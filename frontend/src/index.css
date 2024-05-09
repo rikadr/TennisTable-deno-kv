@@ -1,0 +1,23 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  @apply text-white;
+}
+
+h1 {
+  @apply font-bold text-lg;
+}
+h2 {
+  @apply font-bold text-base;
+}
+h3 {
+  @apply font-normal text-base;
+}
+p {
+  @apply font-light text-sm text-left;
+}
+section {
+  @apply mb-10;
+}
