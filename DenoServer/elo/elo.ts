@@ -24,6 +24,16 @@ function calculateELO(winnersElo: number, losersElo: number) {
 }
 
 export async function getAllPlayersELO(): Promise<PlayerWithElo[]> {
+  const map = await getAllPlayersELOMap();
+
+  const playersWithElo = Array.from(map.values());
+  playersWithElo.sort((a, b) => b.elo - a.elo);
+  return playersWithElo;
+}
+
+export async function getAllPlayersELOMap(): Promise<
+  Map<string, PlayerWithElo>
+> {
   const [players, games] = await Promise.all([getAllPlayers(), getAllGames()]);
 
   const map = new Map<string, PlayerWithElo>();
@@ -43,8 +53,5 @@ export async function getAllPlayersELO(): Promise<PlayerWithElo[]> {
       loser.elo = losersNewElo;
     }
   });
-
-  const playersWithElo = Array.from(map.values());
-  playersWithElo.sort((a, b) => b.elo - a.elo);
-  return playersWithElo;
+  return map;
 }
