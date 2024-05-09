@@ -10,6 +10,7 @@ const api = new Router();
  */
 registerPlayerRoutes(api);
 registerGameRoutes(api);
+registerGameRoutes(api);
 
 api.get("/", (context) => context.response.redirect("/players"));
 
