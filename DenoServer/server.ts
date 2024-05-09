@@ -11,6 +11,8 @@ const api = new Router();
 registerPlayerRoutes(api);
 registerGameRoutes(api);
 
+api.get("/", (context) => context.response.redirect("/players"));
+
 app.use(api.routes());
 app.use(api.allowedMethods());
 
