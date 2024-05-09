@@ -16,8 +16,8 @@ registerEloRoutes(api);
 
 api.get("/", (context) => context.response.redirect("/players"));
 
-app.use(api.routes());
 app.use(oakCors({ origin: "*" }));
+app.use(api.routes());
 app.use(api.allowedMethods());
 
 await app.listen({ port: 8000 });
