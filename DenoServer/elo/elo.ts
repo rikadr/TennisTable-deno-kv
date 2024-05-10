@@ -4,7 +4,7 @@ import { Player, getAllPlayers } from "../player/player.ts";
 type PlayerWithElo = Player & { elo: number };
 
 const K = 32;
-const INITIAL_ELO = 1000;
+const INITIAL_ELO = 1_000;
 
 function calculateELO(winnersElo: number, losersElo: number) {
   // Calculate the expected scores for both players
