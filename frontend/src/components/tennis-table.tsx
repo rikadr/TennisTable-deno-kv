@@ -106,12 +106,10 @@ export const HeaderRow: React.FC<{
 }> = ({ coordinates, gameTable }) => {
   return (
     <RowWrapper>
-      <Cell x={0} y={0} coordinates={coordinates}>
-        <div className="text-right">
-          <div>Winner ➡️</div>
-          <div>Loser ⬇️</div>
-        </div>
-      </Cell>
+      <div className=" flex items-center justify-center flex-col">
+        <div>Winner ➡️</div>
+        <div>Loser ⬇️</div>
+      </div>
       {gameTable.players.map((player, index) => (
         <HeaderCell
           key={index}
