@@ -39,7 +39,7 @@ export const TennisTable: React.FC<{ gameTable: GameTableDTO }> = ({
 export const RowWrapper: React.FC<{
   children: React.ReactNode;
 }> = ({ children }) => {
-  return <div className="grid grid-cols-5 h-full ">{children}</div>;
+  return <div className="grid grid-cols-6 h-full ">{children}</div>;
 };
 
 export const Cell: React.FC<{
