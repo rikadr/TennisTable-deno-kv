@@ -91,9 +91,10 @@ export const Cell: React.FC<{
       )}
     >
       {!!onClick && isSelected && (
-        <p className="absolute top-0 text-[10px]">
-          {pressed ? "Are you sure?" : "Click to +"}
-        </p>
+        <p className="absolute top-0 text-[10px]">Click to +</p>
+      )}
+      {pressed && (
+        <p className="absolute bottom-0 text-[10px]">"Are you sure?</p>
       )}
       {!isOnDiagonal && children}
     </div>
