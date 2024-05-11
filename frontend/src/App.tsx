@@ -1,10 +1,15 @@
+import { QueryClientProvider } from "@tanstack/react-query";
 import { TablePage } from "./components/table-page";
+import { queryClient } from "./common/query-client";
 
 function App() {
+  const queryClienta = queryClient;
   return (
-    <div className="bg-slate-800 min-h-screen w-full">
-      <TablePage />
-    </div>
+    <QueryClientProvider client={queryClienta}>
+      <div className="bg-slate-800 min-h-screen w-full">
+        <TablePage />
+      </div>
+    </QueryClientProvider>
   );
 }
 

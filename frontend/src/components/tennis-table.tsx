@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { GameTableDTO, GameTablePlayer } from "./table-page";
 import { classNames } from "../common/class-names";
+import { useMutation } from "@tanstack/react-query";
+import { queryClient } from "../common/query-client";
 type Coordinates = {
   x: number | undefined;
   y: number | undefined;
@@ -135,6 +137,39 @@ export const ScoreRow: React.FC<{
   player: GameTablePlayer;
   gameTable: GameTableDTO;
 }> = ({ y, coordinates, player, gameTable }) => {
+  const gameMutation = useMutation<
+    {
+      winner: string;
+      loser: string;
+      time: number;
+    },
+    Error,
+    { winner: string; loser: string },
+    unknown
+  >({
+    mutationFn: async ({ winner, loser }) => {
+      return fetch(`${process.env.REACT_APP_API_BASE_URL}/game`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          winner,
+          loser,
+        }),
+      }).then(
+        async (response) =>
+          response.json() as Promise<{
+            winner: string;
+            loser: string;
+            time: number;
+          }>
+      );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["game-table"] });
+    },
+  });
   return (
     <RowWrapper>
       <HeaderCell x={0} y={y} coordinates={coordinates} player={player} />
@@ -142,16 +177,7 @@ export const ScoreRow: React.FC<{
         const cellScore =
           oponent.wins.find((win) => win.oponent === player.name)?.count || 0;
         function handleClick() {
-          fetch(`${process.env.REACT_APP_API_BASE_URL}/game`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              winner: oponent.name,
-              loser: player.name,
-            }),
-          });
+          gameMutation.mutate({ winner: oponent.name, loser: player.name });
         }
         return (
           <ScoreCell
