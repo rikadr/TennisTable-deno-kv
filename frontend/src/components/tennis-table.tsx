@@ -39,9 +39,23 @@ export const TennisTable: React.FC<{ gameTable: GameTableDTO }> = ({
 };
 
 export const RowWrapper: React.FC<{
+  columns: number;
   children: React.ReactNode;
-}> = ({ children }) => {
-  return <div className="grid grid-cols-6 h-full ">{children}</div>;
+}> = ({ columns, children }) => {
+  const minWidth = 120 * columns;
+  const maxWidth = 200 * columns;
+  return (
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
+        minWidth: minWidth,
+        maxWidth: maxWidth,
+      }}
+    >
+      {children}
+    </div>
+  );
 };
 
 export const Cell: React.FC<{
@@ -80,8 +94,12 @@ export const Cell: React.FC<{
       onMouseLeave={() => setPressed(false)}
       onClick={() => (!pressed ? setPressed(!!onClick) : handleClick())}
       className={classNames(
-        "relative select-none w-full h-16 flex items-center justify-center border-[0.5px] border-slate-500/30 transition-all duration-150",
+        "relative w-42 h-16 select-none flex-1",
+        "flex items-center justify-center",
+        "border-[0.5px]",
+        "transition-all duration-150",
         !!onClick && "cursor-pointer",
+        ((!xIsOn && !yIsOn) || isSelectedOnDiagonal) && "border-slate-500/30",
         isMouseOnTable &&
           isNotInCross &&
           !isTwinToSelectedCell &&
@@ -113,8 +131,8 @@ export const HeaderRow: React.FC<{
   gameTable: GameTableDTO;
 }> = ({ coordinates, gameTable }) => {
   return (
-    <RowWrapper>
-      <div className=" flex items-center justify-center flex-col">
+    <RowWrapper columns={gameTable.players.length + 1}>
+      <div className="flex flex-col items-center justify-center">
         <div>Winner ➡️</div>
         <div>Loser ⬇️</div>
       </div>
@@ -171,7 +189,7 @@ export const ScoreRow: React.FC<{
     },
   });
   return (
-    <RowWrapper>
+    <RowWrapper columns={gameTable.players.length + 1}>
       <HeaderCell x={0} y={y} coordinates={coordinates} player={player} />
       {gameTable.players.map((oponent, index) => {
         const cellScore =
