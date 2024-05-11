@@ -51,6 +51,7 @@ export const Cell: React.FC<{
 }> = ({ x, y, coordinates, onClick, children }) => {
   const [pressed, setPressed] = useState(false);
   const isOnDiagonal = x === y;
+  const isSelectedOnDiagonal = coordinates.x === coordinates.y;
 
   const xIsDefined = coordinates.x !== undefined;
   const yIsDefined = coordinates.y !== undefined;
@@ -77,24 +78,28 @@ export const Cell: React.FC<{
       onMouseLeave={() => setPressed(false)}
       onClick={() => (!pressed ? setPressed(!!onClick) : handleClick())}
       className={classNames(
-        "relative w-full h-16 flex items-center justify-center border-[0.5px] border-slate-500/30",
+        "relative select-none w-full h-16 flex items-center justify-center border-[0.5px] border-slate-500/30 transition-all duration-150",
         !!onClick && "cursor-pointer",
         isMouseOnTable &&
           isNotInCross &&
           !isTwinToSelectedCell &&
+          !isSelectedOnDiagonal &&
           "text-white/50",
-        xIsOn && "border-x-2 border-slate-500/100",
-        yIsOn && "border-y-2 border-slate-500/100",
-        (isSelected || isTwinToSelectedCell) && !isOnDiagonal && "bg-slate-500",
+        xIsOn && !isSelectedOnDiagonal && "border-x-2 border-slate-500/100",
+        yIsOn && !isSelectedOnDiagonal && "border-y-2 border-slate-500/100",
+        (isSelected || isTwinToSelectedCell) &&
+          !isOnDiagonal &&
+          !pressed &&
+          "bg-slate-500",
         isSelected && "z-50",
-        pressed && "scale-150 ring-4 ring-white"
+        pressed && "scale-125 ring-4 ring-white bg-emerald-600 rounded-lg"
       )}
     >
       {!!onClick && isSelected && (
         <p className="absolute top-0 text-[10px]">Click to +</p>
       )}
       {pressed && (
-        <p className="absolute bottom-0 text-[10px]">"Are you sure?</p>
+        <p className="absolute bottom-0 text-[10px]">Are you sure?</p>
       )}
       {!isOnDiagonal && children}
     </div>
@@ -171,7 +176,10 @@ export const HeaderCell: React.FC<{
   return (
     <Cell x={x} y={y} coordinates={coordinates}>
       <div>
-        <h3>{player.name}</h3>
+        <h3>
+          {player.name}{" "}
+          <span className="font-thin text-slate-400">#{x !== 0 ? x : y}</span>
+        </h3>
         <p>
           {player.elo.toLocaleString("no-NO", { maximumFractionDigits: 0 })}
         </p>

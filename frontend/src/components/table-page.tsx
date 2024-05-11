@@ -24,7 +24,10 @@ export const TablePage: React.FC = () => {
   }, []);
   return (
     <div>
-      <h1>Tennis Table</h1>
+      <section className="flex gap-4 items-baseline">
+        <h1>Tennis Table</h1>
+        <p>Click any cell to register a played game 🏓</p>
+      </section>
       {data && <TennisTable gameTable={data} />}
     </div>
   );
