@@ -6,7 +6,7 @@ function App() {
   const queryClienta = queryClient;
   return (
     <QueryClientProvider client={queryClienta}>
-      <div className="bg-slate-800 min-h-screen w-full">
+      <div className="bg-slate-800 min-h-screen w-full overflow-auto">
         <TablePage />
       </div>
     </QueryClientProvider>
