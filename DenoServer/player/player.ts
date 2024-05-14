@@ -46,3 +46,10 @@ export async function createPlayer(
     throw new Error("Failed to create player");
   }
 }
+
+export async function deletePlayer(name: string) {
+  if (!name) {
+    throw new Error("name is required");
+  }
+  await kv.delete(["player", name]);
+}

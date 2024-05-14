@@ -2,6 +2,7 @@ import { Router } from "https://deno.land/x/oak@v16.0.0/router.ts";
 import {
   CreatePlayerPayload,
   createPlayer,
+  deletePlayer,
   getAllPlayers,
   getPlayer,
 } from "./player.ts";
@@ -40,5 +41,22 @@ export function registerPlayerRoutes(api: Router) {
 
     const player = await createPlayer(payload);
     context.response.body = player;
+  });
+
+  /**
+   * Delete a player
+   */
+  api.delete("/player/:name", async (context) => {
+    const name = context.params.name;
+    if (!name) {
+      throw new Error("name is required");
+    }
+    const player = getPlayer(name);
+    if (!player) {
+      context.response.status = 404;
+      return;
+    }
+    await deletePlayer(name);
+    context.response.status = 204;
   });
 }
