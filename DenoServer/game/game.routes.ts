@@ -1,9 +1,12 @@
 import { Router } from "https://deno.land/x/oak@v16.0.0/router.ts";
 import {
   CreateGamePayload,
+  DeleteGamePayload,
   createGame,
   deleteAllGames,
+  deleteGame,
   getAllGames,
+  getGame,
   getGamesByPlayer,
 } from "./game.ts";
 
@@ -37,6 +40,24 @@ export function registerGameRoutes(api: Router) {
 
     const game = await createGame(payload);
     context.response.body = game;
+  });
+
+  /**
+   * Delete one game
+   */
+  api.delete("/game", async (context) => {
+    const payload = (await context.request.body.json()) as DeleteGamePayload;
+    if (!payload) {
+      throw new Error("payload is required");
+    }
+
+    const game = await getGame(payload);
+    if (!game) {
+      context.response.status = 404;
+      return;
+    }
+    await deleteGame(game);
+    context.response.body = 204;
   });
 
   /**

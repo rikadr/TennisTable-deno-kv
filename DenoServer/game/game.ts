@@ -3,6 +3,7 @@ import { getPlayer } from "../player/player.ts";
 
 export type Game = { winner: string; loser: string; time: number };
 export type CreateGamePayload = { winner: string; loser: string };
+export type DeleteGamePayload = { winner: string; loser: string; time: number };
 
 export async function getAllGames(): Promise<Game[]> {
   const games: Game[] = [];
@@ -14,6 +15,14 @@ export async function getAllGames(): Promise<Game[]> {
 
   games.sort((a, b) => a.time - b.time);
   return games;
+}
+
+export async function getGame(game: Game): Promise<Game | null> {
+  const res = await kv.get<Game>(["game", "main", game.time]);
+  if (!res.value) {
+    return null;
+  }
+  return res.value;
 }
 
 export async function getGamesByPlayer(name: string): Promise<Game[]> {
@@ -94,4 +103,21 @@ export async function deleteAllGames(): Promise<{ deleted: number }> {
     }
   }
   return { deleted };
+}
+
+export async function deleteGame(game: Game): Promise<{
+  deleted: boolean;
+}> {
+  const keyMain = ["game", "main", game.time];
+  const keyWinner = ["game", "winner", game.winner, game.time];
+  const keyLoser = ["game", "loser", game.loser, game.time];
+
+  const res = await kv
+    .atomic()
+    .delete(keyMain)
+    .delete(keyWinner)
+    .delete(keyLoser)
+    .commit();
+
+  return { deleted: res.ok };
 }
