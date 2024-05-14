@@ -1,6 +1,7 @@
 import React from "react";
 import { TennisTable } from "./tennis-table";
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
 export type GameTableDTO = {
   players: GameTablePlayer[];
 };
@@ -28,6 +29,18 @@ export const TablePage: React.FC = () => {
       <section className="flex gap-4 items-baseline">
         <h1>Tennis Table</h1>
         <p>Click any cell to register a played game 🏓</p>
+        <button
+          className="text-sm bg-green-700 hover:bg-green-900 text-white px-1 rounded-md font-thin"
+          onClick={() => console.log("Add player clicked")}
+        >
+          Add player +
+        </button>
+        <Link
+          className="text-sm ring-[0.5px] font-thin ring-white text-white px-1 rounded-md"
+          to="/admin"
+        >
+          To admin page 🔐
+        </Link>
       </section>
       {(tableQuery.isLoading || tableQuery.isFetching) && (
         <div className="grid grid-cols-6 gap-1 grid-flow-row w-full">
