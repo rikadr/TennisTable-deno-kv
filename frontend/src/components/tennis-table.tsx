@@ -186,7 +186,7 @@ export const ScoreRow: React.FC<{
       );
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["game-table"] });
+      queryClient.invalidateQueries();
     },
   });
   return (

@@ -3,6 +3,7 @@ import { TablePage } from "./components/table-page";
 import { queryClient } from "./common/query-client";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { PlayerPage } from "./components/player-page";
+import { AdminPage } from "./components/admin-page";
 
 function App() {
   const queryClienta = queryClient;
@@ -14,6 +15,7 @@ function App() {
             <Route path="/" element={<Navigate to="/tennis-table" />} />
             <Route path="/tennis-table" element={<TablePage />} />
             <Route path="/player/:name" element={<PlayerPage />} />
+            <Route path="/admin" element={<AdminPage />} />
           </Routes>
         </BrowserRouter>
       </div>
