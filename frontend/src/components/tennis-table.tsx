@@ -3,6 +3,7 @@ import { GameTableDTO, GameTablePlayer } from "./table-page";
 import { classNames } from "../common/class-names";
 import { useMutation } from "@tanstack/react-query";
 import { queryClient } from "../common/query-client";
+import { Link } from "react-router-dom";
 type Coordinates = {
   x: number | undefined;
   y: number | undefined;
@@ -218,17 +219,19 @@ export const HeaderCell: React.FC<{
   player: GameTablePlayer;
 }> = ({ x, y, coordinates, player }) => {
   return (
-    <Cell x={x} y={y} coordinates={coordinates}>
-      <div>
-        <h3>
-          {player.name}{" "}
-          <span className="font-thin text-slate-400">#{x !== 0 ? x : y}</span>
-        </h3>
-        <p>
-          {player.elo.toLocaleString("no-NO", { maximumFractionDigits: 0 })}
-        </p>
-      </div>
-    </Cell>
+    <Link to={`/player/${player.name}`}>
+      <Cell x={x} y={y} coordinates={coordinates}>
+        <div>
+          <h3>
+            {player.name}{" "}
+            <span className="font-thin text-slate-400">#{x !== 0 ? x : y}</span>
+          </h3>
+          <p>
+            {player.elo.toLocaleString("no-NO", { maximumFractionDigits: 0 })}
+          </p>
+        </div>
+      </Cell>
+    </Link>
   );
 };
 export const ScoreCell: React.FC<{

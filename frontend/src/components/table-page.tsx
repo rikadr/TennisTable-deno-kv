@@ -29,7 +29,16 @@ export const TablePage: React.FC = () => {
         <h1>Tennis Table</h1>
         <p>Click any cell to register a played game 🏓</p>
       </section>
-      {tableQuery.data && <TennisTable gameTable={tableQuery.data} />}
+      {(tableQuery.isLoading || tableQuery.isFetching) && (
+        <div className="grid grid-cols-6 gap-1 grid-flow-row w-full">
+          {Array.from({ length: 36 }, () => "").map(() => (
+            <div className="h-16 animate-pulse rounded-lg bg-gray-500" />
+          ))}
+        </div>
+      )}
+      {tableQuery.data && !tableQuery.isLoading && !tableQuery.isFetching && (
+        <TennisTable gameTable={tableQuery.data} />
+      )}
     </div>
   );
 };
