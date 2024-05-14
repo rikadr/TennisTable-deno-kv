@@ -29,12 +29,12 @@ export const TablePage: React.FC = () => {
       <section className="flex gap-4 items-baseline">
         <h1>Tennis Table</h1>
         <p>Click any cell to register a played game 🏓</p>
-        <button
+        <Link
           className="text-sm bg-green-700 hover:bg-green-900 text-white px-1 rounded-md font-thin"
-          onClick={() => console.log("Add player clicked")}
+          to="/add-player"
         >
           Add player +
-        </button>
+        </Link>
         <Link
           className="text-sm ring-[0.5px] font-thin ring-white text-white px-1 rounded-md"
           to="/admin"
