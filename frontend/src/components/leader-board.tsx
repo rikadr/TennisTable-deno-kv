@@ -97,15 +97,15 @@ export const LeaderBoard: React.FC<{ gameTable: GameTableDTO }> = ({
                     {player.name}
                   </Link>
                 </td>
-                <td>
+                <td className="text-right">
                   {player.elo.toLocaleString("no-NO", {
                     maximumFractionDigits: 0,
                   })}
                 </td>
-                <td>
+                <td className="text-right">
                   {player.wins.reduce((acc, cur) => (acc += cur.count), 0)}
                 </td>
-                <td>
+                <td className="text-right">
                   {player.loss.reduce((acc, cur) => (acc += cur.count), 0)}
                 </td>
               </tr>
