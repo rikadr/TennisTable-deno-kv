@@ -41,48 +41,68 @@ export const AddGamePage: React.FC = () => {
   });
 
   return (
-    <div className="space-y-4 p-4 w-fit">
-      <button
-        disabled={!winner || !loser}
-        className={classNames(
-          "text-lg w-full py-4 px-6 bg-green-700 hover:bg-green-900 text-white rounded-lg font-normal",
-          (!winner || !loser) &&
-            "bg-green-700/0 hover:bg-green-700/0 text-gray-300 cursor-not-allowed ring-1 ring-gray-500"
-        )}
-        onClick={() => addGameMutation.mutate()}
-      >
-        Add game 🏓
-      </button>
-      <div className="flex gap-2">
-        <div className="space-y-4">
-          <div className="w-40 h-20 flex flex-col items-center justify-center">
-            <h1 className="text-5xl">🏆</h1>
-            <h1 className="uppercase">{winner || "???"}</h1>
+    <div className="w-full flex justify-center">
+      <div className="space-y-4 p-4 w-fit">
+        <button
+          disabled={!winner || !loser}
+          className={classNames(
+            "text-lg w-full py-4 px-6 bg-green-700 hover:bg-green-900 text-white rounded-lg font-normal",
+            (!winner || !loser) &&
+              "bg-green-700/0 hover:bg-green-700/0 text-gray-300 cursor-not-allowed ring-1 ring-gray-500"
+          )}
+          onClick={() => addGameMutation.mutate()}
+        >
+          Add game 🏓
+        </button>
+        <div className="flex gap-2">
+          <div className="space-y-4">
+            <div className="w-40 h-20 flex flex-col items-center justify-center">
+              <h1 className="text-5xl">🏆</h1>
+              <h1 className="uppercase">{winner || "???"}</h1>
+            </div>
+            <PlayerList
+              players={playersQuery.data}
+              isLoading={playersQuery.isLoading}
+              onClick={(name) =>
+                setWinner((prev) => {
+                  if (name === loser) {
+                    setLoser(undefined);
+                    return name;
+                  }
+                  if (prev === name) {
+                    return undefined;
+                  }
+                  return name;
+                })
+              }
+              selectedPlayer={winner}
+              disabledPlayer={loser}
+            />
           </div>
-          <PlayerList
-            players={playersQuery.data}
-            isLoading={playersQuery.isLoading}
-            onClick={(name) =>
-              setWinner((prev) => (prev === name ? undefined : name))
-            }
-            selectedPlayer={winner}
-            disabledPlayer={loser}
-          />
-        </div>
-        <div className="space-y-4">
-          <div className="w-40 h-20 flex flex-col items-center justify-center">
-            <h1 className="text-5xl">💔</h1>
-            <h1 className="uppercase">{loser || "???"}</h1>
+          <div className="space-y-4">
+            <div className="w-40 h-20 flex flex-col items-center justify-center">
+              <h1 className="text-5xl">💔</h1>
+              <h1 className="uppercase">{loser || "???"}</h1>
+            </div>
+            <PlayerList
+              players={playersQuery.data}
+              isLoading={playersQuery.isLoading}
+              onClick={(name) =>
+                setLoser((prev) => {
+                  if (name === winner) {
+                    setWinner(undefined);
+                    return name;
+                  }
+                  if (prev === name) {
+                    return undefined;
+                  }
+                  return name;
+                })
+              }
+              selectedPlayer={loser}
+              disabledPlayer={winner}
+            />
           </div>
-          <PlayerList
-            players={playersQuery.data}
-            isLoading={playersQuery.isLoading}
-            onClick={(name) =>
-              setLoser((prev) => (prev === name ? undefined : name))
-            }
-            selectedPlayer={loser}
-            disabledPlayer={winner}
-          />
         </div>
       </div>
     </div>
@@ -115,12 +135,11 @@ const PlayerList: React.FC<{
         const isDisabled = disabledPlayer === player.name;
         return (
           <button
-            disabled={isDisabled}
             className={classNames(
               "h-8 text-left pl-4 rounded-lg",
               "bg-gray-500/50",
               isSelected && "bg-green-500/50 ring-2 ring-white",
-              isDisabled && "text-gray-500 cursor-not-allowed",
+              isDisabled && "text-gray-500",
               !isSelected && !isDisabled && "hover:bg-gray-500"
             )}
             onClick={() => onClick(player.name)}

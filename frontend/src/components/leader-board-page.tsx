@@ -25,7 +25,7 @@ export const LeaderBoardPage: React.FC = () => {
   });
 
   return (
-    <div>
+    <div className="flex flex-col items-center">
       <section className="flex gap-x-4 gap-y-2 items-baseline flex-col w-56 sm:w-fit sm:flex-row p-1">
         <h1 className="whitespace-nowrap">Tennis🏆💔Table</h1>
         <Link
