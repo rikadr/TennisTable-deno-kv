@@ -30,7 +30,7 @@ export const LeaderBoardPage: React.FC = () => {
         <h1 className="whitespace-nowrap">Tennis🏆💔Table</h1>
         <Link
           className="w-full text-sm text-center whitespace-nowrap bg-green-700 hover:bg-green-900 text-white py-1 px-3 rounded-md font-thin"
-          to="/add-player"
+          to="/add-game"
         >
           Add played game +🏓
         </Link>

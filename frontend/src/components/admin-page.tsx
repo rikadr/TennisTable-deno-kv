@@ -3,7 +3,7 @@ import React from "react";
 import { queryClient } from "../common/query-client";
 import { timeAgo } from "../common/date-utils";
 
-type PlayersDTO = {
+export type PlayersDTO = {
   name: string;
 }[];
 

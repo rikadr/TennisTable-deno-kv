@@ -6,6 +6,7 @@ import { PlayerPage } from "./components/player-page";
 import { AdminPageProtector } from "./components/admin-page-protector";
 import { AddPlayerPage } from "./components/add-player-page";
 import { LeaderBoardPage } from "./components/leader-board-page";
+import { AddGamePage } from "./components/add-game-page";
 
 function App() {
   const queryClienta = queryClient;
@@ -19,6 +20,7 @@ function App() {
             <Route path="/tennis-table" element={<TablePage />} />
             <Route path="/player/:name" element={<PlayerPage />} />
             <Route path="/add-player" element={<AddPlayerPage />} />
+            <Route path="/add-game" element={<AddGamePage />} />
             <Route path="/admin" element={<AdminPageProtector />} />
           </Routes>
         </BrowserRouter>
