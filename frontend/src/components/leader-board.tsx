@@ -78,9 +78,9 @@ export const LeaderBoard: React.FC<{ gameTable: GameTableDTO }> = ({
           <thead>
             <tr>
               <th>Player</th>
-              <th>Elo</th>
-              <th>Wins</th>
-              <th>Losses</th>
+              <th className="text-right">Elo</th>
+              <th className="text-right">Win 🏆</th>
+              <th className="text-right">Loss 💔</th>
             </tr>
           </thead>
           <tbody>
