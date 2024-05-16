@@ -5,6 +5,7 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { PlayerPage } from "./components/player-page";
 import { AdminPageProtector } from "./components/admin-page-protector";
 import { AddPlayerPage } from "./components/add-player-page";
+import { LeaderBoardPage } from "./components/leader-board-page";
 
 function App() {
   const queryClienta = queryClient;
@@ -13,7 +14,8 @@ function App() {
       <div className="bg-slate-800 min-h-screen w-full overflow-auto">
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<Navigate to="/tennis-table" />} />
+            <Route path="/" element={<Navigate to="/leader-board" />} />
+            <Route path="/leader-board" element={<LeaderBoardPage />} />
             <Route path="/tennis-table" element={<TablePage />} />
             <Route path="/player/:name" element={<PlayerPage />} />
             <Route path="/add-player" element={<AddPlayerPage />} />
