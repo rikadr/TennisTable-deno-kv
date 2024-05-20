@@ -51,6 +51,11 @@ export const PlayerPage: React.FC = () => {
     [playersEloQuery.data, name]
   );
 
+  const reversePlayerGames = useMemo(() => {
+    if (!playerGamesQuery.data) return;
+    return playerGamesQuery.data.slice().reverse();
+  }, [playerGamesQuery.data]);
+
   return (
     <div className="flex flex-col items-center">
       <section className="space-y-1 my-4">
@@ -93,25 +98,25 @@ export const PlayerPage: React.FC = () => {
           of {playersEloQuery.data?.length} players
         </p>
       </section>
-      <div className="w-96">
+      <div className="w-fit">
         <h1 className="text-2xl text-center">
-          Played {playerGamesQuery.data?.length} games
+          {playerGamesQuery.data?.length} games
         </h1>
         <table className="w-full">
           <thead>
             <tr>
-              <th>Result</th>
-              <th>Oponent</th>
+              <th>Game</th>
               <th>Time</th>
             </tr>
           </thead>
           <tbody>
-            {playerGamesQuery.data?.map((game, index) => (
+            {reversePlayerGames?.map((game, index) => (
               <tr key={index} className="hover:bg-gray-500/50">
-                <td className="text-right">
-                  {game.winner === name ? "🏆" : "💔"}
+                <td className="text-left px-4">
+                  {game.winner === name
+                    ? "🏆 " + game.loser
+                    : "💔 " + game.winner}
                 </td>
-                <td className="text-left">{game.loser}</td>
                 <td className="text-right">{timeAgo(new Date(game.time))}</td>
               </tr>
             ))}
