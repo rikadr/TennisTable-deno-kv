@@ -16,8 +16,6 @@ registerGameRoutes(api);
 registerEloRoutes(api);
 registerGameTableRoutes(api);
 
-api.get("/", (context) => context.response.redirect("/players"));
-
 app.use(oakCors({ origin: "*", allowedHeaders: "*", methods: "*" }));
 app.use(api.routes());
 app.use(api.allowedMethods());

@@ -49,8 +49,11 @@ export const LeaderBoardPage: React.FC = () => {
       </section>
       {(tableQuery.isLoading || tableQuery.isFetching) && (
         <div className="grid grid-cols-1 gap-1 grid-flow-row w-full">
-          {Array.from({ length: 6 }, () => "").map(() => (
-            <div className="h-16 animate-pulse rounded-lg bg-gray-500" />
+          {Array.from({ length: 6 }, () => "").map((_, index) => (
+            <div
+              key={index}
+              className="h-16 animate-pulse rounded-lg bg-gray-500"
+            />
           ))}
         </div>
       )}
