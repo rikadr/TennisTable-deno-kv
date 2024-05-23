@@ -6,7 +6,7 @@ type PlayerWithElo = Player & { elo: number };
 const K = 32;
 const INITIAL_ELO = 1_000;
 
-function calculateELO(winnersElo: number, losersElo: number) {
+export function calculateELO(winnersElo: number, losersElo: number) {
   // Calculate the expected scores for both players
   const expectedScoreWinner =
     1 / (1 + Math.pow(10, (losersElo - winnersElo) / 400));

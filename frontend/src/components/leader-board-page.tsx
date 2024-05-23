@@ -2,27 +2,34 @@ import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { LeaderBoard } from "./leader-board";
-export type GameTableDTO = {
-  players: GameTablePlayer[];
-};
-export type GameTablePlayer = {
+
+export type PlayerSummary = {
   name: string;
   elo: number;
-  wins: { oponent: string; count: number }[];
-  loss: { oponent: string; count: number }[];
+  wins: number;
+  loss: number;
 };
 
-export const LeaderBoardPage: React.FC = () => {
-  const tableQuery = useQuery<GameTableDTO>({
-    queryKey: ["game-table"],
+export type LeaderboardDTO = {
+  rankedPlayers: (PlayerSummary & { rank: number })[];
+  unrankedPlayers: (PlayerSummary & { potentialRank: number })[];
+};
+
+export function useLeaderBoardQuery() {
+  return useQuery<LeaderboardDTO>({
+    queryKey: ["leaderboard"],
     queryFn: async () => {
-      return fetch(`${process.env.REACT_APP_API_BASE_URL}/game-table`, {
+      return fetch(`${process.env.REACT_APP_API_BASE_URL}/leaderboard`, {
         method: "GET",
-      }).then(async (response) => response.json() as Promise<GameTableDTO>);
+      }).then(async (response) => response.json() as Promise<LeaderboardDTO>);
     },
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
   });
+}
+
+export const LeaderBoardPage: React.FC = () => {
+  const leaderboardQuery = useLeaderBoardQuery();
 
   return (
     <div className="flex flex-col items-center">
@@ -47,7 +54,7 @@ export const LeaderBoardPage: React.FC = () => {
           To admin page 🔐
         </Link>
       </section>
-      {(tableQuery.isLoading || tableQuery.isFetching) && (
+      {(leaderboardQuery.isLoading || leaderboardQuery.isFetching) && (
         <div className="grid grid-cols-1 gap-1 grid-flow-row w-full">
           {Array.from({ length: 6 }, () => "").map((_, index) => (
             <div
@@ -57,9 +64,11 @@ export const LeaderBoardPage: React.FC = () => {
           ))}
         </div>
       )}
-      {tableQuery.data && !tableQuery.isLoading && !tableQuery.isFetching && (
-        <LeaderBoard gameTable={tableQuery.data} />
-      )}
+      {leaderboardQuery.data &&
+        !leaderboardQuery.isLoading &&
+        !leaderboardQuery.isFetching && (
+          <LeaderBoard leaderboard={leaderboardQuery.data} />
+        )}
     </div>
   );
 };

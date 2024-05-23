@@ -3,7 +3,7 @@ import { oakCors } from "https://deno.land/x/cors@v1.2.2/mod.ts";
 import { registerPlayerRoutes } from "./player/player.routes.ts";
 import { registerGameRoutes } from "./game/game.routes.ts";
 import { registerEloRoutes } from "./elo/elo.routes.ts";
-import { registerGameTableRoutes } from "./game-table/game-table.routes.ts";
+import { registerLeaderboardRoutes } from "./leaderboard/leaderboard.routes.ts";
 
 const app = new Application();
 const api = new Router();
@@ -14,7 +14,7 @@ const api = new Router();
 registerPlayerRoutes(api);
 registerGameRoutes(api);
 registerEloRoutes(api);
-registerGameTableRoutes(api);
+registerLeaderboardRoutes(api);
 
 app.use(oakCors({ origin: "*", allowedHeaders: "*", methods: "*" }));
 app.use(api.routes());

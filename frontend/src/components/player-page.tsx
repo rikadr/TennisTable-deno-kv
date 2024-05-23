@@ -2,16 +2,12 @@ import { useQuery } from "@tanstack/react-query";
 import React, { useMemo } from "react";
 import { useParams } from "react-router-dom";
 import { timeAgo } from "../common/date-utils";
+import { useLeaderBoardQuery } from "./leader-board-page";
 
 type PlayerGamesDTO = {
   winner: string;
   loser: string;
   time: number;
-}[];
-
-type PlayersEloDTO = {
-  name: string;
-  elo: number;
 }[];
 
 export const PlayerPage: React.FC = () => {
@@ -29,26 +25,13 @@ export const PlayerPage: React.FC = () => {
     refetchOnReconnect: true,
   });
 
-  const playersEloQuery = useQuery<PlayersEloDTO>({
-    queryKey: ["players-elo"],
-    queryFn: async () => {
-      return fetch(`${process.env.REACT_APP_API_BASE_URL}/elo`, {
-        method: "GET",
-      }).then(async (response) => response.json() as Promise<PlayersEloDTO>);
-    },
-    enabled: !!name,
-    refetchOnWindowFocus: true,
-    refetchOnReconnect: true,
-  });
+  const leaderboardQuery = useLeaderBoardQuery();
 
-  const player = useMemo(
-    () => playersEloQuery.data?.find((player) => player.name === name),
-    [playersEloQuery.data, name]
+  const playerRanked = leaderboardQuery.data?.rankedPlayers.find(
+    (player) => player.name === name
   );
-
-  const playerPositionIndex = useMemo(
-    () => playersEloQuery.data?.findIndex((player) => player.name === name),
-    [playersEloQuery.data, name]
+  const playerUnranked = leaderboardQuery.data?.unrankedPlayers.find(
+    (player) => player.name === name
   );
 
   const reversePlayerGames = useMemo(() => {
@@ -61,15 +44,13 @@ export const PlayerPage: React.FC = () => {
       <section className="space-y-1 my-4">
         <div className="bg-gray-500/50 w-96 h-20 p-2 rounded-lg flex space-x-4">
           <div className="w-16 text-3xl rounded-lg bg-white text-gray-500 flex items-center justify-center">
-            {playerPositionIndex !== undefined
-              ? "#" + (playerPositionIndex + 1)
-              : "?"}
+            #{playerRanked?.rank || `${playerUnranked?.potentialRank}*` || "?"}
           </div>
           <section className="grow">
             <h2 className="uppercase text-xl">{name} </h2>
             <section className="flex space-x-4 text-md">
               <div>
-                {player?.elo.toLocaleString("no-NO", {
+                {(playerRanked || playerUnranked)?.elo.toLocaleString("no-NO", {
                   maximumFractionDigits: 0,
                 })}
               </div>
@@ -89,18 +70,24 @@ export const PlayerPage: React.FC = () => {
           </section>
         </div>
         <p>
+          {playerUnranked && "Potentially"}{" "}
           <b>
-            #
-            {(playersEloQuery.data?.findIndex(
-              (player) => player.name === name
-            ) ?? -2) + 1}{" "}
+            #{playerRanked?.rank || `${playerUnranked?.potentialRank}` || "?"}{" "}
           </b>
-          of {playersEloQuery.data?.length} players
+          of{" "}
+          {playerRanked &&
+            `${leaderboardQuery.data?.rankedPlayers.length} ranked players`}
+          {playerUnranked &&
+            leaderboardQuery.data &&
+            `${
+              leaderboardQuery.data.rankedPlayers.length +
+              leaderboardQuery.data.unrankedPlayers.length
+            } total ranked + unranked players`}
         </p>
       </section>
       <div className="w-fit">
         <h1 className="text-2xl text-center">
-          {playerGamesQuery.data?.length} games
+          {playerGamesQuery.data?.length || 0} games
         </h1>
         <table className="w-full">
           <thead>

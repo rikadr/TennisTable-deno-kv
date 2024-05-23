@@ -1,14 +1,15 @@
 import React from "react";
-import { GameTableDTO } from "./table-page";
 import { Link } from "react-router-dom";
+import { LeaderboardDTO } from "./leader-board-page";
 
-export const LeaderBoard: React.FC<{ gameTable: GameTableDTO }> = ({
-  gameTable,
+export const LeaderBoard: React.FC<{ leaderboard: LeaderboardDTO }> = ({
+  leaderboard,
 }) => {
-  const nr1 = gameTable.players[0];
-  const nr2 = gameTable.players[1];
-  const nr3 = gameTable.players[2];
-  const lastPlace = gameTable.players[gameTable.players.length - 1];
+  const nr1 = leaderboard.rankedPlayers[0];
+  const nr2 = leaderboard.rankedPlayers[1];
+  const nr3 = leaderboard.rankedPlayers[2];
+  const lastPlace =
+    leaderboard.rankedPlayers[leaderboard.rankedPlayers.length - 1];
   return (
     <div className="h-full w-fit md:flex space-y-4 space-x-4 pb-20">
       <div className="space-y-2">
@@ -26,8 +27,7 @@ export const LeaderBoard: React.FC<{ gameTable: GameTableDTO }> = ({
                 })}
               </div>
               <div>
-                🏆 {nr1.wins.reduce((acc, cur) => (acc += cur.count), 0)} 💔{" "}
-                {nr1.loss.reduce((acc, cur) => (acc += cur.count), 0)}
+                🏆 {nr1.wins} 💔 {nr1.loss}
               </div>
             </section>
           </section>
@@ -46,8 +46,7 @@ export const LeaderBoard: React.FC<{ gameTable: GameTableDTO }> = ({
                 })}
               </div>
               <div>
-                🏆 {nr2.wins.reduce((acc, cur) => (acc += cur.count), 0)} 💔{" "}
-                {nr2.loss.reduce((acc, cur) => (acc += cur.count), 0)}
+                🏆 {nr2.wins} 💔 {nr2.loss}
               </div>
             </section>
           </section>
@@ -66,8 +65,7 @@ export const LeaderBoard: React.FC<{ gameTable: GameTableDTO }> = ({
                 })}
               </div>
               <div>
-                🏆 {nr3.wins.reduce((acc, cur) => (acc += cur.count), 0)} 💔{" "}
-                {nr3.loss.reduce((acc, cur) => (acc += cur.count), 0)}
+                🏆 {nr3.wins} 💔 {nr3.loss}
               </div>
             </section>
           </section>
@@ -83,7 +81,7 @@ export const LeaderBoard: React.FC<{ gameTable: GameTableDTO }> = ({
             <h2 className="uppercase text-sm">
               {lastPlace.name}{" "}
               <span className="font-thin text-slate-400 px-1">
-                #{gameTable.players.length}
+                #{lastPlace.rank}
               </span>
             </h2>
             <section className="flex space-x-4 text-xs">
@@ -93,8 +91,7 @@ export const LeaderBoard: React.FC<{ gameTable: GameTableDTO }> = ({
                 })}
               </div>
               <div>
-                🏆 {lastPlace.wins.reduce((acc, cur) => (acc += cur.count), 0)}{" "}
-                💔 {lastPlace.loss.reduce((acc, cur) => (acc += cur.count), 0)}
+                🏆 {lastPlace.wins} 💔 {lastPlace.loss}
               </div>
             </section>
           </section>
@@ -112,7 +109,7 @@ export const LeaderBoard: React.FC<{ gameTable: GameTableDTO }> = ({
             </tr>
           </thead>
           <tbody>
-            {gameTable.players.map((player, index) => (
+            {leaderboard.rankedPlayers.map((player, index) => (
               <tr key={index}>
                 <td>
                   <Link
@@ -120,7 +117,7 @@ export const LeaderBoard: React.FC<{ gameTable: GameTableDTO }> = ({
                     className="h-full hover:bg-gray-500/50 flex w-full"
                   >
                     <div className="font-thin text-slate-400 w-10 text-center">
-                      #{index + 1}
+                      #{player.rank}
                     </div>
                     {player.name}
                   </Link>
@@ -130,12 +127,45 @@ export const LeaderBoard: React.FC<{ gameTable: GameTableDTO }> = ({
                     maximumFractionDigits: 0,
                   })}
                 </td>
-                <td className="text-right">
-                  {player.wins.reduce((acc, cur) => (acc += cur.count), 0)}
+                <td className="text-right">{player.wins}</td>
+                <td className="text-right">{player.loss}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+
+        <h1 className="text-2xl text-center mt-10">Unranked players</h1>
+        <p className="w-full text-center">Play 5 or more games to get ranked</p>
+        <table className="w-full">
+          <thead>
+            <tr>
+              <th>Potential rank for Player</th>
+              <th className="text-right">Elo</th>
+              <th className="text-right">Win 🏆</th>
+              <th className="text-right">Loss 💔</th>
+            </tr>
+          </thead>
+          <tbody>
+            {leaderboard.unrankedPlayers.map((player, index) => (
+              <tr key={index}>
+                <td>
+                  <Link
+                    to={`/player/${player.name}`}
+                    className="h-full hover:bg-gray-500/50 flex w-full"
+                  >
+                    <div className="font-thin text-slate-400 w-10 text-center">
+                      #{player.potentialRank}
+                    </div>
+                    {player.name}
+                  </Link>
                 </td>
                 <td className="text-right">
-                  {player.loss.reduce((acc, cur) => (acc += cur.count), 0)}
+                  {player.elo.toLocaleString("no-NO", {
+                    maximumFractionDigits: 0,
+                  })}
                 </td>
+                <td className="text-right">{player.wins}</td>
+                <td className="text-right">{player.loss}</td>
               </tr>
             ))}
           </tbody>
