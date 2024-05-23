@@ -72,40 +72,33 @@ export const LeaderBoard: React.FC<{ gameTable: GameTableDTO }> = ({
             </section>
           </section>
         </Link>
-        {(lastPlace.name === "rikard" || lastPlace.name === "peder") && (
-          <>
-            <p className="w-full pl-20 ml-2 pt-2 italic">
-              Honorable mention to last place...
-            </p>
-            <Link
-              to={`/player/${lastPlace.name}`}
-              className="bg-gray-500/50 w-96 h-12 p-2 rounded-lg flex space-x-4 hover:bg-gray-500/75"
-            >
-              <div className="w-16 text-center text-2xl">💩</div>
-              <section className="grow -mt-1">
-                <h2 className="uppercase text-sm">
-                  {lastPlace.name}{" "}
-                  <span className="font-thin text-slate-400 px-1">
-                    #{gameTable.players.length}
-                  </span>
-                </h2>
-                <section className="flex space-x-4 text-xs">
-                  <div>
-                    {lastPlace.elo.toLocaleString("no-NO", {
-                      maximumFractionDigits: 0,
-                    })}
-                  </div>
-                  <div>
-                    🏆{" "}
-                    {lastPlace.wins.reduce((acc, cur) => (acc += cur.count), 0)}{" "}
-                    💔{" "}
-                    {lastPlace.loss.reduce((acc, cur) => (acc += cur.count), 0)}
-                  </div>
-                </section>
-              </section>
-            </Link>
-          </>
-        )}
+
+        <p className="w-full pl-20 ml-2 pt-2 italic">Last place...</p>
+        <Link
+          to={`/player/${lastPlace.name}`}
+          className="bg-gray-500/50 w-96 h-12 p-2 rounded-lg flex space-x-4 hover:bg-gray-500/75"
+        >
+          <div className="w-16 text-center text-2xl">💩</div>
+          <section className="grow -mt-1">
+            <h2 className="uppercase text-sm">
+              {lastPlace.name}{" "}
+              <span className="font-thin text-slate-400 px-1">
+                #{gameTable.players.length}
+              </span>
+            </h2>
+            <section className="flex space-x-4 text-xs">
+              <div>
+                {lastPlace.elo.toLocaleString("no-NO", {
+                  maximumFractionDigits: 0,
+                })}
+              </div>
+              <div>
+                🏆 {lastPlace.wins.reduce((acc, cur) => (acc += cur.count), 0)}{" "}
+                💔 {lastPlace.loss.reduce((acc, cur) => (acc += cur.count), 0)}
+              </div>
+            </section>
+          </section>
+        </Link>
       </div>
       <div className="w-96">
         <h1 className="text-2xl text-center">Leader Board</h1>
