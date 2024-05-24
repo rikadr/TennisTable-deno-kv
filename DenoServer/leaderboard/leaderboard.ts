@@ -1,4 +1,4 @@
-import { calculateELO, getAllPlayersELOMap } from "../elo/elo.ts";
+import { INITIAL_ELO, calculateELO, getAllPlayersELOMap } from "../elo/elo.ts";
 import { getAllGames } from "../game/game.ts";
 
 type PlayerSummary = {
@@ -16,10 +16,7 @@ export type LeaderboardDTO = {
 const GAME_LIMIT_FOR_RANKED = 5;
 
 export async function getLeaderboard(): Promise<LeaderboardDTO> {
-  const [allGames, eloMap] = await Promise.all([
-    getAllGames(),
-    getAllPlayersELOMap(),
-  ]);
+  const [allGames] = await Promise.all([getAllGames()]);
 
   const leaderboardMap = new Map<string, PlayerSummary>();
 
@@ -28,7 +25,7 @@ export async function getLeaderboard(): Promise<LeaderboardDTO> {
     if (player) return player;
     leaderboardMap.set(name, {
       name,
-      elo: eloMap.get(name)?.elo || 0,
+      elo: INITIAL_ELO,
       wins: 0,
       loss: 0,
     });
