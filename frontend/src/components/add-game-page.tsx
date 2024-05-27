@@ -44,7 +44,7 @@ export const AddGamePage: React.FC = () => {
     <div className="w-full flex justify-center">
       <div className="space-y-4 p-4 w-fit">
         <button
-          disabled={!winner || !loser}
+          disabled={!winner || !loser || addGameMutation.isPending}
           className={classNames(
             "text-lg w-full py-4 px-6 bg-green-700 hover:bg-green-900 text-white rounded-lg font-normal",
             (!winner || !loser) &&
@@ -52,7 +52,13 @@ export const AddGamePage: React.FC = () => {
           )}
           onClick={() => addGameMutation.mutate()}
         >
-          Add game 🏓
+          {addGameMutation.isPending ? (
+            <div className="flex items-center justify-center gap-2">
+              Adding game ... <div className="animate-spin">🏓</div>
+            </div>
+          ) : (
+            "Add game 🏓"
+          )}
         </button>
         <div className="flex gap-2">
           <div className="space-y-4">
