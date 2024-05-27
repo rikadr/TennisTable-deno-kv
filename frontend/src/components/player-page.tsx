@@ -93,13 +93,15 @@ export const PlayerPage: React.FC = () => {
       </section>
       <div className="w-fit">
         <h1 className="text-2xl text-center">
-          {playerGamesQuery.data?.length || 0} games
+          {playerGamesQuery.data &&
+            (playerGamesQuery.data?.length || 0) + " games"}
         </h1>
+
         <table className="w-full">
           <thead>
             <tr>
-              <th>Game</th>
-              <th>Time</th>
+              <th>{playerGamesQuery.isLoading ? "Loading " : "Game"}</th>
+              <th>{playerGamesQuery.isLoading ? "games ... " : "Time"}</th>
             </tr>
           </thead>
           <tbody>
@@ -121,6 +123,12 @@ export const PlayerPage: React.FC = () => {
             })}
           </tbody>
         </table>
+        {playerGamesQuery.isLoading && (
+          <div className="flex items-center justify-center w-full">
+            <div className="animate-spin w-min">🏆</div>
+            <div className="animate-spin w-min">💔</div>
+          </div>
+        )}
       </div>
     </div>
   );
