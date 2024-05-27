@@ -134,9 +134,14 @@ const PlayerList: React.FC<{
   if (!players) {
     return <div>Failed to load players</div>;
   }
+
+  const sortedPlayers = players.sort((a, b) =>
+    a.name.toLowerCase().localeCompare(b.name.toLowerCase())
+  );
+
   return (
     <div className="grid grid-cols-1 gap-1 grid-flow-row w-40">
-      {players.map((player) => {
+      {sortedPlayers.map((player) => {
         const isSelected = selectedPlayer === player.name;
         const isDisabled = disabledPlayer === player.name;
         return (
