@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import React, { useMemo } from "react";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { timeAgo } from "../common/date-utils";
 import { useLeaderBoardQuery } from "./leader-board-page";
 
@@ -41,6 +41,12 @@ export const PlayerPage: React.FC = () => {
 
   return (
     <div className="flex flex-col items-center">
+      <Link
+        to="/"
+        className="whitespace-nowrap text-sm font-thin ring-1 ring-white px-2 py-1 mt-1 rounded-lg hover:bg-gray-500/50"
+      >
+        Back to leaderboard
+      </Link>
       <section className="space-y-1 my-4">
         <div className="bg-gray-500/50 w-96 h-20 p-2 rounded-lg flex space-x-4">
           <div className="w-16 text-3xl rounded-lg bg-white text-gray-500 flex items-center justify-center">
@@ -97,16 +103,22 @@ export const PlayerPage: React.FC = () => {
             </tr>
           </thead>
           <tbody>
-            {reversePlayerGames?.map((game, index) => (
-              <tr key={index} className="hover:bg-gray-500/50">
-                <td className="text-left px-4">
-                  {game.winner === name
-                    ? "🏆 " + game.loser
-                    : "💔 " + game.winner}
-                </td>
-                <td className="text-right">{timeAgo(new Date(game.time))}</td>
-              </tr>
-            ))}
+            {reversePlayerGames?.map((game, index) => {
+              const oponent = game.winner === name ? game.loser : game.winner;
+              return (
+                <tr key={index}>
+                  <td className="text-left px-4">
+                    <Link
+                      to={`/player/${oponent}`}
+                      className="h-full hover:bg-gray-500/50 flex w-full"
+                    >
+                      {game.winner === name ? "🏆 " : "💔 "} {oponent}
+                    </Link>
+                  </td>
+                  <td className="text-right">{timeAgo(new Date(game.time))}</td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

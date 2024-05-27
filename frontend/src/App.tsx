@@ -1,5 +1,4 @@
 import { QueryClientProvider } from "@tanstack/react-query";
-import { TablePage } from "./components/table-page";
 import { queryClient } from "./common/query-client";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { PlayerPage } from "./components/player-page";
@@ -16,8 +15,11 @@ function App() {
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Navigate to="/leader-board" />} />
+            <Route
+              path="/tennis-table"
+              element={<Navigate to="/leader-board" />}
+            />
             <Route path="/leader-board" element={<LeaderBoardPage />} />
-            <Route path="/tennis-table" element={<TablePage />} />
             <Route path="/player/:name" element={<PlayerPage />} />
             <Route path="/add-player" element={<AddPlayerPage />} />
             <Route path="/add-game" element={<AddGamePage />} />
