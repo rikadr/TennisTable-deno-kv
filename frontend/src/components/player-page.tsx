@@ -6,10 +6,16 @@ import {
   CartesianGrid,
   Line,
   LineChart,
+  ReferenceLine,
   Tooltip,
+  TooltipProps,
   XAxis,
   YAxis,
 } from "recharts";
+import {
+  NameType,
+  ValueType,
+} from "recharts/types/component/DefaultTooltipContent";
 export const PlayerPage: React.FC = () => {
   const { name } = useParams();
 
@@ -86,6 +92,7 @@ export const PlayerPage: React.FC = () => {
             ]}
             wrapperClassName="rounded-lg"
             animationDuration={0}
+            content={<CustomTooltip />}
           />
           <Line
             type="monotone"
@@ -93,6 +100,7 @@ export const PlayerPage: React.FC = () => {
             stroke="#8884d8"
             animationDuration={100}
           />
+          <ReferenceLine y={1000} stroke="white" label="1 000" />
         </LineChart>
       )}
       <div className="w-fit">
@@ -142,4 +150,33 @@ export const PlayerPage: React.FC = () => {
       </div>
     </div>
   );
+};
+
+const CustomTooltip: React.FC = ({
+  active,
+  payload,
+  label,
+}: TooltipProps<ValueType, NameType>) => {
+  if (active && payload && payload.length) {
+    const game = payload[0].payload;
+    return (
+      <div className="p-2 bg-slate-700 ring-1 ring-white rounded-lg">
+        <p className="">{`Elo : ${payload[0].value?.toLocaleString("no-NO", {
+          maximumFractionDigits: 0,
+        })}`}</p>
+        <p className="desc">
+          {game?.result === "win"
+            ? `🏆 +${game.pointsDiff?.toLocaleString("no-NO", {
+                maximumFractionDigits: 0,
+              })} from`
+            : `💔 ${game.pointsDiff?.toLocaleString("no-NO", {
+                maximumFractionDigits: 0,
+              })} to`}{" "}
+          {game?.oponent}
+        </p>
+      </div>
+    );
+  }
+
+  return null;
 };
