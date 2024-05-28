@@ -16,8 +16,11 @@ import {
   NameType,
   ValueType,
 } from "recharts/types/component/DefaultTooltipContent";
+import { useWindowSize } from "usehooks-ts";
+
 export const PlayerPage: React.FC = () => {
   const { name } = useParams();
+  const { width = 0 } = useWindowSize();
 
   const playerSummaryQuery = usePlayerSummaryQuery(name);
 
@@ -67,12 +70,12 @@ export const PlayerPage: React.FC = () => {
       </h1>
       {playerSummaryQuery.data && (
         <LineChart
-          width={730}
+          width={Math.min(730, width)}
           height={250}
           data={playerSummaryQuery.data.games}
           margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
         >
-          <CartesianGrid strokeDasharray="1 4" />
+          <CartesianGrid strokeDasharray="1 4" vertical={false} />
           <XAxis dataKey="name" />
           <YAxis
             type="number"
