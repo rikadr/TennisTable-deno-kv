@@ -8,6 +8,18 @@ export type PlayerSummary = {
   elo: number;
   wins: number;
   loss: number;
+  games: {
+    time: number;
+    result: "win" | "loss";
+    oponent: string;
+    eloAfterGame: number;
+    pointsDiff: number;
+  }[];
+};
+
+export type PlayerSummaryDTO = PlayerSummary & {
+  isRanked: boolean;
+  rank?: number;
 };
 
 export type LeaderboardDTO = {
@@ -25,6 +37,23 @@ export function useLeaderBoardQuery() {
     },
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
+  });
+}
+
+export function usePlayerSummaryQuery(name?: string) {
+  return useQuery<PlayerSummaryDTO>({
+    queryKey: ["player-summary", name],
+    queryFn: async () => {
+      return fetch(
+        `${process.env.REACT_APP_API_BASE_URL}/player-summary/${name}`,
+        {
+          method: "GET",
+        }
+      ).then(async (response) => response.json() as Promise<PlayerSummaryDTO>);
+    },
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    enabled: !!name,
   });
 }
 
