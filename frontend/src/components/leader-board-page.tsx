@@ -40,23 +40,6 @@ export function useLeaderBoardQuery() {
   });
 }
 
-export function usePlayerSummaryQuery(name?: string) {
-  return useQuery<PlayerSummaryDTO>({
-    queryKey: ["player-summary", name],
-    queryFn: async () => {
-      return fetch(
-        `${process.env.REACT_APP_API_BASE_URL}/player-summary/${name}`,
-        {
-          method: "GET",
-        }
-      ).then(async (response) => response.json() as Promise<PlayerSummaryDTO>);
-    },
-    refetchOnWindowFocus: true,
-    refetchOnReconnect: true,
-    enabled: !!name,
-  });
-}
-
 export const LeaderBoardPage: React.FC = () => {
   const leaderboardQuery = useLeaderBoardQuery();
 

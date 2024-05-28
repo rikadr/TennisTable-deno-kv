@@ -1,7 +1,7 @@
 import React, { useMemo } from "react";
 import { Link, useParams } from "react-router-dom";
 import { timeAgo } from "../common/date-utils";
-import { usePlayerSummaryQuery } from "./leader-board-page";
+import { PlayerSummaryDTO } from "./leader-board-page";
 import {
   CartesianGrid,
   Line,
@@ -17,6 +17,24 @@ import {
   ValueType,
 } from "recharts/types/component/DefaultTooltipContent";
 import { useWindowSize } from "usehooks-ts";
+import { useQuery } from "@tanstack/react-query";
+
+function usePlayerSummaryQuery(name?: string) {
+  return useQuery<PlayerSummaryDTO>({
+    queryKey: ["player-summary", name],
+    queryFn: async () => {
+      return fetch(
+        `${process.env.REACT_APP_API_BASE_URL}/player-summary/${name}`,
+        {
+          method: "GET",
+        }
+      ).then(async (response) => response.json() as Promise<PlayerSummaryDTO>);
+    },
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    enabled: !!name,
+  });
+}
 
 export const PlayerPage: React.FC = () => {
   const { name } = useParams();
