@@ -2,6 +2,14 @@ import React, { useMemo } from "react";
 import { Link, useParams } from "react-router-dom";
 import { timeAgo } from "../common/date-utils";
 import { usePlayerSummaryQuery } from "./leader-board-page";
+import {
+  CartesianGrid,
+  Line,
+  LineChart,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 export const PlayerPage: React.FC = () => {
   const { name } = useParams();
 
@@ -47,11 +55,47 @@ export const PlayerPage: React.FC = () => {
           </section>
         </div>
       </section>
+      <h1 className="text-2xl text-center">
+        {playerSummaryQuery.data &&
+          playerSummaryQuery.data.games.length + " games"}
+      </h1>
+      {playerSummaryQuery.data && (
+        <LineChart
+          width={730}
+          height={250}
+          data={playerSummaryQuery.data.games}
+          margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+        >
+          <CartesianGrid strokeDasharray="1 4" />
+          <XAxis dataKey="name" />
+          <YAxis
+            type="number"
+            domain={["dataMin", "dataMax"]}
+            tickFormatter={(value) =>
+              value.toLocaleString("no-NO", {
+                maximumFractionDigits: 0,
+              })
+            }
+          />
+          <Tooltip
+            formatter={(value) => [
+              value.toLocaleString("no-NO", {
+                maximumFractionDigits: 0,
+              }),
+              "Elo",
+            ]}
+            wrapperClassName="rounded-lg"
+            animationDuration={0}
+          />
+          <Line
+            type="monotone"
+            dataKey="eloAfterGame"
+            stroke="#8884d8"
+            animationDuration={100}
+          />
+        </LineChart>
+      )}
       <div className="w-fit">
-        <h1 className="text-2xl text-center">
-          {playerSummaryQuery.data &&
-            playerSummaryQuery.data.games.length + " games"}
-        </h1>
         {playerSummaryQuery.isLoading ? (
           <div>
             Loading games ...
