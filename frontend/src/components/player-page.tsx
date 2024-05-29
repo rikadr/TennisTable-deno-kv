@@ -133,7 +133,7 @@ export const PlayerPage: React.FC = () => {
           <ReferenceLine y={1000} stroke="white" label="1 000" />
         </LineChart>
       )}
-      <h1 className="text-2xl text-center">Last 5 matches</h1>
+      <h1 className="text-2xl text-center">Last 5 games</h1>
       <div className="w-fit">
         {playerSummaryQuery.isLoading ? (
           <div>
