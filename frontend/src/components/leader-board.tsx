@@ -103,7 +103,11 @@ export const LeaderBoard: React.FC<{ leaderboard: LeaderboardDTO }> = ({
                 })}
               </div>
               <div>
-                🏆 {lastPlace.wins} 💔 {lastPlace.loss}
+                {/* 🏆 {lastPlace.wins} 💔 {lastPlace.loss} */}
+                🏆:💔
+                {(lastPlace.wins / lastPlace.loss).toLocaleString("no-NO", {
+                  maximumFractionDigits: 1,
+                })}
               </div>
             </section>
           </section>

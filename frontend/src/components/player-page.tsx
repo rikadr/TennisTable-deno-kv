@@ -45,7 +45,7 @@ export const PlayerPage: React.FC = () => {
   const reverseGames = useMemo(() => {
     if (!playerSummaryQuery.data) return;
     return playerSummaryQuery.data.games
-      .slice(playerSummaryQuery.data.games.length - 6)
+      .slice(Math.max(playerSummaryQuery.data.games.length - 5, 0))
       .reverse();
   }, [playerSummaryQuery.data]);
 
@@ -133,6 +133,7 @@ export const PlayerPage: React.FC = () => {
           <ReferenceLine y={1000} stroke="white" label="1 000" />
         </LineChart>
       )}
+      <h1 className="text-2xl text-center">Last 5 matches</h1>
       <div className="w-fit">
         {playerSummaryQuery.isLoading ? (
           <div>
