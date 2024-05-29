@@ -44,7 +44,9 @@ export const PlayerPage: React.FC = () => {
 
   const reverseGames = useMemo(() => {
     if (!playerSummaryQuery.data) return;
-    return playerSummaryQuery.data.games.slice().reverse();
+    return playerSummaryQuery.data.games
+      .slice(playerSummaryQuery.data.games.length - 6)
+      .reverse();
   }, [playerSummaryQuery.data]);
 
   return (
@@ -75,17 +77,24 @@ export const PlayerPage: React.FC = () => {
                 })}
               </div>
               <div>
-                🏆 {playerSummaryQuery.data?.wins} 💔{" "}
-                {playerSummaryQuery.data?.loss}
+                {/* 🏆 {playerSummaryQuery.data?.wins} 💔{" "}
+                {playerSummaryQuery.data?.loss} */}
+                🏆:💔
+                {(
+                  (playerSummaryQuery.data?.wins || 0) /
+                  (playerSummaryQuery.data?.loss || 0)
+                ).toLocaleString("no-NO", {
+                  maximumFractionDigits: 1,
+                })}
               </div>
             </section>
           </section>
         </div>
       </section>
-      <h1 className="text-2xl text-center">
+      {/* <h1 className="text-2xl text-center">
         {playerSummaryQuery.data &&
           playerSummaryQuery.data.games.length + " games"}
-      </h1>
+      </h1> */}
       {playerSummaryQuery.data && (
         <LineChart
           width={Math.min(730, width)}

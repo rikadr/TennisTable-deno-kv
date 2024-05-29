@@ -27,7 +27,11 @@ export const LeaderBoard: React.FC<{ leaderboard: LeaderboardDTO }> = ({
                 })}
               </div>
               <div>
-                🏆 {nr1.wins} 💔 {nr1.loss}
+                {/* 🏆 {nr1.wins} 💔 {nr1.loss} */}
+                🏆:💔
+                {(nr1.wins / nr1.loss).toLocaleString("no-NO", {
+                  maximumFractionDigits: 1,
+                })}
               </div>
             </section>
           </section>
@@ -46,7 +50,11 @@ export const LeaderBoard: React.FC<{ leaderboard: LeaderboardDTO }> = ({
                 })}
               </div>
               <div>
-                🏆 {nr2.wins} 💔 {nr2.loss}
+                {/* 🏆 {nr2.wins} 💔 {nr2.loss} */}
+                🏆:💔
+                {(nr2.wins / nr2.loss).toLocaleString("no-NO", {
+                  maximumFractionDigits: 1,
+                })}
               </div>
             </section>
           </section>
@@ -65,7 +73,11 @@ export const LeaderBoard: React.FC<{ leaderboard: LeaderboardDTO }> = ({
                 })}
               </div>
               <div>
-                🏆 {nr3.wins} 💔 {nr3.loss}
+                {/* 🏆 {nr3.wins} 💔 {nr3.loss} */}
+                🏆:💔
+                {(nr3.wins / nr3.loss).toLocaleString("no-NO", {
+                  maximumFractionDigits: 1,
+                })}
               </div>
             </section>
           </section>
@@ -104,8 +116,9 @@ export const LeaderBoard: React.FC<{ leaderboard: LeaderboardDTO }> = ({
             <tr>
               <th>Player</th>
               <th className="text-right">Elo</th>
-              <th className="text-right">Win 🏆</th>
-              <th className="text-right">Loss 💔</th>
+              {/* <th className="text-right">Win 🏆</th>
+              <th className="text-right">Loss 💔</th> */}
+              <th className="text-right">🏆:💔</th>
             </tr>
           </thead>
           <tbody>
@@ -127,8 +140,13 @@ export const LeaderBoard: React.FC<{ leaderboard: LeaderboardDTO }> = ({
                     maximumFractionDigits: 0,
                   })}
                 </td>
-                <td className="text-right">{player.wins}</td>
-                <td className="text-right">{player.loss}</td>
+                {/* <td className="text-right">{player.wins}</td>
+                <td className="text-right">{player.loss}</td> */}
+                <td className="text-right">
+                  {(player.wins / player.loss).toLocaleString("no-NO", {
+                    maximumFractionDigits: 1,
+                  })}
+                </td>
               </tr>
             ))}
           </tbody>
@@ -141,8 +159,9 @@ export const LeaderBoard: React.FC<{ leaderboard: LeaderboardDTO }> = ({
             <tr>
               <th>Potential rank for Player</th>
               <th className="text-right">Elo</th>
-              <th className="text-right">Win 🏆</th>
-              <th className="text-right">Loss 💔</th>
+              {/* <th className="text-right">Win 🏆</th>
+              <th className="text-right">Loss 💔</th> */}
+              <th className="text-right">🏆:💔</th>
             </tr>
           </thead>
           <tbody>
@@ -164,8 +183,13 @@ export const LeaderBoard: React.FC<{ leaderboard: LeaderboardDTO }> = ({
                     maximumFractionDigits: 0,
                   })}
                 </td>
-                <td className="text-right">{player.wins}</td>
-                <td className="text-right">{player.loss}</td>
+                {/* <td className="text-right">{player.wins}</td>
+                <td className="text-right">{player.loss}</td> */}
+                <td className="text-right">
+                  {(player.wins / player.loss).toLocaleString("no-NO", {
+                    maximumFractionDigits: 1,
+                  })}
+                </td>
               </tr>
             ))}
           </tbody>
