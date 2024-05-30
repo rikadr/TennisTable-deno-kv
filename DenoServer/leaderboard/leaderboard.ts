@@ -78,11 +78,7 @@ export async function getPlayerSummary(
 
   const playersWithHigherElo = Array.from(leaderboardMap.values()).reduce(
     (acc, otherPlayer) =>
-      (acc +=
-        otherPlayer.games.length >= GAME_LIMIT_FOR_RANKED &&
-        otherPlayer.elo > player.elo
-          ? 1
-          : 0),
+      (acc += otherPlayer.games.length >= GAME_LIMIT_FOR_RANKED && otherPlayer.elo > player.elo ? 1 : 0),
     0
   );
 
@@ -96,9 +92,7 @@ export async function getPlayerSummary(
 export async function getLeaderboard(): Promise<LeaderboardDTO> {
   const leaderboardMap = await getLeaderboardMap();
 
-  const rankedPlayers: LeaderboardDTO["rankedPlayers"] = Array.from(
-    leaderboardMap.values()
-  )
+  const rankedPlayers: LeaderboardDTO["rankedPlayers"] = Array.from(leaderboardMap.values())
     .sort((a, b) => b.elo - a.elo)
     .filter((player) => player.wins + player.loss >= GAME_LIMIT_FOR_RANKED)
     .map((player, index) => ({
@@ -106,9 +100,7 @@ export async function getLeaderboard(): Promise<LeaderboardDTO> {
       rank: index + 1,
     }));
 
-  const unrankedPlayers: LeaderboardDTO["unrankedPlayers"] = Array.from(
-    leaderboardMap.values()
-  )
+  const unrankedPlayers: LeaderboardDTO["unrankedPlayers"] = Array.from(leaderboardMap.values())
     .sort((a, b) => b.elo - a.elo)
     .map((player, index) => ({
       ...player,

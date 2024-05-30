@@ -2,33 +2,19 @@ import React, { useMemo } from "react";
 import { Link, useParams } from "react-router-dom";
 import { timeAgo } from "../common/date-utils";
 import { PlayerSummaryDTO } from "./leader-board-page";
-import {
-  CartesianGrid,
-  Line,
-  LineChart,
-  ReferenceLine,
-  Tooltip,
-  TooltipProps,
-  XAxis,
-  YAxis,
-} from "recharts";
-import {
-  NameType,
-  ValueType,
-} from "recharts/types/component/DefaultTooltipContent";
+import { CartesianGrid, Line, LineChart, ReferenceLine, Tooltip, TooltipProps, XAxis, YAxis } from "recharts";
+import { NameType, ValueType } from "recharts/types/component/DefaultTooltipContent";
 import { useWindowSize } from "usehooks-ts";
 import { useQuery } from "@tanstack/react-query";
+import { httpClient } from "./login";
 
 function usePlayerSummaryQuery(name?: string) {
   return useQuery<PlayerSummaryDTO>({
     queryKey: ["player-summary", name],
     queryFn: async () => {
-      return fetch(
-        `${process.env.REACT_APP_API_BASE_URL}/player-summary/${name}`,
-        {
-          method: "GET",
-        }
-      ).then(async (response) => response.json() as Promise<PlayerSummaryDTO>);
+      return httpClient(`${process.env.REACT_APP_API_BASE_URL}/player-summary/${name}`, {
+        method: "GET",
+      }).then(async (response) => response.json() as Promise<PlayerSummaryDTO>);
     },
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
@@ -44,9 +30,7 @@ export const PlayerPage: React.FC = () => {
 
   const reverseGames = useMemo(() => {
     if (!playerSummaryQuery.data) return;
-    return playerSummaryQuery.data.games
-      .slice(Math.max(playerSummaryQuery.data.games.length - 5, 0))
-      .reverse();
+    return playerSummaryQuery.data.games.slice(Math.max(playerSummaryQuery.data.games.length - 5, 0)).reverse();
   }, [playerSummaryQuery.data]);
 
   return (
@@ -80,10 +64,7 @@ export const PlayerPage: React.FC = () => {
                 {/* 🏆 {playerSummaryQuery.data?.wins} 💔{" "}
                 {playerSummaryQuery.data?.loss} */}
                 🏆:💔
-                {(
-                  (playerSummaryQuery.data?.wins || 0) /
-                  (playerSummaryQuery.data?.loss || 0)
-                ).toLocaleString("no-NO", {
+                {((playerSummaryQuery.data?.wins || 0) / (playerSummaryQuery.data?.loss || 0)).toLocaleString("no-NO", {
                   maximumFractionDigits: 1,
                 })}
               </div>
@@ -124,12 +105,7 @@ export const PlayerPage: React.FC = () => {
             animationDuration={0}
             content={<CustomTooltip />}
           />
-          <Line
-            type="monotone"
-            dataKey="eloAfterGame"
-            stroke="#8884d8"
-            animationDuration={100}
-          />
+          <Line type="monotone" dataKey="eloAfterGame" stroke="#8884d8" animationDuration={100} />
           <ReferenceLine y={1000} stroke="white" label="1 000" />
         </LineChart>
       )}
@@ -157,10 +133,7 @@ export const PlayerPage: React.FC = () => {
                 return (
                   <tr key={index}>
                     <td className="text-left px-4">
-                      <Link
-                        to={`/player/${game.oponent}`}
-                        className="h-full hover:bg-gray-500/50 flex w-full"
-                      >
+                      <Link to={`/player/${game.oponent}`} className="h-full hover:bg-gray-500/50 flex w-full">
                         {game.result === "win" ? "🏆 " : "💔 "} {game.oponent}
                       </Link>
                     </td>
@@ -169,9 +142,7 @@ export const PlayerPage: React.FC = () => {
                         maximumFractionDigits: 0,
                       })}
                     </td>
-                    <td className="text-right">
-                      {timeAgo(new Date(game.time))}
-                    </td>
+                    <td className="text-right">{timeAgo(new Date(game.time))}</td>
                   </tr>
                 );
               })}
@@ -183,11 +154,7 @@ export const PlayerPage: React.FC = () => {
   );
 };
 
-const CustomTooltip: React.FC = ({
-  active,
-  payload,
-  label,
-}: TooltipProps<ValueType, NameType>) => {
+const CustomTooltip: React.FC = ({ active, payload, label }: TooltipProps<ValueType, NameType>) => {
   if (active && payload && payload.length) {
     const game = payload[0].payload;
     return (

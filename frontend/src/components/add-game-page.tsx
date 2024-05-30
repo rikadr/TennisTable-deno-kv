@@ -4,6 +4,7 @@ import { queryClient } from "../common/query-client";
 import { useNavigate } from "react-router-dom";
 import { PlayersDTO } from "./admin-page";
 import { classNames } from "../common/class-names";
+import { httpClient } from "./login";
 
 export const AddGamePage: React.FC = () => {
   const navigate = useNavigate();
@@ -13,7 +14,7 @@ export const AddGamePage: React.FC = () => {
   const playersQuery = useQuery<PlayersDTO>({
     queryKey: ["all-players"],
     queryFn: async () => {
-      return fetch(`${process.env.REACT_APP_API_BASE_URL}/players`, {
+      return httpClient(`${process.env.REACT_APP_API_BASE_URL}/players`, {
         method: "GET",
       }).then(async (response) => response.json() as Promise<PlayersDTO>);
     },
@@ -23,7 +24,7 @@ export const AddGamePage: React.FC = () => {
 
   const addGameMutation = useMutation<unknown, Error>({
     mutationFn: async () => {
-      return fetch(`${process.env.REACT_APP_API_BASE_URL}/game`, {
+      return httpClient(`${process.env.REACT_APP_API_BASE_URL}/game`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -135,9 +136,7 @@ const PlayerList: React.FC<{
     return <div>Failed to load players</div>;
   }
 
-  const sortedPlayers = players.sort((a, b) =>
-    a.name.toLowerCase().localeCompare(b.name.toLowerCase())
-  );
+  const sortedPlayers = players.sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
 
   return (
     <div className="grid grid-cols-1 gap-1 grid-flow-row w-40">

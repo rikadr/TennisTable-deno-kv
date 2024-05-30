@@ -2,19 +2,15 @@ import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { queryClient } from "../common/query-client";
 import { useNavigate } from "react-router-dom";
+import { httpClient } from "./login";
 
 export const AddPlayerPage: React.FC = () => {
   const navigate = useNavigate();
   const [playerName, setPlayerName] = useState("");
 
-  const addPlayerMutation = useMutation<
-    unknown,
-    Error,
-    { name: string },
-    unknown
-  >({
+  const addPlayerMutation = useMutation<unknown, Error, { name: string }, unknown>({
     mutationFn: async ({ name }) => {
-      return fetch(`${process.env.REACT_APP_API_BASE_URL}/player`, {
+      return httpClient(`${process.env.REACT_APP_API_BASE_URL}/player`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -3,6 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { LeaderBoard } from "./leader-board";
 
+import { httpClient } from "./login";
+
 export type PlayerSummary = {
   name: string;
   elo: number;
@@ -31,7 +33,7 @@ export function useLeaderBoardQuery() {
   return useQuery<LeaderboardDTO>({
     queryKey: ["leaderboard"],
     queryFn: async () => {
-      return fetch(`${process.env.REACT_APP_API_BASE_URL}/leaderboard`, {
+      return httpClient(`${process.env.REACT_APP_API_BASE_URL}/leaderboard`, {
         method: "GET",
       }).then(async (response) => response.json() as Promise<LeaderboardDTO>);
     },
@@ -71,22 +73,23 @@ export const LeaderBoardPage: React.FC = () => {
         >
           To admin page 🔐
         </Link>
+        <Link
+          className="w-full text-sm text-center whitespace-nowrap ring-[0.5px] font-thin ring-white text-white px-1 rounded-md"
+          to="/me"
+        >
+          /Me
+        </Link>
       </section>
       {(leaderboardQuery.isLoading || leaderboardQuery.isFetching) && (
         <div className="grid grid-cols-1 gap-1 grid-flow-row w-full">
           {Array.from({ length: 6 }, () => "").map((_, index) => (
-            <div
-              key={index}
-              className="h-16 animate-pulse rounded-lg bg-gray-500"
-            />
+            <div key={index} className="h-16 animate-pulse rounded-lg bg-gray-500" />
           ))}
         </div>
       )}
-      {leaderboardQuery.data &&
-        !leaderboardQuery.isLoading &&
-        !leaderboardQuery.isFetching && (
-          <LeaderBoard leaderboard={leaderboardQuery.data} />
-        )}
+      {leaderboardQuery.data && !leaderboardQuery.isLoading && !leaderboardQuery.isFetching && (
+        <LeaderBoard leaderboard={leaderboardQuery.data} />
+      )}
     </div>
   );
 };

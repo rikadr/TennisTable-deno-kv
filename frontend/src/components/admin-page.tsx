@@ -2,6 +2,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import React from "react";
 import { queryClient } from "../common/query-client";
 import { timeAgo } from "../common/date-utils";
+import { httpClient } from "./login";
 
 export type PlayersDTO = {
   name: string;
@@ -17,7 +18,7 @@ export const AdminPage: React.FC = () => {
   const playersQuery = useQuery<PlayersDTO>({
     queryKey: ["all-players"],
     queryFn: async () => {
-      return fetch(`${process.env.REACT_APP_API_BASE_URL}/players`, {
+      return httpClient(`${process.env.REACT_APP_API_BASE_URL}/players`, {
         method: "GET",
       }).then(async (response) => response.json() as Promise<PlayersDTO>);
     },
@@ -25,14 +26,9 @@ export const AdminPage: React.FC = () => {
     refetchOnReconnect: true,
   });
 
-  const removePlayerMutation = useMutation<
-    unknown,
-    Error,
-    { name: string },
-    unknown
-  >({
+  const removePlayerMutation = useMutation<unknown, Error, { name: string }, unknown>({
     mutationFn: async ({ name }) => {
-      return fetch(`${process.env.REACT_APP_API_BASE_URL}/player/${name}`, {
+      return httpClient(`${process.env.REACT_APP_API_BASE_URL}/player/${name}`, {
         method: "DELETE",
       });
     },
@@ -44,7 +40,7 @@ export const AdminPage: React.FC = () => {
   const gamesQuery = useQuery<GamesDTO>({
     queryKey: ["all-games"],
     queryFn: async () => {
-      return fetch(`${process.env.REACT_APP_API_BASE_URL}/games`, {
+      return httpClient(`${process.env.REACT_APP_API_BASE_URL}/games`, {
         method: "GET",
       }).then(async (response) => response.json() as Promise<GamesDTO>);
     },
@@ -52,14 +48,9 @@ export const AdminPage: React.FC = () => {
     refetchOnReconnect: true,
   });
 
-  const deleteGameMutation = useMutation<
-    unknown,
-    Error,
-    { winner: string; loser: string; time: number },
-    unknown
-  >({
+  const deleteGameMutation = useMutation<unknown, Error, { winner: string; loser: string; time: number }, unknown>({
     mutationFn: async ({ winner, loser, time }) => {
-      return fetch(`${process.env.REACT_APP_API_BASE_URL}/game`, {
+      return httpClient(`${process.env.REACT_APP_API_BASE_URL}/game`, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
