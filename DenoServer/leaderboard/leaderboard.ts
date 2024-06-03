@@ -1,4 +1,4 @@
-import { INITIAL_ELO, calculateELO, getAllPlayersELOMap } from "../elo/elo.ts";
+import { INITIAL_ELO, calculateELO } from "../elo/elo.ts";
 import { getAllGames } from "../game/game.ts";
 
 type PlayerSummary = {
