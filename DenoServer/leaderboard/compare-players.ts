@@ -15,6 +15,12 @@ export async function comparePlayers(
     getAllPlayers(),
     getAllGames(),
   ]);
+  if (players.length === 0) {
+    return {
+      allPlayers: allPlayers.map((player) => player.name),
+      graphData: [],
+    };
+  }
 
   const map = new Map<string, number>();
   allPlayers.forEach((player) => {
