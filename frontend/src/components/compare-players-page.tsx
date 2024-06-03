@@ -121,7 +121,7 @@ const PlayerSelector: React.FC<{
   const [storedPlayers, setStoredPlayers] = useState<string[]>(players || []);
   useEffect(() => {
     if (players) {
-      setStoredPlayers(players);
+      setStoredPlayers(players.sort());
     }
   }, [players]);
   if (isLoading) {

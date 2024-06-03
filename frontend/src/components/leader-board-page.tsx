@@ -60,6 +60,12 @@ export const LeaderBoardPage: React.FC = () => {
           Add player +👤
         </Link>
         <Link
+          className="w-full text-sm text-center whitespace-nowrap bg-pink-500/70 hover:bg-pink-900 text-white py-1 px-3 rounded-md font-thin"
+          to="/compare-players"
+        >
+          Compare players 📊
+        </Link>
+        <Link
           className="w-full text-sm text-center whitespace-nowrap ring-[0.5px] font-thin ring-white text-white px-1 rounded-md"
           to="/admin"
         >
