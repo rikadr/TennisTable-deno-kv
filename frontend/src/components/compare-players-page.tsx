@@ -48,7 +48,7 @@ function stringToColor(name: string) {
   const brightnessThreshold = 100; // Ensures brightness is above 50%
   for (let i = 0; i < 3; i++) {
     let value = (hash >> (i * 8)) & 0xff;
-    value = Math.max(value, brightnessThreshold);
+    value = value < brightnessThreshold ? value * 1.11 : value;
     color += ("00" + value.toString(16)).substr(-2);
   }
   return color;
