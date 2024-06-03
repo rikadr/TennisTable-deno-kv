@@ -39,6 +39,20 @@ function usePlayerSummaryQuery(players?: string[]) {
     refetchOnReconnect: true,
   });
 }
+function stringToColor(name: string) {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  let color = "#";
+  const brightnessThreshold = 100; // Ensures brightness is above 50%
+  for (let i = 0; i < 3; i++) {
+    let value = (hash >> (i * 8)) & 0xff;
+    value = Math.max(value, brightnessThreshold);
+    color += ("00" + value.toString(16)).substr(-2);
+  }
+  return color;
+}
 
 export const ComparePlayersPage: React.FC = () => {
   const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
@@ -53,7 +67,7 @@ export const ComparePlayersPage: React.FC = () => {
       >
         Back to leaderboard
       </Link>
-      <section className="flex flex-col lg:flex-row">
+      <section className="flex flex-col items-center md:flex-row">
         <PlayerSelector
           players={comparison.data?.allPlayers}
           isLoading={comparison.isLoading}
@@ -99,7 +113,7 @@ export const ComparePlayersPage: React.FC = () => {
                   key={player}
                   type="monotone"
                   dataKey={player}
-                  stroke="#8884d8"
+                  stroke={stringToColor(player)}
                   animationDuration={100}
                   dot={false}
                 />
@@ -146,7 +160,7 @@ const PlayerSelector: React.FC<{
           "h-8 text-left pl-4 rounded-lg",
           "bg-gray-500/50",
           allIsSelected
-            ? "bg-green-500/50 ring-2 ring-white hver:bg-green-300"
+            ? "bg-green-500/50 ring-2 ring-white hover:bg-green-300/50"
             : "hover:bg-gray-500"
         )}
         onClick={() =>
@@ -166,9 +180,10 @@ const PlayerSelector: React.FC<{
               "h-8 text-left pl-4 rounded-lg",
               "bg-gray-500/50",
               isSelected
-                ? "bg-green-500/50 ring-2 ring-white hover:bg-green-300/50"
-                : "hover:bg-gray-500"
+                ? "opacity-100 ring-2 ring-white"
+                : "hover:opacity-100 opacity-75"
             )}
+            style={{ background: stringToColor(player) }}
             onClick={() => {
               if (isSelected) {
                 setSelectedPlayers((prev) =>
@@ -200,7 +215,9 @@ const CustomTooltip: React.FC = ({
     return (
       <div className="p-2 bg-slate-700 ring-1 ring-white rounded-lg">
         {entries.map((entry) => (
-          <p key={entry[0]}>{`${entry[0]}: ${entry[1].toLocaleString("no-NO", {
+          <p key={entry[0]} style={{ color: stringToColor(entry[0]) }}>{`${
+            entry[0]
+          }: ${entry[1].toLocaleString("no-NO", {
             maximumFractionDigits: 0,
           })}`}</p>
         ))}
