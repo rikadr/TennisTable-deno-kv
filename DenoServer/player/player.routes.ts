@@ -1,5 +1,6 @@
 import { Router } from 'https://deno.land/x/oak@v16.0.0/router.ts';
 import { CreatePlayerPayload, createPlayer, deletePlayer, getAllPlayers, getPlayer } from './player.ts';
+import { isAuthenticated } from '../auth-service/middleware.ts';
 
 export function registerPlayerRoutes(api: Router) {
   /**
@@ -40,7 +41,7 @@ export function registerPlayerRoutes(api: Router) {
   /**
    * Delete a player
    */
-  api.delete('/player/:name', async (context) => {
+  api.delete('/player/:name', isAuthenticated, async (context) => {
     const name = context.params.name;
     if (!name) {
       throw new Error('name is required');

@@ -20,9 +20,14 @@ export const registerUserRoutes = (api: Router) => {
   api.post("/user/login", async (context) => {
     const payload = (await context.request.body.json()) as { username: string; password: string };
 
-    const { token } = await authService.login(payload.username, payload.password);
+    try {
+      const { token } = await authService.login(payload.username, payload.password);
 
-    context.response.body = { token };
+      context.response.body = { token };
+    } catch (err) {
+      context.response.status = 401;
+      context.response.body = { error: err.message };
+    }
     return;
   });
 };

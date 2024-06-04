@@ -5,5 +5,5 @@
   "deno.unstable": true,
   "editor.formatOnSave": true,
   "editor.defaultFormatter": "denoland.vscode-deno",
-  "deno.enable": true
+  "deno.enable": false
 }

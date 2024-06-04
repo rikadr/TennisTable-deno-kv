@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import { session } from "../services/auth";
 import { useAuth } from "../services/auth/auth";
 
@@ -13,6 +14,7 @@ export function httpClient(...input: Parameters<typeof fetch>) {
 
 export const LoginPage: React.FC = () => {
   const auth = useAuth();
+  const navigate = useNavigate();
 
   return (
     <div>
@@ -20,11 +22,22 @@ export const LoginPage: React.FC = () => {
         className="space-y-2 p-2"
         onSubmit={async (e) => {
           e.preventDefault();
-          const username = document.getElementById("username") as HTMLInputElement;
-          const password = document.getElementById("password") as HTMLInputElement;
+          const username = document.getElementById(
+            "username",
+          ) as HTMLInputElement;
+          const password = document.getElementById(
+            "password",
+          ) as HTMLInputElement;
 
           if (username && password) {
-            auth.login.mutate({ username: username.value, password: password.value });
+            auth.login.mutate({
+              username: username.value,
+              password: password.value,
+            }, {
+              onSuccess: () => {
+                navigate("/");
+              },
+            });
           } else {
             console.error("No username or password");
           }
@@ -32,13 +45,25 @@ export const LoginPage: React.FC = () => {
       >
         <div>
           <label htmlFor="username">Username</label>
-          <input type="text" className="rounded-sm bg-gray-400 text-black ml-2 p-1" id="username" />
+          <input
+            type="text"
+            className="rounded-sm bg-gray-400 text-black ml-2 p-1"
+            id="username"
+          />
         </div>
         <div>
           <label htmlFor="password">Password</label>
-          <input type="password" className="rounded-sm bg-gray-400 text-black ml-2 p-1" id="password" />
+          <input
+            type="password"
+            autoComplete="current-password"
+            className="rounded-sm bg-gray-400 text-black ml-2 p-1"
+            id="password"
+          />
         </div>
-        <button type="submit" className="p-2 bg-blue-300 text-black rounded-md hover:bg-blue-600">
+        <button
+          type="submit"
+          className="p-2 bg-blue-300 text-black rounded-md hover:bg-blue-600"
+        >
           Login
         </button>
       </form>

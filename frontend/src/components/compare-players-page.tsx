@@ -17,6 +17,7 @@ import {
   NameType,
   ValueType,
 } from "recharts/types/component/DefaultTooltipContent";
+import { httpClient } from "./login";
 
 type PlayerComparison = {
   allPlayers: string[];
@@ -28,10 +29,10 @@ function usePlayerSummaryQuery(players?: string[]) {
     queryKey: ["player-summary", players?.sort()],
     queryFn: async () => {
       const url = new URL(
-        `${process.env.REACT_APP_API_BASE_URL}/compare-players`
+        `${process.env.REACT_APP_API_BASE_URL}/compare-players`,
       );
       url.searchParams.append("players", JSON.stringify(players));
-      return fetch(url, {
+      return httpClient(url, {
         method: "GET",
       }).then(async (response) => response.json() as Promise<PlayerComparison>);
     },
@@ -78,7 +79,7 @@ export const ComparePlayersPage: React.FC = () => {
 
   useEffect(() => {
     setGraphDataToSee(
-      comparison.data?.graphData.slice(Math.max(range - 2, 0)) || []
+      comparison.data?.graphData.slice(Math.max(range - 2, 0)) || [],
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [range]);
@@ -107,54 +108,53 @@ export const ComparePlayersPage: React.FC = () => {
             value={range}
             onChange={(e) => setRange(parseInt(e.target.value))}
           />
-          {comparison.data?.graphData ? (
-            <LineChart
-              className="mt-7"
-              width={Math.min(730, width)}
-              height={400}
-              data={graphDataToSee}
-            >
-              <CartesianGrid strokeDasharray="1 4" vertical={false} />
-              <XAxis
-                dataKey="name"
-                // ?
-              />
-              <YAxis
-                type="number"
-                domain={["dataMin", "dataMax"]}
-                tickFormatter={(value) =>
-                  value.toLocaleString("no-NO", {
-                    maximumFractionDigits: 0,
-                  })
-                }
-              />
-              <Tooltip
-                formatter={(value) => [
-                  value.toLocaleString("no-NO", {
-                    maximumFractionDigits: 0,
-                  }),
-                  "Elo",
-                ]}
-                wrapperClassName="rounded-lg"
-                animationDuration={0}
-                content={<CustomTooltip />}
-              />
-              {graphDataToSee[0] &&
-                Object.keys(graphDataToSee[0]).map((player) => (
-                  <Line
-                    key={player}
-                    type="monotone"
-                    dataKey={player}
-                    stroke={stringToColor(player)}
-                    animationDuration={100}
-                    dot={false}
-                  />
-                ))}
-              <ReferenceLine y={1000} stroke="white" label="1 000" />
-            </LineChart>
-          ) : (
-            <div className="w-[730px] h-[428px] rounded-lg bg-gray-300/50 animate-pulse" />
-          )}
+          {comparison.data?.graphData
+            ? (
+              <LineChart
+                className="mt-7"
+                width={Math.min(730, width)}
+                height={400}
+                data={graphDataToSee}
+              >
+                <CartesianGrid strokeDasharray="1 4" vertical={false} />
+                <XAxis dataKey="name"// ?
+                />
+                <YAxis
+                  type="number"
+                  domain={["dataMin", "dataMax"]}
+                  tickFormatter={(value) =>
+                    value.toLocaleString("no-NO", {
+                      maximumFractionDigits: 0,
+                    })}
+                />
+                <Tooltip
+                  formatter={(value) => [
+                    value.toLocaleString("no-NO", {
+                      maximumFractionDigits: 0,
+                    }),
+                    "Elo",
+                  ]}
+                  wrapperClassName="rounded-lg"
+                  animationDuration={0}
+                  content={<CustomTooltip />}
+                />
+                {graphDataToSee[0] &&
+                  Object.keys(graphDataToSee[0]).map((player) => (
+                    <Line
+                      key={player}
+                      type="monotone"
+                      dataKey={player}
+                      stroke={stringToColor(player)}
+                      animationDuration={100}
+                      dot={false}
+                    />
+                  ))}
+                <ReferenceLine y={1000} stroke="white" label="1 000" />
+              </LineChart>
+            )
+            : (
+              <div className="w-[730px] h-[428px] rounded-lg bg-gray-300/50 animate-pulse" />
+            )}
         </div>
       </section>
     </div>
@@ -196,13 +196,12 @@ const PlayerSelector: React.FC<{
           "bg-gray-500/50",
           allIsSelected
             ? "bg-green-500/50 ring-2 ring-white hover:bg-green-300/50"
-            : "hover:bg-gray-500"
+            : "hover:bg-gray-500",
         )}
         onClick={() =>
           allIsSelected
             ? setSelectedPlayers([])
-            : setSelectedPlayers(storedPlayers)
-        }
+            : setSelectedPlayers(storedPlayers)}
       >
         {allIsSelected ? "Deselect all" : "Select all"}
       </button>
@@ -216,7 +215,7 @@ const PlayerSelector: React.FC<{
               "bg-gray-500/50",
               isSelected
                 ? "opacity-100 ring-2 ring-white"
-                : "hover:opacity-100 opacity-75"
+                : "hover:opacity-100 opacity-75",
             )}
             style={{ background: stringToColor(player) }}
             onClick={() => {
@@ -250,11 +249,13 @@ const CustomTooltip: React.FC = ({
     return (
       <div className="p-2 bg-slate-700 ring-1 ring-white rounded-lg">
         {entries.map((entry) => (
-          <p key={entry[0]} style={{ color: stringToColor(entry[0]) }}>{`${
-            entry[0]
-          }: ${entry[1].toLocaleString("no-NO", {
-            maximumFractionDigits: 0,
-          })}`}</p>
+          <p key={entry[0]} style={{ color: stringToColor(entry[0]) }}>
+            {`${entry[0]}: ${
+              entry[1].toLocaleString("no-NO", {
+                maximumFractionDigits: 0,
+              })
+            }`}
+          </p>
         ))}
       </div>
     );

@@ -9,6 +9,7 @@ import {
   getGame,
   getGamesByPlayer,
 } from "./game.ts";
+import { isAuthenticated } from "../auth-service/middleware.ts";
 
 export function registerGameRoutes(api: Router) {
   /**
@@ -45,7 +46,7 @@ export function registerGameRoutes(api: Router) {
   /**
    * Delete one game
    */
-  api.delete("/game", async (context) => {
+  api.delete("/game", isAuthenticated, async (context) => {
     const payload = (await context.request.body.json()) as DeleteGamePayload;
     if (!payload) {
       throw new Error("payload is required");
