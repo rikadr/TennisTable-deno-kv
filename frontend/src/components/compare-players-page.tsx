@@ -39,6 +39,7 @@ function usePlayerSummaryQuery(players?: string[]) {
     refetchOnReconnect: true,
   });
 }
+
 function stringToColor(name: string) {
   let hash = 0;
   for (let i = 0; i < name.length; i++) {
@@ -56,8 +57,15 @@ function stringToColor(name: string) {
 
 export const ComparePlayersPage: React.FC = () => {
   const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
+  const [playerToSelectFrom, setPlayersToSelectFrom] = useState<string[]>([]);
   const comparison = usePlayerSummaryQuery(selectedPlayers);
   const { width = 0 } = useWindowSize();
+
+  useEffect(() => {
+    if (comparison.data?.allPlayers) {
+      setPlayersToSelectFrom(comparison.data.allPlayers);
+    }
+  }, [comparison.data?.allPlayers]);
 
   return (
     <div className="flex flex-col items-center">
@@ -69,58 +77,61 @@ export const ComparePlayersPage: React.FC = () => {
       </Link>
       <section className="flex flex-col items-center md:flex-row">
         <PlayerSelector
-          players={comparison.data?.allPlayers}
-          isLoading={comparison.isLoading}
+          players={playerToSelectFrom}
+          isLoading={playerToSelectFrom.length === 0 && comparison.isLoading}
           selectedPlayers={selectedPlayers}
           setSelectedPlayers={setSelectedPlayers}
         />
-        {comparison.data?.graphData && (
-          <LineChart
-            className="mt-7"
-            width={Math.min(730, width)}
-            height={400}
-            data={comparison.data.graphData}
-            margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-          >
-            <CartesianGrid strokeDasharray="1 4" vertical={false} />
-            <XAxis
-              dataKey="name"
-              // ?
-            />
-            <YAxis
-              type="number"
-              domain={["dataMin", "dataMax"]}
-              tickFormatter={(value) =>
-                value.toLocaleString("no-NO", {
-                  maximumFractionDigits: 0,
-                })
-              }
-            />
-            <Tooltip
-              formatter={(value) => [
-                value.toLocaleString("no-NO", {
-                  maximumFractionDigits: 0,
-                }),
-                "Elo",
-              ]}
-              wrapperClassName="rounded-lg"
-              animationDuration={0}
-              content={<CustomTooltip />}
-            />
-            {comparison.data.graphData[0] &&
-              Object.keys(comparison.data.graphData[0]).map((player) => (
-                <Line
-                  key={player}
-                  type="monotone"
-                  dataKey={player}
-                  stroke={stringToColor(player)}
-                  animationDuration={100}
-                  dot={false}
-                />
-              ))}
-            <ReferenceLine y={1000} stroke="white" label="1 000" />
-          </LineChart>
-        )}
+        <div className="ml-6">
+          {comparison.data?.graphData ? (
+            <LineChart
+              className="mt-7"
+              width={Math.min(730, width)}
+              height={400}
+              data={comparison.data.graphData}
+            >
+              <CartesianGrid strokeDasharray="1 4" vertical={false} />
+              <XAxis
+                dataKey="name"
+                // ?
+              />
+              <YAxis
+                type="number"
+                domain={["dataMin", "dataMax"]}
+                tickFormatter={(value) =>
+                  value.toLocaleString("no-NO", {
+                    maximumFractionDigits: 0,
+                  })
+                }
+              />
+              <Tooltip
+                formatter={(value) => [
+                  value.toLocaleString("no-NO", {
+                    maximumFractionDigits: 0,
+                  }),
+                  "Elo",
+                ]}
+                wrapperClassName="rounded-lg"
+                animationDuration={0}
+                content={<CustomTooltip />}
+              />
+              {comparison.data.graphData[0] &&
+                Object.keys(comparison.data.graphData[0]).map((player) => (
+                  <Line
+                    key={player}
+                    type="monotone"
+                    dataKey={player}
+                    stroke={stringToColor(player)}
+                    animationDuration={100}
+                    dot={false}
+                  />
+                ))}
+              <ReferenceLine y={1000} stroke="white" label="1 000" />
+            </LineChart>
+          ) : (
+            <div className="w-[730px] h-[428px] rounded-lg bg-gray-300/50 animate-pulse" />
+          )}
+        </div>
       </section>
     </div>
   );
