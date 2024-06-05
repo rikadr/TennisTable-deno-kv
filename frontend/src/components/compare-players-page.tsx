@@ -58,6 +58,10 @@ function stringToColor(name: string) {
 export const ComparePlayersPage: React.FC = () => {
   const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
   const [playerToSelectFrom, setPlayersToSelectFrom] = useState<string[]>([]);
+  const [graphDataToSee, setGraphDataToSee] = useState<
+    Record<string, number>[]
+  >([]);
+  const [range, setRange] = useState(0);
   const comparison = usePlayerSummaryQuery(selectedPlayers);
   const { width = 0 } = useWindowSize();
 
@@ -67,8 +71,20 @@ export const ComparePlayersPage: React.FC = () => {
     }
   }, [comparison.data?.allPlayers]);
 
+  useEffect(() => {
+    setGraphDataToSee(comparison.data?.graphData || []);
+    setRange(0);
+  }, [comparison.data?.graphData]);
+
+  useEffect(() => {
+    setGraphDataToSee(
+      comparison.data?.graphData.slice(Math.max(range - 2, 0)) || []
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [range]);
+
   return (
-    <div className="flex flex-col items-center">
+    <div className="flex flex-col items-center gap-4">
       <Link
         to="/leader-board"
         className="whitespace-nowrap text-sm font-thin ring-1 ring-white px-2 py-1 mt-1 rounded-lg hover:bg-gray-500/50"
@@ -83,12 +99,20 @@ export const ComparePlayersPage: React.FC = () => {
           setSelectedPlayers={setSelectedPlayers}
         />
         <div className="ml-6">
+          <input
+            className="w-full"
+            type="range"
+            min="2"
+            max={comparison.data?.graphData.length || 0}
+            value={range}
+            onChange={(e) => setRange(parseInt(e.target.value))}
+          />
           {comparison.data?.graphData ? (
             <LineChart
               className="mt-7"
               width={Math.min(730, width)}
               height={400}
-              data={comparison.data.graphData}
+              data={graphDataToSee}
             >
               <CartesianGrid strokeDasharray="1 4" vertical={false} />
               <XAxis
@@ -115,8 +139,8 @@ export const ComparePlayersPage: React.FC = () => {
                 animationDuration={0}
                 content={<CustomTooltip />}
               />
-              {comparison.data.graphData[0] &&
-                Object.keys(comparison.data.graphData[0]).map((player) => (
+              {graphDataToSee[0] &&
+                Object.keys(graphDataToSee[0]).map((player) => (
                   <Line
                     key={player}
                     type="monotone"
