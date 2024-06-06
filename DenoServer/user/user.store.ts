@@ -1,9 +1,9 @@
 import { kv } from "../db.ts";
 
-export type User = { username: string; password: string };
+export type User = { username: string; password: string, role: string };
 
-export async function createUser(username: string, password: string) {
-  const user = { username, password };
+export async function createUser(username: string, password: string, role: string) {
+  const user = { username, password, role };
   await kv.set(["user", username], user);
   return user;
 }

@@ -3,7 +3,7 @@ import { OptioPongContext, authService } from "../auth-service/auth-service.ts";
 import { isAuthenticated } from "../auth-service/middleware.ts";
 
 export const registerUserRoutes = (api: Router) => {
-  api.post("/user/register", isAuthenticated, async (context) => {
+  api.post("/user/register", async (context) => {
     const payload = (await context.request.body.json()) as { username: string; password: string };
 
     const { token } = await authService.register(payload.username, payload.password);

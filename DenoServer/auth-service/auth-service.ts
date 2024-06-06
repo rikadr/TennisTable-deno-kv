@@ -3,13 +3,17 @@ import { User } from "../user/user.store.ts";
 import { SignJWT } from "https://deno.land/x/jose@v5.3.0/index.ts";
 import * as userStore from "../user/user.store.ts";
 import * as bcrypt from "https://deno.land/x/bcrypt@v0.4.1/mod.ts";
+import { Auth } from "./auth-handler.ts";
+import { kv } from "../db.ts";
 
 export type SessionUser = {
   username: string;
+  role: string;
 };
 
 export type ContextState = {
   user?: SessionUser;
+  auth?: Auth;
 };
 
 export type OptioPongContext = Context<ContextState>;
@@ -18,12 +22,12 @@ const myNotSoSecretSecret = "myNotSoSecretSecret";
 export const JWT_SECRET = new TextEncoder().encode(myNotSoSecretSecret);
 
 async function createJwt(user: User): Promise<string> {
-  return await new SignJWT({ username: user.username })
+  return await new SignJWT({ username: user.username, role: user.role })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setIssuer("tennis-table")
     .setAudience("tennis-table")
-    .setExpirationTime("1m")
+    .setExpirationTime("1h")
     .sign(JWT_SECRET);
 }
 
@@ -43,7 +47,14 @@ async function register(username: string, password: string): Promise<{ token: st
   }
 
   const encryptedPassword = await bcrypt.hash(password);
-  const user = await userStore.createUser(username, encryptedPassword);
+
+  let role: string = "user";
+
+  if (username === "peder") {
+    role = "admin";
+  }
+
+  const user = await userStore.createUser(username, encryptedPassword, role);
 
   return { token: await createJwt(user) };
 }
