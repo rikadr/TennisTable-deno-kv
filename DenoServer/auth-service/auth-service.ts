@@ -4,8 +4,6 @@ import { SignJWT } from "https://deno.land/x/jose@v5.3.0/index.ts";
 import * as userStore from "../user/user.store.ts";
 import * as bcrypt from "https://deno.land/x/bcrypt@v0.4.1/mod.ts";
 import { Auth } from "./auth-handler.ts";
-import { kv } from "../db.ts";
-
 export type SessionUser = {
   username: string;
   role: string;
