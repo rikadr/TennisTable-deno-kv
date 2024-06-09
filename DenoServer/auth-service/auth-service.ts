@@ -24,7 +24,7 @@ async function createJwt(user: User): Promise<string> {
     .setIssuedAt()
     .setIssuer("tennis-table")
     .setAudience("tennis-table")
-    .setExpirationTime("15s")
+    .setExpirationTime("24h")
     .sign(JWT_SECRET);
 }
 

@@ -1,9 +1,10 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { httpClient } from "./login";
 import { auth } from "../services/auth/auth";
+import { session } from "../services/auth";
 
 export const Users: React.FC = () => {
-  const query = useQuery<{users: { username: string; role: string }[]}>({
+  const query = useQuery<{ users: { username: string; role: string }[] }>({
     queryKey: ["users"],
     queryFn: async () => {
       const response = await httpClient(
@@ -18,7 +19,12 @@ export const Users: React.FC = () => {
       <h1>Users</h1>
       <div className="ring-1 p-5 space-y-3">
         {query.data?.users &&
-          query.data.users.map((user) => <User key={user.username} {...user} />)}
+          query.data.users.map((user) => (
+            <User
+              key={user.username}
+              {...user}
+            />
+          ))}
       </div>
     </div>
   );
@@ -42,10 +48,12 @@ const User: React.FC<{ username: string; role: string }> = (
     },
   });
 
+  const isYou = username === session.sessionData?.username;
+
   return (
     <div>
       <h2>{username}</h2>
-      <label htmlFor="role">Choose a role:</label>
+      <label htmlFor="role">{isYou ? "Your role" : "Choose a role:"}</label>
       <select
         className="bg-gray-300 text-black rounded ml-2 p-1 ring-1 ring-gray-500"
         id="role"
@@ -53,6 +61,7 @@ const User: React.FC<{ username: string; role: string }> = (
         onChange={(e) => {
           updateRoleMutation.mutate({ username, role: e.target.value });
         }}
+        disabled={isYou}
         defaultValue={role}
       >
         <option value="user">User</option>
