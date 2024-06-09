@@ -7,7 +7,8 @@ export type Action<T extends Resource> = (typeof resources)[T][number];
 const resources = {
   player: ["create", "read", "update", "delete"],
   game: ["create", "read", "update", "delete"],
-  roles: ["grant"],
+  user: ["read"],
+  roles: ["write"],
 } as const;
 
 const roles: Record<string, { resource: string; actions: "*" | string[] }[]> = {
@@ -15,6 +16,7 @@ const roles: Record<string, { resource: string; actions: "*" | string[] }[]> = {
     { resource: "player", actions: "*" },
     { resource: "game", actions: "*" },
     { resource: "roles", actions: "*" },
+    { resource: "user", actions: "*" },
   ],
 };
 

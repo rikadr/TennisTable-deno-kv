@@ -23,3 +23,12 @@ export const useAuth = () => {
     }),
   };
 };
+
+export const auth = {
+  async updateRole(data: { username: string; role: string }) {
+    return httpClient(`${process.env.REACT_APP_API_BASE_URL}/user/${data.username}/role`, {
+      method: "PUT",
+      body: JSON.stringify({ role: data.role }),
+    });
+  },
+};

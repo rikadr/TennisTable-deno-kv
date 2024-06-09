@@ -16,8 +16,7 @@ export type ContextState = {
 
 export type OptioPongContext = Context<ContextState>;
 
-const myNotSoSecretSecret = "myNotSoSecretSecret";
-export const JWT_SECRET = new TextEncoder().encode(myNotSoSecretSecret);
+export const JWT_SECRET = new TextEncoder().encode(Deno.env.get("JWT_SECRET"));
 
 async function createJwt(user: User): Promise<string> {
   return await new SignJWT({ username: user.username, role: user.role })
@@ -25,7 +24,7 @@ async function createJwt(user: User): Promise<string> {
     .setIssuedAt()
     .setIssuer("tennis-table")
     .setAudience("tennis-table")
-    .setExpirationTime("1h")
+    .setExpirationTime("15s")
     .sign(JWT_SECRET);
 }
 
@@ -70,12 +69,29 @@ async function login(username: string, password: string): Promise<{ token: strin
     throw new Error("Username or password is incorrect");
   }
 
-  return { token: await createJwt(user) };
+  const token = await createJwt(user);
+
+  return { token };
+}
+
+async function getAllUsers(): Promise<Omit<User, "password">[]> {
+  return await userStore.findAll();
+}
+
+async function setRole(options: { role: string; username: string }): Promise<Omit<User, "password">> {
+  await userStore.update(options.username, { role: options.role });
+  const user = await userStore.getUser(options.username);
+  if (!user) {
+    throw new Error("User not found");
+  }
+  return user;
 }
 
 export const authService = {
   getUserFromRequest,
+  getAllUsers,
   createJwt,
   register,
+  setRole,
   login,
 };
