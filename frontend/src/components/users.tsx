@@ -28,7 +28,7 @@ export const Users: React.FC = () => {
   return (
     <div className="p-1">
       <h1>Users</h1>
-      <div className="p-5 divide-y-2 divide-gray-500">
+      <div className="p-5">
         {query.data?.users &&
           query.data.users.sort((a, b) => {
             // Current user on top, then the rest sorted alphabetically
@@ -76,36 +76,37 @@ const User: React.FC<
   });
 
   return (
-    <div className="max-w-96 flex items-center justify-between px-2 py-3">
-      <div className="flex flex-col sm:flex-row ju items-center">
-        <div className="sm:mr-3 rounded-full h-12 ring w-12 overflow-hidden">
+    <div className="w-56 border-b-2 border-r-2 shadow border-gray-500 bg-slate-700 rounded-md m-2 flex-col flex items-center justify-between px-2 py-3">
+      <div className="flex flex-col items-center">
+        <div className="rounded-full h-12 ring ring-slate-800 shadow bg-gradient-to-t to-slate-800 from-red-700 w-12 overflow-hidden">
           <img src={`https://robohash.org/${username}.png`} alt="profile" />
         </div>
         <h2>{username}</h2>
       </div>
-      <div className="flex items-center">
-        <label htmlFor="role">{isYou ? "Your role" : "Choose a role:"}</label>
-        <select
-          className="bg-gray-300 text-black rounded ml-2 p-1 ring-1 ring-gray-500"
-          id="role"
-          name="role"
-          onChange={(e) => {
-            updateRoleMutation.mutate({ username, role: e.target.value });
-          }}
-          disabled={isYou}
-          defaultValue={role}
-        >
-          <option value="user">User</option>
-          <option value="admin">Admin</option>
-        </select>
+      <div className="flex justify-between w-full mt-3 items-center">
         {!isYou && (
           <button
-            className="bg-red-500 text-white rounded ml-2 p-1"
+            className="bg-red-600 border-b-2 border-r-2 border-red-800 shadow text-gray-900 rounded ml-2 p-1"
             onClick={onDelete}
           >
             delete
           </button>
         )}
+        <div className="flex flex-col items-end">
+          <select
+            className="bg-gray-300 border-b-2 border-r-2 border-gray-400 text-black rounded ml-2 p-1 ring-1 ring-gray-500"
+            id="role"
+            name="role"
+            onChange={(e) => {
+              updateRoleMutation.mutate({ username, role: e.target.value });
+            }}
+            disabled={isYou}
+            defaultValue={role}
+          >
+            <option value="user">User</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
       </div>
     </div>
   );
