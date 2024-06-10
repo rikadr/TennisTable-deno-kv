@@ -13,8 +13,11 @@ export async function getUser(username: string): Promise<User | null> {
   return user.value;
 }
 
+export async function remove(username: string) {
+  await kv.delete(["user", username]);
+}
+
 export async function update(username: string, data: Partial<Omit<User, "username">>) {
-  console.log({data});
   const user = await kv.get<User>(["user", username]);
   if (!user) {
     throw new Error("User not found");

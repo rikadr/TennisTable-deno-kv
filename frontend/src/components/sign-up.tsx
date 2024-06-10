@@ -1,20 +1,22 @@
+import { useMutation } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { session } from "../services/auth";
-import { useAuth } from "../services/auth/auth";
+import { auth } from "../services/auth/auth";
 
-export function httpClient(...input: Parameters<typeof fetch>) {
-  return fetch(input[0], {
-    ...input[1],
-    headers: {
-      ...input[1]?.headers,
-      Authorization: `Bearer ${session.token}`,
+export const SignupPage: React.FC = () => {
+  const navigate = useNavigate();
+
+  const signupMutation = useMutation<
+    void,
+    Error,
+    { username: string; password: string }
+  >({
+    mutationFn: async ({ username, password }) => {
+      await auth.signup(username, password);
+    },
+    onSuccess: () => {
+      navigate("/");
     },
   });
-}
-
-export const LoginPage: React.FC = () => {
-  const auth = useAuth();
-  const navigate = useNavigate();
 
   return (
     <div className="h-screen w-screen flex items-center justify-center">
@@ -29,14 +31,14 @@ export const LoginPage: React.FC = () => {
             "password",
           ) as HTMLInputElement;
 
-          if (username && password) {
-            auth.login.mutate({
+          const confirmPassword = document.getElementById(
+            "confirm-password",
+          ) as HTMLInputElement;
+
+          if (username && password && confirmPassword?.checked) {
+            signupMutation.mutate({
               username: username.value,
               password: password.value,
-            }, {
-              onSuccess: () => {
-                navigate("/");
-              },
             });
           } else {
             console.error("No username or password");
@@ -60,19 +62,23 @@ export const LoginPage: React.FC = () => {
             id="password"
           />
         </div>
+        <div className="w-full flex flex-col items-start justify-center">
+          <label htmlFor="confirm-password">Confirm your password</label>
+          <div className="flex w-full items-center space-x-3">
+            <input
+              type="checkbox"
+              id="confirm-password"
+            />
+            <span>Yes that is my password</span>
+          </div>
+        </div>
         <div className="/* flex flex-col w-full items-center justify-end space-y-3 pt-3 */">
           <button
             type="submit"
             className="p-2 w-full bg-blue-300 text-black rounded-md hover:bg-blue-500"
           >
-            Login
+            sign up
           </button>
-          <a
-            href="/sign-up"
-            className="text-center p-2 w-full text-gray-800 ring-1 ring-gray-300 rounded-md hover:bg-gray-300"
-          >
-            or sign up
-          </a>
         </div>
       </form>
     </div>

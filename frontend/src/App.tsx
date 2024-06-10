@@ -16,6 +16,7 @@ import { LoginPage } from "./components/login";
 import { AdminPage } from "./components/admin-page";
 import { session } from "./services/auth";
 import { isAfter } from "date-fns";
+import { SignupPage } from "./components/sign-up";
 
 const RequireLogin: React.FC<
   { children: React.ReactNode }
@@ -50,6 +51,7 @@ function App() {
             <Route path="/add-player" element={<AddPlayerPage />} />
             <Route path="/add-game" element={<AddGamePage />} />
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/sign-up" element={<SignupPage />} />
             <Route
               path="/admin"
               element={

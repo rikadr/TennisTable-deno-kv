@@ -37,7 +37,7 @@ function getUserFromRequest(context: OptioPongContext): SessionUser {
   return user;
 }
 
-async function register(username: string, password: string): Promise<{ token: string }> {
+async function signUp(username: string, password: string): Promise<{ token: string }> {
   const foundUser = await userStore.getUser(username);
   if (foundUser) {
     throw new Error("User already exists");
@@ -87,11 +87,16 @@ async function setRole(options: { role: string; username: string }): Promise<Omi
   return user;
 }
 
+async function deleteUser(username: string): Promise<void> {
+  await userStore.remove(username);
+}
+
 export const authService = {
   getUserFromRequest,
   getAllUsers,
+  deleteUser,
   createJwt,
-  register,
+  signUp,
   setRole,
   login,
 };

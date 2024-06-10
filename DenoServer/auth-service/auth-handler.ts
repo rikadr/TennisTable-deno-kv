@@ -7,7 +7,7 @@ export type Action<T extends Resource> = (typeof resources)[T][number];
 const resources = {
   player: ["create", "read", "update", "delete"],
   game: ["create", "read", "update", "delete"],
-  user: ["read"],
+  user: ["read", "delete"],
   roles: ["write"],
 } as const;
 

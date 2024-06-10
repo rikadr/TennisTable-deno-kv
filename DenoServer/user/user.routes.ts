@@ -3,10 +3,10 @@ import { OptioPongContext, authService } from "../auth-service/auth-service.ts";
 import { isAuthenticated, requireAuth } from "../auth-service/middleware.ts";
 
 export const registerUserRoutes = (api: Router) => {
-  api.post("/user/register", async (context) => {
+  api.post("/user/sign-up", async (context) => {
     const payload = (await context.request.body.json()) as { username: string; password: string };
 
-    const { token } = await authService.register(payload.username, payload.password);
+    const { token } = await authService.signUp(payload.username, payload.password);
 
     context.response.body = { token };
   });
@@ -19,7 +19,7 @@ export const registerUserRoutes = (api: Router) => {
 
   api.get("/user", isAuthenticated, requireAuth("user", "read"), async (context) => {
     const users = await authService.getAllUsers();
-    context.response.body = {users};
+    context.response.body = { users };
   });
 
   api.post("/user/login", async (context) => {
@@ -44,5 +44,11 @@ export const registerUserRoutes = (api: Router) => {
 
     context.response.status = 200;
     context.response.body = updated;
+  });
+
+  api.delete("/user/:username", isAuthenticated, requireAuth("user", "delete"), async (context) => {
+    const username = context.params.username;
+    await authService.deleteUser(username);
+    context.response.status = 204;
   });
 };

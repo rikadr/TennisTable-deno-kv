@@ -14,15 +14,40 @@ export const Users: React.FC = () => {
     },
   });
 
+  const deleteUserMutation = useMutation<void, Error, { username: string }>({
+    mutationFn: async ({ username }) => {
+      await auth.deleteUser(username);
+    },
+    onSuccess: () => {
+      query.refetch();
+    },
+  });
+
+  const currentUserName = session.sessionData?.username;
+
   return (
     <div className="p-1">
       <h1>Users</h1>
-      <div className="ring-1 p-5 space-y-3">
+      <div className="p-5 divide-y-2 divide-gray-500">
         {query.data?.users &&
-          query.data.users.map((user) => (
+          query.data.users.sort((a, b) => {
+            // Current user on top, then the rest sorted alphabetically
+            if (a.username === currentUserName) {
+              return -1;
+            }
+
+            if (b.username === currentUserName) {
+              return 1;
+            }
+
+            return a.username.localeCompare(b.username);
+          }).map((user) => (
             <User
               key={user.username}
               {...user}
+              isYou={user.username === currentUserName}
+              onDelete={() =>
+                deleteUserMutation.mutate({ username: user.username })}
             />
           ))}
       </div>
@@ -30,8 +55,10 @@ export const Users: React.FC = () => {
   );
 };
 
-const User: React.FC<{ username: string; role: string }> = (
-  { username, role },
+const User: React.FC<
+  { username: string; role: string; onDelete: () => void; isYou: boolean }
+> = (
+  { username, role, onDelete, isYou },
 ) => {
   const updateRoleMutation = useMutation({
     mutationFn: async (data: { username: string; role: string }) => {
@@ -48,25 +75,33 @@ const User: React.FC<{ username: string; role: string }> = (
     },
   });
 
-  const isYou = username === session.sessionData?.username;
-
   return (
-    <div>
+    <div className="max-w-96 flex items-center justify-between px-2 py-3">
       <h2>{username}</h2>
-      <label htmlFor="role">{isYou ? "Your role" : "Choose a role:"}</label>
-      <select
-        className="bg-gray-300 text-black rounded ml-2 p-1 ring-1 ring-gray-500"
-        id="role"
-        name="role"
-        onChange={(e) => {
-          updateRoleMutation.mutate({ username, role: e.target.value });
-        }}
-        disabled={isYou}
-        defaultValue={role}
-      >
-        <option value="user">User</option>
-        <option value="admin">Admin</option>
-      </select>
+      <div className="flex items-center">
+        <label htmlFor="role">{isYou ? "Your role" : "Choose a role:"}</label>
+        <select
+          className="bg-gray-300 text-black rounded ml-2 p-1 ring-1 ring-gray-500"
+          id="role"
+          name="role"
+          onChange={(e) => {
+            updateRoleMutation.mutate({ username, role: e.target.value });
+          }}
+          disabled={isYou}
+          defaultValue={role}
+        >
+          <option value="user">User</option>
+          <option value="admin">Admin</option>
+        </select>
+        {!isYou && (
+          <button
+            className="bg-red-500 text-white rounded ml-2 p-1"
+            onClick={onDelete}
+          >
+            delete
+          </button>
+        )}
+      </div>
     </div>
   );
 };
