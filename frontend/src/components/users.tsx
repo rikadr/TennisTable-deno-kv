@@ -77,7 +77,12 @@ const User: React.FC<
 
   return (
     <div className="max-w-96 flex items-center justify-between px-2 py-3">
-      <h2>{username}</h2>
+      <div className="flex flex-col sm:flex-row ju items-center">
+        <div className="sm:mr-3 rounded-full h-12 ring w-12 overflow-hidden">
+          <img src={`https://robohash.org/${username}.png`} alt="profile" />
+        </div>
+        <h2>{username}</h2>
+      </div>
       <div className="flex items-center">
         <label htmlFor="role">{isYou ? "Your role" : "Choose a role:"}</label>
         <select
