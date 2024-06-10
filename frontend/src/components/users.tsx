@@ -78,7 +78,7 @@ const User: React.FC<
   return (
     <div className="w-56 border-b-2 border-r-2 shadow border-gray-500 bg-slate-700 rounded-md m-2 flex-col flex items-center justify-between px-2 py-3">
       <div className="flex flex-col items-center">
-        <div className="rounded-full h-12 ring ring-slate-800 shadow bg-gradient-to-t to-slate-800 from-red-700 w-12 overflow-hidden">
+        <div className="rounded-full h-12 ring ring-slate-800 shadow bg-gradient-to-t from-red-800 to-slate-900 transition-all w-12 overflow-hidden">
           <img src={`https://robohash.org/${username}.png`} alt="profile" />
         </div>
         <h2>{username}</h2>
@@ -86,7 +86,7 @@ const User: React.FC<
       <div className="flex justify-between w-full mt-3 items-center">
         {!isYou && (
           <button
-            className="bg-red-600 border-b-2 border-r-2 border-red-800 shadow text-gray-900 rounded ml-2 p-1"
+            className="bg-red-600 hover:bg-red-500 transition-all border-b-2 border-r-2 border-red-800 shadow text-gray-900 rounded ml-2 p-1"
             onClick={onDelete}
           >
             delete
