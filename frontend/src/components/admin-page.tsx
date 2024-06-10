@@ -2,7 +2,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import React from "react";
 import { queryClient } from "../common/query-client";
 import { timeAgo } from "../common/date-utils";
-import { httpClient } from "./login";
+import { httpClient } from "../common/http-client";
 import { Users } from "./users";
 
 export type PlayersDTO = {

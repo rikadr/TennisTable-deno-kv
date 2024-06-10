@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { LeaderBoard } from "./leader-board";
 
-import { httpClient } from "./login";
+import { httpClient } from "../common/http-client";
 import { classNames } from "../common/class-names";
 import { session } from "../services/auth";
 

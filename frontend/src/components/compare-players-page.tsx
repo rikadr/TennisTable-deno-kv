@@ -17,7 +17,7 @@ import {
   NameType,
   ValueType,
 } from "recharts/types/component/DefaultTooltipContent";
-import { httpClient } from "./login";
+import { httpClient } from "../common/http-client";
 
 type PlayerComparison = {
   allPlayers: string[];
@@ -117,7 +117,7 @@ export const ComparePlayersPage: React.FC = () => {
                 data={graphDataToSee}
               >
                 <CartesianGrid strokeDasharray="1 4" vertical={false} />
-                <XAxis dataKey="name"// ?
+                <XAxis dataKey="name" // ?
                 />
                 <YAxis
                   type="number"

@@ -1,16 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { session } from "../services/auth";
 import { useAuth } from "../services/auth/auth";
-
-export function httpClient(...input: Parameters<typeof fetch>) {
-  return fetch(input[0], {
-    ...input[1],
-    headers: {
-      ...input[1]?.headers,
-      Authorization: `Bearer ${session.token}`,
-    },
-  });
-}
 
 export const LoginPage: React.FC = () => {
   const auth = useAuth();

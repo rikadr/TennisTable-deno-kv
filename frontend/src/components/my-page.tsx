@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { httpClient } from "./login";
+import { httpClient } from "../common/http-client";
 
 export const MyPage: React.FC = () => {
   const navigate = useNavigate();
@@ -8,7 +8,9 @@ export const MyPage: React.FC = () => {
   const query = useQuery({
     queryKey: ["me"],
     queryFn: async () => {
-      const response = await httpClient(process.env.REACT_APP_API_BASE_URL + "/user/me");
+      const response = await httpClient(
+        process.env.REACT_APP_API_BASE_URL + "/user/me",
+      );
       response.status === 401 && navigate("/login");
       return response.json();
     },

@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { httpClient } from "./login";
+import { httpClient } from "../common/http-client";
 import { auth } from "../services/auth/auth";
 import { session } from "../services/auth";
 

@@ -1,6 +1,6 @@
 import { useMutation } from "@tanstack/react-query";
-import { httpClient } from "../../components/login";
 import { session } from "./session";
+import { httpClient } from "../../common/http-client";
 
 export const useAuth = () => {
   return {
