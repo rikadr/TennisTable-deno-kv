@@ -14,7 +14,7 @@ app.use(
     origin: "*",
     allowedHeaders: ["content-type", "Authorization"],
     methods: "*",
-  })
+  }),
 );
 
 /**
@@ -28,7 +28,5 @@ registerLeaderboardRoutes(api);
 registerUserRoutes(api);
 app.use(api.routes());
 app.use(api.allowedMethods());
-
-api.get("/", (context) => context.response.redirect("/players"));
 
 await app.listen({ port: 8000 });
