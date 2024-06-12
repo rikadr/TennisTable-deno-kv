@@ -1,9 +1,10 @@
-import { Context } from "https://deno.land/x/oak@v16.0.0/mod.ts";
+
+import * as bcrypt from "bcrypt";
 import { User } from "../user/user.store.ts";
-import { SignJWT } from "https://deno.land/x/jose@v5.3.0/index.ts";
+import { SignJWT } from "jose";
 import * as userStore from "../user/user.store.ts";
-import * as bcrypt from "https://deno.land/x/bcrypt@v0.4.1/mod.ts";
 import { Auth } from "./auth-handler.ts";
+import { Context } from "oak";
 export type SessionUser = {
   username: string;
   role: string;

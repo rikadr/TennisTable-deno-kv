@@ -1,5 +1,5 @@
-import { jwtVerify } from "https://deno.land/x/jose@v5.3.0/index.ts";
-import { Middleware } from "https://deno.land/x/oak@v16.0.0/middleware.ts";
+import { jwtVerify } from "jose";
+import { Middleware } from "oak";
 import { ContextState, JWT_SECRET, SessionUser } from "./auth-service.ts";
 import { Action, Auth, Resource } from "./auth-handler.ts";
 

@@ -1,4 +1,5 @@
-import { Router } from "https://deno.land/x/oak@v16.0.0/router.ts";
+
+import { Router } from "oak";
 import { OptioPongContext, authService } from "../auth-service/auth-service.ts";
 import { isAuthenticated, requireAuth } from "../auth-service/middleware.ts";
 

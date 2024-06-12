@@ -1,3 +1,5 @@
+import { isAfter } from "date-fns";
+
 const JWT_TOKEN_NAME = "jwt-token";
 
 export const session = {
@@ -14,7 +16,14 @@ export const session = {
   },
 
   get isAuthenticated() {
-    return this.token !== undefined;
+    const sessionData = this.sessionData;
+
+    if (!sessionData || isAfter(new Date(), sessionData.expires)) {
+      this.token = undefined;
+      return false;
+    }
+
+    return true;
   },
 
   get sessionData() {
@@ -41,7 +50,7 @@ function parseJwt(token: string) {
       .map(function (c) {
         return "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2);
       })
-      .join("")
+      .join(""),
   );
 
   return JSON.parse(jsonPayload);

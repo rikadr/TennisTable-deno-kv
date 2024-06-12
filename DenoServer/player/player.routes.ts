@@ -1,4 +1,4 @@
-import { Router } from 'https://deno.land/x/oak@v16.0.0/router.ts';
+import { Router } from 'oak';
 import { CreatePlayerPayload, createPlayer, deletePlayer, getAllPlayers, getPlayer } from './player.ts';
 import { isAuthenticated } from '../auth-service/middleware.ts';
 
