@@ -1,4 +1,4 @@
-import { Router } from "https://deno.land/x/oak@v16.0.0/router.ts";
+import { Router } from "oak";
 import { getLeaderboard, getPlayerSummary } from "./leaderboard.ts";
 import { comparePlayers } from "./compare-players.ts";
 

@@ -4,6 +4,7 @@ import { queryClient } from "../common/query-client";
 import { useNavigate } from "react-router-dom";
 import { PlayersDTO } from "./admin-page";
 import { classNames } from "../common/class-names";
+import { httpClient } from "../common/http-client";
 
 export const AddGamePage: React.FC = () => {
   const navigate = useNavigate();
@@ -13,7 +14,7 @@ export const AddGamePage: React.FC = () => {
   const playersQuery = useQuery<PlayersDTO>({
     queryKey: ["all-players"],
     queryFn: async () => {
-      return fetch(`${process.env.REACT_APP_API_BASE_URL}/players`, {
+      return httpClient(`${process.env.REACT_APP_API_BASE_URL}/players`, {
         method: "GET",
       }).then(async (response) => response.json() as Promise<PlayersDTO>);
     },
@@ -23,7 +24,7 @@ export const AddGamePage: React.FC = () => {
 
   const addGameMutation = useMutation<unknown, Error>({
     mutationFn: async () => {
-      return fetch(`${process.env.REACT_APP_API_BASE_URL}/game`, {
+      return httpClient(`${process.env.REACT_APP_API_BASE_URL}/game`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -48,17 +49,19 @@ export const AddGamePage: React.FC = () => {
           className={classNames(
             "text-lg w-full py-4 px-6 bg-green-700 hover:bg-green-900 text-white rounded-lg font-normal",
             (!winner || !loser) &&
-              "bg-green-700/0 hover:bg-green-700/0 text-gray-300 cursor-not-allowed ring-1 ring-gray-500"
+              "bg-green-700/0 hover:bg-green-700/0 text-gray-300 cursor-not-allowed ring-1 ring-gray-500",
           )}
           onClick={() => addGameMutation.mutate()}
         >
-          {addGameMutation.isPending ? (
-            <div className="flex items-center justify-center gap-2">
-              Adding game ... <div className="animate-spin">🏓</div>
-            </div>
-          ) : (
-            "Add game 🏓"
-          )}
+          {addGameMutation.isPending
+            ? (
+              <div className="flex items-center justify-center gap-2">
+                Adding game ... <div className="animate-spin">🏓</div>
+              </div>
+            )
+            : (
+              "Add game 🏓"
+            )}
         </button>
         <div className="flex gap-2">
           <div className="space-y-4">
@@ -79,8 +82,7 @@ export const AddGamePage: React.FC = () => {
                     return undefined;
                   }
                   return name;
-                })
-              }
+                })}
               selectedPlayer={winner}
               disabledPlayer={loser}
             />
@@ -103,8 +105,7 @@ export const AddGamePage: React.FC = () => {
                     return undefined;
                   }
                   return name;
-                })
-              }
+                })}
               selectedPlayer={loser}
               disabledPlayer={winner}
             />
@@ -151,7 +152,7 @@ const PlayerList: React.FC<{
               "bg-gray-500/50",
               isSelected && "bg-green-500/50 ring-2 ring-white",
               isDisabled && "text-gray-500",
-              !isSelected && !isDisabled && "hover:bg-gray-500"
+              !isSelected && !isDisabled && "hover:bg-gray-500",
             )}
             onClick={() => onClick(player.name)}
           >

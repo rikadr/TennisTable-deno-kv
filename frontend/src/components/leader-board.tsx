@@ -2,14 +2,17 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { LeaderboardDTO } from "./leader-board-page";
 
-export const LeaderBoard: React.FC<{ leaderboard: LeaderboardDTO }> = ({
-  leaderboard,
-}) => {
+export const LeaderBoard: React.FC<{ leaderboard: LeaderboardDTO }> = ({ leaderboard }) => {
   const nr1 = leaderboard.rankedPlayers[0];
   const nr2 = leaderboard.rankedPlayers[1];
   const nr3 = leaderboard.rankedPlayers[2];
-  const lastPlace =
-    leaderboard.rankedPlayers[leaderboard.rankedPlayers.length - 1];
+
+  if (!nr1 || !nr2 || !nr3) {
+    return <div>Need at least 3 players to show leaderboard</div>;
+  }
+
+  const lastPlace = leaderboard.rankedPlayers[leaderboard.rankedPlayers.length - 1];
+
   return (
     <div className="h-full w-fit md:flex space-y-4 space-x-4 pb-20">
       <div className="space-y-2">
@@ -91,10 +94,7 @@ export const LeaderBoard: React.FC<{ leaderboard: LeaderboardDTO }> = ({
           <div className="w-16 text-center text-2xl">💩</div>
           <section className="grow -mt-1">
             <h2 className="uppercase text-sm">
-              {lastPlace.name}{" "}
-              <span className="font-thin text-slate-400 px-1">
-                #{lastPlace.rank}
-              </span>
+              {lastPlace.name} <span className="font-thin text-slate-400 px-1">#{lastPlace.rank}</span>
             </h2>
             <section className="flex space-x-4 text-xs">
               <div>
@@ -129,13 +129,8 @@ export const LeaderBoard: React.FC<{ leaderboard: LeaderboardDTO }> = ({
             {leaderboard.rankedPlayers.map((player, index) => (
               <tr key={index}>
                 <td>
-                  <Link
-                    to={`/player/${player.name}`}
-                    className="h-full hover:bg-gray-500/50 flex w-full"
-                  >
-                    <div className="font-thin text-slate-400 w-10 text-center">
-                      #{player.rank}
-                    </div>
+                  <Link to={`/player/${player.name}`} className="h-full hover:bg-gray-500/50 flex w-full">
+                    <div className="font-thin text-slate-400 w-10 text-center">#{player.rank}</div>
                     {player.name}
                   </Link>
                 </td>
@@ -172,13 +167,8 @@ export const LeaderBoard: React.FC<{ leaderboard: LeaderboardDTO }> = ({
             {leaderboard.unrankedPlayers.map((player, index) => (
               <tr key={index}>
                 <td>
-                  <Link
-                    to={`/player/${player.name}`}
-                    className="h-full hover:bg-gray-500/50 flex w-full"
-                  >
-                    <div className="font-thin text-slate-400 w-10 text-center">
-                      #{player.potentialRank}
-                    </div>
+                  <Link to={`/player/${player.name}`} className="h-full hover:bg-gray-500/50 flex w-full">
+                    <div className="font-thin text-slate-400 w-10 text-center">#{player.potentialRank}</div>
                     {player.name}
                   </Link>
                 </td>

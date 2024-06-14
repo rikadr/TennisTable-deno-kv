@@ -1,17 +1,12 @@
-import { Router } from "https://deno.land/x/oak@v16.0.0/router.ts";
-import {
-  CreatePlayerPayload,
-  createPlayer,
-  deletePlayer,
-  getAllPlayers,
-  getPlayer,
-} from "./player.ts";
+import { Router } from 'oak';
+import { CreatePlayerPayload, createPlayer, deletePlayer, getAllPlayers, getPlayer } from './player.ts';
+import { isAuthenticated } from '../auth-service/middleware.ts';
 
 export function registerPlayerRoutes(api: Router) {
   /**
    * Get a player by name
    */
-  api.get("/player/:name", async (context) => {
+  api.get('/player/:name', async (context) => {
     const name = context.params.name;
     const player = await getPlayer(name);
     if (player) {
@@ -24,7 +19,7 @@ export function registerPlayerRoutes(api: Router) {
   /**
    * Get all players
    */
-  api.get("/players", async (context) => {
+  api.get('/players', async (context) => {
     const player = await getAllPlayers();
     context.response.body = player;
   });
@@ -32,11 +27,11 @@ export function registerPlayerRoutes(api: Router) {
   /**
    * Create a player
    */
-  api.post("/player", async (context) => {
+  api.post('/player', async (context) => {
     const payload = (await context.request.body.json()) as CreatePlayerPayload;
 
     if (!payload.name) {
-      throw new Error("name is required");
+      throw new Error('name is required');
     }
 
     const player = await createPlayer(payload);
@@ -46,10 +41,10 @@ export function registerPlayerRoutes(api: Router) {
   /**
    * Delete a player
    */
-  api.delete("/player/:name", async (context) => {
+  api.delete('/player/:name', isAuthenticated, async (context) => {
     const name = context.params.name;
     if (!name) {
-      throw new Error("name is required");
+      throw new Error('name is required');
     }
     const player = getPlayer(name);
     if (!player) {

@@ -1,4 +1,4 @@
-import { Router } from "https://deno.land/x/oak@v16.0.0/router.ts";
+import { Router } from "oak";
 import {
   CreateGamePayload,
   DeleteGamePayload,
@@ -11,6 +11,7 @@ import {
   getGamesByPlayer,
   importGame,
 } from "./game.ts";
+import { isAuthenticated, requireAuth } from "../auth-service/middleware.ts";
 
 export function registerGameRoutes(api: Router) {
   /**
@@ -77,7 +78,7 @@ export function registerGameRoutes(api: Router) {
   /**
    * Delete one game
    */
-  api.delete("/game", async (context) => {
+  api.delete("/game", isAuthenticated, requireAuth("game", "delete"), async (context) => {
     const payload = (await context.request.body.json()) as DeleteGamePayload;
     if (!payload) {
       throw new Error("payload is required");
