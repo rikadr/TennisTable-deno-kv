@@ -2,21 +2,9 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { classNames } from "../common/class-names";
 import { useQuery } from "@tanstack/react-query";
-import {
-  CartesianGrid,
-  Line,
-  LineChart,
-  ReferenceLine,
-  Tooltip,
-  TooltipProps,
-  XAxis,
-  YAxis,
-} from "recharts";
+import { CartesianGrid, Line, LineChart, ReferenceLine, Tooltip, TooltipProps, XAxis, YAxis } from "recharts";
 import { useWindowSize } from "usehooks-ts";
-import {
-  NameType,
-  ValueType,
-} from "recharts/types/component/DefaultTooltipContent";
+import { NameType, ValueType } from "recharts/types/component/DefaultTooltipContent";
 import { httpClient } from "../common/http-client";
 
 type PlayerComparison = {
@@ -28,9 +16,7 @@ function usePlayerSummaryQuery(players?: string[]) {
   return useQuery<PlayerComparison>({
     queryKey: ["player-summary", players?.sort()],
     queryFn: async () => {
-      const url = new URL(
-        `${process.env.REACT_APP_API_BASE_URL}/compare-players`,
-      );
+      const url = new URL(`${process.env.REACT_APP_API_BASE_URL}/compare-players`);
       url.searchParams.append("players", JSON.stringify(players));
       return httpClient(url, {
         method: "GET",
@@ -59,9 +45,7 @@ function stringToColor(name: string) {
 export const ComparePlayersPage: React.FC = () => {
   const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
   const [playerToSelectFrom, setPlayersToSelectFrom] = useState<string[]>([]);
-  const [graphDataToSee, setGraphDataToSee] = useState<
-    Record<string, number>[]
-  >([]);
+  const [graphDataToSee, setGraphDataToSee] = useState<Record<string, number>[]>([]);
   const [range, setRange] = useState(0);
   const comparison = usePlayerSummaryQuery(selectedPlayers);
   const { width = 0 } = useWindowSize();
@@ -78,9 +62,7 @@ export const ComparePlayersPage: React.FC = () => {
   }, [comparison.data?.graphData]);
 
   useEffect(() => {
-    setGraphDataToSee(
-      comparison.data?.graphData.slice(Math.max(range - 2, 0)) || [],
-    );
+    setGraphDataToSee(comparison.data?.graphData.slice(Math.max(range - 2, 0)) || []);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [range]);
 
@@ -108,53 +90,37 @@ export const ComparePlayersPage: React.FC = () => {
             value={range}
             onChange={(e) => setRange(parseInt(e.target.value))}
           />
-          {comparison.data?.graphData
-            ? (
-              <LineChart
-                className="mt-7"
-                width={Math.min(730, width)}
-                height={400}
-                data={graphDataToSee}
-              >
-                <CartesianGrid strokeDasharray="1 4" vertical={false} />
-                <XAxis dataKey="name" // ?
-                />
-                <YAxis
-                  type="number"
-                  domain={["dataMin", "dataMax"]}
-                  tickFormatter={(value) =>
-                    value.toLocaleString("no-NO", {
-                      maximumFractionDigits: 0,
-                    })}
-                />
-                <Tooltip
-                  formatter={(value) => [
-                    value.toLocaleString("no-NO", {
-                      maximumFractionDigits: 0,
-                    }),
-                    "Elo",
-                  ]}
-                  wrapperClassName="rounded-lg"
-                  animationDuration={0}
-                  content={<CustomTooltip />}
-                />
-                {graphDataToSee[0] &&
-                  Object.keys(graphDataToSee[0]).map((player) => (
-                    <Line
-                      key={player}
-                      type="monotone"
-                      dataKey={player}
-                      stroke={stringToColor(player)}
-                      animationDuration={100}
-                      dot={false}
-                    />
-                  ))}
-                <ReferenceLine y={1000} stroke="white" label="1 000" />
-              </LineChart>
-            )
-            : (
-              <div className="w-[730px] h-[428px] rounded-lg bg-gray-300/50 animate-pulse" />
-            )}
+          {comparison.data?.graphData ? (
+            <LineChart className="mt-7" width={Math.min(730, width)} height={400} data={graphDataToSee}>
+              <CartesianGrid strokeDasharray="1 4" vertical={false} />
+              <XAxis dataKey="name" />
+              <YAxis
+                type="number"
+                domain={["dataMin", "dataMax"]}
+                tickFormatter={(value) => value.toLocaleString("no-NO", { maximumFractionDigits: 0 })}
+              />
+              <Tooltip
+                formatter={(value) => [value.toLocaleString("no-NO", { maximumFractionDigits: 0 }), "Elo"]}
+                wrapperClassName="rounded-lg"
+                animationDuration={0}
+                content={<CustomTooltip />}
+              />
+              {graphDataToSee[0] &&
+                Object.keys(graphDataToSee[0]).map((player) => (
+                  <Line
+                    key={player}
+                    type="monotone"
+                    dataKey={player}
+                    stroke={stringToColor(player)}
+                    animationDuration={100}
+                    dot={false}
+                  />
+                ))}
+              <ReferenceLine y={1000} stroke="white" label="1 000" />
+            </LineChart>
+          ) : (
+            <div className="w-[730px] h-[428px] rounded-lg bg-gray-300/50 animate-pulse" />
+          )}
         </div>
       </section>
     </div>
@@ -194,14 +160,9 @@ const PlayerSelector: React.FC<{
         className={classNames(
           "h-8 text-left pl-4 rounded-lg",
           "bg-gray-500/50",
-          allIsSelected
-            ? "bg-green-500/50 ring-2 ring-white hover:bg-green-300/50"
-            : "hover:bg-gray-500",
+          allIsSelected ? "bg-green-500/50 ring-2 ring-white hover:bg-green-300/50" : "hover:bg-gray-500",
         )}
-        onClick={() =>
-          allIsSelected
-            ? setSelectedPlayers([])
-            : setSelectedPlayers(storedPlayers)}
+        onClick={() => (allIsSelected ? setSelectedPlayers([]) : setSelectedPlayers(storedPlayers))}
       >
         {allIsSelected ? "Deselect all" : "Select all"}
       </button>
@@ -213,16 +174,12 @@ const PlayerSelector: React.FC<{
             className={classNames(
               "h-8 text-left pl-4 rounded-lg",
               "bg-gray-500/50",
-              isSelected
-                ? "opacity-100 ring-2 ring-white"
-                : "hover:opacity-100 opacity-75",
+              isSelected ? "opacity-100 ring-2 ring-white" : "hover:opacity-100 opacity-75",
             )}
             style={{ background: stringToColor(player) }}
             onClick={() => {
               if (isSelected) {
-                setSelectedPlayers((prev) =>
-                  prev.filter((name) => name !== player)
-                );
+                setSelectedPlayers((prev) => prev.filter((name) => name !== player));
               } else {
                 setSelectedPlayers((prev) => [...prev, player]);
               }
@@ -236,11 +193,7 @@ const PlayerSelector: React.FC<{
   );
 };
 
-const CustomTooltip: React.FC = ({
-  active,
-  payload,
-  label,
-}: TooltipProps<ValueType, NameType>) => {
+const CustomTooltip: React.FC = ({ active, payload, label }: TooltipProps<ValueType, NameType>) => {
   if (active && payload && payload.length) {
     const record = payload[0].payload as Record<string, number>;
     const entries = Object.entries(record);
@@ -250,11 +203,7 @@ const CustomTooltip: React.FC = ({
       <div className="p-2 bg-slate-700 ring-1 ring-white rounded-lg">
         {entries.map((entry) => (
           <p key={entry[0]} style={{ color: stringToColor(entry[0]) }}>
-            {`${entry[0]}: ${
-              entry[1].toLocaleString("no-NO", {
-                maximumFractionDigits: 0,
-              })
-            }`}
+            {`${entry[0]}: ${entry[1].toLocaleString("no-NO", { maximumFractionDigits: 0 })}`}
           </p>
         ))}
       </div>
