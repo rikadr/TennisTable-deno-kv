@@ -72,7 +72,7 @@ export const SignupPage: React.FC = () => {
             <span>Yes that is my password</span>
           </div>
         </div>
-        <div className="/* flex flex-col w-full items-center justify-end space-y-3 pt-3 */">
+        <div className="flex flex-col w-full items-center justify-end space-y-3 pt-3">
           <button
             type="submit"
             className="p-2 w-full bg-blue-300 text-black rounded-md hover:bg-blue-500"
