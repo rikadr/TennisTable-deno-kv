@@ -69,12 +69,32 @@ async function getLeaderboardMap(): Promise<Map<string, PlayerSummary>> {
   return leaderboardMap;
 }
 
-export async function getPlayerSummary(
-  name: string,
-): Promise<(PlayerSummary & { isRanked: boolean; rank?: number }) | undefined> {
+export async function getPlayerSummary(name: string): Promise<
+  | (PlayerSummary & {
+      isRanked: boolean;
+      rank?: number;
+      streaks?: { longestWin: number; longestLose: number };
+    })
+  | undefined
+> {
   const leaderboardMap = await getLeaderboardMap();
   const player = leaderboardMap.get(name);
   if (!player) return undefined;
+
+  const streaks = { longestWin: 0, longestLose: 0 };
+  let winStreak = 0;
+  let loseStreak = 0;
+  player.games.forEach((game) => {
+    if (game.result === "win") {
+      winStreak += 1;
+      loseStreak = 0;
+      streaks.longestWin = Math.max(streaks.longestWin, winStreak);
+    } else {
+      winStreak = 0;
+      loseStreak += 1;
+      streaks.longestLose = Math.max(streaks.longestLose, loseStreak);
+    }
+  });
 
   const playerIsRanked = player.games.length >= GAME_LIMIT_FOR_RANKED;
 
@@ -88,6 +108,7 @@ export async function getPlayerSummary(
     ...player,
     isRanked: player.games.length >= GAME_LIMIT_FOR_RANKED,
     rank: playerIsRanked ? playersWithHigherElo + 1 : undefined,
+    streaks,
   };
 }
 

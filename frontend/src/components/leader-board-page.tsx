@@ -24,6 +24,7 @@ export type PlayerSummary = {
 export type PlayerSummaryDTO = PlayerSummary & {
   isRanked: boolean;
   rank?: number;
+  streaks?: { longestWin: number; longestLose: number };
 };
 
 export type LeaderboardDTO = {
@@ -44,11 +45,7 @@ export function useLeaderBoardQuery() {
   });
 }
 
-const NavigationLink: React.FC<
-  { to: string; text: string; className?: string }
-> = (
-  props,
-) => {
+const NavigationLink: React.FC<{ to: string; text: string; className?: string }> = (props) => {
   return (
     <Link
       className={classNames(
@@ -86,48 +83,26 @@ export const LeaderBoardPage: React.FC = () => {
     <div className="flex flex-col items-center">
       <section className="flex gap-x-4 gap-y-2 items-baseline flex-col w-56 sm:w-fit sm:flex-row p-1">
         <div className="whitespace-nowrap">Tennis🏆💔Table</div>
-        <NavigationLink
-          to="/add-game"
-          text="Add played game +🏓"
-          className="bg-green-700 hover:bg-green-900"
-        />
-        <NavigationLink
-          to="/add-player"
-          text="Add player +👤"
-          className="bg-green-700 hover:bg-green-900"
-        />
-        <NavigationLink
-          to="/compare-players"
-          text="Compare players 📊"
-          className="bg-pink-500/70 hover:bg-pink-900"
-        />
-        {session.isAuthenticated
-          ? (
-            <>
-              <LogOutButton className="bg-blue-700 hover:bg-blue-900" />
-              <NavigationLink to="/admin" text="To admin page 🔐" />
-            </>
-          )
-          : (
-            <NavigationLink
-              to="/login"
-              text="Log In 🔐"
-              className="bg-blue-700 hover:bg-blue-900"
-            />
-          )}
+        <NavigationLink to="/add-game" text="Add played game +🏓" className="bg-green-700 hover:bg-green-900" />
+        <NavigationLink to="/add-player" text="Add player +👤" className="bg-green-700 hover:bg-green-900" />
+        <NavigationLink to="/compare-players" text="Compare players 📊" className="bg-pink-500/70 hover:bg-pink-900" />
+        {session.isAuthenticated ? (
+          <>
+            <LogOutButton className="bg-blue-700 hover:bg-blue-900" />
+            <NavigationLink to="/admin" text="To admin page 🔐" />
+          </>
+        ) : (
+          <NavigationLink to="/login" text="Log In 🔐" className="bg-blue-700 hover:bg-blue-900" />
+        )}
       </section>
       {(leaderboardQuery.isLoading || leaderboardQuery.isFetching) && (
         <div className="grid grid-cols-1 gap-1 grid-flow-row w-full">
           {Array.from({ length: 6 }, () => "").map((_, index) => (
-            <div
-              key={index}
-              className="h-16 animate-pulse rounded-lg bg-gray-500"
-            />
+            <div key={index} className="h-16 animate-pulse rounded-lg bg-gray-500" />
           ))}
         </div>
       )}
-      {leaderboardQuery.data && !leaderboardQuery.isLoading &&
-        !leaderboardQuery.isFetching && (
+      {leaderboardQuery.data && !leaderboardQuery.isLoading && !leaderboardQuery.isFetching && (
         <LeaderBoard leaderboard={leaderboardQuery.data} />
       )}
     </div>

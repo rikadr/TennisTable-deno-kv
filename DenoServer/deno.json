@@ -2,6 +2,12 @@
   "tasks": {
     "dev": "deno run --allow-net --allow-env --env --watch --unstable-kv server.ts"
   },
+  "compilerOptions": {
+    "lib": [
+      "deno.window",
+      "es2015"
+    ]
+  },
   "imports": {
     "bcrypt": "https://deno.land/x/bcrypt@v0.4.1/mod.ts",
     "jose": "https://deno.land/x/jose@v5.3.0/index.ts",
