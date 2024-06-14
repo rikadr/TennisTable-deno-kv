@@ -49,10 +49,9 @@ export function registerGameRoutes(api: Router) {
    * Import a games
    */
   api.post("/import-games", async (context) => {
-    const payload =
-      (await context.request.body.json()) as (CreateGamePayload & {
-        time: number;
-      })[];
+    const payload = (await context.request.body.json()) as (CreateGamePayload & {
+      time: number;
+    })[];
 
     const importedGames: Game[] = [];
     const skippedGames: Game[] = [];

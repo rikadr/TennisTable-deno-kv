@@ -1,4 +1,4 @@
-import { INITIAL_ELO, calculateELO } from "../elo/elo.ts";
+import { INITIAL_ELO, eloCalculator } from "../elo/elo.ts";
 import { getAllGames } from "../game/game.ts";
 import { getAllPlayers } from "../player/player.ts";
 
@@ -7,14 +7,9 @@ type PlayerComparison = {
   graphData: Record<string, number>[];
 };
 
-export async function comparePlayers(
-  players: string[]
-): Promise<PlayerComparison> {
+export async function comparePlayers(players: string[]): Promise<PlayerComparison> {
   const graphData: PlayerComparison["graphData"] = [];
-  const [allPlayers, allGames] = await Promise.all([
-    getAllPlayers(),
-    getAllGames(),
-  ]);
+  const [allPlayers, allGames] = await Promise.all([getAllPlayers(), getAllGames()]);
   if (players.length === 0) {
     return {
       allPlayers: allPlayers.map((player) => player.name),
@@ -22,39 +17,22 @@ export async function comparePlayers(
     };
   }
 
-  const map = new Map<string, number>();
-  allPlayers.forEach((player) => {
-    map.set(player.name, INITIAL_ELO);
-  });
-
   const graphEntry: Record<string, number> = {};
-  players.forEach((player) => {
-    const elo = map.get(player);
-    if (elo) {
-      graphEntry[player] = elo;
-    }
-  });
+  players.forEach((player) => (graphEntry[player] = INITIAL_ELO));
   graphData.push({ ...graphEntry });
 
-  allGames.forEach((game) => {
-    const winner = map.get(game.winner);
-    const loser = map.get(game.loser);
-    if (winner && loser) {
-      const { winnersNewElo, losersNewElo } = calculateELO(winner, loser);
-      map.set(game.winner, winnersNewElo);
-      map.set(game.loser, losersNewElo);
-    }
+  eloCalculator(allGames, allPlayers, (map, game) => {
     if (players.includes(game.winner) || players.includes(game.loser)) {
       if (players.includes(game.winner)) {
         const newElo = map.get(game.winner);
         if (newElo) {
-          graphEntry[game.winner] = newElo;
+          graphEntry[game.winner] = newElo.elo;
         }
       }
       if (players.includes(game.loser)) {
         const newElo = map.get(game.loser);
         if (newElo) {
-          graphEntry[game.loser] = newElo;
+          graphEntry[game.loser] = newElo.elo;
         }
       }
       graphData.push({ ...graphEntry });
@@ -63,8 +41,6 @@ export async function comparePlayers(
 
   return {
     graphData,
-    allPlayers: Array.from(map.keys()).sort((a, b) =>
-      a.toLowerCase().localeCompare(b.toLowerCase())
-    ),
+    allPlayers: allPlayers.map((p) => p.name).sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase())),
   };
 }

@@ -1,5 +1,6 @@
-import { INITIAL_ELO, calculateELO } from "../elo/elo.ts";
+import { INITIAL_ELO, eloCalculator } from "../elo/elo.ts";
 import { getAllGames } from "../game/game.ts";
+import { getAllPlayers } from "../player/player.ts";
 
 type PlayerSummary = {
   name: string;
@@ -23,7 +24,7 @@ export type LeaderboardDTO = {
 const GAME_LIMIT_FOR_RANKED = 5;
 
 async function getLeaderboardMap(): Promise<Map<string, PlayerSummary>> {
-  const [allGames] = await Promise.all([getAllGames()]);
+  const [allGames, allPlayers] = await Promise.all([getAllGames(), getAllPlayers()]);
 
   const leaderboardMap = new Map<string, PlayerSummary>();
 
@@ -40,23 +41,24 @@ async function getLeaderboardMap(): Promise<Map<string, PlayerSummary>> {
     return leaderboardMap.get(name)!;
   }
 
-  allGames.forEach((game) => {
+  eloCalculator(allGames, allPlayers, (map, game, pointsWon) => {
     const winner = getPlayer(game.winner);
     const loser = getPlayer(game.loser);
-    const { winnersNewElo, losersNewElo } = calculateELO(winner.elo, loser.elo);
+    const winnersNewElo = map.get(game.winner)!.elo;
+    const losersNewElo = map.get(game.loser)!.elo;
     winner.games.push({
       time: game.time,
       result: "win",
       oponent: loser.name,
       eloAfterGame: winnersNewElo,
-      pointsDiff: winnersNewElo - winner.elo,
+      pointsDiff: pointsWon,
     });
     loser.games.push({
       time: game.time,
       result: "loss",
       oponent: winner.name,
       eloAfterGame: losersNewElo,
-      pointsDiff: losersNewElo - loser.elo,
+      pointsDiff: -pointsWon,
     });
     winner.wins++;
     loser.loss++;
@@ -68,7 +70,7 @@ async function getLeaderboardMap(): Promise<Map<string, PlayerSummary>> {
 }
 
 export async function getPlayerSummary(
-  name: string
+  name: string,
 ): Promise<(PlayerSummary & { isRanked: boolean; rank?: number }) | undefined> {
   const leaderboardMap = await getLeaderboardMap();
   const player = leaderboardMap.get(name);
@@ -79,7 +81,7 @@ export async function getPlayerSummary(
   const playersWithHigherElo = Array.from(leaderboardMap.values()).reduce(
     (acc, otherPlayer) =>
       (acc += otherPlayer.games.length >= GAME_LIMIT_FOR_RANKED && otherPlayer.elo > player.elo ? 1 : 0),
-    0
+    0,
   );
 
   return {
