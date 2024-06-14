@@ -6,6 +6,7 @@ export function httpClient(...input: Parameters<typeof fetch>) {
     headers: {
       ...input[1]?.headers,
       Authorization: `Bearer ${session.token}`,
+      "Content-Type": "application/json",
     },
   });
 }
