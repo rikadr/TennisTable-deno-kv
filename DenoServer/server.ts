@@ -12,7 +12,7 @@ const api = new Router();
 app.use(
   oakCors({
     origin: "*",
-    allowedHeaders: "*",
+    allowedHeaders: ["content-type", "Authorization"],
     methods: "*",
   }),
 );

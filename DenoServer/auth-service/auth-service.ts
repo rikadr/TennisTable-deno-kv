@@ -1,4 +1,3 @@
-
 import * as bcrypt from "bcrypt";
 import { User } from "../user/user.store.ts";
 import { SignJWT } from "jose";
@@ -44,7 +43,8 @@ async function signUp(username: string, password: string): Promise<{ token: stri
     throw new Error("User already exists");
   }
 
-  const encryptedPassword = await bcrypt.hash(password);
+  // async hash not avaiable in deno deploy
+  const encryptedPassword = bcrypt.hashSync(password);
 
   let role: string = "user";
 
