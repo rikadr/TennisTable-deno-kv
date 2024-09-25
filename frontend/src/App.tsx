@@ -11,12 +11,9 @@ import { LoginPage } from "./components/login";
 import { AdminPage } from "./components/admin-page";
 import { session } from "./services/auth";
 import { SignupPage } from "./components/sign-up";
+import { useWebSocket } from "./services/web-socket/use-web-socket";
 
-const RequireAuth: React.FC<
-  { children: React.ReactNode }
-> = (
-  { children },
-) => {
+const RequireAuth: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   if (!session.isAuthenticated) {
     session.token = undefined;
     return <Navigate to="/login" />;
@@ -27,16 +24,18 @@ const RequireAuth: React.FC<
 
 function App() {
   const queryClienta = queryClient;
+
+  const { send, latestMessage } = useWebSocket(process.env.REACT_APP_API_BASE_URL + "/ws");
+
   return (
     <QueryClientProvider client={queryClienta}>
       <div className="bg-slate-800 min-h-screen w-full overflow-auto">
+        <button onClick={() => send("Hallo form client")}>Send ws message</button>
+        <h2>Latest received message: {latestMessage}</h2>
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Navigate to="/leader-board" />} />
-            <Route
-              path="/tennis-table"
-              element={<Navigate to="/leader-board" />}
-            />
+            <Route path="/tennis-table" element={<Navigate to="/leader-board" />} />
             <Route path="/leader-board" element={<LeaderBoardPage />} />
             <Route path="/compare-players" element={<ComparePlayersPage />} />
             <Route path="/player/:name" element={<PlayerPage />} />

@@ -5,6 +5,7 @@ import { registerGameRoutes } from "./game/game.routes.ts";
 import { registerEloRoutes } from "./elo/elo.routes.ts";
 import { registerLeaderboardRoutes } from "./leaderboard/leaderboard.routes.ts";
 import { registerUserRoutes } from "./user/user.routes.ts";
+import { registerWsRoutes } from "./web-socket/web-sockets.routs.ts";
 
 const app = new Application();
 const api = new Router();
@@ -24,6 +25,7 @@ registerPlayerRoutes(api);
 registerGameRoutes(api);
 registerEloRoutes(api);
 registerLeaderboardRoutes(api);
+registerWsRoutes(api);
 
 registerUserRoutes(api);
 app.use(api.routes());
