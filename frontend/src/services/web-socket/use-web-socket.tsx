@@ -17,6 +17,9 @@ export const useWebSocket = (url: string) => {
       console.error("Websocket error", error);
     };
     setWebSocket(socket);
+    return () => {
+      socket.close();
+    };
   }, [url]);
 
   return { send, latestMessage };

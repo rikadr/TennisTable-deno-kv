@@ -12,6 +12,7 @@ import { AdminPage } from "./components/admin-page";
 import { session } from "./services/auth";
 import { SignupPage } from "./components/sign-up";
 import { useWebSocket } from "./services/web-socket/use-web-socket";
+import { httpClient } from "./common/http-client";
 
 const RequireAuth: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   if (!session.isAuthenticated) {
@@ -30,8 +31,19 @@ function App() {
   return (
     <QueryClientProvider client={queryClienta}>
       <div className="bg-slate-800 min-h-screen w-full overflow-auto">
-        <button onClick={() => send("Hallo form client")}>Send ws message</button>
-        <h2>Latest received message: {latestMessage}</h2>
+        <div className="flex flex-col items-start">
+          <button onClick={() => send("Hallo from client")}>Send ws message</button>
+          <button
+            onClick={() => {
+              httpClient(`${process.env.REACT_APP_API_BASE_URL}/ws/broadcast?message=Broadcast🤪`, {
+                method: "GET",
+              });
+            }}
+          >
+            Send broadcast
+          </button>
+          <h2>Latest received message: {latestMessage}</h2>
+        </div>
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Navigate to="/leader-board" />} />
