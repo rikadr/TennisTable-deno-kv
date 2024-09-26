@@ -31,7 +31,7 @@ export class WebSocketClientManager {
   }
 
   /**
-   * Creates web socket and attepts to open connection.
+   * Upgrades connection and created a web socket.
    * Adds web socket to management of all open web sockets.
    * @param context
    * @returns Web socket
