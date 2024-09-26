@@ -35,23 +35,23 @@ export function eloCalculator(
   players: Player[],
   injectedFunction?: (map: Map<string, PlayerWithElo>, game: Game, pointsWon: number) => void,
 ): Map<string, PlayerWithElo> {
-  const map = new Map<string, PlayerWithElo>();
+  const playerMap = new Map<string, PlayerWithElo>();
 
   players.forEach((player) => {
-    map.set(player.name, { ...player, elo: INITIAL_ELO });
+    playerMap.set(player.name, { ...player, elo: INITIAL_ELO });
   });
 
   games.forEach((game) => {
-    const winner = map.get(game.winner);
-    const loser = map.get(game.loser);
+    const winner = playerMap.get(game.winner);
+    const loser = playerMap.get(game.loser);
     if (winner && loser) {
       // Only games with both players existing in the player list will counted
       const { winnersNewElo, losersNewElo } = calculateELO(winner.elo, loser.elo);
       const pointsWon = winnersNewElo - winner.elo;
       winner.elo = winnersNewElo;
       loser.elo = losersNewElo;
-      injectedFunction && injectedFunction(map, game, pointsWon);
+      injectedFunction && injectedFunction(playerMap, game, pointsWon);
     }
   });
-  return map;
+  return playerMap;
 }

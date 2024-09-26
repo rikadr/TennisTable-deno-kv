@@ -5,6 +5,8 @@ import { registerGameRoutes } from "./game/game.routes.ts";
 import { registerEloRoutes } from "./elo/elo.routes.ts";
 import { registerLeaderboardRoutes } from "./leaderboard/leaderboard.routes.ts";
 import { registerUserRoutes } from "./user/user.routes.ts";
+import { registerWebSocketRoutes } from "./web-socket/web-socket.routs.ts";
+import { WebSocketClientManager } from "./web-socket/web-socket-client-manager.ts";
 
 const app = new Application();
 const api = new Router();
@@ -17,13 +19,16 @@ app.use(
   }),
 );
 
+const webSocketClientManager = new WebSocketClientManager();
+
 /**
  * Register routes
  */
-registerPlayerRoutes(api);
-registerGameRoutes(api);
+registerPlayerRoutes(api, webSocketClientManager);
+registerGameRoutes(api, webSocketClientManager);
 registerEloRoutes(api);
 registerLeaderboardRoutes(api);
+registerWebSocketRoutes(api, webSocketClientManager);
 
 registerUserRoutes(api);
 app.use(api.routes());
