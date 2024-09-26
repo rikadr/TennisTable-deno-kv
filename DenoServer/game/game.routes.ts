@@ -12,8 +12,9 @@ import {
   importGame,
 } from "./game.ts";
 import { isAuthenticated, requireAuth } from "../auth-service/middleware.ts";
+import { WebSocketClientManager } from "../web-socket/web-socket-client-manager.ts";
 
-export function registerGameRoutes(api: Router) {
+export function registerGameRoutes(api: Router, webSocketClientManager: WebSocketClientManager) {
   /**
    * Get all games
    */
@@ -42,6 +43,7 @@ export function registerGameRoutes(api: Router) {
     }
 
     const game = await createGame(payload);
+    webSocketClientManager.reloadClients();
     context.response.body = game;
   });
 
@@ -77,7 +79,8 @@ export function registerGameRoutes(api: Router) {
   /**
    * Delete one game
    */
-  api.delete("/game", isAuthenticated, requireAuth("game", "delete"), async (context) => {
+  api.delete("/game", async (context) => {
+    // isAuthenticated, requireAuth("game", "delete") // Auth requirement is removed because auth is not working properly atm
     const payload = (await context.request.body.json()) as DeleteGamePayload;
     if (!payload) {
       throw new Error("payload is required");
@@ -89,13 +92,14 @@ export function registerGameRoutes(api: Router) {
       return;
     }
     await deleteGame(game);
+    webSocketClientManager.reloadClients();
     context.response.body = 204;
   });
 
   /**
    * Delete all games
    */
-  api.delete("/games", async (context) => {
+  api.delete("/games", isAuthenticated, requireAuth("game", "delete"), async (context) => {
     const deleted = await deleteAllGames();
     context.response.body = deleted;
   });

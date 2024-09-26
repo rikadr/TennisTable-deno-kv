@@ -1,6 +1,11 @@
 import { RouterContext } from "oak";
 
-type SocketUrl = string;
+/**
+ * Defined messages that can be broadcast to connected clients
+ */
+enum WS_BROADCAST {
+  RELOAD = "reload",
+}
 
 export class WebSocketClientManager {
   clients: Set<WebSocket>;
@@ -14,10 +19,15 @@ export class WebSocketClientManager {
   private removeClient(socket: WebSocket) {
     this.clients.delete(socket);
   }
-
-  /** Just a function to send som random numbers to a given socket. Used for dev and debug */
-  private sendSomething(socket: WebSocket) {
-    socket.send(new Date().getMilliseconds().toLocaleString("no-NO"));
+  /**
+   * Send message to all open web sockets on the server managed by the manager
+   */
+  private broadcastMessage(message: WS_BROADCAST) {
+    for (const client of this.clients) {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(message);
+      }
+    }
   }
 
   /**
@@ -28,19 +38,16 @@ export class WebSocketClientManager {
    */
   startWebSocketConnection(context: RouterContext<string>) {
     if (!context.isUpgradable) {
-      context.throw(400, "Web socket can not be established... :(");
+      context.throw(400, "Request can not be upgraded to a web socket");
     }
     const socket = context.upgrade();
-    let intervalID: number | undefined = undefined;
 
     socket.onopen = () => {
       console.log("Connected to client ✅");
-      intervalID = setInterval(() => this.sendSomething(socket), 2345);
       this.addClient(socket);
     };
     socket.onclose = () => {
       console.log("Closed connection 🛑");
-      clearInterval(intervalID);
       this.removeClient(socket);
     };
     socket.onerror = () => {
@@ -51,13 +58,10 @@ export class WebSocketClientManager {
   }
 
   /**
-   * Send message to all open web sockets on the server managed by the manager
+   * Broadcast all connected clients a request to reload data their data.
+   * Used for when games or player data is changed or updated.
    */
-  broadcastMessage(message: string) {
-    for (const client of this.clients) {
-      if (client.readyState === WebSocket.OPEN) {
-        client.send(message);
-      }
-    }
+  reloadClients() {
+    this.broadcastMessage(WS_BROADCAST.RELOAD);
   }
 }

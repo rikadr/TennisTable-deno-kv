@@ -1,4 +1,10 @@
 import { useEffect, useState } from "react";
+/**
+ * Defined messages that can be broadcast to connected clients
+ */
+export enum WS_BROADCAST {
+  RELOAD = "reload",
+}
 
 export const useWebSocket = (url: string) => {
   const [latestMessage, setLatestMessage] = useState<string>();
