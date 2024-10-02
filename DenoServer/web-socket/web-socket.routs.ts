@@ -5,11 +5,7 @@ export function registerWebSocketRoutes(api: Router, clientManager: WebSocketCli
   /**
    * Establish a web socket connection
    */
-  api.get("/ws", (context) => {
-    const socket = clientManager.startWebSocketConnection(context as RouterContext<string>); // Temp casting
-    socket.onmessage = (messageEvent) => {
-      console.log("Message from client:", messageEvent.data);
-      socket.send("Server got the message: '" + messageEvent.data + "'");
-    };
+  api.get("/ws-updates", (context) => {
+    clientManager.startWebSocketConnection(context as RouterContext<string>); // Temp casting
   });
 }

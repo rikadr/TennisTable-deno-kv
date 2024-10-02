@@ -25,7 +25,7 @@ const RequireAuth: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 function App() {
   const queryClienta = queryClient;
 
-  const { latestMessage } = useWebSocket(process.env.REACT_APP_API_BASE_URL + "/ws");
+  const { latestMessage } = useWebSocket(process.env.REACT_APP_API_BASE_URL + "/ws-updates");
   if (latestMessage === WS_BROADCAST.RELOAD) {
     // Server has new data and client should refetch.
     window.location.reload(); // TODO: Invalidate query cache instead of refreshing page.
