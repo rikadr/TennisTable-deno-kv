@@ -30,7 +30,7 @@ export const PlayerPage: React.FC = () => {
 
   const reverseGames = useMemo(() => {
     if (!playerSummaryQuery.data) return;
-    return playerSummaryQuery.data.games.reverse();
+    return playerSummaryQuery.data.games.slice().reverse();
   }, [playerSummaryQuery.data]);
 
   return (
