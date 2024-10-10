@@ -112,7 +112,7 @@ export const ComparePlayersPage: React.FC = () => {
                     type="monotone"
                     dataKey={player}
                     stroke={stringToColor(player)}
-                    animationDuration={100}
+                    animationDuration={0}
                     dot={false}
                   />
                 ))}
