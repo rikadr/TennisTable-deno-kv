@@ -7,6 +7,7 @@ import { registerLeaderboardRoutes } from "./leaderboard/leaderboard.routes.ts";
 import { registerUserRoutes } from "./user/user.routes.ts";
 import { registerWebSocketRoutes } from "./web-socket/web-socket.routs.ts";
 import { WebSocketClientManager } from "./web-socket/web-socket-client-manager.ts";
+import { registerClientDbRoutes } from "./client-db/client-db.routes.ts";
 
 const app = new Application();
 const api = new Router();
@@ -29,6 +30,7 @@ registerGameRoutes(api, webSocketClientManager);
 registerEloRoutes(api);
 registerLeaderboardRoutes(api);
 registerWebSocketRoutes(api, webSocketClientManager);
+registerClientDbRoutes(api);
 
 registerUserRoutes(api);
 app.use(api.routes());
