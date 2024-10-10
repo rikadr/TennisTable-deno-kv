@@ -11,7 +11,7 @@ import { LoginPage } from "./components/login";
 import { AdminPage } from "./components/admin-page";
 import { session } from "./services/auth";
 import { SignupPage } from "./components/sign-up";
-import { useWebSocket, WS_BROADCAST } from "./services/web-socket/use-web-socket";
+import { WebSocketRefetcher } from "./web-socket-refetcher";
 
 const RequireAuth: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   if (!session.isAuthenticated) {
@@ -19,51 +19,46 @@ const RequireAuth: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     return <Navigate to="/login" />;
   }
 
-  return <>{children}</>;
+  return children;
 };
 
 function App() {
-  const queryClienta = queryClient;
-
-  const { latestMessage } = useWebSocket(process.env.REACT_APP_API_BASE_URL + "/ws-updates");
-  if (latestMessage === WS_BROADCAST.RELOAD) {
-    // Server has new data and client should refetch.
-    window.location.reload(); // TODO: Invalidate query cache instead of refreshing page.
-  }
-
+  const client = queryClient;
   return (
-    <QueryClientProvider client={queryClienta}>
-      <div className="bg-slate-800 min-h-screen w-full overflow-auto">
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Navigate to="/leader-board" />} />
-            <Route path="/tennis-table" element={<Navigate to="/leader-board" />} />
-            <Route path="/leader-board" element={<LeaderBoardPage />} />
-            <Route path="/compare-players" element={<ComparePlayersPage />} />
-            <Route path="/player/:name" element={<PlayerPage />} />
-            <Route path="/add-player" element={<AddPlayerPage />} />
-            <Route path="/add-game" element={<AddGamePage />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/sign-up" element={<SignupPage />} />
-            <Route
-              path="/admin"
-              element={
-                <RequireAuth>
-                  <AdminPage />
-                </RequireAuth>
-              }
-            />
-            <Route
-              path="/me"
-              element={
-                <RequireAuth>
-                  <MyPage />
-                </RequireAuth>
-              }
-            />
-          </Routes>
-        </BrowserRouter>
-      </div>
+    <QueryClientProvider client={client}>
+      <WebSocketRefetcher>
+        <div className="bg-slate-800 min-h-screen w-full overflow-auto">
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Navigate to="/leader-board" />} />
+              <Route path="/tennis-table" element={<Navigate to="/leader-board" />} />
+              <Route path="/leader-board" element={<LeaderBoardPage />} />
+              <Route path="/compare-players" element={<ComparePlayersPage />} />
+              <Route path="/player/:name" element={<PlayerPage />} />
+              <Route path="/add-player" element={<AddPlayerPage />} />
+              <Route path="/add-game" element={<AddGamePage />} />
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/sign-up" element={<SignupPage />} />
+              <Route
+                path="/admin"
+                element={
+                  <RequireAuth>
+                    <AdminPage />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/me"
+                element={
+                  <RequireAuth>
+                    <MyPage />
+                  </RequireAuth>
+                }
+              />
+            </Routes>
+          </BrowserRouter>
+        </div>
+      </WebSocketRefetcher>
     </QueryClientProvider>
   );
 }
