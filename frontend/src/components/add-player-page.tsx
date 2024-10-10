@@ -8,12 +8,7 @@ export const AddPlayerPage: React.FC = () => {
   const navigate = useNavigate();
   const [playerName, setPlayerName] = useState("");
 
-  const addPlayerMutation = useMutation<
-    unknown,
-    Error,
-    { name: string },
-    unknown
-  >({
+  const addPlayerMutation = useMutation<unknown, Error, { name: string }, unknown>({
     mutationFn: async ({ name }) => {
       return httpClient(`${process.env.REACT_APP_API_BASE_URL}/player`, {
         method: "POST",

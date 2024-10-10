@@ -6,7 +6,6 @@ import {
   createGame,
   deleteAllGames,
   deleteGame,
-  getAllGames,
   getGame,
   getGamesByPlayer,
   importGame,
@@ -21,14 +20,6 @@ export function registerGameRoutes(api: Router, webSocketClientManager: WebSocke
   api.get("/games/:name", async (context) => {
     const name = context.params.name;
     const games = await getGamesByPlayer(name);
-    context.response.body = games;
-  });
-
-  /**
-   * Get all games
-   */
-  api.get("/games", async (context) => {
-    const games = await getAllGames();
     context.response.body = games;
   });
 

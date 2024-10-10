@@ -1,26 +1,16 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { queryClient } from "../common/query-client";
 import { useNavigate } from "react-router-dom";
 import { PlayersDTO } from "./admin-page";
 import { classNames } from "../common/class-names";
 import { httpClient } from "../common/http-client";
+import { useClientDbContext } from "../wrappers/client-db-context";
 
 export const AddGamePage: React.FC = () => {
   const navigate = useNavigate();
   const [winner, setWinner] = useState<string | undefined>();
   const [loser, setLoser] = useState<string | undefined>();
-
-  const playersQuery = useQuery<PlayersDTO>({
-    queryKey: ["all-players"],
-    queryFn: async () => {
-      return httpClient(`${process.env.REACT_APP_API_BASE_URL}/players`, {
-        method: "GET",
-      }).then(async (response) => response.json() as Promise<PlayersDTO>);
-    },
-    refetchOnWindowFocus: true,
-    refetchOnReconnect: true,
-  });
 
   const addGameMutation = useMutation<unknown, Error>({
     mutationFn: async () => {
@@ -41,6 +31,8 @@ export const AddGamePage: React.FC = () => {
     },
   });
 
+  const { players } = useClientDbContext();
+
   return (
     <div className="w-full flex justify-center">
       <div className="space-y-4 p-4 w-fit">
@@ -53,15 +45,13 @@ export const AddGamePage: React.FC = () => {
           )}
           onClick={() => addGameMutation.mutate()}
         >
-          {addGameMutation.isPending
-            ? (
-              <div className="flex items-center justify-center gap-2">
-                Adding game ... <div className="animate-spin">🏓</div>
-              </div>
-            )
-            : (
-              "Add game 🏓"
-            )}
+          {addGameMutation.isPending ? (
+            <div className="flex items-center justify-center gap-2">
+              Adding game ... <div className="animate-spin">🏓</div>
+            </div>
+          ) : (
+            "Add game 🏓"
+          )}
         </button>
         <div className="flex gap-2">
           <div className="space-y-4">
@@ -70,8 +60,7 @@ export const AddGamePage: React.FC = () => {
               <h1 className="uppercase">{winner || "???"}</h1>
             </div>
             <PlayerList
-              players={playersQuery.data}
-              isLoading={playersQuery.isLoading}
+              players={players}
               onClick={(name) =>
                 setWinner((prev) => {
                   if (name === loser) {
@@ -82,7 +71,8 @@ export const AddGamePage: React.FC = () => {
                     return undefined;
                   }
                   return name;
-                })}
+                })
+              }
               selectedPlayer={winner}
               disabledPlayer={loser}
             />
@@ -93,8 +83,7 @@ export const AddGamePage: React.FC = () => {
               <h1 className="uppercase">{loser || "???"}</h1>
             </div>
             <PlayerList
-              players={playersQuery.data}
-              isLoading={playersQuery.isLoading}
+              players={players}
               onClick={(name) =>
                 setLoser((prev) => {
                   if (name === winner) {
@@ -105,7 +94,8 @@ export const AddGamePage: React.FC = () => {
                     return undefined;
                   }
                   return name;
-                })}
+                })
+              }
               selectedPlayer={loser}
               disabledPlayer={winner}
             />
@@ -118,27 +108,15 @@ export const AddGamePage: React.FC = () => {
 
 const PlayerList: React.FC<{
   players?: PlayersDTO;
-  isLoading: boolean;
   selectedPlayer?: string;
   disabledPlayer?: string;
   onClick: (name: string) => void;
-}> = ({ players, isLoading, selectedPlayer, disabledPlayer, onClick }) => {
-  if (isLoading) {
-    return (
-      <div className="grid grid-cols-1 gap-1 grid-flow-row w-40">
-        {Array.from({ length: 6 }, () => "").map(() => (
-          <div className="h-8 animate-pulse rounded-lg bg-gray-500" />
-        ))}
-      </div>
-    );
-  }
+}> = ({ players, selectedPlayer, disabledPlayer, onClick }) => {
   if (!players) {
     return <div>Failed to load players</div>;
   }
 
-  const sortedPlayers = players.sort((a, b) =>
-    a.name.toLowerCase().localeCompare(b.name.toLowerCase())
-  );
+  const sortedPlayers = players.sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
 
   return (
     <div className="grid grid-cols-1 gap-1 grid-flow-row w-40">

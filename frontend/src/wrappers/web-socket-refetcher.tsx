@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { useWebSocket, WS_BROADCAST } from "./services/web-socket/use-web-socket";
+import { useWebSocket, WS_BROADCAST } from "../services/web-socket/use-web-socket";
 
 type Props = {
   children: React.ReactNode;

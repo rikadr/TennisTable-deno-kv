@@ -1,5 +1,5 @@
 import { Router } from "oak";
-import { CreatePlayerPayload, createPlayer, deletePlayer, getAllPlayers, getPlayer } from "./player.ts";
+import { CreatePlayerPayload, createPlayer, deletePlayer, getPlayer } from "./player.ts";
 import { isAuthenticated } from "../auth-service/middleware.ts";
 import { WebSocketClientManager } from "../web-socket/web-socket-client-manager.ts";
 
@@ -15,14 +15,6 @@ export function registerPlayerRoutes(api: Router, webSocketClientManager: WebSoc
     } else {
       context.response.status = 404;
     }
-  });
-
-  /**
-   * Get all players
-   */
-  api.get("/players", async (context) => {
-    const player = await getAllPlayers();
-    context.response.body = player;
   });
 
   /**
