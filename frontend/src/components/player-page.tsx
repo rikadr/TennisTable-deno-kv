@@ -30,7 +30,7 @@ export const PlayerPage: React.FC = () => {
 
   const reverseGames = useMemo(() => {
     if (!playerSummaryQuery.data) return;
-    return playerSummaryQuery.data.games.slice().reverse();
+    return playerSummaryQuery.data.games.slice(Math.max(playerSummaryQuery.data.games.length - 5, 0)).reverse();
   }, [playerSummaryQuery.data]);
 
   return (
@@ -61,11 +61,11 @@ export const PlayerPage: React.FC = () => {
                 })}
               </div>
               <div>
-                🏆 {playerSummaryQuery.data?.wins} 💔 {playerSummaryQuery.data?.loss}
-                {/* 🏆:💔
+                {/* 🏆 {playerSummaryQuery.data?.wins} 💔 {playerSummaryQuery.data?.loss} */}
+                🏆:💔
                 {((playerSummaryQuery.data?.wins || 0) / (playerSummaryQuery.data?.loss || 0)).toLocaleString("no-NO", {
                   maximumFractionDigits: 1,
-                })} */}
+                })}
               </div>
             </section>
           </section>
@@ -102,9 +102,10 @@ export const PlayerPage: React.FC = () => {
           <div className="">Longest lose-streak 🔥💔 {playerSummaryQuery.data.streaks.longestLose}</div>
         </>
       )}
-      <h1 className="text-2xl text-center mt-4">
+      {/* <h1 className="text-2xl text-center mt-4">
         Total {playerSummaryQuery.data && playerSummaryQuery.data.games.length + " games"}
-      </h1>
+      </h1> */}
+      <h1 className="text-2xl text-center mt-4">Last 5 games</h1>
       <div className="w-fit">
         {playerSummaryQuery.isLoading ? (
           <div>
