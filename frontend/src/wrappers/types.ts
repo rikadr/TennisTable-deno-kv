@@ -28,3 +28,8 @@ export type PlayerSummaryDTO = PlayerSummary & {
   rank?: number;
   streaks?: { longestWin: number; longestLose: number };
 };
+
+export type PlayerComparison = {
+  allPlayers: string[];
+  graphData: Record<string, number>[];
+};

@@ -1,13 +1,11 @@
 import { Elo } from "./elo";
-import { ClientDbDTO, Game, LeaderboardDTO, Player, PlayerSummary } from "./types";
+import { ClientDbDTO, Game, LeaderboardDTO, Player, PlayerComparison, PlayerSummary } from "./types";
 
 export class Leaderboard {
   private players: Player[] = [];
   private games: Game[] = [];
 
   constructor(data: ClientDbDTO) {
-    console.log("Leaderboard constructor");
-
     this.players = data.players;
     this.games = data.games;
   }
@@ -80,9 +78,44 @@ export class Leaderboard {
     };
   }
 
-  private _getLeaderboardMap(): Map<string, PlayerSummary> {
-    console.log("_getLeaderboardMap");
+  comparePlayers(players: string[]): PlayerComparison {
+    const graphData: PlayerComparison["graphData"] = [];
+    if (players.length === 0) {
+      return {
+        allPlayers: this.players.map((player) => player.name),
+        graphData: [],
+      };
+    }
 
+    const graphEntry: Record<string, number> = {};
+    players.forEach((player) => (graphEntry[player] = Elo.INITIAL_ELO));
+    graphData.push({ ...graphEntry });
+
+    Elo.eloCalculator(this.games, this.players, (map, game) => {
+      if (players.includes(game.winner) || players.includes(game.loser)) {
+        if (players.includes(game.winner)) {
+          const newElo = map.get(game.winner);
+          if (newElo) {
+            graphEntry[game.winner] = newElo.elo;
+          }
+        }
+        if (players.includes(game.loser)) {
+          const newElo = map.get(game.loser);
+          if (newElo) {
+            graphEntry[game.loser] = newElo.elo;
+          }
+        }
+        graphData.push({ ...graphEntry });
+      }
+    });
+
+    return {
+      graphData,
+      allPlayers: this.players.map((p) => p.name).sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase())),
+    };
+  }
+
+  private _getLeaderboardMap(): Map<string, PlayerSummary> {
     const leaderboardMap = new Map<string, PlayerSummary>();
 
     function getPlayer(name: string): PlayerSummary {

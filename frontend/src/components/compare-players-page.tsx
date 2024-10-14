@@ -1,31 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { classNames } from "../common/class-names";
-import { useQuery } from "@tanstack/react-query";
 import { CartesianGrid, Line, LineChart, ReferenceLine, Tooltip, TooltipProps, XAxis, YAxis } from "recharts";
 import { useWindowSize } from "usehooks-ts";
 import { NameType, ValueType } from "recharts/types/component/DefaultTooltipContent";
-import { httpClient } from "../common/http-client";
-
-type PlayerComparison = {
-  allPlayers: string[];
-  graphData: Record<string, number>[];
-};
-
-function usePlayerSummaryQuery(players?: string[]) {
-  return useQuery<PlayerComparison>({
-    queryKey: ["player-summary", players?.sort()],
-    queryFn: async () => {
-      const url = new URL(`${process.env.REACT_APP_API_BASE_URL}/compare-players`);
-      url.searchParams.append("players", JSON.stringify(players));
-      return httpClient(url, {
-        method: "GET",
-      }).then(async (response) => response.json() as Promise<PlayerComparison>);
-    },
-    refetchOnWindowFocus: true,
-    refetchOnReconnect: true,
-  });
-}
+import { useClientDbContext } from "../wrappers/client-db-context";
 
 function stringToColor(name: string) {
   let hash = 0;
@@ -43,28 +22,20 @@ function stringToColor(name: string) {
 }
 
 export const ComparePlayersPage: React.FC = () => {
+  const context = useClientDbContext();
   const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
-  const [playerToSelectFrom, setPlayersToSelectFrom] = useState<string[]>([]);
-  const [graphDataToSee, setGraphDataToSee] = useState<Record<string, number>[]>([]);
+  const comparison = useMemo(
+    () => context.leaderboard.comparePlayers(selectedPlayers),
+    [context.leaderboard, selectedPlayers],
+  );
+  const [graphDataToSee, setGraphDataToSee] = useState<Record<string, number>[]>(comparison.graphData);
   const [range, setRange] = useState(0);
-  const comparison = usePlayerSummaryQuery(selectedPlayers);
+
   const { width = 0 } = useWindowSize();
 
   useEffect(() => {
-    if (comparison.data?.allPlayers) {
-      setPlayersToSelectFrom(comparison.data.allPlayers);
-    }
-  }, [comparison.data?.allPlayers]);
-
-  useEffect(() => {
-    setGraphDataToSee(comparison.data?.graphData || []);
-    setRange(0);
-  }, [comparison.data?.graphData]);
-
-  useEffect(() => {
-    setGraphDataToSee(comparison.data?.graphData.slice(Math.max(range - 2, 0)) || []);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [range]);
+    setGraphDataToSee(comparison.graphData.slice(Math.max(range - 2, 0)) || []);
+  }, [comparison.graphData, range]);
 
   return (
     <div className="flex flex-col items-center gap-4">
@@ -76,8 +47,7 @@ export const ComparePlayersPage: React.FC = () => {
       </Link>
       <section className="flex flex-col items-center md:flex-row">
         <PlayerSelector
-          players={playerToSelectFrom}
-          isLoading={playerToSelectFrom.length === 0 && comparison.isLoading}
+          players={comparison.allPlayers}
           selectedPlayers={selectedPlayers}
           setSelectedPlayers={setSelectedPlayers}
         />
@@ -86,11 +56,11 @@ export const ComparePlayersPage: React.FC = () => {
             className="w-full"
             type="range"
             min="2"
-            max={comparison.data?.graphData.length || 0}
+            max={comparison.graphData.length || 0}
             value={range}
             onChange={(e) => setRange(parseInt(e.target.value))}
           />
-          {comparison.data?.graphData ? (
+          {comparison.graphData ? (
             <LineChart className="mt-7" width={Math.min(730, width)} height={400} data={graphDataToSee}>
               <CartesianGrid strokeDasharray="1 4" vertical={false} />
               <XAxis dataKey="name" />
@@ -128,30 +98,12 @@ export const ComparePlayersPage: React.FC = () => {
 };
 
 const PlayerSelector: React.FC<{
-  players?: string[];
-  isLoading: boolean;
+  players: string[];
   selectedPlayers: string[];
   setSelectedPlayers: React.Dispatch<React.SetStateAction<string[]>>;
-}> = ({ players, isLoading, selectedPlayers, setSelectedPlayers }) => {
-  const [storedPlayers, setStoredPlayers] = useState<string[]>(players || []);
-  useEffect(() => {
-    if (players) {
-      setStoredPlayers(players.sort());
-    }
-  }, [players]);
-  if (isLoading) {
-    return (
-      <div className="grid grid-cols-1 gap-1 grid-flow-row w-40">
-        {Array.from({ length: 6 }, () => "").map((_, i) => (
-          <div className="h-8 animate-pulse rounded-lg bg-gray-500" key={i} />
-        ))}
-      </div>
-    );
-  }
-  if (!storedPlayers) {
-    return <div>Failed to load players</div>;
-  }
-  const allIsSelected = selectedPlayers.length === storedPlayers.length;
+}> = ({ players, selectedPlayers, setSelectedPlayers }) => {
+  const sortedPlayers = useMemo(() => players.sort(), [players]);
+  const allIsSelected = selectedPlayers.length === sortedPlayers.length;
 
   return (
     <div className="grid grid-cols-1 gap-1 grid-flow-row w-40 h-fit">
@@ -162,11 +114,11 @@ const PlayerSelector: React.FC<{
           "bg-gray-500/50",
           allIsSelected ? "bg-green-500/50 ring-2 ring-white hover:bg-green-300/50" : "hover:bg-gray-500",
         )}
-        onClick={() => (allIsSelected ? setSelectedPlayers([]) : setSelectedPlayers(storedPlayers))}
+        onClick={() => (allIsSelected ? setSelectedPlayers([]) : setSelectedPlayers(sortedPlayers))}
       >
         {allIsSelected ? "Deselect all" : "Select all"}
       </button>
-      {storedPlayers.map((player) => {
+      {sortedPlayers.map((player) => {
         const isSelected = selectedPlayers.includes(player);
         return (
           <button
