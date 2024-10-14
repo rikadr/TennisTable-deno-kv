@@ -1,8 +1,11 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { LeaderboardDTO } from "./leader-board-page";
+import { useClientDbContext } from "../wrappers/client-db-context";
 
-export const LeaderBoard: React.FC<{ leaderboard: LeaderboardDTO }> = ({ leaderboard }) => {
+export const LeaderBoard: React.FC = () => {
+  const context = useClientDbContext();
+  const leaderboard = context.leaderboard.getLeaderboard();
+
   const nr1 = leaderboard.rankedPlayers[0];
   const nr2 = leaderboard.rankedPlayers[1];
   const nr3 = leaderboard.rankedPlayers[2];

@@ -129,7 +129,7 @@ const PlayerList: React.FC<{
               "h-8 text-left pl-4 rounded-lg",
               "bg-gray-500/50",
               isSelected && "bg-green-500/50 ring-2 ring-white",
-              isDisabled && "text-gray-500",
+              (isDisabled || (!!selectedPlayer && !isSelected)) && "text-gray-500",
               !isSelected && !isDisabled && "hover:bg-gray-500",
             )}
             onClick={() => onClick(player.name)}
