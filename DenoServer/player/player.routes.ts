@@ -5,19 +5,6 @@ import { WebSocketClientManager } from "../web-socket/web-socket-client-manager.
 
 export function registerPlayerRoutes(api: Router, webSocketClientManager: WebSocketClientManager) {
   /**
-   * Get a player by name
-   */
-  api.get("/player/:name", async (context) => {
-    const name = context.params.name;
-    const player = await getPlayer(name);
-    if (player) {
-      context.response.body = player;
-    } else {
-      context.response.status = 404;
-    }
-  });
-
-  /**
    * Create a player
    */
   api.post("/player", async (context) => {

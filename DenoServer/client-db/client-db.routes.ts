@@ -12,8 +12,7 @@ export function registerClientDbRoutes(api: Router) {
    * Get client db data
    */
   api.get("/client-db", async (context) => {
-    const players = await getAllPlayers();
-    const games = await getAllGames();
+    const [players, games] = await Promise.all([getAllPlayers(), getAllGames()]);
     context.response.body = { players, games };
   });
 }

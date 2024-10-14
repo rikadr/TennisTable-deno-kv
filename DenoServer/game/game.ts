@@ -25,32 +25,6 @@ export async function getGame(game: Game): Promise<Game | null> {
   return res.value;
 }
 
-export async function getGamesByPlayer(name: string): Promise<Game[]> {
-  if (!name) {
-    throw new Error("name is required");
-  }
-  const player = await getPlayer(name);
-  if (!player) {
-    throw new Error("Player not found");
-  }
-
-  const games: Game[] = [];
-
-  // Games where player is winner
-  const resWinner = kv.list<Game>({ prefix: ["game", "winner", player.name] });
-  for await (const game of resWinner) {
-    games.push(game.value);
-  }
-  // Games where player is loser
-  const resLoser = kv.list<Game>({ prefix: ["game", "loser", player.name] });
-  for await (const game of resLoser) {
-    games.push(game.value);
-  }
-
-  games.sort((a, b) => a.time - b.time);
-  return games;
-}
-
 export async function createGame(payload: CreateGamePayload): Promise<Game> {
   if (!payload.winner || !payload.loser) {
     throw new Error("winner and loser is required");
@@ -74,12 +48,7 @@ export async function createGame(payload: CreateGamePayload): Promise<Game> {
     time,
   };
 
-  const res = await kv
-    .atomic()
-    .set(keyMain, game)
-    .set(keyWinner, game)
-    .set(keyLoser, game)
-    .commit();
+  const res = await kv.atomic().set(keyMain, game).set(keyWinner, game).set(keyLoser, game).commit();
 
   if (res.ok) {
     return game;
@@ -88,9 +57,7 @@ export async function createGame(payload: CreateGamePayload): Promise<Game> {
   }
 }
 
-export async function importGame(
-  gamedata: CreateGamePayload & { time: number }
-): Promise<Game | undefined> {
+export async function importGame(gamedata: CreateGamePayload & { time: number }): Promise<Game | undefined> {
   if (!gamedata.winner || !gamedata.loser) {
     return;
   }
@@ -112,12 +79,7 @@ export async function importGame(
     time,
   };
 
-  const res = await kv
-    .atomic()
-    .set(keyMain, game)
-    .set(keyWinner, game)
-    .set(keyLoser, game)
-    .commit();
+  const res = await kv.atomic().set(keyMain, game).set(keyWinner, game).set(keyLoser, game).commit();
 
   if (res.ok) {
     return game;
@@ -131,11 +93,7 @@ export async function deleteAllGames(): Promise<{ deleted: number }> {
 
   const games = kv.list<Game>({ prefix: ["game"] });
   for await (const game of games) {
-    const res = await kv
-      .atomic()
-      .check({ key: game.key, versionstamp: game.versionstamp })
-      .delete(game.key)
-      .commit();
+    const res = await kv.atomic().check({ key: game.key, versionstamp: game.versionstamp }).delete(game.key).commit();
     if (res.ok) {
       deleted++;
     }
@@ -150,12 +108,7 @@ export async function deleteGame(game: Game): Promise<{
   const keyWinner = ["game", "winner", game.winner, game.time];
   const keyLoser = ["game", "loser", game.loser, game.time];
 
-  const res = await kv
-    .atomic()
-    .delete(keyMain)
-    .delete(keyWinner)
-    .delete(keyLoser)
-    .commit();
+  const res = await kv.atomic().delete(keyMain).delete(keyWinner).delete(keyLoser).commit();
 
   return { deleted: res.ok };
 }

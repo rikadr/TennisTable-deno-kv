@@ -7,22 +7,12 @@ import {
   deleteAllGames,
   deleteGame,
   getGame,
-  getGamesByPlayer,
   importGame,
 } from "./game.ts";
 import { isAuthenticated, requireAuth } from "../auth-service/middleware.ts";
 import { WebSocketClientManager } from "../web-socket/web-socket-client-manager.ts";
 
 export function registerGameRoutes(api: Router, webSocketClientManager: WebSocketClientManager) {
-  /**
-   * Get all games
-   */
-  api.get("/games/:name", async (context) => {
-    const name = context.params.name;
-    const games = await getGamesByPlayer(name);
-    context.response.body = games;
-  });
-
   /**
    * Create a game
    */

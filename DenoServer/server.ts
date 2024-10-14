@@ -2,7 +2,6 @@ import { Application, Router } from "oak";
 import { oakCors } from "cors";
 import { registerPlayerRoutes } from "./player/player.routes.ts";
 import { registerGameRoutes } from "./game/game.routes.ts";
-import { registerEloRoutes } from "./elo/elo.routes.ts";
 import { registerLeaderboardRoutes } from "./leaderboard/leaderboard.routes.ts";
 import { registerUserRoutes } from "./user/user.routes.ts";
 import { registerWebSocketRoutes } from "./web-socket/web-socket.routs.ts";
@@ -27,7 +26,6 @@ const webSocketClientManager = new WebSocketClientManager();
  */
 registerPlayerRoutes(api, webSocketClientManager);
 registerGameRoutes(api, webSocketClientManager);
-registerEloRoutes(api);
 registerLeaderboardRoutes(api);
 registerWebSocketRoutes(api, webSocketClientManager);
 registerClientDbRoutes(api);
