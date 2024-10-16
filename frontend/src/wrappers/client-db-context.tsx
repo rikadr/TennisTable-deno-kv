@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { httpClient } from "../common/http-client";
 import { createContext, useContext } from "react";
 import { ClientDbDTO } from "./types";
@@ -15,6 +15,7 @@ function useClientDb() {
     },
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -28,13 +29,28 @@ export const ClientDbWrapper: React.FC<{
   const query = useClientDb();
 
   if (query.isLoading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="w-full h-screen flex items-center justify-center">
+        <div className="animate-ping w-fit text-9xl pr-4">🏓</div>
+      </div>
+    );
   }
   if (query.isError) {
-    return <div>Error: {query.error.message}</div>;
+    return (
+      <div className="w-full h-screen flex items-center justify-center">
+        <section>
+          <p>An error occured. Please try again</p>
+          <p>Error message: {query.error?.message}</p>
+        </section>
+      </div>
+    );
   }
   if (!query.data) {
-    return <div>Unable to load data</div>;
+    return (
+      <div className="w-full h-screen flex items-center justify-center">
+        <p>Unable to load data. Please try again</p>
+      </div>
+    );
   }
 
   return <ClientDbContext.Provider value={new TennisTable(query.data)}>{children}</ClientDbContext.Provider>;

@@ -27,9 +27,9 @@ function App() {
   const client = queryClient;
   return (
     <QueryClientProvider client={client}>
-      <WebSocketRefetcher>
-        <ClientDbWrapper>
-          <div className="bg-slate-800 min-h-screen w-full overflow-auto">
+      <div className="bg-slate-800 min-h-screen w-full overflow-auto">
+        <WebSocketRefetcher>
+          <ClientDbWrapper>
             <BrowserRouter>
               <Routes>
                 <Route path="/" element={<Navigate to="/leader-board" />} />
@@ -59,9 +59,9 @@ function App() {
                 />
               </Routes>
             </BrowserRouter>
-          </div>
-        </ClientDbWrapper>
-      </WebSocketRefetcher>
+          </ClientDbWrapper>
+        </WebSocketRefetcher>
+      </div>
     </QueryClientProvider>
   );
 }
