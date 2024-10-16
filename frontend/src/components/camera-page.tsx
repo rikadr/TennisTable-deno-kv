@@ -13,14 +13,6 @@ export const CameraPage: React.FC = () => {
     img && setImgUrl(img);
   }
 
-  const captureInput = (target: EventTarget & HTMLInputElement) => {
-    if (target.files && target.files.length !== 0) {
-      const file = target.files[0];
-      const newUrl = URL.createObjectURL(file);
-      setImgUrl(newUrl);
-    }
-  };
-
   return (
     <div className="space-y-4">
       <Link
@@ -30,13 +22,6 @@ export const CameraPage: React.FC = () => {
         Back to leaderboard
       </Link>
       <h1>Camera page</h1>
-      <input
-        accept="image/*"
-        id="icon-button-file"
-        type="file"
-        capture="user"
-        onChange={(e) => captureInput(e.target)}
-      />
       <p>Soon you might be able to set your player profile picture</p>
       {imgUrl && <img src={imgUrl} alt="captured" />}
       {!hasMediaStream && (
@@ -46,13 +31,18 @@ export const CameraPage: React.FC = () => {
       )}
       <Webcam
         ref={webCamRef}
-        className={classNames(imgUrl ? "hidden" : "")}
+        className={classNames(imgUrl && "hidden")}
         screenshotFormat="image/jpeg"
         screenshotQuality={1}
         imageSmoothing
         mirrored
         audio={false}
-        videoConstraints={{ width: 500, height: 500, facingMode: "user", aspectRatio: 1, noiseSuppression: true }}
+        videoConstraints={{
+          width: 500,
+          height: 500,
+          facingMode: "user",
+          noiseSuppression: true,
+        }}
         onUserMedia={() => setHasMediaStream(true)}
         onUserMediaError={() => setHasMediaStream(false)}
       />
