@@ -13,6 +13,7 @@ import { session } from "./services/auth";
 import { SignupPage } from "./components/sign-up";
 import { WebSocketRefetcher } from "./wrappers/web-socket-refetcher";
 import { ClientDbWrapper } from "./wrappers/client-db-context";
+import { CameraPage } from "./components/camera-page";
 
 const RequireAuth: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   if (!session.isAuthenticated) {
@@ -38,6 +39,7 @@ function App() {
                 <Route path="/compare-players" element={<ComparePlayersPage />} />
                 <Route path="/player/:name" element={<PlayerPage />} />
                 <Route path="/add-player" element={<AddPlayerPage />} />
+                <Route path="/camera" element={<CameraPage />} />
                 <Route path="/add-game" element={<AddGamePage />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/sign-up" element={<SignupPage />} />

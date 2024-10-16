@@ -1,7 +1,7 @@
 import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { queryClient } from "../common/query-client";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { httpClient } from "../common/http-client";
 
 export const AddPlayerPage: React.FC = () => {
@@ -28,6 +28,12 @@ export const AddPlayerPage: React.FC = () => {
 
   return (
     <div className="flex flex-col items-center gap-2">
+      <Link
+        to="/leader-board"
+        className="whitespace-nowrap text-sm font-thin ring-1 ring-white px-2 py-1 mt-1 rounded-lg hover:bg-gray-500/50"
+      >
+        Back to leaderboard
+      </Link>
       <h1>Add player</h1>
       <p>Player name</p>
       <input

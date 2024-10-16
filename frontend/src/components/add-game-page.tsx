@@ -1,7 +1,7 @@
 import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { queryClient } from "../common/query-client";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { PlayersDTO } from "./admin-page";
 import { classNames } from "../common/class-names";
 import { httpClient } from "../common/http-client";
@@ -36,6 +36,12 @@ export const AddGamePage: React.FC = () => {
   return (
     <div className="w-full flex justify-center">
       <div className="space-y-4 p-4 w-fit">
+        <Link
+          to="/leader-board"
+          className="whitespace-nowrap text-sm font-thin ring-1 ring-white px-2 py-1 mt-1 rounded-lg hover:bg-gray-500/50"
+        >
+          Back to leaderboard
+        </Link>
         <button
           disabled={!winner || !loser || addGameMutation.isPending}
           className={classNames(

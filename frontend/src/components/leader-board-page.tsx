@@ -44,6 +44,7 @@ export const LeaderBoardPage: React.FC = () => {
         <NavigationLink to="/add-game" text="Add played game +🏓" className="bg-green-700 hover:bg-green-900" />
         <NavigationLink to="/add-player" text="Add player +👤" className="bg-green-700 hover:bg-green-900" />
         <NavigationLink to="/compare-players" text="Compare players 📊" className="bg-pink-500/70 hover:bg-pink-900" />
+        <NavigationLink to="/camera" text="Camera 📸" className="bg-indigo-700 hover:bg-indigo-800" />
         {session.isAuthenticated ? (
           <>
             <LogOutButton className="bg-blue-700 hover:bg-blue-900" />
