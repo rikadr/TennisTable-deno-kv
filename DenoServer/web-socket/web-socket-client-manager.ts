@@ -43,11 +43,9 @@ export class WebSocketClientManager {
     const socket = context.upgrade();
 
     socket.onopen = () => {
-      console.log("Connected to client ✅");
       this.addClient(socket);
     };
     socket.onclose = () => {
-      console.log("Closed connection 🛑");
       this.removeClient(socket);
     };
     socket.onerror = () => {
