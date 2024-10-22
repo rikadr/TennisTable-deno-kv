@@ -4,7 +4,7 @@ import { Link, Outlet } from "react-router-dom";
 import { classNames } from "../common/class-names";
 import { session } from "../services/auth";
 
-const MENU_HEIGHT = "h-20 md:h-16";
+const MENU_HEIGHT = "h-20 md:h-12";
 
 export const NavMenu: React.FC = () => {
   const menuItems = useMemo(
@@ -44,7 +44,7 @@ export const NavMenu: React.FC = () => {
 
         {/* Left Item - Leaderboard link */}
         <Link to="/leader-board" className="flex-1 flex justify-center items-center">
-          <p className="hover:underline w-full text-xl font-semibold text-center">Leaderboard</p>
+          <p className="hover:underline w-full text-2xl md:text-xl font-semibold text-center">Leaderboard</p>
         </Link>
 
         {/* Middle Item - Plus Button */}
@@ -85,15 +85,15 @@ export const NavMenu: React.FC = () => {
                       key={index}
                       as={Link}
                       to={item.to}
-                      className="flex items-center justify-end md:justify-start h-10 hover:underline px-12"
+                      className="flex items-center justify-end md:justify-start h-16 md:h-10 hover:underline px-12"
                     >
-                      <p className="text-xl font-semibold">{item.name}</p>
+                      <p className="text-2xl md:text-xl font-semibold">{item.name}</p>
                     </CloseButton>
                   ))}
                   {session.isAuthenticated && (
                     <button
                       className={classNames(
-                        "flex items-center justify-end md:justify-start h-10 hover:underline w-full text-xl font-semibold text-center whitespace-nowrap text-white px-12 rounded-md",
+                        "flex items-center justify-end md:justify-start h-16 md:h-10 hover:underline w-full text-2xl md:text-xl font-semibold text-center whitespace-nowrap text-white px-12 rounded-md",
                       )}
                       onClick={() => {
                         session.token = undefined;
