@@ -10,7 +10,9 @@ export const NavMenu: React.FC = () => {
   const menuItems = useMemo(
     () => {
       const items: { name: string; to: string }[] = [
-        { name: "Score Timeline", to: "/compare-players" },
+        { name: "+🏓  Add game ", to: "/add-game" },
+        { name: "+👤  New player  ", to: "/add-player" },
+        { name: "📈 Compare players", to: "/compare-players" },
         { name: "Camera", to: "/camera" },
       ];
       if (session.isAuthenticated) {
@@ -27,11 +29,10 @@ export const NavMenu: React.FC = () => {
 
   return (
     <div className="">
-      <div
-        aria-label="menu displacer"
-        className={classNames("hidden md:visible md:flex w-full md:mb-4", MENU_HEIGHT)}
-      />
-      <Outlet />
+      <div aria-label="menu displacer" className={classNames("hidden md:visible md:flex w-full", MENU_HEIGHT)} />
+      <div className="mt-4 mb-24">
+        <Outlet />
+      </div>
       <div
         className={classNames(
           "fixed inset-x-0 bottom-0 md:top-0 bg-slate-600 text-white flex justify-between items-center p-4",
@@ -47,9 +48,9 @@ export const NavMenu: React.FC = () => {
         </Link>
 
         {/* Middle Item - Plus Button */}
-        <button className="flex-1 flex justify-center items-center">
+        {/* <button className="flex-1 flex justify-center items-center">
           <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-2xl pb-1">+</div>
-        </button>
+        </button> */}
 
         {/* Right Item - Burger Menu */}
         <Popover className="relative flex-1 flex justify-center items-center">
