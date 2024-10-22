@@ -21,7 +21,7 @@ export const LeaderBoard: React.FC = () => {
       <div className="space-y-2">
         <Link
           to={`/player/${nr1.name}`}
-          className="bg-gray-500/50 w-96 h-20 p-2 rounded-lg flex space-x-4 hover:bg-gray-500/75"
+          className="bg-slate-600 w-96 h-20 p-2 rounded-lg flex space-x-4 hover:bg-slate-500"
         >
           <div className="w-16 text-center text-6xl">🥇</div>
           <section className="grow">
@@ -44,7 +44,7 @@ export const LeaderBoard: React.FC = () => {
         </Link>
         <Link
           to={`/player/${nr2.name}`}
-          className="bg-gray-500/50 w-96 h-16 p-2 rounded-lg flex space-x-4 hover:bg-gray-500/75"
+          className="bg-slate-600 w-96 h-16 p-2 rounded-lg flex space-x-4 hover:bg-slate-500"
         >
           <div className="w-16 text-center text-5xl">🥈</div>
           <section className="grow">
@@ -67,7 +67,7 @@ export const LeaderBoard: React.FC = () => {
         </Link>
         <Link
           to={`/player/${nr3.name}`}
-          className="bg-gray-500/50 w-96 h-14 p-2 rounded-lg flex space-x-4 hover:bg-gray-500/75"
+          className="bg-slate-600 w-96 h-14 p-2 rounded-lg flex space-x-4 hover:bg-slate-500"
         >
           <div className="w-16 text-center text-4xl">🥉</div>
           <section className="grow -mt-1">
@@ -92,7 +92,7 @@ export const LeaderBoard: React.FC = () => {
         <p className="w-full pl-20 ml-2 pt-2 italic">Last place...</p>
         <Link
           to={`/player/${lastPlace.name}`}
-          className="bg-gray-500/50 w-96 h-12 p-2 rounded-lg flex space-x-4 hover:bg-gray-500/75"
+          className="bg-slate-600 w-96 h-12 p-2 rounded-lg flex space-x-4 hover:bg-slate-500"
         >
           <div className="w-16 text-center text-2xl">💩</div>
           <section className="grow -mt-1">
@@ -132,7 +132,7 @@ export const LeaderBoard: React.FC = () => {
             {leaderboard.rankedPlayers.map((player, index) => (
               <tr key={index}>
                 <td>
-                  <Link to={`/player/${player.name}`} className="h-full hover:bg-gray-500/50 flex w-full">
+                  <Link to={`/player/${player.name}`} className="h-full hover:bg-slate-600 flex w-full">
                     <div className="font-thin text-slate-400 w-10 text-center">#{player.rank}</div>
                     {player.name}
                   </Link>
@@ -170,7 +170,7 @@ export const LeaderBoard: React.FC = () => {
             {leaderboard.unrankedPlayers.map((player, index) => (
               <tr key={index}>
                 <td>
-                  <Link to={`/player/${player.name}`} className="h-full hover:bg-gray-500/50 flex w-full">
+                  <Link to={`/player/${player.name}`} className="h-full hover:bg-slate-600 flex w-full">
                     <div className="font-thin text-slate-400 w-10 text-center">#{player.potentialRank}</div>
                     {player.name}
                   </Link>
