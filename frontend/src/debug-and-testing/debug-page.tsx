@@ -1,5 +1,5 @@
 import React from "react";
-import { NavigationLink } from "../components/leader-board-page";
+import { NavigationLink } from "../pages/leader-board-page";
 
 export const DebugPage: React.FC = () => {
   return (
