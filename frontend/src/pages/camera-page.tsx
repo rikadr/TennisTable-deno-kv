@@ -1,7 +1,6 @@
 import React, { useRef, useState } from "react";
 import Webcam from "react-webcam";
 import { classNames } from "../common/class-names";
-import { Link } from "react-router-dom";
 import Avatar from "react-avatar-edit";
 
 export const CameraPage: React.FC = () => {
@@ -26,12 +25,6 @@ export const CameraPage: React.FC = () => {
 
   return (
     <div className="flex flex-col gap-4 items-center">
-      <Link
-        to="/leader-board"
-        className="whitespace-nowrap text-sm font-thin ring-1 ring-white px-2 py-1 mt-1 rounded-lg hover:bg-gray-500/50"
-      >
-        Back to leaderboard
-      </Link>
       <h1>Camera page</h1>
       <p>Soon you might be able to set your player profile picture</p>
       {!hasMediaStream && (
