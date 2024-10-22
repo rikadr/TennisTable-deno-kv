@@ -14,6 +14,9 @@ import { SignupPage } from "./components/sign-up";
 import { WebSocketRefetcher } from "./wrappers/web-socket-refetcher";
 import { ClientDbWrapper } from "./wrappers/client-db-context";
 import { CameraPage } from "./components/camera-page";
+import { DebugPage } from "./debug-and-testing/debug-page";
+import { V2Wrapper } from "./debug-and-testing/v2-wrapper";
+import { ZoomWrapper } from "./wrappers/zoom-wrapper";
 
 const RequireAuth: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   if (!session.isAuthenticated) {
@@ -31,36 +34,43 @@ function App() {
       <div className="bg-slate-800 min-h-screen w-full overflow-auto">
         <WebSocketRefetcher>
           <ClientDbWrapper>
-            <BrowserRouter>
-              <Routes>
-                <Route path="/" element={<Navigate to="/leader-board" />} />
-                <Route path="/tennis-table" element={<Navigate to="/leader-board" />} />
-                <Route path="/leader-board" element={<LeaderBoardPage />} />
-                <Route path="/compare-players" element={<ComparePlayersPage />} />
-                <Route path="/player/:name" element={<PlayerPage />} />
-                <Route path="/add-player" element={<AddPlayerPage />} />
-                <Route path="/camera" element={<CameraPage />} />
-                <Route path="/add-game" element={<AddGamePage />} />
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/sign-up" element={<SignupPage />} />
-                <Route
-                  path="/admin"
-                  element={
-                    <RequireAuth>
-                      <AdminPage />
-                    </RequireAuth>
-                  }
-                />
-                <Route
-                  path="/me"
-                  element={
-                    <RequireAuth>
-                      <MyPage />
-                    </RequireAuth>
-                  }
-                />
-              </Routes>
-            </BrowserRouter>
+            <ZoomWrapper>
+              <BrowserRouter>
+                <Routes>
+                  <Route path="/" element={<Navigate to="/leader-board" />} />
+                  <Route path="/tennis-table" element={<Navigate to="/leader-board" />} />
+                  <Route path="/leader-board" element={<LeaderBoardPage />} />
+                  <Route path="/compare-players" element={<ComparePlayersPage />} />
+                  <Route path="/player/:name" element={<PlayerPage />} />
+                  <Route path="/add-player" element={<AddPlayerPage />} />
+                  <Route path="/camera" element={<CameraPage />} />
+                  <Route path="/add-game" element={<AddGamePage />} />
+                  <Route path="/login" element={<LoginPage />} />
+                  <Route path="/sign-up" element={<SignupPage />} />
+                  <Route path="/debug" element={<DebugPage />} />
+                  <Route path="/v2" element={<V2Wrapper />}>
+                    <Route index element={<div>Heyyy from app.tsx. This is the index in the v2 route</div>} />
+                    <Route path="a" element={<div>Heyyy from app.tsx</div>} />
+                  </Route>
+                  <Route
+                    path="/admin"
+                    element={
+                      <RequireAuth>
+                        <AdminPage />
+                      </RequireAuth>
+                    }
+                  />
+                  <Route
+                    path="/me"
+                    element={
+                      <RequireAuth>
+                        <MyPage />
+                      </RequireAuth>
+                    }
+                  />
+                </Routes>
+              </BrowserRouter>
+            </ZoomWrapper>
           </ClientDbWrapper>
         </WebSocketRefetcher>
       </div>

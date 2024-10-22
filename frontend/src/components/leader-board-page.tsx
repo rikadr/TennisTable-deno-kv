@@ -1,11 +1,11 @@
-import React from "react";
-import { Link } from "react-router-dom";
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { LeaderBoard } from "./leader-board";
 
 import { classNames } from "../common/class-names";
 import { session } from "../services/auth";
 
-const NavigationLink: React.FC<{ to: string; text: string; className?: string }> = (props) => {
+export const NavigationLink: React.FC<{ to: string; text: string; className?: string }> = (props) => {
   return (
     <Link
       className={classNames(
@@ -37,14 +37,25 @@ const LogOutButton: React.FC<{ className?: string }> = (props) => {
 };
 
 export const LeaderBoardPage: React.FC = () => {
+  const [count, setCount] = useState(0);
+  const navigate = useNavigate();
   return (
     <div className="flex flex-col items-center">
       <section className="flex gap-x-4 gap-y-2 items-baseline flex-col w-56 sm:w-fit sm:flex-row p-1">
-        <div className="whitespace-nowrap">Tennis🏆💔Table</div>
+        <div
+          className="whitespace-nowrap"
+          onClick={() => {
+            if (count === 5) {
+              navigate("/debug");
+            }
+            setCount(count + 1);
+          }}
+        >
+          Tennis🏆💔Table
+        </div>
         <NavigationLink to="/add-game" text="Add played game +🏓" className="bg-green-700 hover:bg-green-900" />
         <NavigationLink to="/add-player" text="Add player +👤" className="bg-green-700 hover:bg-green-900" />
         <NavigationLink to="/compare-players" text="Compare players 📊" className="bg-pink-500/70 hover:bg-pink-900" />
-        <NavigationLink to="/camera" text="Camera 📸" className="bg-indigo-700 hover:bg-indigo-800" />
         {session.isAuthenticated ? (
           <>
             <LogOutButton className="bg-blue-700 hover:bg-blue-900" />
