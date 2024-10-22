@@ -8,11 +8,11 @@ type Props = {
 export const ZoomWrapper: React.FC<Props> = ({ children }) => {
   const [zoomLevel, setZoomLevel] = useLocalStorage("app-zoom-level", 1);
 
-  const showZoomControls = window.location.pathname === "/debug";
+  const showZoomControls = window.location.pathname === "/login";
 
   return (
     <div className="relative" style={{ zoom: zoomLevel }}>
-      <div className={classNames("absolute top-4 right-4 flex gap-2", showZoomControls === false && "hidden")}>
+      <div className={classNames("absolute top-20 right-4 flex gap-2", showZoomControls === false && "hidden")}>
         <p>App zoom level: {Math.round(zoomLevel * 100)}%</p>
         <button
           className="px-4 py-1 rounded-md bg-blue-500 hover:bg-blue-700"
