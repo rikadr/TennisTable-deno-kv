@@ -35,12 +35,14 @@ export const NavMenu: React.FC = () => {
       </div>
       <div
         className={classNames(
-          "fixed inset-x-0 bottom-0 md:top-0 bg-slate-600 text-white flex justify-between items-center p-4",
+          "fixed inset-x-0 bottom-0 md:top-0 bg-slate-600 text-white flex justify-between items-center p-4 overflow-hidden",
           MENU_HEIGHT,
         )}
       >
         {/* Logo for desktop menu */}
-        <div className="hidden md:visible md:flex whitespace-nowrap bg-slate-800 p-6 rounded-full">Tennis🏆💔Table</div>
+        <div className="hidden md:visible md:flex whitespace-nowrap bg-slate-800 py-4 px-6 rounded-full">
+          Tennis🏆💔Table
+        </div>
 
         {/* Left Item - Leaderboard link */}
         <Link to="/leader-board" className="flex-1 flex justify-center items-center">
