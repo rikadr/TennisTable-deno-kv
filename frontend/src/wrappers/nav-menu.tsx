@@ -41,7 +41,10 @@ export const NavMenu: React.FC = () => {
         )}
       >
         {/* Logo for desktop menu */}
-        <Link to="/leader-board" className=" whitespace-nowrap bg-slate-800 py-4 px-6 rounded-full select-none">
+        <Link
+          to="/leader-board"
+          className=" whitespace-nowrap bg-slate-800 py-4 px-6 rounded-full select-none hover:bg-slate-500"
+        >
           Tennis🏆💔Table
         </Link>
 

@@ -158,7 +158,7 @@ export class Leaderboard {
       winner.elo = winnersNewElo;
       loser.elo = losersNewElo;
 
-      if (winner.elo - loser.elo > FARMER_DIFF_THRESHOLD) {
+      if (winner.games.length > Elo.GAME_LIMIT_FOR_RANKED && winner.elo - loser.elo > FARMER_DIFF_THRESHOLD) {
         winner.farmerGames++;
       }
     });
