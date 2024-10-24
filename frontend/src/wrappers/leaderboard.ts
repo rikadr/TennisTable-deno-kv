@@ -126,6 +126,7 @@ export class Leaderboard {
         elo: Elo.INITIAL_ELO,
         wins: 0,
         loss: 0,
+        farmerScore: 0,
         games: [],
       });
       return leaderboardMap.get(name)!;
@@ -150,12 +151,48 @@ export class Leaderboard {
         eloAfterGame: losersNewElo,
         pointsDiff: -pointsWon,
       });
+
       winner.wins++;
       loser.loss++;
+
       winner.elo = winnersNewElo;
       loser.elo = losersNewElo;
+
+      const { winnerNewFarmerScore, loserNewFarmerScore } = calculateFarmerScore(winner, loser);
+      winner.farmerScore = winnerNewFarmerScore;
+      loser.farmerScore = loserNewFarmerScore;
     });
 
     return leaderboardMap;
   }
+}
+
+const FARMER_DIFF_THRESHOLD = 100;
+
+function calculateFarmerScore(
+  winner: PlayerSummary,
+  loser: PlayerSummary,
+): { winnerNewFarmerScore: number; loserNewFarmerScore: number } {
+  const eloDiff = Math.abs(winner.elo - loser.elo);
+
+  if (eloDiff < FARMER_DIFF_THRESHOLD) {
+    // Not enough elo difference to be considered a farmer
+    return { winnerNewFarmerScore: winner.farmerScore, loserNewFarmerScore: loser.farmerScore };
+  }
+
+  const farmerScoreIncrement = eloDiff / 100;
+
+  // Farmer won
+  if (winner.elo > loser.elo) {
+    return {
+      winnerNewFarmerScore: winner.farmerScore + farmerScoreIncrement,
+      loserNewFarmerScore: loser.farmerScore - farmerScoreIncrement,
+    };
+  }
+
+  // Farmer lost
+  return {
+    winnerNewFarmerScore: winner.farmerScore - farmerScoreIncrement,
+    loserNewFarmerScore: loser.farmerScore - farmerScoreIncrement,
+  };
 }

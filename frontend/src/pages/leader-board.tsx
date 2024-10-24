@@ -126,6 +126,11 @@ export const LeaderBoard: React.FC = () => {
               {/* <th className="text-right">Win 🏆</th>
               <th className="text-right">Loss 💔</th> */}
               <th className="text-right">🏆:💔</th>
+              <th className="text-right flex items-end flex-col">
+                <p className="w-fit">👨🏻‍🌾🐔</p>
+                <p className="text-xs w-fit">Farmer score</p>
+                <p className="text-xs w-fit">(Beta testing)</p>
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -149,6 +154,7 @@ export const LeaderBoard: React.FC = () => {
                     maximumFractionDigits: 1,
                   })}
                 </td>
+                <td className="text-right">{Math.round(player.farmerScore)}</td>
               </tr>
             ))}
           </tbody>
