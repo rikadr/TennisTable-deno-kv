@@ -126,7 +126,7 @@ export class Leaderboard {
         elo: Elo.INITIAL_ELO,
         wins: 0,
         loss: 0,
-        farmerScore: 0,
+        farmerGames: 0,
         games: [],
       });
       return leaderboardMap.get(name)!;
@@ -158,9 +158,9 @@ export class Leaderboard {
       winner.elo = winnersNewElo;
       loser.elo = losersNewElo;
 
-      const { winnerNewFarmerScore, loserNewFarmerScore } = calculateFarmerScore(winner, loser);
-      winner.farmerScore = winnerNewFarmerScore;
-      loser.farmerScore = loserNewFarmerScore;
+      if (winner.elo - loser.elo > FARMER_DIFF_THRESHOLD) {
+        winner.farmerGames++;
+      }
     });
 
     return leaderboardMap;
@@ -168,33 +168,3 @@ export class Leaderboard {
 }
 
 const FARMER_DIFF_THRESHOLD = 100;
-
-function calculateFarmerScore(
-  winner: PlayerSummary,
-  loser: PlayerSummary,
-): { winnerNewFarmerScore: number; loserNewFarmerScore: number } {
-  const eloDiff = Math.abs(winner.elo - loser.elo);
-
-  const farmerScoreIncrement = eloDiff / 100;
-  if (eloDiff < FARMER_DIFF_THRESHOLD) {
-    // Not enough elo difference to be considered a farmer
-    return {
-      winnerNewFarmerScore: winner.farmerScore - farmerScoreIncrement / 2,
-      loserNewFarmerScore: loser.farmerScore - farmerScoreIncrement / 2,
-    };
-  }
-
-  // Farmer won
-  if (winner.elo > loser.elo) {
-    return {
-      winnerNewFarmerScore: winner.farmerScore + farmerScoreIncrement,
-      loserNewFarmerScore: loser.farmerScore - farmerScoreIncrement,
-    };
-  }
-
-  // Farmer lost
-  return {
-    winnerNewFarmerScore: winner.farmerScore - farmerScoreIncrement,
-    loserNewFarmerScore: loser.farmerScore - farmerScoreIncrement,
-  };
-}

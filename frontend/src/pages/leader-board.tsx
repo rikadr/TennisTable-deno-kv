@@ -154,7 +154,7 @@ export const LeaderBoard: React.FC = () => {
                     maximumFractionDigits: 1,
                   })}
                 </td>
-                <td className="text-right">{Math.round(player.farmerScore)}</td>
+                <td className="text-right">{Math.round((player.farmerGames / player.games.length) * 10)}</td>
               </tr>
             ))}
           </tbody>

@@ -9,7 +9,7 @@ export type PlayerSummary = {
   elo: number;
   wins: number;
   loss: number;
-  farmerScore: number;
+  farmerGames: number;
   games: {
     time: number;
     result: "win" | "loss";
