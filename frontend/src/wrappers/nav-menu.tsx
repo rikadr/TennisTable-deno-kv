@@ -10,8 +10,9 @@ export const NavMenu: React.FC = () => {
   const menuItems = useMemo(
     () => {
       const items: { name: string; to: string }[] = [
-        { name: "+🏓  Add game ", to: "/add-game" },
-        { name: "+👤  New player  ", to: "/add-player" },
+        { name: "🏆 Leaderboard", to: "/leader-board" },
+        { name: "+🏓  Add game", to: "/add-game" },
+        { name: "+👤  New player", to: "/add-player" },
         { name: "📈 Compare players", to: "/compare-players" },
         { name: "Camera", to: "/camera" },
       ];
@@ -40,22 +41,14 @@ export const NavMenu: React.FC = () => {
         )}
       >
         {/* Logo for desktop menu */}
-        <div className="hidden md:visible md:flex whitespace-nowrap bg-slate-800 py-4 px-6 rounded-full">
+        <Link to="/leader-board" className=" whitespace-nowrap bg-slate-800 py-4 px-6 rounded-full select-none">
           Tennis🏆💔Table
-        </div>
-
-        {/* Left Item - Leaderboard link */}
-        <Link to="/leader-board" className="flex-1 flex justify-center items-center">
-          <p className="hover:underline w-full text-2xl md:text-xl font-semibold text-center">Leaderboard</p>
         </Link>
 
-        {/* Middle Item - Plus Button */}
-        {/* <button className="flex-1 flex justify-center items-center">
-          <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-2xl pb-1">+</div>
-        </button> */}
+        <div className="grow" />
 
         {/* Right Item - Burger Menu */}
-        <Popover className="relative flex-1 flex justify-center items-center">
+        <Popover className="relative flex justify-center items-center">
           {({ open }) => {
             return (
               <>
