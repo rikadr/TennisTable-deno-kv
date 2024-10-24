@@ -175,12 +175,14 @@ function calculateFarmerScore(
 ): { winnerNewFarmerScore: number; loserNewFarmerScore: number } {
   const eloDiff = Math.abs(winner.elo - loser.elo);
 
+  const farmerScoreIncrement = eloDiff / 100;
   if (eloDiff < FARMER_DIFF_THRESHOLD) {
     // Not enough elo difference to be considered a farmer
-    return { winnerNewFarmerScore: winner.farmerScore, loserNewFarmerScore: loser.farmerScore };
+    return {
+      winnerNewFarmerScore: winner.farmerScore - farmerScoreIncrement / 2,
+      loserNewFarmerScore: loser.farmerScore - farmerScoreIncrement / 2,
+    };
   }
-
-  const farmerScoreIncrement = eloDiff / 100;
 
   // Farmer won
   if (winner.elo > loser.elo) {
