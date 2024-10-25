@@ -7,7 +7,18 @@ module.exports = {
     fontFamily: {
       display: ["Oooh Baby", "cursive"],
     },
-    extend: {},
+    extend: {
+      colors: {
+        primary: {
+          text: "#FFFFFF",
+          background: "#333333",
+        },
+        secondary: {
+          text: "#333333",
+          background: "#AAAFB5",
+        },
+      },
+    },
   },
   plugins: [],
 };

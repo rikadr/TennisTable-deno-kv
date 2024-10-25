@@ -22,17 +22,17 @@ export const PlayerPage: React.FC = () => {
   return (
     <div className="flex flex-col items-center">
       <section className="space-y-1 my-4">
-        <div className="bg-gray-500/50 w-96 h-20 p-2 rounded-lg flex space-x-4">
+        <div className="bg-secondary-background w-96 h-20 p-2 rounded-lg flex space-x-4">
           {summary?.isRanked ? (
-            <div className="w-16 text-3xl rounded-lg bg-white text-gray-500 flex items-center justify-center">
+            <div className="w-16 text-3xl rounded-lg bg-primary-background text-primary-text flex items-center justify-center">
               #{summary.rank}
             </div>
           ) : (
-            <div className="w-16 text-sm rounded-lg bg-white text-gray-500 flex items-center justify-center">
+            <div className="w-16 text-sm rounded-lg bg-primary-background text-primary-text flex items-center justify-center">
               <p className="text-center">Not yet ranked</p>
             </div>
           )}
-          <section className="grow">
+          <section className="grow text-secondary-text">
             <h2 className="uppercase text-xl">{name}</h2>
             <section className="flex space-x-4 text-md">
               <div>
@@ -59,7 +59,7 @@ export const PlayerPage: React.FC = () => {
           data={summary?.games}
           margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
         >
-          <CartesianGrid strokeDasharray="1 4" vertical={false} />
+          <CartesianGrid strokeDasharray="1 4" vertical={false} stroke="#666" />
           <XAxis dataKey="name" />
           <YAxis
             type="number"
@@ -100,7 +100,10 @@ export const PlayerPage: React.FC = () => {
               return (
                 <tr key={index}>
                   <td className="text-left px-4">
-                    <Link to={`/player/${game.oponent}`} className="h-full hover:bg-gray-500/50 flex w-full">
+                    <Link
+                      to={`/player/${game.oponent}`}
+                      className="h-full hover:bg-secondary-background/10 flex w-full"
+                    >
                       {game.result === "win" ? "🏆 " : "💔 "} {game.oponent}
                     </Link>
                   </td>
@@ -124,7 +127,7 @@ const CustomTooltip: React.FC = ({ active, payload, label }: TooltipProps<ValueT
   if (active && payload && payload.length) {
     const game = payload[0].payload;
     return (
-      <div className="p-2 bg-slate-700 ring-1 ring-white rounded-lg">
+      <div className="p-2 bg-primary-background ring-1 ring-primary-text rounded-lg text-primary-text">
         <p className="">{`Elo : ${payload[0].value?.toLocaleString("no-NO", { maximumFractionDigits: 0 })}`}</p>
         <p className="desc">
           {game?.result === "win"

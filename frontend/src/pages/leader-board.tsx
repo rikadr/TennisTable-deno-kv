@@ -21,10 +21,10 @@ export const LeaderBoard: React.FC = () => {
       <div className="space-y-2">
         <Link
           to={`/player/${nr1.name}`}
-          className="bg-slate-600 w-96 h-20 p-2 rounded-lg flex space-x-4 hover:bg-slate-500"
+          className="bg-secondary-background w-96 h-20 p-2 rounded-lg flex space-x-4 hover:bg-secondary-background/70"
         >
           <div className="w-16 text-center text-6xl">🥇</div>
-          <section className="grow">
+          <section className="grow text-secondary-text">
             <h2 className="uppercase text-xl">{nr1.name} </h2>
             <section className="flex space-x-4 text-md">
               <div>
@@ -44,10 +44,10 @@ export const LeaderBoard: React.FC = () => {
         </Link>
         <Link
           to={`/player/${nr2.name}`}
-          className="bg-slate-600 w-96 h-16 p-2 rounded-lg flex space-x-4 hover:bg-slate-500"
+          className="bg-secondary-background w-96 h-16 p-2 rounded-lg flex space-x-4 hover:bg-secondary-background/70"
         >
           <div className="w-16 text-center text-5xl">🥈</div>
-          <section className="grow">
+          <section className="grow text-secondary-text">
             <h2 className="uppercase text-lg">{nr2.name} </h2>
             <section className="flex space-x-4 text-sm">
               <div>
@@ -67,10 +67,10 @@ export const LeaderBoard: React.FC = () => {
         </Link>
         <Link
           to={`/player/${nr3.name}`}
-          className="bg-slate-600 w-96 h-14 p-2 rounded-lg flex space-x-4 hover:bg-slate-500"
+          className="bg-secondary-background w-96 h-14 p-2 rounded-lg flex space-x-4 hover:bg-secondary-background/70"
         >
           <div className="w-16 text-center text-4xl">🥉</div>
-          <section className="grow -mt-1">
+          <section className="grow -mt-1 text-secondary-text">
             <h2 className="uppercase text-md">{nr3.name} </h2>
             <section className="flex space-x-4 text-sm">
               <div>
@@ -92,12 +92,12 @@ export const LeaderBoard: React.FC = () => {
         <p className="w-full pl-20 ml-2 pt-2 italic">Last place...</p>
         <Link
           to={`/player/${lastPlace.name}`}
-          className="bg-slate-600 w-96 h-12 p-2 rounded-lg flex space-x-4 hover:bg-slate-500"
+          className="bg-secondary-background w-96 h-12 p-2 rounded-lg flex space-x-4 hover:bg-secondary-background/70"
         >
           <div className="w-16 text-center text-2xl">💩</div>
-          <section className="grow -mt-1">
+          <section className="grow -mt-1 text-secondary-text">
             <h2 className="uppercase text-sm">
-              {lastPlace.name} <span className="font-thin text-slate-400 px-1">#{lastPlace.rank}</span>
+              {lastPlace.name} <span className="font-thin text-secondary-text px-1">#{lastPlace.rank}</span>
             </h2>
             <section className="flex space-x-4 text-xs">
               <div>
@@ -137,8 +137,8 @@ export const LeaderBoard: React.FC = () => {
             {leaderboard.rankedPlayers.map((player, index) => (
               <tr key={index}>
                 <td>
-                  <Link to={`/player/${player.name}`} className="h-full hover:bg-slate-600 flex w-full">
-                    <div className="font-thin text-slate-400 w-10 text-center">#{player.rank}</div>
+                  <Link to={`/player/${player.name}`} className="h-full hover:bg-secondary-background/10 flex w-full">
+                    <div className="font-thin text-primary-text w-10 text-center">#{player.rank}</div>
                     {player.name}
                   </Link>
                 </td>
@@ -176,8 +176,8 @@ export const LeaderBoard: React.FC = () => {
             {leaderboard.unrankedPlayers.map((player, index) => (
               <tr key={index}>
                 <td>
-                  <Link to={`/player/${player.name}`} className="h-full hover:bg-slate-600 flex w-full">
-                    <div className="font-thin text-slate-400 w-10 text-center">#{player.potentialRank}</div>
+                  <Link to={`/player/${player.name}`} className="h-full hover:bg-secondary-background/10 flex w-full">
+                    <div className="font-thin text-primary-text w-10 text-center">#{player.potentialRank}</div>
                     {player.name}
                   </Link>
                 </td>

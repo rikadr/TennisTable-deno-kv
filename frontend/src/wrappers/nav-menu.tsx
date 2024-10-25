@@ -36,14 +36,14 @@ export const NavMenu: React.FC = () => {
       </div>
       <div
         className={classNames(
-          "fixed inset-x-0 bottom-0 md:top-0 bg-slate-600 text-white flex justify-between items-center p-4 overflow-hidden",
+          "fixed inset-x-0 bottom-0 md:top-0 bg-secondary-background text-white flex justify-between items-center p-4 overflow-hidden",
           MENU_HEIGHT,
         )}
       >
         {/* Logo for desktop menu */}
         <Link
           to="/leader-board"
-          className=" whitespace-nowrap bg-slate-800 py-4 px-6 rounded-full select-none hover:bg-slate-500"
+          className=" whitespace-nowrap bg-primary-background py-4 px-6 rounded-full select-none hover:bg-primary-background/70 text-primary-text"
         >
           Tennis🏆💔Table
         </Link>
@@ -55,18 +55,20 @@ export const NavMenu: React.FC = () => {
           {({ open }) => {
             return (
               <>
-                <PopoverButton className="py-4 px-8 transition-all outline-0 ">
+                <PopoverButton className="py-4 px-8 transition-all outline-0 space-y-0">
                   <div
                     className={classNames(
-                      "w-6 h-0.5 bg-white transition-all duration-100",
-                      open ? "rotate-45 translate-y-0.5 scale-110" : "-translate-y-2",
+                      "h-[3px] bg-secondary-text transition-all duration-100",
+                      open ? "rotate-45 translate-y-[3px] scale-110 w-6" : "-translate-y-1 w-8",
                     )}
                   />
-                  <div className={classNames("w-6 h-0.5 bg-white transition-all", open ? "opacity-0" : "")} />
+                  <div
+                    className={classNames("w-8 h-[3px] bg-secondary-text transition-all", open ? "opacity-0" : "")}
+                  />
                   <div
                     className={classNames(
-                      "w-6 h-0.5 bg-white transition-all",
-                      open ? "-rotate-45 -translate-y-0.5 scale-110" : "translate-y-2",
+                      "h-[3px] bg-secondary-text transition-all",
+                      open ? "-rotate-45 -translate-y-[3px] scale-110 w-6" : "translate-y-1 w-8",
                     )}
                   />
                 </PopoverButton>
@@ -74,7 +76,7 @@ export const NavMenu: React.FC = () => {
                   transition
                   anchor="top"
                   className={classNames(
-                    "flex flex-col gap-2 p-8 w-full md:w-96 bg-slate-600 rounded-lg",
+                    "flex flex-col gap-2 p-8 w-full md:w-96 bg-secondary-background rounded-lg",
                     "transition duration-200 ease-out data-[closed]:scale-95 data-[closed]:opacity-0",
                   )}
                 >
@@ -85,7 +87,7 @@ export const NavMenu: React.FC = () => {
                       to={item.to}
                       className="flex items-center justify-end md:justify-start h-16 md:h-10 hover:underline px-12"
                     >
-                      <p className="text-2xl md:text-xl font-semibold">{item.name}</p>
+                      <p className="text-2xl md:text-xl font-semibold text-secondary-text">{item.name}</p>
                     </CloseButton>
                   ))}
                   {session.isAuthenticated && (

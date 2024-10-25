@@ -145,7 +145,7 @@ const CustomTooltip: React.FC = ({ active, payload, label }: TooltipProps<ValueT
     entries.sort((a, b) => b[1] - a[1]);
 
     return (
-      <div className="p-2 bg-slate-700 ring-1 ring-white rounded-lg">
+      <div className="p-2 bg-primary-background ring-1 ring-primary-text rounded-lg">
         {entries.map((entry) => (
           <p key={entry[0]} style={{ color: stringToColor(entry[0]) }}>
             {`${entry[0]}: ${entry[1].toLocaleString("no-NO", { maximumFractionDigits: 0 })}`}

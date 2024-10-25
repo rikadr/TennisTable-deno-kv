@@ -11,6 +11,7 @@ export const AddGamePage: React.FC = () => {
   const navigate = useNavigate();
   const [winner, setWinner] = useState<string | undefined>();
   const [loser, setLoser] = useState<string | undefined>();
+  const [editSelection, setEditSelection] = useState(false);
 
   const addGameMutation = useMutation<unknown, Error>({
     mutationFn: async () => {
@@ -33,15 +34,19 @@ export const AddGamePage: React.FC = () => {
 
   const { players } = useClientDbContext();
 
+  function swapPlayers() {
+    setWinner(loser);
+    setLoser(winner);
+  }
+
   return (
     <div className="w-full flex justify-center">
       <div className="space-y-4 p-4 w-fit">
         <button
           disabled={!winner || !loser || addGameMutation.isPending}
           className={classNames(
-            "text-lg w-full py-4 px-6 bg-green-700 hover:bg-green-900 text-white rounded-lg font-normal",
-            (!winner || !loser) &&
-              "bg-green-700/0 hover:bg-green-700/0 text-gray-300 cursor-not-allowed ring-1 ring-gray-500",
+            "text-lg font-semibold w-full py-4 px-6 bg-secondary-background hover:bg-secondary-background/70 text-secondary-text rounded-lg",
+            (!winner || !loser) && "cursor-not-allowed opacity-50 hover:bg-secondary-background",
           )}
           onClick={() => addGameMutation.mutate()}
         >
@@ -53,12 +58,34 @@ export const AddGamePage: React.FC = () => {
             "Add game 🏓"
           )}
         </button>
-        <div className="flex gap-2">
+        <div className="relative flex gap-2">
+          <div className="w-40 h-20 flex flex-col items-center justify-center">
+            <h1 className="text-5xl">🏆</h1>
+            <h1 className="uppercase">{winner || "???"}</h1>
+          </div>
+          <div className="w-40 h-20 flex flex-col items-center justify-center">
+            <h1 className="text-5xl">💔</h1>
+            <h1 className="uppercase">{loser || "???"}</h1>
+          </div>
+          {(winner || loser) && (
+            <button
+              className="absolute inset-0 m-auto bg-secondary-background hover:bg-secondary-background/70 text-secondary-text rounded-full h-10 aspect-square text-2xl"
+              onClick={swapPlayers}
+            >
+              &#8596;
+            </button>
+          )}
+        </div>
+        {winner && loser && !editSelection && (
+          <button
+            className="bg-secondary-background hover:bg-secondary-background/70 text-secondary-text rounded-lg h-10 w-full"
+            onClick={() => setEditSelection(true)}
+          >
+            Edit selection
+          </button>
+        )}
+        <div className={classNames("flex gap-2", winner && loser && !editSelection && "hidden")}>
           <div className="space-y-4">
-            <div className="w-40 h-20 flex flex-col items-center justify-center">
-              <h1 className="text-5xl">🏆</h1>
-              <h1 className="uppercase">{winner || "???"}</h1>
-            </div>
             <PlayerList
               players={players}
               onClick={(name) =>
@@ -78,10 +105,6 @@ export const AddGamePage: React.FC = () => {
             />
           </div>
           <div className="space-y-4">
-            <div className="w-40 h-20 flex flex-col items-center justify-center">
-              <h1 className="text-5xl">💔</h1>
-              <h1 className="uppercase">{loser || "???"}</h1>
-            </div>
             <PlayerList
               players={players}
               onClick={(name) =>

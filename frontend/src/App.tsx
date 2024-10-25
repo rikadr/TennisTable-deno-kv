@@ -30,7 +30,7 @@ function App() {
   const client = queryClient;
   return (
     <QueryClientProvider client={client}>
-      <div className="bg-slate-800 min-h-screen w-full overflow-auto">
+      <div className="bg-primary-background min-h-screen w-full overflow-auto">
         <WebSocketRefetcher>
           <ClientDbWrapper>
             <ZoomWrapper>
