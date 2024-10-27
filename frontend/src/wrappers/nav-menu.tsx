@@ -47,14 +47,14 @@ export const NavMenu: React.FC = () => {
         <div className="grow" />
 
         {/* Right Item - Burger Menu */}
-        <Popover className="relative flex justify-center items-center">
+        <Popover className={classNames("relative flex justify-center items-center", MENU_HEIGHT)}>
           {({ open }) => {
             return (
               <>
                 <PopoverButton className="py-4 px-8 transition-all outline-0 space-y-0">
                   <div
                     className={classNames(
-                      "h-[3px] bg-secondary-text transition-all duration-100",
+                      "h-[3px] bg-secondary-text transition-all",
                       open ? "rotate-45 translate-y-[3px] scale-110 w-6" : "-translate-y-1 w-8",
                     )}
                   />
