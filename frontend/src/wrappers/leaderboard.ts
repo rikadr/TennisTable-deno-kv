@@ -187,7 +187,7 @@ export class Leaderboard {
 
   private _calculateFarmerScore(player: PlayerSummary): number {
     const farmedGames = player.farmerGames.filter(Boolean).length;
-    return Math.round(farmedGames / FARMER_GAME_LIMIT) * 10;
+    return Math.round((farmedGames / FARMER_GAME_LIMIT) * 10);
   }
 }
 
