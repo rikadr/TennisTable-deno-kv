@@ -42,6 +42,7 @@ export class Leaderboard {
         streaks?: { longestWin: number; longestLose: number };
       })
     | undefined {
+    const start = performance.now();
     const leaderboardMap = this._getLeaderboardMap();
 
     const player = leaderboardMap.get(name);
@@ -69,6 +70,8 @@ export class Leaderboard {
         (acc += otherPlayer.games.length >= Elo.GAME_LIMIT_FOR_RANKED && otherPlayer.elo > player.elo ? 1 : 0),
       0,
     );
+    const end = performance.now();
+    console.log("getPlayerSummary " + name, (end - start).toLocaleString("no-NO"), "ms");
 
     return {
       ...player,
