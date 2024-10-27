@@ -30,13 +30,9 @@ export const NavMenu: React.FC = () => {
 
   return (
     <div className="">
-      <div aria-label="menu displacer" className={classNames("hidden md:visible md:flex w-full", MENU_HEIGHT)} />
-      <div className="mt-4 mb-24">
-        <Outlet />
-      </div>
       <div
         className={classNames(
-          "fixed inset-x-0 bottom-0 md:top-0 bg-secondary-background text-white flex justify-between items-center p-4 overflow-hidden",
+          "bg-secondary-background text-white flex justify-between items-center p-4 overflow-hidden",
           MENU_HEIGHT,
         )}
       >
@@ -74,9 +70,9 @@ export const NavMenu: React.FC = () => {
                 </PopoverButton>
                 <PopoverPanel
                   transition
-                  anchor="top"
+                  anchor="bottom"
                   className={classNames(
-                    "flex flex-col gap-2 p-8 w-full md:w-96 bg-secondary-background rounded-lg",
+                    "flex flex-col gap-2 p-8 mt-4 md:mt-0 w-full md:w-96 bg-secondary-background rounded-lg",
                     "transition duration-200 ease-out data-[closed]:scale-95 data-[closed]:opacity-0",
                   )}
                 >
@@ -108,6 +104,9 @@ export const NavMenu: React.FC = () => {
             );
           }}
         </Popover>
+      </div>
+      <div className="mt-4 mb-24">
+        <Outlet />
       </div>
     </div>
   );
