@@ -138,23 +138,6 @@ export class Leaderboard {
       const loser = getPlayer(game.loser);
       const winnersNewElo = map.get(game.winner)!.elo;
       const losersNewElo = map.get(game.loser)!.elo;
-      winner.games.push({
-        time: game.time,
-        result: "win",
-        oponent: loser.name,
-        eloAfterGame: winnersNewElo,
-        pointsDiff: pointsWon,
-      });
-      loser.games.push({
-        time: game.time,
-        result: "loss",
-        oponent: winner.name,
-        eloAfterGame: losersNewElo,
-        pointsDiff: -pointsWon,
-      });
-
-      winner.wins++;
-      loser.loss++;
 
       // Farming score
 
@@ -177,6 +160,26 @@ export class Leaderboard {
         }
       }
       loser.farmerScore = this._calculateFarmerScore(loser);
+
+      winner.games.push({
+        time: game.time,
+        result: "win",
+        oponent: loser.name,
+        eloAfterGame: winnersNewElo,
+        pointsDiff: pointsWon,
+        farmerScoreAfterGame: winner.farmerScore,
+      });
+      loser.games.push({
+        time: game.time,
+        result: "loss",
+        oponent: winner.name,
+        eloAfterGame: losersNewElo,
+        pointsDiff: -pointsWon,
+        farmerScoreAfterGame: loser.farmerScore,
+      });
+
+      winner.wins++;
+      loser.loss++;
 
       winner.elo = winnersNewElo;
       loser.elo = losersNewElo;

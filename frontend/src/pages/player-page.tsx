@@ -5,6 +5,7 @@ import { CartesianGrid, Line, LineChart, ReferenceLine, Tooltip, TooltipProps, X
 import { NameType, ValueType } from "recharts/types/component/DefaultTooltipContent";
 import { useWindowSize } from "usehooks-ts";
 import { useClientDbContext } from "../wrappers/client-db-context";
+import { ALLOWED_FARMER_GAMES, FARMER_GAME_LIMIT } from "../wrappers/leaderboard";
 
 export const PlayerPage: React.FC = () => {
   const { name } = useParams();
@@ -60,20 +61,37 @@ export const PlayerPage: React.FC = () => {
           margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
         >
           <CartesianGrid strokeDasharray="1 4" vertical={false} stroke="#666" />
-          <XAxis dataKey="name" />
           <YAxis
             type="number"
+            yAxisId="left"
+            label={{ value: "Elo", angle: -90, position: "insideLeft" }}
             domain={["dataMin", "dataMax"]}
             tickFormatter={(value) => value.toLocaleString("no-NO", { maximumFractionDigits: 0 })}
           />
+          <YAxis
+            type="number"
+            yAxisId="right"
+            orientation="right"
+            label={{ value: "Farmer score", angle: -90 }}
+            domain={[0, FARMER_GAME_LIMIT - ALLOWED_FARMER_GAMES]}
+          />
+          <XAxis dataKey="name" />
           <Tooltip
             formatter={(value) => [value.toLocaleString("no-NO", { maximumFractionDigits: 0 }), "Elo"]}
             wrapperClassName="rounded-lg"
             animationDuration={0}
             content={<CustomTooltip />}
           />
-          <Line type="monotone" dataKey="eloAfterGame" stroke="#8884d8" animationDuration={100} />
-          <ReferenceLine y={1000} stroke="white" label="1 000" />
+          <Line yAxisId="left" type="monotone" dataKey="eloAfterGame" stroke="#8884d8" animationDuration={100} />
+          <Line
+            yAxisId="right"
+            type="monotone"
+            dataKey="farmerScoreAfterGame"
+            stroke="#82ca9d"
+            animationDuration={100}
+            dot={false}
+          />
+          <ReferenceLine yAxisId="left" y={1000} stroke="white" label="1 000" />
         </LineChart>
       )}
       {summary?.streaks && (
@@ -129,6 +147,9 @@ const CustomTooltip: React.FC = ({ active, payload, label }: TooltipProps<ValueT
     return (
       <div className="p-2 bg-primary-background ring-1 ring-primary-text rounded-lg text-primary-text">
         <p className="">{`Elo : ${payload[0].value?.toLocaleString("no-NO", { maximumFractionDigits: 0 })}`}</p>
+        <p className="">{`👨🏻‍🌾🐔: ${game?.farmerScoreAfterGame.toLocaleString("no-NO", {
+          maximumFractionDigits: 0,
+        })}`}</p>
         <p className="desc">
           {game?.result === "win"
             ? `🏆 +${game.pointsDiff?.toLocaleString("no-NO", { maximumFractionDigits: 0 })} from`
