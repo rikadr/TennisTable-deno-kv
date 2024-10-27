@@ -126,8 +126,9 @@ export class Leaderboard {
         elo: Elo.INITIAL_ELO,
         wins: 0,
         loss: 0,
-        farmerGames: 0,
         games: [],
+        farmerGames: [],
+        farmerScore: 0,
       });
       return leaderboardMap.get(name)!;
     }
@@ -155,16 +156,40 @@ export class Leaderboard {
       winner.wins++;
       loser.loss++;
 
+      // Farming score
+
+      // Winner
+      if (winner.games.length > Elo.GAME_LIMIT_FOR_RANKED) {
+        const EloDiff = winnersNewElo - losersNewElo;
+        const isFarmed = EloDiff > FARMER_DIFF_THRESHOLD;
+        winner.farmerGames.unshift(isFarmed);
+        if (winner.farmerGames.length > FARMER_GAME_LIMIT) {
+          winner.farmerGames.pop();
+        }
+      }
+      winner.farmerScore = this._calculateFarmerScore(winner);
+
+      // Loser
+      if (loser.games.length > Elo.GAME_LIMIT_FOR_RANKED) {
+        loser.farmerGames.unshift(false);
+        if (loser.farmerGames.length > FARMER_GAME_LIMIT) {
+          loser.farmerGames.pop();
+        }
+      }
+      loser.farmerScore = this._calculateFarmerScore(loser);
+
       winner.elo = winnersNewElo;
       loser.elo = losersNewElo;
-
-      if (winner.games.length > Elo.GAME_LIMIT_FOR_RANKED && winner.elo - loser.elo > FARMER_DIFF_THRESHOLD) {
-        winner.farmerGames++;
-      }
     });
 
     return leaderboardMap;
   }
+
+  private _calculateFarmerScore(player: PlayerSummary): number {
+    const farmedGames = player.farmerGames.filter(Boolean).length;
+    return Math.round(farmedGames / FARMER_GAME_LIMIT) * 10;
+  }
 }
 
 const FARMER_DIFF_THRESHOLD = 100;
+const FARMER_GAME_LIMIT = 10;

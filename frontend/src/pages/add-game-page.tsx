@@ -148,6 +148,7 @@ const PlayerList: React.FC<{
         const isDisabled = disabledPlayer === player.name;
         return (
           <button
+            key={player.name}
             className={classNames(
               "h-8 text-left pl-4 rounded-lg",
               "bg-gray-500/50",

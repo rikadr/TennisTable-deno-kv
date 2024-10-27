@@ -9,7 +9,6 @@ export type PlayerSummary = {
   elo: number;
   wins: number;
   loss: number;
-  farmerGames: number;
   games: {
     time: number;
     result: "win" | "loss";
@@ -17,6 +16,8 @@ export type PlayerSummary = {
     eloAfterGame: number;
     pointsDiff: number;
   }[];
+  farmerGames: boolean[];
+  farmerScore: number;
 };
 
 export type LeaderboardDTO = {
