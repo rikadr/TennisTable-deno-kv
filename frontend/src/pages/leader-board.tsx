@@ -130,6 +130,9 @@ export const LeaderBoard: React.FC = () => {
                 <p className="w-fit">👨🏻‍🌾🐔</p>
                 <p className="text-xs w-fit">Farmer score</p>
                 <p className="text-xs w-fit">(Experimental)</p>
+                <Link to="/farmer-score" className="text-xs w-fit underline font-thin">
+                  Read more here...
+                </Link>
               </th>
             </tr>
           </thead>

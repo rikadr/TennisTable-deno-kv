@@ -187,9 +187,11 @@ export class Leaderboard {
 
   private _calculateFarmerScore(player: PlayerSummary): number {
     const farmedGames = player.farmerGames.filter(Boolean).length;
-    return Math.round((farmedGames / FARMER_GAME_LIMIT) * 10);
+    const exceedingFarmedGames = Math.max(farmedGames - ALLOWED_FARMER_GAMES, 0);
+    return Math.round((exceedingFarmedGames / (FARMER_GAME_LIMIT - ALLOWED_FARMER_GAMES)) * 10);
   }
 }
 
-const FARMER_DIFF_THRESHOLD = 100;
-const FARMER_GAME_LIMIT = 10;
+export const FARMER_DIFF_THRESHOLD = 100;
+export const FARMER_GAME_LIMIT = 13;
+export const ALLOWED_FARMER_GAMES = 3;
