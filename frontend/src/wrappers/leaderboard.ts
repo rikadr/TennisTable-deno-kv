@@ -5,13 +5,25 @@ export class Leaderboard {
   private players: Player[] = [];
   private games: Game[] = [];
 
+  private _leaderBoardCache: ReturnType<typeof this._getLeaderboard> | undefined;
+  private _leaderBoardMapCache: ReturnType<typeof this._getLeaderboardMap> | undefined;
+  private _playerSummaryCache: Map<string, ReturnType<typeof this._getPlayerSummary>> = new Map();
+  private _playerComparisonCache: Map<string, ReturnType<typeof this._comparePlayers>> = new Map();
+
   constructor(data: ClientDbDTO) {
     this.players = data.players;
     this.games = data.games;
   }
 
   getLeaderboard(): LeaderboardDTO {
-    const leaderboardMap = this._getLeaderboardMap();
+    if (this._leaderBoardCache !== undefined) return this._leaderBoardCache;
+    const leaderboard = this._getLeaderboard();
+    this._leaderBoardCache = leaderboard;
+    return leaderboard;
+  }
+
+  private _getLeaderboard(): LeaderboardDTO {
+    const leaderboardMap = this._getCachedLeaderboardMap();
 
     const rankedPlayers: LeaderboardDTO["rankedPlayers"] = Array.from(leaderboardMap.values())
       .sort((a, b) => b.elo - a.elo)
@@ -35,7 +47,20 @@ export class Leaderboard {
     };
   }
 
-  getPlayerSummary(name: string):
+  getPlayerSummary(name: string) {
+    if (this._playerSummaryCache.has(name)) {
+      return this._playerSummaryCache.get(name)!;
+    }
+
+    const playerSummary = this._getPlayerSummary(name);
+    if (playerSummary) {
+      this._playerSummaryCache.set(name, playerSummary);
+    }
+
+    return playerSummary;
+  }
+
+  private _getPlayerSummary(name: string):
     | (PlayerSummary & {
         isRanked: boolean;
         rank?: number;
@@ -43,7 +68,7 @@ export class Leaderboard {
       })
     | undefined {
     const start = performance.now();
-    const leaderboardMap = this._getLeaderboardMap();
+    const leaderboardMap = this._getCachedLeaderboardMap();
 
     const player = leaderboardMap.get(name);
     if (!player) return undefined;
@@ -81,7 +106,18 @@ export class Leaderboard {
     };
   }
 
-  comparePlayers(players: string[]): PlayerComparison {
+  comparePlayers(players: string[]) {
+    const key = players.sort().join(",");
+    if (this._playerComparisonCache.has(key)) {
+      return this._playerComparisonCache.get(key)!;
+    }
+
+    const playerComparison = this._comparePlayers(players);
+    this._playerComparisonCache.set(key, playerComparison);
+    return playerComparison;
+  }
+
+  private _comparePlayers(players: string[]): PlayerComparison {
     const graphData: PlayerComparison["graphData"] = [];
     if (players.length === 0) {
       return {
@@ -116,6 +152,12 @@ export class Leaderboard {
       graphData,
       allPlayers: this.players.map((p) => p.name).sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase())),
     };
+  }
+  private _getCachedLeaderboardMap() {
+    if (this._leaderBoardMapCache !== undefined) return this._leaderBoardMapCache;
+    const leaderboardMap = this._getLeaderboardMap();
+    this._leaderBoardMapCache = leaderboardMap;
+    return leaderboardMap;
   }
 
   private _getLeaderboardMap(): Map<string, PlayerSummary> {
