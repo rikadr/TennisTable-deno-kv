@@ -30,9 +30,10 @@ export const NavMenu: React.FC = () => {
 
   return (
     <div className="">
+      <div aria-label="menu displacer" className={MENU_HEIGHT} />
       <div
         className={classNames(
-          "bg-secondary-background text-white flex justify-between items-center p-4 overflow-hidden",
+          "fixed inset-0 top-0 bg-secondary-background text-white flex justify-between items-center p-4 overflow-hidden",
           MENU_HEIGHT,
         )}
       >
