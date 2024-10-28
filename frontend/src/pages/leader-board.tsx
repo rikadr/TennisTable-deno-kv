@@ -20,11 +20,11 @@ export const LeaderBoard: React.FC = () => {
   return (
     <div className="w-full px-4 flex flex-col justify-center items-center md:items-start gap-6 md:flex-row ">
       <div className="w-full max-w-96 sm:w-96 flex flex-col gap-2 items-center">
-        <PodiumPlace place="1" player={nr1} />
-        <PodiumPlace place="2" player={nr2} />
-        <PodiumPlace place="3" player={nr3} />
+        <PodiumPlace size="default" place={1} player={nr1} />
+        <PodiumPlace size="sm" place={2} player={nr2} />
+        <PodiumPlace size="xs" place={3} player={nr3} />
         {/* <p className="pt-2 italic">Last place...</p>
-        <PodiumPlace place="last" player={lastPlace} /> */}
+        <PodiumPlace size="xs" place={leaderboard.rankedPlayers.length} player={lastPlace} /> */}
       </div>
       <div className="w-96 shrink-0">
         <h1 className="text-2xl text-center">Leader Board</h1>
