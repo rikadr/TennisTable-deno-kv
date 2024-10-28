@@ -18,7 +18,7 @@ export const LeaderBoard: React.FC = () => {
   // const lastPlace = leaderboard.rankedPlayers[leaderboard.rankedPlayers.length - 1];
 
   return (
-    <div className="w-full px-4 flex flex-col justify-center items-center gap-6 md:flex-row ">
+    <div className="w-full px-4 flex flex-col justify-center items-center md:items-start gap-6 md:flex-row ">
       <div className="w-full max-w-96 sm:w-96 flex flex-col gap-2 items-center">
         <PodiumPlace place="1" player={nr1} />
         <PodiumPlace place="2" player={nr2} />
