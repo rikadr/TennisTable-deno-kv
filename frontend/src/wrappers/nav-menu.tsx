@@ -1,12 +1,23 @@
 import { CloseButton, Popover, PopoverButton, PopoverPanel } from "@headlessui/react";
-import React, { useMemo } from "react";
-import { Link, Outlet } from "react-router-dom";
+import React, { useEffect, useMemo } from "react";
+import { Link, Outlet, useLocation } from "react-router-dom";
 import { classNames } from "../common/class-names";
 import { session } from "../services/auth";
 
 const MENU_HEIGHT = "h-20 md:h-12";
 
 export const NavMenu: React.FC = () => {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    // Scroll to top whenever the path changes
+    window.scrollTo({
+      top: 0,
+      left: 0,
+      behavior: "smooth",
+    });
+  }, [pathname]);
+
   const menuItems = useMemo(
     () => {
       const items: { name: string; to: string }[] = [
