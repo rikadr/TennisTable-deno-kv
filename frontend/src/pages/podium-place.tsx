@@ -19,10 +19,10 @@ const placeBoxSize: Record<Props["size"], string> = {
   sm: "w-[3.4rem] h-[3.4rem]",
   xs: "w-[3rem] h-[3rem]",
 };
-const placeTextSize: Record<Props["size"], string> = {
-  default: "text-5xl",
-  sm: "text-4xl",
-  xs: "text-3xl",
+const placeTextSize: Record<Props["size"], string[]> = {
+  default: ["text-5xl", "text-4xl", "text-3xl"],
+  sm: ["text-4xl", "text-3xl", "text-2xl"],
+  xs: ["text-3xl", "text-2xl", "text-xl"],
 };
 
 const nameTextSize: Record<Props["size"], string> = {
@@ -38,6 +38,7 @@ const statsTextSize: Record<Props["size"], string> = {
 };
 
 export const PodiumPlace: React.FC<Props> = ({ player, place, size }) => {
+  const placeNumberLength = place?.toString().length || 1;
   return (
     <Link
       to={`/player/${player.name}`}
@@ -54,7 +55,7 @@ export const PodiumPlace: React.FC<Props> = ({ player, place, size }) => {
           )}
         >
           {place ? (
-            <div className={placeTextSize[size]}>{place}</div>
+            <div className={placeTextSize[size][placeNumberLength - 1]}>{place}</div>
           ) : (
             <div className="text-xs text-center">Not yet ranked</div>
           )}
