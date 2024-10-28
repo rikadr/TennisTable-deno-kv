@@ -16,7 +16,6 @@ import { ClientDbWrapper } from "./wrappers/client-db-context";
 import { CameraPage } from "./pages/camera-page";
 import { NavMenu } from "./wrappers/nav-menu";
 import { ZoomWrapper } from "./wrappers/zoom-wrapper";
-import { FarmerScorePage } from "./pages/farmer-score-page";
 
 const RequireAuth: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   if (!session.isAuthenticated) {
@@ -41,7 +40,6 @@ function App() {
                     <Route index element={<Navigate to="/leader-board" />} />
                     <Route path="/tennis-table" element={<Navigate to="/leader-board" />} />
                     <Route path="/leader-board" element={<LeaderBoardPage />} />
-                    <Route path="/farmer-score" element={<FarmerScorePage />} />
                     <Route path="/compare-players" element={<ComparePlayersPage />} />
                     <Route path="/player/:name" element={<PlayerPage />} />
                     <Route path="/add-player" element={<AddPlayerPage />} />

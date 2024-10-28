@@ -130,8 +130,6 @@ export class Leaderboard {
         wins: 0,
         loss: 0,
         games: [],
-        farmerGames: [],
-        farmerScore: 0,
       });
       return leaderboardMap.get(name)!;
     }
@@ -142,35 +140,12 @@ export class Leaderboard {
       const winnersNewElo = map.get(game.winner)!.elo;
       const losersNewElo = map.get(game.loser)!.elo;
 
-      // Farming score
-
-      // Winner
-      if (winner.games.length > Elo.GAME_LIMIT_FOR_RANKED) {
-        const EloDiff = winnersNewElo - losersNewElo;
-        const isFarmed = EloDiff > FARMER_DIFF_THRESHOLD;
-        winner.farmerGames.unshift(isFarmed);
-        if (winner.farmerGames.length > FARMER_GAME_LIMIT) {
-          winner.farmerGames.pop();
-        }
-      }
-      winner.farmerScore = this._calculateFarmerScore(winner);
-
-      // Loser
-      if (loser.games.length > Elo.GAME_LIMIT_FOR_RANKED) {
-        loser.farmerGames.unshift(false);
-        if (loser.farmerGames.length > FARMER_GAME_LIMIT) {
-          loser.farmerGames.pop();
-        }
-      }
-      loser.farmerScore = this._calculateFarmerScore(loser);
-
       winner.games.push({
         time: game.time,
         result: "win",
         oponent: loser.name,
         eloAfterGame: winnersNewElo,
         pointsDiff: pointsWon,
-        farmerScoreAfterGame: winner.farmerScore,
       });
       loser.games.push({
         time: game.time,
@@ -178,7 +153,6 @@ export class Leaderboard {
         oponent: winner.name,
         eloAfterGame: losersNewElo,
         pointsDiff: -pointsWon,
-        farmerScoreAfterGame: loser.farmerScore,
       });
 
       winner.wins++;
@@ -190,14 +164,4 @@ export class Leaderboard {
 
     return leaderboardMap;
   }
-
-  private _calculateFarmerScore(player: PlayerSummary): number {
-    const farmedGames = player.farmerGames.filter(Boolean).length;
-    const exceedingFarmedGames = Math.max(farmedGames - ALLOWED_FARMER_GAMES, 0);
-    return Math.round((exceedingFarmedGames / (FARMER_GAME_LIMIT - ALLOWED_FARMER_GAMES)) * 10);
-  }
 }
-
-export const FARMER_DIFF_THRESHOLD = 100;
-export const FARMER_GAME_LIMIT = 13;
-export const ALLOWED_FARMER_GAMES = 3;

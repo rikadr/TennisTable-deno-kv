@@ -15,10 +15,7 @@ export type PlayerSummary = {
     oponent: string;
     eloAfterGame: number;
     pointsDiff: number;
-    farmerScoreAfterGame: number;
   }[];
-  farmerGames: boolean[];
-  farmerScore: number;
 };
 
 export type LeaderboardDTO = {
