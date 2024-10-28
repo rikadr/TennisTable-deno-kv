@@ -4,8 +4,8 @@ import { classNames } from "../common/class-names";
 
 type Props = {
   player: PlayerSummary;
-  place: number;
   size: "default" | "sm" | "xs";
+  place?: number;
 };
 
 const cardHeight: Record<Props["size"], string> = {
@@ -53,7 +53,11 @@ export const PodiumPlace: React.FC<Props> = ({ player, place, size }) => {
             placeBoxSize[size],
           )}
         >
-          <div className={placeTextSize[size]}> {place}</div>
+          {place ? (
+            <div className={placeTextSize[size]}>{place}</div>
+          ) : (
+            <div className="text-xs text-center">Not yet ranked</div>
+          )}
         </div>
       </div>
       <section className="grow text-secondary-text">

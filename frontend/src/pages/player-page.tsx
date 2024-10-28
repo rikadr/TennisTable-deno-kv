@@ -5,6 +5,7 @@ import { CartesianGrid, Line, LineChart, ReferenceLine, Tooltip, TooltipProps, X
 import { NameType, ValueType } from "recharts/types/component/DefaultTooltipContent";
 import { useWindowSize } from "usehooks-ts";
 import { useClientDbContext } from "../wrappers/client-db-context";
+import { PodiumPlace } from "./podium-place";
 
 export const PlayerPage: React.FC = () => {
   const { name } = useParams();
@@ -21,36 +22,7 @@ export const PlayerPage: React.FC = () => {
 
   return (
     <div className="flex flex-col items-center">
-      <section className="space-y-1 my-4">
-        <div className="bg-secondary-background w-96 h-20 p-2 rounded-lg flex space-x-4">
-          {summary?.isRanked ? (
-            <div className="w-16 text-3xl rounded-lg bg-primary-background text-primary-text flex items-center justify-center">
-              #{summary.rank}
-            </div>
-          ) : (
-            <div className="w-16 text-sm rounded-lg bg-primary-background text-primary-text flex items-center justify-center">
-              <p className="text-center">Not yet ranked</p>
-            </div>
-          )}
-          <section className="grow text-secondary-text">
-            <h2 className="uppercase text-xl">{name}</h2>
-            <section className="flex space-x-4 text-md">
-              <div>
-                {summary?.elo.toLocaleString("no-NO", {
-                  maximumFractionDigits: 0,
-                })}
-              </div>
-              <div>
-                {/* 🏆 {summary?.wins} 💔 {summary?.loss} */}
-                🏆:💔
-                {((summary?.wins || 0) / (summary?.loss || 0)).toLocaleString("no-NO", {
-                  maximumFractionDigits: 1,
-                })}
-              </div>
-            </section>
-          </section>
-        </div>
-      </section>
+      <div className="w-96 mb-4">{summary && <PodiumPlace size="default" place={summary.rank} player={summary} />}</div>
 
       {summary && (
         <LineChart
