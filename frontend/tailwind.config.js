@@ -11,11 +11,11 @@ module.exports = {
       colors: {
         primary: {
           text: "#FFFFFF",
-          background: "#333333",
+          background: "#1e293b",
         },
         secondary: {
-          text: "#333333",
-          background: "#AAAFB5",
+          text: "#FFFFFF",
+          background: "#64748b",
         },
       },
     },
