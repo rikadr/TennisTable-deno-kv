@@ -28,12 +28,40 @@ export const NavMenu: React.FC = () => {
     ],
   );
 
+  const renderMenuitems = () => {
+    const list = menuItems.map((item, index) => (
+      <CloseButton
+        key={index}
+        as={Link}
+        to={item.to}
+        className="flex items-center justify-end md:justify-start h-16 md:h-10 hover:underline px-12"
+      >
+        <p className="text-2xl md:text-xl font-semibold text-secondary-text">{item.name}</p>
+      </CloseButton>
+    ));
+    if (session.isAuthenticated) {
+      list.push(
+        <CloseButton
+          key={list.length}
+          onClick={() => {
+            session.token = undefined;
+            window.location.reload();
+          }}
+          className="flex items-center justify-end md:justify-start h-16 md:h-10 hover:underline px-12"
+        >
+          <p className="text-2xl md:text-xl font-semibold text-secondary-text">Log Out</p>
+        </CloseButton>,
+      );
+    }
+    return list;
+  };
+
   return (
     <div className="">
       <div aria-label="menu displacer" className={MENU_HEIGHT} />
       <div
         className={classNames(
-          "fixed inset-0 top-0 bg-secondary-background text-white flex justify-between items-center p-4 overflow-hidden",
+          "fixed inset-0 top-0 z-50 bg-secondary-background text-white flex justify-between items-center p-4 overflow-hidden shadow-xl",
           MENU_HEIGHT,
         )}
       >
@@ -44,6 +72,7 @@ export const NavMenu: React.FC = () => {
         >
           Tennis🏆💔Table
         </Link>
+        <div className="md:flex gap-0 shrink-0 hidden">{renderMenuitems().slice(1, 3)}</div>
 
         <div className="grow" />
 
@@ -77,29 +106,7 @@ export const NavMenu: React.FC = () => {
                     "transition duration-200 ease-out data-[closed]:scale-95 data-[closed]:opacity-0",
                   )}
                 >
-                  {menuItems.map((item, index) => (
-                    <CloseButton
-                      key={index}
-                      as={Link}
-                      to={item.to}
-                      className="flex items-center justify-end md:justify-start h-16 md:h-10 hover:underline px-12"
-                    >
-                      <p className="text-2xl md:text-xl font-semibold text-secondary-text">{item.name}</p>
-                    </CloseButton>
-                  ))}
-                  {session.isAuthenticated && (
-                    <button
-                      className={classNames(
-                        "flex items-center justify-end md:justify-start h-16 md:h-10 hover:underline w-full text-2xl md:text-xl font-semibold text-center whitespace-nowrap text-white px-12 rounded-md",
-                      )}
-                      onClick={() => {
-                        session.token = undefined;
-                        window.location.reload();
-                      }}
-                    >
-                      Log Out
-                    </button>
-                  )}
+                  {renderMenuitems()}
                 </PopoverPanel>
               </>
             );
