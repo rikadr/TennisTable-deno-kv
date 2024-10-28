@@ -1,5 +1,5 @@
-export type Player = { name: string };
-export type Game = { winner: string; loser: string; time: number };
+import { Game, Player } from "./types";
+
 type PlayerWithElo = Player & { elo: number };
 
 export abstract class Elo {

@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { useClientDbContext } from "../wrappers/client-db-context";
+import { PodiumPlace } from "./podium-place";
 
 export const LeaderBoard: React.FC = () => {
   const context = useClientDbContext();
@@ -14,109 +15,18 @@ export const LeaderBoard: React.FC = () => {
     return <div>Need at least 3 players to show leaderboard</div>;
   }
 
-  const lastPlace = leaderboard.rankedPlayers[leaderboard.rankedPlayers.length - 1];
+  // const lastPlace = leaderboard.rankedPlayers[leaderboard.rankedPlayers.length - 1];
 
   return (
-    <div className="h-full w-fit md:flex space-y-4 space-x-4 pb-20">
-      <div className="space-y-2">
-        <Link
-          to={`/player/${nr1.name}`}
-          className="bg-secondary-background w-96 h-20 p-2 rounded-lg flex space-x-4 hover:bg-secondary-background/70"
-        >
-          <div className="w-16 text-center text-6xl">🥇</div>
-          <section className="grow text-secondary-text">
-            <h2 className="uppercase text-xl">{nr1.name} </h2>
-            <section className="flex space-x-4 text-md">
-              <div>
-                {nr1.elo.toLocaleString("no-NO", {
-                  maximumFractionDigits: 0,
-                })}
-              </div>
-              <div>
-                {/* 🏆 {nr1.wins} 💔 {nr1.loss} */}
-                🏆:💔
-                {(nr1.wins / nr1.loss).toLocaleString("no-NO", {
-                  maximumFractionDigits: 1,
-                })}
-              </div>
-            </section>
-          </section>
-        </Link>
-        <Link
-          to={`/player/${nr2.name}`}
-          className="bg-secondary-background w-96 h-16 p-2 rounded-lg flex space-x-4 hover:bg-secondary-background/70"
-        >
-          <div className="w-16 text-center text-5xl">🥈</div>
-          <section className="grow text-secondary-text">
-            <h2 className="uppercase text-lg">{nr2.name} </h2>
-            <section className="flex space-x-4 text-sm">
-              <div>
-                {nr2.elo.toLocaleString("no-NO", {
-                  maximumFractionDigits: 0,
-                })}
-              </div>
-              <div>
-                {/* 🏆 {nr2.wins} 💔 {nr2.loss} */}
-                🏆:💔
-                {(nr2.wins / nr2.loss).toLocaleString("no-NO", {
-                  maximumFractionDigits: 1,
-                })}
-              </div>
-            </section>
-          </section>
-        </Link>
-        <Link
-          to={`/player/${nr3.name}`}
-          className="bg-secondary-background w-96 h-14 p-2 rounded-lg flex space-x-4 hover:bg-secondary-background/70"
-        >
-          <div className="w-16 text-center text-4xl">🥉</div>
-          <section className="grow -mt-1 text-secondary-text">
-            <h2 className="uppercase text-md">{nr3.name} </h2>
-            <section className="flex space-x-4 text-sm">
-              <div>
-                {nr3.elo.toLocaleString("no-NO", {
-                  maximumFractionDigits: 0,
-                })}
-              </div>
-              <div>
-                {/* 🏆 {nr3.wins} 💔 {nr3.loss} */}
-                🏆:💔
-                {(nr3.wins / nr3.loss).toLocaleString("no-NO", {
-                  maximumFractionDigits: 1,
-                })}
-              </div>
-            </section>
-          </section>
-        </Link>
-
-        <p className="w-full pl-20 ml-2 pt-2 italic">Last place...</p>
-        <Link
-          to={`/player/${lastPlace.name}`}
-          className="bg-secondary-background w-96 h-12 p-2 rounded-lg flex space-x-4 hover:bg-secondary-background/70"
-        >
-          <div className="w-16 text-center text-2xl">💩</div>
-          <section className="grow -mt-1 text-secondary-text">
-            <h2 className="uppercase text-sm">
-              {lastPlace.name} <span className="font-thin text-secondary-text px-1">#{lastPlace.rank}</span>
-            </h2>
-            <section className="flex space-x-4 text-xs">
-              <div>
-                {lastPlace.elo.toLocaleString("no-NO", {
-                  maximumFractionDigits: 0,
-                })}
-              </div>
-              <div>
-                {/* 🏆 {lastPlace.wins} 💔 {lastPlace.loss} */}
-                🏆:💔
-                {(lastPlace.wins / lastPlace.loss).toLocaleString("no-NO", {
-                  maximumFractionDigits: 1,
-                })}
-              </div>
-            </section>
-          </section>
-        </Link>
+    <div className="w-full px-4 flex flex-col justify-center items-center gap-6 md:flex-row ">
+      <div className="w-full max-w-96 sm:w-96 flex flex-col gap-2 items-center">
+        <PodiumPlace place="1" player={nr1} />
+        <PodiumPlace place="2" player={nr2} />
+        <PodiumPlace place="3" player={nr3} />
+        {/* <p className="pt-2 italic">Last place...</p>
+        <PodiumPlace place="last" player={lastPlace} /> */}
       </div>
-      <div className="w-96">
+      <div className="w-96 shrink-0">
         <h1 className="text-2xl text-center">Leader Board</h1>
         <table className="w-full">
           <thead>
