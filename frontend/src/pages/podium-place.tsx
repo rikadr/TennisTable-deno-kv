@@ -37,6 +37,20 @@ const statsTextSize: Record<Props["size"], string> = {
   xs: "text-md",
 };
 
+function getPumpkin(place?: number): string {
+  if (place === 1) {
+    return "https://png.pngtree.com/png-vector/20240501/ourmid/pngtree-halloween-pumpkin-horror-transparent-background-png-image_12345228.png";
+  }
+  if (place === 2) {
+    return "https://png.pngtree.com/png-clipart/20220921/ourmid/pngtree-halloween-pumpkin-burning-png-image_6207123.png";
+  }
+  if (place === 3) {
+    return "https://gallery.yopriceville.com/var/resizes/Free-Clipart-Pictures/Halloween-PNG-Pictures/Dark_Carved_Pumpkin_PNG_Clip_Art.png?m=1629832168";
+  }
+
+  return "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/a2dce0c6-66d0-4687-8ee5-1c76b0fa1671/dg6qz51-f605e437-ec6e-4d9d-bb01-53938e5dfb66.png?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7InBhdGgiOiJcL2ZcL2EyZGNlMGM2LTY2ZDAtNDY4Ny04ZWU1LTFjNzZiMGZhMTY3MVwvZGc2cXo1MS1mNjA1ZTQzNy1lYzZlLTRkOWQtYmIwMS01MzkzOGU1ZGZiNjYucG5nIn1dXSwiYXVkIjpbInVybjpzZXJ2aWNlOmZpbGUuZG93bmxvYWQiXX0.72qQeAx1QYaxmlZXwXjg28v6rVAKDhAuj4VukNECrvk";
+}
+
 export const PodiumPlace: React.FC<Props> = ({ player, place, size }) => {
   const placeNumberLength = place?.toString().length || 1;
   return (
@@ -77,6 +91,9 @@ export const PodiumPlace: React.FC<Props> = ({ player, place, size }) => {
           </div>
         </section>
       </section>
+      <div className="w-16 flex items-center justify-center">
+        <img className={placeBoxSize[size]} src={getPumpkin(place)} alt="Pumpkin" />
+      </div>
     </Link>
   );
 };
