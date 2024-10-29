@@ -1,5 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { queryClient } from "../common/query-client";
 import { useNavigate } from "react-router-dom";
 import { PlayersDTO } from "./admin-page";
@@ -11,7 +11,7 @@ export const AddGamePage: React.FC = () => {
   const navigate = useNavigate();
   const [winner, setWinner] = useState<string | undefined>();
   const [loser, setLoser] = useState<string | undefined>();
-  const [editSelection, setEditSelection] = useState(false);
+  const [playersHaveBeenSet, setPlayersHaveBeenSet] = useState(false);
 
   const addGameMutation = useMutation<unknown, Error>({
     mutationFn: async () => {
@@ -38,6 +38,21 @@ export const AddGamePage: React.FC = () => {
     setWinner(loser);
     setLoser(winner);
   }
+
+  useEffect(() => {
+    // Scroll to top whenever both players have been set
+    if (winner && loser && !playersHaveBeenSet) {
+      window.scrollTo({
+        top: 0,
+        left: 0,
+        behavior: "smooth",
+      });
+      setPlayersHaveBeenSet(true);
+    }
+    if (!winner && !loser && playersHaveBeenSet) {
+      setPlayersHaveBeenSet(false);
+    }
+  }, [winner, loser, playersHaveBeenSet]);
 
   return (
     <div className="w-full flex justify-center">
@@ -76,15 +91,7 @@ export const AddGamePage: React.FC = () => {
             </button>
           )}
         </div>
-        {winner && loser && !editSelection && (
-          <button
-            className="bg-secondary-background hover:bg-secondary-background/70 text-secondary-text rounded-lg h-10 w-full"
-            onClick={() => setEditSelection(true)}
-          >
-            Edit selection
-          </button>
-        )}
-        <div className={classNames("flex gap-2", winner && loser && !editSelection && "hidden")}>
+        <div className="flex gap-2">
           <div className="space-y-4">
             <PlayerList
               players={players}
