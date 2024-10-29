@@ -42,7 +42,7 @@ export const LeaderBoard: React.FC = () => {
             {leaderboard.rankedPlayers.map((player, index) => (
               <tr key={index}>
                 <td>
-                  <Link to={`/player/${player.name}`} className="h-full hover:bg-secondary-background/10 flex w-full">
+                  <Link to={`/player/${player.name}`} className="h-full hover:bg-secondary-background/20 flex w-full">
                     <div className="font-thin text-primary-text w-10 text-center">#{player.rank}</div>
                     {player.name}
                   </Link>
