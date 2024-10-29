@@ -32,9 +32,9 @@ export const LeaderBoard: React.FC = () => {
         <div className="flex flex-col divide-y divide-primary-text/50">
           <div className="flex gap-4 text-base text-center mb-2">
             <div className="w-5">#</div>
-            <div className="w-28 text-left pl-2">Name</div>
+            <div className="w-32 text-left pl-2">Name</div>
             <div className="w-12 text-right">Elo</div>
-            <div className="w-16 text-right pl-5">Interval</div>
+            <div className="w-10 ml-1">Interval</div>
             <div className="w-14 text-right">🏆:💔</div>
           </div>
           {leaderboard.rankedPlayers.map((player, index, list) => (
@@ -44,13 +44,13 @@ export const LeaderBoard: React.FC = () => {
               className="bg-primary-background hover:bg-secondary-background/30 py-1 px-2 flex gap-4 text-xl font-light"
             >
               <div className="w-5 italic">{player.rank}</div>
-              <div className="w-28 font-normal whitespace-nowrap">{player.name}</div>
+              <div className="w-32 font-normal whitespace-nowrap">{player.name}</div>
               <div className="w-12 text-right">
                 {player.elo.toLocaleString("no-NO", {
                   maximumFractionDigits: 0,
                 })}
               </div>
-              <div className="w-16 text-right text-base">
+              <div className="w-10 text-right text-base">
                 {list[index - 1]
                   ? (player.elo - list[index - 1].elo).toLocaleString("no-NO", {
                       maximumFractionDigits: 0,
@@ -70,7 +70,7 @@ export const LeaderBoard: React.FC = () => {
         <p className="w-full text-center mb-4">Play {Elo.GAME_LIMIT_FOR_RANKED} or more games to get ranked</p>
         <div className="flex flex-col divide-y divide-primary-text/50">
           <div className="flex gap-4 text-base text-center mb-2">
-            <div className="w-28 text-left pl-2">Name</div>
+            <div className="w-32 text-left pl-2">Name</div>
             <div className="w-12 text-right">Elo</div>
             <div className="w-14 text-right">🏆:💔</div>
           </div>
@@ -80,7 +80,7 @@ export const LeaderBoard: React.FC = () => {
               to={`/player/${player.name}`}
               className="bg-primary-background hover:bg-secondary-background/30 py-1 px-2 flex gap-4 text-xl font-light"
             >
-              <div className="w-28 font-normal whitespace-nowrap">{player.name}</div>
+              <div className="w-32 font-normal whitespace-nowrap">{player.name}</div>
               <div className="w-12 text-right">
                 {player.elo.toLocaleString("no-NO", {
                   maximumFractionDigits: 0,
