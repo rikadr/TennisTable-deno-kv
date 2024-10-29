@@ -17,7 +17,7 @@ export const PlayerPage: React.FC = () => {
 
   const reverseGames = useMemo(() => {
     if (!summary) return;
-    return summary?.games.slice(Math.max(summary?.games.length - 5, 0)).reverse();
+    return summary?.games.slice(Math.max(summary?.games.length - 8, 0)).reverse();
   }, [summary]);
 
   return (
@@ -58,39 +58,30 @@ export const PlayerPage: React.FC = () => {
       {/* <h1 className="text-2xl text-center mt-4">
         Total {summary && summary?.games.length + " games"}
       </h1> */}
-      <h1 className="text-2xl text-center mt-4">Last 5 games</h1>
-      <div className="w-fit">
-        <table className="w-full">
-          <thead>
-            <tr>
-              <th>Game</th>
-              <th>Elo +-</th>
-              <th>Time</th>
-            </tr>
-          </thead>
-          <tbody>
-            {reverseGames?.map((game, index) => {
-              return (
-                <tr key={index}>
-                  <td className="text-left px-4">
-                    <Link
-                      to={`/player/${game.oponent}`}
-                      className="h-full hover:bg-secondary-background/10 flex w-full"
-                    >
-                      {game.result === "win" ? "🏆 " : "💔 "} {game.oponent}
-                    </Link>
-                  </td>
-                  <td className="text-right pr-4">
-                    {game.pointsDiff.toLocaleString("no-NO", {
-                      maximumFractionDigits: 0,
-                    })}
-                  </td>
-                  <td className="text-right">{timeAgo(new Date(game.time))}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+      <h1 className="text-2xl text-center mt-4">Last 8 games</h1>
+      <div className="flex flex-col divide-y divide-primary-text/50">
+        <div className="flex gap-4 text-base text-center mb-2">
+          <div className="w-32 text-left pl-2">Game</div>
+          <div className="w-12 pl-4 whitespace-nowrap">Elo +-</div>
+          <div className="w-28 text-right">Time</div>
+        </div>
+        {reverseGames?.map((game, index) => (
+          <Link
+            key={index}
+            to={`/player/${game.oponent}`}
+            className="bg-primary-background hover:bg-secondary-background/30 py-1 px-2 flex gap-4 text-xl font-light"
+          >
+            <div className="w-32 font-normal whitespace-nowrap">
+              {game.result === "win" ? "🏆 " : "💔 "} {game.oponent}
+            </div>
+            <div className="w-12 text-right">
+              {game.pointsDiff.toLocaleString("no-NO", {
+                maximumFractionDigits: 0,
+              })}
+            </div>
+            <div className="w-28 text-right text-base">{timeAgo(new Date(game.time))}</div>
+          </Link>
+        ))}
       </div>
     </div>
   );

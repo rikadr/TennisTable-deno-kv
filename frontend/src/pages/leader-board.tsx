@@ -34,7 +34,7 @@ export const LeaderBoard: React.FC = () => {
             <div className="w-5">#</div>
             <div className="w-32 text-left pl-2">Name</div>
             <div className="w-12 text-right">Elo</div>
-            <div className="w-10 ml-1">Interval</div>
+            <div className="w-10 pl-1">Interval</div>
             <div className="w-14 text-right">🏆:💔</div>
           </div>
           {leaderboard.rankedPlayers.map((player, index, list) => (
@@ -74,7 +74,7 @@ export const LeaderBoard: React.FC = () => {
             <div className="w-12 text-right">Elo</div>
             <div className="w-14 text-right">🏆:💔</div>
           </div>
-          {leaderboard.unrankedPlayers.map((player, index, list) => (
+          {leaderboard.unrankedPlayers.map((player, index) => (
             <Link
               key={index}
               to={`/player/${player.name}`}
