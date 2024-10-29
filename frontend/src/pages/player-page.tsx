@@ -67,7 +67,7 @@ export const PlayerPage: React.FC = () => {
         </div>
         {reverseGames?.map((game, index) => (
           <Link
-            key={summary?.name ?? "-" + index + game.oponent}
+            key={(summary?.name ?? "-") + index + game.oponent}
             to={`/player/${game.oponent}`}
             className="bg-primary-background hover:bg-secondary-background/30 py-1 px-2 flex gap-4 text-xl font-light"
           >
