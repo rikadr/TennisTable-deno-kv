@@ -1,6 +1,18 @@
 import { Link } from "react-router-dom";
-import { PlayerSummary } from "../wrappers/types";
+import { CURRENT_THEME, PlayerSummary } from "../wrappers/types";
 import { classNames } from "../common/class-names";
+
+import pumpkin1 from "../img/halloween/pumpkin-numbers/1.png";
+import pumpkin2 from "../img/halloween/pumpkin-numbers/2.png";
+import pumpkin3 from "../img/halloween/pumpkin-numbers/3.png";
+import pumpkin4 from "../img/halloween/pumpkin-numbers/4.png";
+import pumpkin5 from "../img/halloween/pumpkin-numbers/5.png";
+import pumpkin6 from "../img/halloween/pumpkin-numbers/6.png";
+import pumpkin7 from "../img/halloween/pumpkin-numbers/7.png";
+import pumpkin8 from "../img/halloween/pumpkin-numbers/8.png";
+import pumpkin9 from "../img/halloween/pumpkin-numbers/9.png";
+import pumpkin10 from "../img/halloween/pumpkin-numbers/10.png";
+import pumpkinNotRanked from "../img/halloween/pumpkin-numbers/not-ranked.png";
 
 type Props = {
   player: PlayerSummary;
@@ -37,22 +49,52 @@ const statsTextSize: Record<Props["size"], string> = {
   xs: "text-md",
 };
 
-function getPumpkin(place?: number): string {
-  if (place === 1) {
-    return "https://png.pngtree.com/png-vector/20240501/ourmid/pngtree-halloween-pumpkin-horror-transparent-background-png-image_12345228.png";
-  }
-  if (place === 2) {
-    return "https://png.pngtree.com/png-clipart/20220921/ourmid/pngtree-halloween-pumpkin-burning-png-image_6207123.png";
-  }
-  if (place === 3) {
-    return "https://gallery.yopriceville.com/var/resizes/Free-Clipart-Pictures/Halloween-PNG-Pictures/Dark_Carved_Pumpkin_PNG_Clip_Art.png?m=1629832168";
-  }
+function getPumpkin(place?: number): string | undefined {
+  const pumpkins = [
+    pumpkin1,
+    pumpkin2,
+    pumpkin3,
+    pumpkin4,
+    pumpkin5,
+    pumpkin6,
+    pumpkin7,
+    pumpkin8,
+    pumpkin9,
+    pumpkin10,
+  ];
+  if (!place) return pumpkinNotRanked;
 
-  return "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/a2dce0c6-66d0-4687-8ee5-1c76b0fa1671/dg6qz51-f605e437-ec6e-4d9d-bb01-53938e5dfb66.png?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7InBhdGgiOiJcL2ZcL2EyZGNlMGM2LTY2ZDAtNDY4Ny04ZWU1LTFjNzZiMGZhMTY3MVwvZGc2cXo1MS1mNjA1ZTQzNy1lYzZlLTRkOWQtYmIwMS01MzkzOGU1ZGZiNjYucG5nIn1dXSwiYXVkIjpbInVybjpzZXJ2aWNlOmZpbGUuZG93bmxvYWQiXX0.72qQeAx1QYaxmlZXwXjg28v6rVAKDhAuj4VukNECrvk";
+  return pumpkins[place - 1];
 }
 
 export const PodiumPlace: React.FC<Props> = ({ player, place, size }) => {
   const placeNumberLength = place?.toString().length || 1;
+
+  const themedPlaceNumber = () => {
+    if (CURRENT_THEME === "halloween") {
+      const pumpkin = getPumpkin(place);
+      if (pumpkin) {
+        return <img className={classNames("scale-125", placeBoxSize[size])} src={pumpkin} alt="Pumpkin" />;
+      }
+    }
+
+    // Default theme
+    return (
+      <div
+        className={classNames(
+          "w-16 flex justify-center items-center rounded-full bg-primary-background text-primary-text",
+          placeBoxSize[size],
+        )}
+      >
+        {place ? (
+          <div className={placeTextSize[size][placeNumberLength - 1]}>{place}</div>
+        ) : (
+          <div className="text-xs text-center">Not yet ranked</div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <Link
       to={`/player/${player.name}`}
@@ -61,23 +103,10 @@ export const PodiumPlace: React.FC<Props> = ({ player, place, size }) => {
         cardHeight[size],
       )}
     >
-      <div className="w-16 flex justify-center">
-        <div
-          className={classNames(
-            "w-16 flex justify-center items-center rounded-full bg-primary-background text-primary-text",
-            placeBoxSize[size],
-          )}
-        >
-          {place ? (
-            <div className={placeTextSize[size][placeNumberLength - 1]}>{place}</div>
-          ) : (
-            <div className="text-xs text-center">Not yet ranked</div>
-          )}
-        </div>
-      </div>
+      <div className="w-16 flex items-center justify-center shrink-0">{themedPlaceNumber()}</div>
       <section className="grow text-secondary-text">
         <h2 className={classNames("uppercase", nameTextSize[size])}>{player.name} </h2>
-        <section className={classNames("flex space-x-4", statsTextSize[size])}>
+        <section className={classNames("flex space-x-4 font-medium", statsTextSize[size])}>
           <div>
             {player.elo.toLocaleString("no-NO", {
               maximumFractionDigits: 0,
@@ -91,9 +120,6 @@ export const PodiumPlace: React.FC<Props> = ({ player, place, size }) => {
           </div>
         </section>
       </section>
-      <div className="w-16 flex items-center justify-center">
-        <img className={placeBoxSize[size]} src={getPumpkin(place)} alt="Pumpkin" />
-      </div>
     </Link>
   );
 };

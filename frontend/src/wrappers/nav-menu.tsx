@@ -3,6 +3,8 @@ import React, { useEffect, useMemo } from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
 import { classNames } from "../common/class-names";
 import { session } from "../services/auth";
+import pumpkinLogo from "../img/halloween/tennis-table.png";
+import { CURRENT_THEME } from "./types";
 
 const MENU_HEIGHT = "h-20 md:h-12";
 
@@ -67,6 +69,15 @@ export const NavMenu: React.FC = () => {
     return list;
   };
 
+  const themedLogo = () => {
+    if (CURRENT_THEME === "halloween") {
+      return <img className="w-40" src={pumpkinLogo} alt="Pumpkin" />;
+    }
+
+    // Default theme
+    return <>Tennis🏆💔Table</>;
+  };
+
   return (
     <div className="">
       <div aria-label="menu displacer" className={MENU_HEIGHT} />
@@ -76,18 +87,16 @@ export const NavMenu: React.FC = () => {
           MENU_HEIGHT,
         )}
       >
-        {/* Logo for desktop menu */}
         <Link
           to="/leader-board"
           className=" whitespace-nowrap bg-primary-background py-4 px-6 rounded-full select-none hover:bg-primary-background/70 text-primary-text"
         >
-          Tennis🏆💔Table
+          {themedLogo()}
         </Link>
         <div className="md:flex gap-0 shrink-0 hidden">{renderMenuitems().slice(1, 3)}</div>
 
         <div className="grow" />
 
-        {/* Right Item - Burger Menu */}
         <Popover className={classNames("relative flex justify-center items-center", MENU_HEIGHT)}>
           {({ open }) => {
             return (

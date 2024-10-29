@@ -33,3 +33,6 @@ export type PlayerComparison = {
   allPlayers: string[];
   graphData: Record<string, number>[];
 };
+
+type Theme = "default" | "halloween";
+export const CURRENT_THEME: Theme = "halloween";
