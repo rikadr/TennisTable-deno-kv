@@ -27,7 +27,7 @@ export const LeaderBoard: React.FC = () => {
         {/* <p className="pt-2 italic">Last place...</p>
         <PodiumPlace size="xs" place={leaderboard.rankedPlayers.length} player={lastPlace} /> */}
       </div>
-      <div className="w-fit shrink-0">
+      <div>
         <h1 className="text-2xl text-center mb-4">Leader Board</h1>
         <div className="flex flex-col divide-y divide-primary-text/50">
           <div className="flex gap-4 text-base text-center mb-2">

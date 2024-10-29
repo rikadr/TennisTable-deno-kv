@@ -20,7 +20,7 @@ export type PlayerSummary = {
 
 export type LeaderboardDTO = {
   rankedPlayers: (PlayerSummary & { rank: number })[];
-  unrankedPlayers: (PlayerSummary & { potentialRank: number })[];
+  unrankedPlayers: PlayerSummary[];
 };
 
 export type PlayerSummaryDTO = PlayerSummary & {
