@@ -50,7 +50,7 @@ export const PodiumPlace: React.FC<Props> = ({ player, place, size }) => {
       <div className="w-16 flex justify-center">
         <div
           className={classNames(
-            "w-16 flex justify-center items-center rounded-full bg-primary-background text-primary-text shadow-inner shadow-primary-text",
+            "w-16 flex justify-center items-center rounded-full bg-primary-background text-primary-text",
             placeBoxSize[size],
           )}
         >
