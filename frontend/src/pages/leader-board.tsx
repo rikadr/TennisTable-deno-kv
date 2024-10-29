@@ -2,6 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { useClientDbContext } from "../wrappers/client-db-context";
 import { PodiumPlace } from "./podium-place";
+import { Elo } from "../wrappers/elo";
 
 export const LeaderBoard: React.FC = () => {
   const context = useClientDbContext();
@@ -26,81 +27,73 @@ export const LeaderBoard: React.FC = () => {
         {/* <p className="pt-2 italic">Last place...</p>
         <PodiumPlace size="xs" place={leaderboard.rankedPlayers.length} player={lastPlace} /> */}
       </div>
-      <div className="w-96 shrink-0">
-        <h1 className="text-2xl text-center">Leader Board</h1>
-        <table className="w-full">
-          <thead>
-            <tr>
-              <th>Player</th>
-              <th className="text-right">Elo</th>
-              {/* <th className="text-right">Win 🏆</th>
-              <th className="text-right">Loss 💔</th> */}
-              <th className="text-right">🏆:💔</th>
-            </tr>
-          </thead>
-          <tbody>
-            {leaderboard.rankedPlayers.map((player, index) => (
-              <tr key={index}>
-                <td>
-                  <Link to={`/player/${player.name}`} className="h-full hover:bg-secondary-background/20 flex w-full">
-                    <div className="font-thin text-primary-text w-10 text-center">#{player.rank}</div>
-                    {player.name}
-                  </Link>
-                </td>
-                <td className="text-right">
-                  {player.elo.toLocaleString("no-NO", {
-                    maximumFractionDigits: 0,
-                  })}
-                </td>
-                {/* <td className="text-right">{player.wins}</td>
-                <td className="text-right">{player.loss}</td> */}
-                <td className="text-right">
-                  {(player.wins / player.loss).toLocaleString("no-NO", {
-                    maximumFractionDigits: 1,
-                  })}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="w-fit shrink-0">
+        <h1 className="text-2xl text-center mb-4">Leader Board</h1>
+        <div className="flex flex-col divide-y divide-primary-text/50">
+          <div className="flex gap-4 text-base text-center mb-2">
+            <div className="w-5">#</div>
+            <div className="w-24 text-left pl-2">Name</div>
+            <div className="w-16 text-right">Elo</div>
+            <div className="w-16 text-right pl-5">Interval</div>
+            <div className="w-14 text-right">🏆:💔</div>
+          </div>
+          {leaderboard.rankedPlayers.map((player, index, list) => (
+            <Link
+              key={index}
+              to={`/player/${player.name}`}
+              className="bg-primary-background hover:bg-secondary-background/30 py-1 px-2 flex gap-4 text-xl font-light"
+            >
+              <div className="w-5 italic">{player.rank}</div>
+              <div className="w-24 font-normal">{player.name}</div>
+              <div className="w-16 text-right">
+                {player.elo.toLocaleString("no-NO", {
+                  maximumFractionDigits: 0,
+                })}
+              </div>
+              <div className="w-16 text-right">
+                {list[index - 1]
+                  ? (player.elo - list[index - 1].elo).toLocaleString("no-NO", {
+                      maximumFractionDigits: 0,
+                    })
+                  : "-"}
+              </div>
+              <div className="w-10 text-right text-base">
+                {(player.wins / player.loss).toLocaleString("no-NO", {
+                  maximumFractionDigits: 1,
+                })}
+              </div>
+            </Link>
+          ))}
+        </div>
 
         <h1 className="text-2xl text-center mt-10">Unranked players</h1>
-        <p className="w-full text-center">Play 5 or more games to get ranked</p>
-        <table className="w-full">
-          <thead>
-            <tr>
-              <th>Potential rank for Player</th>
-              <th className="text-right">Elo</th>
-              {/* <th className="text-right">Win 🏆</th>
-              <th className="text-right">Loss 💔</th> */}
-              <th className="text-right">🏆:💔</th>
-            </tr>
-          </thead>
-          <tbody>
-            {leaderboard.unrankedPlayers.map((player, index) => (
-              <tr key={index}>
-                <td>
-                  <Link to={`/player/${player.name}`} className="h-full hover:bg-secondary-background/10 flex w-full">
-                    <div className="font-thin text-primary-text w-10 text-center">#{player.potentialRank}</div>
-                    {player.name}
-                  </Link>
-                </td>
-                <td className="text-right">
-                  {player.elo.toLocaleString("no-NO", {
-                    maximumFractionDigits: 0,
-                  })}
-                </td>
-                {/* <td className="text-right">{player.wins}</td>
-                <td className="text-right">{player.loss}</td> */}
-                <td className="text-right">
-                  {(player.wins / player.loss).toLocaleString("no-NO", {
-                    maximumFractionDigits: 1,
-                  })}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <p className="w-full text-center mb-4">Play {Elo.GAME_LIMIT_FOR_RANKED} or more games to get ranked</p>
+        <div className="flex flex-col divide-y divide-primary-text/50">
+          <div className="flex gap-4 text-base text-center mb-2">
+            <div className="w-24 text-left pl-2">Name</div>
+            <div className="w-16 text-right">Elo</div>
+            <div className="w-14 text-right">🏆:💔</div>
+          </div>
+          {leaderboard.unrankedPlayers.map((player, index, list) => (
+            <Link
+              key={index}
+              to={`/player/${player.name}`}
+              className="bg-primary-background hover:bg-secondary-background/30 py-1 px-2 flex gap-4 text-xl font-light"
+            >
+              <div className="w-24 font-normal">{player.name}</div>
+              <div className="w-16 text-right">
+                {player.elo.toLocaleString("no-NO", {
+                  maximumFractionDigits: 0,
+                })}
+              </div>
+              <div className="w-10 text-right text-base">
+                {(player.wins / player.loss).toLocaleString("no-NO", {
+                  maximumFractionDigits: 1,
+                })}
+              </div>
+            </Link>
+          ))}
+        </div>
       </div>
     </div>
   );
