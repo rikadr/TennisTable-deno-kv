@@ -26,15 +26,17 @@ export const PvPStats: React.FC<Props> = ({ player1, player2 }) => {
           <p className="text-lg font-semibold text-center mb-1">
             {Math.round((p1.wins / games.length) * 100) || "-"} %
           </p>
-          <p>Longest streak: {p1.streak.longest}</p>
-          <p>Current streak: {p1.streak.current}</p>
+          <p>Streaks 🔥🏆</p>
+          <p>Longest: {p1.streak.longest}</p>
+          <p>Current: {p1.streak.current}</p>
         </section>
         <section>
           <p className="text-lg font-semibold text-center mb-1">
             {Math.round((p2.wins / games.length) * 100) || "-"} %
           </p>
-          <p>Longest streak: {p2.streak.longest}</p>
-          <p>Current streak: {p2.streak.current}</p>
+          <p>Streaks 🔥🏆</p>
+          <p>Longest: {p2.streak.longest}</p>
+          <p>Current: {p2.streak.current}</p>
         </section>
       </div>
       <div className="w-fit m-auto">
@@ -66,7 +68,7 @@ export const PvPStats: React.FC<Props> = ({ player1, player2 }) => {
               </Link>
             );
           })}
-        </div>{" "}
+        </div>
       </div>
     </div>
   );
@@ -80,8 +82,8 @@ export const WinsPillar: React.FC<{ name: string; wins: number; oponentWins: num
   const MAX_HEIGHT = 250;
   const TEXT_INSIDE_THRESHOLD = 100;
 
-  const heightPerWin = (MAX_HEIGHT - BASE_HEIGHT) / (Math.max(wins, oponentWins) || 1);
-  const pillarHeight = BASE_HEIGHT + wins * heightPerWin;
+  const heightPerWin = MAX_HEIGHT / (Math.max(wins, oponentWins) || 1);
+  const pillarHeight = Math.max(wins * heightPerWin, BASE_HEIGHT);
   const showTextInside = pillarHeight >= TEXT_INSIDE_THRESHOLD;
 
   const winsText = () => (
