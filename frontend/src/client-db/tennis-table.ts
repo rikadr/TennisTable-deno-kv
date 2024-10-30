@@ -4,8 +4,8 @@ import { PVP } from "./pvp";
 import { ClientDbDTO, Game, Player, PlayerWithElo } from "./types";
 
 export class TennisTable {
-  players: Player[] = [];
-  games: Game[] = [];
+  players: Player[];
+  games: Game[];
   leaderboard: Leaderboard;
   pvp: PVP;
 
@@ -13,7 +13,7 @@ export class TennisTable {
     this.players = data.players;
     this.games = data.games;
     this.leaderboard = new Leaderboard(data);
-    this.pvp = new PVP(data);
+    this.pvp = new PVP(data, this.leaderboard);
   }
 
   getAllPlayersELO(): PlayerWithElo[] {

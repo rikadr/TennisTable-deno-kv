@@ -23,20 +23,64 @@ export const PvPStats: React.FC<Props> = ({ player1, player2 }) => {
       </div>
       <div className="flex gap-2 justify-around">
         <section>
-          <p className="text-lg font-semibold text-center mb-1">
-            {Math.round((p1.wins / games.length) * 100) || "-"} %
-          </p>
-          <p>Streaks 🔥🏆</p>
+          <p className="text-lg font-semibold text-center">{Math.round((p1.wins / games.length) * 100) || "-"} %</p>
+          <p className="text-lg font-semibold mt-2">Streaks 🔥🏆</p>
           <p>Longest: {p1.streak.longest}</p>
           <p>Current: {p1.streak.current}</p>
+          <p className="text-lg font-semibold mt-2">
+            Points:{" "}
+            {p1.points.currentElo.toLocaleString("no-NO", {
+              maximumFractionDigits: 0,
+            })}
+          </p>
+          <p>
+            Gained:{" "}
+            {p1.points.gained.toLocaleString("no-NO", {
+              maximumFractionDigits: 0,
+            })}
+          </p>
+          <p>
+            Lost:{" "}
+            {p1.points.lost.toLocaleString("no-NO", {
+              maximumFractionDigits: 0,
+            })}
+          </p>
+          <p>
+            Net:{" "}
+            {(p1.points.gained - p1.points.lost).toLocaleString("no-NO", {
+              maximumFractionDigits: 0,
+            })}
+          </p>
         </section>
         <section>
-          <p className="text-lg font-semibold text-center mb-1">
-            {Math.round((p2.wins / games.length) * 100) || "-"} %
-          </p>
-          <p>Streaks 🔥🏆</p>
+          <p className="text-lg font-semibold text-center">{Math.round((p2.wins / games.length) * 100) || "-"} %</p>
+          <p className="text-lg font-semibold mt-2">Streaks 🔥🏆</p>
           <p>Longest: {p2.streak.longest}</p>
           <p>Current: {p2.streak.current}</p>
+          <p className="text-lg font-semibold mt-2">
+            Points:{" "}
+            {p2.points.currentElo.toLocaleString("no-NO", {
+              maximumFractionDigits: 0,
+            })}
+          </p>
+          <p>
+            Gained:{" "}
+            {p2.points.gained.toLocaleString("no-NO", {
+              maximumFractionDigits: 0,
+            })}
+          </p>
+          <p>
+            Lost:{" "}
+            {p2.points.lost.toLocaleString("no-NO", {
+              maximumFractionDigits: 0,
+            })}
+          </p>
+          <p>
+            Net:{" "}
+            {(p2.points.gained - p2.points.lost).toLocaleString("no-NO", {
+              maximumFractionDigits: 0,
+            })}
+          </p>
         </section>
       </div>
       <div className="w-fit m-auto">

@@ -2,8 +2,8 @@ import { Elo } from "./elo";
 import { ClientDbDTO, Game, LeaderboardDTO, Player, PlayerComparison, PlayerSummary } from "./types";
 
 export class Leaderboard {
-  private players: Player[] = [];
-  private games: Game[] = [];
+  private players: Player[];
+  private games: Game[];
 
   private _leaderBoardCache: ReturnType<typeof this._getLeaderboard> | undefined;
   private _leaderBoardMapCache: ReturnType<typeof this._getLeaderboardMap> | undefined;
