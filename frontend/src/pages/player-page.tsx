@@ -63,7 +63,7 @@ export const PlayerPage: React.FC = () => {
         <div className="flex gap-4 text-base text-center mb-2">
           <div className="w-32 text-left pl-2">Game</div>
           <div className="w-12 pl-4 whitespace-nowrap">Elo +-</div>
-          <div className="w-28 text-right">Time</div>
+          <div className="w-32 text-right">Time</div>
         </div>
         {reverseGames?.map((game, index) => (
           <Link
@@ -79,7 +79,13 @@ export const PlayerPage: React.FC = () => {
                 maximumFractionDigits: 0,
               })}
             </div>
-            <div className="w-28 text-right text-base">{timeAgo(new Date(game.time))}</div>
+            <div className="w-32 text-right text-base">{timeAgo(new Date(game.time))}</div>
+            <Link
+              to={`/1v1?player1=${summary?.name}&player2=${game.oponent}`}
+              className="px-2 py-1 text-base rounded-lg bg-secondary-background text-secondary-text hover:bg-secondary-background/70"
+            >
+              Compare 1v1
+            </Link>
           </Link>
         ))}
       </div>

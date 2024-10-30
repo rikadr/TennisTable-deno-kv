@@ -16,6 +16,7 @@ import { CameraPage } from "./pages/camera-page";
 import { NavMenu } from "./wrappers/nav-menu";
 import { ZoomWrapper } from "./wrappers/zoom-wrapper";
 import { LeaderBoard } from "./pages/leader-board";
+import { PvPPage } from "./pages/pvp-page";
 
 const RequireAuth: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   if (!session.isAuthenticated) {
@@ -42,6 +43,7 @@ function App() {
                     <Route path="/leader-board" element={<LeaderBoard />} />
                     <Route path="/compare-players" element={<ComparePlayersPage />} />
                     <Route path="/player/:name" element={<PlayerPage />} />
+                    <Route path="/1v1" element={<PvPPage />} />
                     <Route path="/add-player" element={<AddPlayerPage />} />
                     <Route path="/camera" element={<CameraPage />} />
                     <Route path="/add-game" element={<AddGamePage />} />

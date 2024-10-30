@@ -4,7 +4,7 @@ import { Link, Outlet, useLocation } from "react-router-dom";
 import { classNames } from "../common/class-names";
 import { session } from "../services/auth";
 import pumpkinLogo from "../img/halloween/tennis-table.png";
-import { CURRENT_THEME } from "./types";
+import { CURRENT_THEME } from "../client-db/types";
 
 const MENU_HEIGHT = "h-20 md:h-12";
 

@@ -2,7 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { useClientDbContext } from "../wrappers/client-db-context";
 import { PodiumPlace } from "./podium-place";
-import { Elo } from "../wrappers/elo";
+import { Elo } from "../client-db/elo";
 
 export const LeaderBoard: React.FC = () => {
   const context = useClientDbContext();

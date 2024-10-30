@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { CURRENT_THEME, PlayerSummary } from "../wrappers/types";
+import { CURRENT_THEME, PlayerSummary } from "../client-db/types";
 import { classNames } from "../common/class-names";
 
 import pumpkin1 from "../img/halloween/pumpkin-numbers/1.png";

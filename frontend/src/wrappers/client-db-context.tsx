@@ -1,8 +1,8 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { httpClient } from "../common/http-client";
 import { createContext, useContext } from "react";
-import { ClientDbDTO } from "./types";
-import { TennisTable } from "./tennis-table";
+import { ClientDbDTO } from "../client-db/types";
+import { TennisTable } from "../client-db/tennis-table";
 
 function useClientDb() {
   return useQuery<ClientDbDTO>({
