@@ -11,6 +11,8 @@ const MENU_HEIGHT = "h-20 md:h-12";
 export const NavMenu: React.FC = () => {
   const { pathname } = useLocation();
 
+  const showLoginLink = window.location.pathname === "/player/rikard";
+
   useEffect(() => {
     // Scroll to top whenever the path changes
     window.scrollTo({
@@ -20,27 +22,26 @@ export const NavMenu: React.FC = () => {
     });
   }, [pathname]);
 
-  const menuItems = useMemo(
-    () => {
-      const items: { name: string; to: string }[] = [
-        { name: "🏆 Leaderboard", to: "/leader-board" },
-        { name: "+🏓  Add game", to: "/add-game" },
-        { name: "+👤  New player", to: "/add-player" },
-        { name: "👥🥊 Compare 1v1", to: "/1v1" },
-        { name: "📈 Compare all", to: "/compare-players" },
-        { name: "Camera", to: "/camera" },
-      ];
-      if (session.isAuthenticated) {
-        items.push({ name: "Admin Page 🔐", to: "/admin" });
-      } else {
-        items.push({ name: "Log in", to: "/login" });
-      }
-      return items;
-    },
-    [
-      // TODO: update when session.isAuthenticated changes
-    ],
-  );
+  const menuItems = useMemo(() => {
+    const items: { name: string; to: string }[] = [
+      { name: "🏆 Leaderboard", to: "/leader-board" },
+      { name: "+🏓  Add game", to: "/add-game" },
+      { name: "+👤  New player", to: "/add-player" },
+      { name: "👥🥊 Compare 1v1", to: "/1v1" },
+      { name: "📈 Compare all", to: "/compare-players" },
+      { name: "Camera", to: "/camera" },
+    ];
+    if (session.isAuthenticated) {
+      items.push({ name: "Admin Page 🔐", to: "/admin" });
+    }
+    if (showLoginLink) {
+      items.push({ name: "Log in", to: "/secret" });
+    }
+    return items;
+  }, [
+    // TODO: update when session.isAuthenticated changes
+    showLoginLink,
+  ]);
 
   const renderMenuitems = () => {
     const list = menuItems.map((item, index) => (

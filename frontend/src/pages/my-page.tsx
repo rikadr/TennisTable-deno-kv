@@ -8,10 +8,8 @@ export const MyPage: React.FC = () => {
   const query = useQuery({
     queryKey: ["me"],
     queryFn: async () => {
-      const response = await httpClient(
-        process.env.REACT_APP_API_BASE_URL + "/user/me",
-      );
-      response.status === 401 && navigate("/login");
+      const response = await httpClient(process.env.REACT_APP_API_BASE_URL + "/user/me");
+      response.status === 401 && navigate("/secret");
       return response.json();
     },
   });

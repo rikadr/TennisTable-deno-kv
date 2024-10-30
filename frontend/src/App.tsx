@@ -21,7 +21,7 @@ import { PvPPage } from "./pages/pvp-page";
 const RequireAuth: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   if (!session.isAuthenticated) {
     session.token = undefined;
-    return <Navigate to="/login" />;
+    return <Navigate to="/secret" />;
   }
 
   return children;
@@ -47,7 +47,7 @@ function App() {
                     <Route path="/add-player" element={<AddPlayerPage />} />
                     <Route path="/camera" element={<CameraPage />} />
                     <Route path="/add-game" element={<AddGamePage />} />
-                    <Route path="/login" element={<LoginPage />} />
+                    <Route path="/secret" element={<LoginPage />} />
                     <Route path="/sign-up" element={<SignupPage />} />
                   </Route>
                   <Route
