@@ -26,7 +26,8 @@ export const NavMenu: React.FC = () => {
         { name: "🏆 Leaderboard", to: "/leader-board" },
         { name: "+🏓  Add game", to: "/add-game" },
         { name: "+👤  New player", to: "/add-player" },
-        { name: "📈 Compare players", to: "/compare-players" },
+        { name: "👥🥊 Compare 1v1", to: "/1v1" },
+        { name: "📈 Compare all", to: "/compare-players" },
         { name: "Camera", to: "/camera" },
       ];
       if (session.isAuthenticated) {

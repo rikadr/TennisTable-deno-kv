@@ -1,5 +1,7 @@
 import { useClientDbContext } from "../wrappers/client-db-context";
 import { classNames } from "../common/class-names";
+import { Link } from "react-router-dom";
+import { timeAgo } from "../common/date-utils";
 
 type Props = {
   player1?: string;
@@ -12,7 +14,7 @@ export const PvPStats: React.FC<Props> = ({ player1, player2 }) => {
   if (!player1 || !player2) {
     return <div>Please select players</div>;
   }
-  const { player1: p1, player2: p2 } = context.pvp.compare(player1, player2);
+  const { player1: p1, player2: p2, games } = context.pvp.compare(player1, player2);
   return (
     <div className="space-y-4">
       <div className="flex gap-2">
@@ -21,13 +23,43 @@ export const PvPStats: React.FC<Props> = ({ player1, player2 }) => {
       </div>
       <div className="flex gap-2 justify-around">
         <section>
+          <p className="text-lg font-semibold text-center mb-1">
+            {Math.round((p1.wins / games.length) * 100) || "-"} %
+          </p>
           <p>Longest streak: {p1.streak.longest}</p>
           <p>Current streak: {p1.streak.current}</p>
         </section>
         <section>
+          <p className="text-lg font-semibold text-center mb-1">
+            {Math.round((p2.wins / games.length) * 100) || "-"} %
+          </p>
           <p>Longest streak: {p2.streak.longest}</p>
           <p>Current streak: {p2.streak.current}</p>
         </section>
+      </div>
+      <div className="w-fit m-auto">
+        <div className="flex flex-col divide-y divide-primary-text/50">
+          <div className="flex gap-4 text-base text-center mb-2">
+            <div className="w-32 text-left pl-2">Winner</div>
+            {/* <div className="w-12 pl-4 whitespace-nowrap">Elo +-</div> */}
+            <div className="w-32 text-right">Time</div>
+          </div>
+          {games.map((game, index) => (
+            <Link
+              key={p1.name + p2.name + index}
+              to={`/player/${game.winner}`}
+              className="bg-primary-background hover:bg-secondary-background/30 py-1 px-2 flex gap-4 text-xl font-light"
+            >
+              <div className="w-32 font-normal whitespace-nowrap">🏆 {game.winner}</div>
+              {/* <div className="w-12 text-right">
+                {(0).toLocaleString("no-NO", {
+                  maximumFractionDigits: 0,
+                })}
+              </div> */}
+              <div className="w-32 text-right text-base">{timeAgo(new Date(game.time))}</div>
+            </Link>
+          ))}
+        </div>{" "}
       </div>
     </div>
   );
@@ -49,7 +81,7 @@ export const WinsPillar: React.FC<{ name: string; wins: number; oponentWins: num
     <div
       className={classNames("flex flex-col items-center", showTextInside ? "text-secondary-text" : "text-primary-text")}
     >
-      <div className="text-5xl font-semibold sm:text-6xl">{wins}</div>
+      <div className="text-5xl font-semibold sm:text-6xl transition-all duration-500">{wins}</div>
     </div>
   );
 
@@ -58,12 +90,12 @@ export const WinsPillar: React.FC<{ name: string; wins: number; oponentWins: num
       <div className="grow" />
       {!showTextInside && winsText()}
       <div
-        className="w-full mt-1 py-1 flex flex-col justify-between items-center bg-secondary-background rounded-t-3xl transition-all duration-500"
+        className="w-full mt-1 py-1 flex flex-col justify-between items-center bg-secondary-background rounded-t-[2rem] md:rounded-t-[3rem] transition-all duration-500"
         style={{ height: `${pillarHeight}px` }}
       >
         {showTextInside && winsText()}
         <div className="grow" />
-        <p className="text-secondary-text text-xl sm:text-2xl md:text-3xl uppercase font-bold tracking-tight">
+        <p className="text-secondary-text text-xl sm:text-2xl md:text-3xl uppercase font-bold tracking-tight transition-all duration-500">
           {name}{" "}
         </p>
       </div>

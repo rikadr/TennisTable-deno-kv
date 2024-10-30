@@ -9,7 +9,7 @@ export class PVP {
     this.games = data.games;
   }
 
-  compare(player1: string, player2: string): { player1: PlayerComparison; player2: PlayerComparison } {
+  compare(player1: string, player2: string): { player1: PlayerComparison; player2: PlayerComparison; games: Game[] } {
     const relevantGames = this.games.filter(
       (game) =>
         // Player 1 wins
@@ -24,6 +24,7 @@ export class PVP {
     return {
       player1: { name: player1, wins: player1Wins.length, streak: this._getWinStreak(player1, relevantGames) },
       player2: { name: player2, wins: player2Wins.length, streak: this._getWinStreak(player2, relevantGames) },
+      games: relevantGames,
     };
   }
 
