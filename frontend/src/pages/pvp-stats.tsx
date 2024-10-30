@@ -44,21 +44,24 @@ export const PvPStats: React.FC<Props> = ({ player1, player2 }) => {
             {/* <div className="w-12 pl-4 whitespace-nowrap">Elo +-</div> */}
             <div className="w-32 text-right">Time</div>
           </div>
-          {games.map((game, index) => (
-            <Link
-              key={p1.name + p2.name + index}
-              to={`/player/${game.winner}`}
-              className="bg-primary-background hover:bg-secondary-background/30 py-1 px-2 flex gap-4 text-xl font-light"
-            >
-              <div className="w-32 font-normal whitespace-nowrap">🏆 {game.winner}</div>
-              {/* <div className="w-12 text-right">
+          {games.map((_, index, list) => {
+            const game = list[list.length - 1 - index];
+            return (
+              <Link
+                key={p1.name + p2.name + index}
+                to={`/player/${game.winner}`}
+                className="bg-primary-background hover:bg-secondary-background/30 py-1 px-2 flex gap-4 text-xl font-light"
+              >
+                <div className="w-32 font-normal whitespace-nowrap">🏆 {game.winner}</div>
+                {/* <div className="w-12 text-right">
                 {(0).toLocaleString("no-NO", {
                   maximumFractionDigits: 0,
                 })}
               </div> */}
-              <div className="w-32 text-right text-base">{timeAgo(new Date(game.time))}</div>
-            </Link>
-          ))}
+                <div className="w-32 text-right text-base">{timeAgo(new Date(game.time))}</div>
+              </Link>
+            );
+          })}
         </div>{" "}
       </div>
     </div>
