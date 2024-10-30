@@ -87,7 +87,7 @@ export const PvPStats: React.FC<Props> = ({ player1, player2 }) => {
         <div className="flex flex-col divide-y divide-primary-text/50">
           <div className="flex gap-4 text-base text-center mb-2">
             <div className="w-32 text-left pl-2">Winner</div>
-            {/* <div className="w-12 pl-4 whitespace-nowrap">Elo +-</div> */}
+            <div className="w-8 text-right pl-8 whitespace-nowrap">Elo gained</div>
             <div className="w-32 text-right">Time</div>
           </div>
           {games.map((_, index, list) => {
@@ -95,19 +95,19 @@ export const PvPStats: React.FC<Props> = ({ player1, player2 }) => {
             return (
               <Link
                 key={p1.name + p2.name + index}
-                to={`/player/${game.winner}`}
+                to={`/player/${game.result === "win" ? p1.name : p2.name}`}
                 className="bg-primary-background hover:bg-secondary-background/30 py-1 px-2 flex gap-4 text-xl font-light"
               >
-                <div className="w-48 font-normal whitespace-nowrap flex gap-4">
-                  <div className="w-5 shrink-0">{p1.name === game.winner && "🏆"}</div>
-                  {game.winner}
-                  <div className="w-5 shrink-0">{p2.name === game.winner && "🏆"}</div>
+                <div className="w-44 font-normal whitespace-nowrap flex gap-3">
+                  <div className="w-5 shrink-0">{game.result === "win" && "🏆"}</div>
+                  {game.result === "win" ? p1.name : p2.name}
+                  <div className="w-5 shrink-0">{game.result === "loss" && "🏆"}</div>
                 </div>
-                {/* <div className="w-12 text-right">
-                {(0).toLocaleString("no-NO", {
-                  maximumFractionDigits: 0,
-                })}
-              </div> */}
+                <div className="w-8 text-right">
+                  {Math.abs(game.pointsDiff).toLocaleString("no-NO", {
+                    maximumFractionDigits: 0,
+                  })}
+                </div>
                 <div className="w-32 text-right text-base">{timeAgo(new Date(game.time))}</div>
               </Link>
             );

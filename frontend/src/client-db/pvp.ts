@@ -1,5 +1,5 @@
 import { Leaderboard } from "./leaderboard";
-import { Game, ClientDbDTO } from "./types";
+import { Game, ClientDbDTO, PlayerSummary } from "./types";
 
 export class PVP {
   private games: Game[];
@@ -10,7 +10,10 @@ export class PVP {
     this.leaderboard = leaderboard;
   }
 
-  compare(player1: string, player2: string): { player1: PlayerComparison; player2: PlayerComparison; games: Game[] } {
+  compare(
+    player1: string,
+    player2: string,
+  ): { player1: PlayerComparison; player2: PlayerComparison; games: PlayerSummary["games"] } {
     const relevantGames = this.games.filter(
       (game) =>
         // Player 1 wins
@@ -51,7 +54,7 @@ export class PVP {
         streak: this._getWinStreak(player2, relevantGames),
         points: { currentElo: player2Summary?.elo || 0, ...points.p2 },
       },
-      games: relevantGames,
+      games: relevantSummaryGames || [],
     };
   }
 
