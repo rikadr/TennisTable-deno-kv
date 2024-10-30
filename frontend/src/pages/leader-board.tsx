@@ -73,6 +73,7 @@ export const LeaderBoard: React.FC = () => {
             <div className="w-32 text-left pl-2">Name</div>
             <div className="w-12 text-right">Elo</div>
             <div className="w-14 text-right">🏆:💔</div>
+            <div className="w-14 text-right">Games</div>
           </div>
           {leaderboard.unrankedPlayers.map((player, index) => (
             <Link
@@ -89,6 +90,11 @@ export const LeaderBoard: React.FC = () => {
               <div className="w-10 text-right text-base">
                 {(player.wins / player.loss).toLocaleString("no-NO", {
                   maximumFractionDigits: 1,
+                })}
+              </div>
+              <div className="w-14 text-right text-base">
+                {player.games.length.toLocaleString("no-NO", {
+                  maximumFractionDigits: 0,
                 })}
               </div>
             </Link>
