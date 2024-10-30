@@ -52,7 +52,11 @@ export const PvPStats: React.FC<Props> = ({ player1, player2 }) => {
                 to={`/player/${game.winner}`}
                 className="bg-primary-background hover:bg-secondary-background/30 py-1 px-2 flex gap-4 text-xl font-light"
               >
-                <div className="w-32 font-normal whitespace-nowrap">🏆 {game.winner}</div>
+                <div className="w-32 font-normal whitespace-nowrap flex gap-4">
+                  <div className="w-5">{p1.name === game.winner && "🏆"}</div>
+                  {game.winner}
+                  <div className="w-5">{p2.name === game.winner && "🏆"}</div>
+                </div>
                 {/* <div className="w-12 text-right">
                 {(0).toLocaleString("no-NO", {
                   maximumFractionDigits: 0,
