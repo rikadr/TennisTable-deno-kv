@@ -65,7 +65,9 @@ export const PlayerPage: React.FC = () => {
       {/* <h1 className="text-2xl text-center mt-4">
         Total {summary && summary?.games.length + " games"}
       </h1> */}
-      <h1 className="text-2xl text-center mt-4 mb-1">Last 10 games</h1>
+      <h1 className="text-2xl text-center mt-4">Last 10 games</h1>
+      <p className="mb-1">Click to go to player</p>
+
       <div className="flex flex-col divide-y divide-primary-text/50">
         <div className="flex gap-4 text-base text-center mb-2">
           <div className="w-32 text-left pl-2">Game</div>
