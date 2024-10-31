@@ -61,6 +61,7 @@ export class Leaderboard {
         isRanked: boolean;
         rank?: number;
         streaks?: { longestWin: number; longestLose: number };
+        pointsDistrubution: { name: string; points: number }[];
       })
     | undefined {
     const leaderboardMap = this._getCachedLeaderboardMap();
@@ -91,11 +92,23 @@ export class Leaderboard {
       0,
     );
 
+    // Points distrubution
+
+    const pointsMap: Record<string, number> = {};
+    for (const game of player.games) {
+      pointsMap[game.oponent] = (pointsMap[game.oponent] || 0) + game.pointsDiff;
+    }
+
+    const pointsDistrubution = Object.keys(pointsMap)
+      .map((name) => ({ name, points: pointsMap[name] }))
+      .sort((a, b) => b.points - a.points);
+
     return {
       ...player,
       isRanked: player.games.length >= Elo.GAME_LIMIT_FOR_RANKED,
       rank: playerIsRanked ? playersWithHigherElo + 1 : undefined,
       streaks,
+      pointsDistrubution,
     };
   }
 

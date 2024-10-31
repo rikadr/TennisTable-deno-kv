@@ -6,6 +6,7 @@ import { NameType, ValueType } from "recharts/types/component/DefaultTooltipCont
 import { useWindowSize } from "usehooks-ts";
 import { useClientDbContext } from "../wrappers/client-db-context";
 import { PodiumPlace } from "./podium-place";
+import { PlayerPointsDistrubution } from "./player-points-distribution";
 
 export const PlayerPage: React.FC = () => {
   const { name } = useParams();
@@ -17,7 +18,7 @@ export const PlayerPage: React.FC = () => {
 
   const reverseGames = useMemo(() => {
     if (!summary) return;
-    return summary?.games.slice(Math.max(summary?.games.length - 8, 0)).reverse();
+    return summary?.games.slice(Math.max(summary?.games.length - 10, 0)).reverse();
   }, [summary]);
 
   return (
@@ -55,10 +56,16 @@ export const PlayerPage: React.FC = () => {
           <div className="">Longest lose-streak 🔥💔 {summary.streaks.longestLose}</div>
         </>
       )}
+      <h1 className="text-2xl text-center mt-4">Points distribution</h1>
+      <p className="mb-1">Click to compare 1v1</p>
+
+      <div className="w-full max-w-2xl">
+        <PlayerPointsDistrubution name={summary?.name} />
+      </div>
       {/* <h1 className="text-2xl text-center mt-4">
         Total {summary && summary?.games.length + " games"}
       </h1> */}
-      <h1 className="text-2xl text-center mt-4">Last 8 games</h1>
+      <h1 className="text-2xl text-center mt-4 mb-1">Last 10 games</h1>
       <div className="flex flex-col divide-y divide-primary-text/50">
         <div className="flex gap-4 text-base text-center mb-2">
           <div className="w-32 text-left pl-2">Game</div>
@@ -80,12 +87,6 @@ export const PlayerPage: React.FC = () => {
               })}
             </div>
             <div className="w-32 text-right text-base">{timeAgo(new Date(game.time))}</div>
-            <Link
-              to={`/1v1?player1=${summary?.name}&player2=${game.oponent}`}
-              className="px-2 py-1 text-base rounded-lg bg-secondary-background text-secondary-text hover:bg-secondary-background/70"
-            >
-              Compare 1v1
-            </Link>
           </Link>
         ))}
       </div>
