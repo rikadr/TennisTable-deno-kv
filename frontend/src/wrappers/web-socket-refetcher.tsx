@@ -8,10 +8,13 @@ type Props = {
 export const WebSocketRefetcher: React.FC<Props> = ({ children }) => {
   const queryClient = useQueryClient();
 
-  const { latestMessage } = useWebSocket(process.env.REACT_APP_API_BASE_URL + "/ws-updates");
-  if (latestMessage === WS_BROADCAST.RELOAD) {
-    // Server has new data and client should refetch.
-    queryClient.invalidateQueries();
+  function onMessage(message: string) {
+    if (message === WS_BROADCAST.RELOAD) {
+      queryClient.invalidateQueries();
+    }
   }
+
+  useWebSocket(process.env.REACT_APP_API_BASE_URL + "/ws-updates", onMessage);
+
   return children;
 };

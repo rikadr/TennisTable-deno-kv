@@ -6,9 +6,8 @@ export enum WS_BROADCAST {
   RELOAD = "reload",
 }
 
-export const useWebSocket = (url: string) => {
+export const useWebSocket = (url: string, onMessage: (message: string) => void) => {
   const [webSocket, setWebSocket] = useState<WebSocket>();
-  const [latestMessage, setLatestMessage] = useState<string>();
 
   function send(message: string) {
     webSocket?.send(message);
@@ -18,7 +17,7 @@ export const useWebSocket = (url: string) => {
     const socket = new WebSocket(url);
     socket.onopen = () => {};
     socket.onmessage = (messageEvent) => {
-      setLatestMessage(messageEvent.data);
+      onMessage(messageEvent.data);
     };
     socket.onerror = (error) => {
       console.error("Websocket error", error);
@@ -38,5 +37,5 @@ export const useWebSocket = (url: string) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [url]);
 
-  return { send, latestMessage };
+  return { send };
 };
