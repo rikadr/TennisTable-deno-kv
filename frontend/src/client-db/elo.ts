@@ -6,7 +6,7 @@ export abstract class Elo {
   public static readonly K = 32;
   public static readonly DIVISOR = 400;
   public static readonly INITIAL_ELO = 1_000;
-  public static readonly GAME_LIMIT_FOR_RANKED = 5;
+  public static readonly GAME_LIMIT_FOR_RANKED = 7;
 
   public static eloCalculator(
     games: Game[],
