@@ -57,7 +57,7 @@ export const PlayerPage: React.FC = () => {
         </>
       )}
       <h1 className="text-2xl text-center mt-4">Points distribution</h1>
-      <p className="mb-1">Click to compare 1v1</p>
+      <p className="mb-1">Click to go to player</p>
 
       <div className="w-full max-w-2xl">
         <PlayerPointsDistrubution name={summary?.name} />
@@ -66,7 +66,7 @@ export const PlayerPage: React.FC = () => {
         Total {summary && summary?.games.length + " games"}
       </h1> */}
       <h1 className="text-2xl text-center mt-4">Last 10 games</h1>
-      <p className="mb-1">Click to go to player</p>
+      <p className="mb-1">Click to compare 1v1</p>
 
       <div className="flex flex-col divide-y divide-primary-text/50">
         <div className="flex gap-4 text-base text-center mb-2">
@@ -77,7 +77,7 @@ export const PlayerPage: React.FC = () => {
         {reverseGames?.map((game, index) => (
           <Link
             key={(summary?.name ?? "-") + index + game.oponent}
-            to={`/player/${game.oponent}`}
+            to={`/1v1?player1=${summary?.name}&player2=${game.oponent}`}
             className="bg-primary-background hover:bg-secondary-background/30 py-1 px-2 flex gap-4 text-xl font-light"
           >
             <div className="w-32 font-normal whitespace-nowrap">

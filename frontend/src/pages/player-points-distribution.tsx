@@ -15,14 +15,14 @@ export const PlayerPointsDistrubution: React.FC<Props> = ({ name }) => {
 
   return (
     <div className="flex flex-col w-full px-4 divide-y divide-secondary-background">
-      {summary?.pointsDistrubution.map(({ name, points }) => {
+      {summary?.pointsDistrubution.map(({ name, points }, index) => {
         const fraction = points / range;
         return (
-          <Link to={`/1v1?player1=${summary.name}&player2=${name}`} className="group" key={name}>
+          <Link to={`/player/${name}`} className="group" key={index}>
             <div className="relative w-full h-6 group-hover:bg-primary-text/5">
               <div
                 className={classNames(
-                  "absolute h-6 w-[20%] bg-secondary-background group-hover:bg-secondary-background/70 top-0",
+                  "absolute h-6 w-[20%] bg-secondary-background group-hover:bg-secondary-background/70 top-0 transition-all duration-300",
                   points > 0 ? "right-1/2 rounded-l-md" : "left-1/2  rounded-r-md",
                 )}
                 style={{ width: `${(Math.abs(fraction) / 2) * 100}%` }}
