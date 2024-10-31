@@ -23,14 +23,14 @@ export const PlayerPointsDistrubution: React.FC<Props> = ({ name }) => {
               <div
                 className={classNames(
                   "absolute h-6 w-[20%] bg-secondary-background group-hover:bg-secondary-background/70 top-0",
-                  points > 0 ? "right-1/2 rounded-l-md" : "left-1/2  rounded-r-md",
+                  points > 0 ? "right-1/2 rounded-l-full" : "left-1/2  rounded-r-full",
                 )}
                 style={{ width: `${(Math.abs(fraction) / 2) * 100}%` }}
               />
-              <div className="absolute top-0 left-2 text-secondary-text">{name}</div>
+              <div className="absolute top-0 left-2 text-primary-text">{name}</div>
               <div
                 className={classNames(
-                  "absolute top-0 text-secondary-text",
+                  "absolute top-0 text-primary-text",
                   points > 0 ? "right-1/2 pr-2" : "left-1/2 pl-2",
                 )}
               >
