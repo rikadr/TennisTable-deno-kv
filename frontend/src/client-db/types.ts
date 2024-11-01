@@ -35,4 +35,4 @@ export type PlayerComparison = {
 };
 
 type Theme = "default" | "halloween";
-export const CURRENT_THEME: Theme = "halloween";
+export const CURRENT_THEME: Theme = "default";
