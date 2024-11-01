@@ -4,7 +4,7 @@ import {
   DeleteGamePayload,
   Game,
   createGame,
-  deleteAllGames,
+  // deleteAllGames,
   deleteGame,
   getGame,
   importGame,
@@ -92,9 +92,10 @@ export function registerGameRoutes(api: Router, webSocketClientManager: WebSocke
   /**
    * Delete all games
    */
-  api.delete("/games", isAuthenticated, async (context) => {
-    // requireAuth("game", "delete") // Auth requirement is removed because auth is not working properly atm
-    const deleted = await deleteAllGames();
-    context.response.body = deleted;
-  });
+  // Commented out because it's not used, and is too dangerous to have it enabled
+  // api.delete("/games", isAuthenticated, async (context) => {
+  //   // requireAuth("game", "delete") // Auth requirement is removed because auth is not working properly atm
+  //   const deleted = await deleteAllGames();
+  //   context.response.body = deleted;
+  // });
 }
