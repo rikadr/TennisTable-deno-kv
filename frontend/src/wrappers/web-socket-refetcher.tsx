@@ -37,8 +37,8 @@ export const WebSocketRefetcher: React.FC<Props> = ({ children }) => {
             "w-4 m-1 rounded-full aspect-square z-50 absolute top-24 md:top-14 right-0",
             webSocket.readyState === webSocket.OPEN && "bg-green-500",
             webSocket.readyState === webSocket.CONNECTING && "bg-blue-500",
-            webSocket.readyState === webSocket.CLOSING && "bg-orange-500",
-            webSocket.readyState === webSocket.CLOSED && "bg-red-500",
+            webSocket.readyState === webSocket.CLOSING && "bg-purple-400",
+            webSocket.readyState === webSocket.CLOSED && "bg-red-600",
           )}
         />
       )}
