@@ -11,7 +11,6 @@ type Props = {
 export const WebSocketRefetcher: React.FC<Props> = ({ children }) => {
   const queryClient = useQueryClient();
   const [connectionId, setConnectionId] = useState<string>();
-  const [broadcastsReceived, setBroadcastsReceived] = useState(0);
   const [debugMessages, setDebugMessages] = useState<string[]>([]);
   const [showDebug, setShowDebug] = useLocalStorage("show-debug-stats", false);
 
@@ -19,11 +18,9 @@ export const WebSocketRefetcher: React.FC<Props> = ({ children }) => {
     setDebugMessages([...debugMessages, formatTime() + " Message " + message]);
     if (message === WS_BROADCAST.RELOAD) {
       queryClient.invalidateQueries();
-      setBroadcastsReceived(broadcastsReceived + 1);
     }
     if (message.startsWith(WS_BROADCAST.CONNECTION_ID)) {
       setConnectionId(message.split(":")[1]);
-      setBroadcastsReceived(0);
     }
   }
 
@@ -57,7 +54,6 @@ export const WebSocketRefetcher: React.FC<Props> = ({ children }) => {
         )}
         <div className="flex gap-4">
           <p>Connection ID: {connectionId}</p>
-          <p>Broadcasts: {broadcastsReceived}</p>
         </div>
         {showDebug && debugMessages.map((m, i, l) => <p key={i}>{l[l.length - 1 - i]}</p>)}
       </div>
