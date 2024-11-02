@@ -34,7 +34,7 @@ export const WebSocketRefetcher: React.FC<Props> = ({ children }) => {
       {showDebug && webSocket && (
         <div
           className={classNames(
-            "w-4 m-1 rounded-full aspect-square z-50 absolute top-24 md:top-14 right-0",
+            "w-4 m-1 rounded-full aspect-square z-50 absolute top-20 md:top-12 right-0",
             webSocket.readyState === webSocket.OPEN && "bg-green-500",
             webSocket.readyState === webSocket.CONNECTING && "bg-blue-500",
             webSocket.readyState === webSocket.CLOSING && "bg-purple-400",
@@ -42,7 +42,7 @@ export const WebSocketRefetcher: React.FC<Props> = ({ children }) => {
           )}
         />
       )}
-      <div className="z-50 absolute top-24 md:top-14">
+      <div className="z-50 absolute top-20 md:top-12">
         {window.location.pathname === "/debug" && (
           <button className="p-1 bg-secondary-background text-secondary-text" onClick={() => setShowDebug(!showDebug)}>
             {showDebug ? "Hide " : "Show "} debug info

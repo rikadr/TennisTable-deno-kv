@@ -32,9 +32,9 @@ function App() {
   return (
     <QueryClientProvider client={client}>
       <div className="bg-primary-background min-h-screen w-full overflow-auto">
-        <WebSocketRefetcher>
-          <ClientDbWrapper>
-            <ZoomWrapper>
+        <ZoomWrapper>
+          <WebSocketRefetcher>
+            <ClientDbWrapper>
               <BrowserRouter>
                 <Routes>
                   <Route path="/" element={<NavMenu />}>
@@ -69,9 +69,9 @@ function App() {
                   </Route>
                 </Routes>
               </BrowserRouter>
-            </ZoomWrapper>
-          </ClientDbWrapper>
-        </WebSocketRefetcher>
+            </ClientDbWrapper>
+          </WebSocketRefetcher>
+        </ZoomWrapper>
       </div>
     </QueryClientProvider>
   );
