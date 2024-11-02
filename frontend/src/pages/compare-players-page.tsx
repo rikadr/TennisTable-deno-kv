@@ -6,6 +6,12 @@ import { NameType, ValueType } from "recharts/types/component/DefaultTooltipCont
 import { useClientDbContext } from "../wrappers/client-db-context";
 
 function stringToColor(name: string) {
+  switch (name) {
+    case "Peder":
+    case "Rikard":
+    case "Simone":
+      name = name.toLowerCase();
+  }
   let hash = 0;
   for (let i = 0; i < name.length; i++) {
     hash = name.charCodeAt(i) + ((hash << 5) - hash);

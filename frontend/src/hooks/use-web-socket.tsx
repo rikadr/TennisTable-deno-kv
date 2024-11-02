@@ -6,7 +6,14 @@ export enum WS_BROADCAST {
   RELOAD = "reload",
 }
 
-export const useWebSocket = (url: string, onMessage: (message: string) => void) => {
+export const useWebSocket = (
+  url: string,
+  onMessage: (message: string) => void,
+  onConnect: () => void,
+  onRetry: () => void,
+  onClose: () => void,
+  onError: () => void,
+) => {
   const [webSocket, setWebSocket] = useState<WebSocket>();
 
   function send(message: string) {
@@ -15,16 +22,23 @@ export const useWebSocket = (url: string, onMessage: (message: string) => void) 
 
   function openWebSocket() {
     const socket = new WebSocket(url);
-    socket.onopen = () => {};
+    socket.onopen = () => {
+      onConnect();
+    };
     socket.onmessage = (messageEvent) => {
       onMessage(messageEvent.data);
     };
     socket.onerror = (error) => {
       console.error("Websocket error", error);
+      onError();
     };
     socket.onclose = () => {
       // Retry connection
-      setTimeout(openWebSocket, 1_000);
+      onClose();
+      setTimeout(() => {
+        onRetry();
+        openWebSocket();
+      }, 2_000);
     };
     setWebSocket(socket);
   }
@@ -37,5 +51,5 @@ export const useWebSocket = (url: string, onMessage: (message: string) => void) 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [url]);
 
-  return { send };
+  return { send, webSocket };
 };

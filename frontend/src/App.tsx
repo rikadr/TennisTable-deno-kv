@@ -49,23 +49,24 @@ function App() {
                     <Route path="/add-game" element={<AddGamePage />} />
                     <Route path="/secret" element={<LoginPage />} />
                     <Route path="/sign-up" element={<SignupPage />} />
+                    <Route
+                      path="/admin"
+                      element={
+                        <RequireAuth>
+                          <AdminPage />
+                        </RequireAuth>
+                      }
+                    />
+                    <Route
+                      path="/me"
+                      element={
+                        <RequireAuth>
+                          <MyPage />
+                        </RequireAuth>
+                      }
+                    />
+                    <Route path="/debug" />
                   </Route>
-                  <Route
-                    path="/admin"
-                    element={
-                      <RequireAuth>
-                        <AdminPage />
-                      </RequireAuth>
-                    }
-                  />
-                  <Route
-                    path="/me"
-                    element={
-                      <RequireAuth>
-                        <MyPage />
-                      </RequireAuth>
-                    }
-                  />
                 </Routes>
               </BrowserRouter>
             </ZoomWrapper>

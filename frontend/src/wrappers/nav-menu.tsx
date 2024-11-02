@@ -11,7 +11,7 @@ const MENU_HEIGHT = "h-20 md:h-12";
 export const NavMenu: React.FC = () => {
   const { pathname } = useLocation();
 
-  const showLoginLink = window.location.pathname === "/player/rikard";
+  const showLoginLink = window.location.pathname === "/player/Rikard";
 
   useEffect(() => {
     // Scroll to top whenever the path changes
@@ -36,6 +36,7 @@ export const NavMenu: React.FC = () => {
     }
     if (showLoginLink) {
       items.push({ name: "Log in", to: "/secret" });
+      items.push({ name: "🐞 Debug", to: "/debug" });
     }
     return items;
   }, [
