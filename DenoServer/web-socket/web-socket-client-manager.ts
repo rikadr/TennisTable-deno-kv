@@ -5,27 +5,44 @@ import { RouterContext } from "oak";
  */
 enum WS_BROADCAST {
   RELOAD = "reload",
+  CONNECTION_ID = "connection-id",
 }
 
 export class WebSocketClientManager {
-  clients: Set<WebSocket>;
+  private clients: Map<string, { client: WebSocket; createdAt: number; broadcastsReceived: number }>;
+
   constructor() {
-    this.clients = new Set();
+    this.clients = new Map();
   }
 
-  private addClient(socket: WebSocket) {
-    this.clients.add(socket);
+  private addClient(client: WebSocket): string {
+    const connectionId = Math.random().toString(36).substring(2);
+    this.clients.set(connectionId, { client, createdAt: Date.now(), broadcastsReceived: 0 });
+    return connectionId;
   }
-  private removeClient(socket: WebSocket) {
-    this.clients.delete(socket);
+
+  private removeClient(connectionId: string) {
+    this.clients.delete(connectionId);
+  }
+
+  /**
+   * Send internal connection id to client
+   */
+  private sendConnectionId(connectionId: string) {
+    const client = this.clients.get(connectionId);
+    if (client) {
+      client.client.send(WS_BROADCAST.CONNECTION_ID + ":" + connectionId);
+    }
+    //
   }
   /**
    * Send message to all open web sockets on the server managed by the manager
    */
   private broadcastMessage(message: WS_BROADCAST) {
-    for (const client of this.clients) {
-      if (client.readyState === WebSocket.OPEN) {
-        client.send(message);
+    for (const [_id, client] of this.clients) {
+      if (client.client.readyState === WebSocket.OPEN) {
+        client.client.send(message);
+        client.broadcastsReceived++;
       }
     }
   }
@@ -41,15 +58,20 @@ export class WebSocketClientManager {
       context.throw(400, "Request can not be upgraded to a web socket");
     }
     const socket = context.upgrade();
+    let connectionId = "";
 
     socket.onopen = () => {
-      this.addClient(socket);
+      const id = this.addClient(socket);
+      connectionId = id;
+      this.sendConnectionId(id);
     };
+
     socket.onclose = () => {
-      this.removeClient(socket);
+      this.removeClient(connectionId);
     };
+
     socket.onerror = () => {
-      console.log("Error on connection ❌");
+      console.log("❌ Error on connection", connectionId);
       socket.close();
     };
     return socket;
@@ -61,5 +83,16 @@ export class WebSocketClientManager {
    */
   reloadClients() {
     this.broadcastMessage(WS_BROADCAST.RELOAD);
+  }
+
+  /**
+   * List all clients and their current state
+   */
+  listAllClients(): { id: string; createdAt: number; broadcastsReceived: number }[] {
+    return Array.from(this.clients.keys()).map((id) => ({
+      id,
+      createdAt: this.clients.get(id)!.createdAt,
+      broadcastsReceived: this.clients.get(id)!.broadcastsReceived,
+    }));
   }
 }

@@ -17,6 +17,7 @@ import { NavMenu } from "./wrappers/nav-menu";
 import { ZoomWrapper } from "./wrappers/zoom-wrapper";
 import { LeaderBoard } from "./pages/leader-board";
 import { PvPPage } from "./pages/pvp-page";
+import { DebugPage } from "./pages/debug-page";
 
 const RequireAuth: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   if (!session.isAuthenticated) {
@@ -65,7 +66,7 @@ function App() {
                         </RequireAuth>
                       }
                     />
-                    <Route path="/debug" />
+                    <Route path="/debug" element={<DebugPage />} />
                   </Route>
                 </Routes>
               </BrowserRouter>

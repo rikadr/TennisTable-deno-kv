@@ -8,4 +8,12 @@ export function registerWebSocketRoutes(api: Router, clientManager: WebSocketCli
   api.get("/ws-updates", (context) => {
     clientManager.startWebSocketConnection(context as RouterContext<string>); // Temp casting
   });
+
+  /**
+   * List all connected clients' web sockets managed in client manager
+   */
+  api.get("/ws-list", (context) => {
+    const clientList = clientManager.listAllClients();
+    context.response.body = clientList;
+  });
 }

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
  */
 export enum WS_BROADCAST {
   RELOAD = "reload",
+  CONNECTION_ID = "connection-id",
 }
 
 export const useWebSocket = (
