@@ -95,4 +95,11 @@ export class WebSocketClientManager {
       broadcastsReceived: this.clients.get(id)!.broadcastsReceived,
     }));
   }
+
+  closeAllConnections() {
+    for (const [id, client] of this.clients) {
+      client.client.close();
+      this.removeClient(id);
+    }
+  }
 }

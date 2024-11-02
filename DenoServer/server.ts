@@ -32,4 +32,16 @@ registerUserRoutes(api);
 app.use(api.routes());
 app.use(api.allowedMethods());
 
+// Define a function to handle cleanup tasks on shutdown
+async function shutdown() {
+  console.log("Shutting down the server...");
+  webSocketClientManager.closeAllConnections();
+  console.log("Cleanup complete. Server is now shutting down.");
+  Deno.exit();
+}
+
+// Listen for termination signals and call the shutdown function
+Deno.addSignalListener("SIGINT", shutdown);
+Deno.addSignalListener("SIGTERM", shutdown);
+
 await app.listen({ port: 8000 });
