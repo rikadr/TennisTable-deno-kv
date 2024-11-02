@@ -33,7 +33,7 @@ app.use(api.routes());
 app.use(api.allowedMethods());
 
 // Define a function to handle cleanup tasks on shutdown
-async function shutdown() {
+function shutdown() {
   console.log("Shutting down the server...");
   webSocketClientManager.closeAllConnections();
   console.log("Cleanup complete. Server is now shutting down.");
