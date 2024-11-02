@@ -96,6 +96,9 @@ export class WebSocketClientManager {
     }));
   }
 
+  /**
+   * Close all connections
+   */
   closeAllConnections() {
     for (const [id, client] of this.clients) {
       client.client.close();
