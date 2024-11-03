@@ -9,7 +9,9 @@ enum WS_BROADCAST {
 }
 
 export class WebSocketClientManager {
+  private readonly instanciatedAt = Date.now();
   private clients: Map<string, { client: WebSocket; createdAt: number; broadcastsReceived: number }>;
+  private historicalClients: { id: string; createdAt: number; broadcastsReceived: number }[] = [];
 
   constructor() {
     this.clients = new Map();
@@ -22,6 +24,15 @@ export class WebSocketClientManager {
   }
 
   private removeClient(connectionId: string) {
+    const client = this.clients.get(connectionId);
+    if (!client) {
+      return;
+    }
+    this.historicalClients.push({
+      id: connectionId,
+      createdAt: client.createdAt,
+      broadcastsReceived: client.broadcastsReceived,
+    });
     this.clients.delete(connectionId);
   }
 
@@ -88,12 +99,20 @@ export class WebSocketClientManager {
   /**
    * List all clients and their current state
    */
-  listAllClients(): { id: string; createdAt: number; broadcastsReceived: number }[] {
-    return Array.from(this.clients.keys()).map((id) => ({
-      id,
-      createdAt: this.clients.get(id)!.createdAt,
-      broadcastsReceived: this.clients.get(id)!.broadcastsReceived,
-    }));
+  listAllClients(): {
+    instanciatedAt: string;
+    active: { id: string; createdAt: number; broadcastsReceived: number }[];
+    deleted: { id: string; createdAt: number; broadcastsReceived: number }[];
+  } {
+    return {
+      instanciatedAt: new Date(this.instanciatedAt).toLocaleString("no-NO", { hourCycle: "h23" }),
+      active: Array.from(this.clients.keys()).map((id) => ({
+        id,
+        createdAt: this.clients.get(id)!.createdAt,
+        broadcastsReceived: this.clients.get(id)!.broadcastsReceived,
+      })),
+      deleted: this.historicalClients,
+    };
   }
 
   /**
