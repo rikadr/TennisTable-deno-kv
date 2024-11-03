@@ -15,6 +15,7 @@ export const DebugPage: React.FC = () => {
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
     refetchInterval: 10_000,
+    enabled: false,
   });
   return (
     <div className="w-64 mt-64 m-auto">
