@@ -2,18 +2,15 @@ import { useEffect, useState } from "react";
 /**
  * Defined messages that can be broadcast to connected clients
  */
-export enum WS_BROADCAST {
+export enum WS_MESSAGE {
   RELOAD = "reload",
   CONNECTION_ID = "connection-id",
+  HEART_BEAT = "heart-beat",
 }
 
 export const useWebSocket = (
   url: string,
-  onMessage: (message: string) => void,
-  onConnect: () => void,
-  onRetry: () => void,
-  onClose: () => void,
-  onError: () => void,
+  { onMessage, onClose }: { onMessage?: (message: string) => void; onClose?: () => void },
 ) => {
   const [webSocket, setWebSocket] = useState<WebSocket>();
 
@@ -23,21 +20,17 @@ export const useWebSocket = (
 
   function openWebSocket() {
     const socket = new WebSocket(url);
-    socket.onopen = () => {
-      onConnect();
-    };
+    socket.onopen = () => {};
     socket.onmessage = (messageEvent) => {
-      onMessage(messageEvent.data);
+      onMessage && onMessage(messageEvent.data);
     };
     socket.onerror = (error) => {
       console.error("Websocket error", error);
-      onError();
     };
     socket.onclose = () => {
       // Retry connection
-      onClose();
+      onClose && onClose();
       setTimeout(() => {
-        onRetry();
         openWebSocket();
       }, 2_000);
     };

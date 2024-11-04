@@ -3,15 +3,17 @@ import { RouterContext } from "oak";
 /**
  * Defined messages that can be broadcast to connected clients
  */
-enum WS_BROADCAST {
+enum WS_MESSAGE {
   RELOAD = "reload",
   CONNECTION_ID = "connection-id",
+  HEART_BEAT = "heart-beat",
 }
 
 export class WebSocketClientManager {
   private readonly instanciatedAt = Date.now();
   private clients: Map<string, { client: WebSocket; createdAt: number; broadcastsReceived: number }>;
   private historicalClients: { id: string; createdAt: number; broadcastsReceived: number }[] = [];
+  private messagesReceived: string[] = [];
 
   constructor() {
     this.clients = new Map();
@@ -36,20 +38,49 @@ export class WebSocketClientManager {
     this.clients.delete(connectionId);
   }
 
+  private clientExists(connectionId: string): boolean {
+    return this.clients.has(connectionId);
+  }
+
+  private handleMessage(message: unknown, client: WebSocket) {
+    if (typeof message !== "string") {
+      this.messagesReceived.push(
+        "Received invalid message of type: " + typeof message + ". Message: " + JSON.stringify(message),
+      );
+      return;
+    }
+    this.messagesReceived.push(message);
+
+    if (message.startsWith(WS_MESSAGE.HEART_BEAT)) {
+      const connectionId = message.split(":")[1];
+      if (this.clientExists(connectionId) === false) {
+        console.log("Closing connection as it is not in the manager");
+        console.log({ connectionId, listInTheManager: this.clients.keys() });
+
+        client.close();
+        this.historicalClients.push({
+          id: connectionId + " (Not recognized)",
+          broadcastsReceived: 0,
+          createdAt: Date.now(),
+        });
+      }
+    }
+  }
+
   /**
    * Send internal connection id to client
    */
   private sendConnectionId(connectionId: string) {
     const client = this.clients.get(connectionId);
     if (client) {
-      client.client.send(WS_BROADCAST.CONNECTION_ID + ":" + connectionId);
+      client.client.send(WS_MESSAGE.CONNECTION_ID + ":" + connectionId);
     }
     //
   }
   /**
    * Send message to all open web sockets on the server managed by the manager
    */
-  private broadcastMessage(message: WS_BROADCAST) {
+  private broadcastMessage(message: WS_MESSAGE) {
     for (const [_id, client] of this.clients) {
       if (client.client.readyState === WebSocket.OPEN) {
         client.client.send(message);
@@ -77,6 +108,10 @@ export class WebSocketClientManager {
       this.sendConnectionId(id);
     };
 
+    socket.onmessage = ({ data: message }) => {
+      this.handleMessage(message, socket);
+    };
+
     socket.onclose = () => {
       this.removeClient(connectionId);
     };
@@ -93,7 +128,7 @@ export class WebSocketClientManager {
    * Used for when games or player data is changed or updated.
    */
   reloadClients() {
-    this.broadcastMessage(WS_BROADCAST.RELOAD);
+    this.broadcastMessage(WS_MESSAGE.RELOAD);
   }
 
   /**
@@ -103,6 +138,7 @@ export class WebSocketClientManager {
     instanciatedAt: string;
     active: { id: string; createdAt: number; broadcastsReceived: number }[];
     deleted: { id: string; createdAt: number; broadcastsReceived: number }[];
+    messagesReceived: string[];
   } {
     return {
       instanciatedAt: new Date(this.instanciatedAt).toLocaleString("no-NO", { hourCycle: "h23" }),
@@ -112,16 +148,7 @@ export class WebSocketClientManager {
         broadcastsReceived: this.clients.get(id)!.broadcastsReceived,
       })),
       deleted: this.historicalClients,
+      messagesReceived: this.messagesReceived,
     };
-  }
-
-  /**
-   * Close all connections
-   */
-  closeAllConnections() {
-    for (const [id, client] of this.clients) {
-      client.client.close();
-      this.removeClient(id);
-    }
   }
 }
