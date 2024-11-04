@@ -7,7 +7,6 @@ export function useHeartbeat(getConnectionId: () => string | undefined, ws?: Web
     const connectionId = getConnectionId();
     if (!connectionId) return;
     ws.send(WS_MESSAGE.HEART_BEAT + ":" + connectionId);
-  }, 10 * 1000); // TODO: set to 10 minutes
-
+  }, 10 * 60 * 1000);
   ws.addEventListener("close", () => clearInterval(interval));
 }
