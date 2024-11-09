@@ -27,7 +27,7 @@ export const NavMenu: React.FC = () => {
       { name: "+👤  New player", to: "/add-player" },
       { name: "👥🥊 Compare 1v1", to: "/1v1" },
       { name: "📈 Compare all", to: "/compare-players" },
-      { name: "Camera", to: "/camera" },
+      { name: "📸 Camera", to: "/camera" },
     ];
     if (session.isAuthenticated && session.sessionData?.role === "admin") {
       items.push({ name: "Admin Page 🔐", to: "/admin" });
@@ -43,6 +43,16 @@ export const NavMenu: React.FC = () => {
       </CloseButton>
     ));
     if (session.isAuthenticated) {
+      list.push(
+        <CloseButton
+          key={list.length}
+          as={Link}
+          to="/me"
+          className="flex items-center justify-end md:justify-start h-16 md:h-10 hover:underline px-12"
+        >
+          <p className="text-2xl md:text-xl font-semibold text-secondary-text">My profile</p>
+        </CloseButton>,
+      );
       list.push(
         <CloseButton
           key={list.length}

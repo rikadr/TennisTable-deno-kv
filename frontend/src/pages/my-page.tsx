@@ -17,7 +17,7 @@ export const MyPage: React.FC = () => {
   return (
     <div>
       <h1>My Page</h1>
-      <pre className="p-16">{JSON.stringify(query, null, 2)}</pre>
+      <pre className="p-16">{JSON.stringify(query.data, null, 2)}</pre>
     </div>
   );
 };
