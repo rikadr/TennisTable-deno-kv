@@ -5,6 +5,7 @@ import { timeAgo } from "../common/date-utils";
 import { httpClient } from "../common/http-client";
 import { Users } from "./users";
 import { useClientDbContext } from "../wrappers/client-db-context";
+import { session } from "../services/auth";
 
 export type PlayersDTO = {
   name: string;
@@ -41,6 +42,10 @@ export const AdminPage: React.FC = () => {
   });
 
   const { games, players } = useClientDbContext();
+
+  if (session.sessionData?.role !== "admin") {
+    return <div>Not authorized</div>;
+  }
 
   return (
     <div>

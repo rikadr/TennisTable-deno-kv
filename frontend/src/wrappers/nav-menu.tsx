@@ -29,7 +29,7 @@ export const NavMenu: React.FC = () => {
       { name: "📈 Compare all", to: "/compare-players" },
       { name: "Camera", to: "/camera" },
     ];
-    if (session.isAuthenticated) {
+    if (session.isAuthenticated && session.sessionData?.role === "admin") {
       items.push({ name: "Admin Page 🔐", to: "/admin" });
     }
     const list = items.map((item, index) => (
