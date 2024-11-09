@@ -9,7 +9,7 @@ export const MyPage: React.FC = () => {
     queryKey: ["me"],
     queryFn: async () => {
       const response = await httpClient(process.env.REACT_APP_API_BASE_URL + "/user/me");
-      response.status === 401 && navigate("/secret");
+      response.status === 401 && navigate("/log-in");
       return response.json();
     },
   });

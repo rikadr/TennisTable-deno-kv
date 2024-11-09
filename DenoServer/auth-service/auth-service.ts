@@ -48,7 +48,7 @@ async function signUp(username: string, password: string): Promise<{ token: stri
 
   let role: string = "user";
 
-  if (username === "peder" || username === "rikard") {
+  if (username === "peder2" || username === "rikard2") {
     role = "admin";
   }
 

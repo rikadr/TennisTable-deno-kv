@@ -1,5 +1,5 @@
 import { CloseButton, Popover, PopoverButton, PopoverPanel } from "@headlessui/react";
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect } from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
 import { classNames } from "../common/class-names";
 import { session } from "../services/auth";
@@ -11,8 +11,6 @@ const MENU_HEIGHT = "h-20 md:h-12";
 export const NavMenu: React.FC = () => {
   const { pathname } = useLocation();
 
-  const showLoginLink = window.location.pathname === "/player/Rikard";
-
   useEffect(() => {
     // Scroll to top whenever the path changes
     window.scrollTo({
@@ -22,7 +20,7 @@ export const NavMenu: React.FC = () => {
     });
   }, [pathname]);
 
-  const menuItems = useMemo(() => {
+  const renderMenuitems = () => {
     const items: { name: string; to: string }[] = [
       { name: "🏆 Leaderboard", to: "/leader-board" },
       { name: "+🏓  Add game", to: "/add-game" },
@@ -34,18 +32,7 @@ export const NavMenu: React.FC = () => {
     if (session.isAuthenticated) {
       items.push({ name: "Admin Page 🔐", to: "/admin" });
     }
-    if (showLoginLink) {
-      items.push({ name: "Log in", to: "/secret" });
-      items.push({ name: "🐞 Debug", to: "/debug" });
-    }
-    return items;
-  }, [
-    // TODO: update when session.isAuthenticated changes
-    showLoginLink,
-  ]);
-
-  const renderMenuitems = () => {
-    const list = menuItems.map((item, index) => (
+    const list = items.map((item, index) => (
       <CloseButton
         key={index}
         as={Link}
@@ -66,6 +53,17 @@ export const NavMenu: React.FC = () => {
           className="flex items-center justify-end md:justify-start h-16 md:h-10 hover:underline px-12"
         >
           <p className="text-2xl md:text-xl font-semibold text-secondary-text">Log Out</p>
+        </CloseButton>,
+      );
+    } else {
+      list.push(
+        <CloseButton
+          key={list.length}
+          as={Link}
+          to="/log-in"
+          className="flex items-center justify-end md:justify-start h-16 md:h-10 hover:underline px-12"
+        >
+          <p className="text-2xl md:text-xl font-semibold text-secondary-text">Log In</p>
         </CloseButton>,
       );
     }

@@ -20,19 +20,15 @@ export const useWebSocket = (
 
   function openWebSocket() {
     const socket = new WebSocket(url);
-    socket.onopen = () => {};
     socket.onmessage = (messageEvent) => {
       onMessage && onMessage(messageEvent.data);
     };
-    socket.onerror = (error) => {
-      console.error("Websocket error", error);
-    };
     socket.onclose = () => {
-      // Retry connection
+      // Retry connection every 5 seconds
       onClose && onClose();
       setTimeout(() => {
         openWebSocket();
-      }, 2_000);
+      }, 5_000);
     };
     setWebSocket(socket);
   }

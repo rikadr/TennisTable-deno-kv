@@ -11,9 +11,7 @@ enum WS_MESSAGE {
 
 export class WebSocketClientManager {
   private readonly instanciatedAt = Date.now();
-  private clients: Map<string, { client: WebSocket; createdAt: number; broadcastsReceived: number }>;
-  private historicalClients: { id: string; createdAt: number; broadcastsReceived: number }[] = [];
-  private messagesReceived: string[] = [];
+  private clients: Map<string, { client: WebSocket; createdAt: number }>;
 
   constructor() {
     this.clients = new Map();
@@ -21,7 +19,7 @@ export class WebSocketClientManager {
 
   private addClient(client: WebSocket): string {
     const connectionId = Math.random().toString(36).substring(2);
-    this.clients.set(connectionId, { client, createdAt: Date.now(), broadcastsReceived: 0 });
+    this.clients.set(connectionId, { client, createdAt: Date.now() });
     return connectionId;
   }
 
@@ -30,11 +28,6 @@ export class WebSocketClientManager {
     if (!client) {
       return;
     }
-    this.historicalClients.push({
-      id: connectionId,
-      createdAt: client.createdAt,
-      broadcastsReceived: client.broadcastsReceived,
-    });
     this.clients.delete(connectionId);
   }
 
@@ -44,25 +37,13 @@ export class WebSocketClientManager {
 
   private handleMessage(message: unknown, client: WebSocket) {
     if (typeof message !== "string") {
-      this.messagesReceived.push(
-        "Received invalid message of type: " + typeof message + ". Message: " + JSON.stringify(message),
-      );
       return;
     }
-    this.messagesReceived.push(message);
 
     if (message.startsWith(WS_MESSAGE.HEART_BEAT)) {
       const connectionId = message.split(":")[1];
       if (this.clientExists(connectionId) === false) {
-        console.log("Closing connection as it is not in the manager");
-        console.log({ connectionId, listInTheManager: this.clients.keys() });
-
         client.close();
-        this.historicalClients.push({
-          id: connectionId + " (Not recognized)",
-          broadcastsReceived: 0,
-          createdAt: Date.now(),
-        });
       }
     }
   }
@@ -84,7 +65,6 @@ export class WebSocketClientManager {
     for (const [_id, client] of this.clients) {
       if (client.client.readyState === WebSocket.OPEN) {
         client.client.send(message);
-        client.broadcastsReceived++;
       }
     }
   }
@@ -113,6 +93,7 @@ export class WebSocketClientManager {
     };
 
     socket.onclose = () => {
+      console.log("Closed connection", connectionId);
       this.removeClient(connectionId);
     };
 
@@ -136,19 +117,14 @@ export class WebSocketClientManager {
    */
   listAllClients(): {
     instanciatedAt: string;
-    active: { id: string; createdAt: number; broadcastsReceived: number }[];
-    deleted: { id: string; createdAt: number; broadcastsReceived: number }[];
-    messagesReceived: string[];
+    clients: { id: string; createdAt: number }[];
   } {
     return {
       instanciatedAt: new Date(this.instanciatedAt).toLocaleString("no-NO", { hourCycle: "h23" }),
-      active: Array.from(this.clients.keys()).map((id) => ({
+      clients: Array.from(this.clients.keys()).map((id) => ({
         id,
         createdAt: this.clients.get(id)!.createdAt,
-        broadcastsReceived: this.clients.get(id)!.broadcastsReceived,
       })),
-      deleted: this.historicalClients,
-      messagesReceived: this.messagesReceived,
     };
   }
 }

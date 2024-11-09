@@ -1,6 +1,6 @@
 import { Router } from "oak";
 import { CreatePlayerPayload, createPlayer, deletePlayer, getPlayer } from "./player.ts";
-import { isAuthenticated } from "../auth-service/middleware.ts";
+import { isAuthenticated, requireAuth } from "../auth-service/middleware.ts";
 import { WebSocketClientManager } from "../web-socket/web-socket-client-manager.ts";
 
 export function registerPlayerRoutes(api: Router, webSocketClientManager: WebSocketClientManager) {
@@ -22,7 +22,7 @@ export function registerPlayerRoutes(api: Router, webSocketClientManager: WebSoc
   /**
    * Delete a player
    */
-  api.delete("/player/:name", isAuthenticated, async (context) => {
+  api.delete("/player/:name", isAuthenticated, requireAuth("user", "delete"), async (context) => {
     const name = context.params.name;
     if (!name) {
       throw new Error("name is required");

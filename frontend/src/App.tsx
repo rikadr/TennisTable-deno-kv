@@ -17,12 +17,11 @@ import { NavMenu } from "./wrappers/nav-menu";
 import { ZoomWrapper } from "./wrappers/zoom-wrapper";
 import { LeaderBoard } from "./pages/leader-board";
 import { PvPPage } from "./pages/pvp-page";
-import { DebugPage } from "./pages/debug-page";
 
 const RequireAuth: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   if (!session.isAuthenticated) {
     session.token = undefined;
-    return <Navigate to="/secret" />;
+    return <Navigate to="/log-in" />;
   }
 
   return children;
@@ -48,7 +47,7 @@ function App() {
                     <Route path="/add-player" element={<AddPlayerPage />} />
                     <Route path="/camera" element={<CameraPage />} />
                     <Route path="/add-game" element={<AddGamePage />} />
-                    <Route path="/secret" element={<LoginPage />} />
+                    <Route path="/log-in" element={<LoginPage />} />
                     <Route path="/sign-up" element={<SignupPage />} />
                     <Route
                       path="/admin"
@@ -66,7 +65,6 @@ function App() {
                         </RequireAuth>
                       }
                     />
-                    <Route path="/debug" element={<DebugPage />} />
                   </Route>
                 </Routes>
               </BrowserRouter>

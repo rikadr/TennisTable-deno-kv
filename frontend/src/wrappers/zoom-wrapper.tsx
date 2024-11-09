@@ -8,7 +8,7 @@ type Props = {
 export const ZoomWrapper: React.FC<Props> = ({ children }) => {
   const [zoomLevel, setZoomLevel] = useLocalStorage("app-zoom-level", 1);
 
-  const showZoomControls = window.location.pathname === "/secret";
+  const showZoomControls = window.location.pathname === "/log-in";
 
   return (
     <div className="relative" style={{ zoom: zoomLevel }}>
