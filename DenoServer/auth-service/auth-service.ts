@@ -64,7 +64,7 @@ async function login(username: string, password: string): Promise<{ token: strin
     throw new Error("Username or password is incorrect");
   }
 
-  const passwordMatch = await bcrypt.compare(password, user.password);
+  const passwordMatch = await bcrypt.compareSync(password, user.password);
 
   if (!passwordMatch) {
     throw new Error("Username or password is incorrect");
