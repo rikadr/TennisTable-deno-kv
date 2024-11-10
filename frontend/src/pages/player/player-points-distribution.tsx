@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
-import { classNames } from "../common/class-names";
-import { useClientDbContext } from "../wrappers/client-db-context";
+import { useClientDbContext } from "../../wrappers/client-db-context";
+import { classNames } from "../../common/class-names";
+import { stringToColor } from "../compare-players-page";
 
 type Props = {
   name?: string;
@@ -22,10 +23,10 @@ export const PlayerPointsDistrubution: React.FC<Props> = ({ name }) => {
             <div className="relative w-full h-6 group-hover:bg-primary-text/5">
               <div
                 className={classNames(
-                  "absolute h-6 w-[20%] bg-secondary-background group-hover:bg-secondary-background/70 top-0 transition-all duration-300",
+                  "absolute h-6 w-[20%]  group-hover:bg-secondary-background/70 top-0 transition-all duration-300",
                   points > 0 ? "right-1/2 rounded-l-md" : "left-1/2  rounded-r-md",
                 )}
-                style={{ width: `${(Math.abs(fraction) / 2) * 100}%` }}
+                style={{ width: `${(Math.abs(fraction) / 2) * 100}%`, backgroundColor: stringToColor(name) }}
               />
               <div className="absolute top-0 left-2 text-primary-text">{name}</div>
               <div

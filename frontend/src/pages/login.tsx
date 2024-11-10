@@ -11,22 +11,21 @@ export const LoginPage: React.FC = () => {
         className="space-y-2 p-10 rounded-xl ring-1 ring-gray-300 drop-shadow bg-gray-50 text-black"
         onSubmit={async (e) => {
           e.preventDefault();
-          const username = document.getElementById(
-            "username",
-          ) as HTMLInputElement;
-          const password = document.getElementById(
-            "password",
-          ) as HTMLInputElement;
+          const username = document.getElementById("username") as HTMLInputElement;
+          const password = document.getElementById("password") as HTMLInputElement;
 
           if (username && password) {
-            auth.login.mutate({
-              username: username.value,
-              password: password.value,
-            }, {
-              onSuccess: () => {
-                navigate("/");
+            auth.login.mutate(
+              {
+                username: username.value,
+                password: password.value,
               },
-            });
+              {
+                onSuccess: () => {
+                  navigate("/");
+                },
+              },
+            );
           } else {
             console.error("No username or password");
           }
@@ -50,10 +49,7 @@ export const LoginPage: React.FC = () => {
           />
         </div>
         <div className="/* flex flex-col w-full items-center justify-end space-y-3 pt-3 */">
-          <button
-            type="submit"
-            className="p-2 w-full bg-blue-300 text-black rounded-md hover:bg-blue-500"
-          >
+          <button type="submit" className="p-2 w-full bg-blue-300 text-black rounded-md hover:bg-blue-500">
             Login
           </button>
           <a

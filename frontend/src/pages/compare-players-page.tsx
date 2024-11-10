@@ -5,7 +5,8 @@ import { useWindowSize } from "usehooks-ts";
 import { NameType, ValueType } from "recharts/types/component/DefaultTooltipContent";
 import { useClientDbContext } from "../wrappers/client-db-context";
 
-function stringToColor(name: string) {
+export function stringToColor(name?: string) {
+  if (!name) return "#4338ca";
   switch (name) {
     case "Peder":
     case "Rikard":

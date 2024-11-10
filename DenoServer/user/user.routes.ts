@@ -1,7 +1,7 @@
-
 import { Router } from "oak";
 import { OptioPongContext, authService } from "../auth-service/auth-service.ts";
 import { isAuthenticated, requireAuth } from "../auth-service/middleware.ts";
+import { getUser } from "./user.store.ts";
 
 export const registerUserRoutes = (api: Router) => {
   api.post("/user/sign-up", async (context) => {
@@ -12,9 +12,10 @@ export const registerUserRoutes = (api: Router) => {
     context.response.body = { token };
   });
 
-  api.get("/user/me", isAuthenticated, (context: OptioPongContext) => {
+  api.get("/user/me", isAuthenticated, async (context: OptioPongContext) => {
     const user = authService.getUserFromRequest(context);
-    context.response.body = user;
+    const userData = await getUser(user.username);
+    context.response.body = userData;
     return;
   });
 
@@ -32,7 +33,7 @@ export const registerUserRoutes = (api: Router) => {
       context.response.body = { token };
     } catch (err) {
       context.response.status = 401;
-      context.response.body = { error: err.message };
+      context.response.body = { error: (err as Error).message };
     }
     return;
   });

@@ -25,20 +25,14 @@ export async function getAllPlayers(): Promise<Player[]> {
   return players;
 }
 
-export async function createPlayer(
-  payload: CreatePlayerPayload
-): Promise<Player> {
+export async function createPlayer(payload: CreatePlayerPayload): Promise<Player> {
   if (!payload.name) {
     throw new Error("name is required");
   }
   const key = ["player", payload.name];
   const value: Player = { name: payload.name };
 
-  const res = await kv
-    .atomic()
-    .check({ key, versionstamp: null })
-    .set(key, value)
-    .commit();
+  const res = await kv.atomic().check({ key, versionstamp: null }).set(key, value).commit();
 
   if (res.ok) {
     return value;
@@ -52,4 +46,35 @@ export async function deletePlayer(name: string) {
     throw new Error("name is required");
   }
   await kv.delete(["player", name]);
+}
+
+export async function uploadProfilePicture(name: string, base64: string) {
+  if (!name) {
+    throw new Error("name is required");
+  }
+
+  if (!base64) {
+    throw new Error("base64 is required");
+  }
+
+  const res = await kv.set(["profile-picture", name], base64);
+
+  if (res.ok) {
+    return;
+  } else {
+    throw new Error("Failed to upload profile picture");
+  }
+}
+
+export async function getProfilePicture(name: string): Promise<string | null> {
+  if (!name) {
+    throw new Error("name is required");
+  }
+
+  const res = await kv.get(["profile-picture", name]);
+
+  if (res.value) {
+    return res.value as string;
+  }
+  return null;
 }

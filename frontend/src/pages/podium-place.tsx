@@ -13,12 +13,7 @@ import pumpkin8 from "../img/halloween/pumpkin-numbers/8.png";
 import pumpkin9 from "../img/halloween/pumpkin-numbers/9.png";
 import pumpkin10 from "../img/halloween/pumpkin-numbers/10.png";
 import pumpkinNotRanked from "../img/halloween/pumpkin-numbers/not-ranked.png";
-
-type Props = {
-  player: PlayerSummary;
-  size: "default" | "sm" | "xs";
-  place?: number;
-};
+import { ProfilePicture } from "./player/profile-picture";
 
 const cardHeight: Record<Props["size"], string> = {
   default: "h-[5rem]",
@@ -31,6 +26,13 @@ const placeBoxSize: Record<Props["size"], string> = {
   sm: "w-[3.4rem] h-[3.4rem]",
   xs: "w-[3rem] h-[3rem]",
 };
+
+const profilePictureSize: Record<Props["size"], number> = {
+  default: 64 + 3,
+  sm: 54.4 + 3,
+  xs: 48 + 3,
+};
+
 const placeTextSize: Record<Props["size"], string[]> = {
   default: ["text-5xl", "text-4xl", "text-3xl"],
   sm: ["text-4xl", "text-3xl", "text-2xl"],
@@ -67,7 +69,14 @@ function getPumpkin(place?: number): string | undefined {
   return pumpkins[place - 1];
 }
 
-export const PodiumPlace: React.FC<Props> = ({ player, place, size }) => {
+type Props = {
+  player: PlayerSummary;
+  size: "default" | "sm" | "xs";
+  place?: number;
+  profilePicture?: boolean;
+};
+
+export const PodiumPlace: React.FC<Props> = ({ player, place, size, profilePicture = false }) => {
   const placeNumberLength = place?.toString().length || 1;
 
   const themedPlaceNumber = () => {
@@ -120,6 +129,17 @@ export const PodiumPlace: React.FC<Props> = ({ player, place, size }) => {
           </div>
         </section>
       </section>
+      {profilePicture && (
+        <div className="w-16 flex items-center justify-center shrink-0">
+          <ProfilePicture
+            name={player.name}
+            size={profilePictureSize[size]}
+            shape="circle"
+            clickToEdit={false}
+            border={3}
+          />
+        </div>
+      )}
     </Link>
   );
 };

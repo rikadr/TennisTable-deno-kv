@@ -27,7 +27,6 @@ export const NavMenu: React.FC = () => {
       { name: "+👤  New player", to: "/add-player" },
       { name: "👥🥊 Compare 1v1", to: "/1v1" },
       { name: "📈 Compare all", to: "/compare-players" },
-      { name: "📸 Camera", to: "/camera" },
     ];
     if (session.isAuthenticated && session.sessionData?.role === "admin") {
       items.push({ name: "Admin Page 🔐", to: "/admin" });

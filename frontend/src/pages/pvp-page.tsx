@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { useClientDbContext } from "../wrappers/client-db-context";
 import { Select } from "@headlessui/react";
 import { PvPStats } from "./pvp-stats";
+import { ProfilePicture } from "./player/profile-picture";
 
 const PLAYER_1 = "player1";
 const PLAYER_2 = "player2";
@@ -31,17 +32,20 @@ export const SelectPlayer: React.FC<{ value?: string; onChange: (value: string) 
   const sortedPlayers = players.sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
 
   return (
-    <Select
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      className="text-lg text-primary-text appearance-none bg-primary-background ring-1 ring-secondary-background px-4 py-4 rounded-lg w-full md:w-64"
-    >
-      {!value && <option key="No selected">Select player</option>}
-      {sortedPlayers.map((player) => (
-        <option value={player.name} key={player.name}>
-          {player.name}
-        </option>
-      ))}
-    </Select>
+    <div className="w-fit flex gap-2">
+      <Select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="text-lg text-primary-text appearance-none bg-primary-background ring-1 ring-secondary-background px-4 py-4 rounded-lg w-full md:w-64"
+      >
+        {!value && <option key="No selected">Select player</option>}
+        {sortedPlayers.map((player) => (
+          <option value={player.name} key={player.name}>
+            {player.name}
+          </option>
+        ))}
+      </Select>
+      <ProfilePicture name={value} size={64} />
+    </div>
   );
 };
