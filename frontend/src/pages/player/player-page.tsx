@@ -52,6 +52,7 @@ export const PlayerPage: React.FC = () => {
           {["stroke", "main"].map((type) => {
             return (
               <Line
+                key={type}
                 type="monotone"
                 dataKey="eloAfterGame"
                 stroke={type === "main" ? "white" : stringToColor(name)}

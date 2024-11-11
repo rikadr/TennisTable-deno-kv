@@ -36,3 +36,12 @@ export type PlayerComparison = {
 
 type Theme = "default" | "halloween";
 export const CURRENT_THEME: Theme = "default";
+
+export type Tournament = {
+  id: string;
+  name: string;
+  startDate: number;
+  playersSignedUp: string[];
+  playerStarting: string[]; // To be set when tournament starts
+  skippedGames: { eliminated: string; advancing: string }[];
+};

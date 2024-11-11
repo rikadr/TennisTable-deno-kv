@@ -1,26 +1,28 @@
-import { Elo } from "./elo";
 import { Leaderboard } from "./leaderboard";
 import { PVP } from "./pvp";
-import { ClientDbDTO, Game, Player, PlayerWithElo } from "./types";
+import { Tournaments } from "./tournament";
+import { ClientDbDTO, Game, Player } from "./types";
 
 export class TennisTable {
-  players: Player[];
-  games: Game[];
+  // --------------------------------------------------------------------------
+  // Data from db
+  // --------------------------------------------------------------------------
+  readonly players: Player[];
+  readonly games: Game[];
+
+  // --------------------------------------------------------------------------
+  // Business logic
+  // --------------------------------------------------------------------------
   leaderboard: Leaderboard;
   pvp: PVP;
+  tournaments: Tournaments;
 
   constructor(data: ClientDbDTO) {
     this.players = data.players;
     this.games = data.games;
-    this.leaderboard = new Leaderboard(data);
-    this.pvp = new PVP(data, this.leaderboard);
-  }
 
-  getAllPlayersELO(): PlayerWithElo[] {
-    const map = Elo.eloCalculator(this.games, this.players);
-    const playersWithElo = Array.from(map.values());
-
-    playersWithElo.sort((a, b) => b.elo - a.elo);
-    return playersWithElo;
+    this.leaderboard = new Leaderboard(this);
+    this.pvp = new PVP(this);
+    this.tournaments = new Tournaments(this);
   }
 }

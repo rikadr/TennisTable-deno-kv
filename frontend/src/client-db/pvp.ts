@@ -1,20 +1,17 @@
-import { Leaderboard } from "./leaderboard";
-import { Game, ClientDbDTO, PlayerSummary } from "./types";
+import { TennisTable } from "./tennis-table";
+import { Game, PlayerSummary } from "./types";
 
 export class PVP {
-  private games: Game[];
-  private leaderboard: Leaderboard;
+  private parent: TennisTable;
 
-  constructor(data: ClientDbDTO, leaderboard: Leaderboard) {
-    this.games = data.games;
-    this.leaderboard = leaderboard;
+  constructor(parent: TennisTable) {
+    this.parent = parent;
   }
-
   compare(
     player1: string,
     player2: string,
   ): { player1: PlayerComparison; player2: PlayerComparison; games: PlayerSummary["games"] } {
-    const relevantGames = this.games.filter(
+    const relevantGames = this.parent.games.filter(
       (game) =>
         // Player 1 wins
         (game.winner === player1 && game.loser === player2) ||
@@ -25,8 +22,8 @@ export class PVP {
     const player1Wins = relevantGames.filter((game) => game.winner === player1);
     const player2Wins = relevantGames.filter((game) => game.winner === player2);
 
-    const player1Summary = this.leaderboard.getPlayerSummary(player1);
-    const player2Summary = this.leaderboard.getPlayerSummary(player2);
+    const player1Summary = this.parent.leaderboard.getPlayerSummary(player1);
+    const player2Summary = this.parent.leaderboard.getPlayerSummary(player2);
 
     const relevantSummaryGames = player1Summary?.games.filter((game) => game.oponent === player2);
     const points = { p1: { gained: 0, lost: 0 }, p2: { gained: 0, lost: 0 } };

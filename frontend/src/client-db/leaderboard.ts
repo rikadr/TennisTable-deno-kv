@@ -1,18 +1,17 @@
 import { Elo } from "./elo";
-import { ClientDbDTO, Game, LeaderboardDTO, Player, PlayerComparison, PlayerSummary } from "./types";
+import { TennisTable } from "./tennis-table";
+import { LeaderboardDTO, PlayerComparison, PlayerSummary } from "./types";
 
 export class Leaderboard {
-  private players: Player[];
-  private games: Game[];
+  private parent: TennisTable;
 
   private _leaderBoardCache: ReturnType<typeof this._getLeaderboard> | undefined;
   private _leaderBoardMapCache: ReturnType<typeof this._getLeaderboardMap> | undefined;
   private _playerSummaryCache: Map<string, ReturnType<typeof this._getPlayerSummary>> = new Map();
   private _playerComparisonCache: Map<string, ReturnType<typeof this._comparePlayers>> = new Map();
 
-  constructor(data: ClientDbDTO) {
-    this.players = data.players;
-    this.games = data.games;
+  constructor(parent: TennisTable) {
+    this.parent = parent;
   }
 
   getLeaderboard(): LeaderboardDTO {
@@ -127,7 +126,7 @@ export class Leaderboard {
     const graphData: PlayerComparison["graphData"] = [];
     if (players.length === 0) {
       return {
-        allPlayers: this.players.map((player) => player.name),
+        allPlayers: this.parent.players.map((player) => player.name),
         graphData: [],
       };
     }
@@ -136,7 +135,7 @@ export class Leaderboard {
     players.forEach((player) => (graphEntry[player] = Elo.INITIAL_ELO));
     graphData.push({ ...graphEntry });
 
-    Elo.eloCalculator(this.games, this.players, (map, game) => {
+    Elo.eloCalculator(this.parent.games, this.parent.players, (map, game) => {
       if (players.includes(game.winner) || players.includes(game.loser)) {
         if (players.includes(game.winner)) {
           const newElo = map.get(game.winner);
@@ -156,7 +155,7 @@ export class Leaderboard {
 
     return {
       graphData,
-      allPlayers: this.players.map((p) => p.name).sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase())),
+      allPlayers: this.parent.players.map((p) => p.name).sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase())),
     };
   }
   private _getCachedLeaderboardMap() {
@@ -182,7 +181,7 @@ export class Leaderboard {
       return leaderboardMap.get(name)!;
     }
 
-    Elo.eloCalculator(this.games, this.players, (map, game, pointsWon) => {
+    Elo.eloCalculator(this.parent.games, this.parent.players, (map, game, pointsWon) => {
       const winner = getPlayer(game.winner);
       const loser = getPlayer(game.loser);
       const winnersNewElo = map.get(game.winner)!.elo;

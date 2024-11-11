@@ -1,28 +1,51 @@
 import { useMutation } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { queryClient } from "../common/query-client";
 import { useNavigate } from "react-router-dom";
 import { httpClient } from "../common/http-client";
+import { useClientDbContext } from "../wrappers/client-db-context";
+import { classNames } from "../common/class-names";
 
 export const AddPlayerPage: React.FC = () => {
   const navigate = useNavigate();
+  const context = useClientDbContext();
+
   const [playerName, setPlayerName] = useState("");
+  const backendError = "An error occurred while adding player";
+
+  const [errorMessage, setErrorMessage] = useState<string>();
+
+  useEffect(() => {
+    const playerExists = !!context.players.find((p) => p.name.toLowerCase() === playerName.toLowerCase());
+    if (playerExists) {
+      setErrorMessage("Player already exists");
+    } else {
+      setErrorMessage(undefined);
+    }
+  }, [playerName, context.players]);
 
   const addPlayerMutation = useMutation<unknown, Error, { name: string }, unknown>({
     mutationFn: async ({ name }) => {
-      return httpClient(`${process.env.REACT_APP_API_BASE_URL}/player`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name,
-        }),
-      });
+      try {
+        return await httpClient(`${process.env.REACT_APP_API_BASE_URL}/player`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            name,
+          }),
+        });
+      } catch (error) {
+        setErrorMessage(backendError);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries();
       navigate("/");
+    },
+    onError(error) {
+      setErrorMessage(error.message);
     },
   });
 
@@ -37,8 +60,13 @@ export const AddPlayerPage: React.FC = () => {
         onChange={(e) => setPlayerName(e.target.value)}
         placeholder="Name"
       />
+      {errorMessage && <p className="text-red-500">{errorMessage}</p>}
       <button
-        className="text-sm bg-green-700 hover:bg-green-900 text-white px-1 rounded-md font-thin"
+        disabled={!!errorMessage}
+        className={classNames(
+          "text-sm bg-green-700 hover:bg-green-900 text-white px-1 rounded-md font-thin",
+          !!errorMessage && "cursor-not-allowed bg-gray-700 hover:bg-gray-700",
+        )}
         onClick={() => addPlayerMutation.mutate({ name: playerName })}
       >
         Add player

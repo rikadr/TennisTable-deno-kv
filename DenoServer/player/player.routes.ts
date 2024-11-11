@@ -32,6 +32,11 @@ export function registerPlayerRoutes(api: Router, webSocketClientManager: WebSoc
       throw new Error("name is required");
     }
 
+    const existingPlayer = await getPlayer(payload.name);
+    if (existingPlayer) {
+      throw new Error("Player already exists");
+    }
+
     const player = await createPlayer(payload);
     webSocketClientManager.reloadClients();
     context.response.body = player;
