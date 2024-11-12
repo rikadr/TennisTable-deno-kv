@@ -17,8 +17,11 @@ export const AddPlayerPage: React.FC = () => {
 
   useEffect(() => {
     const playerExists = !!context.players.find((p) => p.name.toLowerCase() === playerName.toLowerCase());
+    const firstLetterIsUpperCase = playerName[0] === playerName[0]?.toUpperCase();
     if (playerExists) {
       setErrorMessage("Player already exists");
+    } else if (!firstLetterIsUpperCase) {
+      setErrorMessage("Please uppercase first letter");
     } else {
       setErrorMessage(undefined);
     }
@@ -26,6 +29,7 @@ export const AddPlayerPage: React.FC = () => {
 
   const addPlayerMutation = useMutation<unknown, Error, { name: string }, unknown>({
     mutationFn: async ({ name }) => {
+      const upperCasedName = name[0]?.toUpperCase() + name.slice(1);
       try {
         return await httpClient(`${process.env.REACT_APP_API_BASE_URL}/player`, {
           method: "POST",
@@ -33,7 +37,7 @@ export const AddPlayerPage: React.FC = () => {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            name,
+            name: upperCasedName,
           }),
         });
       } catch (error) {
