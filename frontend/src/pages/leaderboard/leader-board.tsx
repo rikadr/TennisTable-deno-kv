@@ -1,9 +1,10 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { useClientDbContext } from "../wrappers/client-db-context";
 import { PodiumPlace } from "./podium-place";
-import { Elo } from "../client-db/elo";
-import { ProfilePicture } from "./player/profile-picture";
+import { Elo } from "../../client-db/elo";
+import { useClientDbContext } from "../../wrappers/client-db-context";
+import { ProfilePicture } from "../player/profile-picture";
+import { LeaderboardDistrubution } from "./leaderboard-distribution";
 
 export const LeaderBoard: React.FC = () => {
   const context = useClientDbContext();
@@ -17,16 +18,13 @@ export const LeaderBoard: React.FC = () => {
     return <div>Need at least 3 players to show leaderboard</div>;
   }
 
-  // const lastPlace = leaderboard.rankedPlayers[leaderboard.rankedPlayers.length - 1];
-
   return (
     <div className="w-full px-4 flex flex-col justify-center items-center md:items-start gap-6 md:flex-row ">
       <div className="w-full max-w-96 sm:w-96 flex flex-col gap-2 items-center">
         <PodiumPlace size="default" place={1} player={nr1} profilePicture />
         <PodiumPlace size="sm" place={2} player={nr2} profilePicture />
         <PodiumPlace size="xs" place={3} player={nr3} profilePicture />
-        {/* <p className="pt-2 italic">Last place...</p>
-        <PodiumPlace size="xs" place={leaderboard.rankedPlayers.length} player={lastPlace} /> */}
+        <LeaderboardDistrubution />
       </div>
       <div>
         <h1 className="text-2xl text-center mb-4">Leader Board</h1>

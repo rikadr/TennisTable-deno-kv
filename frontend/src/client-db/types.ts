@@ -41,7 +41,8 @@ export type Tournament = {
   id: string;
   name: string;
   startDate: number;
-  playersSignedUp: string[];
-  playerStarting: string[]; // To be set when tournament starts
+  // endDate: number; ????
+  signedUp: string[];
+  playerOrder?: string[]; // To be set when tournament starts
   skippedGames: { eliminated: string; advancing: string }[];
 };

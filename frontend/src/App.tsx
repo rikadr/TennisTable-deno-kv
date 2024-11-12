@@ -14,9 +14,9 @@ import { WebSocketRefetcher } from "./wrappers/web-socket-refetcher";
 import { ClientDbWrapper } from "./wrappers/client-db-context";
 import { NavMenu } from "./wrappers/nav-menu";
 import { ZoomWrapper } from "./wrappers/zoom-wrapper";
-import { LeaderBoard } from "./pages/leader-board";
 import { PvPPage } from "./pages/pvp-page";
 import { CameraPage } from "./pages/camera/camera-page";
+import { LeaderBoard } from "./pages/leaderboard/leader-board";
 
 const RequireAuth: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   if (!session.isAuthenticated) {

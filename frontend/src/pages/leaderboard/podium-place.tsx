@@ -1,19 +1,19 @@
 import { Link } from "react-router-dom";
-import { CURRENT_THEME, PlayerSummary } from "../client-db/types";
-import { classNames } from "../common/class-names";
+import { CURRENT_THEME, PlayerSummary } from "../../client-db/types";
+import { classNames } from "../../common/class-names";
 
-import pumpkin1 from "../img/halloween/pumpkin-numbers/1.png";
-import pumpkin2 from "../img/halloween/pumpkin-numbers/2.png";
-import pumpkin3 from "../img/halloween/pumpkin-numbers/3.png";
-import pumpkin4 from "../img/halloween/pumpkin-numbers/4.png";
-import pumpkin5 from "../img/halloween/pumpkin-numbers/5.png";
-import pumpkin6 from "../img/halloween/pumpkin-numbers/6.png";
-import pumpkin7 from "../img/halloween/pumpkin-numbers/7.png";
-import pumpkin8 from "../img/halloween/pumpkin-numbers/8.png";
-import pumpkin9 from "../img/halloween/pumpkin-numbers/9.png";
-import pumpkin10 from "../img/halloween/pumpkin-numbers/10.png";
-import pumpkinNotRanked from "../img/halloween/pumpkin-numbers/not-ranked.png";
-import { ProfilePicture } from "./player/profile-picture";
+import pumpkin1 from "../../img/halloween/pumpkin-numbers/1.png";
+import pumpkin2 from "../../img/halloween/pumpkin-numbers/2.png";
+import pumpkin3 from "../../img/halloween/pumpkin-numbers/3.png";
+import pumpkin4 from "../../img/halloween/pumpkin-numbers/4.png";
+import pumpkin5 from "../../img/halloween/pumpkin-numbers/5.png";
+import pumpkin6 from "../../img/halloween/pumpkin-numbers/6.png";
+import pumpkin7 from "../../img/halloween/pumpkin-numbers/7.png";
+import pumpkin8 from "../../img/halloween/pumpkin-numbers/8.png";
+import pumpkin9 from "../../img/halloween/pumpkin-numbers/9.png";
+import pumpkin10 from "../../img/halloween/pumpkin-numbers/10.png";
+import pumpkinNotRanked from "../../img/halloween/pumpkin-numbers/not-ranked.png";
+import { ProfilePicture } from "../player/profile-picture";
 
 const cardHeight: Record<Props["size"], string> = {
   default: "h-[5rem]",

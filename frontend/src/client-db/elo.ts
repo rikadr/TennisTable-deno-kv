@@ -26,8 +26,10 @@ export abstract class Elo {
       }
       const { winnersNewElo, losersNewElo } = this._calculateELO(winner.elo, loser.elo);
       const pointsWon = winnersNewElo - winner.elo;
+
       winner.elo = winnersNewElo;
       loser.elo = losersNewElo;
+
       onGameResult && onGameResult(playerMap, game, pointsWon);
     });
     return playerMap;

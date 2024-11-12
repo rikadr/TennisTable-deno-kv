@@ -3,25 +3,23 @@ import { useClientDbContext } from "../../wrappers/client-db-context";
 import { classNames } from "../../common/class-names";
 import { stringToColor } from "../compare-players-page";
 
-type Props = {
-  name?: string;
-};
-
-export const PlayerGamesDistrubution: React.FC<Props> = ({ name }) => {
+export const LeaderboardDistrubution: React.FC = () => {
   const context = useClientDbContext();
-  const summary = context.leaderboard.getPlayerSummary(name || "");
-  const mostGames = summary?.gamesDistribution[0]?.games || 0;
+  const leaderboard = context.leaderboard.getLeaderboard();
+  const highestElo = leaderboard.rankedPlayers[0]?.elo || 0;
+  const lowestElo = leaderboard.rankedPlayers[leaderboard.rankedPlayers.length - 1]?.elo || 0;
+  const range = highestElo - lowestElo;
 
   return (
-    <div className="flex flex-col w-full px-4 divide-y divide-secondary-background">
-      {summary?.gamesDistribution.map(({ name, games }, index) => {
-        const fraction = games / mostGames;
+    <div className="flex flex-col w-full divide-y divide-secondary-background">
+      {leaderboard?.rankedPlayers.map(({ name, elo }, index) => {
+        const fraction = (elo - lowestElo) / range;
         return (
           <Link to={`/player/${name}`} className="group" key={index}>
             <div className="relative w-full h-6 group-hover:bg-primary-text/5">
               <div
                 className={classNames(
-                  "absolute h-6 group-hover:opacity-75 top-0 transition-all duration-300 left-0 rounded-r-md",
+                  "absolute h-6 group-hover:opacity-75 top-0 transition-all duration-100 left-0 rounded-r-md",
                 )}
                 style={{ width: `${fraction * 100}%`, backgroundColor: stringToColor(name) }}
               />
