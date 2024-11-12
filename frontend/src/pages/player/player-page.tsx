@@ -9,6 +9,7 @@ import { PodiumPlace } from "../podium-place";
 import { PlayerPointsDistrubution } from "./player-points-distribution";
 import { ProfilePicture } from "./profile-picture";
 import { stringToColor } from "../compare-players-page";
+import { PlayerGamesDistrubution } from "./player-games-distribution";
 
 export const PlayerPage: React.FC = () => {
   const { name } = useParams();
@@ -30,7 +31,7 @@ export const PlayerPage: React.FC = () => {
 
       {summary && (
         <LineChart
-          width={Math.min(730, width)}
+          width={Math.min(1000, width)}
           height={300}
           data={summary?.games}
           margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
@@ -80,6 +81,10 @@ export const PlayerPage: React.FC = () => {
       <h1 className="text-2xl text-center mt-4">Points distribution</h1>
       <div className="w-full max-w-2xl">
         <PlayerPointsDistrubution name={summary?.name} />
+      </div>
+      <h1 className="text-2xl text-center mt-4">Games distribution</h1>
+      <div className="w-full max-w-2xl">
+        <PlayerGamesDistrubution name={summary?.name} />
       </div>
 
       <h1 className="text-2xl text-center mt-4">Last 10 games</h1>

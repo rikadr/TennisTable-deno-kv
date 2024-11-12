@@ -45,7 +45,7 @@ export const ComparePlayersPage: React.FC = () => {
 
   return (
     <div className="flex flex-col items-center gap-4">
-      <section className="flex flex-col items-center md:flex-row">
+      <section className="flex flex-col items-center xl:flex-row">
         <PlayerSelector
           players={comparison.allPlayers}
           selectedPlayers={selectedPlayers}
@@ -61,7 +61,7 @@ export const ComparePlayersPage: React.FC = () => {
             onChange={(e) => setRange(parseInt(e.target.value))}
           />
           {comparison.graphData ? (
-            <LineChart className="mt-7" width={Math.min(730, width)} height={400} data={graphDataToSee}>
+            <LineChart className="mt-7" width={Math.min(1000, width - 50)} height={500} data={graphDataToSee}>
               <CartesianGrid strokeDasharray="1 4" vertical={false} />
               <XAxis dataKey="name" />
               <YAxis
@@ -78,12 +78,26 @@ export const ComparePlayersPage: React.FC = () => {
               {graphDataToSee[0] &&
                 Object.keys(graphDataToSee[0]).map((player) => (
                   <Line
-                    key={player}
+                    key={player + "color"}
                     type="monotone"
                     dataKey={player}
                     stroke={stringToColor(player)}
-                    animationDuration={150}
                     dot={false}
+                    animationDuration={150}
+                    strokeWidth={3}
+                  />
+                ))}
+              {graphDataToSee[0] &&
+                Object.keys(graphDataToSee[0]).map((player) => (
+                  <Line
+                    key={player + "main"}
+                    type="monotone"
+                    dataKey={player}
+                    stroke={"white"}
+                    dot={false}
+                    animationDuration={150}
+                    strokeWidth={0.5}
+                    opacity={0.5}
                   />
                 ))}
               <ReferenceLine y={1000} stroke="white" label="1 000" />

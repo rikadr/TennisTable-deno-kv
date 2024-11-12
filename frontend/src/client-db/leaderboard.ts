@@ -61,6 +61,7 @@ export class Leaderboard {
         rank?: number;
         streaks?: { longestWin: number; longestLose: number };
         pointsDistrubution: { name: string; points: number }[];
+        gamesDistribution: { name: string; games: number }[];
       })
     | undefined {
     const leaderboardMap = this._getCachedLeaderboardMap();
@@ -102,12 +103,23 @@ export class Leaderboard {
       .map((name) => ({ name, points: pointsMap[name] }))
       .sort((a, b) => b.points - a.points);
 
+    // Games distrubution
+    const gamesMap: Record<string, number> = {};
+    for (const game of player.games) {
+      gamesMap[game.oponent] = (gamesMap[game.oponent] || 0) + 1;
+    }
+
+    const gamesDistribution = Object.keys(gamesMap)
+      .map((name) => ({ name, games: gamesMap[name] }))
+      .sort((a, b) => b.games - a.games);
+
     return {
       ...player,
       isRanked: player.games.length >= Elo.GAME_LIMIT_FOR_RANKED,
       rank: playerIsRanked ? playersWithHigherElo + 1 : undefined,
       streaks,
       pointsDistrubution,
+      gamesDistribution,
     };
   }
 
