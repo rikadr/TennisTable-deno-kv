@@ -82,10 +82,10 @@ export const PlayerPage: React.FC = () => {
       <div className="w-full max-w-2xl">
         <PlayerPointsDistrubution name={summary?.name} />
       </div>
-      {/* <h1 className="text-2xl text-center mt-4">Games distribution</h1>
+      <h1 className="text-2xl text-center mt-4">Games distribution</h1>
       <div className="w-full max-w-2xl">
         <PlayerGamesDistrubution name={summary?.name} />
-      </div> */}
+      </div>
 
       <h1 className="text-2xl text-center mt-4">Last 10 games</h1>
       <div className="flex flex-col divide-y divide-primary-text/50">
