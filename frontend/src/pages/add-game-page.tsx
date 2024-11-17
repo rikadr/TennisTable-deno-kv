@@ -34,7 +34,7 @@ export const AddGamePage: React.FC = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries();
-      navigate("/");
+      navigate("/leader-board");
     },
   });
 

@@ -22,11 +22,12 @@ export const NavMenu: React.FC = () => {
 
   const renderMenuitems = () => {
     const items: { name: string; to: string }[] = [
-      { name: "🏆 Leaderboard", to: "/leader-board" },
+      { name: "🥇 Leaderboard", to: "/leader-board" },
       { name: "+🏓  Add game", to: "/add-game" },
       { name: "+👤  New player", to: "/add-player" },
       { name: "👥🥊 Compare 1v1", to: "/1v1" },
       { name: "📈 Compare all", to: "/compare-players" },
+      { name: "🏆 Tournaments", to: "/tournament" },
     ];
     if (session.isAuthenticated && session.sessionData?.role === "admin") {
       items.push({ name: "Admin Page 🔐", to: "/admin" });

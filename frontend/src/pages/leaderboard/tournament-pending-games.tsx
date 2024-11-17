@@ -45,7 +45,9 @@ export const TournamentHighlightsAndPendingGames: React.FC = () => {
 
         return (
           <div key={tournament.id} className="space-y-1">
-            <h1>{tournament.name}</h1>
+            <Link to="/tournament" className="text-lg font-bold">
+              {tournament.name}
+            </Link>
             {recentWinner && <WinnerBox winner={recentWinner} />}
             {anyPendingGames &&
               tournament.games.map((layer, layerIndex) => (
@@ -72,8 +74,8 @@ type PendingGameProps = {
 const PendingGames: React.FC<PendingGameProps> = ({ player1, player2 }) => {
   return (
     <Link
-      to={`/1v1/?player1=${player1}&player2=${player2}`}
-      // to={`/add-game/?player1=${player1}&player2=${player2}`}
+      // to={`/1v1/?player1=${player1}&player2=${player2}`}
+      to={`/add-game/?player1=${player1}&player2=${player2}`}
       className="relative w-full px-4 py-2 rounded-lg flex items-center gap-x-4 h-12 bg-secondary-background hover:bg-secondary-background/70"
     >
       <h2 className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2">VS</h2>
@@ -93,7 +95,7 @@ const PendingGames: React.FC<PendingGameProps> = ({ player1, player2 }) => {
 type WinnerBoxProps = {
   winner: string;
 };
-const WinnerBox: React.FC<WinnerBoxProps> = ({ winner }) => {
+export const WinnerBox: React.FC<WinnerBoxProps> = ({ winner }) => {
   return (
     <Link
       to={`/player/${winner}`}
@@ -112,7 +114,7 @@ const WinnerBox: React.FC<WinnerBoxProps> = ({ winner }) => {
   );
 };
 
-function layerIndexToTournamentRound(index: number): string | undefined {
+export function layerIndexToTournamentRound(index: number): string | undefined {
   switch (index) {
     case 0:
       return "Final";
