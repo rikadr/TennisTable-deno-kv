@@ -1,16 +1,22 @@
 import { useMutation } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { queryClient } from "../common/query-client";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { PlayersDTO } from "./admin-page";
 import { classNames } from "../common/class-names";
 import { httpClient } from "../common/http-client";
 import { useClientDbContext } from "../wrappers/client-db-context";
+const PLAYER_1 = "player1";
+const PLAYER_2 = "player2";
 
 export const AddGamePage: React.FC = () => {
   const navigate = useNavigate();
-  const [winner, setWinner] = useState<string | undefined>();
-  const [loser, setLoser] = useState<string | undefined>();
+  const [searchParams] = useSearchParams();
+  const paramPlayer1 = searchParams.get(PLAYER_1);
+  const paramPlayer2 = searchParams.get(PLAYER_2);
+
+  const [winner, setWinner] = useState<string | undefined>(paramPlayer1 || undefined);
+  const [loser, setLoser] = useState<string | undefined>(paramPlayer2 || undefined);
   const [playersHaveBeenSet, setPlayersHaveBeenSet] = useState(false);
 
   const addGameMutation = useMutation<unknown, Error>({

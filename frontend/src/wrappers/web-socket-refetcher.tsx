@@ -6,6 +6,11 @@ import { useHeartbeat } from "../hooks/use-heartbeat";
 type Props = {
   children: React.ReactNode;
 };
+declare global {
+  interface Window {
+    socket: { ws: WebSocket | undefined; connectionId: string | undefined };
+  }
+}
 
 export const WebSocketRefetcher: React.FC<Props> = ({ children }) => {
   const queryClient = useQueryClient();
@@ -30,6 +35,8 @@ export const WebSocketRefetcher: React.FC<Props> = ({ children }) => {
   });
 
   useHeartbeat(() => connectionId, webSocket);
+
+  window.socket = { ws: webSocket, connectionId };
 
   return children;
 };

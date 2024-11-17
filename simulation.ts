@@ -3,7 +3,7 @@ const SET_POINTS = 11;
 const GAME_SETS = 3;
 
 // Player config
-const BALL_WIN_CHANCE = 0.46;
+const BALL_WIN_CHANCE = 0.415;
 
 // Simulation config
 const SIMULATED_GAMES = 1_000_000;

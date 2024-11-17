@@ -19,6 +19,12 @@ function useClientDb() {
   });
 }
 
+declare global {
+  interface Window {
+    tennisTable: TennisTable;
+  }
+}
+
 export const ClientDbContext = createContext<TennisTable>(new TennisTable({ players: [], games: [] }));
 
 export const useClientDbContext = () => useContext(ClientDbContext);
@@ -52,6 +58,7 @@ export const ClientDbWrapper: React.FC<{
       </div>
     );
   }
+  const tennistableClass = (window.tennisTable = new TennisTable(query.data));
 
-  return <ClientDbContext.Provider value={new TennisTable(query.data)}>{children}</ClientDbContext.Provider>;
+  return <ClientDbContext.Provider value={tennistableClass}>{children}</ClientDbContext.Provider>;
 };

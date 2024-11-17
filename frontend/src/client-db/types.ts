@@ -37,9 +37,10 @@ export type PlayerComparison = {
 type Theme = "default" | "halloween";
 export const CURRENT_THEME: Theme = "default";
 
-export type Tournament = {
+export type TournamentDB = {
   id: string;
   name: string;
+  description?: string;
   startDate: number;
   // endDate: number; ????
   signedUp: string[];
