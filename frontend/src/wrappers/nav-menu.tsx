@@ -145,7 +145,8 @@ export const NavMenu: React.FC = () => {
         </Popover>
       </div>
       <div className="mt-4 mb-24">
-        <Outlet />
+        {/* <Outlet /> */}
+        Site is down for maintenance. Please come back later.
       </div>
     </div>
   );
