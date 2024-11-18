@@ -11,6 +11,8 @@ const MENU_HEIGHT = "h-20 md:h-12";
 export const NavMenu: React.FC = () => {
   const { pathname } = useLocation();
 
+  const skipMaintenance = window.location.pathname === "/log-in" || window.location.pathname === "/admin";
+
   useEffect(() => {
     // Scroll to top whenever the path changes
     window.scrollTo({
@@ -145,8 +147,7 @@ export const NavMenu: React.FC = () => {
         </Popover>
       </div>
       <div className="mt-4 mb-24">
-        {/* <Outlet /> */}
-        Site is down for maintenance. Please come back later.
+        {skipMaintenance ? <Outlet /> : "Site is down for maintenance. Please come back later."}
       </div>
     </div>
   );
