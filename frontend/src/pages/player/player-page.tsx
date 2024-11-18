@@ -84,7 +84,7 @@ export const PlayerPage: React.FC = () => {
           </div>
         )}
       </div>
-      <div className="flex flex-col md:flex-row justify-evenly items-center md:items-start w-full">
+      <div className="flex flex-col md:flex-row justify-evenly items-center md:items-start w-full md:mr-4">
         <div className="w-full max-w-2xl flex flex-col justify-center">
           <div className="flex flex-col items-center">
             <h1 className="text-2xl text-center mt-4">Points distribution</h1>
