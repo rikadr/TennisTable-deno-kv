@@ -47,7 +47,7 @@ export const CameraPage: React.FC = () => {
   }
 
   // Compress and resize image
-  async function compressImage(base64Str: string, maxWidth = 256, maxHeight = 256, quality = 0.7): Promise<string> {
+  async function compressImage(base64Str: string, maxWidth = 256, maxHeight = 256, quality = 0.8): Promise<string> {
     return new Promise((resolve) => {
       const img = new Image();
       img.src = base64Str;
