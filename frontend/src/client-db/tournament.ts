@@ -272,12 +272,12 @@ export const mockTournament: TournamentDB = {
     // "Test name 199",
     // "Test name 200",
   ],
-  skippedGames: [{ advancing: "Tor", eliminated: "Ole Anders" }],
+  skippedGames: [{ advancing: "Fooa", eliminated: "Anders" }],
 };
 
 export class Tournaments {
   private parent: TennisTable;
-  private tournaments: TournamentDB[] = []; // Add mock for mock data
+  private tournaments: TournamentDB[] = [mockTournament]; // Add mock for mock data
 
   constructor(parent: TennisTable) {
     this.parent = parent;
@@ -297,9 +297,8 @@ export class Tournaments {
     }
 
     // Tournament has started, populate games
-    const bracket = this.#getStartingBracketFromPlayerOrder(t.playerOrder || []);
-    this.#fillBracketWithGames(bracket, t.startDate);
-    console.log(bracket);
+    const bracket = this.#getStartingBracketFromPlayerOrder2(t.playerOrder || []);
+    this.#fillBracketWithGames2(bracket, t.startDate, t.skippedGames);
 
     const games: TournamentWithGames["games"] = [];
 
@@ -341,177 +340,108 @@ export class Tournaments {
     console.log(this.tournaments[0].skippedGames);
   }
 
-  #getStartingBracketFromPlayerOrder(playerOrder: string[]): Bracket {
-    // Bracket structure
-    const layers = Math.ceil(Math.log2(playerOrder.length));
-    const byesCount = Math.pow(2, layers) - playerOrder.length;
-
-    // Player groups
-    const byes = playerOrder.slice(0, byesCount);
-    const qualifiers = playerOrder.slice(byesCount);
-
-    if (qualifiers.length % 2 !== 0) {
-      throw new Error("Odd number of qualifiers");
-    }
-
+  #getStartingBracketFromPlayerOrder2(playerOrder: string[]): Bracket {
     const bracket: Bracket = [];
 
-    // Create layers of the bracket
-    for (let i = 1; i <= layers; i++) {
-      const gamesInLayer = Math.pow(2, i - 1);
-
-      // Fill layers with empty games until layer for byes
-      if ((byesCount === 0 && i < layers) || (byesCount > 0 && i < layers - 1)) {
-        bracket.push(
-          Array.from({ length: gamesInLayer }, (_, index) => {
-            if (i === 1) {
-              return {}; // The Final game
-            } else {
-              return {
-                advanceTo: {
-                  layerIndex: i - 2,
-                  gameIndex: Math.floor(index / 2),
-                  role: index % 2 === 0 ? "player1" : "player2",
-                },
-              };
-            }
-          }),
-        );
-        continue;
-      }
-
-      if (byesCount > 0 && i === layers - 1) {
-        // Distribute byes
-        const layer: Bracket[number] = [];
-
-        // Generate all games in layer and populate with highest ranked players
-        for (let ibye = 0; ibye < gamesInLayer; ibye++) {
-          const game: Bracket[number][number] = { player1: byes[ibye] };
-          if (ibye % 2 === 1) {
-            // Odd add to end of list
-            layer.push(game);
-          } else {
-            // Even add first in list
-            layer.unshift(game);
-          }
-        }
-
-        // Distribute remaining byes in bye games
-        for (let ibye = gamesInLayer; ibye < byesCount; ibye++) {
-          const gameIndex = Math.floor((ibye - gamesInLayer) / 2);
-          if (ibye % 2 === 0) {
-            // Even is last,
-            layer[layer.length - 1 - gameIndex].player2 = byes[ibye];
-          } else {
-            // Odd is first
-            layer[gameIndex].player2 = byes[ibye];
-          }
-        }
-
-        // Assign advanceTo
-        layer.forEach(
-          (game, index) =>
-            (game.advanceTo = {
-              layerIndex: i - 2,
-              gameIndex: Math.floor(index / 2),
-              role: index % 2 === 0 ? "player1" : "player2",
-            }),
-        );
-
-        bracket.push(layer);
-        continue;
-      }
+    playerOrder.forEach((player, playerIndex, players) => {
+      const layerIndex = Math.floor(Math.log2(Math.max(1, playerIndex)));
+      const gamesInLayer = Math.pow(2, layerIndex);
 
       // Fill layer with empty games
-      const layer: Bracket[number] = Array.from({ length: gamesInLayer }, (_, index) => ({
-        advanceTo: {
-          layerIndex: i - 2,
-          gameIndex: Math.floor(index / 2),
-          role: index % 2 === 0 ? "player1" : "player2",
-        },
-      }));
-
-      // Pair qualifiers in games
-      const qualifierGames: Bracket[number] = Array.from({ length: qualifiers.length / 2 }, () => ({}));
-      for (let iquali = 0; iquali < qualifiers.length; iquali++) {
-        const gameIndex = Math.floor(iquali / 2);
-        const qualifiersLeft = qualifiers.length - iquali;
-        const player = qualifiers[iquali];
-
-        if (qualifiersLeft % 2 === 0) {
-          // Even is last
-          const flippedIndex = qualifierGames.length - 1 - gameIndex;
-          if (iquali < qualifiersLeft) {
-            qualifierGames[flippedIndex].player1 = player;
+      if (bracket[layerIndex] === undefined) {
+        bracket[layerIndex] = Array.from({ length: gamesInLayer }, (_, index) => {
+          if (layerIndex === 0) {
+            return {}; // The Final game
           } else {
-            qualifierGames[flippedIndex].player2 = player;
+            return {
+              advanceTo: {
+                layerIndex: layerIndex - 1,
+                gameIndex: Math.floor(index / 2),
+                role: index % 2 === 0 ? "player1" : "player2",
+              },
+            };
           }
-        } else {
-          // Odd is first
-          if (iquali < qualifiersLeft) {
-            qualifierGames[gameIndex].player1 = player;
-          } else {
-            qualifierGames[gameIndex].player2 = player;
-          }
-        }
+        });
       }
 
-      // Distribute qualifier games to advance to correct bye's oponent
-      let missingOponentCount = -1;
-      layer.forEach((game) => {
-        if (!game.advanceTo) throw new Error("advanceTo not defined");
-        const advanceToOponent = bracket[game.advanceTo.layerIndex][game.advanceTo.gameIndex][game.advanceTo.role];
-        if (advanceToOponent === undefined) {
-          missingOponentCount++;
-          if (missingOponentCount >= qualifierGames.length) throw new Error("missingOponentCount is too high");
-          const qualifierGame = qualifierGames[missingOponentCount];
-          if (!qualifierGame) throw new Error("qualifierGame is undefined");
-          game.player1 = qualifierGame.player1;
-          game.player2 = qualifierGame.player2;
-        }
-      });
+      // Assign players to the final game
+      if (playerIndex < 2) {
+        bracket[layerIndex][0][playerIndex === 0 ? "player1" : "player2"] = player;
+        return; // Can i return here?
+      }
+      const oponentIndex = 2 * gamesInLayer - 1 - playerIndex;
+      const oponent = players[oponentIndex];
+      if (oponent === undefined) throw new Error("oponent is undefined");
 
-      bracket.push(layer);
-    }
+      const oponentsMatchIndex = bracket[layerIndex - 1].findIndex(({ player1, player2 }) =>
+        [player1, player2].includes(oponent),
+      );
+      if (oponentsMatchIndex === -1) throw new Error("oponentsMatchIndex not found (-1)");
+      const oponentsMatch = bracket[layerIndex - 1][oponentsMatchIndex];
+      const oponentRole: keyof Game = oponentsMatch.player1 === oponent ? "player1" : "player2";
+
+      const newGameIndex = oponentsMatchIndex * 2 + (oponentRole === "player1" ? 0 : 1);
+      const newGame = bracket[layerIndex][newGameIndex];
+
+      // Add players to new game
+      newGame.player1 = oponent;
+      newGame.player2 = player;
+
+      // Remove oponent from oponent game
+      oponentsMatch[oponentRole] = undefined;
+    });
 
     return bracket;
   }
 
-  #fillBracketWithGames(bracket: Bracket, startTime: number) {
+  #fillBracketWithGames2(bracket: Bracket, startTime: number, skipped: TournamentDB["skippedGames"]) {
     const games = this.parent.games.filter((game) => game.time > startTime);
-    games.forEach((game) => {
-      // Stop if winning game has been played
-      if (bracket[0][0].winner) return;
-      // Check if game is a pending game
+    let gameIndex = 0;
+
+    let foundAnything: boolean = true;
+
+    // Need to keep looping after all games are done, because games can be skipped
+    // Like a, while "FoundAnything" is true
+    while (foundAnything && bracket[0][0].winner === undefined) {
+      foundAnything = false;
+      // eslint-disable-next-line no-loop-func
       bracket.forEach((layer, layerIndex) =>
         layer.forEach((match) => {
-          const gamePlayers = [game.winner, game.loser];
-          const matchPlayers = [match.player1, match.player2];
-          if (
-            match.winner === undefined &&
-            match.skipped === undefined &&
-            gamePlayers.every((player) => matchPlayers.includes(player))
-          ) {
-            match.winner = game.winner;
-            match.completedAt = game.time;
-            if (layerIndex > 0) {
-              // if (layerIndex > 0) check can be removed when done debugging. advanceTo should be only undefined for final
-              // Advance winner to next match
-              if (match.advanceTo === undefined) throw new Error("AdvanceTo not defined");
-              const nextMatch = bracket[match.advanceTo.layerIndex][match.advanceTo.gameIndex];
-              if (!nextMatch) throw new Error("Next match does not exist");
-              if (nextMatch.player1 && nextMatch.player2) throw new Error("Next match already full");
-              nextMatch[match.advanceTo.role] = match.winner;
-            }
+          if (match.winner || match.skipped || match.player1 === undefined || match.player2 === undefined) {
+            // Won, skipped, or incomplete matches
+            return;
           }
+
+          if (match.advanceTo === undefined) throw new Error("AdvanceTo not defined");
+          const nextMatch = bracket[match.advanceTo.layerIndex][match.advanceTo.gameIndex];
+          if (!nextMatch) throw new Error("Next match does not exist");
+          if (nextMatch.player1 && nextMatch.player2) throw new Error("Next match already full");
+
+          const matchPlayers = [match.player1, match.player2];
+          const skip = skipped.find(
+            (skip) => matchPlayers.includes(skip.advancing) && matchPlayers.includes(skip.eliminated),
+          );
+          const game = games[gameIndex];
+          const gameIsMatch = matchPlayers.includes(game?.winner) && matchPlayers.includes(game?.loser);
+          if (skip === undefined && gameIsMatch === false) {
+            // Keep as pending
+            return;
+          }
+          foundAnything = true;
+
+          match.winner = gameIsMatch ? game.winner : skip?.advancing;
+          match.completedAt = gameIsMatch ? game.time : undefined;
+          match.skipped = skip;
+
+          nextMatch[match.advanceTo.role] = match.winner;
         }),
       );
-    });
+      gameIndex++; // try next game
+    }
   }
 }
 
 /**
  * Ideas:
  * - Tournament results in player page
- * - Tournament page, with brackets and results
  */
