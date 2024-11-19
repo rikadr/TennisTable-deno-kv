@@ -277,7 +277,7 @@ export const mockTournament: TournamentDB = {
 
 export class Tournaments {
   private parent: TennisTable;
-  private tournaments: TournamentDB[] = [mockTournament]; // Add mock for mock data
+  private tournaments: TournamentDB[] = []; // Add mock for mock data
 
   constructor(parent: TennisTable) {
     this.parent = parent;
