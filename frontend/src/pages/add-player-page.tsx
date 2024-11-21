@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { httpClient } from "../common/http-client";
 import { useClientDbContext } from "../wrappers/client-db-context";
 import { classNames } from "../common/class-names";
+import ConfettiExplosion from "react-confetti-explosion";
 
 export const AddPlayerPage: React.FC = () => {
   const navigate = useNavigate();
@@ -15,17 +16,19 @@ export const AddPlayerPage: React.FC = () => {
 
   const [errorMessage, setErrorMessage] = useState<string>();
 
+  const [playerSuccessfullyAdded, setPlayerSuccessfullyAdded] = useState(false);
+
   useEffect(() => {
     const playerExists = !!context.players.find((p) => p.name.toLowerCase() === playerName.toLowerCase());
     const firstLetterIsUpperCase = playerName[0] === playerName[0]?.toUpperCase();
-    if (playerExists) {
+    if (playerExists && !playerSuccessfullyAdded) {
       setErrorMessage("Player already exists");
     } else if (!firstLetterIsUpperCase) {
       setErrorMessage("Please uppercase first letter");
     } else {
       setErrorMessage(undefined);
     }
-  }, [playerName, context.players]);
+  }, [playerName, context.players, playerSuccessfullyAdded]);
 
   const addPlayerMutation = useMutation<unknown, Error, { name: string }, unknown>({
     mutationFn: async ({ name }) => {
@@ -46,7 +49,10 @@ export const AddPlayerPage: React.FC = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries();
-      navigate("/");
+      setPlayerSuccessfullyAdded(true);
+      setTimeout(() => {
+        navigate("/leader-board");
+      }, 2_000);
     },
     onError(error) {
       setErrorMessage(error.message);
@@ -70,10 +76,12 @@ export const AddPlayerPage: React.FC = () => {
         className={classNames(
           "text-sm bg-green-700 hover:bg-green-900 text-white px-1 rounded-md font-thin",
           !!errorMessage && "cursor-not-allowed bg-gray-700 hover:bg-gray-700",
+          playerSuccessfullyAdded && "animate-ping-once",
         )}
         onClick={() => addPlayerMutation.mutate({ name: playerName })}
       >
         Add player
+        {playerSuccessfullyAdded && <ConfettiExplosion particleCount={400} force={0.8} duration={4_000} />}
       </button>
     </div>
   );
