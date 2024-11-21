@@ -28,6 +28,16 @@ module.exports = {
           background: "#6b7280",
         },
       },
+      animation: {
+        "ping-once": "ping-once 1000ms ease-in-out 1000ms forwards",
+      },
+      keyframes: {
+        "ping-once": {
+          "0%": { transform: "scale(1)", opacity: "1" },
+          "15%": { transform: "scale(0.7)", opacity: "1" },
+          "100%": { transform: "scale(2)", opacity: "0" },
+        },
+      },
     },
   },
   plugins: [],

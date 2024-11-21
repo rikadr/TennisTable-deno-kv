@@ -6,6 +6,7 @@ import { PlayersDTO } from "./admin-page";
 import { classNames } from "../common/class-names";
 import { httpClient } from "../common/http-client";
 import { useClientDbContext } from "../wrappers/client-db-context";
+import ConfettiExplosion from "react-confetti-explosion";
 const PLAYER_1 = "player1";
 const PLAYER_2 = "player2";
 
@@ -18,6 +19,8 @@ export const AddGamePage: React.FC = () => {
   const [winner, setWinner] = useState<string | undefined>(paramPlayer1 || undefined);
   const [loser, setLoser] = useState<string | undefined>(paramPlayer2 || undefined);
   const [playersHaveBeenSet, setPlayersHaveBeenSet] = useState(false);
+
+  const [gameSuccessfullyAdded, setGameSuccessfullyAdded] = useState(false);
 
   const addGameMutation = useMutation<unknown, Error>({
     mutationFn: async () => {
@@ -34,13 +37,17 @@ export const AddGamePage: React.FC = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries();
-      navigate("/leader-board");
+      setGameSuccessfullyAdded(true);
+      setTimeout(() => {
+        navigate("/leader-board");
+      }, 2_000);
     },
   });
 
   const { players } = useClientDbContext();
 
   function swapPlayers() {
+    if (addGameMutation.isPending || gameSuccessfullyAdded) return;
     setWinner(loser);
     setLoser(winner);
   }
@@ -68,6 +75,7 @@ export const AddGamePage: React.FC = () => {
           className={classNames(
             "text-lg font-semibold w-full py-4 px-6 bg-secondary-background hover:bg-secondary-background/70 text-secondary-text rounded-lg",
             (!winner || !loser) && "cursor-not-allowed opacity-50 hover:bg-secondary-background",
+            gameSuccessfullyAdded && "animate-ping-once",
           )}
           onClick={() => addGameMutation.mutate()}
         >
@@ -78,6 +86,7 @@ export const AddGamePage: React.FC = () => {
           ) : (
             "Add game 🏓"
           )}
+          {gameSuccessfullyAdded && <ConfettiExplosion particleCount={400} force={0.8} duration={4_000} />}
         </button>
         <div className="relative flex gap-2">
           <div className="w-40 h-20 flex flex-col items-center justify-center">
@@ -115,6 +124,7 @@ export const AddGamePage: React.FC = () => {
               }
               selectedPlayer={winner}
               disabledPlayer={loser}
+              disableSelection={addGameMutation.isPending || gameSuccessfullyAdded}
             />
           </div>
           <div className="space-y-4">
@@ -134,6 +144,7 @@ export const AddGamePage: React.FC = () => {
               }
               selectedPlayer={loser}
               disabledPlayer={winner}
+              disableSelection={addGameMutation.isPending || gameSuccessfullyAdded}
             />
           </div>
         </div>
@@ -147,7 +158,8 @@ const PlayerList: React.FC<{
   selectedPlayer?: string;
   disabledPlayer?: string;
   onClick: (name: string) => void;
-}> = ({ players, selectedPlayer, disabledPlayer, onClick }) => {
+  disableSelection?: boolean;
+}> = ({ players, selectedPlayer, disabledPlayer, onClick, disableSelection = false }) => {
   if (!players) {
     return <div>Failed to load players</div>;
   }
@@ -161,6 +173,7 @@ const PlayerList: React.FC<{
         const isDisabled = disabledPlayer === player.name;
         return (
           <button
+            disabled={disableSelection}
             key={player.name}
             className={classNames(
               "h-8 text-left pl-4 rounded-lg",
