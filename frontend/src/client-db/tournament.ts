@@ -22,8 +22,59 @@ export type TournamentWithGames = TournamentDB & {
 
 type Bracket = Partial<Game>[][];
 
-export const mockTournament: TournamentDB = {
+export const mockTournament1: TournamentDB = {
   id: "1",
+  name: "Smaller test tournament",
+  description: "Dette er en testturnering for å teste ut funksjonalitet i TennisTable",
+  startDate: 1732120523906, // 21th nov, 21:22
+  signedUp: [
+    "Rasmus",
+    "Simone",
+    "Alexander",
+    "Fooa",
+    "Peder",
+    "Christoffer",
+    "Erling",
+    "Oskar",
+    "Sveinung",
+    "Fredrik H",
+    "Aksel",
+    "Rikard",
+    "Anders",
+    "Ole",
+    "Marius",
+    "Tor",
+    "Ole Anders",
+    "Markus",
+    "Yngve",
+  ],
+  skippedGames: [{ advancing: "Fooa", eliminated: "Anders" }],
+
+  // TODO: function to set playerOrder based on elo at the time. if some players are not ranked, order them last by theirs signup order
+  playerOrder: [
+    "Rasmus",
+    "Simone",
+    "Alexander",
+    "Fooa",
+    "Peder",
+    "Christoffer",
+    "Erling",
+    "Oskar",
+    "Sveinung",
+    "Fredrik H",
+    "Aksel",
+    "Rikard",
+    "Anders",
+    "Ole",
+    "Marius",
+    "Tor",
+    "Ole Anders",
+    "Markus",
+    "Yngve",
+  ],
+};
+export const mockTournament2: TournamentDB = {
+  id: "2",
   name: "Optio Christmas tournament 2024 🏓🏆🎅🏻",
   description: "Dette er en testturnering for å teste ut funksjonalitet i TennisTable",
 
@@ -50,6 +101,8 @@ export const mockTournament: TournamentDB = {
     "Markus",
     "Yngve",
   ],
+  skippedGames: [{ advancing: "Fooa", eliminated: "Anders" }],
+
   // TODO: function to set playerOrder based on elo at the time. if some players are not ranked, order them last by theirs signup order
   playerOrder: [
     "Rasmus",
@@ -71,27 +124,27 @@ export const mockTournament: TournamentDB = {
     "Ole Anders",
     "Markus",
     "Yngve",
-    // "Test name 1",
-    // "Test name 2",
-    // "Test name 3",
-    // "Test name 4",
-    // "Test name 5",
-    // "Test name 6",
-    // "Test name 7",
-    // "Test name 8",
-    // "Test name 9",
-    // "Test name 10",
-    // "Test name 11",
-    // "Test name 12",
-    // "Test name 13",
-    // "Test name 14",
-    // "Test name 15",
-    // "Test name 16",
-    // "Test name 17",
-    // "Test name 18",
-    // "Test name 19",
-    // "Test name 20",
-    // "Test name 21",
+    "Test name 1",
+    "Test name 2",
+    "Test name 3",
+    "Test name 4",
+    "Test name 5",
+    "Test name 6",
+    "Test name 7",
+    "Test name 8",
+    "Test name 9",
+    "Test name 10",
+    "Test name 11",
+    "Test name 12",
+    "Test name 13",
+    "Test name 14",
+    "Test name 15",
+    "Test name 16",
+    "Test name 17",
+    "Test name 18",
+    "Test name 19",
+    "Test name 20",
+    "Test name 21",
     // "Test name 22",
     // "Test name 23",
     // "Test name 24",
@@ -272,12 +325,11 @@ export const mockTournament: TournamentDB = {
     // "Test name 199",
     // "Test name 200",
   ],
-  skippedGames: [{ advancing: "Fooa", eliminated: "Anders" }],
 };
 
 export class Tournaments {
   private parent: TennisTable;
-  private tournaments: TournamentDB[] = []; // Add mock for mock data
+  private tournaments: TournamentDB[] = []; // Add mock for mock data -> mockTournament1, mockTournament2
 
   constructor(parent: TennisTable) {
     this.parent = parent;
@@ -335,7 +387,7 @@ export class Tournaments {
   }
   undoSkipGame(skip: TournamentDB["skippedGames"][number]) {
     this.tournaments[0].skippedGames = this.tournaments[0].skippedGames.filter(
-      (game) => game.advancing !== skip.advancing && game.eliminated !== skip.eliminated,
+      (game) => game.advancing !== skip.advancing || game.eliminated !== skip.eliminated,
     );
     console.log(this.tournaments[0].skippedGames);
   }
@@ -396,13 +448,15 @@ export class Tournaments {
 
   #fillBracketWithGames2(bracket: Bracket, startTime: number, skipped: TournamentDB["skippedGames"]) {
     const games = this.parent.games.filter((game) => game.time > startTime);
+    console.log(games);
+
     let gameIndex = 0;
 
     let foundAnything: boolean = true;
 
     // Need to keep looping after all games are done, because games can be skipped
     // Like a, while "FoundAnything" is true
-    while (foundAnything && bracket[0][0].winner === undefined) {
+    while (bracket[0][0].winner === undefined && (foundAnything || gameIndex < games.length)) {
       foundAnything = false;
       // eslint-disable-next-line no-loop-func
       bracket.forEach((layer, layerIndex) =>
@@ -411,11 +465,6 @@ export class Tournaments {
             // Won, skipped, or incomplete matches
             return;
           }
-
-          if (match.advanceTo === undefined) throw new Error("AdvanceTo not defined");
-          const nextMatch = bracket[match.advanceTo.layerIndex][match.advanceTo.gameIndex];
-          if (!nextMatch) throw new Error("Next match does not exist");
-          if (nextMatch.player1 && nextMatch.player2) throw new Error("Next match already full");
 
           const matchPlayers = [match.player1, match.player2];
           const skip = skipped.find(
@@ -433,7 +482,14 @@ export class Tournaments {
           match.completedAt = gameIsMatch ? game.time : undefined;
           match.skipped = skip;
 
-          nextMatch[match.advanceTo.role] = match.winner;
+          if (layerIndex !== 0) {
+            // Skip for the final game
+            if (match.advanceTo === undefined) throw new Error("AdvanceTo not defined");
+            const nextMatch = bracket[match.advanceTo.layerIndex][match.advanceTo.gameIndex];
+            if (!nextMatch) throw new Error("Next match does not exist");
+            if (nextMatch.player1 && nextMatch.player2) throw new Error("Next match already full");
+            nextMatch[match.advanceTo.role] = match.winner;
+          }
         }),
       );
       gameIndex++; // try next game

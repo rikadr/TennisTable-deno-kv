@@ -13,13 +13,11 @@ export const TournamentHighlightsAndPendingGames: React.FC = () => {
           tournament.startDate < new Date().getTime() && tournament.games.some((layer) => layer.pending.length > 0),
       );
 
-    const anyRecentWinners = context.tournaments.getTournaments().some(
-      (tournament) =>
-        tournament.startDate < new Date().getTime() &&
-        tournament.bracket[0][0].winner !== undefined &&
-        tournament.bracket[0][0].completedAt !== undefined &&
-        tournament.bracket[0][0].completedAt > new Date().getTime() - 7 * 24 * 60 * 60 * 1000, // Max 7 days old
-    );
+    const anyRecentWinners = context.tournaments
+      .getTournaments()
+      .some(
+        (tournament) => tournament.startDate < new Date().getTime() && tournament.bracket[0][0].winner !== undefined,
+      );
 
     if (!anyPendingGames && !anyRecentWinners) {
       return null;
@@ -27,7 +25,7 @@ export const TournamentHighlightsAndPendingGames: React.FC = () => {
   }
 
   return (
-    <div className="w-full flex flex-col gap-2">
+    <div className="w-full flex flex-col gap-4">
       <h1 className="text-2xl text-center m2-4">Tournaments</h1>
       {context.tournaments.getTournaments().map((tournament) => {
         const anyPendingGames =
@@ -36,19 +34,19 @@ export const TournamentHighlightsAndPendingGames: React.FC = () => {
         const recentWinner =
           tournament.startDate < new Date().getTime() &&
           tournament.bracket[0][0].winner !== undefined &&
-          tournament.bracket[0][0].completedAt !== undefined &&
-          // Max 7 days old
-          tournament.bracket[0][0].completedAt > new Date().getTime() - 7 * 24 * 60 * 60 * 1000 &&
           tournament.bracket[0][0].winner;
 
         if (!anyPendingGames && !recentWinner) return null;
 
         return (
-          <div key={tournament.id} className="space-y-1">
-            <Link to="/tournament" className="text-lg font-bold">
-              {tournament.name}
+          <div key={tournament.id} className="space-y-1 p-2 ring-1 ring-secondary-background rounded-lg">
+            <Link to={`/tournament?tournament=${tournament.id}`}>
+              <button className="text-lg w-full py-1 px-2 rounded-md font-bold bg-secondary-background hover:bg-secondary-background/70 ">
+                {tournament.name}
+              </button>
             </Link>
             {recentWinner && <WinnerBox winner={recentWinner} />}
+            {anyPendingGames && <p className="text-base font-thin">Pending games:</p>}
             {anyPendingGames &&
               tournament.games.map((layer, layerIndex) => (
                 <div key={layerIndex} className="space-y-1">
@@ -56,7 +54,7 @@ export const TournamentHighlightsAndPendingGames: React.FC = () => {
                     <h3 className="text-center text-sm">{layerIndexToTournamentRound(layerIndex)}</h3>
                   )}
                   {layer.pending.map((game) => (
-                    <PendingGames key={game.player1 + game.player2} player1={game.player1} player2={game.player2} />
+                    <PendingGame key={game.player1 + game.player2} player1={game.player1} player2={game.player2} />
                   ))}
                 </div>
               ))}
@@ -71,7 +69,7 @@ type PendingGameProps = {
   player1: string;
   player2: string;
 };
-const PendingGames: React.FC<PendingGameProps> = ({ player1, player2 }) => {
+export const PendingGame: React.FC<PendingGameProps> = ({ player1, player2 }) => {
   return (
     <Link
       // to={`/1v1/?player1=${player1}&player2=${player2}`}
@@ -126,5 +124,13 @@ export function layerIndexToTournamentRound(index: number): string | undefined {
       return "8th Finals";
     case 4:
       return "16th Finals";
+    case 5:
+      return "32nd Finals";
+    case 6:
+      return "64th Finals";
+    case 7:
+      return "128th Finals";
+    case 8:
+      return "256th Finals";
   }
 }
