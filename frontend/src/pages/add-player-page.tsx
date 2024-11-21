@@ -72,10 +72,10 @@ export const AddPlayerPage: React.FC = () => {
       />
       {errorMessage && <p className="text-red-500">{errorMessage}</p>}
       <button
-        disabled={!!errorMessage || addPlayerMutation.isPending}
+        disabled={!!errorMessage || addPlayerMutation.isPending || !playerName}
         className={classNames(
           "text-lg font-semibold w-full py-4 px-6 bg-secondary-background hover:bg-secondary-background/70 text-secondary-text rounded-lg",
-          !!errorMessage && "cursor-not-allowed opacity-50 hover:bg-secondary-background",
+          (!!errorMessage || !playerName) && "cursor-not-allowed opacity-50 hover:bg-secondary-background",
           playerSuccessfullyAdded && "animate-ping-once",
         )}
         onClick={() => addPlayerMutation.mutate({ name: playerName })}
