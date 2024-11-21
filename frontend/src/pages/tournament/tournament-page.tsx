@@ -335,7 +335,7 @@ export const GameMenuItems: React.FC<{
           <button
             className="w-full px-4 py-2 text-left data-[focus]:bg-primary-background/50"
             onClick={() => {
-              context.tournaments.skipGame({ advancing: game.player1!, eliminated: game.player2! });
+              context.tournaments.skipGame({ advancing: game.player1!, eliminated: game.player2! }, tournament.id);
               rerender();
             }}
           >
@@ -348,7 +348,7 @@ export const GameMenuItems: React.FC<{
           <button
             className="w-full px-4 py-2 text-left data-[focus]:bg-primary-background/50"
             onClick={() => {
-              context.tournaments.skipGame({ advancing: game.player2!, eliminated: game.player1! });
+              context.tournaments.skipGame({ advancing: game.player2!, eliminated: game.player1! }, tournament.id);
               rerender();
             }}
           >
@@ -361,7 +361,7 @@ export const GameMenuItems: React.FC<{
           <button
             className="w-full px-4 py-2 text-left data-[focus]:bg-primary-background/50"
             onClick={() => {
-              context.tournaments.undoSkipGame(game.skipped!);
+              context.tournaments.undoSkipGame(game.skipped!, tournament.id);
               rerender();
             }}
           >

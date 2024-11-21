@@ -381,15 +381,17 @@ export class Tournaments {
     };
   }
 
-  skipGame(skip: TournamentDB["skippedGames"][number]) {
-    this.tournaments[0].skippedGames.push(skip);
-    console.log(this.tournaments[0].skippedGames);
+  skipGame(skip: TournamentDB["skippedGames"][number], tournamentId: string) {
+    const tournamentIndex = this.tournaments.findIndex((t) => t.id === tournamentId);
+    this.tournaments[tournamentIndex]?.skippedGames.push(skip);
   }
-  undoSkipGame(skip: TournamentDB["skippedGames"][number]) {
-    this.tournaments[0].skippedGames = this.tournaments[0].skippedGames.filter(
-      (game) => game.advancing !== skip.advancing || game.eliminated !== skip.eliminated,
-    );
-    console.log(this.tournaments[0].skippedGames);
+  undoSkipGame(skip: TournamentDB["skippedGames"][number], tournamentId: string) {
+    const tournamentIndex = this.tournaments.findIndex((t) => t.id === tournamentId);
+    if (tournamentIndex !== -1) {
+      this.tournaments[tournamentIndex].skippedGames = this.tournaments[tournamentIndex].skippedGames.filter(
+        (game) => game.advancing !== skip.advancing || game.eliminated !== skip.eliminated,
+      );
+    }
   }
 
   #getStartingBracketFromPlayerOrder2(playerOrder: string[]): Bracket {
@@ -448,8 +450,6 @@ export class Tournaments {
 
   #fillBracketWithGames2(bracket: Bracket, startTime: number, skipped: TournamentDB["skippedGames"]) {
     const games = this.parent.games.filter((game) => game.time > startTime);
-    console.log(games);
-
     let gameIndex = 0;
 
     let foundAnything: boolean = true;
