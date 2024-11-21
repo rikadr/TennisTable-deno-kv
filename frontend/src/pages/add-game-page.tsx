@@ -79,13 +79,13 @@ export const AddGamePage: React.FC = () => {
           )}
           onClick={() => addGameMutation.mutate()}
         >
-          {addGameMutation.isPending ? (
+          {addGameMutation.isPending && (
             <div className="flex items-center justify-center gap-2">
               Adding game ... <div className="animate-spin">🏓</div>
             </div>
-          ) : (
-            "Add game 🏓"
           )}
+          {gameSuccessfullyAdded && "Success ✅"}
+          {!addGameMutation.isPending && !gameSuccessfullyAdded && "Add game 🏓"}
           {gameSuccessfullyAdded && <ConfettiExplosion particleCount={400} force={0.8} duration={4_000} />}
         </button>
         <div className="relative flex gap-2">

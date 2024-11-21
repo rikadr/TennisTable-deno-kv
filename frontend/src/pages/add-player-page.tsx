@@ -60,7 +60,7 @@ export const AddPlayerPage: React.FC = () => {
   });
 
   return (
-    <div className="flex flex-col items-center gap-2">
+    <div className="flex flex-col items-center gap-2 w-96 m-auto">
       <h1>Add player</h1>
       <p>Player name</p>
       <input
@@ -72,15 +72,21 @@ export const AddPlayerPage: React.FC = () => {
       />
       {errorMessage && <p className="text-red-500">{errorMessage}</p>}
       <button
-        disabled={!!errorMessage}
+        disabled={!!errorMessage || addPlayerMutation.isPending}
         className={classNames(
-          "text-sm bg-green-700 hover:bg-green-900 text-white px-1 rounded-md font-thin",
-          !!errorMessage && "cursor-not-allowed bg-gray-700 hover:bg-gray-700",
+          "text-lg font-semibold w-full py-4 px-6 bg-secondary-background hover:bg-secondary-background/70 text-secondary-text rounded-lg",
+          !!errorMessage && "cursor-not-allowed opacity-50 hover:bg-secondary-background",
           playerSuccessfullyAdded && "animate-ping-once",
         )}
         onClick={() => addPlayerMutation.mutate({ name: playerName })}
       >
-        Add player
+        {addPlayerMutation.isPending && (
+          <div className="flex items-center justify-center gap-2">
+            Adding player ... <div className="animate-spin">👤</div>
+          </div>
+        )}
+        {playerSuccessfullyAdded && "Success ✅"}
+        {!addPlayerMutation.isPending && !playerSuccessfullyAdded && "Add player 👤"}
         {playerSuccessfullyAdded && <ConfettiExplosion particleCount={400} force={0.8} duration={4_000} />}
       </button>
     </div>
