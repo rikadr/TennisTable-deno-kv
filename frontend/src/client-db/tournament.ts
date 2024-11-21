@@ -24,7 +24,7 @@ type Bracket = Partial<Game>[][];
 
 export const mockTournament1: TournamentDB = {
   id: "1",
-  name: "Smaller test tournament",
+  name: "Small test tournament 🏓🏆",
   description: "Dette er en testturnering for å teste ut funksjonalitet i TennisTable",
   startDate: 1732120523906, // 21th nov, 21:22
   signedUp: [
@@ -48,7 +48,7 @@ export const mockTournament1: TournamentDB = {
     "Markus",
     "Yngve",
   ],
-  skippedGames: [{ advancing: "Fooa", eliminated: "Anders" }],
+  skippedGames: [],
 
   // TODO: function to set playerOrder based on elo at the time. if some players are not ranked, order them last by theirs signup order
   playerOrder: [
@@ -67,10 +67,10 @@ export const mockTournament1: TournamentDB = {
     "Anders",
     "Ole",
     "Marius",
-    "Tor",
-    "Ole Anders",
-    "Markus",
-    "Yngve",
+    // "Tor",
+    // "Ole Anders",
+    // "Markus",
+    // "Yngve",
   ],
 };
 export const mockTournament2: TournamentDB = {
@@ -329,7 +329,7 @@ export const mockTournament2: TournamentDB = {
 
 export class Tournaments {
   private parent: TennisTable;
-  private tournaments: TournamentDB[] = [mockTournament1, mockTournament2]; // Add mock for mock data -> mockTournament1, mockTournament2
+  private tournaments: TournamentDB[] = [mockTournament1]; // Add mock for mock data -> mockTournament1, mockTournament2
 
   constructor(parent: TennisTable) {
     this.parent = parent;

@@ -6,6 +6,7 @@ import { layerIndexToTournamentRound, WinnerBox } from "../leaderboard/tournamen
 import { Menu, MenuButton, MenuItem, MenuItems } from "@headlessui/react";
 import { Link, useLocation } from "react-router-dom";
 import { useRerender } from "../../hooks/use-rerender";
+import { useState } from "react";
 
 export const TournamentPage: React.FC = () => {
   const location = useLocation();
@@ -13,8 +14,9 @@ export const TournamentPage: React.FC = () => {
   const tournamentId = queryParams.get("tournament");
 
   const rerender = useRerender();
-
   const context = useClientDbContext();
+
+  const [showAsList, setShowAsList] = useState(true);
 
   const tournaments = context.tournaments.getTournaments();
   const tournament = tournaments.length === 1 ? tournaments[0] : tournaments.find((t) => t.id === tournamentId);
@@ -24,15 +26,29 @@ export const TournamentPage: React.FC = () => {
   return (
     <div>
       <h1 className="m-auto w-fit">{tournament.name}</h1>
+      <p>
+        Hi! <br />
+        Im testing the upcoming tournament features. <br />
+        If you have feedback or wished, please share your thoughts with me 😄 <br />- Rikard
+      </p>
+      <button
+        className="py-2 px-4 cursor-pointer bg-secondary-background hover:bg-secondary-background/70 rounded-md"
+        onClick={() => setShowAsList(!showAsList)}
+      >
+        Toggle view! Current: {showAsList ? "List" : "Tree 🌲"}
+      </button>
       {tournament.bracket[0][0].winner && (
         <div className="min-w-80 max-w-96 space-y-2">
           <WinnerBox winner={tournament.bracket[0][0].winner} />{" "}
         </div>
       )}
-      <GamesList tournament={tournament} rerender={rerender} />
-      <div className="w-fit m-auto">
-        <GameTriangle tournament={tournament} layerIndex={0} gameIndex={0} rerender={rerender} />
-      </div>
+      {showAsList ? (
+        <GamesList tournament={tournament} rerender={rerender} />
+      ) : (
+        <div className="w-fit m-auto">
+          <GameTriangle tournament={tournament} layerIndex={0} gameIndex={0} rerender={rerender} />
+        </div>
+      )}
     </div>
   );
 };
@@ -283,6 +299,7 @@ function getGameStates(tournament: TournamentWithGames, game: TournamentWithGame
   const p1IsLoser = !!game.winner && game.winner === game.player2;
   const p2IsLoser = !!game.winner && game.winner === game.player1;
 
+  const showCompareOption = !!game.player1 && !!game.player2;
   const showRegisterResultOption =
     game.player1 && game.player2 && game.winner === undefined && game.skipped === undefined;
   const showSkipGameOption = game.player1 && game.player2 && game.winner === undefined && game.skipped === undefined;
@@ -292,7 +309,7 @@ function getGameStates(tournament: TournamentWithGames, game: TournamentWithGame
   const showUndoSkipOption =
     game.skipped && advanceToGame?.winner === undefined && advanceToGame?.skipped === undefined;
 
-  const showMenu = showRegisterResultOption || showSkipGameOption || showUndoSkipOption;
+  const showMenu = showCompareOption || showRegisterResultOption || showSkipGameOption || showUndoSkipOption;
   return {
     isPending,
     p1IsWinner,
@@ -300,6 +317,7 @@ function getGameStates(tournament: TournamentWithGames, game: TournamentWithGame
     p1IsLoser,
     p2IsLoser,
     showMenu,
+    showCompareOption,
     showRegisterResultOption,
     showSkipGameOption,
     showUndoSkipOption,
@@ -313,13 +331,26 @@ export const GameMenuItems: React.FC<{
 }> = ({ tournament, game, rerender }) => {
   const context = useClientDbContext();
 
-  const { showRegisterResultOption, showSkipGameOption, showUndoSkipOption } = getGameStates(tournament, game);
+  const { showCompareOption, showRegisterResultOption, showSkipGameOption, showUndoSkipOption } = getGameStates(
+    tournament,
+    game,
+  );
 
   return (
     <MenuItems
       anchor="bottom"
       className="flex flex-col gap-0 rounded-lg bg-secondary-background ring-2 ring-secondary-text shadow-xl"
     >
+      {showCompareOption && (
+        <MenuItem>
+          <Link
+            to={`/1v1/?player1=${game.player1 || ""}&player2=${game.player2 || ""}`}
+            className="w-full px-4 py-2 text-left data-[focus]:bg-primary-background/50"
+          >
+            🥊 Compare players 👀
+          </Link>
+        </MenuItem>
+      )}
       {showRegisterResultOption && (
         <MenuItem>
           <Link
@@ -365,7 +396,7 @@ export const GameMenuItems: React.FC<{
               rerender();
             }}
           >
-            Undo skip
+            ⏮️ Undo skip
           </button>
         </MenuItem>
       )}

@@ -27,6 +27,11 @@ export const TournamentHighlightsAndPendingGames: React.FC = () => {
   return (
     <div className="w-full flex flex-col gap-4">
       <h1 className="text-2xl text-center m2-4">Tournaments</h1>
+      <p>
+        Hi! <br />
+        Im testing the upcoming tournament features. <br />
+        If you have feedback or wished, please share your thoughts with me 😄 <br />- Rikard
+      </p>
       {context.tournaments.getTournaments().map((tournament) => {
         const anyPendingGames =
           tournament.startDate < new Date().getTime() && tournament.games.some((layer) => layer.pending.length > 0);
