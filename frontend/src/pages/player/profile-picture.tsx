@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { classNames } from "../../common/class-names";
 import { stringToColor } from "../compare-players-page";
 
@@ -8,6 +8,7 @@ type Props = {
   clickToEdit?: boolean;
   border?: number;
   shape?: "circle" | "rounded";
+  linkToPlayer?: boolean;
 };
 
 export const ProfilePicture: React.FC<Props> = ({
@@ -16,8 +17,20 @@ export const ProfilePicture: React.FC<Props> = ({
   size = 256,
   border = 0,
   shape = "circle",
+  linkToPlayer = false,
 }) => {
   const navigate = useNavigate();
+
+  const img = () => (
+    <img
+      className={classNames(
+        "w-full h-full object-cover",
+        clickToEdit && " group-hover:opacity-50 transition-opacity duration-150",
+      )}
+      src={`${process.env.REACT_APP_API_BASE_URL}/player/${name}/profile-picture`}
+      alt="Profile"
+    />
+  );
   return (
     <div
       className={classNames(
@@ -34,14 +47,13 @@ export const ProfilePicture: React.FC<Props> = ({
           Click to edit
         </div>
       )}
-      <img
-        className={classNames(
-          "w-full h-full object-cover",
-          clickToEdit && " group-hover:opacity-50 transition-opacity duration-150",
-        )}
-        src={`${process.env.REACT_APP_API_BASE_URL}/player/${name}/profile-picture`}
-        alt="Profile"
-      />
+      {linkToPlayer && name !== "default" ? (
+        <Link aria-disabled to={`/player/${name}`}>
+          {img()}
+        </Link>
+      ) : (
+        img()
+      )}
     </div>
   );
 };

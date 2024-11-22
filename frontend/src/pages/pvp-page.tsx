@@ -40,7 +40,7 @@ export const SelectPlayer: React.FC<{ value?: string; onChange: (value: string) 
           </option>
         ))}
       </Select>
-      <ProfilePicture name={value} size={64} />
+      <ProfilePicture name={value} size={64} linkToPlayer border={3} />
     </div>
   );
 };
