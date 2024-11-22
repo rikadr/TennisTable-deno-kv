@@ -331,11 +331,20 @@ export class Tournaments {
   private parent: TennisTable;
   private tournaments: TournamentDB[] = [mockTournament1]; // Add mock for mock data -> mockTournament1, mockTournament2
 
+  #tournamentsCache: TournamentWithGames[] | undefined;
+
   constructor(parent: TennisTable) {
     this.parent = parent;
   }
 
   getTournaments(): TournamentWithGames[] {
+    if (this.#tournamentsCache !== undefined) return this.#tournamentsCache;
+    const tournaments = this.#getTournaments();
+    this.#tournamentsCache = tournaments;
+    return tournaments;
+  }
+
+  #getTournaments(): TournamentWithGames[] {
     return this.tournaments.map((t) => this.getTournament(t));
   }
 
