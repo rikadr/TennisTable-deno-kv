@@ -46,7 +46,6 @@ export const TournamentHighlightsAndPendingGames: React.FC = () => {
               </button>
             </Link>
             {recentWinner && <WinnerBox winner={recentWinner} />}
-            {anyPendingGames && <p className="text-base font-thin">Pending games:</p>}
             {anyPendingGames &&
               tournament.games.map((layer, layerIndex) => (
                 <div key={layerIndex} className="space-y-1">

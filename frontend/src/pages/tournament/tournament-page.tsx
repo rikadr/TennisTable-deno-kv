@@ -6,8 +6,9 @@ import { layerIndexToTournamentRound, WinnerBox } from "../leaderboard/tournamen
 import { Menu, MenuButton, MenuItem, MenuItems } from "@headlessui/react";
 import { Link } from "react-router-dom";
 import { useRerender } from "../../hooks/use-rerender";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useTennisParams } from "../../hooks/use-tennis-params";
+import { useSessionStorage } from "usehooks-ts";
 
 export const TournamentPage: React.FC = () => {
   const { tournament: tournamentId, player1, player2 } = useTennisParams();
@@ -19,7 +20,7 @@ export const TournamentPage: React.FC = () => {
   const tournament = tournaments.length === 1 ? tournaments[0] : tournaments.find((t) => t.id === tournamentId);
 
   // Determine default based on screen width and layer debth in bracket. Also, store in local storage?
-  const [showAsList, setShowAsList] = useState(true);
+  const [showAsList, setShowAsList] = useSessionStorage(`show-tournament-as-list${tournamentId}`, false);
 
   // ScrollTo
   const itemRefs = useRef<{ [key: string]: HTMLElement | null }>({});
