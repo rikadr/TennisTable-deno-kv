@@ -24,10 +24,14 @@ type Bracket = Partial<TournamentGame>[][];
 
 export const mockTournament1: TournamentDB = {
   id: "1",
-  name: "Small test tournament 🏓🏆",
-  description: "Dette er en testturnering for å teste ut funksjonalitet i TennisTable",
+  name: "Optio Christmas tournament 2024 🏓🎅🏻",
+  description:
+    "The social happening of the year!! Create you new player if not already in the system, and ask Rikard to join the tournament!",
   startDate: 1732120523906, // 21th nov, 21:22
-  signedUp: [
+  signedUp: [],
+  skippedGames: [],
+  // TODO: function to set playerOrder based on elo at the time. if some players are not ranked, order them last by theirs signup order
+  playerOrder: [
     "Rasmus",
     "Simone",
     "Alexander",
@@ -48,34 +52,10 @@ export const mockTournament1: TournamentDB = {
     "Markus",
     "Yngve",
   ],
-  skippedGames: [],
-
-  // TODO: function to set playerOrder based on elo at the time. if some players are not ranked, order them last by theirs signup order
-  playerOrder: [
-    "Rasmus",
-    "Simone",
-    "Alexander",
-    "Fooa",
-    "Peder",
-    // "Christoffer",
-    "Erling",
-    "Oskar",
-    // "Sveinung",
-    "Fredrik H",
-    "Axel",
-    "Rikard",
-    "Anders",
-    "Ole",
-    "Marius",
-    // "Tor",
-    // "Ole Anders",
-    // "Markus",
-    // "Yngve",
-  ],
 };
 export const mockTournament2: TournamentDB = {
   id: "2",
-  name: "Optio Christmas tournament 2024 🏓🏆🎅🏻",
+  name: "Test big numbers",
   description: "Dette er en testturnering for å teste ut funksjonalitet i TennisTable",
 
   startDate: 1731524875192, // 13th nov, 20:08
