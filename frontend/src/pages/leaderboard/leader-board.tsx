@@ -10,6 +10,12 @@ export const LeaderBoard: React.FC = () => {
   const context = useClientDbContext();
   const leaderboard = context.leaderboard.getLeaderboard();
 
+  const playersWithNoMatches = context.players.filter(
+    (player) =>
+      !leaderboard.rankedPlayers.some((r) => r.name === player.name) &&
+      !leaderboard.unrankedPlayers.some((u) => u.name === player.name),
+  );
+
   const nr1 = leaderboard.rankedPlayers[0];
   const nr2 = leaderboard.rankedPlayers[1];
   const nr3 = leaderboard.rankedPlayers[2];
@@ -94,6 +100,19 @@ export const LeaderBoard: React.FC = () => {
                   maximumFractionDigits: 0,
                 })}
               </div>
+            </Link>
+          ))}
+          {playersWithNoMatches.map((player, index) => (
+            <Link
+              key={index}
+              to={`/player/${player.name}`}
+              className="bg-primary-background hover:bg-secondary-background/30 py-1 px-2 flex items-center gap-4 text-xl font-light"
+            >
+              <ProfilePicture name={player.name} size={28} border={2} />
+
+              <div className="w-28 font-normal whitespace-nowrap">{player.name}</div>
+              <div className="w-12 text-right">-</div>
+              <div className="w-14 text-right text-base">0</div>
             </Link>
           ))}
         </div>
