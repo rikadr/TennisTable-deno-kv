@@ -83,7 +83,7 @@ export const AddGamePage: React.FC = () => {
           )}
           {gameSuccessfullyAdded && "Success ✅"}
           {!addGameMutation.isPending && !gameSuccessfullyAdded && "Add game 🏓"}
-          {gameSuccessfullyAdded && <ConfettiExplosion particleCount={400} force={0.8} duration={4_000} />}
+          {gameSuccessfullyAdded && <ConfettiExplosion particleCount={300} force={0.8} duration={4_000} />}
         </button>
         <div className="relative flex gap-2">
           <div className="w-40 h-20 flex flex-col items-center justify-center">
