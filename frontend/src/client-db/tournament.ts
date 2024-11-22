@@ -394,6 +394,7 @@ export class Tournaments {
     const tournamentIndex = this.tournaments.findIndex((t) => t.id === tournamentId);
     this.tournaments[tournamentIndex]?.skippedGames.push(skip);
   }
+
   undoSkipGame(skip: TournamentDB["skippedGames"][number], tournamentId: string) {
     const tournamentIndex = this.tournaments.findIndex((t) => t.id === tournamentId);
     if (tournamentIndex !== -1) {
@@ -401,6 +402,43 @@ export class Tournaments {
         (game) => game.advancing !== skip.advancing || game.eliminated !== skip.eliminated,
       );
     }
+  }
+
+  isPendingGame(
+    player1: string | null | undefined,
+    player2: string | null | undefined,
+  ):
+    | {
+        tournament: { name: string; id: string };
+        layerIndex: number;
+        game: TournamentWithGames["bracket"][number][number];
+      }
+    | undefined {
+    if (!player1 || !player2) return;
+    const players = [player1, player2];
+
+    const tournament = this.getTournaments().find((t) =>
+      t.games.some((layer) =>
+        layer.pending.some((game) => players.includes(game.player1) && players.includes(game.player2)),
+      ),
+    );
+    if (!tournament) return;
+
+    const layerIndex = tournament.games.findIndex((layer) =>
+      layer.pending.some((game) => players.includes(game.player1) && players.includes(game.player2)),
+    );
+    if (layerIndex === -1) return;
+
+    const game = tournament.games[layerIndex].pending.find(
+      (game) => players.includes(game.player1) && players.includes(game.player2),
+    );
+    if (!game) return;
+
+    return {
+      tournament: { name: tournament.name, id: tournament.id },
+      layerIndex,
+      game,
+    };
   }
 
   #getStartingBracketFromPlayerOrder2(playerOrder: string[]): Bracket {

@@ -1,15 +1,18 @@
 import { useMutation } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { queryClient } from "../common/query-client";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { PlayersDTO } from "./admin-page";
 import { classNames } from "../common/class-names";
 import { httpClient } from "../common/http-client";
 import { useClientDbContext } from "../wrappers/client-db-context";
 import ConfettiExplosion from "react-confetti-explosion";
 import { useTennisParams } from "../hooks/use-tennis-params";
+import { layerIndexToTournamentRound } from "./leaderboard/tournament-pending-games";
 
 export const AddGamePage: React.FC = () => {
+  const context = useClientDbContext();
+
   const navigate = useNavigate();
   const { player1: paramPlayer1, player2: paramPlayer2 } = useTennisParams();
 
@@ -64,9 +67,22 @@ export const AddGamePage: React.FC = () => {
     }
   }, [winner, loser, playersHaveBeenSet]);
 
+  const isPendingTournamentGame = context.tournaments.isPendingGame(winner, loser);
+
   return (
     <div className="w-full flex justify-center">
       <div className="space-y-4 p-4 w-fit">
+        {isPendingTournamentGame && (
+          <Link
+            to={`/tournament?tournament=${isPendingTournamentGame.tournament.id}&player1=${isPendingTournamentGame.game.player1}&player2=${isPendingTournamentGame.game.player2}`}
+          >
+            <div className="ring-1 ring-secondary-background px-4 py-2 rounded-lg hover:bg-secondary-background/50">
+              <p className="text-left italic text-xs">This game is pending in a tournament!</p>
+              <h1>{isPendingTournamentGame.tournament.name}</h1>
+              <p className="text-center text-lg">{layerIndexToTournamentRound(isPendingTournamentGame.layerIndex)}</p>
+            </div>
+          </Link>
+        )}
         <button
           disabled={!winner || !loser || addGameMutation.isPending}
           className={classNames(
