@@ -28,6 +28,7 @@ export const TournamentPage: React.FC = () => {
       <h1 className="m-auto w-fit">{tournament.name}</h1>
       <p>
         Preview of the tournament features ⚙️ <br />
+        Feel free to click around and skip games. (Skipping is not permanent yet) <br />
         If you have feedback or wishes, please share 😄 <br />- Rikard
       </p>
       <button

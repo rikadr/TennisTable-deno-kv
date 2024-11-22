@@ -29,6 +29,7 @@ export const TournamentHighlightsAndPendingGames: React.FC = () => {
       <h1 className="text-2xl text-center m2-4">Tournaments</h1>
       <p>
         Preview of the tournament features ⚙️ <br />
+        Feel free to click around and skip games. (Skipping is not permanent yet) <br />
         If you have feedback or wishes, please share 😄 <br />- Rikard
       </p>
       {context.tournaments.getTournaments().map((tournament) => {
