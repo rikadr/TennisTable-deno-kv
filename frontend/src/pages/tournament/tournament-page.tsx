@@ -19,8 +19,12 @@ export const TournamentPage: React.FC = () => {
   const tournaments = context.tournaments.getTournaments();
   const tournament = tournaments.length === 1 ? tournaments[0] : tournaments.find((t) => t.id === tournamentId);
 
-  // Determine default based on screen width and layer debth in bracket. Also, store in local storage?
-  const [showAsList, setShowAsList] = useSessionStorage(`show-tournament-as-list${tournamentId}`, false);
+  const [showAsList, setShowAsList] = useSessionStorage(
+    `show-tournament-as-list${tournamentId}`,
+    window.innerWidth < 1_000,
+  );
+
+  console.log(window.innerWidth);
 
   // ScrollTo
   const itemRefs = useRef<{ [key: string]: HTMLElement | null }>({});
