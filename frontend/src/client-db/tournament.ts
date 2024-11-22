@@ -330,6 +330,7 @@ export const mockTournament2: TournamentDB = {
 export class Tournaments {
   private parent: TennisTable;
   private tournaments: TournamentDB[] = [mockTournament1]; // Add mock for mock data -> mockTournament1, mockTournament2
+  private skipIsEnabled = false;
 
   #tournamentsCache: TournamentWithGames[] | undefined;
 
@@ -391,12 +392,20 @@ export class Tournaments {
   }
 
   skipGame(skip: TournamentDB["skippedGames"][number], tournamentId: string) {
+    if (this.skipIsEnabled === false) {
+      window.alert("Ask Rikard to skip the game 🙏 It's not self serviced yet... ");
+      return;
+    }
     const tournamentIndex = this.tournaments.findIndex((t) => t.id === tournamentId);
     this.tournaments[tournamentIndex]?.skippedGames.push(skip);
     this.#tournamentsCache = undefined;
   }
 
   undoSkipGame(skip: TournamentDB["skippedGames"][number], tournamentId: string) {
+    if (this.skipIsEnabled === false) {
+      window.alert("Ask Rikard to undo the skip 🙏 It's not self serviced yet... ");
+      return;
+    }
     const tournamentIndex = this.tournaments.findIndex((t) => t.id === tournamentId);
     if (tournamentIndex !== -1) {
       this.tournaments[tournamentIndex].skippedGames = this.tournaments[tournamentIndex].skippedGames.filter(
