@@ -27,9 +27,8 @@ export const TournamentPage: React.FC = () => {
     <div>
       <h1 className="m-auto w-fit">{tournament.name}</h1>
       <p>
-        Hi! <br />
-        Im testing the upcoming tournament features. <br />
-        If you have feedback or wished, please share your thoughts with me 😄 <br />- Rikard
+        Preview of the tournament features ⚙️ <br />
+        If you have feedback or wishes, please share 😄 <br />- Rikard
       </p>
       <button
         className="py-2 px-4 cursor-pointer bg-secondary-background hover:bg-secondary-background/70 rounded-md"
