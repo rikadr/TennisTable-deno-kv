@@ -4,14 +4,13 @@ import { useClientDbContext } from "../../wrappers/client-db-context";
 import { ProfilePicture } from "../player/profile-picture";
 import { layerIndexToTournamentRound, WinnerBox } from "../leaderboard/tournament-pending-games";
 import { Menu, MenuButton, MenuItem, MenuItems } from "@headlessui/react";
-import { Link, useLocation } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useRerender } from "../../hooks/use-rerender";
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useTennisParams } from "../../hooks/use-tennis-params";
 
 export const TournamentPage: React.FC = () => {
-  const location = useLocation();
-  const queryParams = new URLSearchParams(location.search);
-  const tournamentId = queryParams.get("tournament");
+  const { tournament: tournamentId, player1, player2 } = useTennisParams();
 
   const rerender = useRerender();
   const context = useClientDbContext();
@@ -21,6 +20,28 @@ export const TournamentPage: React.FC = () => {
 
   // Determine default based on screen width and layer debth in bracket. Also, store in local storage?
   const [showAsList, setShowAsList] = useState(true);
+
+  // ScrollTo
+  const itemRefs = useRef<{ [key: string]: HTMLElement | null }>({});
+  const gameKey = getGameKeyFromPlayers(player1 ?? "", player2 ?? "");
+  const scrollToGame = useCallback(() => {
+    const element = itemRefs.current[gameKey];
+    if (element) {
+      element.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+        inline: "center",
+      });
+    } else {
+      console.warn(`Item with ID '${gameKey}' not found.`);
+    }
+  }, [gameKey]);
+
+  useEffect(() => {
+    // Run the scroll function after a short delay to ensure rendering is complete
+    const timeout = setTimeout(scrollToGame, 100);
+    return () => clearTimeout(timeout);
+  }, [scrollToGame]);
 
   if (!tournament) return <div>No tournament selected</div>;
 
@@ -39,10 +60,10 @@ export const TournamentPage: React.FC = () => {
         </div>
       )}
       {showAsList ? (
-        <GamesList tournament={tournament} rerender={rerender} />
+        <GamesList tournament={tournament} rerender={rerender} itemRefs={itemRefs} />
       ) : (
         <div className="w-fit m-auto">
-          <GameTriangle tournament={tournament} layerIndex={0} gameIndex={0} rerender={rerender} />
+          <GameTriangle tournament={tournament} layerIndex={0} gameIndex={0} rerender={rerender} itemRefs={itemRefs} />
         </div>
       )}
     </div>
@@ -51,8 +72,13 @@ export const TournamentPage: React.FC = () => {
 type GamesListProps = {
   tournament: TournamentWithGames;
   rerender: () => void;
+  itemRefs: React.MutableRefObject<{
+    [key: string]: HTMLElement | null;
+  }>;
 };
-const GamesList: React.FC<GamesListProps> = ({ tournament, rerender }) => {
+const GamesList: React.FC<GamesListProps> = ({ tournament, rerender, itemRefs }) => {
+  const { player1, player2 } = useTennisParams();
+
   return (
     <div className="flex flex-col items-center lg:flex-row-reverse lg:justify-end lg:items-start gap-2">
       {tournament.bracket.map((layer, layerIndex) => (
@@ -66,14 +92,22 @@ const GamesList: React.FC<GamesListProps> = ({ tournament, rerender }) => {
               game,
             );
 
+            const gameKey =
+              game.player1 && game.player2
+                ? getGameKeyFromPlayers(game.player1, game.player2)
+                : "L" + layerIndex + "G+" + gameIndex;
+
+            const isParamSelectedGame = gameKey === getGameKeyFromPlayers(player1, player2);
+
             return (
-              <Menu key={"L" + layerIndex + "G+" + gameIndex}>
+              <Menu key={gameKey} ref={(el) => (itemRefs.current[gameKey] = el)}>
                 <MenuButton
                   disabled={!showMenu}
                   className={classNames(
                     "relative w-full px-4 py-2 rounded-lg flex items-center gap-x-4 h-12",
                     isPending ? "bg-secondary-background ring-2 ring-secondary-text" : "bg-secondary-background/50",
                     showMenu && "hover:bg-secondary-background/70",
+                    isParamSelectedGame && "animate-wiggle",
                   )}
                 >
                   <h2 className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2">VS</h2>
@@ -116,8 +150,13 @@ type GameTriangleProps = {
   layerIndex: number;
   gameIndex: number;
   rerender: () => void;
+  itemRefs: React.MutableRefObject<{
+    [key: string]: HTMLElement | null;
+  }>;
 };
-const GameTriangle: React.FC<GameTriangleProps> = ({ tournament, layerIndex, gameIndex, rerender }) => {
+const GameTriangle: React.FC<GameTriangleProps> = ({ tournament, layerIndex, gameIndex, rerender, itemRefs }) => {
+  const { player1, player2 } = useTennisParams();
+
   let size: Size = "xxs";
   switch (layerIndex) {
     case 0:
@@ -186,6 +225,13 @@ const GameTriangle: React.FC<GameTriangleProps> = ({ tournament, layerIndex, gam
 
   const { isPending, p1IsWinner, p2IsWinner, p1IsLoser, p2IsLoser, showMenu } = getGameStates(tournament, game);
 
+  const gameKey =
+    game.player1 && game.player2
+      ? getGameKeyFromPlayers(game.player1, game.player2)
+      : "L" + layerIndex + "G+" + gameIndex;
+
+  const isParamSelectedGame = gameKey === getGameKeyFromPlayers(player1, player2);
+
   return (
     <div className="w-fit space-y-2">
       {layerIndex < 3 ? (
@@ -193,7 +239,7 @@ const GameTriangle: React.FC<GameTriangleProps> = ({ tournament, layerIndex, gam
       ) : (
         <div className="h-0" />
       )}
-      <Menu>
+      <Menu key={gameKey} ref={(el) => (itemRefs.current[gameKey] = el)}>
         <div className="w-full flex">
           <MenuButton
             disabled={!showMenu}
@@ -203,6 +249,7 @@ const GameTriangle: React.FC<GameTriangleProps> = ({ tournament, layerIndex, gam
               game.winner || game.skipped || !isPending ? "bg-secondary-background/50" : "bg-secondary-background",
               isPending && "bg-secondary-background ring-2 ring-secondary-text",
               showMenu && "hover:bg-secondary-background/70",
+              isParamSelectedGame && "animate-wiggle",
             )}
           >
             <div
@@ -267,12 +314,14 @@ const GameTriangle: React.FC<GameTriangleProps> = ({ tournament, layerIndex, gam
             layerIndex={layerIndex + 1}
             gameIndex={gameIndex * 2}
             rerender={rerender}
+            itemRefs={itemRefs}
           />
           <GameTriangle
             tournament={tournament}
             layerIndex={layerIndex + 1}
             gameIndex={gameIndex * 2 + 1}
             rerender={rerender}
+            itemRefs={itemRefs}
           />
         </div>
       )}
@@ -417,3 +466,7 @@ export const QuestionMark: React.FC<{ size: number }> = ({ size }) => {
     </div>
   );
 };
+
+function getGameKeyFromPlayers(player1: string | undefined | null, player2: string | undefined | null) {
+  return `P1:${player1 ?? ""}:P2:${player2 ?? ""}`;
+}

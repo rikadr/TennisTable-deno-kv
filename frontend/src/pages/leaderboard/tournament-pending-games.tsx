@@ -78,9 +78,7 @@ type PendingGameProps = {
 export const PendingGame: React.FC<PendingGameProps> = ({ player1, player2, tournamentId }) => {
   return (
     <Link
-      // to={`/1v1/?player1=${player1}&player2=${player2}`}
-      // to={`/add-game/?player1=${player1}&player2=${player2}`}
-      to={`/tournament?tournament=${tournamentId}`}
+      to={`/tournament?tournament=${tournamentId}&player1=${player1}&player2=${player2}`}
       className="relative w-full px-4 py-2 rounded-lg flex items-center gap-x-4 h-12 bg-secondary-background hover:bg-secondary-background/70"
     >
       <h2 className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2">VS</h2>

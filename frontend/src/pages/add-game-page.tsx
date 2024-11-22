@@ -1,20 +1,17 @@
 import { useMutation } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { queryClient } from "../common/query-client";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { PlayersDTO } from "./admin-page";
 import { classNames } from "../common/class-names";
 import { httpClient } from "../common/http-client";
 import { useClientDbContext } from "../wrappers/client-db-context";
 import ConfettiExplosion from "react-confetti-explosion";
-const PLAYER_1 = "player1";
-const PLAYER_2 = "player2";
+import { useTennisParams } from "../hooks/use-tennis-params";
 
 export const AddGamePage: React.FC = () => {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const paramPlayer1 = searchParams.get(PLAYER_1);
-  const paramPlayer2 = searchParams.get(PLAYER_2);
+  const { player1: paramPlayer1, player2: paramPlayer2 } = useTennisParams();
 
   const [winner, setWinner] = useState<string | undefined>(paramPlayer1 || undefined);
   const [loser, setLoser] = useState<string | undefined>(paramPlayer2 || undefined);

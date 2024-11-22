@@ -1,17 +1,12 @@
 import React, { useState } from "react";
-import { useSearchParams } from "react-router-dom";
 import { useClientDbContext } from "../wrappers/client-db-context";
 import { Select } from "@headlessui/react";
 import { PvPStats } from "./pvp-stats";
 import { ProfilePicture } from "./player/profile-picture";
-
-const PLAYER_1 = "player1";
-const PLAYER_2 = "player2";
+import { useTennisParams } from "../hooks/use-tennis-params";
 
 export const PvPPage: React.FC = () => {
-  const [searchParams] = useSearchParams();
-  const paramPlayer1 = searchParams.get(PLAYER_1);
-  const paramPlayer2 = searchParams.get(PLAYER_2);
+  const { player1: paramPlayer1, player2: paramPlayer2 } = useTennisParams();
 
   const [player1, setPlayer1] = useState<string | undefined>(paramPlayer1 || undefined);
   const [player2, setPlayer2] = useState<string | undefined>(paramPlayer2 || undefined);
