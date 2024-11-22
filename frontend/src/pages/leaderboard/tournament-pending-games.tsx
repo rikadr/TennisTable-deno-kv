@@ -27,11 +27,6 @@ export const TournamentHighlightsAndPendingGames: React.FC = () => {
   return (
     <div className="w-full flex flex-col gap-4">
       <h1 className="text-2xl text-center m2-4">Tournaments</h1>
-      <p>
-        Preview of the tournament features ⚙️ <br />
-        Feel free to click around and skip games. (Skipping is not permanent yet) <br />
-        If you have feedback or wishes, please share 😄 <br />- Rikard
-      </p>
       {context.tournaments.getTournaments().map((tournament) => {
         const anyPendingGames =
           tournament.startDate < new Date().getTime() && tournament.games.some((layer) => layer.pending.length > 0);
@@ -59,7 +54,12 @@ export const TournamentHighlightsAndPendingGames: React.FC = () => {
                     <h3 className="text-center text-sm">{layerIndexToTournamentRound(layerIndex)}</h3>
                   )}
                   {layer.pending.map((game) => (
-                    <PendingGame key={game.player1 + game.player2} player1={game.player1} player2={game.player2} />
+                    <PendingGame
+                      key={game.player1 + game.player2}
+                      player1={game.player1}
+                      player2={game.player2}
+                      tournamentId={tournament.id}
+                    />
                   ))}
                 </div>
               ))}
@@ -73,12 +73,14 @@ export const TournamentHighlightsAndPendingGames: React.FC = () => {
 type PendingGameProps = {
   player1: string;
   player2: string;
+  tournamentId: string;
 };
-export const PendingGame: React.FC<PendingGameProps> = ({ player1, player2 }) => {
+export const PendingGame: React.FC<PendingGameProps> = ({ player1, player2, tournamentId }) => {
   return (
     <Link
       // to={`/1v1/?player1=${player1}&player2=${player2}`}
-      to={`/add-game/?player1=${player1}&player2=${player2}`}
+      // to={`/add-game/?player1=${player1}&player2=${player2}`}
+      to={`/tournament?tournament=${tournamentId}`}
       className="relative w-full px-4 py-2 rounded-lg flex items-center gap-x-4 h-12 bg-secondary-background hover:bg-secondary-background/70"
     >
       <h2 className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2">VS</h2>

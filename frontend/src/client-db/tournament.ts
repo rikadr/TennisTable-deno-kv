@@ -1,7 +1,7 @@
 import { TennisTable } from "./tennis-table";
-import { TournamentDB } from "./types";
+import { Game, TournamentDB } from "./types";
 
-type Game = {
+type TournamentGame = {
   player1: string;
   player2: string;
   winner?: string;
@@ -14,13 +14,13 @@ type Game = {
 export type TournamentWithGames = TournamentDB & {
   games: {
     // Games per layer
-    played: Game[]; // Games that have been played
-    pending: Game[]; // Games that can be played now
+    played: TournamentGame[]; // Games that have been played
+    pending: TournamentGame[]; // Games that can be played now
   }[];
   bracket: Bracket;
 };
 
-type Bracket = Partial<Game>[][];
+type Bracket = Partial<TournamentGame>[][];
 
 export const mockTournament1: TournamentDB = {
   id: "1",
@@ -57,10 +57,10 @@ export const mockTournament1: TournamentDB = {
     "Alexander",
     "Fooa",
     "Peder",
-    "Christoffer",
+    // "Christoffer",
     "Erling",
     "Oskar",
-    "Sveinung",
+    // "Sveinung",
     "Fredrik H",
     "Aksel",
     "Rikard",
@@ -101,7 +101,7 @@ export const mockTournament2: TournamentDB = {
     "Markus",
     "Yngve",
   ],
-  skippedGames: [{ advancing: "Fooa", eliminated: "Anders" }],
+  skippedGames: [],
 
   // TODO: function to set playerOrder based on elo at the time. if some players are not ranked, order them last by theirs signup order
   playerOrder: [
@@ -355,8 +355,8 @@ export class Tournaments {
     const games: TournamentWithGames["games"] = [];
 
     for (let layerIndex = 0; layerIndex < bracket.length; layerIndex++) {
-      const played: Game[] = [];
-      const pending: Game[] = [];
+      const played: TournamentGame[] = [];
+      const pending: TournamentGame[] = [];
       const layer = bracket[layerIndex];
 
       for (const game of layer) {
@@ -364,10 +364,10 @@ export class Tournaments {
           // Both player are set
           if (game.winner || game.skipped) {
             // Game is completed
-            played.push(game as Game);
+            played.push(game as TournamentGame);
           } else {
             // Game is pending
-            pending.push(game as Game);
+            pending.push(game as TournamentGame);
           }
         }
       }
@@ -432,7 +432,7 @@ export class Tournaments {
       );
       if (oponentsMatchIndex === -1) throw new Error("oponentsMatchIndex not found (-1)");
       const oponentsMatch = bracket[layerIndex - 1][oponentsMatchIndex];
-      const oponentRole: keyof Game = oponentsMatch.player1 === oponent ? "player1" : "player2";
+      const oponentRole: keyof TournamentGame = oponentsMatch.player1 === oponent ? "player1" : "player2";
 
       const newGameIndex = oponentsMatchIndex * 2 + (oponentRole === "player1" ? 0 : 1);
       const newGame = bracket[layerIndex][newGameIndex];
@@ -449,55 +449,67 @@ export class Tournaments {
   }
 
   #fillBracketWithGames2(bracket: Bracket, startTime: number, skipped: TournamentDB["skippedGames"]) {
-    const games = this.parent.games.filter((game) => game.time > startTime);
-    let gameIndex = 0;
+    type BaseEntry = { time: number; player1: string; player2: string };
+    const entries: (
+      | (BaseEntry & { game: Game; skip: undefined })
+      | (BaseEntry & { game: undefined; skip: TournamentDB["skippedGames"][number] })
+    )[] = [];
 
-    let foundAnything: boolean = true;
+    const games = this.parent.games.filter((game) => game?.time > startTime);
+    games.forEach((game) =>
+      entries.push({ time: game.time, player1: game.winner, player2: game.loser, game, skip: undefined }),
+    );
+    skipped.forEach((skip) =>
+      entries.push({ time: skip.time, player1: skip.advancing, player2: skip.eliminated, game: undefined, skip }),
+    );
 
-    // Need to keep looping after all games are done, because games can be skipped
-    // Like a, while "FoundAnything" is true
-    while (bracket[0][0].winner === undefined && (foundAnything || gameIndex < games.length)) {
-      foundAnything = false;
+    entries.sort((a, b) => a.time - b.time);
+
+    entries.forEach((entry) => {
       // eslint-disable-next-line no-loop-func
       bracket.forEach((layer, layerIndex) =>
         layer.forEach((match) => {
-          if (match.winner || match.skipped || match.player1 === undefined || match.player2 === undefined) {
-            // Won, skipped, or incomplete matches
+          if (match.winner || match.player1 === undefined || match.player2 === undefined) {
+            // Won (or skipped), or incomplete players
             return;
           }
-
           const matchPlayers = [match.player1, match.player2];
-          const skip = skipped.find(
-            (skip) => matchPlayers.includes(skip.advancing) && matchPlayers.includes(skip.eliminated),
-          );
-          const game = games[gameIndex];
-          const gameIsMatch = matchPlayers.includes(game?.winner) && matchPlayers.includes(game?.loser);
-          if (skip === undefined && gameIsMatch === false) {
-            // Keep as pending
+          const entryPlayers = [entry.player1, entry.player2];
+          const entryIsMatch = matchPlayers.every((player) => entryPlayers.includes(player));
+
+          if (entryIsMatch === false) {
+            // No match, keep as pending
             return;
           }
-          foundAnything = true;
 
-          match.winner = gameIsMatch ? game.winner : skip?.advancing;
-          match.completedAt = gameIsMatch ? game.time : undefined;
-          match.skipped = skip;
+          match.winner = entry.game ? entry.game.winner : entry.skip.advancing;
+          match.completedAt = entry.time; // Not sure how that would affect select item options for skipped games.....
+          match.skipped = entry.skip;
 
-          if (layerIndex !== 0) {
-            // Skip for the final game
-            if (match.advanceTo === undefined) throw new Error("AdvanceTo not defined");
-            const nextMatch = bracket[match.advanceTo.layerIndex][match.advanceTo.gameIndex];
-            if (!nextMatch) throw new Error("Next match does not exist");
-            if (nextMatch.player1 && nextMatch.player2) throw new Error("Next match already full");
-            nextMatch[match.advanceTo.role] = match.winner;
+          if (layerIndex === 0) {
+            // No advanceTo for the final game
+            return;
           }
+
+          if (match.advanceTo === undefined) throw new Error("AdvanceTo not defined");
+          const nextMatch = bracket[match.advanceTo.layerIndex][match.advanceTo.gameIndex];
+          if (!nextMatch) throw new Error("Next match does not exist");
+          if (nextMatch.player1 && nextMatch.player2) throw new Error("Next match already full");
+          nextMatch[match.advanceTo.role] = match.winner;
         }),
       );
-      gameIndex++; // try next game
-    }
+    });
   }
 }
 
 /**
+ * TODOS:
+ * - Store skips in db, page to register skip
+ * - Default to tree if wide enough screen
+ */
+
+/**
  * Ideas:
+ * - Show if game about to be registered is part of tournament
  * - Tournament results in player page
  */

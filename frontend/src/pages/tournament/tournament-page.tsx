@@ -16,21 +16,17 @@ export const TournamentPage: React.FC = () => {
   const rerender = useRerender();
   const context = useClientDbContext();
 
-  const [showAsList, setShowAsList] = useState(true);
-
   const tournaments = context.tournaments.getTournaments();
   const tournament = tournaments.length === 1 ? tournaments[0] : tournaments.find((t) => t.id === tournamentId);
+
+  // Determine default based on screen width and layer debth in bracket. Also, store in local storage?
+  const [showAsList, setShowAsList] = useState(true);
 
   if (!tournament) return <div>No tournament selected</div>;
 
   return (
     <div>
       <h1 className="m-auto w-fit">{tournament.name}</h1>
-      <p>
-        Preview of the tournament features ⚙️ <br />
-        Feel free to click around and skip games. (Skipping is not permanent yet) <br />
-        If you have feedback or wishes, please share 😄 <br />- Rikard
-      </p>
       <button
         className="py-2 px-4 cursor-pointer bg-secondary-background hover:bg-secondary-background/70 rounded-md"
         onClick={() => setShowAsList(!showAsList)}
@@ -366,7 +362,10 @@ export const GameMenuItems: React.FC<{
           <button
             className="w-full px-4 py-2 text-left data-[focus]:bg-primary-background/50"
             onClick={() => {
-              context.tournaments.skipGame({ advancing: game.player1!, eliminated: game.player2! }, tournament.id);
+              context.tournaments.skipGame(
+                { advancing: game.player1!, eliminated: game.player2!, time: new Date().getTime() },
+                tournament.id,
+              );
               rerender();
             }}
           >
@@ -379,7 +378,10 @@ export const GameMenuItems: React.FC<{
           <button
             className="w-full px-4 py-2 text-left data-[focus]:bg-primary-background/50"
             onClick={() => {
-              context.tournaments.skipGame({ advancing: game.player2!, eliminated: game.player1! }, tournament.id);
+              context.tournaments.skipGame(
+                { advancing: game.player2!, eliminated: game.player1!, time: new Date().getTime() },
+                tournament.id,
+              );
               rerender();
             }}
           >
