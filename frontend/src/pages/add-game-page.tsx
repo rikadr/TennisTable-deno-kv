@@ -44,7 +44,7 @@ export const AddGamePage: React.FC = () => {
         navigate(
           isPendingTournamentGame
             ? `/tournament?tournament=${isPendingTournamentGame.tournament.id}&player1=${isPendingTournamentGame.game.player1}&player2=${isPendingTournamentGame.game.player2}`
-            : "/leader-board",
+            : `/1v1/?player1=${winner}&player2=${loser}`,
         );
       }, 2_000);
     },

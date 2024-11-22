@@ -34,9 +34,12 @@ export const AddPlayerPage: React.FC = () => {
     }
   }, [playerName, context.players, playerSuccessfullyAdded]);
 
+  function fixName(n: string): string {
+    return (n[0]?.toUpperCase() + n.slice(1)).trim();
+  }
+
   const addPlayerMutation = useMutation<unknown, Error, { name: string }, unknown>({
     mutationFn: async ({ name }) => {
-      const upperCasedName = name[0]?.toUpperCase() + name.slice(1);
       try {
         return await httpClient(`${process.env.REACT_APP_API_BASE_URL}/player`, {
           method: "POST",
@@ -44,18 +47,18 @@ export const AddPlayerPage: React.FC = () => {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            name: upperCasedName.trimEnd(),
+            name: fixName(name),
           }),
         });
       } catch (error) {
         setErrorMessage(backendError);
       }
     },
-    onSuccess: () => {
+    onSuccess: (_, { name }) => {
       queryClient.invalidateQueries();
       setPlayerSuccessfullyAdded(true);
       setTimeout(() => {
-        navigate("/leader-board");
+        navigate(`/player/${fixName(name)}`);
       }, 2_000);
     },
     onError(error) {
