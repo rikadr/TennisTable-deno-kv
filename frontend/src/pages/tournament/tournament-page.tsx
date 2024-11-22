@@ -9,6 +9,7 @@ import { useRerender } from "../../hooks/use-rerender";
 import { useCallback, useEffect, useRef } from "react";
 import { useTennisParams } from "../../hooks/use-tennis-params";
 import { useSessionStorage } from "usehooks-ts";
+import { timeAgo } from "../../common/date-utils";
 
 export const TournamentPage: React.FC = () => {
   const { tournament: tournamentId, player1, player2 } = useTennisParams();
@@ -49,13 +50,34 @@ export const TournamentPage: React.FC = () => {
   if (!tournament) return <div>No tournament selected</div>;
 
   return (
-    <div>
-      <h1 className="m-auto w-fit">{tournament.name}</h1>
+    <div className="space-y-4">
+      <div className="ring-1 ring-secondary-background w-fit mx-4 px-4 md:mx-10 md:px-6 py-4 rounded-lg">
+        <p className="text-xs italic">Tournament:</p>
+        <h1 className="mb-2">{tournament.name}</h1>
+        <p className="text-xs italic">Description:</p>
+        <p className="text-sm mb-2">{tournament.description || "-"}</p>
+        <p className="text-xs italic">Start date:</p>
+        <p className="text-sm mb-2">
+          {timeAgo(new Date(tournament.startDate))} (
+          {new Intl.DateTimeFormat("en-US", {
+            day: "numeric",
+            month: "long", // Full month name
+            year: "numeric",
+          }).format(new Date(tournament.startDate))}
+          )
+        </p>
+        {tournament.bracket[0][0].winner && (
+          <div className="min-w-80 max-w-96 space-y-2">
+            <p className="text-xs italic">Won {timeAgo(new Date(tournament.bracket[0][0].completedAt ?? 0))}</p>
+            <WinnerBox winner={tournament.bracket[0][0].winner} />{" "}
+          </div>
+        )}
+      </div>
 
       <Switch
         checked={showAsList}
         onChange={setShowAsList}
-        className="group relative flex h-10 w-36 cursor-pointer rounded-full bg-secondary-background p-1 transition-colors duration-200 ease-in-out focus:outline-none data-[focus]:outline-1 data-[focus]:outline-white"
+        className="ml-4 md:ml-10 group relative flex h-10 w-36 cursor-pointer rounded-full bg-secondary-background p-1 transition-colors duration-200 ease-in-out focus:outline-none data-[focus]:outline-1 data-[focus]:outline-white"
       >
         <div className="absolute top-1/2 transform -translate-y-1/2 left-5 z-50">Tree {!showAsList && "🌲"}</div>
         <div className="absolute top-1/2 transform -translate-y-1/2 right-5 z-50">{showAsList && "🟰"} List </div>
@@ -64,11 +86,7 @@ export const TournamentPage: React.FC = () => {
           className="pointer-events-none inline-block h-8 w-[5rem] translate-x-0 rounded-full bg-primary-background ring-0 shadow-lg transition duration-200 ease-in-out group-data-[checked]:translate-x-[3.5rem]"
         />
       </Switch>
-      {tournament.bracket[0][0].winner && (
-        <div className="min-w-80 max-w-96 space-y-2">
-          <WinnerBox winner={tournament.bracket[0][0].winner} />{" "}
-        </div>
-      )}
+
       {showAsList ? (
         <GamesList tournament={tournament} rerender={rerender} itemRefs={itemRefs} />
       ) : (
