@@ -22,6 +22,8 @@ export const AddGamePage: React.FC = () => {
 
   const [gameSuccessfullyAdded, setGameSuccessfullyAdded] = useState(false);
 
+  const isPendingTournamentGame = context.tournaments.isPendingGame(winner, loser);
+
   const addGameMutation = useMutation<unknown, Error>({
     mutationFn: async () => {
       return httpClient(`${process.env.REACT_APP_API_BASE_URL}/game`, {
@@ -39,7 +41,11 @@ export const AddGamePage: React.FC = () => {
       queryClient.invalidateQueries();
       setGameSuccessfullyAdded(true);
       setTimeout(() => {
-        navigate("/leader-board");
+        navigate(
+          isPendingTournamentGame
+            ? `/tournament?tournament=${isPendingTournamentGame.tournament.id}&player1=${isPendingTournamentGame.game.player1}&player2=${isPendingTournamentGame.game.player2}`
+            : "/leader-board",
+        );
       }, 2_000);
     },
   });
@@ -66,8 +72,6 @@ export const AddGamePage: React.FC = () => {
       setPlayersHaveBeenSet(false);
     }
   }, [winner, loser, playersHaveBeenSet]);
-
-  const isPendingTournamentGame = context.tournaments.isPendingGame(winner, loser);
 
   return (
     <div className="w-full flex justify-center">
