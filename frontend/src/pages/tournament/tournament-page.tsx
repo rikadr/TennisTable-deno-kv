@@ -41,7 +41,7 @@ export const TournamentPage: React.FC = () => {
     // Run the scroll function after a short delay to ensure rendering is complete
     const timeout = setTimeout(scrollToGame, 100);
     return () => clearTimeout(timeout);
-  }, [scrollToGame]);
+  }, [scrollToGame, showAsList]);
 
   if (!tournament) return <div>No tournament selected</div>;
 
