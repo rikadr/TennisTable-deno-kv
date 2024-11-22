@@ -393,6 +393,7 @@ export class Tournaments {
   skipGame(skip: TournamentDB["skippedGames"][number], tournamentId: string) {
     const tournamentIndex = this.tournaments.findIndex((t) => t.id === tournamentId);
     this.tournaments[tournamentIndex]?.skippedGames.push(skip);
+    this.#tournamentsCache = undefined;
   }
 
   undoSkipGame(skip: TournamentDB["skippedGames"][number], tournamentId: string) {
@@ -402,6 +403,7 @@ export class Tournaments {
         (game) => game.advancing !== skip.advancing || game.eliminated !== skip.eliminated,
       );
     }
+    this.#tournamentsCache = undefined;
   }
 
   isPendingGame(

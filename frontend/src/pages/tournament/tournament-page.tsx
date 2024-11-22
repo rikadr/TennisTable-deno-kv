@@ -24,8 +24,6 @@ export const TournamentPage: React.FC = () => {
     window.innerWidth < 1_000,
   );
 
-  console.log(window.innerWidth);
-
   // ScrollTo
   const itemRefs = useRef<{ [key: string]: HTMLElement | null }>({});
   const gameKey = getGameKeyFromPlayers(player1 ?? "", player2 ?? "");
