@@ -3,7 +3,7 @@ import { classNames } from "../../common/class-names";
 import { useClientDbContext } from "../../wrappers/client-db-context";
 import { ProfilePicture } from "../player/profile-picture";
 import { layerIndexToTournamentRound, WinnerBox } from "../leaderboard/tournament-pending-games";
-import { Menu, MenuButton, MenuItem, MenuItems } from "@headlessui/react";
+import { Menu, MenuButton, MenuItem, MenuItems, Switch } from "@headlessui/react";
 import { Link } from "react-router-dom";
 import { useRerender } from "../../hooks/use-rerender";
 import { useCallback, useEffect, useRef } from "react";
@@ -51,12 +51,19 @@ export const TournamentPage: React.FC = () => {
   return (
     <div>
       <h1 className="m-auto w-fit">{tournament.name}</h1>
-      <button
-        className="py-2 px-4 cursor-pointer bg-secondary-background hover:bg-secondary-background/70 rounded-md"
-        onClick={() => setShowAsList(!showAsList)}
+
+      <Switch
+        checked={showAsList}
+        onChange={setShowAsList}
+        className="group relative flex h-10 w-36 cursor-pointer rounded-full bg-secondary-background p-1 transition-colors duration-200 ease-in-out focus:outline-none data-[focus]:outline-1 data-[focus]:outline-white"
       >
-        Toggle view! Current: {showAsList ? "List" : "Tree 🌲"}
-      </button>
+        <div className="absolute top-1/2 transform -translate-y-1/2 left-5 z-50">Tree {!showAsList && "🌲"}</div>
+        <div className="absolute top-1/2 transform -translate-y-1/2 right-5 z-50">{showAsList && "🟰"} List </div>
+        <span
+          aria-hidden="true"
+          className="pointer-events-none inline-block h-8 w-[5rem] translate-x-0 rounded-full bg-primary-background ring-0 shadow-lg transition duration-200 ease-in-out group-data-[checked]:translate-x-[3.5rem]"
+        />
+      </Switch>
       {tournament.bracket[0][0].winner && (
         <div className="min-w-80 max-w-96 space-y-2">
           <WinnerBox winner={tournament.bracket[0][0].winner} />{" "}
