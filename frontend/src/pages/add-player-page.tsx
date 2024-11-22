@@ -94,7 +94,7 @@ export const AddPlayerPage: React.FC = () => {
         )}
         {playerSuccessfullyAdded && "Success ✅"}
         {!addPlayerMutation.isPending && !playerSuccessfullyAdded && "Add player 👤"}
-        {playerSuccessfullyAdded && <ConfettiExplosion particleCount={300} force={0.8} duration={4_000} />}
+        {playerSuccessfullyAdded && <ConfettiExplosion particleCount={250} force={0.8} duration={4_000} />}
       </button>
     </div>
   );
