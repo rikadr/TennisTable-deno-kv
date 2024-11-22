@@ -21,10 +21,14 @@ export const AddPlayerPage: React.FC = () => {
   useEffect(() => {
     const playerExists = !!context.players.find((p) => p.name.toLowerCase() === playerName.toLowerCase());
     const firstLetterIsUpperCase = playerName[0] === playerName[0]?.toUpperCase();
+    const hasSpecialCharacters = /[!@#$%^&*()+=[\]{};':"\\|,.<>/?]+/.test(playerName);
+
     if (playerExists && !playerSuccessfullyAdded) {
       setErrorMessage("Player already exists");
     } else if (!firstLetterIsUpperCase) {
       setErrorMessage("Please uppercase first letter");
+    } else if (hasSpecialCharacters) {
+      setErrorMessage("The string contains special or invalid characters.");
     } else {
       setErrorMessage(undefined);
     }
@@ -40,7 +44,7 @@ export const AddPlayerPage: React.FC = () => {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            name: upperCasedName,
+            name: upperCasedName.trimEnd(),
           }),
         });
       } catch (error) {
