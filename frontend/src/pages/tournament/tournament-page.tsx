@@ -79,8 +79,8 @@ export const TournamentPage: React.FC = () => {
         onChange={setShowAsList}
         className="ml-4 md:ml-10 group relative flex h-10 w-36 cursor-pointer rounded-full bg-secondary-background p-1 transition-colors duration-200 ease-in-out focus:outline-none data-[focus]:outline-1 data-[focus]:outline-white"
       >
-        <div className="absolute top-1/2 transform -translate-y-1/2 left-5 z-50">Tree {!showAsList && "🌲"}</div>
-        <div className="absolute top-1/2 transform -translate-y-1/2 right-5 z-50">{showAsList && "🟰"} List </div>
+        <div className="absolute top-1/2 transform -translate-y-1/2 left-5 z-10">Tree {!showAsList && "🌲"}</div>
+        <div className="absolute top-1/2 transform -translate-y-1/2 right-5 z-10">{showAsList && "🟰"} List </div>
         <span
           aria-hidden="true"
           className="pointer-events-none inline-block h-8 w-[5rem] translate-x-0 rounded-full bg-primary-background ring-0 shadow-lg transition duration-200 ease-in-out group-data-[checked]:translate-x-[3.5rem]"
@@ -420,7 +420,7 @@ export const GameMenuItems: React.FC<{
             to={`/1v1/?player1=${game.player1 || ""}&player2=${game.player2 || ""}`}
             className="w-full px-4 py-2 text-left data-[focus]:bg-primary-background/50"
           >
-            🥊 Compare players 👀
+            🥊 Compare 1v1 👀
           </Link>
         </MenuItem>
       )}
