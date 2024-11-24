@@ -1,4 +1,12 @@
-export function timeAgo(date: Date): string {
+export function relativeTimeString(date: Date): string {
+  if (date.getTime() > new Date().getTime()) {
+    return timeTo(date);
+  } else {
+    return timeAgo(date);
+  }
+}
+
+function timeAgo(date: Date): string {
   const seconds = Math.floor((new Date().getTime() - date.getTime()) / 1000);
 
   let interval = seconds / 31536000;
@@ -26,4 +34,34 @@ export function timeAgo(date: Date): string {
     return Math.floor(interval) + " minutes ago";
   }
   return Math.floor(seconds) + " seconds ago";
+}
+
+function timeTo(date: Date): string {
+  const seconds = Math.floor((date.getTime() - new Date().getTime()) / 1000);
+
+  let interval = seconds / 31536000;
+  if (interval > 1) {
+    return "In " + Math.floor(interval) + " years";
+  }
+  interval = seconds / 2592000;
+  if (interval > 1) {
+    return "In " + Math.floor(interval) + " months";
+  }
+  interval = seconds / 604800;
+  if (interval > 1) {
+    return "In " + Math.floor(interval) + " weeks";
+  }
+  interval = seconds / 86400;
+  if (interval > 1) {
+    return "In " + Math.floor(interval) + " days";
+  }
+  interval = seconds / 3600;
+  if (interval > 1) {
+    return "In " + Math.floor(interval) + " hours";
+  }
+  interval = seconds / 60;
+  if (interval > 1) {
+    return "In " + Math.floor(interval) + " minutes";
+  }
+  return "In " + Math.floor(seconds) + " seconds";
 }

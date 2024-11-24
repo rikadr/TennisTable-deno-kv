@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
 import { Link, useParams } from "react-router-dom";
-import { timeAgo } from "../../common/date-utils";
+import { relativeTimeString } from "../../common/date-utils";
 import { CartesianGrid, Line, LineChart, ReferenceLine, Tooltip, TooltipProps, XAxis, YAxis } from "recharts";
 import { NameType, ValueType } from "recharts/types/component/DefaultTooltipContent";
 import { useWindowSize } from "usehooks-ts";
@@ -123,7 +123,7 @@ export const PlayerPage: React.FC = () => {
                     maximumFractionDigits: 0,
                   })}
                 </div>
-                <div className="w-32 text-right text-base">{timeAgo(new Date(game.time))}</div>
+                <div className="w-32 text-right text-base">{relativeTimeString(new Date(game.time))}</div>
               </Link>
             ))}
           </div>

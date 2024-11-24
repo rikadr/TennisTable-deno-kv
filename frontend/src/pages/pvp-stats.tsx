@@ -1,7 +1,7 @@
 import { useClientDbContext } from "../wrappers/client-db-context";
 import { classNames } from "../common/class-names";
 import { Link } from "react-router-dom";
-import { timeAgo } from "../common/date-utils";
+import { relativeTimeString } from "../common/date-utils";
 
 type Props = {
   player1?: string;
@@ -108,7 +108,7 @@ export const PvPStats: React.FC<Props> = ({ player1, player2 }) => {
                     maximumFractionDigits: 0,
                   })}
                 </div>
-                <div className="w-32 text-right text-base">{timeAgo(new Date(game.time))}</div>
+                <div className="w-32 text-right text-base">{relativeTimeString(new Date(game.time))}</div>
               </Link>
             );
           })}

@@ -3,13 +3,17 @@ import { classNames } from "../../common/class-names";
 import { useClientDbContext } from "../../wrappers/client-db-context";
 import { ProfilePicture } from "../player/profile-picture";
 import { layerIndexToTournamentRound, WinnerBox } from "../leaderboard/tournament-pending-games";
-import { Menu, MenuButton, MenuItem, MenuItems, Switch } from "@headlessui/react";
+import { Menu, MenuButton, MenuItem, MenuItems, Select, Switch } from "@headlessui/react";
 import { Link } from "react-router-dom";
 import { useRerender } from "../../hooks/use-rerender";
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTennisParams } from "../../hooks/use-tennis-params";
 import { useSessionStorage } from "usehooks-ts";
-import { timeAgo } from "../../common/date-utils";
+import { relativeTimeString } from "../../common/date-utils";
+import ConfettiExplosion from "react-confetti-explosion";
+import { useMutation } from "@tanstack/react-query";
+import { httpClient } from "../../common/http-client";
+import { queryClient } from "../../common/query-client";
 
 export const TournamentPage: React.FC = () => {
   const { tournament: tournamentId, player1, player2 } = useTennisParams();
@@ -24,6 +28,49 @@ export const TournamentPage: React.FC = () => {
     `show-tournament-as-list${tournamentId}`,
     window.innerWidth < 1_000,
   );
+
+  const [signUpEdit, setSignUpEdit] = useState(false);
+  const [signUpPlayer, setSignUpPlayer] = useState<string>();
+  const [showConfetti, setShowConfetti] = useState(false);
+
+  const signUpPlayerMutation = useMutation<unknown, Error>({
+    mutationFn: async () => {
+      return httpClient(`${process.env.REACT_APP_API_BASE_URL}/tournament/sign-up`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          tournamentId: tournament?.id,
+          player: signUpPlayer,
+        }),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries();
+      setShowConfetti(true);
+      setSignUpPlayer(undefined);
+      setSignUpEdit(false);
+    },
+  });
+
+  const deleteSignUpMutation = useMutation<unknown, Error, { player: string }>({
+    mutationFn: async ({ player }) => {
+      return httpClient(`${process.env.REACT_APP_API_BASE_URL}/tournament/sign-up`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          tournamentId: tournament?.id,
+          player,
+        }),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries();
+    },
+  });
 
   // ScrollTo
   const itemRefs = useRef<{ [key: string]: HTMLElement | null }>({});
@@ -58,42 +105,117 @@ export const TournamentPage: React.FC = () => {
         <p className="text-sm mb-2">{tournament.description || "-"}</p>
         <p className="text-xs italic">Start date:</p>
         <p className="text-sm mb-2">
-          {timeAgo(new Date(tournament.startDate))} (
+          {relativeTimeString(new Date(tournament.startDate))} (
           {new Intl.DateTimeFormat("en-US", {
+            minute: "numeric",
+            hour: "numeric",
+            hour12: false,
             day: "numeric",
-            month: "long", // Full month name
+            month: "long",
             year: "numeric",
           }).format(new Date(tournament.startDate))}
           )
         </p>
-        {tournament.bracket[0][0].winner && (
+        {tournament.bracket[0]?.[0]?.winner && (
           <div className="min-w-80 max-w-96 space-y-2">
-            <p className="text-xs italic">Won {timeAgo(new Date(tournament.bracket[0][0].completedAt ?? 0))}</p>
+            <p className="text-xs italic">
+              Won {relativeTimeString(new Date(tournament.bracket[0][0].completedAt ?? 0))}
+            </p>
             <WinnerBox winner={tournament.bracket[0][0].winner} />{" "}
           </div>
         )}
-        <p>{tournament.signedUp.map((p) => p.player).join(", ")}</p>
       </div>
 
-      <Switch
-        checked={showAsList}
-        onChange={setShowAsList}
-        className="ml-4 md:ml-10 group relative flex h-10 w-36 cursor-pointer rounded-full bg-secondary-background p-1 transition-colors duration-200 ease-in-out focus:outline-none data-[focus]:outline-1 data-[focus]:outline-white"
-      >
-        <div className="absolute top-1/2 transform -translate-y-1/2 left-5 z-10">Tree {!showAsList && "🌲"}</div>
-        <div className="absolute top-1/2 transform -translate-y-1/2 right-5 z-10">{showAsList && "🟰"} List </div>
-        <span
-          aria-hidden="true"
-          className="pointer-events-none inline-block h-8 w-[5rem] translate-x-0 rounded-full bg-primary-background ring-0 shadow-lg transition duration-200 ease-in-out group-data-[checked]:translate-x-[3.5rem]"
-        />
-      </Switch>
-
-      {showAsList ? (
-        <GamesList tournament={tournament} rerender={rerender} itemRefs={itemRefs} />
-      ) : (
-        <div className="w-fit m-auto">
-          <GameTriangle tournament={tournament} layerIndex={0} gameIndex={0} rerender={rerender} itemRefs={itemRefs} />
+      {tournament.startDate > new Date().getTime() && (
+        <div className="m-auto space-y-4 max-w-96 flex flex-col items-center w-full">
+          {signUpEdit && (
+            <Select
+              value={signUpPlayer}
+              onChange={(e) => {
+                setSignUpPlayer(e.target.value);
+                setShowConfetti(false);
+              }}
+              className="text-lg font-semibold w-full py-4 px-6 flex flex-col items-center ring ring-secondary-background bg-primary-background hover:bg-secondary-background/70 text-secondary-text rounded-lg"
+            >
+              {!signUpPlayer && (
+                <option key="No selected" className="text-cener w-full">
+                  Select player to sign up...
+                </option>
+              )}
+              {context.players
+                .filter((p) => !tournament.signedUp.some((s) => s.player === p.name))
+                .map((player) => (
+                  <option value={player.name} key={player.name}>
+                    {player.name}
+                  </option>
+                ))}
+            </Select>
+          )}
+          <button
+            className={classNames(
+              "text-lg font-semibold w-full py-4 px-6 flex flex-col items-center bg-secondary-background hover:bg-secondary-background/70 text-secondary-text rounded-lg",
+            )}
+            onClick={() => (signUpPlayer ? signUpPlayerMutation.mutate() : setSignUpEdit(true))}
+          >
+            Sign up {signUpPlayer ?? "here"}! ✍️🏆
+            {showConfetti && <ConfettiExplosion particleCount={250} force={0.8} width={2_000} duration={10_000} />}
+          </button>
+          <div className="ring-1 ring-secondary-background w-full px-4 md:px-6 py-2 rounded-lg divide-y divide-primary-text/50">
+            <h1 className="mb-4">
+              Signed up players{" "}
+              <span className="pl-1 font-thin italic text-base text-primary-text/50">
+                ({tournament.signedUp.length})
+              </span>
+            </h1>
+            {tournament.signedUp.map((p) => (
+              <div key={p.player} className="flex justify-between items-center h-10 gap-4">
+                <div className="flex gap-2 items-center">
+                  <ProfilePicture name={p.player} size={25} border={2} linkToPlayer />
+                  <p className="text-lg">{p.player}</p>
+                </div>
+                <button
+                  className="italic text-primary-text/50 font-thin text-xs"
+                  onClick={() =>
+                    window.confirm(`Are you sure you want to withdraw ${p.player} from the tournament?`) &&
+                    deleteSignUpMutation.mutate({ player: p.player })
+                  }
+                >
+                  (Remove)
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
+      )}
+      {tournament.startDate < new Date().getTime() && (
+        <>
+          <Switch
+            checked={showAsList}
+            onChange={setShowAsList}
+            className="ml-4 md:ml-10 group relative flex h-10 w-36 cursor-pointer rounded-full bg-secondary-background p-1 transition-colors duration-200 ease-in-out focus:outline-none data-[focus]:outline-1 data-[focus]:outline-white"
+          >
+            <div className="absolute top-1/2 transform -translate-y-1/2 left-5 z-10">Tree {!showAsList && "🌲"}</div>
+            <div className="absolute top-1/2 transform -translate-y-1/2 right-5 z-10">{showAsList && "🟰"} List </div>
+            <span
+              aria-hidden="true"
+              className="pointer-events-none inline-block h-8 w-[5rem] translate-x-0 rounded-full bg-primary-background ring-0 shadow-lg transition duration-200 ease-in-out group-data-[checked]:translate-x-[3.5rem]"
+            />
+          </Switch>
+
+          {showAsList ? (
+            <GamesList tournament={tournament} rerender={rerender} itemRefs={itemRefs} />
+          ) : (
+            <div className="w-fit m-auto">
+              <GameTriangle
+                tournament={tournament}
+                layerIndex={0}
+                gameIndex={0}
+                rerender={rerender}
+                itemRefs={itemRefs}
+              />
+            </div>
+          )}
+        </>
       )}
     </div>
   );

@@ -1,6 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useWebSocket, WS_MESSAGE } from "../hooks/use-web-socket";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useHeartbeat } from "../hooks/use-heartbeat";
 
 type Props = {
@@ -37,6 +37,18 @@ export const WebSocketRefetcher: React.FC<Props> = ({ children }) => {
   useHeartbeat(() => connectionId, webSocket);
 
   window.socket = { ws: webSocket, connectionId };
+
+  // Refresh the page every 30 minutes
+  useEffect(() => {
+    const refreshInterval = 30 * 60 * 1000; // 30 minutes in milliseconds
+
+    const intervalId = setInterval(() => {
+      window.location.reload();
+    }, refreshInterval);
+
+    // Cleanup interval on component unmount
+    return () => clearInterval(intervalId);
+  }, []);
 
   return children;
 };

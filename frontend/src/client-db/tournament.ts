@@ -22,35 +22,32 @@ export type TournamentWithGames = TournamentDB & {
 
 type Bracket = Partial<TournamentGame>[][];
 
-export const mockTournament1: TournamentDB = {
-  id: "1",
+export const optioChristmasTournament: TournamentDB = {
+  id: "randomid37",
   name: "Optio Christmas tournament 2024 🏓🎅🏻",
   description:
-    "The social happening of the year!! Create you new player if not already in the system, and ask Rikard to join the tournament!",
-  startDate: 1732120523906, // 21th nov, 21:22
+    "The social happening of the year, and a long awaited feature!! Sign up with your player and join the tournament 🚀",
+  // startDate: 1732120523906, // 21th nov, 21:22
+  startDate: 173261_3408196,
   signedUp: [],
   skippedGames: [],
   // TODO: function to set playerOrder based on elo at the time. if some players are not ranked, order them last by theirs signup order
   playerOrder: [
-    "Rasmus",
-    "Simone",
-    "Alexander",
-    "Fooa",
-    "Peder",
-    "Christoffer",
-    "Erling",
-    "Oskar",
-    "Sveinung",
-    "Fredrik H",
-    "Axel",
-    "Rikard",
-    "Anders",
-    "Ole",
-    "Marius",
-    "Tor",
-    "Ole Anders",
-    "Markus",
-    "Yngve",
+    // "Rasmus",
+    // "Simone",
+    // "Alexander",
+    // "Fooa",
+    // "Peder",
+    // "Erling",
+    // "Christoffer",
+    // "Oskar",
+    // "Sveinung",
+    // "Rikard",
+    // "Fredrik H",
+    // "Axel",
+    // "Anders",
+    // "Marius",
+    // "Ole",
   ],
 };
 export const mockTournament2: TournamentDB = {
@@ -289,7 +286,7 @@ export const mockTournament2: TournamentDB = {
 
 export class Tournaments {
   private parent: TennisTable;
-  private tournaments: TournamentDB[] = [mockTournament1]; // Add mock for mock data -> mockTournament1, mockTournament2
+  private tournaments: TournamentDB[] = [optioChristmasTournament]; // Add mock for mock data -> mockTournament1, mockTournament2
   private skipIsEnabled = false;
 
   #tournamentsCache: TournamentWithGames[] | undefined;

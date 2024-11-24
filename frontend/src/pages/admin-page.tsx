@@ -1,7 +1,7 @@
 import { useMutation } from "@tanstack/react-query";
 import React from "react";
 import { queryClient } from "../common/query-client";
-import { timeAgo } from "../common/date-utils";
+import { relativeTimeString } from "../common/date-utils";
 import { httpClient } from "../common/http-client";
 import { Users } from "./users";
 import { useClientDbContext } from "../wrappers/client-db-context";
@@ -72,7 +72,7 @@ export const AdminPage: React.FC = () => {
         {games.map((game) => (
           <div className="flex gap-2" key={game.time}>
             <p>
-              {game.winner} won over {game.loser} {timeAgo(new Date(game.time))}
+              {game.winner} won over {game.loser} {relativeTimeString(new Date(game.time))}
             </p>
             <button
               className="text-xs bg-red-500 hover:bg-red-800 text-white px-1 rounded-md"

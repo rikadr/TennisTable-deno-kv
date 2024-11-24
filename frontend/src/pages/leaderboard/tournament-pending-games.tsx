@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { ProfilePicture } from "../player/profile-picture";
 import { useClientDbContext } from "../../wrappers/client-db-context";
+import { relativeTimeString } from "../../common/date-utils";
 
 export const TournamentHighlightsAndPendingGames: React.FC = () => {
   const context = useClientDbContext();
@@ -16,10 +17,18 @@ export const TournamentHighlightsAndPendingGames: React.FC = () => {
     const anyRecentWinners = context.tournaments
       .getTournaments()
       .some(
-        (tournament) => tournament.startDate < new Date().getTime() && tournament.bracket[0][0].winner !== undefined,
+        (tournament) => tournament.startDate < new Date().getTime() && tournament.bracket[0]?.[0]?.winner !== undefined,
       );
 
-    if (!anyPendingGames && !anyRecentWinners) {
+    const anySignupPeriod = context.tournaments
+      .getTournaments()
+      .some(
+        (tournament) =>
+          tournament.startDate > new Date().getTime() &&
+          tournament.startDate - 20 * 7 * 24 * 60 * 60 * 1000 < new Date().getTime(),
+      );
+
+    if (!anyPendingGames && !anyRecentWinners && !anySignupPeriod) {
       return null;
     }
   }
@@ -33,10 +42,14 @@ export const TournamentHighlightsAndPendingGames: React.FC = () => {
 
         const recentWinner =
           tournament.startDate < new Date().getTime() &&
-          tournament.bracket[0][0].winner !== undefined &&
-          tournament.bracket[0][0].winner;
+          tournament.bracket[0]?.[0]?.winner !== undefined &&
+          tournament.bracket[0]?.[0]?.winner;
 
-        if (!anyPendingGames && !recentWinner) return null;
+        const signUpPeriod =
+          tournament.startDate > new Date().getTime() &&
+          tournament.startDate - 20 * 7 * 24 * 60 * 60 * 1000 < new Date().getTime();
+
+        if (!anyPendingGames && !recentWinner && !signUpPeriod) return null;
 
         return (
           <div key={tournament.id} className="space-y-1 p-2 ring-1 ring-secondary-background rounded-lg">
@@ -45,6 +58,24 @@ export const TournamentHighlightsAndPendingGames: React.FC = () => {
                 {tournament.name}
               </button>
             </Link>
+            {signUpPeriod && (
+              <Link to={`/tournament?tournament=${tournament.id}`}>
+                <p className="text-xs text-center italic mt-2">Start date:</p>
+                <p className="text-sm text-center mb-2">
+                  {relativeTimeString(new Date(tournament.startDate))} (
+                  {new Intl.DateTimeFormat("en-US", {
+                    minute: "numeric",
+                    hour: "numeric",
+                    hour12: false,
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric",
+                  }).format(new Date(tournament.startDate))}
+                  )
+                </p>
+                <div className="w-full text-center py-1">Sign up now! ✍️🏆</div>
+              </Link>
+            )}
             {recentWinner && <WinnerBox winner={recentWinner} />}
             {anyPendingGames &&
               tournament.games.map((layer, layerIndex) => (
