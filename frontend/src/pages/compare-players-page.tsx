@@ -38,7 +38,7 @@ export const ComparePlayersPage: React.FC = () => {
   const [graphDataToSee, setGraphDataToSee] = useState<Record<string, number>[]>(comparison.graphData);
   const [range, setRange] = useState(0);
 
-  const { width = 0 } = useWindowSize();
+  const { width = 0, height = 0 } = useWindowSize();
 
   useEffect(() => {
     setGraphDataToSee(comparison.graphData.slice(Math.max(range - 2, 0)) || []);
@@ -65,7 +65,7 @@ export const ComparePlayersPage: React.FC = () => {
             <LineChart
               className="mt-6"
               width={Math.min(1000, width > 1_200 || width < 1_024 ? width - 50 : width - 230)}
-              height={500}
+              height={Math.min(500, Math.max(300, height - 100))}
               margin={{ left: -10 }}
               data={graphDataToSee}
             >
