@@ -4,6 +4,7 @@ import { CartesianGrid, Line, LineChart, ReferenceLine, Tooltip, TooltipProps, X
 import { useWindowSize } from "usehooks-ts";
 import { NameType, ValueType } from "recharts/types/component/DefaultTooltipContent";
 import { useClientDbContext } from "../wrappers/client-db-context";
+import { Switch } from "@headlessui/react";
 
 export function stringToColor(name?: string) {
   if (!name) return "#4338ca";
@@ -44,14 +45,14 @@ export const ComparePlayersPage: React.FC = () => {
   }, [comparison.graphData, range]);
 
   return (
-    <div className="flex flex-col items-center gap-4">
-      <section className="flex flex-col items-center xl:flex-row">
+    <div className="flex flex-col items-center">
+      <section className="flex flex-col-reverse items-center lg:flex-row lg:gap-4">
         <PlayerSelector
           players={comparison.allPlayers}
           selectedPlayers={selectedPlayers}
           setSelectedPlayers={setSelectedPlayers}
         />
-        <div className="ml-6">
+        <div className="">
           <input
             className="w-full"
             type="range"
@@ -61,7 +62,13 @@ export const ComparePlayersPage: React.FC = () => {
             onChange={(e) => setRange(parseInt(e.target.value))}
           />
           {comparison.graphData ? (
-            <LineChart className="mt-7" width={Math.min(1000, width - 50)} height={500} data={graphDataToSee}>
+            <LineChart
+              className="mt-6"
+              width={Math.min(1000, width > 1_200 || width < 1_024 ? width - 50 : width - 230)}
+              height={500}
+              margin={{ left: -10 }}
+              data={graphDataToSee}
+            >
               <CartesianGrid strokeDasharray="1 4" vertical={false} />
               <XAxis dataKey="name" />
               <YAxis
@@ -116,23 +123,48 @@ const PlayerSelector: React.FC<{
   selectedPlayers: string[];
   setSelectedPlayers: React.Dispatch<React.SetStateAction<string[]>>;
 }> = ({ players, selectedPlayers, setSelectedPlayers }) => {
-  const sortedPlayers = useMemo(() => players.sort(), [players]);
-  const allIsSelected = selectedPlayers.length === sortedPlayers.length;
+  const context = useClientDbContext();
+
+  const playersByName = useMemo(() => players.sort(), [players]);
+  const playersByRank = context.leaderboard.getLeaderboard().rankedPlayers.map((p) => p.name);
+  const [byRank, setByRank] = useState(false);
+  const allIsSelected = selectedPlayers.length === (byRank ? playersByRank.length : playersByName.length);
+
+  useEffect(() => {
+    if (byRank) {
+      setSelectedPlayers(selectedPlayers.filter((p) => playersByRank.includes(p)));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [byRank]);
 
   return (
     <div className="grid grid-cols-1 gap-1 grid-flow-row w-40 h-fit">
-      Comparing players
+      Comparing players by
+      <Switch
+        checked={byRank}
+        onChange={setByRank}
+        className="group relative flex h-10 w-[10rem] cursor-pointer rounded-full bg-secondary-background p-1 transition-colors duration-200 ease-in-out focus:outline-none data-[focus]:outline-1 data-[focus]:outline-white"
+      >
+        <div className="absolute top-1/2 transform -translate-y-1/2 left-[1rem] z-10">Name {!byRank && "🔡"}</div>
+        <div className="absolute top-1/2 transform -translate-y-1/2 right-[1rem] z-10">{byRank && "🥇 "} Rank </div>
+        <span
+          aria-hidden="true"
+          className="pointer-events-none inline-block h-8 w-[5.8rem] group-data-[checked]:w-[5.1rem] translate-x-0 rounded-full bg-primary-background ring-0 shadow-lg transition duration-200 ease-in-out group-data-[checked]:translate-x-[4.4rem]"
+        />
+      </Switch>
       <button
         className={classNames(
           "h-8 text-left pl-4 rounded-lg",
           "bg-gray-500/50",
           allIsSelected ? "bg-green-500/50 ring-2 ring-white hover:bg-green-300/50" : "hover:bg-gray-500",
         )}
-        onClick={() => (allIsSelected ? setSelectedPlayers([]) : setSelectedPlayers(sortedPlayers))}
+        onClick={() =>
+          allIsSelected ? setSelectedPlayers([]) : setSelectedPlayers(byRank ? playersByRank : playersByName)
+        }
       >
         {allIsSelected ? "Deselect all" : "Select all"}
       </button>
-      {sortedPlayers.map((player) => {
+      {(byRank ? playersByRank : playersByName).map((player, index) => {
         const isSelected = selectedPlayers.includes(player);
         return (
           <button
@@ -151,7 +183,7 @@ const PlayerSelector: React.FC<{
               }
             }}
           >
-            {player}
+            {byRank && `#${index + 1}`} {player}
           </button>
         );
       })}

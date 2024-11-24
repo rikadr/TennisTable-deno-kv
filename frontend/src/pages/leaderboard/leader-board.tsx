@@ -29,9 +29,9 @@ export const LeaderBoard: React.FC = () => {
       <div className="w-full max-w-96 sm:w-96 flex flex-col gap-2 items-center">
         <TournamentHighlightsAndPendingGames />
         <h1 className="text-2xl text-center my-2">Leaderboard</h1>
-        <PodiumPlace size="default" place={1} player={nr1} profilePicture />
-        <PodiumPlace size="sm" place={2} player={nr2} profilePicture />
-        <PodiumPlace size="xs" place={3} player={nr3} profilePicture />
+        <PodiumPlace name={nr1.name} size="default" place={1} playerSummary={nr1} profilePicture />
+        <PodiumPlace name={nr2.name} size="sm" place={2} playerSummary={nr2} profilePicture />
+        <PodiumPlace name={nr3.name} size="xs" place={3} playerSummary={nr3} profilePicture />
         {/* <LeaderboardDistrubution /> */}
       </div>
       <div>

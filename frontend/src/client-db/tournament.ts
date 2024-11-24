@@ -28,7 +28,7 @@ export const optioChristmasTournament: TournamentDB = {
   description:
     "The social happening of the year, and a long awaited feature!! Sign up with your player and join the tournament 🚀",
   // startDate: 1732120523906, // 21th nov, 21:22
-  startDate: 173261_3408196,
+  startDate: 1732613408196,
   signedUp: [],
   skippedGames: [],
   // TODO: function to set playerOrder based on elo at the time. if some players are not ranked, order them last by theirs signup order

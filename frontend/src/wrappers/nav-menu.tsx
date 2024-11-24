@@ -23,8 +23,8 @@ export const NavMenu: React.FC = () => {
   const renderMenuitems = () => {
     const items: { name: string; to: string }[] = [
       { name: "🥇 Leaderboard", to: "/leader-board" },
-      { name: "+🏓  Add game", to: "/add-game" },
-      { name: "+👤  New player", to: "/add-player" },
+      { name: "🏓  Add game", to: "/add-game" },
+      { name: "👤  New player", to: "/add-player" },
       { name: "👥🥊 Compare 1v1", to: "/1v1" },
       { name: "📈 Compare all", to: "/compare-players" },
       { name: "🏆 Tournaments", to: "/tournament" },
@@ -33,7 +33,7 @@ export const NavMenu: React.FC = () => {
       items.push({ name: "Admin Page 🔐", to: "/admin" });
     }
     const menuItemWrapperClassNames =
-      "flex items-center justify-end md:justify-start h-12 md:h-10 hover:underline px-12";
+      "flex items-center justify-end md:justify-start h-12 md:h-10 hover:underline px-4 sm:px-12";
     const menuItemTextClassNames = "text-xl font-semibold text-secondary-text";
 
     const list = items.map((item, index) => (
@@ -83,7 +83,7 @@ export const NavMenu: React.FC = () => {
       <div aria-label="menu displacer" className={MENU_HEIGHT} />
       <div
         className={classNames(
-          "fixed inset-0 top-0 z-50 bg-secondary-background text-white flex justify-between items-center p-4 overflow-hidden shadow-xl",
+          "fixed inset-0 top-0 z-50 bg-secondary-background text-white flex justify-between items-center p-4 overflow-hidden",
           MENU_HEIGHT,
         )}
       >
@@ -96,7 +96,7 @@ export const NavMenu: React.FC = () => {
         {renderMenuitems().slice(1, 2)}
         <div className="md:flex hidden">{renderMenuitems().slice(2, 3)}</div>
 
-        <div className="grow" />
+        <div className="grow md:block" />
 
         <Popover className={classNames("relative flex justify-center items-center", MENU_HEIGHT)}>
           {({ open }) => {
@@ -123,7 +123,7 @@ export const NavMenu: React.FC = () => {
                   transition
                   anchor="bottom"
                   className={classNames(
-                    "flex flex-col gap-2 p-8 mt-4 md:mt-0 w-full md:w-96 bg-secondary-background rounded-lg",
+                    "flex flex-col gap-2 p-8 md:mt-0 w-full md:w-96 bg-secondary-background rounded-lg",
                     "transition duration-200 ease-out data-[closed]:scale-95 data-[closed]:opacity-0",
                   )}
                 >

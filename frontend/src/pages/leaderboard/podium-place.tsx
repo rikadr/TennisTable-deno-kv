@@ -70,13 +70,14 @@ function getPumpkin(place?: number): string | undefined {
 }
 
 type Props = {
-  player: PlayerSummary;
+  name: string;
+  playerSummary?: PlayerSummary;
   size: "default" | "sm" | "xs";
   place?: number;
   profilePicture?: boolean;
 };
 
-export const PodiumPlace: React.FC<Props> = ({ player, place, size, profilePicture = false }) => {
+export const PodiumPlace: React.FC<Props> = ({ name, playerSummary, place, size, profilePicture = false }) => {
   const placeNumberLength = place?.toString().length || 1;
 
   const themedPlaceNumber = () => {
@@ -106,7 +107,7 @@ export const PodiumPlace: React.FC<Props> = ({ player, place, size, profilePictu
 
   return (
     <Link
-      to={`/player/${player.name}`}
+      to={`/player/${name}`}
       className={classNames(
         "w-full p-2 rounded-lg flex space-x-4 h-20 bg-secondary-background hover:bg-secondary-background/70",
         cardHeight[size],
@@ -114,30 +115,28 @@ export const PodiumPlace: React.FC<Props> = ({ player, place, size, profilePictu
     >
       <div className="w-16 flex items-center justify-center shrink-0">{themedPlaceNumber()}</div>
       <section className="grow text-secondary-text">
-        <h2 className={classNames("uppercase", nameTextSize[size])}>{player.name} </h2>
+        <h2 className={classNames("uppercase", nameTextSize[size])}>{name} </h2>
         <section className={classNames("flex space-x-4 font-medium", statsTextSize[size])}>
           <div>
-            {player.elo.toLocaleString("no-NO", {
-              maximumFractionDigits: 0,
-            })}
+            {playerSummary
+              ? playerSummary.elo.toLocaleString("no-NO", {
+                  maximumFractionDigits: 0,
+                })
+              : "-"}
           </div>
           <div>
             🏆:💔
-            {(player.wins / player.loss).toLocaleString("no-NO", {
-              maximumFractionDigits: 1,
-            })}
+            {playerSummary
+              ? (playerSummary.wins / playerSummary.loss).toLocaleString("no-NO", {
+                  maximumFractionDigits: 1,
+                })
+              : "-"}
           </div>
         </section>
       </section>
       {profilePicture && (
         <div className="w-16 flex items-center justify-center shrink-0">
-          <ProfilePicture
-            name={player.name}
-            size={profilePictureSize[size]}
-            shape="circle"
-            clickToEdit={false}
-            border={3}
-          />
+          <ProfilePicture name={name} size={profilePictureSize[size]} shape="circle" clickToEdit={false} border={3} />
         </div>
       )}
     </Link>

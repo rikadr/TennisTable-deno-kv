@@ -30,7 +30,7 @@ export const PlayerPage: React.FC = () => {
         <div className="w-64">
           <ProfilePicture name={name} clickToEdit border={8} shape="rounded" />
           <div className="w-64 my-4">
-            {summary && <PodiumPlace size="default" place={summary.rank} player={summary} />}
+            {<PodiumPlace name={name ?? "-"} size="default" place={summary?.rank} playerSummary={summary} />}
           </div>
         </div>
 
@@ -83,52 +83,64 @@ export const PlayerPage: React.FC = () => {
             </div>
           </div>
         )}
+        {!summary && (
+          <div className="p-10">
+            <h1>It's empty here...</h1>
+            <br />
+            <p>- Add your Profile picture! 📸</p>
+            <p>- Join tournaments! 🏆</p>
+            <p>- Play games! 🏓</p>
+            <p>- Analyse data and compare players! 📊</p>
+          </div>
+        )}
       </div>
-      <div className="flex flex-col md:flex-row justify-evenly items-center md:items-start w-full md:mr-4">
-        <div className="w-full max-w-2xl flex flex-col justify-center">
-          <div className="flex flex-col items-center">
-            <h1 className="text-2xl text-center mt-4">Points distribution</h1>
-            <div className="w-full max-w-2xl">
-              <PlayerPointsDistrubution name={summary?.name} />
+      {summary && (
+        <div className="flex flex-col md:flex-row justify-evenly items-center md:items-start w-full md:mr-4">
+          <div className="w-full max-w-2xl flex flex-col justify-center">
+            <div className="flex flex-col items-center">
+              <h1 className="text-2xl text-center mt-4">Points distribution</h1>
+              <div className="w-full max-w-2xl">
+                <PlayerPointsDistrubution name={summary?.name} />
+              </div>
+            </div>
+
+            <div className="flex flex-col items-center">
+              <h1 className="text-2xl text-center mt-4">Games distribution</h1>
+              <div className="w-full max-w-2xl">
+                <PlayerGamesDistrubution name={summary?.name} />
+              </div>
             </div>
           </div>
 
-          <div className="flex flex-col items-center">
-            <h1 className="text-2xl text-center mt-4">Games distribution</h1>
-            <div className="w-full max-w-2xl">
-              <PlayerGamesDistrubution name={summary?.name} />
+          <div>
+            <h1 className="text-2xl text-center mt-4">Last 10 games</h1>
+            <div className="flex flex-col divide-y divide-primary-text/50">
+              <div className="flex gap-4 text-base text-center mb-2">
+                <div className="w-36 ">Game</div>
+                <div className="w-12 pl-4 whitespace-nowrap">Elo +-</div>
+                <div className="w-24 text-right">Time</div>
+              </div>
+              {reverseGames?.map((game, index) => (
+                <Link
+                  key={(summary?.name ?? "-") + index + game.oponent}
+                  to={`/player/${game.oponent}`}
+                  className="bg-primary-background hover:bg-secondary-background/30 py-1 px-2 flex gap-4 text-xl font-light"
+                >
+                  <div className="w-32 font-normal whitespace-nowrap">
+                    {game.result === "win" ? "🏆 " : "💔 "} {game.oponent}
+                  </div>
+                  <div className="w-12 text-right">
+                    {game.pointsDiff.toLocaleString("no-NO", {
+                      maximumFractionDigits: 0,
+                    })}
+                  </div>
+                  <div className="w-32 text-right text-base">{relativeTimeString(new Date(game.time))}</div>
+                </Link>
+              ))}
             </div>
           </div>
         </div>
-
-        <div>
-          <h1 className="text-2xl text-center mt-4">Last 10 games</h1>
-          <div className="flex flex-col divide-y divide-primary-text/50">
-            <div className="flex gap-4 text-base text-center mb-2">
-              <div className="w-36 ">Game</div>
-              <div className="w-12 pl-4 whitespace-nowrap">Elo +-</div>
-              <div className="w-24 text-right">Time</div>
-            </div>
-            {reverseGames?.map((game, index) => (
-              <Link
-                key={(summary?.name ?? "-") + index + game.oponent}
-                to={`/player/${game.oponent}`}
-                className="bg-primary-background hover:bg-secondary-background/30 py-1 px-2 flex gap-4 text-xl font-light"
-              >
-                <div className="w-32 font-normal whitespace-nowrap">
-                  {game.result === "win" ? "🏆 " : "💔 "} {game.oponent}
-                </div>
-                <div className="w-12 text-right">
-                  {game.pointsDiff.toLocaleString("no-NO", {
-                    maximumFractionDigits: 0,
-                  })}
-                </div>
-                <div className="w-32 text-right text-base">{relativeTimeString(new Date(game.time))}</div>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </div>
+      )}
     </div>
   );
 };
