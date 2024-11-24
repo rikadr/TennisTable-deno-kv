@@ -34,7 +34,7 @@ export const NavMenu: React.FC = () => {
     }
     const menuItemWrapperClassNames =
       "flex items-center justify-end md:justify-start h-12 md:h-10 hover:underline px-4 sm:px-12";
-    const menuItemTextClassNames = "text-xl font-semibold text-secondary-text";
+    const menuItemTextClassNames = "text-lg md:text-xl font-semibold text-secondary-text";
 
     const list = items.map((item, index) => (
       <CloseButton key={index} as={Link} to={item.to} className={menuItemWrapperClassNames}>
