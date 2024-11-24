@@ -46,7 +46,7 @@ export const ComparePlayersPage: React.FC = () => {
 
   return (
     <div className="flex flex-col items-center">
-      <section className="flex flex-col-reverse items-center lg:items-start lg:flex-row lg:gap-4">
+      <section className="flex flex-col-reverse items-center md:items-start md:flex-row md:gap-4">
         <PlayerSelector
           players={comparison.allPlayers}
           selectedPlayers={selectedPlayers}
@@ -64,7 +64,7 @@ export const ComparePlayersPage: React.FC = () => {
           {comparison.graphData ? (
             <LineChart
               className="mt-6"
-              width={Math.min(1000, width > 1_200 || width < 1_024 ? width - 50 : width - 230)}
+              width={Math.min(1000, width > 1_200 || width < 768 ? width - 50 : width - 230)}
               height={Math.min(500, Math.max(300, height - 100))}
               margin={{ left: -10 }}
               data={graphDataToSee}
