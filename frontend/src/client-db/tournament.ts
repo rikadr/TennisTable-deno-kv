@@ -24,7 +24,7 @@ type Bracket = Partial<TournamentGame>[][];
 
 export const optioChristmasTournament: TournamentDB = {
   id: "randomid37",
-  name: "Optio Christmas tournament 2024 🏓🎅🏻",
+  name: "Optio Christmas Tournament 2024 🏓🎅🏻",
   description:
     "The social happening of the year, and a long awaited feature!! Sign up with your player and join the tournament 🚀",
   // startDate: 1732120523906, // 21th nov, 21:22
