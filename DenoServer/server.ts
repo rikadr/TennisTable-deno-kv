@@ -6,6 +6,7 @@ import { registerUserRoutes } from "./user/user.routes.ts";
 import { registerWebSocketRoutes } from "./web-socket/web-socket.routs.ts";
 import { WebSocketClientManager } from "./web-socket/web-socket-client-manager.ts";
 import { registerClientDbRoutes } from "./client-db/client-db.routes.ts";
+import { registerTournamentRoutes } from "./tournament/tournament.routes.ts";
 
 const app = new Application();
 const api = new Router();
@@ -25,6 +26,7 @@ const webSocketClientManager = new WebSocketClientManager();
  */
 registerPlayerRoutes(api, webSocketClientManager);
 registerGameRoutes(api, webSocketClientManager);
+registerTournamentRoutes(api, webSocketClientManager);
 registerWebSocketRoutes(api, webSocketClientManager);
 registerClientDbRoutes(api);
 

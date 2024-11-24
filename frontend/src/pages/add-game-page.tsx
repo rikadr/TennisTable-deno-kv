@@ -90,7 +90,7 @@ export const AddGamePage: React.FC = () => {
         <button
           disabled={!winner || !loser || addGameMutation.isPending}
           className={classNames(
-            "text-lg font-semibold w-full py-4 px-6 bg-secondary-background hover:bg-secondary-background/70 text-secondary-text rounded-lg",
+            "text-lg font-semibold w-full py-4 px-6 flex flex-col items-center bg-secondary-background hover:bg-secondary-background/70 text-secondary-text rounded-lg",
             (!winner || !loser) && "cursor-not-allowed opacity-50 hover:bg-secondary-background",
             gameSuccessfullyAdded && "animate-ping-once",
           )}
@@ -103,7 +103,9 @@ export const AddGamePage: React.FC = () => {
           )}
           {gameSuccessfullyAdded && "Success ✅"}
           {!addGameMutation.isPending && !gameSuccessfullyAdded && "Add game 🏓"}
-          {gameSuccessfullyAdded && <ConfettiExplosion particleCount={250} force={0.8} duration={4_000} />}
+          {gameSuccessfullyAdded && (
+            <ConfettiExplosion particleCount={250} force={0.8} width={2_000} duration={10_000} />
+          )}
         </button>
         <div className="relative flex gap-2">
           <div className="w-40 h-20 flex flex-col items-center justify-center">

@@ -1,7 +1,13 @@
 export type Player = { name: string };
 export type Game = { winner: string; loser: string; time: number };
 
-export type ClientDbDTO = { players: Player[]; games: Game[] };
+export type ClientDbDTO = {
+  players: Player[];
+  games: Game[];
+  tournament?: {
+    signedUp: SignUpTournament[];
+  };
+};
 
 export type PlayerWithElo = Player & { elo: number };
 export type PlayerSummary = {
@@ -43,7 +49,16 @@ export type TournamentDB = {
   description?: string;
   startDate: number;
   // endDate: number; ????
-  signedUp: string[];
+  signedUp: SignUpTournament[];
   playerOrder?: string[]; // To be set when tournament starts
   skippedGames: { eliminated: string; advancing: string; time: number }[];
+};
+export type SignUpTournament = {
+  tournamentId: string;
+  player: string;
+  time: number;
+};
+export type SignUpTournamentPayload = {
+  tournamentId: string;
+  player: string;
 };

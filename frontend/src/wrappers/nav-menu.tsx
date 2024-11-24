@@ -6,7 +6,7 @@ import { session } from "../services/auth";
 import pumpkinLogo from "../img/halloween/tennis-table.png";
 import { CURRENT_THEME } from "../client-db/types";
 
-const MENU_HEIGHT = "h-20 md:h-12";
+const MENU_HEIGHT = "h-16 md:h-12";
 
 export const NavMenu: React.FC = () => {
   const { pathname } = useLocation();
@@ -32,25 +32,19 @@ export const NavMenu: React.FC = () => {
     if (session.isAuthenticated && session.sessionData?.role === "admin") {
       items.push({ name: "Admin Page 🔐", to: "/admin" });
     }
+    const menuItemWrapperClassNames =
+      "flex items-center justify-end md:justify-start h-12 md:h-10 hover:underline px-12";
+    const menuItemTextClassNames = "text-xl font-semibold text-secondary-text";
+
     const list = items.map((item, index) => (
-      <CloseButton
-        key={index}
-        as={Link}
-        to={item.to}
-        className="flex items-center justify-end md:justify-start h-16 md:h-10 hover:underline px-12"
-      >
-        <p className="text-2xl md:text-xl font-semibold text-secondary-text">{item.name}</p>
+      <CloseButton key={index} as={Link} to={item.to} className={menuItemWrapperClassNames}>
+        <p className={menuItemTextClassNames}>{item.name}</p>
       </CloseButton>
     ));
     if (session.isAuthenticated) {
       list.push(
-        <CloseButton
-          key={list.length}
-          as={Link}
-          to="/me"
-          className="flex items-center justify-end md:justify-start h-16 md:h-10 hover:underline px-12"
-        >
-          <p className="text-2xl md:text-xl font-semibold text-secondary-text">My profile</p>
+        <CloseButton key={list.length} as={Link} to="/me" className={menuItemWrapperClassNames}>
+          <p className={menuItemTextClassNames}>My profile</p>
         </CloseButton>,
       );
       list.push(
@@ -60,20 +54,15 @@ export const NavMenu: React.FC = () => {
             session.token = undefined;
             window.location.reload();
           }}
-          className="flex items-center justify-end md:justify-start h-16 md:h-10 hover:underline px-12"
+          className={menuItemWrapperClassNames}
         >
-          <p className="text-2xl md:text-xl font-semibold text-secondary-text">Log Out</p>
+          <p className={menuItemTextClassNames}>Log Out</p>
         </CloseButton>,
       );
     } else {
       list.push(
-        <CloseButton
-          key={list.length}
-          as={Link}
-          to="/log-in"
-          className="flex items-center justify-end md:justify-start h-16 md:h-10 hover:underline px-12"
-        >
-          <p className="text-2xl md:text-xl font-semibold text-secondary-text">Log In</p>
+        <CloseButton key={list.length} as={Link} to="/log-in" className={menuItemWrapperClassNames}>
+          <p className={menuItemTextClassNames}>Log In</p>
         </CloseButton>,
       );
     }
@@ -104,7 +93,8 @@ export const NavMenu: React.FC = () => {
         >
           {themedLogo()}
         </Link>
-        <div className="md:flex gap-0 shrink-0 hidden">{renderMenuitems().slice(1, 3)}</div>
+        {renderMenuitems().slice(1, 2)}
+        <div className="md:flex hidden">{renderMenuitems().slice(2, 3)}</div>
 
         <div className="grow" />
 

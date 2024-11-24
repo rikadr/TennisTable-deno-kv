@@ -60,27 +60,7 @@ export const mockTournament2: TournamentDB = {
 
   startDate: 1731524875192, // 13th nov, 20:08
   // startDate: 0,
-  signedUp: [
-    "Rasmus",
-    "Simone",
-    "Alexander",
-    "Fooa",
-    "Peder",
-    "Christoffer",
-    "Erling",
-    "Oskar",
-    "Sveinung",
-    "Fredrik H",
-    "Aksel",
-    "Rikard",
-    "Anders",
-    "Ole",
-    "Marius",
-    "Tor",
-    "Ole Anders",
-    "Markus",
-    "Yngve",
-  ],
+  signedUp: [],
   skippedGames: [],
 
   // TODO: function to set playerOrder based on elo at the time. if some players are not ranked, order them last by theirs signup order
@@ -330,9 +310,12 @@ export class Tournaments {
   }
 
   getTournament(t: TournamentDB): TournamentWithGames {
+    const signedUp = this.parent.signedUp.filter((s) => s.tournamentId === t.id).sort((a, b) => a.time - b.time);
+
     if (t.startDate > Date.now()) {
       return {
         ...t,
+        signedUp,
         games: [],
         bracket: [],
       };
@@ -366,6 +349,7 @@ export class Tournaments {
 
     return {
       ...t,
+      signedUp,
       games,
       bracket,
     };

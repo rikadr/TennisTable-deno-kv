@@ -1,7 +1,7 @@
 import { Leaderboard } from "./leaderboard";
 import { PVP } from "./pvp";
 import { Tournaments } from "./tournament";
-import { ClientDbDTO, Game, Player } from "./types";
+import { ClientDbDTO, Game, Player, SignUpTournament } from "./types";
 
 export class TennisTable {
   // --------------------------------------------------------------------------
@@ -9,6 +9,7 @@ export class TennisTable {
   // --------------------------------------------------------------------------
   readonly players: Player[];
   readonly games: Game[];
+  readonly signedUp: SignUpTournament[];
 
   // --------------------------------------------------------------------------
   // Business logic
@@ -20,6 +21,7 @@ export class TennisTable {
   constructor(data: ClientDbDTO) {
     this.players = data.players;
     this.games = data.games;
+    this.signedUp = data.tournament?.signedUp || [];
 
     this.leaderboard = new Leaderboard(this);
     this.pvp = new PVP(this);

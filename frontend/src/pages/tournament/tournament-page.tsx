@@ -72,6 +72,7 @@ export const TournamentPage: React.FC = () => {
             <WinnerBox winner={tournament.bracket[0][0].winner} />{" "}
           </div>
         )}
+        <p>{tournament.signedUp.map((p) => p.player).join(", ")}</p>
       </div>
 
       <Switch

@@ -81,7 +81,7 @@ export const AddPlayerPage: React.FC = () => {
       <button
         disabled={!!errorMessage || addPlayerMutation.isPending || !playerName}
         className={classNames(
-          "text-lg font-semibold w-full py-4 px-6 bg-secondary-background hover:bg-secondary-background/70 text-secondary-text rounded-lg",
+          "text-lg font-semibold w-full flex flex-col items-center py-4 px-6 bg-secondary-background hover:bg-secondary-background/70 text-secondary-text rounded-lg",
           (!!errorMessage || !playerName) && "cursor-not-allowed opacity-50 hover:bg-secondary-background",
           playerSuccessfullyAdded && "animate-ping-once",
         )}
@@ -94,7 +94,9 @@ export const AddPlayerPage: React.FC = () => {
         )}
         {playerSuccessfullyAdded && "Success ✅"}
         {!addPlayerMutation.isPending && !playerSuccessfullyAdded && "Add player 👤"}
-        {playerSuccessfullyAdded && <ConfettiExplosion particleCount={250} force={0.8} duration={4_000} />}
+        {playerSuccessfullyAdded && (
+          <ConfettiExplosion particleCount={250} force={0.8} width={2_000} duration={10_000} />
+        )}
       </button>
     </div>
   );
