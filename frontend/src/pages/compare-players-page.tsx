@@ -46,7 +46,7 @@ export const ComparePlayersPage: React.FC = () => {
 
   return (
     <div className="flex flex-col items-center">
-      <section className="flex flex-col-reverse items-center lg:flex-row lg:gap-4">
+      <section className="flex flex-col-reverse items-center lg:items-start lg:flex-row lg:gap-4">
         <PlayerSelector
           players={comparison.allPlayers}
           selectedPlayers={selectedPlayers}
