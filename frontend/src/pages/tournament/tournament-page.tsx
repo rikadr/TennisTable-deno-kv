@@ -158,7 +158,10 @@ export const TournamentPage: React.FC = () => {
               )}
               onClick={() => (signUpPlayer ? signUpPlayerMutation.mutate() : setSignUpEdit(true))}
             >
-              Sign up {signUpPlayer ?? "here"}! ✍️🏆
+              <h2 className="flex gap-2">
+                <div>Sign up {signUpPlayer ?? "here"}! </div>
+                <div className={classNames(signUpPlayerMutation.isPending && "animate-spin")}>✍️🏆</div>
+              </h2>
               {showConfetti && <ConfettiExplosion particleCount={250} force={0.8} width={2_000} duration={10_000} />}
             </button>
           )}
