@@ -33,23 +33,25 @@ export const optioChristmasTournament: TournamentDB = {
   skippedGames: [],
   // TODO: function to set playerOrder based on elo at the time. if some players are not ranked, order them last by theirs signup order
   playerOrder: [
-    // "Rasmus",
-    // "Simone",
-    // "Alexander",
-    // // "Fooa",
-    // "Peder",
-    // "Erling",
-    // "Oskar",
-    // "Fredrik H",
-    // "Rikard",
-    // "Marius",
-    // "Gina", // Gina
-    // "Gustas", // Gustas
+    "Rasmus",
+    "Simone",
+    "Alexander",
+    "Fooa",
+    "Peder",
+    "Erling",
+    "Oskar",
+    "Fredrik H",
+    "Rikard",
+    "Ole",
+    "Marius",
+    "Gina",
+    "Gustas",
+    "Daniele",
+    "Ole Anders",
     // "Christoffer",
     // "Sveinung",
     // "Axel",
     // "Anders",
-    // "Ole",
   ],
 };
 export const mockTournament2: TournamentDB = {
