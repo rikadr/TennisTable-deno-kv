@@ -50,6 +50,7 @@ export const optioChristmasTournament: TournamentDB = {
     "Ole Anders",
     "Kevin",
     "James 007",
+    "Chakib Youcefi",
 
     // "Christoffer",
     // "Sveinung",
