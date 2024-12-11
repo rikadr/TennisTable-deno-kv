@@ -3,12 +3,12 @@ import { Game } from "../../client-db/types";
 import { useClientDbContext } from "../../wrappers/client-db-context";
 import { relativeTimeString } from "../../common/date-utils";
 
-const LAST_GAMES_COUNT = 5;
+const GAMES_COUNT = 5;
 
-export const LatestGames: React.FC = () => {
+export const RecentGames: React.FC = () => {
   const context = useClientDbContext();
   const leaderboardMap = context.leaderboard.getCachedLeaderboardMap();
-  const lastGames = context.games.slice(context.games.length - LAST_GAMES_COUNT).toReversed();
+  const lastGames = context.games.slice(context.games.length - GAMES_COUNT).toReversed();
 
   function getGame(game: Game) {
     const winner = leaderboardMap.get(game.winner);
@@ -18,12 +18,12 @@ export const LatestGames: React.FC = () => {
 
   return (
     <div>
-      <h1 className="text-2xl text-center mb-4 mt-[27.5px]">Last {LAST_GAMES_COUNT} games</h1>
+      <h1 className="text-2xl text-center mb-4 mt-[27.5px]">Recent games</h1>
       <div className="flex flex-col divide-y divide-primary-text/50">
         <div className="flex gap-4 text-base text-center mb-2">
           <div className="w-24 pl-5">Winner</div>
           <div className="w-32">Loser</div>
-          <div className="w-12 whitespace-nowrap">Points won</div>
+          <div className="w-12 whitespace-nowrap -ml-2">Points won</div>
         </div>
         {lastGames.map(getGame).map((game) => (
           <Link

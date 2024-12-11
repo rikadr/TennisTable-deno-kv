@@ -4,7 +4,7 @@ import { PodiumPlace } from "./podium-place";
 import { Elo } from "../../client-db/elo";
 import { useClientDbContext } from "../../wrappers/client-db-context";
 import { ProfilePicture } from "../player/profile-picture";
-import { LatestGames } from "./lates-games";
+import { RecentGames } from "./recent-games";
 
 export const LeaderBoard: React.FC = () => {
   const context = useClientDbContext();
@@ -33,7 +33,7 @@ export const LeaderBoard: React.FC = () => {
         <PodiumPlace name={nr2.name} size="sm" place={2} playerSummary={nr2} profilePicture />
         <PodiumPlace name={nr3.name} size="xs" place={3} playerSummary={nr3} profilePicture />
         {/* <LeaderboardDistrubution /> */}
-        <LatestGames />
+        <RecentGames />
       </div>
       <div>
         <div className="flex flex-col divide-y divide-primary-text/50">
