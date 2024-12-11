@@ -22,7 +22,7 @@ export class Leaderboard {
   }
 
   private _getLeaderboard(): LeaderboardDTO {
-    const leaderboardMap = this._getCachedLeaderboardMap();
+    const leaderboardMap = this.getCachedLeaderboardMap();
 
     const rankedPlayers: LeaderboardDTO["rankedPlayers"] = Array.from(leaderboardMap.values())
       .filter((player) => player.games.length >= Elo.GAME_LIMIT_FOR_RANKED)
@@ -64,7 +64,7 @@ export class Leaderboard {
         gamesDistribution: { name: string; games: number }[];
       })
     | undefined {
-    const leaderboardMap = this._getCachedLeaderboardMap();
+    const leaderboardMap = this.getCachedLeaderboardMap();
 
     const player = leaderboardMap.get(name);
     if (!player) return undefined;
@@ -170,7 +170,7 @@ export class Leaderboard {
       allPlayers: this.parent.players.map((p) => p.name).sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase())),
     };
   }
-  private _getCachedLeaderboardMap() {
+  getCachedLeaderboardMap() {
     if (this._leaderBoardMapCache !== undefined) return this._leaderBoardMapCache;
     const leaderboardMap = this._getLeaderboardMap();
     this._leaderBoardMapCache = leaderboardMap;
