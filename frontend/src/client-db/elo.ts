@@ -48,4 +48,36 @@ export abstract class Elo {
       losersNewElo,
     };
   }
+
+  static simulateRandomGamesOrder(games: Game[], players: Player[], permutations: number) {
+    const totalsMap: Map<string, number[]> = new Map();
+
+    for (let i = 0; i < permutations; i++) {
+      const randomizedGames = this.shuffleArray([...games]);
+
+      const result = this.eloCalculator(randomizedGames, players);
+      result.forEach(({ name, elo }) => {
+        if (!totalsMap.has(name)) {
+          totalsMap.set(name, [elo]);
+        }
+        totalsMap.get(name)!.push(elo);
+      });
+    }
+
+    const avrage: Map<string, number> = new Map();
+    totalsMap.forEach((elos, name) => avrage.set(name, elos.reduce((acc, cur) => acc + cur, 0) / elos.length));
+
+    return Array.from(avrage)
+      .map(([name, elo]) => ({ name, elo }))
+      .sort((a, b) => b.elo - a.elo);
+  }
+
+  // Fisher-Yates Shuffle
+  private static shuffleArray<T>(array: T[]): T[] {
+    for (let i = array.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1)); // Random index from 0 to i
+      [array[i], array[j]] = [array[j], array[i]]; // Swap elements
+    }
+    return array;
+  }
 }

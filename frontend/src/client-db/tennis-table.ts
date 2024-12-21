@@ -1,3 +1,4 @@
+import { Elo } from "./elo";
 import { Leaderboard } from "./leaderboard";
 import { PVP } from "./pvp";
 import { Tournaments } from "./tournament";
@@ -10,6 +11,7 @@ export class TennisTable {
   readonly players: Player[];
   readonly games: Game[];
   readonly signedUp: SignUpTournament[];
+  readonly elo = Elo;
 
   // --------------------------------------------------------------------------
   // Business logic
