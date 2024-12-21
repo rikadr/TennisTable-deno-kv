@@ -64,12 +64,24 @@ export abstract class Elo {
       });
     }
 
-    const avrage: Map<string, number> = new Map();
-    totalsMap.forEach((elos, name) => avrage.set(name, elos.reduce((acc, cur) => acc + cur, 0) / elos.length));
+    const avrage: Map<string, { avg: number; min: number; max: number }> = new Map();
+    totalsMap.forEach((elos, name) => {
+      const avg = elos.reduce((acc, cur) => acc + cur, 0) / elos.length;
+      const minMax = { min: 9999, max: 0 };
+      for (const elo of elos) {
+        if (elo < minMax.min) {
+          minMax.min = elo;
+        }
+        if (elo > minMax.max) {
+          minMax.max = elo;
+        }
+      }
+      avrage.set(name, { avg, ...minMax });
+    });
 
     return Array.from(avrage)
       .map(([name, elo]) => ({ name, elo }))
-      .sort((a, b) => b.elo - a.elo);
+      .sort((a, b) => b.elo.avg - a.elo.avg);
   }
 
   // Fisher-Yates Shuffle
