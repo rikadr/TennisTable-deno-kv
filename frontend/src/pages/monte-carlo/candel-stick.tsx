@@ -111,14 +111,6 @@ export const CandleStickChart: React.FC<{ rawData: CandelStickData[] }> = ({ raw
   return (
     <ResponsiveContainer>
       <BarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 10 }}>
-        <XAxis dataKey="name" tickFormatter={(v) => v} angle={45} minTickGap={-15} tickMargin={0} tickSize={5} />
-        <YAxis
-          type="number"
-          domain={[totalMinimum, totalMaximum]}
-          tickFormatter={(value) => value.toLocaleString("no-NO", { maximumFractionDigits: 0 })}
-          stroke="#FFFFFF"
-        />
-        {/* <CartesianGrid strokeDasharray="3 3" /> */}
         <Bar
           dataKey="avgCurrent"
           activeBar={<Candlestick />}
@@ -129,6 +121,23 @@ export const CandleStickChart: React.FC<{ rawData: CandelStickData[] }> = ({ raw
             <Cell key={`cell-${index}`} fill={colors[index % 20]} />
           ))} */}
         </Bar>
+        <XAxis
+          dataKey="name"
+          tickFormatter={(v) => v}
+          angle={45}
+          minTickGap={-15}
+          tickMargin={0}
+          tickSize={5}
+          orientation="bottom"
+          tick={{ fill: "#FFFFFF" }}
+        />
+        <YAxis
+          type="number"
+          domain={[totalMinimum, totalMaximum]}
+          tickFormatter={(value) => value.toLocaleString("no-NO", { maximumFractionDigits: 0 })}
+          stroke="#FFFFFF"
+        />
+        {/* <CartesianGrid strokeDasharray="3 3" /> */}
         <ReferenceLine y={1000} stroke="white" label="1 000" />
         <Tooltip
           formatter={(value) => [value.toLocaleString("no-NO", { maximumFractionDigits: 0 }), "Elo"]}
