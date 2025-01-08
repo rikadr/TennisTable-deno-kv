@@ -3,12 +3,12 @@ import {
   BarChart,
   Bar,
   YAxis,
-  CartesianGrid,
   Tooltip,
   TooltipProps,
   ResponsiveContainer,
   BarProps,
   ReferenceLine,
+  XAxis,
 } from "recharts";
 import { BarRectangleItem } from "recharts/types/cartesian/Bar";
 import { NameType, ValueType } from "recharts/types/component/DefaultTooltipContent";
@@ -110,8 +110,8 @@ export const CandleStickChart: React.FC<{ rawData: CandelStickData[] }> = ({ raw
 
   return (
     <ResponsiveContainer>
-      <BarChart width={600} height={300} data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-        {/* <XAxis dataKey="time" /> Do place number? */}
+      <BarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 10 }}>
+        <XAxis dataKey="name" tickFormatter={(v) => v} angle={45} minTickGap={-15} tickMargin={0} tickSize={5} />
         <YAxis
           type="number"
           domain={[totalMinimum, totalMaximum]}
@@ -141,6 +141,19 @@ export const CandleStickChart: React.FC<{ rawData: CandelStickData[] }> = ({ raw
     </ResponsiveContainer>
   );
 };
+
+// Custom tick component
+// const CustomTick: React.FC<{
+//   x: number;
+//   y: number;
+//   payload: { value: string };
+// }> = ({ x, y, payload }) => {
+//   return (
+//     <text x={x} y={y} dy={10} textAnchor="middle" fill="#8884d8" style={{ fontSize: 12, fontWeight: "bold" }}>
+//       {payload.value.toUpperCase()}
+//     </text>
+//   );
+// };
 
 const CustomTooltip: React.FC = ({ active, payload, label }: TooltipProps<ValueType, NameType>) => {
   if (active && payload && payload.length) {

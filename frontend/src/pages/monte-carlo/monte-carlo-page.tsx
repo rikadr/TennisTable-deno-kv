@@ -24,7 +24,7 @@ export const MonteCarlo: React.FC = () => {
     }));
 
   return (
-    <div className="w-full h-96">
+    <div className="w-full h-[600px]">
       <p>Hello from monte carlo page</p>
       <CandleStickChart rawData={formattedRawData} />
     </div>
