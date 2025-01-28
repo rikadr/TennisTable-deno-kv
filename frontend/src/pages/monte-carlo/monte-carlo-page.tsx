@@ -7,9 +7,7 @@ export const MonteCarlo: React.FC = () => {
   const context = useClientDbContext();
 
   const leaderboardMap = context.leaderboard.getCachedLeaderboardMap();
-
-  const { games, players } = context;
-  const simulation = context.elo.simulateRandomGamesOrder(games, players, 10_000);
+  const simulation = context.simulations.monteCarloSimulation(10_000);
 
   const formattedRawData: CandelStickData[] = simulation
     .filter(({ name }) => leaderboardMap.get(name)!.games.length >= Elo.GAME_LIMIT_FOR_RANKED)
