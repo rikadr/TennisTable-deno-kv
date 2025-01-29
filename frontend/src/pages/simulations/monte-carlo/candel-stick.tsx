@@ -12,8 +12,8 @@ import {
 } from "recharts";
 import { BarRectangleItem } from "recharts/types/cartesian/Bar";
 import { NameType, ValueType } from "recharts/types/component/DefaultTooltipContent";
-import { ProfilePicture } from "../player/profile-picture";
-import { stringToColor } from "../compare-players-page";
+import { ProfilePicture } from "../../player/profile-picture";
+import { stringToColor } from "../../compare-players-page";
 
 export type CandelStickData = {
   name: string;

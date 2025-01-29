@@ -1,7 +1,7 @@
 import React from "react";
 import { CandelStickData, CandleStickChart } from "./candel-stick";
-import { useClientDbContext } from "../../wrappers/client-db-context";
-import { Elo } from "../../client-db/elo";
+import { useClientDbContext } from "../../../wrappers/client-db-context";
+import { Elo } from "../../../client-db/elo";
 
 export const MonteCarlo: React.FC = () => {
   const context = useClientDbContext();
@@ -19,8 +19,8 @@ export const MonteCarlo: React.FC = () => {
       avg: elo.avg,
       current: leaderboardMap.get(name)!.elo, // Bug when equal to avg
       time: elo.avg,
-    }));
-
+    }))
+    .sort((a, b) => b.current - a.current);
   return (
     <div>
       <div className="mx-8">

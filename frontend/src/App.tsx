@@ -18,8 +18,9 @@ import { PvPPage } from "./pages/pvp-page";
 import { CameraPage } from "./pages/camera/camera-page";
 import { LeaderBoard } from "./pages/leaderboard/leader-board";
 import { TournamentPage } from "./pages/tournament/tournament-page";
-import { MonteCarlo } from "./pages/monte-carlo/monte-carlo-page";
 import { SimulationsPage } from "./pages/simulations/simulations-page";
+import { MonteCarlo } from "./pages/simulations/monte-carlo/monte-carlo-page";
+import { WinLoss } from "./pages/simulations/win-loss";
 
 const RequireAuth: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   if (!session.isAuthenticated) {
@@ -51,6 +52,7 @@ function App() {
                     <Route path="/simulations">
                       <Route index element={<SimulationsPage />} />
                       <Route path="monte-carlo" element={<MonteCarlo />} />
+                      <Route path="win-loss" element={<WinLoss />} />
                     </Route>
                     <Route path="/add-player" element={<AddPlayerPage />} />
                     <Route path="/add-game" element={<AddGamePage />} />

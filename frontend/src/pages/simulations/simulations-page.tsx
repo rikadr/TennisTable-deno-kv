@@ -2,14 +2,22 @@ import React from "react";
 import { Link } from "react-router-dom";
 
 export const SimulationsPage: React.FC = () => {
-  const simulations: { name: string; url: string }[] = [{ name: "Monte Carlo 💰", url: "monte-carlo" }];
+  const simulations: { name: string; url: string }[] = [
+    { name: "Monte Carlo 💰🕯️", url: "monte-carlo" },
+    { name: "Expected win/loss rate 🏆💔", url: "win-loss" },
+  ];
 
   return (
     <div className="flex flex-col items-center">
-      <h1>Simulations</h1>
-      <div className="flex flex-col gap-4">
+      <h1 className="mb-6 text-2xl">Simulations</h1>
+      <div className="flex flex-col gap-4 w-96">
         {simulations.map(({ name, url }) => (
-          <Link to={url}>{name}</Link>
+          <Link
+            className="bg-secondary-background hover:bg-secondary-background/50 rounded-md py-4 text-center text-lg"
+            to={url}
+          >
+            {name}
+          </Link>
         ))}
       </div>
     </div>
