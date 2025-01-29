@@ -8,6 +8,29 @@ export class Simulations {
     this.parent = parent;
   }
 
+  expectedWinLoss(diffElo: number, gamesToSimulate: number = 1_000): number {
+    let player1Elo = 1_000;
+    let player2Elo = player1Elo + diffElo;
+    let wins = 0;
+    let loss = 0;
+
+    for (let i = 1; i <= gamesToSimulate; i++) {
+      const player1mustWin = player2Elo - player1Elo > diffElo;
+      if (player1mustWin) {
+        wins++;
+        const { winnersNewElo, losersNewElo } = Elo.calculateELO(player1Elo, player2Elo);
+        player1Elo = winnersNewElo;
+        player2Elo = losersNewElo;
+      } else {
+        loss++;
+        const { winnersNewElo, losersNewElo } = Elo.calculateELO(player2Elo, player1Elo);
+        player1Elo = losersNewElo;
+        player2Elo = winnersNewElo;
+      }
+    }
+    return wins / (loss ?? 1);
+  }
+
   monteCarloSimulation(permutations: number) {
     const totalsMap: Map<string, number[]> = new Map();
 

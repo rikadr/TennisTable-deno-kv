@@ -3,12 +3,12 @@ import { Game, Player } from "./types";
 type PlayerWithElo = Player & { elo: number };
 
 export abstract class Elo {
-  public static readonly K = 32;
-  public static readonly DIVISOR = 400;
-  public static readonly INITIAL_ELO = 1_000;
-  public static readonly GAME_LIMIT_FOR_RANKED = 5;
+  static readonly K = 32;
+  static readonly DIVISOR = 400;
+  static readonly INITIAL_ELO = 1_000;
+  static readonly GAME_LIMIT_FOR_RANKED = 5;
 
-  public static eloCalculator(
+  static eloCalculator(
     games: Game[],
     players: Player[],
     onGameResult?: (map: Map<string, PlayerWithElo>, game: Game, pointsWon: number) => void,
@@ -24,7 +24,7 @@ export abstract class Elo {
         // Only games with both players existing in the player list will counted
         return;
       }
-      const { winnersNewElo, losersNewElo } = this._calculateELO(winner.elo, loser.elo);
+      const { winnersNewElo, losersNewElo } = this.calculateELO(winner.elo, loser.elo);
       const pointsWon = winnersNewElo - winner.elo;
 
       winner.elo = winnersNewElo;
@@ -35,7 +35,7 @@ export abstract class Elo {
     return playerMap;
   }
 
-  private static _calculateELO(winnersElo: number, losersElo: number) {
+  static calculateELO(winnersElo: number, losersElo: number) {
     // Calculate the expected scores for both players
     const expectedScoreWinner = 1 / (1 + Math.pow(10, (losersElo - winnersElo) / this.DIVISOR));
     const expectedScoreLoser = 1 / (1 + Math.pow(10, (winnersElo - losersElo) / this.DIVISOR));
