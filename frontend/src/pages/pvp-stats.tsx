@@ -31,7 +31,12 @@ export const PvPStats: React.FC<Props> = ({ player1, player2 }) => {
             Points:{" "}
             {p1.points.currentElo.toLocaleString("no-NO", {
               maximumFractionDigits: 0,
+            })}{" "}
+            (
+            {(p1.points.currentElo - p2.points.currentElo).toLocaleString("no-NO", {
+              maximumFractionDigits: 0,
             })}
+            )
           </p>
           <p>
             Gained:{" "}
@@ -61,7 +66,12 @@ export const PvPStats: React.FC<Props> = ({ player1, player2 }) => {
             Points:{" "}
             {p2.points.currentElo.toLocaleString("no-NO", {
               maximumFractionDigits: 0,
+            })}{" "}
+            (
+            {(p2.points.currentElo - p1.points.currentElo).toLocaleString("no-NO", {
+              maximumFractionDigits: 0,
             })}
+            )
           </p>
           <p>
             Gained:{" "}
