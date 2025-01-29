@@ -46,8 +46,8 @@ function App() {
                     <Route path="/player/:name" element={<PlayerPage />} />
                     <Route path="/1v1" element={<PvPPage />} />
                     <Route path="/compare-players" element={<ComparePlayersPage />} />
-                    <Route path="/monte-carlo" element={<MonteCarlo />} />
                     <Route path="/tournament" element={<TournamentPage />} />
+                    <Route path="/simulations" element={<MonteCarlo />} />
                     <Route path="/add-player" element={<AddPlayerPage />} />
                     <Route path="/add-game" element={<AddGamePage />} />
                     <Route path="/camera" element={<CameraPage />} />
