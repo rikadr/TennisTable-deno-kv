@@ -5,6 +5,7 @@ export const SimulationsPage: React.FC = () => {
   const simulations: { name: string; url: string }[] = [
     { name: "Monte Carlo 💰🕯️", url: "monte-carlo" },
     { name: "Expected win/loss rate 🏆💔", url: "win-loss" },
+    { name: "Expected score 💯", url: "expected-score" },
   ];
 
   return (

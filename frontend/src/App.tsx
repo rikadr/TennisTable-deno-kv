@@ -53,6 +53,7 @@ function App() {
                       <Route index element={<SimulationsPage />} />
                       <Route path="monte-carlo" element={<MonteCarlo />} />
                       <Route path="win-loss" element={<WinLoss />} />
+                      <Route path="expected-score" element={<>Coming soon ...</>} />
                     </Route>
                     <Route path="/add-player" element={<AddPlayerPage />} />
                     <Route path="/add-game" element={<AddGamePage />} />
