@@ -163,10 +163,15 @@ export class FutureElo {
   }
 
   private linkFractions(fraction1: Fraction, fraction2: Fraction): Fraction {
-    // TODO.... how to do this
+    const numerator = fraction1.fraction * fraction2.fraction;
+    const denominator = numerator + (1 - fraction1.fraction) * (1 - fraction2.fraction);
+
+    const fraction = denominator === 0 ? 0 : numerator / denominator;
+    const confidence = fraction1.confidence * fraction2.confidence;
+
     return {
-      fraction: Math.min(1, fraction1.fraction + fraction2.fraction),
-      confidence: fraction1.confidence * fraction2.confidence,
+      fraction,
+      confidence,
     };
   }
 
@@ -181,7 +186,7 @@ export class FutureElo {
 
     for (const item of fractions) {
       weightedFractionSum += item.fraction * item.confidence;
-      weightedConfidenceSum += item.confidence * item.confidence; // Weighting confidence itself
+      weightedConfidenceSum += item.confidence * item.confidence;
       totalWeight += item.confidence;
     }
 
@@ -191,7 +196,7 @@ export class FutureElo {
 
     return {
       fraction: weightedFractionSum / totalWeight,
-      confidence: weightedConfidenceSum / totalWeight, // Weighted average confidence
+      confidence: weightedConfidenceSum / totalWeight,
     };
   }
 }
