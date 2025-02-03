@@ -76,6 +76,15 @@ export const PlayerPage: React.FC = () => {
                 label={{ value: "1 000", position: "insideBottom", fill: "white" }}
                 color="#"
               />
+              {context.futureElo.predictedGames[0] && (
+                <ReferenceLine
+                  x={context.games.filter((g) => g.winner === name || g.loser === name).length}
+                  stroke="white"
+                  opacity={0.5}
+                  label={{ value: "Now", position: "insideBottomLeft", fill: "white", opacity: 0.5 }}
+                  color="#"
+                />
+              )}
             </LineChart>
             <div className="m-auto w-fit -mt-2">
               <div className="">Longest win-streak 🔥🏆 {summary.streaks?.longestWin}</div>
