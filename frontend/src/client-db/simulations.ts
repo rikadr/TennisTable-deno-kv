@@ -1,11 +1,14 @@
 import { Elo } from "./elo";
+import { FutureElo } from "./future-elo";
 import { TennisTable } from "./tennis-table";
 
 export class Simulations {
   private parent: TennisTable;
+  futureElo: FutureElo;
 
   constructor(parent: TennisTable) {
     this.parent = parent;
+    this.futureElo = new FutureElo(parent);
   }
 
   expectedWinLoss(diffElo: number, gamesToSimulate: number = 1_000): number {

@@ -14,6 +14,7 @@ export const SimulationsPage: React.FC = () => {
       <div className="flex flex-col gap-4 w-96">
         {simulations.map(({ name, url }) => (
           <Link
+            key={url}
             className="bg-secondary-background hover:bg-secondary-background/50 rounded-md py-4 text-center text-lg"
             to={url}
           >
