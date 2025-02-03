@@ -1,14 +1,11 @@
 import { Elo } from "./elo";
-import { FutureElo } from "./future-elo";
 import { TennisTable } from "./tennis-table";
 
 export class Simulations {
   private parent: TennisTable;
-  futureElo: FutureElo;
 
   constructor(parent: TennisTable) {
     this.parent = parent;
-    this.futureElo = new FutureElo(parent);
   }
 
   expectedWinLoss(diffElo: number, gamesToSimulate: number = 1_000): number {
@@ -38,7 +35,7 @@ export class Simulations {
     const totalsMap: Map<string, number[]> = new Map();
 
     for (let i = 0; i < permutations; i++) {
-      const randomizedGames = this.shuffleArray([...this.parent.games]);
+      const randomizedGames = this.shuffleArray([...this.parent.games, ...this.parent.futureElo.predictedGames]);
 
       const permutationResult = Elo.eloCalculator(randomizedGames, this.parent.players);
       permutationResult.forEach(({ name, elo }) => {
@@ -70,7 +67,7 @@ export class Simulations {
   }
 
   // Fisher-Yates Shuffle
-  private shuffleArray<T>(array: T[]): T[] {
+  shuffleArray<T>(array: T[]): T[] {
     for (let i = array.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1)); // Random index from 0 to i
       [array[i], array[j]] = [array[j], array[i]]; // Swap elements

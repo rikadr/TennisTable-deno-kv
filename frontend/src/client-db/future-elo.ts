@@ -1,7 +1,7 @@
 import { Elo } from "./elo";
 import { TennisTable } from "./tennis-table";
 
-const GAMES_TO_PREDICT_PER_OPONENT = 30; // Find the lowest number that gives enought games that scores tend to flat out
+const GAMES_TO_PREDICT_PER_OPONENT = 20; // Find the lowest number that gives enought games that scores tend to flat out
 
 type Fraction = { fraction: number; confidence: number };
 
@@ -14,21 +14,26 @@ export class FutureElo {
 
   private playersMap = new Map<string, PlayerClass>();
   private playerPairings: { p1: string; p2: string; confidence?: number }[] = [];
-  private predictedGames: { winner: string; loser: string }[] = [];
+  predictedGamesTemp: { winner: string; loser: string }[][] = [];
+  predictedGames: { winner: string; loser: string; time: number }[] = [];
 
   simulate() {
-    let setupTs = performance.now();
+    this.predictedGamesTemp = [];
+    this.predictedGames = [];
     this.setup();
-    setupTs = performance.now() - setupTs;
-
-    let predictGamesTs = performance.now();
     this.createPredictedGames();
-    predictGamesTs = performance.now() - predictGamesTs;
 
-    console.log({ setupTs, predictGamesTs });
+    const now = new Date().getTime();
+    for (let i = 0; i < GAMES_TO_PREDICT_PER_OPONENT; i++) {
+      for (let ii = 0; ii < this.predictedGamesTemp.length; ii++) {
+        this.predictedGames.push({ ...this.predictedGamesTemp[ii][i], time: now + this.predictedGames.length });
+      }
+    }
+
+    this.predictedGames = this.parent.simulations.shuffleArray(this.predictedGames);
   }
 
-  private setup() {
+  setup() {
     // Add all existing games
     for (const { winner, loser } of this.parent.games) {
       // Add players to map
@@ -68,11 +73,11 @@ export class FutureElo {
 
   private createPredictedGames() {
     for (const { p1, p2 } of this.playerPairings) {
-      const { wins, loss } = this.playersMap.get(p1)!.oponentsMap.get(p2)!;
+      const directResults = this.playersMap.get(p1)?.oponentsMap.get(p2);
 
       // Calculate win fraction
-      const directFraction = this.getFraction(wins, loss);
-      const oneLayerFraction = this.oneLayerSeparationWinFraction(p1, p2);
+      const directFraction = this.getFraction(directResults?.wins, directResults?.loss);
+      const oneLayerFraction = this.getOneLayerFraction(p1, p2);
       // Perhaps 2 layer fraction?
       const combinedFraction = this.combineFractions([directFraction, oneLayerFraction]);
 
@@ -80,12 +85,16 @@ export class FutureElo {
       const predictedWins = GAMES_TO_PREDICT_PER_OPONENT * combinedFraction.fraction;
       const predictedLoss = GAMES_TO_PREDICT_PER_OPONENT * (1 - combinedFraction.fraction);
 
+      const pairingGames: { winner: string; loser: string }[] = [];
+
       for (let i = 0; i < predictedWins; i++) {
-        this.predictedGames.push({ winner: p1, loser: p2 });
+        pairingGames.push({ winner: p1, loser: p2 });
       }
       for (let i = 0; i < predictedLoss; i++) {
-        this.predictedGames.push({ winner: p2, loser: p1 });
+        pairingGames.push({ winner: p2, loser: p1 });
       }
+
+      this.predictedGamesTemp.push(pairingGames);
 
       // Update with pairing confidence
       const pairing = this.playerPairings.find((pair) => pair.p1 === p1 && pair.p2 === p2);
@@ -107,9 +116,8 @@ export class FutureElo {
   // Step 3: Determine a probability/certainty/confidence of preditcion
   // ------------------------------------------------------
 
-  oneLayerSeparationWinFraction(p1: string, p2: string): Fraction {
+  getOneLayerFraction(p1: string, p2: string): Fraction {
     const player1 = this.playersMap.get(p1)!;
-
     const fractions: Fraction[] = [];
 
     player1.oponentsMap.forEach(({ wins, loss }, name) => {
@@ -131,7 +139,13 @@ export class FutureElo {
     return combinedFraction;
   }
 
-  private getFraction(wins: number, loss: number): Fraction {
+  private getFraction(wins?: number, loss?: number): Fraction {
+    if (wins === undefined && loss === undefined) {
+      return { fraction: 0, confidence: 0 };
+    }
+    if (wins === undefined) wins = 0;
+    if (loss === undefined) loss = 0;
+
     if (wins === 0 && loss === 0) {
       return { fraction: 0, confidence: 0 };
     }
@@ -149,8 +163,11 @@ export class FutureElo {
   }
 
   private linkFractions(fraction1: Fraction, fraction2: Fraction): Fraction {
-    // TODO
-    return { fraction: 0, confidence: fraction1.confidence * fraction2.confidence };
+    // TODO.... how to do this
+    return {
+      fraction: Math.min(1, fraction1.fraction + fraction2.fraction),
+      confidence: fraction1.confidence * fraction2.confidence,
+    };
   }
 
   private combineFractions(fractions: Fraction[]): Fraction {

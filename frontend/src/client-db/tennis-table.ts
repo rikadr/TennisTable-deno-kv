@@ -1,4 +1,5 @@
 import { Elo } from "./elo";
+import { FutureElo } from "./future-elo";
 import { Leaderboard } from "./leaderboard";
 import { PVP } from "./pvp";
 import { Simulations } from "./simulations";
@@ -21,6 +22,7 @@ export class TennisTable {
   pvp: PVP;
   tournaments: Tournaments;
   simulations: Simulations;
+  futureElo: FutureElo;
 
   constructor(data: ClientDbDTO) {
     this.players = data.players;
@@ -31,5 +33,6 @@ export class TennisTable {
     this.pvp = new PVP(this);
     this.tournaments = new Tournaments(this);
     this.simulations = new Simulations(this);
+    this.futureElo = new FutureElo(this);
   }
 }
