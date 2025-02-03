@@ -78,8 +78,11 @@ export class FutureElo {
       // Calculate win fraction
       const directFraction = this.getFraction(directResults?.wins, directResults?.loss);
       const oneLayerFraction = this.getOneLayerFraction(p1, p2);
+
       // Perhaps 2 layer fraction?
       const combinedFraction = this.combineFractions([directFraction, oneLayerFraction]);
+
+      console.log({ p1, p2, directFraction, oneLayerFraction, combinedFraction });
 
       // Create games for wins and losses
       const predictedWins = GAMES_TO_PREDICT_PER_OPONENT * combinedFraction.fraction;
