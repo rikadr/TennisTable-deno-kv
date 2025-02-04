@@ -7,6 +7,8 @@ import { Tournaments } from "./tournament";
 import { ClientDbDTO, Game, Player, SignUpTournament } from "./types";
 
 export class TennisTable {
+  isSimulatedState = false;
+
   // --------------------------------------------------------------------------
   // Data from db
   // --------------------------------------------------------------------------

@@ -14,6 +14,13 @@ export class Leaderboard {
     this.parent = parent;
   }
 
+  clearCaches() {
+    this._leaderBoardCache = undefined;
+    this._leaderBoardMapCache = undefined;
+    this._playerSummaryCache = new Map();
+    this._playerComparisonCache = new Map();
+  }
+
   getLeaderboard(): LeaderboardDTO {
     if (this._leaderBoardCache !== undefined) return this._leaderBoardCache;
     const leaderboard = this._getLeaderboard();

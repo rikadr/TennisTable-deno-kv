@@ -12,14 +12,18 @@ export class FutureElo {
 
   private parent: TennisTable;
 
-  private playersMap = new Map<string, PlayerClass>();
+  playersMap = new Map<string, PlayerClass>();
   private playerPairings: { p1: string; p2: string; confidence?: number }[] = [];
   predictedGamesTemp: { winner: string; loser: string }[][] = [];
   predictedGames: { winner: string; loser: string; time: number }[] = [];
 
   simulate() {
+    this.parent.leaderboard.clearCaches();
+    this.playersMap = new Map();
+    this.playerPairings = [];
     this.predictedGamesTemp = [];
     this.predictedGames = [];
+
     this.setup();
     this.createPredictedGames();
 
@@ -31,6 +35,8 @@ export class FutureElo {
     }
 
     this.predictedGames = this.parent.simulations.shuffleArray(this.predictedGames);
+
+    this.parent.isSimulatedState = true;
   }
 
   setup() {
@@ -59,6 +65,7 @@ export class FutureElo {
     this.playersMap.forEach(
       (player) => player.totalGames >= Elo.GAME_LIMIT_FOR_RANKED && rankedNames.push(player.name),
     );
+
     // Create all unique permutations of player pairings
     for (let playerIndex = 0; playerIndex < rankedNames.length; playerIndex++) {
       for (let oponentIndex = playerIndex + 1; oponentIndex < rankedNames.length; oponentIndex++) {
@@ -81,8 +88,6 @@ export class FutureElo {
 
       // Perhaps 2 layer fraction?
       const combinedFraction = this.combineFractions([directFraction, oneLayerFraction]);
-
-      console.log({ p1, p2, directFraction, oneLayerFraction, combinedFraction });
 
       // Create games for wins and losses
       const predictedWins = GAMES_TO_PREDICT_PER_OPONENT * combinedFraction.fraction;
@@ -176,7 +181,7 @@ export class FutureElo {
     };
   }
 
-  private combineFractions(fractions: Fraction[]): Fraction {
+  combineFractions(fractions: Fraction[]): Fraction {
     if (fractions.length === 0) {
       return { fraction: 0, confidence: 0 };
     }

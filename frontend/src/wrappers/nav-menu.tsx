@@ -5,11 +5,15 @@ import { classNames } from "../common/class-names";
 import { session } from "../services/auth";
 import pumpkinLogo from "../img/halloween/tennis-table.png";
 import { CURRENT_THEME } from "../client-db/types";
+import { useClientDbContext } from "./client-db-context";
 
 const MENU_HEIGHT = "h-16 md:h-12";
 
 export const NavMenu: React.FC = () => {
   const { pathname } = useLocation();
+  const context = useClientDbContext();
+
+  const isSimulated = context.isSimulatedState;
 
   useEffect(() => {
     // Scroll to top whenever the path changes
@@ -75,12 +79,15 @@ export const NavMenu: React.FC = () => {
       return <img className="w-40" src={pumpkinLogo} alt="Pumpkin" />;
     }
 
+    if (isSimulated) {
+      return <>Simulation 🔴</>;
+    }
     // Default theme
     return <>Tennis🏆💔Table</>;
   };
 
   return (
-    <div className="">
+    <div className={classNames("min-h-svh", isSimulated && " border-4 border-red-500")}>
       <div aria-label="menu displacer" className={MENU_HEIGHT} />
       <div
         className={classNames(
@@ -90,7 +97,10 @@ export const NavMenu: React.FC = () => {
       >
         <Link
           to="/leader-board"
-          className=" whitespace-nowrap bg-primary-background py-4 px-6 rounded-full select-none hover:bg-primary-background/70 text-primary-text"
+          className={classNames(
+            "whitespace-nowrap  py-4 px-6 rounded-full select-none text-primary-text",
+            isSimulated ? "bg-red-600 hover:bg-red-900" : "bg-primary-background hover:bg-primary-background/70",
+          )}
         >
           {themedLogo()}
         </Link>
