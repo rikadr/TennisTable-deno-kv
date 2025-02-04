@@ -5,6 +5,7 @@ import { useWindowSize } from "usehooks-ts";
 import { NameType, ValueType } from "recharts/types/component/DefaultTooltipContent";
 import { useClientDbContext } from "../wrappers/client-db-context";
 import { Switch } from "@headlessui/react";
+import { fmtNum } from "../common/number-utils";
 
 export function stringToColor(name?: string) {
   if (!name) return "#4338ca";
@@ -71,11 +72,7 @@ export const ComparePlayersPage: React.FC = () => {
             >
               <CartesianGrid strokeDasharray="1 4" vertical={false} />
               <XAxis dataKey="name" />
-              <YAxis
-                type="number"
-                domain={["dataMin", "dataMax"]}
-                tickFormatter={(value) => value.toLocaleString("no-NO", { maximumFractionDigits: 0 })}
-              />
+              <YAxis type="number" domain={["dataMin", "dataMax"]} tickFormatter={(value) => fmtNum(value)} />
               <Tooltip
                 formatter={(value) => [value.toLocaleString("no-NO", { maximumFractionDigits: 0 }), "Elo"]}
                 wrapperClassName="rounded-lg"

@@ -1,8 +1,6 @@
 import { Elo } from "./elo";
 import { TennisTable } from "./tennis-table";
 
-const GAMES_TO_PREDICT_PER_OPONENT = 20; // Find the lowest number that gives enought games that scores tend to flat out
-
 type Fraction = { fraction: number; confidence: number };
 
 export class FutureElo {
@@ -11,6 +9,8 @@ export class FutureElo {
   }
 
   private parent: TennisTable;
+
+  GAMES_TO_PREDICT_PER_OPONENT = 20;
 
   playersMap = new Map<string, PlayerClass>();
   private playerPairings: { p1: string; p2: string; confidence?: number }[] = [];
@@ -26,15 +26,7 @@ export class FutureElo {
 
     this.setup();
     this.createPredictedGames();
-
-    const now = new Date().getTime();
-    for (let i = 0; i < GAMES_TO_PREDICT_PER_OPONENT; i++) {
-      for (let ii = 0; ii < this.predictedGamesTemp.length; ii++) {
-        this.predictedGames.push({ ...this.predictedGamesTemp[ii][i], time: now + this.predictedGames.length });
-      }
-    }
-
-    this.predictedGames = this.parent.simulations.shuffleArray(this.predictedGames);
+    this.shuffleGameOrder();
 
     this.parent.isSimulatedState = true;
   }
@@ -72,26 +64,26 @@ export class FutureElo {
         this.playerPairings.push({ p1: rankedNames[playerIndex], p2: rankedNames[oponentIndex] });
       }
     }
-  }
 
-  // ------------------------------------------------------
-  // Step 1: Predict future games
-  // ------------------------------------------------------
+    // Register all oponents on all players
+    this.playerPairings.forEach(({ p1, p2 }) => {
+      this.playersMap.get(p1)?.registerOponentIfNotExists(p2);
+      this.playersMap.get(p2)?.registerOponentIfNotExists(p1);
+    });
+  }
 
   private createPredictedGames() {
     for (const { p1, p2 } of this.playerPairings) {
-      const directResults = this.playersMap.get(p1)?.oponentsMap.get(p2);
-
       // Calculate win fraction
-      const directFraction = this.getFraction(directResults?.wins, directResults?.loss);
+      const directFraction = this.getDirectFraction(p1, p2);
       const oneLayerFraction = this.getOneLayerFraction(p1, p2);
+      const twoLayerFraction = this.getTwoLayerFraction(p1, p2);
 
-      // Perhaps 2 layer fraction?
-      const combinedFraction = this.combineFractions([directFraction, oneLayerFraction]);
+      const combinedFraction = this.combineFractions([directFraction, oneLayerFraction, twoLayerFraction]);
 
       // Create games for wins and losses
-      const predictedWins = GAMES_TO_PREDICT_PER_OPONENT * combinedFraction.fraction;
-      const predictedLoss = GAMES_TO_PREDICT_PER_OPONENT * (1 - combinedFraction.fraction);
+      const predictedWins = this.GAMES_TO_PREDICT_PER_OPONENT * combinedFraction.fraction;
+      const predictedLoss = this.GAMES_TO_PREDICT_PER_OPONENT * (1 - combinedFraction.fraction);
 
       const pairingGames: { winner: string; loser: string }[] = [];
 
@@ -112,42 +104,32 @@ export class FutureElo {
     }
   }
 
-  // ------------------------------------------------------
-  // Step 2: Shuffle games in fair order
-  // ------------------------------------------------------
-
   private shuffleGameOrder() {
-    return;
-  }
-
-  // ------------------------------------------------------
-  // Step 3: Determine a probability/certainty/confidence of preditcion
-  // ------------------------------------------------------
-
-  getOneLayerFraction(p1: string, p2: string): Fraction {
-    const player1 = this.playersMap.get(p1)!;
-    const fractions: Fraction[] = [];
-
-    player1.oponentsMap.forEach(({ wins, loss }, name) => {
-      const p1ToIntermediaryFraction = this.getFraction(wins, loss);
-
-      const intermediary = this.playersMap.get(name)!;
-      const intermediaryToP2Results = intermediary.oponentsMap.get(p2);
-      if (intermediaryToP2Results === undefined) {
-        return; // Intermediary has no games against p2
+    // TODO: I want a deterministic way to shuffle
+    const now = new Date().getTime();
+    for (let i = 0; i < this.GAMES_TO_PREDICT_PER_OPONENT; i++) {
+      for (let ii = 0; ii < this.predictedGamesTemp.length; ii++) {
+        this.predictedGames.push({ ...this.predictedGamesTemp[ii][i], time: now + this.predictedGames.length });
       }
-      const intermediaryToP2Fraction = this.getFraction(intermediaryToP2Results.wins, intermediaryToP2Results.loss);
+    }
 
-      const linkedFraction = this.linkFractions(p1ToIntermediaryFraction, intermediaryToP2Fraction);
-      fractions.push(linkedFraction);
-    });
-
-    const combinedFraction = this.combineFractions(fractions);
-
-    return combinedFraction;
+    this.predictedGames = this.parent.simulations.shuffleArray(this.predictedGames);
   }
 
-  private getFraction(wins?: number, loss?: number): Fraction {
+  private getDirectFraction(p1: string, p2: string): Fraction {
+    const player1 = this.playersMap.get(p1);
+    const player2 = this.playersMap.get(p2);
+
+    // Check cache
+    const alreadyCalculatedDirectFraction = player1?.oponentsMap.get(p2)?.directFraction;
+    if (alreadyCalculatedDirectFraction) {
+      return alreadyCalculatedDirectFraction;
+    }
+
+    // Calculate Fraction
+    let wins = player1?.oponentsMap.get(p2)?.wins;
+    let loss = player1?.oponentsMap.get(p2)?.loss;
+
     if (wins === undefined && loss === undefined) {
       return { fraction: 0, confidence: 0 };
     }
@@ -165,6 +147,10 @@ export class FutureElo {
 
     const confidence = Math.min(confidencePoints, 100) / 100;
 
+    // Update cache
+    player1!.oponentsMap.get(p2)!.directFraction = { fraction, confidence };
+    player2!.oponentsMap.get(p1)!.directFraction = { fraction: 1 - fraction, confidence }; // Invert fraction for p2
+
     return { fraction, confidence };
   }
 
@@ -181,7 +167,7 @@ export class FutureElo {
     };
   }
 
-  combineFractions(fractions: Fraction[]): Fraction {
+  combineFractions(fractions: (Fraction | undefined)[]): Fraction {
     if (fractions.length === 0) {
       return { fraction: 0, confidence: 0 };
     }
@@ -191,6 +177,7 @@ export class FutureElo {
     let totalWeight = 0;
 
     for (const item of fractions) {
+      if (item === undefined) continue;
       weightedFractionSum += item.fraction * item.confidence;
       weightedConfidenceSum += item.confidence * item.confidence;
       totalWeight += item.confidence;
@@ -205,6 +192,89 @@ export class FutureElo {
       confidence: weightedConfidenceSum / totalWeight,
     };
   }
+
+  getOneLayerFraction(p1: string, p2: string): Fraction {
+    const player1 = this.playersMap.get(p1)!;
+    const player2 = this.playersMap.get(p2)!;
+
+    // Check cache
+    const alreadyCalculatedOneLayerFraction = player1?.oponentsMap.get(p2)?.oneLayerFraction;
+    if (alreadyCalculatedOneLayerFraction) {
+      return alreadyCalculatedOneLayerFraction;
+    }
+
+    const fractions: Fraction[] = [];
+
+    player1.oponentsMap.forEach((_, intermediaryName) => {
+      const p1TointermediaryFraction = this.getDirectFraction(p1, intermediaryName);
+
+      const intermediary = this.playersMap.get(intermediaryName)!;
+      const intermediaryToP2Results = intermediary.oponentsMap.get(p2);
+      if (intermediaryToP2Results === undefined) {
+        return; // Intermediary2 has no games against p2. Blocks intermediary and p2 being the same player
+      }
+      const intermediaryToP2Fraction = this.getDirectFraction(intermediaryName, p2);
+
+      const linkedFraction = this.linkFractions(p1TointermediaryFraction, intermediaryToP2Fraction);
+
+      fractions.push(linkedFraction);
+    });
+
+    const combinedFraction = this.combineFractions(fractions);
+
+    // Update cache
+    player1!.oponentsMap.get(p2)!.oneLayerFraction = combinedFraction;
+    player2!.oponentsMap.get(p1)!.oneLayerFraction = {
+      fraction: 1 - combinedFraction.fraction,
+      confidence: combinedFraction.confidence,
+    }; // Invert fraction for p2
+
+    return combinedFraction;
+  }
+
+  getTwoLayerFraction(p1: string, p2: string): Fraction {
+    const player1 = this.playersMap.get(p1)!;
+    const player2 = this.playersMap.get(p2)!;
+
+    // Check cache
+    const alreadyCalculatedTwoLayerFraction = player1?.oponentsMap.get(p2)?.twoLayerFraction;
+    if (alreadyCalculatedTwoLayerFraction) {
+      return alreadyCalculatedTwoLayerFraction;
+    }
+    const fractions: Fraction[] = [];
+
+    player1.oponentsMap.forEach((_, intermediary1Name) => {
+      const intermediary1 = this.playersMap.get(intermediary1Name)!;
+      const p1Tointermediary1Fraction = this.getDirectFraction(p1, intermediary1Name);
+
+      intermediary1.oponentsMap.forEach((_, intermediary2Name) => {
+        if ([p1, p2].includes(intermediary2Name)) {
+          return; // Block looping chain
+        }
+        const intermediary2 = this.playersMap.get(intermediary2Name)!;
+        if (intermediary2.oponentsMap.has(p2) === false) {
+          return; // Intermidiary 2 has no results to p2
+        }
+        const intermediary1Tointermediary2Fraction = this.getDirectFraction(intermediary1Name, intermediary2Name);
+        const intermediary2ToP2Fraction = this.getDirectFraction(intermediary2Name, p2);
+
+        const step1 = this.linkFractions(p1Tointermediary1Fraction, intermediary1Tointermediary2Fraction);
+        const step2 = this.linkFractions(step1, intermediary2ToP2Fraction);
+        fractions.push(step2);
+      });
+    });
+
+    const combinedFraction = this.combineFractions(fractions);
+
+    // Update cache
+    player1!.oponentsMap.get(p2)!.twoLayerFraction = combinedFraction;
+    player2!.oponentsMap.get(p1)!.twoLayerFraction = {
+      fraction: 1 - combinedFraction.fraction,
+      confidence: combinedFraction.confidence,
+    }; // Invert fraction for p2
+
+    return combinedFraction;
+  }
 }
 
 class PlayerClass {
@@ -215,13 +285,23 @@ class PlayerClass {
   readonly name: string;
   elo = Elo.INITIAL_ELO;
   totalGames = 0;
-  oponentsMap = new Map<string, { wins: number; loss: number }>();
+  oponentsMap = new Map<
+    string,
+    { wins: number; loss: number; directFraction?: Fraction; oneLayerFraction?: Fraction; twoLayerFraction?: Fraction }
+  >();
+
+  registerOponentIfNotExists(oponent: string) {
+    if (this.oponentsMap.has(oponent) === false) {
+      this.oponentsMap.set(oponent, {
+        wins: 0,
+        loss: 0,
+      });
+    }
+  }
 
   registerGame(oponent: string, newElo: number, result: "win" | "loss") {
     // Find oponent
-    if (this.oponentsMap.has(oponent) === false) {
-      this.oponentsMap.set(oponent, { wins: 0, loss: 0 });
-    }
+    this.registerOponentIfNotExists(oponent);
     const oponentFromMap = this.oponentsMap.get(oponent)!;
 
     // Register game
@@ -230,9 +310,8 @@ class PlayerClass {
     } else {
       oponentFromMap.loss++;
     }
-    this.totalGames++;
 
-    // Update elo
+    this.totalGames++;
     this.elo = newElo;
   }
 }
