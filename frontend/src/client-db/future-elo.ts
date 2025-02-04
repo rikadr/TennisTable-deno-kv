@@ -156,10 +156,8 @@ export class FutureElo {
 
     const addition = wins + loss;
     const product = wins * loss;
-    const exponents = Math.pow(2, wins * 0.5) - 1 + Math.pow(2, loss * 0.5) - 1;
-    const fullexponen = Math.min(wins, loss) * product * 2;
+    const confidencePoints = addition * 3 + product * 6;
 
-    const confidencePoints = addition + exponents + fullexponen;
     const confidence = Math.min(confidencePoints, 100) / 100;
 
     return { fraction, confidence };
