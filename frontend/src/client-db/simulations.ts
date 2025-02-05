@@ -18,12 +18,12 @@ export class Simulations {
       const player1mustWin = player2Elo - player1Elo > diffElo;
       if (player1mustWin) {
         wins++;
-        const { winnersNewElo, losersNewElo } = Elo.calculateELO(player1Elo, player2Elo);
+        const { winnersNewElo, losersNewElo } = Elo.calculateELO(player1Elo, player2Elo, i, i);
         player1Elo = winnersNewElo;
         player2Elo = losersNewElo;
       } else {
         loss++;
-        const { winnersNewElo, losersNewElo } = Elo.calculateELO(player2Elo, player1Elo);
+        const { winnersNewElo, losersNewElo } = Elo.calculateELO(player2Elo, player1Elo, i, i);
         player1Elo = losersNewElo;
         player2Elo = winnersNewElo;
       }

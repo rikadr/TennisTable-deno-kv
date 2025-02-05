@@ -45,7 +45,12 @@ export class FutureElo {
       const loserPlayer = this.playersMap.get(loser)!;
 
       // Calculate elo
-      const { winnersNewElo, losersNewElo } = Elo.calculateELO(winnerPlayer.elo, loserPlayer.elo);
+      const { winnersNewElo, losersNewElo } = Elo.calculateELO(
+        winnerPlayer.elo,
+        loserPlayer.elo,
+        winnerPlayer.totalGames,
+        loserPlayer.totalGames,
+      );
 
       // Register games
       winnerPlayer.registerGame(loser, winnersNewElo, "win");
