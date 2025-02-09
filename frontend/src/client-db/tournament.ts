@@ -22,13 +22,22 @@ export type TournamentWithGames = TournamentDB & {
 
 type Bracket = Partial<TournamentGame>[][];
 
+// export const optioEasterTournament: TournamentDB = {
+//   id: "randomid38",
+//   name: "Optio Easter Tournament 2025 🐣💛",
+//   description: "",
+//   startDate: 1739136617337,
+//   signedUp: [],
+//   skippedGames: [],
+//   playerOrder: [],
+// };
+
 export const optioChristmasTournament: TournamentDB = {
   id: "randomid37",
   name: "Optio Christmas Tournament 2024 🏓🎅🏻",
   description:
     "The social happening of the year, and a long awaited feature!! Sign up with your player and join the tournament 🚀",
-  // startDate: 1732120523906, // 21th nov, 21:22
-  startDate: 1732613408196,
+  startDate: 1732613408196, // Nov 26 2024 10:30:08 GMT+0100
   signedUp: [],
   skippedGames: [{ advancing: "Marius", eliminated: "Erling", time: 1732709055829 }],
   // TODO: function to set playerOrder based on elo at the time. if some players are not ranked, order them last by theirs signup order
@@ -51,13 +60,9 @@ export const optioChristmasTournament: TournamentDB = {
     "Kevin",
     "James 007",
     "Chakib Youcefi",
-
-    // "Christoffer",
-    // "Sveinung",
-    // "Axel",
-    // "Anders",
   ],
 };
+
 export const mockTournament2: TournamentDB = {
   id: "2",
   name: "Test big numbers",
@@ -294,7 +299,7 @@ export const mockTournament2: TournamentDB = {
 
 export class Tournaments {
   private parent: TennisTable;
-  private tournaments: TournamentDB[] = [optioChristmasTournament]; // Add mock for mock data -> mockTournament1, mockTournament2
+  tournaments: TournamentDB[] = [optioChristmasTournament]; // Add mock for mock data -> mockTournament1, mockTournament2
   private skipIsEnabled = false;
 
   #tournamentsCache: TournamentWithGames[] | undefined;
@@ -362,7 +367,7 @@ export class Tournaments {
 
   skipGame(skip: TournamentDB["skippedGames"][number], tournamentId: string) {
     if (this.skipIsEnabled === false) {
-      window.alert("Ask Rikard to skip the game 🙏 It's not self serviced yet... ");
+      window.alert("Ask Rikard to skip the game 🙏 It's not self serviced yet... "); // TODO: Make self serviced
       return;
     }
     const tournamentIndex = this.tournaments.findIndex((t) => t.id === tournamentId);
@@ -372,7 +377,7 @@ export class Tournaments {
 
   undoSkipGame(skip: TournamentDB["skippedGames"][number], tournamentId: string) {
     if (this.skipIsEnabled === false) {
-      window.alert("Ask Rikard to undo the skip 🙏 It's not self serviced yet... ");
+      window.alert("Ask Rikard to undo the skip 🙏 It's not self serviced yet... "); // TODO: Make self serviced
       return;
     }
     const tournamentIndex = this.tournaments.findIndex((t) => t.id === tournamentId);
