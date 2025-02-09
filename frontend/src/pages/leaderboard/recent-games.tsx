@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { Game } from "../../client-db/types";
 import { useClientDbContext } from "../../wrappers/client-db-context";
 import { relativeTimeString } from "../../common/date-utils";
+import { fmtNum } from "../../common/number-utils";
 
 const GAMES_COUNT = 5;
 
@@ -12,6 +13,10 @@ export const RecentGames: React.FC = () => {
 
   function getGame(game: Game) {
     const winner = leaderboardMap.get(game.winner);
+    const loser = leaderboardMap.get(game.loser);
+    if (!winner || !loser) {
+      return undefined;
+    }
     const foundGame = winner!.games.toReversed().find((g) => g.time === game.time);
     return { ...game, ...foundGame };
   }
@@ -25,22 +30,21 @@ export const RecentGames: React.FC = () => {
           <div className="w-32">Loser</div>
           <div className="w-12 whitespace-nowrap -ml-2">Points won</div>
         </div>
-        {lastGames.map(getGame).map((game) => (
-          <Link
-            key={game.time}
-            to={`/1v1?player1=${game.winner}&player2=${game.loser}`}
-            className="bg-primary-background hover:bg-secondary-background/30 py-1 px-2 flex gap-4 text-xl font-light"
-          >
-            <div className="w-24 font-normal whitespace-nowrap">🏆 {game.winner}</div>
-            <div className="w-32 text-right font-normal whitespace-nowrap">{game.loser} 💔</div>
-            <div className="w-6 text-right">
-              {game.pointsDiff!.toLocaleString("no-NO", {
-                maximumFractionDigits: 0,
-              })}
-            </div>
-            <div className="w-28 text-right text-base">{relativeTimeString(new Date(game.time))}</div>
-          </Link>
-        ))}
+        {lastGames
+          .map(getGame)
+          .filter(Boolean)
+          .map((game) => (
+            <Link
+              key={game!.time}
+              to={`/1v1?player1=${game!.winner}&player2=${game!.loser}`}
+              className="bg-primary-background hover:bg-secondary-background/30 py-1 px-2 flex gap-4 text-xl font-light"
+            >
+              <div className="w-24 font-normal whitespace-nowrap">🏆 {game!.winner}</div>
+              <div className="w-32 text-right font-normal whitespace-nowrap">{game!.loser} 💔</div>
+              <div className="w-6 text-right">{fmtNum(game!.pointsDiff, 0)}</div>
+              <div className="w-28 text-right text-base">{relativeTimeString(new Date(game!.time))}</div>
+            </Link>
+          ))}
       </div>
       {}
     </div>
