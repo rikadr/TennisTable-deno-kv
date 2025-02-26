@@ -58,24 +58,15 @@ export async function createGame(payload: CreateGamePayload): Promise<Game> {
 }
 
 export async function importGame(gamedata: CreateGamePayload & { time: number }): Promise<Game | undefined> {
-  if (!gamedata.winner || !gamedata.loser) {
-    return;
-  }
-  const winner = await getPlayer(gamedata.winner);
-  const loser = await getPlayer(gamedata.loser);
-  if (!winner || !loser) {
-    return;
-  }
-
   const time = gamedata.time; // Use the time from the imported data
   const keyMain = ["game", "main", time]; // Source of truth
   // Additional keys to get games by player
-  const keyWinner = ["game", "winner", winner.name, time];
-  const keyLoser = ["game", "loser", loser.name, time];
+  const keyWinner = ["game", "winner", gamedata.winner, time];
+  const keyLoser = ["game", "loser", gamedata.loser, time];
 
   const game: Game = {
-    winner: winner.name,
-    loser: loser.name,
+    winner: gamedata.winner,
+    loser: gamedata.loser,
     time,
   };
 
