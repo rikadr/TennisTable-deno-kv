@@ -148,7 +148,7 @@ export class FutureElo {
 
     const addition = wins + loss;
     const product = wins * loss;
-    const confidencePoints = addition * 3 + product * 6;
+    const confidencePoints = addition * 3 + product * 1;
 
     const confidence = Math.min(confidencePoints, 100) / 100;
 
