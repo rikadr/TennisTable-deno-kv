@@ -3,30 +3,32 @@ import { ProfilePicture } from "../player/profile-picture";
 import { useClientDbContext } from "../../wrappers/client-db-context";
 import { relativeTimeString } from "../../common/date-utils";
 
+const ONE_WEEK = 7 * 24 * 60 * 60 * 1000;
+const RECENT_WINNER_THRESHOLD = ONE_WEEK;
+const SIGNUP_PERIOD = 20 * ONE_WEEK;
+
 export const TournamentHighlightsAndPendingGames: React.FC = () => {
   const context = useClientDbContext();
 
   {
-    const anyPendingGames = context.tournaments
-      .getTournaments()
-      .some(
-        (tournament) =>
-          tournament.startDate < new Date().getTime() && tournament.games.some((layer) => layer.pending.length > 0),
-      );
+    const anyPendingGames = context.tournaments.getTournaments().some(
+      (tournament) =>
+        tournament.startDate < new Date().getTime() && // Has started
+        tournament.bracketGames?.some((layer) => layer.pending.length > 0), // Has pending games
+    );
 
-    const anyRecentWinners = context.tournaments
-      .getTournaments()
-      .some(
-        (tournament) => tournament.startDate < new Date().getTime() && tournament.bracket[0]?.[0]?.winner !== undefined,
-      );
+    const anyRecentWinners = context.tournaments.getTournaments().some(
+      (tournament) =>
+        tournament.startDate < new Date().getTime() && // Has started
+        tournament.bracket![0]?.[0]?.winner !== undefined && // Has a winner
+        new Date().getTime() - tournament.bracket![0]?.[0]?.completedAt! < RECENT_WINNER_THRESHOLD, // Won less than 7 days ago
+    );
 
-    const anySignupPeriod = context.tournaments
-      .getTournaments()
-      .some(
-        (tournament) =>
-          tournament.startDate > new Date().getTime() &&
-          tournament.startDate - 20 * 7 * 24 * 60 * 60 * 1000 < new Date().getTime(),
-      );
+    const anySignupPeriod = context.tournaments.getTournaments().some(
+      (tournament) =>
+        tournament.startDate > new Date().getTime() && // Has not yet started
+        tournament.startDate - SIGNUP_PERIOD < new Date().getTime(),
+    );
 
     if (!anyPendingGames && !anyRecentWinners && !anySignupPeriod) {
       return null;
@@ -38,16 +40,18 @@ export const TournamentHighlightsAndPendingGames: React.FC = () => {
       <h1 className="text-2xl text-center m2-4">Tournaments</h1>
       {context.tournaments.getTournaments().map((tournament) => {
         const anyPendingGames =
-          tournament.startDate < new Date().getTime() && tournament.games.some((layer) => layer.pending.length > 0);
+          tournament.startDate < new Date().getTime() && // Has started
+          tournament.bracketGames?.some((layer) => layer.pending.length > 0); // Has pending games
 
         const recentWinner =
-          tournament.startDate < new Date().getTime() &&
-          tournament.bracket[0]?.[0]?.winner !== undefined &&
-          tournament.bracket[0]?.[0]?.winner;
+          tournament.startDate < new Date().getTime() && // Has started
+          tournament.bracket![0]?.[0]?.winner !== undefined && // Has a winner
+          new Date().getTime() - tournament.bracket![0]?.[0]?.completedAt! < RECENT_WINNER_THRESHOLD && // Won less than 7 days ago
+          tournament.bracket![0]?.[0]?.winner; // Return winner
 
         const signUpPeriod =
-          tournament.startDate > new Date().getTime() &&
-          tournament.startDate - 20 * 7 * 24 * 60 * 60 * 1000 < new Date().getTime();
+          tournament.startDate > new Date().getTime() && // Has not yet started
+          tournament.startDate - SIGNUP_PERIOD < new Date().getTime();
 
         if (!anyPendingGames && !recentWinner && !signUpPeriod) return null;
 
@@ -78,7 +82,7 @@ export const TournamentHighlightsAndPendingGames: React.FC = () => {
             )}
             {recentWinner && <WinnerBox winner={recentWinner} />}
             {anyPendingGames &&
-              tournament.games.map((layer, layerIndex) => (
+              tournament.bracketGames?.map((layer, layerIndex) => (
                 <div key={layerIndex} className="space-y-1">
                   {layerIndexToTournamentRound(layerIndex) && layer.pending.length > 0 && (
                     <h3 className="text-center text-sm">{layerIndexToTournamentRound(layerIndex)}</h3>

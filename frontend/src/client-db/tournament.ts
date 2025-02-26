@@ -1,7 +1,7 @@
 import { TennisTable } from "./tennis-table";
 import { Game, TournamentDB } from "./types";
 
-type TournamentGame = {
+export type TournamentGame = {
   player1: string;
   player2: string;
   winner?: string;
@@ -11,26 +11,110 @@ type TournamentGame = {
   advanceTo?: { layerIndex: number; gameIndex: number; role: "player1" | "player2" };
 };
 
+type GroupGame = Omit<TournamentGame, "advanceTo">;
+export type GroupScorePlayer = {
+  name: string;
+  score: number;
+  adjustedScore: number;
+  groupSizeAdjustmentFactor: number;
+  wins: number;
+  loss: number;
+  dnf: number;
+  playerOrderIndex: number;
+};
+type GroupScore = Map<string, GroupScorePlayer>;
+
 export type TournamentWithGames = TournamentDB & {
-  games: {
+  bracketGames?: {
     // Games per layer
     played: TournamentGame[]; // Games that have been played
     pending: TournamentGame[]; // Games that can be played now
   }[];
-  bracket: Bracket;
+  bracket?: Bracket;
+  groups?: {
+    players: string[];
+    // groupEnded?: number;
+    played: GroupGame[];
+    pending: GroupGame[];
+    groupGames: Partial<GroupGame>[];
+  }[];
+  groupPlayEnded?: number;
+  groupScores?: GroupScore;
 };
 
 type Bracket = Partial<TournamentGame>[][];
 
-// export const optioEasterTournament: TournamentDB = {
-//   id: "randomid38",
-//   name: "Optio Easter Tournament 2025 🐣💛",
-//   description: "",
-//   startDate: 1739136617337,
-//   signedUp: [],
-//   skippedGames: [],
-//   playerOrder: [],
-// };
+export const optioEasterTournament: TournamentDB = {
+  id: "randomid38",
+  // name: "Optio Easter Tournament 2025 🐣💛",
+  name: "Test group play tournament",
+  description: "This is a test tournament just to try out the group play feature",
+  startDate: 1740600238644,
+  groupPlay: true,
+  signedUp: [],
+  skippedGames: [],
+  playerOrder: [
+    "Rasmus",
+    "Fooa",
+    "Alexander",
+    "Peder",
+    "Simone",
+    "Christoffer",
+    "Oskar",
+    "Erling",
+    "Rikard",
+    "Sveinung",
+    "Fredrik H",
+    "Axel",
+    "Ole",
+    "Marius",
+    "Anders",
+    "Gustas",
+    "Vlad",
+    "Ole Anders",
+    // "Daniele",
+    // "Kevin",
+    // "James 007",
+    // "Chakib Youcefi",
+    // "Test name 1",
+    // "Test name 2",
+    // "Test name 3",
+    // "Test name 4",
+    // "Test name 5",
+    // "Test name 6",
+    // "Test name 7",
+    // "Test name 8",
+    // "Test name 9",
+    // "Test name 10",
+    // "Test name 11",
+    // "Test name 12",
+    // "Test name 13",
+    // "Test name 14",
+    // "Test name 15",
+    // "Test name 16",
+    // "Test name 17",
+    // "Test name 18",
+    // "Test name 19",
+    // "Test name 20",
+    // "Test name 21",
+    // "Test name 22",
+    // "Test name 23",
+    // "Test name 24",
+    // "Test name 25",
+    // "Test name 26",
+    // "Test name 27",
+    // "Test name 28",
+    // "Test name 29",
+    // "Test name 30",
+    // "Test name 31",
+    // "Test name 32",
+    // "Test name 33",
+    // "Test name 34",
+    // "Test name 35",
+    // "Test name 36",
+    // "Test name 37",
+  ],
+};
 
 export const optioChristmasTournament: TournamentDB = {
   id: "randomid37",
@@ -38,8 +122,10 @@ export const optioChristmasTournament: TournamentDB = {
   description:
     "The social happening of the year, and a long awaited feature!! Sign up with your player and join the tournament 🚀",
   startDate: 1732613408196, // Nov 26 2024 10:30:08 GMT+0100
+  groupPlay: false,
   signedUp: [],
   skippedGames: [{ advancing: "Marius", eliminated: "Erling", time: 1732709055829 }],
+
   // TODO: function to set playerOrder based on elo at the time. if some players are not ranked, order them last by theirs signup order
   playerOrder: [
     "Rasmus",
@@ -70,6 +156,7 @@ export const mockTournament2: TournamentDB = {
 
   startDate: 1731524875192, // 13th nov, 20:08
   // startDate: 0,
+  groupPlay: false,
   signedUp: [],
   skippedGames: [],
 
@@ -299,8 +386,10 @@ export const mockTournament2: TournamentDB = {
 
 export class Tournaments {
   private parent: TennisTable;
-  tournaments: TournamentDB[] = [optioChristmasTournament]; // Add mock for mock data -> mockTournament1, mockTournament2
-  private skipIsEnabled = false;
+  tournaments: TournamentDB[] = [optioChristmasTournament, optioEasterTournament]; // Add mock for mock data -> mockTournament1, mockTournament2
+  private skipIsEnabled = true; // False for prod
+
+  static GROUP_POINTS = { WIN: 2, LOSS: 1, DNF: 1 } as const;
 
   #tournamentsCache: TournamentWithGames[] | undefined;
 
@@ -326,16 +415,54 @@ export class Tournaments {
       return {
         ...t,
         signedUp,
-        games: [],
-        bracket: [],
       };
     }
 
-    // Tournament has started, populate games
-    const bracket = this.#getStartingBracketFromPlayerOrder2(t.playerOrder || []);
-    this.#fillBracketWithGames2(bracket, t.startDate, t.skippedGames);
+    let tournamentStart = t.startDate;
+    let tournamentPlayerOrder = t.playerOrder;
+    let groupsCalculated: TournamentWithGames["groups"] = undefined;
+    let groupPlayEndedAt: number | undefined = undefined;
+    let groupScores: GroupScore | undefined = undefined;
 
-    const games: TournamentWithGames["games"] = [];
+    if (t.groupPlay === true) {
+      const groups = this.#divideInGroups(t.playerOrder || []);
+      const groupGames = this.#generateGroupGames(groups);
+      this.#fillGroupsWithGames(groupGames, t.startDate, t.skippedGames);
+      groupScores = this.#getGroupScores(groups, groupGames, tournamentPlayerOrder || []);
+      groupPlayEndedAt = this.#findGroupPlayEndedAt(groupGames);
+
+      if (groupPlayEndedAt === undefined) {
+        return {
+          ...t,
+          signedUp,
+          groups: groups.map((players, groupIndex) => ({
+            players,
+            groupGames: groupGames[groupIndex],
+            played: groupGames[groupIndex].filter((g) => !!g.completedAt) as GroupGame[],
+            pending: groupGames[groupIndex].filter((g) => !g.completedAt) as GroupGame[],
+          })),
+          groupScores,
+        };
+      }
+
+      tournamentStart = groupPlayEndedAt + 1;
+      tournamentPlayerOrder = Array.from(groupScores)
+        .sort(Tournaments.sortGroupScores) // Sort by score
+        .map((player) => player[0]) // Only get the name
+        .slice(0, Math.pow(2, Math.floor(Math.log2((t.playerOrder || []).length)))); // Slice to biggest full power of 2
+      groupsCalculated = groups.map((players, groupIndex) => ({
+        players,
+        groupGames: groupGames[groupIndex],
+        played: groupGames[groupIndex] as GroupGame[],
+        pending: [],
+      }));
+    }
+
+    // Tournament has started
+    const bracket = this.#getStartingBracketFromPlayerOrder(tournamentPlayerOrder || []);
+    this.#fillBracketWithGames(bracket, tournamentStart, t.skippedGames);
+
+    const games: TournamentWithGames["bracketGames"] = [];
 
     for (let layerIndex = 0; layerIndex < bracket.length; layerIndex++) {
       const played: TournamentGame[] = [];
@@ -360,8 +487,11 @@ export class Tournaments {
     return {
       ...t,
       signedUp,
-      games,
+      bracketGames: games,
       bracket,
+      groups: groupsCalculated,
+      groupPlayEnded: groupPlayEndedAt,
+      groupScores,
     };
   }
 
@@ -383,38 +513,39 @@ export class Tournaments {
     const tournamentIndex = this.tournaments.findIndex((t) => t.id === tournamentId);
     if (tournamentIndex !== -1) {
       this.tournaments[tournamentIndex].skippedGames = this.tournaments[tournamentIndex].skippedGames.filter(
-        (game) => game.advancing !== skip.advancing || game.eliminated !== skip.eliminated,
+        (game) => game.time !== skip.time,
       );
     }
     this.#tournamentsCache = undefined;
   }
 
   isPendingGame(
+    // Needs update on group play
     player1: string | null | undefined,
     player2: string | null | undefined,
   ):
     | {
         tournament: { name: string; id: string };
         layerIndex: number;
-        game: TournamentWithGames["bracket"][number][number];
+        game: { player1: string; player2: string };
       }
     | undefined {
     if (!player1 || !player2) return;
     const players = [player1, player2];
 
     const tournament = this.getTournaments().find((t) =>
-      t.games.some((layer) =>
+      t.bracketGames?.some((layer) =>
         layer.pending.some((game) => players.includes(game.player1) && players.includes(game.player2)),
       ),
     );
-    if (!tournament) return;
+    if (!tournament || !tournament.bracketGames) return; // remove || !tournament.bracketGames
 
-    const layerIndex = tournament.games.findIndex((layer) =>
+    const layerIndex = tournament.bracketGames.findIndex((layer) =>
       layer.pending.some((game) => players.includes(game.player1) && players.includes(game.player2)),
     );
     if (layerIndex === -1) return;
 
-    const game = tournament.games[layerIndex].pending.find(
+    const game = tournament.bracketGames![layerIndex].pending?.find(
       (game) => players.includes(game.player1) && players.includes(game.player2),
     );
     if (!game) return;
@@ -426,7 +557,7 @@ export class Tournaments {
     };
   }
 
-  #getStartingBracketFromPlayerOrder2(playerOrder: string[]): Bracket {
+  #getStartingBracketFromPlayerOrder(playerOrder: string[]): Bracket {
     const bracket: Bracket = [];
 
     playerOrder.forEach((player, playerIndex, players) => {
@@ -480,7 +611,7 @@ export class Tournaments {
     return bracket;
   }
 
-  #fillBracketWithGames2(bracket: Bracket, startTime: number, skipped: TournamentDB["skippedGames"]) {
+  #getRelevantGames(startTime: number, skipped: TournamentDB["skippedGames"]) {
     type BaseEntry = { time: number; player1: string; player2: string };
     const entries: (
       | (BaseEntry & { game: Game; skip: undefined })
@@ -491,11 +622,18 @@ export class Tournaments {
     games.forEach((game) =>
       entries.push({ time: game.time, player1: game.winner, player2: game.loser, game, skip: undefined }),
     );
-    skipped.forEach((skip) =>
-      entries.push({ time: skip.time, player1: skip.advancing, player2: skip.eliminated, game: undefined, skip }),
-    );
+    skipped
+      .filter((s) => s.time > startTime)
+      .forEach((skip) =>
+        entries.push({ time: skip.time, player1: skip.advancing, player2: skip.eliminated, game: undefined, skip }),
+      );
 
     entries.sort((a, b) => a.time - b.time);
+    return entries;
+  }
+
+  #fillBracketWithGames(bracket: Bracket, startTime: number, skipped: TournamentDB["skippedGames"]) {
+    const entries = this.#getRelevantGames(startTime, skipped);
 
     entries.forEach((entry) => {
       // eslint-disable-next-line no-loop-func
@@ -532,16 +670,178 @@ export class Tournaments {
       );
     });
   }
+
+  #fillGroupsWithGames(
+    groupGames: Partial<GroupGame>[][],
+    startTime: number,
+    skipped: TournamentDB["skippedGames"],
+  ): void {
+    const entries = this.#getRelevantGames(startTime, skipped);
+    entries.forEach((entry) => {
+      const entryPlayers = [entry.player1, entry.player2];
+      const matchedGroup = groupGames.findIndex((group) =>
+        group.some(
+          (game) => !game.completedAt && entryPlayers.includes(game.player1!) && entryPlayers.includes(game.player2!),
+        ),
+      );
+
+      if (matchedGroup === -1) return;
+      const matchedGame = groupGames[matchedGroup].findIndex(
+        (game) => !game.completedAt && entryPlayers.includes(game.player1!) && entryPlayers.includes(game.player2!),
+      )!;
+      if (entry.game) {
+        groupGames[matchedGroup][matchedGame].winner = entry.game.winner;
+        groupGames[matchedGroup][matchedGame].completedAt = entry.game.time;
+      } else {
+        groupGames[matchedGroup][matchedGame].skipped = entry.skip;
+        groupGames[matchedGroup][matchedGame].winner = entry.skip.advancing;
+        groupGames[matchedGroup][matchedGame].completedAt = entry.skip.time;
+      }
+    });
+  }
+
+  #getGroupScores(groups: string[][], groupGames: Partial<GroupGame>[][], playerOrder: string[]): GroupScore {
+    const biggestGroup = groups.reduce((biggest, group) => (biggest = Math.max(group.length, biggest)), 0);
+    const scores: GroupScore = new Map();
+    groups.forEach((group) =>
+      group.forEach((player) =>
+        scores.set(player, {
+          name: player,
+          score: 0,
+          adjustedScore: 0,
+          groupSizeAdjustmentFactor: (biggestGroup - 1) / (group.length - 1),
+          wins: 0,
+          loss: 0,
+          dnf: 0,
+          playerOrderIndex: playerOrder.findIndex((p) => p === player),
+        }),
+      ),
+    );
+
+    groupGames.forEach((group) =>
+      group.forEach((game) => {
+        if (game.winner === undefined) return;
+        // Winner
+        const winner = scores.get(game.winner)!;
+        winner.wins++;
+        winner.score += Tournaments.GROUP_POINTS.WIN;
+        winner.adjustedScore += Tournaments.GROUP_POINTS.WIN * winner.groupSizeAdjustmentFactor;
+
+        // Loser
+        const loserName = [game.player1!, game.player2!].filter((player) => player !== game.winner)[0];
+        const loser = scores.get(loserName)!;
+        if (game.skipped) {
+          loser.dnf++;
+          loser.score += Tournaments.GROUP_POINTS.DNF;
+          loser.adjustedScore += Tournaments.GROUP_POINTS.DNF * loser.groupSizeAdjustmentFactor;
+        } else {
+          loser.loss++;
+          loser.score += Tournaments.GROUP_POINTS.LOSS;
+          loser.adjustedScore += Tournaments.GROUP_POINTS.LOSS * loser.groupSizeAdjustmentFactor;
+        }
+      }),
+    );
+    return scores;
+  }
+
+  static sortGroupScores([_, p1]: [string, GroupScorePlayer], [__, p2]: [string, GroupScorePlayer]): number {
+    if (p1.adjustedScore !== p2.adjustedScore) {
+      return p2.adjustedScore - p1.adjustedScore;
+    }
+    if (p1.wins !== p2.wins) {
+      return p2.wins - p1.wins;
+    }
+    if (p1.loss !== p2.loss) {
+      return p1.loss - p2.loss; // Reversed because fewer loss is better
+    }
+    if (p1.dnf !== p2.dnf) {
+      return p1.dnf - p2.dnf; // Reversed because fewer dnf is better
+    }
+    if (p1.score !== p2.score) {
+      return p2.score - p1.score;
+    }
+
+    return p1.playerOrderIndex - p2.playerOrderIndex; // Default to player order
+  }
+
+  #findGroupPlayEndedAt(groupGames: Partial<GroupGame>[][]): number | undefined {
+    const allGamesPlayed = groupGames.every((group) => group.every((game) => !!game.winner));
+    if (allGamesPlayed === false) return undefined;
+    return groupGames.reduce(
+      (latestGameInGroup, group) =>
+        Math.max(
+          latestGameInGroup,
+          group.reduce((latestGame, game) => Math.max(latestGame, game.completedAt ?? 0), 0),
+        ),
+      0,
+    );
+  }
+
+  #divideInGroups(players: string[]): string[][] {
+    const groupSizes = this.#getGroupSizes(players.length);
+    // Remove test when verified
+    if (players.length !== groupSizes.reduce((a, c) => (a = a + c), 0)) {
+      throw new Error("Group sizes do not equal player length");
+    }
+
+    const groups: string[][] = [];
+    for (let i = 0; i < groupSizes.length; ++i) groups[i] = [];
+
+    for (let i = 0; i < players.length; i++) {
+      groups[i % groups.length].push(players[i]);
+    }
+    return groups;
+  }
+
+  #getGroupSizes(players: number): number[] {
+    if (players === 24) return [5, 5, 5, 5, 4]; // Special case
+
+    function getPreferredGroupSize(players: number): number {
+      if (players <= 8) return 3;
+      if (players === 11) return 3; // 4, 4, 3 instead of 6, 5
+      if (players <= 19) return 4;
+      if (players >= 21 && players <= 23) return 4;
+      return 5;
+    }
+    const groupSize = getPreferredGroupSize(players);
+    const fullGroups = Math.floor(players / groupSize);
+    const restPlayers = players % groupSize;
+
+    if (fullGroups === 0) {
+      return [restPlayers];
+    }
+
+    const groups = new Array(fullGroups).fill(groupSize);
+    for (let i = 0; i < restPlayers; i++) {
+      groups[i % groups.length]++;
+    }
+    return groups;
+  }
+
+  #generateGroupGames(groups: string[][]): Partial<GroupGame>[][] {
+    const groupGames: Partial<GroupGame>[][] = [];
+    for (let i = 0; i < groups.length; ++i) groupGames[i] = [];
+
+    for (let groupIndex = 0; groupIndex < groups.length; groupIndex++) {
+      for (let playerIndex = 0; playerIndex < groups[groupIndex].length - 1; playerIndex++) {
+        for (let oponentIndex = playerIndex + 1; oponentIndex < groups[groupIndex].length; oponentIndex++) {
+          groupGames[groupIndex].push({
+            player1: groups[groupIndex][playerIndex],
+            player2: groups[groupIndex][oponentIndex],
+          });
+        }
+      }
+    }
+    return groupGames;
+  }
 }
 
 /**
  * TODOS:
  * - Store skips in db, page to register skip
- * - Default to tree if wide enough screen
  */
 
 /**
  * Ideas:
- * - Show if game about to be registered is part of tournament
  * - Tournament results in player page
  */

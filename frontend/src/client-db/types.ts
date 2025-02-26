@@ -49,6 +49,7 @@ export type TournamentDB = {
   description?: string;
   startDate: number;
   // endDate: number; ????
+  groupPlay: boolean;
   signedUp: SignUpTournament[];
   playerOrder?: string[]; // To be set when tournament starts
   skippedGames: { eliminated: string; advancing: string; time: number }[];

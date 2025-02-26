@@ -93,6 +93,7 @@ export function registerGameRoutes(api: Router, webSocketClientManager: WebSocke
    */
   // Commented out because it's not used, and is too dangerous to have it enabled
   // api.delete("/games", isAuthenticated, requireAuth("game", "delete"), async (context) => {
+  // api.delete("/games", async (context) => {
   //   const deleted = await deleteAllGames();
   //   context.response.body = deleted;
   // });
