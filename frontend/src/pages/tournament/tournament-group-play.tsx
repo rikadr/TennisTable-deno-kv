@@ -175,9 +175,15 @@ export const TournamentGroups: React.FC<{ tournament: TournamentWithGames; reren
                   game.winner && "bg-secondary-background",
                 )}
               >
-                <button onClick={() => handleSkip(game.player1!)}>{game.player1}</button>
+                <button onClick={() => handleSkip(game.player1!)}>
+                  {game.winner === game.player1 && (game.skipped ? "🆓🏆" : "🏆")}
+                  {game.player1}
+                </button>
                 <div className="mx-2">v.s.</div>
-                <button onClick={() => handleSkip(game.player2!)}>{game.player2}</button>
+                <button onClick={() => handleSkip(game.player2!)}>
+                  {game.player2}
+                  {game.winner === game.player2 && (game.skipped ? "🆓🏆" : "🏆")}
+                </button>
               </div>
             </div>
           );
