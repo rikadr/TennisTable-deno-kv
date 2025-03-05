@@ -170,7 +170,7 @@ export const TournamentGroups: React.FC<{ tournament: TournamentWithGames; reren
             <div key={game.player1! + game.player2!} className="group cursor-pointer">
               <div
                 className={classNames(
-                  "h-12 rounded-lg ring-secondary-background ring-2 flex items-center",
+                  "h-12 px-2 rounded-lg ring-secondary-background ring-2 flex items-center",
                   game.winner ? "bg-secondary-background" : "group-hover:bg-secondary-background/50",
                 )}
               >

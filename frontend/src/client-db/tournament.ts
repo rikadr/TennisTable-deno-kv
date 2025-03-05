@@ -71,7 +71,7 @@ export const optioEasterTournament: TournamentDB = {
     "Marius",
     "Anders",
     "Gustas",
-    "Vlad",
+    // "Vlad",
     "Ole Anders",
     "Bendik",
     // "Daniele",
