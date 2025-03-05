@@ -1,7 +1,9 @@
+import { Link } from "react-router-dom";
 import { GroupScorePlayer, Tournaments, TournamentWithGames } from "../../client-db/tournament";
 import { classNames } from "../../common/class-names";
 import { fmtNum } from "../../common/number-utils";
 import { useClientDbContext } from "../../wrappers/client-db-context";
+import { ProfilePicture } from "../player/profile-picture";
 
 export const TournamentGroupPlay: React.FC<{ tournament: TournamentWithGames; rerender: () => void }> = ({
   tournament,
@@ -19,7 +21,7 @@ export const TournamentGroupPlay: React.FC<{ tournament: TournamentWithGames; re
         <GroupPlayRules />
       </div>
       <p className="mt-10">Groups:</p>
-      <div className="grid grid-flow-row gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-flow-row gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 mx-2">
         <TournamentGroups tournament={tournament} rerender={rerender} />
       </div>
     </div>
@@ -126,6 +128,7 @@ export const TournamentGroupScores: React.FC<{ tournament: TournamentWithGames }
     </div>
   );
 };
+
 export const TournamentGroups: React.FC<{ tournament: TournamentWithGames; rerender: () => void }> = ({
   tournament,
   rerender,
@@ -164,26 +167,41 @@ export const TournamentGroups: React.FC<{ tournament: TournamentWithGames; reren
             rerender();
           }
           return (
-            <div
-              key={game.player1! + game.player2!}
-              // to={`/add-game/?player1=${game.player1 || ""}&player2=${game.player2 || ""}`}
-              className="group cursor-pointer"
-            >
+            <div key={game.player1! + game.player2!} className="group cursor-pointer">
               <div
                 className={classNames(
-                  "rounded-lg ring-secondary-background ring-2 group-hover:bg-secondary-background/50 flex",
-                  game.winner && "bg-secondary-background",
+                  "h-12 rounded-lg ring-secondary-background ring-2 flex items-center",
+                  game.winner ? "bg-secondary-background" : "group-hover:bg-secondary-background/50",
                 )}
               >
-                <button onClick={() => handleSkip(game.player1!)}>
-                  {game.winner === game.player1 && (game.skipped ? "🆓🏆" : "🏆")}
-                  {game.player1}
-                </button>
-                <div className="mx-2">v.s.</div>
-                <button onClick={() => handleSkip(game.player2!)}>
-                  {game.player2}
-                  {game.winner === game.player2 && (game.skipped ? "🆓🏆" : "🏆")}
-                </button>
+                <div className="w-1/2">
+                  <button
+                    onClick={() => handleSkip(game.player1!)}
+                    className={classNames(
+                      "flex gap-2 items-center",
+                      game.winner === game.player2 && "font-light italic line-through",
+                    )}
+                  >
+                    <ProfilePicture name={game.player1} size={35} shape="circle" clickToEdit={false} border={2.5} />
+                    {game.player1}
+                    {game.winner === game.player1 && (game.skipped ? " 🆓" : " 🏆")}
+                  </button>
+                </div>
+
+                <Link to={`/add-game/?player1=${game.player1 || ""}&player2=${game.player2 || ""}`}>v.s.</Link>
+                <div className="w-1/2 flex justify-end">
+                  <button
+                    onClick={() => handleSkip(game.player2!)}
+                    className={classNames(
+                      "flex gap-2 items-center",
+                      game.winner === game.player1 && "font-light italic line-through",
+                    )}
+                  >
+                    {game.winner === game.player2 && (game.skipped ? "🆓 " : "🏆 ")}
+                    {game.player2}
+                    <ProfilePicture name={game.player2} size={35} shape="circle" clickToEdit={false} border={2.5} />
+                  </button>
+                </div>
               </div>
             </div>
           );

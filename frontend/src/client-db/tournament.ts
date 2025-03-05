@@ -61,6 +61,7 @@ export const optioEasterTournament: TournamentDB = {
     "Simone",
     "Christoffer",
     "Oskar",
+    "Daniel",
     "Erling",
     "Rikard",
     "Sveinung",
@@ -72,6 +73,7 @@ export const optioEasterTournament: TournamentDB = {
     "Gustas",
     "Vlad",
     "Ole Anders",
+    "Bendik",
     // "Daniele",
     // "Kevin",
     // "James 007",
@@ -389,7 +391,7 @@ export class Tournaments {
   tournaments: TournamentDB[] = [optioChristmasTournament, optioEasterTournament]; // Add mock for mock data -> mockTournament1, mockTournament2
   private skipIsEnabled = true; // False for prod
 
-  static GROUP_POINTS = { WIN: 2, LOSS: 1, DNF: 1 } as const;
+  static GROUP_POINTS = { WIN: 3, LOSS: 1, DNF: 1 } as const;
 
   #tournamentsCache: TournamentWithGames[] | undefined;
 
