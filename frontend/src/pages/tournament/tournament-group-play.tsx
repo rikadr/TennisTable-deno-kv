@@ -167,7 +167,7 @@ export const TournamentGroups: React.FC<{ tournament: TournamentWithGames; reren
             rerender();
           }
           return (
-            <div key={game.player1! + game.player2!} className="group cursor-pointer">
+            <div key={game.player1! + game.player2!} className="group">
               <div
                 className={classNames(
                   "h-12 px-2 rounded-lg ring-secondary-background ring-2 flex items-center",
@@ -187,8 +187,11 @@ export const TournamentGroups: React.FC<{ tournament: TournamentWithGames; reren
                     {game.winner === game.player1 && (game.skipped ? " 🆓" : " 🏆")}
                   </button>
                 </div>
-
-                <Link to={`/add-game/?player1=${game.player1 || ""}&player2=${game.player2 || ""}`}>v.s.</Link>
+                {game.winner ? (
+                  <div>v.s.</div>
+                ) : (
+                  <Link to={`/add-game/?player1=${game.player1 || ""}&player2=${game.player2 || ""}`}>v.s.</Link>
+                )}
                 <div className="w-1/2 flex justify-end">
                   <button
                     onClick={() => handleSkip(game.player2!)}
