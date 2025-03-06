@@ -20,8 +20,7 @@ export const TournamentGroupPlay: React.FC<{ tournament: TournamentWithGames; re
         <TournamentGroupScores tournament={tournament} />
         <GroupPlayRules />
       </div>
-      <p className="mt-10">Groups:</p>
-      <div className="flex flex-wrap justify-center gap-x-6 gap-y-10 mx-6">
+      <div className="flex flex-wrap justify-center gap-x-6 gap-y-10 mx-6 mt-10">
         <TournamentGroups tournament={tournament} rerender={rerender} />
       </div>
     </div>
@@ -140,15 +139,15 @@ export const TournamentGroups: React.FC<{ tournament: TournamentWithGames; reren
 
   return tournament.groups?.map((group, groupIndex) => (
     <div key={groupIndex} className="max-w-96 w-full space-y-2">
-      <div className="rounded-lg bg-secondary-background text-secondary-text p-2 px-4">
-        <h2 className="text-xl font-normal">
-          Group {groupIndex + 1}{" "}
-          <span className="text-xs">
+      <div className="rounded-lg ring-2 ring-secondary-background text-secondary-text p-2 px-4">
+        <section className="flex justify-between items-baseline">
+          <h2 className="text-xl font-normal">Group {groupIndex + 1}</h2>
+          <p className="text-xs">
             {fmtNum(group.groupGames.length - group.pending.length)} of {fmtNum(group.groupGames.length)} games
             completed
-          </span>
-        </h2>
-        <span className="text-xs">({fmtNum(group.players.length)} players)</span>
+          </p>
+        </section>
+        <p className="text-xs">{fmtNum(group.players.length)} players:</p>
         <p>{group.players.join(", ")}</p>
       </div>
       {group.groupGames.map((game) => {
