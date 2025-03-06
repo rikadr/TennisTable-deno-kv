@@ -21,7 +21,7 @@ export const TournamentGroupPlay: React.FC<{ tournament: TournamentWithGames; re
         <GroupPlayRules />
       </div>
       <p className="mt-10">Groups:</p>
-      <div className="grid grid-flow-row gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 mx-2">
+      <div className="flex flex-wrap justify-center gap-x-6 gap-y-10 mx-6">
         <TournamentGroups tournament={tournament} rerender={rerender} />
       </div>
     </div>
@@ -85,7 +85,6 @@ export const TournamentGroupScores: React.FC<{ tournament: TournamentWithGames }
   return (
     <div>
       <h1>Score board</h1>
-
       <table>
         <thead>
           <tr>
@@ -140,76 +139,83 @@ export const TournamentGroups: React.FC<{ tournament: TournamentWithGames; reren
   }
 
   return tournament.groups?.map((group, groupIndex) => (
-    <div key={groupIndex} className="max-w-96">
-      Group {groupIndex + 1} <span className="text-xs">({fmtNum(group.players.length)} players)</span>
-      <p>{group.players.join(", ")}</p>
-      <div className="flex flex-col gap-2">
-        {group.groupGames.map((game) => {
-          const gameIsWon = game.winner !== undefined;
-          const gameIsSkipped = game.skipped !== undefined;
-          function handleSkip(player: string) {
-            if (gameIsWon) return;
-            if (gameIsSkipped) {
-              tournaments.undoSkipGame(
-                tournament.skippedGames.find((g) => g.time === game.skipped!.time)!,
-                tournament.id,
-              );
-            } else {
-              tournaments.skipGame(
-                {
-                  time: new Date().getTime(),
-                  advancing: player,
-                  eliminated: game.player1 === player ? game.player2! : game.player1!,
-                },
-                tournament.id,
-              );
-            }
-            rerender();
+    <div key={groupIndex} className="max-w-96 w-full space-y-2">
+      <div className="rounded-lg bg-secondary-background text-secondary-text p-2 px-4">
+        <h2 className="text-xl font-normal">
+          Group {groupIndex + 1}{" "}
+          <span className="text-xs">
+            {fmtNum(group.groupGames.length - group.pending.length)} of {fmtNum(group.groupGames.length)} games
+            completed
+          </span>
+        </h2>
+        <span className="text-xs">({fmtNum(group.players.length)} players)</span>
+        <p>{group.players.join(", ")}</p>
+      </div>
+      {group.groupGames.map((game) => {
+        const gameIsWon = game.winner !== undefined;
+        const gameIsSkipped = game.skipped !== undefined;
+        function handleSkip(player: string) {
+          if (gameIsWon) return;
+          if (gameIsSkipped) {
+            tournaments.undoSkipGame(
+              tournament.skippedGames.find((g) => g.time === game.skipped!.time)!,
+              tournament.id,
+            );
+          } else {
+            tournaments.skipGame(
+              {
+                time: new Date().getTime(),
+                advancing: player,
+                eliminated: game.player1 === player ? game.player2! : game.player1!,
+              },
+              tournament.id,
+            );
           }
-          return (
-            <div key={game.player1! + game.player2!} className="group">
-              <div
-                className={classNames(
-                  "h-12 px-2 rounded-lg ring-secondary-background ring-2 flex items-center",
-                  game.winner ? "bg-secondary-background" : "group-hover:bg-secondary-background/50",
-                )}
-              >
-                <div className="w-1/2">
-                  <button
-                    onClick={() => handleSkip(game.player1!)}
-                    className={classNames(
-                      "flex gap-2 items-center",
-                      game.winner === game.player2 && "font-light italic line-through",
-                    )}
-                  >
-                    <ProfilePicture name={game.player1} size={35} shape="circle" clickToEdit={false} border={2.5} />
-                    {game.player1}
-                    {game.winner === game.player1 && (game.skipped ? " 🆓" : " 🏆")}
-                  </button>
-                </div>
-                {game.winner ? (
-                  <div>v.s.</div>
-                ) : (
-                  <Link to={`/add-game/?player1=${game.player1 || ""}&player2=${game.player2 || ""}`}>v.s.</Link>
-                )}
-                <div className="w-1/2 flex justify-end">
-                  <button
-                    onClick={() => handleSkip(game.player2!)}
-                    className={classNames(
-                      "flex gap-2 items-center",
-                      game.winner === game.player1 && "font-light italic line-through",
-                    )}
-                  >
-                    {game.winner === game.player2 && (game.skipped ? "🆓 " : "🏆 ")}
-                    {game.player2}
-                    <ProfilePicture name={game.player2} size={35} shape="circle" clickToEdit={false} border={2.5} />
-                  </button>
-                </div>
+          rerender();
+        }
+        return (
+          <div key={game.player1! + game.player2!} className="group">
+            <div
+              className={classNames(
+                "h-12 px-2 rounded-lg ring-secondary-background ring-2 flex items-center",
+                game.winner ? "bg-secondary-background" : "group-hover:bg-secondary-background/50",
+              )}
+            >
+              <div className="w-1/2">
+                <button
+                  onClick={() => handleSkip(game.player1!)}
+                  className={classNames(
+                    "flex gap-2 items-center",
+                    game.winner === game.player2 && "font-light italic line-through",
+                  )}
+                >
+                  <ProfilePicture name={game.player1} size={35} shape="circle" clickToEdit={false} border={2.5} />
+                  {game.player1}
+                  {game.winner === game.player1 && (game.skipped ? " 🆓" : " 🏆")}
+                </button>
+              </div>
+              {game.winner ? (
+                <div>v.s.</div>
+              ) : (
+                <Link to={`/add-game/?player1=${game.player1 || ""}&player2=${game.player2 || ""}`}>v.s.</Link>
+              )}
+              <div className="w-1/2 flex justify-end">
+                <button
+                  onClick={() => handleSkip(game.player2!)}
+                  className={classNames(
+                    "flex gap-2 items-center",
+                    game.winner === game.player1 && "font-light italic line-through",
+                  )}
+                >
+                  {game.winner === game.player2 && (game.skipped ? "🆓 " : "🏆 ")}
+                  {game.player2}
+                  <ProfilePicture name={game.player2} size={35} shape="circle" clickToEdit={false} border={2.5} />
+                </button>
               </div>
             </div>
-          );
-        })}
-      </div>
+          </div>
+        );
+      })}
     </div>
   ));
 };
