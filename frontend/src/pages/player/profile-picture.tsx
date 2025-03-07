@@ -1,6 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { classNames } from "../../common/class-names";
 import { stringToColor } from "../compare-players-page";
+import { useClientDbContext } from "../../wrappers/client-db-context";
 
 type Props = {
   name?: string;
@@ -20,6 +21,14 @@ export const ProfilePicture: React.FC<Props> = ({
   linkToPlayer = false,
 }) => {
   const navigate = useNavigate();
+  const { players, defaultProfilePhoto } = useClientDbContext();
+
+  let profilePhoto: string | undefined = undefined;
+  const player = players.find((p) => p.name === name);
+  if (player) {
+    // So it only fetches backend for photo if player is not among the registered players
+    profilePhoto = player.photo ?? defaultProfilePhoto;
+  }
 
   const img = () => (
     <img
@@ -27,7 +36,7 @@ export const ProfilePicture: React.FC<Props> = ({
         "w-full h-full object-cover",
         clickToEdit && " group-hover:opacity-50 transition-opacity duration-150",
       )}
-      src={`${process.env.REACT_APP_API_BASE_URL}/player/${name}/profile-picture`}
+      src={profilePhoto || `${process.env.REACT_APP_API_BASE_URL}/player/${name}/profile-picture`}
       alt="Profile"
     />
   );

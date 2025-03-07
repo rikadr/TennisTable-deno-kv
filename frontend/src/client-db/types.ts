@@ -1,8 +1,9 @@
-export type Player = { name: string };
+export type Player = { name: string; photo?: string };
 export type Game = { winner: string; loser: string; time: number };
 
 export type ClientDbDTO = {
   players: Player[];
+  defaultProfilePhoto: string;
   games: Game[];
   tournament?: {
     signedUp: SignUpTournament[];

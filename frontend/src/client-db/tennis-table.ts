@@ -13,6 +13,7 @@ export class TennisTable {
   // Data from db
   // --------------------------------------------------------------------------
   readonly players: Player[];
+  readonly defaultProfilePhoto: string;
   readonly games: Game[];
   readonly signedUp: SignUpTournament[];
   readonly elo = Elo;
@@ -28,6 +29,7 @@ export class TennisTable {
 
   constructor(data: ClientDbDTO) {
     this.players = data.players;
+    this.defaultProfilePhoto = data.defaultProfilePhoto;
     this.games = data.games;
     this.signedUp = data.tournament?.signedUp || [];
 
