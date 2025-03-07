@@ -25,9 +25,7 @@ declare global {
   }
 }
 
-export const ClientDbContext = createContext<TennisTable>(
-  new TennisTable({ players: [], defaultProfilePhoto: "", games: [] }),
-);
+export const ClientDbContext = createContext<TennisTable>(new TennisTable({ players: [], games: [] }));
 
 export const useClientDbContext = () => useContext(ClientDbContext);
 
