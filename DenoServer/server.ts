@@ -26,7 +26,9 @@ export const webSocketClientManager = new WebSocketClientManager();
 /**
  * Clear cashe on start or redeploy. New deployment could have changes in the data structure, invalidating the cache
  */
+console.log("Clearing cache");
 await clientDBCacheManager.clearCache();
+console.log("Cache cleared");
 
 /**
  * Register routes
