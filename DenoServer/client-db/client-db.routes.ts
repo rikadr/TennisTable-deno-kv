@@ -12,14 +12,29 @@ export function registerClientDbRoutes(api: Router) {
    * Get client db data
    */
   api.get("/client-db", async (context) => {
+    const a = performance.now();
     const cache = await clientDBCacheManager.getCache();
+    const b = performance.now();
     if (cache) {
+      console.log("CACHE EXIST: Get Cache time", b - a, "total time", b - a);
       context.response.body = cache;
       return;
     }
 
     const response = await getClientDbData();
+    const c = performance.now();
     await clientDBCacheManager.setCache(response);
+    const d = performance.now();
+    console.log(
+      "NO CACHE: Get Cache time",
+      b - a,
+      "Get data time",
+      c - b,
+      "Set Cache time",
+      d - c,
+      "total time",
+      d - a,
+    );
     context.response.body = response;
   });
 }
