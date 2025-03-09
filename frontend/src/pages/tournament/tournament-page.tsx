@@ -79,14 +79,31 @@ export const TournamentPage: React.FC = () => {
             <WinnerBox winner={tournament.bracket[0][0].winner} />{" "}
           </div>
         )}
-        <button
-          onClick={() => {
-            context.futureElo.simulate();
-            rerender();
-          }}
-        >
-          Simulate tournament
-        </button>
+        <div className="flex flex-col items-start">
+          <button
+            onClick={() => {
+              context.futureElo.simulate();
+              rerender();
+            }}
+          >
+            Simulate tournament
+          </button>
+          <button
+            onClick={() => {
+              let tries = 0;
+              const likelyWinners = ["Alexander", "Rasmus", "Fooa", "Christoffer", "Simone", "Peder", "Erling"];
+              let winner = tournament.bracket?.[0][0].winner;
+
+              while (tries < 1_000 && (winner === undefined || likelyWinners.includes(winner))) {
+                tries++;
+                context.futureElo.simulate();
+              }
+              rerender();
+            }}
+          >
+            Simulate unlikely winner tournament
+          </button>
+        </div>
       </div>
 
       {tournament.startDate > new Date().getTime() && <TournamentSignup tournament={tournament} />}
