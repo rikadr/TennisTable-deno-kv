@@ -7,6 +7,7 @@ import { registerWebSocketRoutes } from "./web-socket/web-socket.routs.ts";
 import { WebSocketClientManager } from "./web-socket/web-socket-client-manager.ts";
 import { registerClientDbRoutes } from "./client-db/client-db.routes.ts";
 import { registerTournamentRoutes } from "./tournament/tournament.routes.ts";
+import { ClientDBCacheManager } from "./client-db/client-db-cache.ts";
 
 const app = new Application();
 const api = new Router();
@@ -19,15 +20,21 @@ app.use(
   }),
 );
 
-const webSocketClientManager = new WebSocketClientManager();
+export const clientDBCacheManager = new ClientDBCacheManager();
+export const webSocketClientManager = new WebSocketClientManager();
+
+/**
+ * Clear cashe on start or redeploy. New deployment could have changes in the data structure, invalidating the cache
+ */
+await clientDBCacheManager.clearCache();
 
 /**
  * Register routes
  */
-registerPlayerRoutes(api, webSocketClientManager);
-registerGameRoutes(api, webSocketClientManager);
-registerTournamentRoutes(api, webSocketClientManager);
-registerWebSocketRoutes(api, webSocketClientManager);
+registerPlayerRoutes(api);
+registerGameRoutes(api);
+registerTournamentRoutes(api);
+registerWebSocketRoutes(api);
 registerClientDbRoutes(api);
 
 registerUserRoutes(api);

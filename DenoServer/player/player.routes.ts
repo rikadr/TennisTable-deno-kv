@@ -9,7 +9,7 @@ import {
   uploadProfilePicture,
 } from "./player.ts";
 import { isAuthenticated, requireAuth } from "../auth-service/middleware.ts";
-import { WebSocketClientManager } from "../web-socket/web-socket-client-manager.ts";
+import { webSocketClientManager } from "../server.ts";
 
 function decodeBase64(base64: string): Uint8Array {
   // Buffer.from(data, 'base64') // Try it?
@@ -22,7 +22,7 @@ function decodeBase64(base64: string): Uint8Array {
   return bytes;
 }
 
-export function registerPlayerRoutes(api: Router, webSocketClientManager: WebSocketClientManager) {
+export function registerPlayerRoutes(api: Router) {
   /**
    * Create a player
    */
@@ -39,7 +39,7 @@ export function registerPlayerRoutes(api: Router, webSocketClientManager: WebSoc
     }
 
     const player = await createPlayer(payload);
-    webSocketClientManager.reloadClients();
+    await webSocketClientManager.reloadCacheAndClients();
     context.response.body = player;
   });
 
@@ -68,7 +68,7 @@ export function registerPlayerRoutes(api: Router, webSocketClientManager: WebSoc
     try {
       await uploadProfilePicture(playerName, base64);
       context.response.status = 204;
-      webSocketClientManager.reloadClients();
+      await webSocketClientManager.reloadCacheAndClients();
     } catch (err) {
       console.error("Error uploading base64 profile image:", err);
       context.response.status = 500;
@@ -122,7 +122,7 @@ export function registerPlayerRoutes(api: Router, webSocketClientManager: WebSoc
       return;
     }
     await deletePlayer(name);
-    webSocketClientManager.reloadClients();
+    await webSocketClientManager.reloadCacheAndClients();
     context.response.status = 204;
   });
 }

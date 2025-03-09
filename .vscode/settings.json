@@ -2,7 +2,8 @@
   "deno.enablePaths": [
     "./DenoServer"
   ],
-  "deno.unstable": true,
+  "deno.unstable": ["kv"],
+  "deno.lint": true,
   "editor.formatOnSave": true,
   "editor.defaultFormatter": "denoland.vscode-deno",
   "deno.enable": true

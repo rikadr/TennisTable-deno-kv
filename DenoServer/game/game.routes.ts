@@ -10,10 +10,10 @@ import {
   importGame,
 } from "./game.ts";
 import { isAuthenticated, requireAuth } from "../auth-service/middleware.ts";
-import { WebSocketClientManager } from "../web-socket/web-socket-client-manager.ts";
 import { createPlayer, type CreatePlayerPayload } from "../player/player.ts";
+import { webSocketClientManager } from "../server.ts";
 
-export function registerGameRoutes(api: Router, webSocketClientManager: WebSocketClientManager) {
+export function registerGameRoutes(api: Router) {
   /**
    * Create a game
    */
@@ -25,7 +25,7 @@ export function registerGameRoutes(api: Router, webSocketClientManager: WebSocke
     }
 
     const game = await createGame(payload);
-    webSocketClientManager.reloadClients();
+    await webSocketClientManager.reloadCacheAndClients();
     context.response.body = game;
   });
 
@@ -84,7 +84,7 @@ export function registerGameRoutes(api: Router, webSocketClientManager: WebSocke
       return;
     }
     await deleteGame(game);
-    webSocketClientManager.reloadClients();
+    await webSocketClientManager.reloadCacheAndClients();
     context.response.body = 204;
   });
 

@@ -7,10 +7,10 @@ export async function getPlayer(name: string): Promise<Player | null> {
   if (!name) {
     throw new Error("name is required");
   }
-  const res = await kv.get(["player", name]);
+  const res = await kv.get<Player>(["player", name]);
 
   if (res.value) {
-    return res.value as Player;
+    return res.value;
   }
   return null;
 }

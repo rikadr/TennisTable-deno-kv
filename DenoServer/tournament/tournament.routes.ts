@@ -1,14 +1,14 @@
 import { Router } from "oak";
-import { WebSocketClientManager } from "../web-socket/web-socket-client-manager.ts";
 import { getPlayer } from "../player/player.ts";
 import { deleteSignUp, getSignedUp, signUp } from "./tournament.ts";
+import { webSocketClientManager } from "../server.ts";
 
 export type SignUpTournamentPayload = {
   tournamentId: string;
   player: string;
 };
 
-export function registerTournamentRoutes(api: Router, webSocketClientManager: WebSocketClientManager) {
+export function registerTournamentRoutes(api: Router) {
   /**
    * Sign up for tournament
    */
@@ -39,7 +39,7 @@ export function registerTournamentRoutes(api: Router, webSocketClientManager: We
 
     const result = await signUp(payload);
 
-    webSocketClientManager.reloadClients();
+    await webSocketClientManager.reloadCacheAndClients();
     context.response.body = result;
   });
 
@@ -59,7 +59,7 @@ export function registerTournamentRoutes(api: Router, webSocketClientManager: We
     }
 
     await deleteSignUp(payload);
-    webSocketClientManager.reloadClients();
+    await webSocketClientManager.reloadCacheAndClients();
     context.response.body = 204;
   });
 }
