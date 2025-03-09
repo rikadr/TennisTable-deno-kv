@@ -96,6 +96,11 @@ export class ClientDBCacheManager {
   }
 
   private async uploadCacheBatches(cacheBatches: { key: string[]; value: CacheValue }[]) {
+    console.log(
+      "Sizes",
+      cacheBatches.map(({ value }) => value.value.length),
+    );
+
     await Promise.all(cacheBatches.map(async ({ key, value }) => await kv.set(key, value)));
     return [];
   }
