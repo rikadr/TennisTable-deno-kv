@@ -27,7 +27,6 @@ export type CandelStickData = {
 type PreparedData = Omit<CandelStickData, "avg" | "current"> & { avgCurrent: number[] };
 
 const Candlestick = (props: unknown) => {
-  //   console.log(props);
   const {
     x = 0,
     y = 0,
@@ -40,7 +39,6 @@ const Candlestick = (props: unknown) => {
   const isAboveAvg = current > avg;
   const color = isAboveAvg ? "green" : "red";
   const ratio = Math.abs(height / (avg - current));
-  //   console.log(props);
   return (
     <g stroke={color} fill="none" strokeWidth="3">
       <path
@@ -166,7 +164,6 @@ export const CandleStickChart: React.FC<{ rawData: CandelStickData[] }> = ({ raw
 
 const CustomTooltip: React.FC = ({ active, payload, label }: TooltipProps<ValueType, NameType>) => {
   if (active && payload && payload.length) {
-    // console.log({ active, payload, label });
     const {
       name,
       rank,
