@@ -49,7 +49,7 @@ export const optioEasterTournament: TournamentDB = {
   // name: "Optio Easter Tournament 2025 🐣💛",
   name: "Test group play tournament",
   description: "This is a test tournament just to try out the group play feature",
-  startDate: 0, // 1740600238644,
+  startDate: 1741535352817, // 1741535352817,
   groupPlay: true,
   signedUp: [],
   skippedGames: [],
