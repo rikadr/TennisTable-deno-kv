@@ -19,6 +19,7 @@ export class FutureElo {
 
   simulate() {
     this.parent.leaderboard.clearCaches();
+    this.parent.tournaments.clearTournamentCache();
     this.playersMap = new Map();
     this.playerPairings = [];
     this.predictedGamesTemp = [];

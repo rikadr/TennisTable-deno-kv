@@ -65,15 +65,15 @@ export const optioEasterTournament: TournamentDB = {
     "Oskar",
     "Erling",
     "Bendik",
-    // "Sveinung",
+    "Sveinung",
     "Axel",
     "Fredrik H",
     "Marius",
     "Ole",
     "Anders",
-    "Gustas",
-    "Alejandro 🌮",
-    "Ole Anders",
+    // "Gustas",
+    // "Alejandro 🌮",
+    // "Ole Anders",
     // "Vlad",
     // "Daniele",
     // "Kevin",
@@ -400,6 +400,10 @@ export class Tournaments {
     this.parent = parent;
   }
 
+  clearTournamentCache() {
+    this.#tournamentsCache = undefined;
+  }
+
   getTournaments(): TournamentWithGames[] {
     if (this.#tournamentsCache !== undefined) return this.#tournamentsCache;
     const tournaments = this.#getTournaments();
@@ -621,7 +625,11 @@ export class Tournaments {
       | (BaseEntry & { game: undefined; skip: TournamentDB["skippedGames"][number] })
     )[] = [];
 
-    const games = this.parent.games.filter((game) => game?.time > startTime);
+    const games = [
+      ...this.parent.games.filter((game) => game?.time > startTime),
+      ...this.parent.futureElo.predictedGames,
+    ];
+
     games.forEach((game) =>
       entries.push({ time: game.time, player1: game.winner, player2: game.loser, game, skip: undefined }),
     );
@@ -631,7 +639,7 @@ export class Tournaments {
         entries.push({ time: skip.time, player1: skip.advancing, player2: skip.eliminated, game: undefined, skip }),
       );
 
-    entries.sort((a, b) => a.time - b.time);
+    // entries.sort((a, b) => a.time - b.time);
     return entries;
   }
 

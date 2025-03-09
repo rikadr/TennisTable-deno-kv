@@ -79,6 +79,14 @@ export const TournamentPage: React.FC = () => {
             <WinnerBox winner={tournament.bracket[0][0].winner} />{" "}
           </div>
         )}
+        <button
+          onClick={() => {
+            context.futureElo.simulate();
+            rerender();
+          }}
+        >
+          Simulate tournament
+        </button>
       </div>
 
       {tournament.startDate > new Date().getTime() && <TournamentSignup tournament={tournament} />}
