@@ -782,16 +782,34 @@ export class Tournaments {
 
   #divideInGroups(players: string[]): string[][] {
     const groupSizes = this.#getGroupSizes(players.length);
-    // Remove test when verified
-    if (players.length !== groupSizes.reduce((a, c) => (a = a + c), 0)) {
-      throw new Error("Group sizes do not equal player length");
-    }
-
     const groups: string[][] = [];
     for (let i = 0; i < groupSizes.length; ++i) groups[i] = [];
 
-    for (let i = 0; i < players.length; i++) {
-      groups[i % groups.length].push(players[i]);
+    let assignedPlayers = 0;
+    let lastAssignedTopPlayer = -1;
+    let lastAssignedBottomPlayer = players.length;
+
+    while (assignedPlayers < players.length) {
+      for (let i = 0; i < groups.length; i++) {
+        const worstRemainingPlayer = players[lastAssignedBottomPlayer - 1];
+        if (worstRemainingPlayer && groups[i].length < groupSizes[i]) {
+          // Only adds if room in group
+          groups[i].push(worstRemainingPlayer);
+          lastAssignedBottomPlayer--;
+          assignedPlayers++;
+        }
+        const bestRemainingPlayer = players[lastAssignedTopPlayer + 1];
+        if (bestRemainingPlayer && groups[i].length < groupSizes[i]) {
+          // Only adds if room in group
+          groups[i].push(bestRemainingPlayer);
+          lastAssignedTopPlayer++;
+          assignedPlayers++;
+        }
+      }
+    }
+
+    for (const group of groups) {
+      group.sort((a, b) => players.findIndex((n) => n === a) - players.findIndex((n) => n === b));
     }
     return groups;
   }
