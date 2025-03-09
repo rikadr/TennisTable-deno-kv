@@ -90,15 +90,51 @@ export const TournamentPage: React.FC = () => {
           </button>
           <button
             onClick={() => {
+              if (
+                window.confirm(
+                  "Are you sure you want to simulate to an unlikely winner? It may take over 60 seconds",
+                ) === false
+              ) {
+                return;
+              }
               let tries = 0;
-              const likelyWinners = ["Alexander", "Rasmus", "Fooa", "Christoffer", "Simone", "Peder", "Erling"];
-              let winner = tournament.bracket?.[0][0].winner;
+              const likelyWinners = [
+                "Alexander",
+                "Rasmus",
+                "Fooa",
+                "Christoffer",
+                "Simone",
+                "Peder",
+                "Erling",
+                "Rikard",
+                "Oskar",
+              ];
+              let winner: string | undefined = "";
+              let winners: Record<string, number> = {};
 
-              while (tries < 1_000 && (winner === undefined || likelyWinners.includes(winner))) {
+              while (tries < 10_000 && (winner === undefined || winner === "" || likelyWinners.includes(winner))) {
                 tries++;
                 context.futureElo.simulate();
+                context.tournaments.clearTournamentCache();
+                winner = context.tournaments.getTournaments().find((t) => t.id === tournament.id)
+                  ?.bracket?.[0]?.[0]?.winner;
+                if (winner) {
+                  winners[winner] = (winners[winner] || 0) + 1;
+                }
+                if (tries % 100 === 0) {
+                  console.log(tries);
+                }
               }
+              const sortedEntries = Object.entries(winners).sort((a, b) => b[1] - a[1]);
+              const sortedWinners: Record<string, number> = Object.fromEntries(sortedEntries);
+              console.log(sortedWinners);
+
               rerender();
+              window.alert(
+                `Winner: ${winner}!!!
+Simulated ${tries} tournaments. 
+Other winners: ` + JSON.stringify(sortedWinners, null, 2),
+              );
             }}
           >
             Simulate unlikely winner tournament
