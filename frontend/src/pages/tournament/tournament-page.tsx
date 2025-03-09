@@ -105,9 +105,9 @@ export const TournamentPage: React.FC = () => {
                 "Christoffer",
                 "Simone",
                 "Peder",
-                "Erling",
-                "Rikard",
-                "Oskar",
+                // "Erling",
+                // "Rikard",
+                // "Oskar",
               ];
               let winner: string | undefined = "";
               let winners: Record<string, number> = {};
