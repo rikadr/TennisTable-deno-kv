@@ -5,7 +5,7 @@ type CacheValue = { index: number; total: number; time: number; value: string };
 
 export class ClientDBCacheManager {
   private readonly CACHE_TTL = 24 * 60 * 60 * 1_000; // Time to live in ms
-  private readonly MAX_CACHE_BATCH_SIZE = 64_000 - 1_000; // Max value size of 64 KiB, I minus some overhead for metadata
+  private readonly MAX_CACHE_BATCH_SIZE = 60_000; // Max value size of 64 KiB, I minus some overhead and for metadata
 
   async getCache() {
     const cacheBatches = await this.getAllCacheBatches();
