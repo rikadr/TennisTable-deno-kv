@@ -48,8 +48,8 @@ const GroupPlayRules: React.FC = () => (
       <p>Players on equal scores are split by the following criteria in this order:</p>
       <div className="italic font-light text-xs">
         <p>1: Most wins</p>
-        <p>2: Least losses</p>
-        <p>3: Least DNFs</p>
+        <p>2: Least DNFs</p>
+        <p>3: Least losses</p>
         <p>4: Highest score before group size adjustment</p>
         <p>5: Highest ELO rating</p>
         <p>6: First to sign up for the tournament</p>

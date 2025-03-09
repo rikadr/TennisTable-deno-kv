@@ -57,23 +57,24 @@ export const optioEasterTournament: TournamentDB = {
     "Rasmus",
     "Fooa",
     "Alexander",
-    "Peder",
     "Simone",
+    "Peder",
     "Christoffer",
-    "Oskar",
     "Daniel",
-    "Erling",
     "Rikard",
-    "Sveinung",
-    "Fredrik H",
+    "Oskar",
+    "Erling",
+    "Bendik",
+    // "Sveinung",
     "Axel",
-    "Ole",
+    "Fredrik H",
     "Marius",
+    "Ole",
     "Anders",
     "Gustas",
-    // "Vlad",
+    "Alejandro 🌮",
     "Ole Anders",
-    "Bendik",
+    // "Vlad",
     // "Daniele",
     // "Kevin",
     // "James 007",
@@ -753,11 +754,11 @@ export class Tournaments {
     if (p1.wins !== p2.wins) {
       return p2.wins - p1.wins;
     }
-    if (p1.loss !== p2.loss) {
-      return p1.loss - p2.loss; // Reversed because fewer loss is better
-    }
     if (p1.dnf !== p2.dnf) {
       return p1.dnf - p2.dnf; // Reversed because fewer dnf is better
+    }
+    if (p1.loss !== p2.loss) {
+      return p1.loss - p2.loss; // Reversed because fewer loss is better
     }
     if (p1.score !== p2.score) {
       return p2.score - p1.score;
