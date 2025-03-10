@@ -1,4 +1,4 @@
-import { TournamentGame, TournamentWithGames } from "../../client-db/tournament";
+import { TournamentGame, TournamentWithGames } from "../../client-db/tournaments";
 import { classNames } from "../../common/class-names";
 import { useClientDbContext } from "../../wrappers/client-db-context";
 import { ProfilePicture } from "../player/profile-picture";

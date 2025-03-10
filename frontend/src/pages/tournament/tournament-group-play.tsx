@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { GroupScorePlayer, Tournaments, TournamentWithGames } from "../../client-db/tournament";
+import { GroupScorePlayer, Tournaments, TournamentWithGames } from "../../client-db/tournaments";
 import { classNames } from "../../common/class-names";
 import { fmtNum } from "../../common/number-utils";
 import { useClientDbContext } from "../../wrappers/client-db-context";
