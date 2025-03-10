@@ -18,6 +18,15 @@ module.exports = {
         //   text: "#000000",
         //   background: "#d97706",
         // },
+        // Easter theme
+        // primary: {
+        //   text: "#000000",
+        //   background: "#fce803",
+        // },
+        // secondary: {
+        //   text: "#000000",
+        //   background: "#FFFFFF",
+        // },
         // Default theme
         primary: {
           text: "#FFFFFF",
