@@ -10,7 +10,7 @@ export const MonteCarlo: React.FC = () => {
   const simulation = context.simulations.monteCarloSimulation(10_000);
 
   const formattedRawData: CandelStickData[] = simulation
-    .filter(({ name }) => leaderboardMap.get(name)!.games.length >= Elo.GAME_LIMIT_FOR_RANKED)
+    .filter(({ name }) => (leaderboardMap.get(name)?.games.length || 0) >= Elo.GAME_LIMIT_FOR_RANKED)
     .map(({ name, elo }, index) => ({
       name: name,
       rank: index + 1,
