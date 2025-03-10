@@ -3,7 +3,7 @@ import { FutureElo } from "./future-elo";
 import { Leaderboard } from "./leaderboard";
 import { PVP } from "./pvp";
 import { Simulations } from "./simulations";
-import { Tournaments } from "./tournaments";
+import { Tournaments } from "./tournaments/tournaments";
 import { ClientDbDTO, Game, Player, SignUpTournament } from "./types";
 
 export class TennisTable {

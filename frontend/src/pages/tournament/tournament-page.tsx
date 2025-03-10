@@ -11,7 +11,7 @@ import { useSessionStorage } from "usehooks-ts";
 import { relativeTimeString } from "../../common/date-utils";
 import { TournamentSignup } from "./tournament-signup";
 import { TournamentGroupPlayComponent } from "./tournament-group-play";
-import { Tournament, TournamentGame } from "../../client-db/tournament";
+import { Tournament, TournamentGame } from "../../client-db/tournaments/tournament";
 
 export const TournamentPage: React.FC = () => {
   const { tournament: tournamentId, player1, player2 } = useTennisParams();
