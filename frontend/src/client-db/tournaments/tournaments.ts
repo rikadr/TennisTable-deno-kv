@@ -1,6 +1,6 @@
-import { TennisTable } from "./tennis-table";
+import { TennisTable } from "../tennis-table";
+import { TournamentDB } from "../types";
 import { Tournament } from "./tournament";
-import { TournamentDB } from "./types";
 
 export const optioEasterTournament: TournamentDB = {
   id: "randomid38",
