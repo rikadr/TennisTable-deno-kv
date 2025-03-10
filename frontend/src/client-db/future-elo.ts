@@ -120,6 +120,8 @@ export class FutureElo {
     }
 
     this.predictedGames = this.parent.simulations.shuffleArray(this.predictedGames);
+
+    this.predictedGames.forEach((game, index) => (game.time = now + index)); // Set deterministic time in order after shuffle
   }
 
   private getDirectFraction(p1: string, p2: string): Fraction {

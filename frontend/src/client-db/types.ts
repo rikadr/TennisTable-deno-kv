@@ -48,7 +48,6 @@ export type TournamentDB = {
   name: string;
   description?: string;
   startDate: number;
-  // endDate: number; ????
   groupPlay: boolean;
   signedUp: SignUpTournament[];
   playerOrder?: string[]; // To be set when tournament starts

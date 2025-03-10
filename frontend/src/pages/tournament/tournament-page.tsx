@@ -1,4 +1,3 @@
-import { TournamentGame, TournamentWithGames } from "../../client-db/tournaments";
 import { classNames } from "../../common/class-names";
 import { useClientDbContext } from "../../wrappers/client-db-context";
 import { ProfilePicture } from "../player/profile-picture";
@@ -11,17 +10,14 @@ import { useTennisParams } from "../../hooks/use-tennis-params";
 import { useSessionStorage } from "usehooks-ts";
 import { relativeTimeString } from "../../common/date-utils";
 import { TournamentSignup } from "./tournament-signup";
-import { TournamentGroupPlay } from "./tournament-group-play";
+import { TournamentGroupPlayComponent } from "./tournament-group-play";
+import { Tournament, TournamentGame } from "../../client-db/tournament";
 
 export const TournamentPage: React.FC = () => {
   const { tournament: tournamentId, player1, player2 } = useTennisParams();
-
   const rerender = useRerender();
   const context = useClientDbContext();
-
-  const tournaments = context.tournaments.getTournaments();
-  const tournament = tournaments.length === 1 ? tournaments[0] : tournaments.find((t) => t.id === tournamentId);
-
+  const tournament = context.tournaments.getTournament(tournamentId);
   const [showAsList, setShowAsList] = useSessionStorage(
     `show-tournament-as-list${tournamentId}`,
     window.innerWidth < 1_000,
@@ -71,12 +67,10 @@ export const TournamentPage: React.FC = () => {
           }).format(new Date(tournament.startDate))}
           )
         </p>
-        {tournament.bracket && tournament.bracket[0]?.[0]?.winner && (
+        {tournament.winner && (
           <div className="min-w-80 max-w-96 space-y-2">
-            <p className="text-xs italic">
-              Won {relativeTimeString(new Date(tournament.bracket[0][0].completedAt ?? 0))}
-            </p>
-            <WinnerBox winner={tournament.bracket[0][0].winner} />{" "}
+            <p className="text-xs italic">Won {relativeTimeString(new Date(tournament.endDate || 0))}</p>
+            <WinnerBox winner={tournament.winner} />{" "}
           </div>
         )}
         <div className="flex flex-col items-start">
@@ -116,8 +110,7 @@ export const TournamentPage: React.FC = () => {
                 tries++;
                 context.futureElo.simulate();
                 context.tournaments.clearTournamentCache();
-                winner = context.tournaments.getTournaments().find((t) => t.id === tournament.id)
-                  ?.bracket?.[0]?.[0]?.winner;
+                winner = context.tournaments.getTournament(tournament.id)?.winner;
                 if (winner) {
                   winners[winner] = (winners[winner] || 0) + 1;
                 }
@@ -145,7 +138,7 @@ Other winners: ` + JSON.stringify(sortedWinners, null, 2),
       {tournament.startDate > new Date().getTime() && <TournamentSignup tournament={tournament} />}
       {tournament.startDate < new Date().getTime() && (
         <>
-          {((tournament.groupPlay && tournament.groupPlayEnded) || tournament.groupPlay === false) && (
+          {tournament.bracket && (
             <>
               <Switch
                 checked={showAsList}
@@ -178,7 +171,7 @@ Other winners: ` + JSON.stringify(sortedWinners, null, 2),
               )}
             </>
           )}
-          <TournamentGroupPlay tournament={tournament} rerender={rerender} />
+          <TournamentGroupPlayComponent tournament={tournament} rerender={rerender} />
         </>
       )}
     </div>
@@ -186,7 +179,7 @@ Other winners: ` + JSON.stringify(sortedWinners, null, 2),
 };
 
 type GamesListProps = {
-  tournament: TournamentWithGames;
+  tournament: Tournament;
   rerender: () => void;
   itemRefs: React.MutableRefObject<{
     [key: string]: HTMLElement | null;
@@ -198,12 +191,12 @@ const GamesList: React.FC<GamesListProps> = ({ tournament, rerender, itemRefs })
   return (
     <div className="flex flex-col items-center lg:flex-row-reverse lg:justify-end lg:items-start gap-2">
       {tournament.bracket &&
-        tournament.bracket.map((layer, layerIndex) => (
+        tournament.bracket.bracket.map((layer, layerIndex) => (
           <div key={layerIndex} className="flex flex-col gap-1 w-full min-w-[22rem] max-w-[27rem]">
             <h3 className="text-center text-sm">{layerIndexToTournamentRound(layerIndex)}</h3>
             {layer.map((game, gameIndex) => {
               // Skip empty qualifier games
-              if (layerIndex === tournament.bracket!.length - 1 && !game.player1 && !game.player2) return null;
+              if (layerIndex === tournament.bracket!.bracket.length - 1 && !game.player1 && !game.player2) return null;
               const { isPending, p1IsWinner, p2IsWinner, p1IsLoser, p2IsLoser, showMenu } = getGameStates(
                 tournament,
                 game,
@@ -263,7 +256,7 @@ const GamesList: React.FC<GamesListProps> = ({ tournament, rerender, itemRefs })
 type Size = "lg" | "md" | "sm" | "xs" | "xxs";
 
 type GameTriangleProps = {
-  tournament: TournamentWithGames;
+  tournament: Tournament;
   layerIndex: number;
   gameIndex: number;
   rerender: () => void;
@@ -338,9 +331,9 @@ const GameTriangle: React.FC<GameTriangleProps> = ({ tournament, layerIndex, gam
     return null;
   }
 
-  const game = tournament.bracket[layerIndex]?.[gameIndex];
+  const game = tournament.bracket.bracket[layerIndex]?.[gameIndex];
 
-  if (!game || (layerIndex === tournament.bracket.length - 1 && !game.player1 && !game.player2)) {
+  if (!game || (layerIndex === tournament.bracket.bracket.length - 1 && !game.player1 && !game.player2)) {
     return size === "xs" || size === "xxs" ? null : <div className="grow" />;
   }
 
@@ -428,7 +421,7 @@ const GameTriangle: React.FC<GameTriangleProps> = ({ tournament, layerIndex, gam
         </div>
       </Menu>
 
-      {layerIndex < tournament.bracket.length && (
+      {layerIndex < tournament.bracket.bracket.length && (
         <div className="flex gap-2">
           <GameTriangle
             tournament={tournament}
@@ -456,7 +449,7 @@ function winStateEmoji(winner?: boolean, skipped?: any) {
   }
 }
 
-function getGameStates(tournament: TournamentWithGames, game: Partial<TournamentGame>) {
+function getGameStates(tournament: Tournament, game: Partial<TournamentGame>) {
   const isPending = !!game.player1 && !!game.player2 && !game.winner && !game.skipped;
 
   const p1IsWinner = !!game.winner && game.winner === game.player1;
@@ -470,7 +463,7 @@ function getGameStates(tournament: TournamentWithGames, game: Partial<Tournament
     game.player1 && game.player2 && game.winner === undefined && game.skipped === undefined;
   const showSkipGameOption = game.player1 && game.player2 && game.winner === undefined && game.skipped === undefined;
   const advanceToGame = game.advanceTo
-    ? tournament.bracket![game.advanceTo.layerIndex]?.[game.advanceTo.gameIndex]
+    ? tournament.bracket!.bracket[game.advanceTo.layerIndex]?.[game.advanceTo.gameIndex]
     : undefined;
   const showUndoSkipOption =
     game.skipped && advanceToGame?.winner === undefined && advanceToGame?.skipped === undefined;
@@ -491,7 +484,7 @@ function getGameStates(tournament: TournamentWithGames, game: Partial<Tournament
 }
 
 export const GameMenuItems: React.FC<{
-  tournament: TournamentWithGames;
+  tournament: Tournament;
   game: Partial<TournamentGame>;
   rerender: () => void;
 }> = ({ tournament, game, rerender }) => {

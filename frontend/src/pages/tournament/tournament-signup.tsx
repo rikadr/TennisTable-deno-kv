@@ -7,9 +7,9 @@ import { httpClient } from "../../common/http-client";
 import { queryClient } from "../../common/query-client";
 import { ProfilePicture } from "../player/profile-picture";
 import { useClientDbContext } from "../../wrappers/client-db-context";
-import { TournamentWithGames } from "../../client-db/tournaments";
+import { Tournament } from "../../client-db/tournament";
 
-export const TournamentSignup: React.FC<{ tournament: TournamentWithGames }> = ({ tournament }) => {
+export const TournamentSignup: React.FC<{ tournament: Tournament }> = ({ tournament }) => {
   const context = useClientDbContext();
   const [signUpEdit, setSignUpEdit] = useState(false);
   const [signUpPlayer, setSignUpPlayer] = useState<string>();

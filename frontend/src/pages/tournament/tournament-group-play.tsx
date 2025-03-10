@@ -1,15 +1,15 @@
 import { Link } from "react-router-dom";
-import { GroupScorePlayer, Tournaments, TournamentWithGames } from "../../client-db/tournaments";
 import { classNames } from "../../common/class-names";
 import { fmtNum } from "../../common/number-utils";
 import { useClientDbContext } from "../../wrappers/client-db-context";
 import { ProfilePicture } from "../player/profile-picture";
+import { GroupScorePlayer, Tournament, TournamentGroupPlay } from "../../client-db/tournament";
 
-export const TournamentGroupPlay: React.FC<{ tournament: TournamentWithGames; rerender: () => void }> = ({
+export const TournamentGroupPlayComponent: React.FC<{ tournament: Tournament; rerender: () => void }> = ({
   tournament,
   rerender,
 }) => {
-  if (tournament.groupPlay === false) {
+  if (tournament.tournamentDb.groupPlay === false) {
     return null;
   }
 
@@ -32,9 +32,9 @@ const GroupPlayRules: React.FC = () => (
     <h3 className="px-4 -mb-2 mt-2">Rules</h3>
     <div className="bg-secondary-background text-secondary-text w-96 space-y-2 py-2 px-4 rounded-lg m-4">
       <div className="flex gap-4">
-        <p>Win: {fmtNum(Tournaments.GROUP_POINTS.WIN)}</p>
-        <p>Loss: {fmtNum(Tournaments.GROUP_POINTS.LOSS)}</p>
-        <p>DNF: {fmtNum(Tournaments.GROUP_POINTS.DNF)}</p>
+        <p>Win: {fmtNum(Tournament.GROUP_POINTS.WIN)}</p>
+        <p>Loss: {fmtNum(Tournament.GROUP_POINTS.LOSS)}</p>
+        <p>DNF: {fmtNum(Tournament.GROUP_POINTS.DNF)}</p>
       </div>
       <p className="font-light text-sm">
         Scores are multiplied by the <span className="font-bold underline">group size adjustment factor </span> to
@@ -59,14 +59,13 @@ const GroupPlayRules: React.FC = () => (
   </div>
 );
 
-export const TournamentGroupScores: React.FC<{ tournament: TournamentWithGames }> = ({ tournament }) => {
-  if (tournament.groupScores === undefined) {
+export const TournamentGroupScores: React.FC<{ tournament: Tournament }> = ({ tournament }) => {
+  if (tournament.groupPlay?.groupScores === undefined) {
     return null;
   }
 
-  const scores = Array.from(tournament.groupScores).sort(Tournaments.sortGroupScores);
-  const tournamentLayers = Math.floor(Math.log2(tournament.playerOrder!.length));
-  const cutOffIndex = Math.pow(2, tournamentLayers);
+  const scores = Array.from(tournament.groupPlay.groupScores).sort(TournamentGroupPlay.sortGroupScores);
+  const cutOffIndex = tournament.groupPlay.getBracketSize();
 
   const row = (player: GroupScorePlayer, place: number) => (
     <tr key={player.name} className="hover:bg-secondary-background/50">
@@ -127,17 +126,17 @@ export const TournamentGroupScores: React.FC<{ tournament: TournamentWithGames }
   );
 };
 
-export const TournamentGroups: React.FC<{ tournament: TournamentWithGames; rerender: () => void }> = ({
+export const TournamentGroups: React.FC<{ tournament: Tournament; rerender: () => void }> = ({
   tournament,
   rerender,
 }) => {
   const { tournaments } = useClientDbContext();
 
-  if (tournament.groups === undefined) {
+  if (tournament.groupPlay?.groups === undefined) {
     return null;
   }
 
-  return tournament.groups?.map((group, groupIndex) => (
+  return tournament.groupPlay.groups.map((group, groupIndex) => (
     <div key={groupIndex} className="max-w-96 w-full space-y-2">
       <div className="rounded-lg ring-2 ring-secondary-background text-secondary-text p-2 px-4">
         <section className="flex justify-between items-baseline">
@@ -155,12 +154,7 @@ export const TournamentGroups: React.FC<{ tournament: TournamentWithGames; reren
         const gameIsSkipped = game.skipped !== undefined;
         function handleSkip(player: string) {
           if (gameIsWon) return;
-          if (gameIsSkipped) {
-            tournaments.undoSkipGame(
-              tournament.skippedGames.find((g) => g.time === game.skipped!.time)!,
-              tournament.id,
-            );
-          } else {
+          if (!gameIsSkipped) {
             tournaments.skipGame(
               {
                 time: new Date().getTime(),
