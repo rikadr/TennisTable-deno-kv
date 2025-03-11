@@ -46,11 +46,11 @@ async function signUp(username: string, password: string): Promise<{ token: stri
   // async hash not avaiable in deno deploy
   const encryptedPassword = bcrypt.hashSync(password);
 
-  const role: string = "user";
+  let role: string = "user";
 
-  // if (username === "peder" || username === "rikard") {
-  //   role = "admin";
-  // }
+  if (username === "peder") {
+    role = "admin";
+  }
 
   const user = await userStore.createUser(username, encryptedPassword, role);
 
