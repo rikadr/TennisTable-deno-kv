@@ -9,7 +9,7 @@ const GAMES_COUNT = 5;
 export const RecentGames: React.FC = () => {
   const context = useClientDbContext();
   const leaderboardMap = context.leaderboard.getCachedLeaderboardMap();
-  const lastGames = context.games.slice(context.games.length - GAMES_COUNT).toReversed();
+  const lastGames = context.games.slice(context.games.length - 1 - GAMES_COUNT).toReversed();
 
   function getGame(game: Game) {
     const winner = leaderboardMap.get(game.winner);
