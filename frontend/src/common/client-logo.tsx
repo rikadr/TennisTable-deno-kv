@@ -5,7 +5,9 @@ export const ClientLogo: React.FC = () => {
   switch (clientName) {
     case "skimore":
       return (
-        <img src={skimorelogo} alt="skimore logo" className="h-full max-w-36 sm:max-w-48 rounded-lg hover:opacity-60" />
+        <div className="h-full max-w-36 sm:max-w-48 rounded-lg overflow-hidden hover:opacity-60">
+          <img src={skimorelogo} alt="skimore logo" />
+        </div>
       );
     default:
       return (
