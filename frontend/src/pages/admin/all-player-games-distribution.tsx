@@ -17,7 +17,7 @@ export const AllPlayerGamesDistrubution: React.FC = () => {
     .sort((a, b) => b.games - a.games);
 
   return (
-    <div className="flex flex-col w-full px-4 divide-y divide-primary-text/50">
+    <div className="flex flex-col w-full px-4 divide-y divide-primary-text/50 max-w-xl">
       {summary.map(({ name, games }, index) => {
         const fraction = games / mostGames;
         return (
