@@ -6,6 +6,7 @@ import { session } from "../services/auth";
 import pumpkinLogo from "../img/halloween/tennis-table.png";
 import { CURRENT_THEME } from "../client-db/types";
 import { useClientDbContext } from "./client-db-context";
+import { ClientLogo } from "../common/client-logo";
 
 const MENU_HEIGHT = "h-16 md:h-12";
 
@@ -76,14 +77,18 @@ export const NavMenu: React.FC = () => {
 
   const themedLogo = () => {
     if (CURRENT_THEME === "halloween") {
-      return <img className="w-40" src={pumpkinLogo} alt="Pumpkin" />;
+      return (
+        <div className="w-40 py-4 px-6 rounded-full bg-primary-background hover:bg-primary-background/70">
+          <img className="" src={pumpkinLogo} alt="Pumpkin" />
+        </div>
+      );
     }
 
     if (isSimulated) {
-      return <>Simulation 🔴</>;
+      return <div className="bg-red-600 hover:bg-red-900 rounded-full py-4 px-6">Simulation 🔴</div>;
     }
-    // Default theme
-    return <>Tennis🏆💔Table</>;
+
+    return <ClientLogo />;
   };
 
   return (
@@ -95,13 +100,7 @@ export const NavMenu: React.FC = () => {
           MENU_HEIGHT,
         )}
       >
-        <Link
-          to="/leader-board"
-          className={classNames(
-            "whitespace-nowrap  py-4 px-6 rounded-full select-none text-primary-text",
-            isSimulated ? "bg-red-600 hover:bg-red-900" : "bg-primary-background hover:bg-primary-background/70",
-          )}
-        >
+        <Link to="/leader-board" className={classNames("whitespace-nowrap rounded-full select-none text-primary-text")}>
           {themedLogo()}
         </Link>
         {renderMenuitems().slice(1, 2)}
