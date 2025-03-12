@@ -2,7 +2,7 @@ import { useMutation } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { queryClient } from "../common/query-client";
 import { Link, useNavigate } from "react-router-dom";
-import { PlayersDTO } from "./admin-page";
+import { PlayersDTO } from "./admin/admin-page";
 import { classNames } from "../common/class-names";
 import { httpClient } from "../common/http-client";
 import { useClientDbContext } from "../wrappers/client-db-context";

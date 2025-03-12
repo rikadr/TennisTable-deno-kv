@@ -1,11 +1,12 @@
 import { useMutation } from "@tanstack/react-query";
 import React from "react";
-import { queryClient } from "../common/query-client";
-import { relativeTimeString } from "../common/date-utils";
-import { httpClient } from "../common/http-client";
-import { Users } from "./users";
-import { useClientDbContext } from "../wrappers/client-db-context";
-import { session } from "../services/auth";
+import { queryClient } from "../../common/query-client";
+import { relativeTimeString } from "../../common/date-utils";
+import { httpClient } from "../../common/http-client";
+import { Users } from "../users";
+import { useClientDbContext } from "../../wrappers/client-db-context";
+import { session } from "../../services/auth";
+import { AllPlayerGamesDistrubution } from "./all-player-games-distribution";
 
 export type PlayersDTO = {
   name: string;
@@ -49,6 +50,10 @@ export const AdminPage: React.FC = () => {
 
   return (
     <div>
+      <h1>ADMIN PAGE</h1>
+      <br />
+      <h2>Total distribution of games played</h2>
+      <AllPlayerGamesDistrubution />
       <Users />
       <p>Players: {players.length}</p>
       <p>Removing players is reverable. No games will be deleted.</p>

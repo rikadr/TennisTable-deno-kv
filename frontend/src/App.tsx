@@ -7,7 +7,7 @@ import { AddGamePage } from "./pages/add-game-page";
 import { ComparePlayersPage } from "./pages/compare-players-page";
 import { MyPage } from "./pages/my-page";
 import { LoginPage } from "./pages/login";
-import { AdminPage } from "./pages/admin-page";
+import { AdminPage } from "./pages/admin/admin-page";
 import { session } from "./services/auth";
 import { SignupPage } from "./pages/sign-up";
 import { WebSocketRefetcher } from "./wrappers/web-socket-refetcher";
