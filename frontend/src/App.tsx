@@ -25,6 +25,7 @@ import { TournamentsListPage } from "./pages/tournament/tournaments-list-page";
 import { TournamentPage } from "./pages/tournament/tournament-page";
 import { getClientConfig } from "./common/client-config/get-client-config";
 import Snowfall from "react-snowfall";
+import { HelmetSetter } from "./wrappers/helmet";
 
 const RequireAuth: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   if (!session.isAuthenticated) {
@@ -40,8 +41,9 @@ function App() {
   const client = queryClient;
   return (
     <QueryClientProvider client={client}>
-      {clientConfig.snow && <Snowfall />}
+      {clientConfig.snow && <Snowfall radius={[0.2, 1]} speed={[0.1, 0.3]} wind={[0, 1]} />}
       <div className="bg-primary-background min-h-screen w-full overflow-auto">
+        <HelmetSetter />
         <ZoomWrapper>
           <WebSocketRefetcher>
             <ClientDbWrapper>

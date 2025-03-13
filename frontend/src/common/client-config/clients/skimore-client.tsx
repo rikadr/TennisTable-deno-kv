@@ -9,4 +9,6 @@ export class SkimoreClient implements ClientConfig {
     </div>
   );
   snow = true;
+  title = "SKIMORE - Ping pong klubb";
+  favicon = "❄";
 }

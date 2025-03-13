@@ -6,11 +6,21 @@ export abstract class ClientConfig {
   name: string;
   logo: React.ReactElement;
   snow: boolean;
+  title: string;
+  favicon: string;
 
-  protected constructor(data: { name: string; logo: React.ReactElement; snow?: boolean }) {
+  protected constructor(data: {
+    name: string;
+    logo: React.ReactElement;
+    snow?: boolean;
+    title: string;
+    favicon: string;
+  }) {
     this.name = data.name;
     this.logo = data.logo;
     this.snow = data.snow ?? false;
+    this.title = data.title;
+    this.favicon = data.favicon;
   }
 }
 
