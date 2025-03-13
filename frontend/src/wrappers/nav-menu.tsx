@@ -6,7 +6,7 @@ import { session } from "../services/auth";
 import pumpkinLogo from "../img/halloween/tennis-table.png";
 import { CURRENT_THEME } from "../client-db/types";
 import { useClientDbContext } from "./client-db-context";
-import { getClientConfig } from "../common/get-client-config";
+import { getClientConfig } from "../common/client-config/get-client-config";
 
 const MENU_HEIGHT = "h-16 md:h-12";
 

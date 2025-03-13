@@ -1,11 +1,11 @@
 import React from "react";
-import skimorelogo from "../img/client-logo/skimore.jpg";
+import { SkimoreClient } from "./skimore-client";
 
 export function getClientConfig() {
   return ClientConfig.create();
 }
 
-class ClientConfig {
+export class ClientConfig {
   name: string;
   logo: React.ReactElement;
   snow: boolean;
@@ -36,20 +36,6 @@ class ClientConfig {
         </div>
       ),
       snow: false,
-    });
-  }
-}
-
-class SkimoreClient extends ClientConfig {
-  constructor() {
-    super({
-      name: "skimore",
-      logo: (
-        <div className="h-full max-w-36 sm:max-w-48 rounded-lg overflow-hidden hover:opacity-60">
-          <img src={skimorelogo} alt="skimore logo" />
-        </div>
-      ),
-      snow: true,
     });
   }
 }
