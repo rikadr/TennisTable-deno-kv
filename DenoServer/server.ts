@@ -8,6 +8,7 @@ import { WebSocketClientManager } from "./web-socket/web-socket-client-manager.t
 import { registerClientDbRoutes } from "./client-db/client-db.routes.ts";
 import { registerTournamentRoutes } from "./tournament/tournament.routes.ts";
 import { ClientDBCacheManager } from "./client-db/client-db-cache.ts";
+import { runMigrations } from "./migrations/index.ts";
 
 const app = new Application();
 const api = new Router();
@@ -27,6 +28,16 @@ export const webSocketClientManager = new WebSocketClientManager();
  * Clear cashe on start or redeploy. New deployment could have changes in the data structure, invalidating the cache
  */
 await clientDBCacheManager.clearCache();
+
+/**
+ * Run database migrations
+ */
+try {
+  await runMigrations();
+} catch (error) {
+  console.error("Failed to run migrations", error);
+  Deno.exit(1);
+}
 
 /**
  * Register routes

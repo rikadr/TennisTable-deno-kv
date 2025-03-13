@@ -1,6 +1,6 @@
 {
   "tasks": {
-    "dev": "deno run --allow-net --allow-env --env --watch --unstable-kv server.ts"
+    "dev": "deno run --allow-net --allow-env --allow-read --env --watch --unstable-kv server.ts"
   },
   "compilerOptions": {
     "lib": [
