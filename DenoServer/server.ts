@@ -32,12 +32,7 @@ await clientDBCacheManager.clearCache();
 /**
  * Run database migrations
  */
-try {
-  await runMigrations();
-} catch (error) {
-  console.error("Failed to run migrations", error);
-  Deno.exit(1);
-}
+await runMigrations();
 
 /**
  * Register routes
@@ -47,8 +42,8 @@ registerGameRoutes(api);
 registerTournamentRoutes(api);
 registerWebSocketRoutes(api);
 registerClientDbRoutes(api);
-
 registerUserRoutes(api);
+
 app.use(api.routes());
 app.use(api.allowedMethods());
 
