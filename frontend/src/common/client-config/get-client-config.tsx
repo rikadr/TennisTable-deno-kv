@@ -1,11 +1,8 @@
 import React from "react";
-import { SkimoreClient } from "./skimore-client";
+import { SkimoreClient } from "./clients/skimore-client";
+import { GuestClient } from "./clients/guest-client";
 
-export function getClientConfig() {
-  return ClientConfig.create();
-}
-
-export class ClientConfig {
+export abstract class ClientConfig {
   name: string;
   logo: React.ReactElement;
   snow: boolean;
@@ -15,27 +12,15 @@ export class ClientConfig {
     this.logo = data.logo;
     this.snow = data.snow ?? false;
   }
+}
 
-  public static create() {
-    const clientName = process.env.REACT_APP_CLIENT;
+export function getClientConfig() {
+  const clientName = process.env.REACT_APP_CLIENT;
 
-    switch (clientName) {
-      case "skimore":
-        return new SkimoreClient();
-      default:
-        return ClientConfig.guest();
-    }
-  }
-
-  public static guest() {
-    return new ClientConfig({
-      name: "guest",
-      logo: (
-        <div className="py-4 px-6 bg-primary-background hover:bg-primary-background/70  rounded-full">
-          Tennis🏆💔Table
-        </div>
-      ),
-      snow: false,
-    });
+  switch (clientName) {
+    case "skimore":
+      return new SkimoreClient();
+    default:
+      return new GuestClient();
   }
 }
