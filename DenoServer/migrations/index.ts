@@ -1,4 +1,5 @@
 import { kv } from "../db.ts";
+import { migrations } from "./migrations.ts";
 
 /**
  * Migration execution
@@ -7,29 +8,16 @@ import { kv } from "../db.ts";
 export async function runMigrations() {
   console.log("\nRunning migrations .......................");
 
-  // Collect migration scripts
-  const migrationFiles: string[] = [];
-  for await (const entry of Deno.readDir("./migrations/scripts")) {
-    if (entry.isFile && entry.name.endsWith(".ts")) {
-      migrationFiles.push(entry.name);
-    }
-  }
-
-  // Sort by file name
-  migrationFiles.sort();
-
   // Execute in order
-  for (const fileName of migrationFiles) {
-    const migrationStatus = await getMigrationStatus(fileName);
+  for (const migration of migrations) {
+    const migrationStatus = await getMigrationStatus(migration.name);
     if (migrationStatus) {
-      console.log(`*Skip* Migration already executed: ${fileName} at ${migrationStatus.timestamp}`);
+      console.log(`*Skip* Migration already executed: ${migration.name} at ${migrationStatus.timestamp}`);
       continue;
     }
-    console.log(`Executing migration: ${fileName}`);
-    const filePath = new URL(`./scripts/${fileName}`, import.meta.url).href;
-    await import(filePath);
-    console.log(`Completed migration: ${fileName}`);
-    await registerSuccessfulMigration(fileName);
+    console.log(`Executing migration: ${migration.name}`);
+    await migration.up();
+    await registerSuccessfulMigration(migration.name);
   }
 
   console.log("Migrations completed .....................");
