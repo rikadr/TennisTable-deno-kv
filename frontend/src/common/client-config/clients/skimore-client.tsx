@@ -1,5 +1,4 @@
-import React from "react";
-import skimorelogo from "../../img/client-logo/skimore.jpg";
+import skimorelogo from "../../../img/client-logo/skimore.jpg";
 import { ClientConfig } from "../get-client-config";
 
 export class SkimoreClient implements ClientConfig {
