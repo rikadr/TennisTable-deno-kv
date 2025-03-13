@@ -6,7 +6,7 @@ import { session } from "../services/auth";
 import pumpkinLogo from "../img/halloween/tennis-table.png";
 import { CURRENT_THEME } from "../client-db/types";
 import { useClientDbContext } from "./client-db-context";
-import { ClientLogo } from "../common/client-logo";
+import { getClientConfig } from "../common/get-client-config";
 
 const MENU_HEIGHT = "h-16 md:h-12";
 
@@ -88,7 +88,9 @@ export const NavMenu: React.FC = () => {
       return <div className="bg-red-600 hover:bg-red-900 rounded-full py-4 px-6">Simulation 🔴</div>;
     }
 
-    return <ClientLogo />;
+    const clientConfig = getClientConfig();
+
+    return clientConfig.logo;
   };
 
   return (

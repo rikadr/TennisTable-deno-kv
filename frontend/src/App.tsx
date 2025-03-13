@@ -23,6 +23,8 @@ import { WinLoss } from "./pages/simulations/win-loss";
 import { ExpectedScore } from "./pages/simulations/expected-score";
 import { TournamentsListPage } from "./pages/tournament/tournaments-list-page";
 import { TournamentPage } from "./pages/tournament/tournament-page";
+import { getClientConfig } from "./common/get-client-config";
+import Snowfall from "react-snowfall";
 
 const RequireAuth: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   if (!session.isAuthenticated) {
@@ -34,9 +36,11 @@ const RequireAuth: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 };
 
 function App() {
+  const clientConfig = getClientConfig();
   const client = queryClient;
   return (
     <QueryClientProvider client={client}>
+      {clientConfig.snow && <Snowfall />}
       <div className="bg-primary-background min-h-screen w-full overflow-auto">
         <ZoomWrapper>
           <WebSocketRefetcher>
