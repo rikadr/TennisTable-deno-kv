@@ -1,7 +1,6 @@
 import { TournamentDB } from "../../client-db/types";
 import { ClientConfig } from "../get-client-config";
 import { GuestClient } from "./guest-client";
-import { testGroupPlayTournament } from "./local-dev-client";
 
 export class OptioClient implements ClientConfig {
   id = process.env.REACT_APP_CLIENT;
@@ -10,7 +9,7 @@ export class OptioClient implements ClientConfig {
   snow = false;
   title = new GuestClient().title;
   favicon = new GuestClient().favicon;
-  tournaments = [optioChristmasTournament, testGroupPlayTournament];
+  tournaments = [optioChristmasTournament];
 }
 
 export const optioChristmasTournament: TournamentDB = {
