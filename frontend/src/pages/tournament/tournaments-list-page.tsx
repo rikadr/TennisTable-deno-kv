@@ -4,7 +4,7 @@ import { relativeTimeString } from "../../common/date-utils";
 
 export const TournamentsListPage: React.FC = () => {
   const {
-    tournaments: { tournaments },
+    client: { tournaments },
   } = useClientDbContext();
 
   const sortedTournaments = [...tournaments].sort((a, b) => b.startDate - a.startDate);
@@ -34,6 +34,9 @@ export const TournamentsListPage: React.FC = () => {
             </div>
           </Link>
         ))}
+        {sortedTournaments.length === 0 && (
+          <p>No tournaments. Want to set up a tournament? Reach out to Rikard to set up a new tournament 🏆</p>
+        )}
       </div>
     </div>
   );

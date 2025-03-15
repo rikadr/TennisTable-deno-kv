@@ -5,6 +5,7 @@ import { PVP } from "./pvp";
 import { Simulations } from "./simulations";
 import { Tournaments } from "./tournaments/tournaments";
 import { ClientDbDTO, Game, Player, SignUpTournament } from "./types";
+import { getClientConfig } from "../common/client-config/get-client-config";
 
 export class TennisTable {
   isSimulatedState = false;
@@ -16,6 +17,11 @@ export class TennisTable {
   readonly games: Game[];
   readonly signedUp: SignUpTournament[];
   readonly elo = Elo;
+
+  // --------------------------------------------------------------------------
+  // Client configuration
+  // --------------------------------------------------------------------------
+  client = getClientConfig();
 
   // --------------------------------------------------------------------------
   // Business logic

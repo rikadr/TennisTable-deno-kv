@@ -8,4 +8,5 @@ export class GuestClient implements ClientConfig {
   snow = false;
   title = "Tennis🏆💔Table";
   favicon = "🏓";
+  tournaments = [];
 }
