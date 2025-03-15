@@ -22,7 +22,7 @@ export const AddGamePage: React.FC = () => {
 
   const [gameSuccessfullyAdded, setGameSuccessfullyAdded] = useState(false);
 
-  const isPendingTournamentGame = context.tournaments.isPendingGame(winner, loser);
+  const isPendingTournamentGame = context.tournaments.findPendingGames(winner, loser);
 
   const addGameMutation = useMutation<unknown, Error>({
     mutationFn: async () => {
@@ -42,8 +42,8 @@ export const AddGamePage: React.FC = () => {
       setGameSuccessfullyAdded(true);
       setTimeout(() => {
         navigate(
-          isPendingTournamentGame
-            ? `/tournament?tournament=${isPendingTournamentGame.tournament.id}&player1=${isPendingTournamentGame.game.player1}&player2=${isPendingTournamentGame.game.player2}`
+          isPendingTournamentGame.length > 0
+            ? `/tournament?tournament=${isPendingTournamentGame[0].tournament.id}&player1=${isPendingTournamentGame[0].player1}&player2=${isPendingTournamentGame[0].player2}`
             : `/1v1/?player1=${winner}&player2=${loser}`,
         );
       }, 2_000);
@@ -76,14 +76,21 @@ export const AddGamePage: React.FC = () => {
   return (
     <div className="w-full flex justify-center">
       <div className="space-y-4 p-4 w-fit">
-        {isPendingTournamentGame && (
+        {isPendingTournamentGame.length > 0 && (
           <Link
-            to={`/tournament?tournament=${isPendingTournamentGame.tournament.id}&player1=${isPendingTournamentGame.game.player1}&player2=${isPendingTournamentGame.game.player2}`}
+            to={`/tournament?tournament=${isPendingTournamentGame[0].tournament.id}&player1=${isPendingTournamentGame[0].player1}&player2=${isPendingTournamentGame[0].player2}`}
           >
             <div className="ring-1 ring-secondary-background px-4 py-2 rounded-lg hover:bg-secondary-background/50">
               <p className="text-left italic text-xs">This game is pending in a tournament!</p>
-              <h1>{isPendingTournamentGame.tournament.name}</h1>
-              <p className="text-center text-lg">{layerIndexToTournamentRound(isPendingTournamentGame.layerIndex)}</p>
+              <h1>{isPendingTournamentGame[0].tournament.name}</h1>
+              {isPendingTournamentGame[0].layerIndex !== undefined && (
+                <p className="text-center text-lg">
+                  {layerIndexToTournamentRound(isPendingTournamentGame[0].layerIndex)}
+                </p>
+              )}
+              {isPendingTournamentGame[0].groupIndex !== undefined && (
+                <p className="text-center text-lg">Group {isPendingTournamentGame[0].groupIndex + 1}</p>
+              )}
             </div>
           </Link>
         )}

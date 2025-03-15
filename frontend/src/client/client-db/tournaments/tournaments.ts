@@ -65,43 +65,16 @@ export class Tournaments {
     this.#tournamentsCache = undefined;
   }
 
-  isPendingGame(
-    // TODO: Needs update to support group play
-    player1: string | null | undefined,
-    player2: string | null | undefined,
-  ):
-    | {
-        tournament: { name: string; id: string };
-        layerIndex: number;
-        game: { player1: string; player2: string };
-      }
-    | undefined {
-    if (!player1 || !player2) return;
-    const players = [player1, player2];
-
-    const tournament = this.getTournaments().find((t) =>
-      t.bracket?.bracketGames?.some((layer) =>
-        layer.pending.some((game) => players.includes(game.player1) && players.includes(game.player2)),
-      ),
-    );
-    if (!tournament || !tournament.bracket?.bracketGames) return; // remove || !tournament.bracketGames
-
-    const layerIndex = tournament.bracket?.bracketGames.findIndex((layer) =>
-      layer.pending.some((game) => players.includes(game.player1) && players.includes(game.player2)),
-    );
-    if (layerIndex === -1) return;
-
-    const game = tournament.bracket!.bracketGames![layerIndex].pending?.find(
-      (game) => players.includes(game.player1) && players.includes(game.player2),
-    );
-    if (!game) return;
-
-    return {
-      tournament: { name: tournament.tournamentDb.name, id: tournament.tournamentDb.id },
-      layerIndex,
-      game,
-    };
+  findPendingGames(player1: string | null | undefined, player2: string | null | undefined) {
+    if (!player1 || !player2) return [];
+    return this.getTournaments()
+      .map((tournament) => tournament.findPendingGame(player1, player2))
+      .filter(isDefined);
   }
+}
+
+function isDefined<T>(value: T | undefined): value is T {
+  return value !== undefined;
 }
 
 /**

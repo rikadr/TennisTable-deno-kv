@@ -114,4 +114,57 @@ export class Tournament {
     entries.sort((a, b) => a.time - b.time); // Might be heavy sorting, but we need to be sure the games are in order
     return entries;
   }
+
+  findPendingGame(
+    player1: string,
+    player2: string,
+  ):
+    | {
+        tournament: { name: string; id: string };
+        player1: string;
+        player2: string;
+        groupIndex?: number;
+        layerIndex?: number;
+      }
+    | undefined {
+    if (this.startDate > Date.now()) return; // Not started
+    if (this.endDate !== undefined) return; // Has ended
+
+    const players = [player1, player2];
+
+    // Check group play games
+    if (this.groupPlay && this.groupPlay.groupPlayEnded === undefined) {
+      const pendingGroupIndex = this.groupPlay.groups.findIndex((group) =>
+        group.pending.some((game) => players.includes(game.player1!) && players.includes(game.player2!)),
+      );
+      const pendingGame = this.groupPlay.groups[pendingGroupIndex]?.pending.find(
+        (game) => players.includes(game.player1!) && players.includes(game.player2!),
+      );
+      if (pendingGame) {
+        return {
+          tournament: { name: this.name, id: this.id },
+          player1: pendingGame.player1!,
+          player2: pendingGame.player2!,
+          groupIndex: pendingGroupIndex,
+        };
+      }
+    }
+    if (!this.bracket) return;
+
+    // Check bracket games
+    const pendingLayerIndex = this.bracket!.bracketGames.findIndex((layer) =>
+      layer.pending.some((game) => players.includes(game.player1!) && players.includes(game.player2!)),
+    );
+    const pendingGame = this.bracket?.bracketGames[pendingLayerIndex]?.pending.find(
+      (game) => players.includes(game.player1!) && players.includes(game.player2!),
+    );
+    if (pendingGame) {
+      return {
+        tournament: { name: this.name, id: this.id },
+        player1: pendingGame.player1!,
+        player2: pendingGame.player2!,
+        layerIndex: pendingLayerIndex,
+      };
+    }
+  }
 }
