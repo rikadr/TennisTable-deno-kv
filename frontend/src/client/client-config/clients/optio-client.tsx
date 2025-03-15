@@ -3,6 +3,7 @@ import { ClientConfig } from "../get-client-config";
 import { GuestClient } from "./guest-client";
 
 export class OptioClient implements ClientConfig {
+  id = process.env.REACT_APP_CLIENT;
   name = "Optio";
   logo = new GuestClient().logo;
   snow = false;

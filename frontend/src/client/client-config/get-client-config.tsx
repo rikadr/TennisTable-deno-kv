@@ -6,6 +6,7 @@ import { TournamentDB } from "../client-db/types";
 import { LocalDevClient } from "./clients/local-dev-client";
 
 export abstract class ClientConfig {
+  id: string | undefined;
   name: string;
   logo: React.ReactElement;
   snow: boolean;
@@ -14,6 +15,7 @@ export abstract class ClientConfig {
   tournaments: TournamentDB[];
 
   protected constructor(data: {
+    id?: string;
     name: string;
     logo: React.ReactElement;
     snow?: boolean;
@@ -21,6 +23,7 @@ export abstract class ClientConfig {
     favicon: string;
     tournaments: TournamentDB[];
   }) {
+    this.id = data.id;
     this.name = data.name;
     this.logo = data.logo;
     this.snow = data.snow ?? false;

@@ -73,66 +73,68 @@ export const TournamentPage: React.FC = () => {
             <WinnerBox winner={tournament.winner} />{" "}
           </div>
         )}
-        <div className="flex flex-col items-start">
-          <button
-            onClick={() => {
-              context.futureElo.simulate();
-              rerender();
-            }}
-          >
-            Simulate tournament
-          </button>
-          <button
-            onClick={() => {
-              if (
-                window.confirm(
-                  "Are you sure you want to simulate to an unlikely winner? It may take over 60 seconds",
-                ) === false
-              ) {
-                return;
-              }
-              let tries = 0;
-              const likelyWinners = [
-                "Alexander",
-                "Rasmus",
-                "Fooa",
-                "Christoffer",
-                "Simone",
-                "Peder",
-                "Erling",
-                "Rikard",
-                "Oskar",
-              ];
-              let winner: string | undefined = "";
-              let winners: Record<string, number> = {};
-
-              while (tries < 10_000 && (winner === undefined || winner === "" || likelyWinners.includes(winner))) {
-                tries++;
+        {context.client.id === "local" && (
+          <div className="flex flex-col items-start">
+            <button
+              onClick={() => {
                 context.futureElo.simulate();
-                context.tournaments.clearTournamentCache();
-                winner = context.tournaments.getTournament(tournament.id)?.winner;
-                if (winner) {
-                  winners[winner] = (winners[winner] || 0) + 1;
+                rerender();
+              }}
+            >
+              Simulate tournament
+            </button>
+            <button
+              onClick={() => {
+                if (
+                  window.confirm(
+                    "Are you sure you want to simulate to an unlikely winner? It may take over 60 seconds",
+                  ) === false
+                ) {
+                  return;
                 }
-                if (tries % 100 === 0) {
-                  console.log(tries);
-                }
-              }
-              const sortedEntries = Object.entries(winners).sort((a, b) => b[1] - a[1]);
-              const sortedWinners: Record<string, number> = Object.fromEntries(sortedEntries);
-              console.log(sortedWinners);
+                let tries = 0;
+                const likelyWinners = [
+                  "Alexander",
+                  "Rasmus",
+                  "Fooa",
+                  "Christoffer",
+                  "Simone",
+                  "Peder",
+                  // "Erling",
+                  // "Rikard",
+                  // "Oskar",
+                ];
+                let winner: string | undefined = "";
+                let winners: Record<string, number> = {};
 
-              rerender();
-              window.alert(
-                `Winner: ${winner}!!!
+                while (tries < 10_000 && (winner === undefined || winner === "" || likelyWinners.includes(winner))) {
+                  tries++;
+                  context.futureElo.simulate();
+                  context.tournaments.clearTournamentCache();
+                  winner = context.tournaments.getTournament(tournament.id)?.winner;
+                  if (winner) {
+                    winners[winner] = (winners[winner] || 0) + 1;
+                  }
+                  if (tries % 100 === 0) {
+                    console.log(tries);
+                  }
+                }
+                const sortedEntries = Object.entries(winners).sort((a, b) => b[1] - a[1]);
+                const sortedWinners: Record<string, number> = Object.fromEntries(sortedEntries);
+                console.log(sortedWinners);
+
+                rerender();
+                window.alert(
+                  `Winner: ${winner}!!!
 Simulated ${tries} tournaments. 
 Other winners: ` + JSON.stringify(sortedWinners, null, 2),
-              );
-            }}
-          >
-            Simulate unlikely winner tournament
-          </button>
-        </div>
+                );
+              }}
+            >
+              Simulate unlikely winner tournament
+            </button>
+          </div>
+        )}
       </div>
 
       {tournament.startDate > new Date().getTime() && <TournamentSignup tournament={tournament} />}
