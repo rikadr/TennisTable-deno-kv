@@ -77,23 +77,24 @@ export const AddGamePage: React.FC = () => {
     <div className="w-full flex justify-center">
       <div className="space-y-4 p-4 w-fit">
         {isPendingTournamentGame.length > 0 && (
+          <p className="italic w-full text-center mb-2">This game is pending in a tournament!</p>
+        )}
+        {isPendingTournamentGame.map((pendingGame) => (
           <Link
-            to={`/tournament?tournament=${isPendingTournamentGame[0].tournament.id}&player1=${isPendingTournamentGame[0].player1}&player2=${isPendingTournamentGame[0].player2}`}
+            key={pendingGame.tournament.id}
+            to={`/tournament?tournament=${pendingGame.tournament.id}&player1=${pendingGame.player1}&player2=${pendingGame.player2}`}
           >
-            <div className="ring-1 ring-secondary-background px-4 py-2 rounded-lg hover:bg-secondary-background/50">
-              <p className="text-left italic text-xs">This game is pending in a tournament!</p>
-              <h1>{isPendingTournamentGame[0].tournament.name}</h1>
-              {isPendingTournamentGame[0].layerIndex !== undefined && (
-                <p className="text-center text-lg">
-                  {layerIndexToTournamentRound(isPendingTournamentGame[0].layerIndex)}
-                </p>
+            <div className="ring-1 ring-secondary-background px-4 py-2 rounded-lg hover:bg-secondary-background/50 mb-2">
+              <h1>{pendingGame.tournament.name}</h1>
+              {pendingGame.layerIndex !== undefined && (
+                <p className="text-center text-lg">{layerIndexToTournamentRound(pendingGame.layerIndex)}</p>
               )}
-              {isPendingTournamentGame[0].groupIndex !== undefined && (
-                <p className="text-center text-lg">Group {isPendingTournamentGame[0].groupIndex + 1}</p>
+              {pendingGame.groupIndex !== undefined && (
+                <p className="text-center text-lg">Group {pendingGame.groupIndex + 1}</p>
               )}
             </div>
           </Link>
-        )}
+        ))}
         <button
           disabled={!winner || !loser || addGameMutation.isPending}
           className={classNames(
