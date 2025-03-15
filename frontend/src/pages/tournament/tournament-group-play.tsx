@@ -1,15 +1,20 @@
-import { Link } from "react-router-dom";
 import { classNames } from "../../common/class-names";
 import { fmtNum } from "../../common/number-utils";
 import { useClientDbContext } from "../../wrappers/client-db-context";
 import { ProfilePicture } from "../player/profile-picture";
 import { Tournament } from "../../client/client-db/tournaments/tournament";
 import { GroupScorePlayer, TournamentGroupPlay } from "../../client/client-db/tournaments/group-play";
+import { GameMenuItems, getGameKeyFromPlayers, QuestionMark, winStateEmoji } from "./tournament-page";
+import { Menu, MenuButton } from "@headlessui/react";
+import { useTennisParams } from "../../hooks/use-tennis-params";
 
-export const TournamentGroupPlayComponent: React.FC<{ tournament: Tournament; rerender: () => void }> = ({
-  tournament,
-  rerender,
-}) => {
+export const TournamentGroupPlayComponent: React.FC<{
+  tournament: Tournament;
+  rerender: () => void;
+  itemRefs: React.MutableRefObject<{
+    [key: string]: HTMLElement | null;
+  }>;
+}> = ({ tournament, rerender, itemRefs }) => {
   if (tournament.tournamentDb.groupPlay === false) {
     return null;
   }
@@ -22,7 +27,7 @@ export const TournamentGroupPlayComponent: React.FC<{ tournament: Tournament; re
         <GroupPlayRules />
       </div>
       <div className="flex flex-wrap justify-center gap-x-6 gap-y-10 mx-6 mt-10">
-        <TournamentGroups tournament={tournament} rerender={rerender} />
+        <TournamentGroups tournament={tournament} rerender={rerender} itemRefs={itemRefs} />
       </div>
     </div>
   );
@@ -127,11 +132,15 @@ export const TournamentGroupScores: React.FC<{ tournament: Tournament }> = ({ to
   );
 };
 
-export const TournamentGroups: React.FC<{ tournament: Tournament; rerender: () => void }> = ({
-  tournament,
-  rerender,
-}) => {
+export const TournamentGroups: React.FC<{
+  tournament: Tournament;
+  rerender: () => void;
+  itemRefs: React.MutableRefObject<{
+    [key: string]: HTMLElement | null;
+  }>;
+}> = ({ tournament, rerender, itemRefs }) => {
   const { tournaments } = useClientDbContext();
+  const { player1: paramPlayer1, player2: paramPlayer2 } = useTennisParams();
 
   if (tournament.groupPlay?.groups === undefined) {
     return null;
@@ -150,7 +159,7 @@ export const TournamentGroups: React.FC<{ tournament: Tournament; rerender: () =
         <p className="text-xs">{fmtNum(group.players.length)} players:</p>
         <p>{group.players.join(", ")}</p>
       </div>
-      {group.groupGames.map((game) => {
+      {group.groupGames.map((game, gameIndex) => {
         const gameIsWon = game.winner !== undefined;
         const gameIsSkipped = game.skipped !== undefined;
         function handleSkip(player: string) {
@@ -167,47 +176,75 @@ export const TournamentGroups: React.FC<{ tournament: Tournament; rerender: () =
           }
           rerender();
         }
+
+        const gameKey =
+          game.player1 && game.player2
+            ? getGameKeyFromPlayers(game.player1, game.player2, "group")
+            : "GR" + groupIndex + "G" + gameIndex;
+
+        const isParamSelectedGame = gameKey === getGameKeyFromPlayers(paramPlayer1, paramPlayer2, "group");
+        const p1IsWinner = !!game.winner && game.winner === game.player1;
+        const p2IsWinner = !!game.winner && game.winner === game.player2;
+        const p1IsLoser = !!game.winner && game.winner !== game.player1;
+        const p2IsLoser = !!game.winner && game.winner !== game.player2;
+        const isPending = group.pending.includes(game);
+
         return (
-          <div key={game.player1! + game.player2!} className="group">
-            <div
+          <Menu key={gameKey} ref={(el) => (itemRefs.current[gameKey] = el)}>
+            <MenuButton
               className={classNames(
-                "h-12 px-2 rounded-lg ring-secondary-background ring-2 flex items-center",
-                game.winner ? "bg-secondary-background" : "group-hover:bg-secondary-background/50",
+                "relative w-full px-4 py-2 rounded-lg flex items-center gap-x-4 h-12",
+                "hover:bg-secondary-background/70",
+                isPending ? "bg-secondary-background ring-2 ring-secondary-text" : "bg-secondary-background/50",
+                isParamSelectedGame && "animate-wiggle",
               )}
             >
-              <div className="w-1/2">
-                <button
-                  onClick={() => handleSkip(game.player1!)}
-                  className={classNames(
-                    "flex gap-2 items-center",
-                    game.winner === game.player2 && "font-light italic line-through",
-                  )}
-                >
-                  <ProfilePicture name={game.player1} size={35} shape="circle" clickToEdit={false} border={2.5} />
-                  {game.player1}
-                  {game.winner === game.player1 && (game.skipped ? " 🆓" : " 🏆")}
-                </button>
+              <h2 className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2">VS</h2>
+              <div className="flex gap-3 items-center justify-center">
+                {game.player1 ? (
+                  <ProfilePicture name={game.player1} size={35} shape="circle" clickToEdit={false} border={3} />
+                ) : (
+                  <QuestionMark size={38} />
+                )}
+                <h3 className={classNames(p1IsWinner && "font-semibold", p1IsLoser && "line-through font-thin")}>
+                  {game.player1} {winStateEmoji(p1IsWinner, game.skipped)}
+                </h3>
               </div>
-              {game.winner ? (
-                <div>v.s.</div>
-              ) : (
-                <Link to={`/add-game/?player1=${game.player1 || ""}&player2=${game.player2 || ""}`}>v.s.</Link>
-              )}
-              <div className="w-1/2 flex justify-end">
-                <button
-                  onClick={() => handleSkip(game.player2!)}
-                  className={classNames(
-                    "flex gap-2 items-center",
-                    game.winner === game.player1 && "font-light italic line-through",
-                  )}
-                >
-                  {game.winner === game.player2 && (game.skipped ? "🆓 " : "🏆 ")}
-                  {game.player2}
-                  <ProfilePicture name={game.player2} size={35} shape="circle" clickToEdit={false} border={2.5} />
-                </button>
+              <div className="grow" />
+              <div className="flex gap-3 items-center justify-center">
+                <h3 className={classNames(p2IsWinner && "font-semibold", p2IsLoser && "line-through font-thin")}>
+                  {winStateEmoji(p2IsWinner, game.skipped)} {game.player2}
+                </h3>
+                {game.player2 ? (
+                  <ProfilePicture name={game.player2} size={35} shape="circle" clickToEdit={false} border={3} />
+                ) : (
+                  <QuestionMark size={38} />
+                )}
               </div>
-            </div>
-          </div>
+              <GameMenuItems
+                player1={game.player1}
+                player2={game.player2}
+                showCompare
+                showRegisterResult={isPending}
+                showSkipGamePlayer1Advance={{
+                  show: isPending,
+                  onSkip() {
+                    handleSkip(game.player1!);
+                  },
+                }}
+                showSkipGamePlayer2Advance={{
+                  show: isPending,
+                  onSkip() {
+                    handleSkip(game.player2!);
+                  },
+                }}
+                showUndoSkip={{
+                  show: !!game.skipped,
+                  onUndoSkip() {},
+                }}
+              />
+            </MenuButton>
+          </Menu>
         );
       })}
     </div>

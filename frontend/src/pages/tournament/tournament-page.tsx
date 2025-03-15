@@ -25,19 +25,21 @@ export const TournamentPage: React.FC = () => {
 
   // ScrollTo
   const itemRefs = useRef<{ [key: string]: HTMLElement | null }>({});
-  const gameKey = getGameKeyFromPlayers(player1 ?? "", player2 ?? "");
+  const gameKeyBracket = getGameKeyFromPlayers(player1 ?? "", player2 ?? "", "bracket");
+  const gameKeyGroup = getGameKeyFromPlayers(player1 ?? "", player2 ?? "", "group");
   const scrollToGame = useCallback(() => {
-    const element = itemRefs.current[gameKey];
-    if (element) {
-      element.scrollIntoView({
+    const elementBracket = itemRefs.current[gameKeyBracket];
+    const elementGroup = itemRefs.current[gameKeyGroup];
+    if (elementBracket || elementGroup) {
+      (elementBracket ?? elementGroup)?.scrollIntoView({
         behavior: "smooth",
         block: "center",
         inline: "center",
       });
     } else {
-      console.warn(`Item with ID '${gameKey}' not found.`);
+      console.warn(`Item with ID '${gameKeyBracket}' nor '${gameKeyGroup}' not found.`);
     }
-  }, [gameKey]);
+  }, [gameKeyBracket, gameKeyGroup]);
 
   useEffect(() => {
     // Run the scroll function after a short delay to ensure rendering is complete
@@ -173,7 +175,7 @@ Other winners: ` + JSON.stringify(sortedWinners, null, 2),
               )}
             </>
           )}
-          <TournamentGroupPlayComponent tournament={tournament} rerender={rerender} />
+          <TournamentGroupPlayComponent tournament={tournament} rerender={rerender} itemRefs={itemRefs} />
         </>
       )}
     </div>
@@ -188,6 +190,7 @@ type GamesListProps = {
   }>;
 };
 const GamesList: React.FC<GamesListProps> = ({ tournament, rerender, itemRefs }) => {
+  const context = useClientDbContext();
   const { player1, player2 } = useTennisParams();
 
   return (
@@ -199,17 +202,17 @@ const GamesList: React.FC<GamesListProps> = ({ tournament, rerender, itemRefs })
             {layer.map((game, gameIndex) => {
               // Skip empty qualifier games
               if (layerIndex === tournament.bracket!.bracket.length - 1 && !game.player1 && !game.player2) return null;
-              const { isPending, p1IsWinner, p2IsWinner, p1IsLoser, p2IsLoser, showMenu } = getGameStates(
+              const { isPending, p1IsWinner, p2IsWinner, p1IsLoser, p2IsLoser, showMenu, ...states } = getGameStates(
                 tournament,
                 game,
               );
 
               const gameKey =
                 game.player1 && game.player2
-                  ? getGameKeyFromPlayers(game.player1, game.player2)
+                  ? getGameKeyFromPlayers(game.player1, game.player2, "bracket")
                   : "L" + layerIndex + "G+" + gameIndex;
 
-              const isParamSelectedGame = gameKey === getGameKeyFromPlayers(player1, player2);
+              const isParamSelectedGame = gameKey === getGameKeyFromPlayers(player1, player2, "bracket");
 
               return (
                 <Menu key={gameKey} ref={(el) => (itemRefs.current[gameKey] = el)}>
@@ -244,7 +247,39 @@ const GamesList: React.FC<GamesListProps> = ({ tournament, rerender, itemRefs })
                         <QuestionMark size={38} />
                       )}
                     </div>
-                    <GameMenuItems tournament={tournament} game={game} rerender={rerender} />
+                    <GameMenuItems
+                      player1={game.player1}
+                      player2={game.player2}
+                      showCompare={states.showCompareOption}
+                      showRegisterResult={!!states.showRegisterResultOption}
+                      showSkipGamePlayer1Advance={{
+                        show: !!states.showSkipGameOption,
+                        onSkip: () => {
+                          context.tournaments.skipGame(
+                            { advancing: game.player1!, eliminated: game.player2!, time: new Date().getTime() },
+                            tournament.id,
+                          );
+                          rerender();
+                        },
+                      }}
+                      showSkipGamePlayer2Advance={{
+                        show: !!states.showSkipGameOption,
+                        onSkip: () => {
+                          context.tournaments.skipGame(
+                            { advancing: game.player2!, eliminated: game.player1!, time: new Date().getTime() },
+                            tournament.id,
+                          );
+                          rerender();
+                        },
+                      }}
+                      showUndoSkip={{
+                        show: !!states.showUndoSkipOption,
+                        onUndoSkip: () => {
+                          context.tournaments.undoSkipGame(game.skipped!, tournament.id);
+                          rerender();
+                        },
+                      }}
+                    />
                   </MenuButton>
                 </Menu>
               );
@@ -267,6 +302,7 @@ type GameTriangleProps = {
   }>;
 };
 const GameTriangle: React.FC<GameTriangleProps> = ({ tournament, layerIndex, gameIndex, rerender, itemRefs }) => {
+  const context = useClientDbContext();
   const { player1, player2 } = useTennisParams();
 
   let size: Size = "xxs";
@@ -339,14 +375,17 @@ const GameTriangle: React.FC<GameTriangleProps> = ({ tournament, layerIndex, gam
     return size === "xs" || size === "xxs" ? null : <div className="grow" />;
   }
 
-  const { isPending, p1IsWinner, p2IsWinner, p1IsLoser, p2IsLoser, showMenu } = getGameStates(tournament, game);
+  const { isPending, p1IsWinner, p2IsWinner, p1IsLoser, p2IsLoser, showMenu, ...states } = getGameStates(
+    tournament,
+    game,
+  );
 
   const gameKey =
     game.player1 && game.player2
-      ? getGameKeyFromPlayers(game.player1, game.player2)
+      ? getGameKeyFromPlayers(game.player1, game.player2, "bracket")
       : "L" + layerIndex + "G+" + gameIndex;
 
-  const isParamSelectedGame = gameKey === getGameKeyFromPlayers(player1, player2);
+  const isParamSelectedGame = gameKey === getGameKeyFromPlayers(player1, player2, "bracket");
 
   return (
     <div className="w-fit space-y-2">
@@ -419,7 +458,39 @@ const GameTriangle: React.FC<GameTriangleProps> = ({ tournament, layerIndex, gam
               )}
             </div>
           </MenuButton>
-          <GameMenuItems tournament={tournament} game={game} rerender={rerender} />
+          <GameMenuItems
+            player1={game.player1}
+            player2={game.player2}
+            showCompare={states.showCompareOption}
+            showRegisterResult={!!states.showRegisterResultOption}
+            showSkipGamePlayer1Advance={{
+              show: !!states.showSkipGameOption,
+              onSkip: () => {
+                context.tournaments.skipGame(
+                  { advancing: game.player1!, eliminated: game.player2!, time: new Date().getTime() },
+                  tournament.id,
+                );
+                rerender();
+              },
+            }}
+            showSkipGamePlayer2Advance={{
+              show: !!states.showSkipGameOption,
+              onSkip: () => {
+                context.tournaments.skipGame(
+                  { advancing: game.player2!, eliminated: game.player1!, time: new Date().getTime() },
+                  tournament.id,
+                );
+                rerender();
+              },
+            }}
+            showUndoSkip={{
+              show: !!states.showUndoSkipOption,
+              onUndoSkip: () => {
+                context.tournaments.undoSkipGame(game.skipped!, tournament.id);
+                rerender();
+              },
+            }}
+          />
         </div>
       </Menu>
 
@@ -445,7 +516,7 @@ const GameTriangle: React.FC<GameTriangleProps> = ({ tournament, layerIndex, gam
   );
 };
 
-function winStateEmoji(winner?: boolean, skipped?: any) {
+export function winStateEmoji(winner?: boolean, skipped?: any) {
   if (winner) {
     return !!skipped ? "🆓" : "🏆";
   }
@@ -485,83 +556,66 @@ function getGameStates(tournament: Tournament, game: Partial<TournamentGame>) {
   };
 }
 
-export const GameMenuItems: React.FC<{
-  tournament: Tournament;
-  game: Partial<TournamentGame>;
-  rerender: () => void;
-}> = ({ tournament, game, rerender }) => {
-  const context = useClientDbContext();
-
-  const { showCompareOption, showRegisterResultOption, showSkipGameOption, showUndoSkipOption } = getGameStates(
-    tournament,
-    game,
-  );
-
+type GameMenuItemsProps = {
+  player1?: string;
+  player2?: string;
+  showCompare: boolean;
+  showRegisterResult: boolean;
+  showSkipGamePlayer1Advance: { show: boolean; onSkip: () => void };
+  showSkipGamePlayer2Advance: { show: boolean; onSkip: () => void };
+  showUndoSkip: { show: boolean; onUndoSkip: () => void };
+};
+export const GameMenuItems: React.FC<GameMenuItemsProps> = (props) => {
   return (
     <MenuItems
       anchor="bottom"
       className="flex flex-col gap-0 rounded-lg bg-secondary-background ring-2 ring-secondary-text shadow-xl"
     >
-      {showCompareOption && (
+      {props.showCompare && (
         <MenuItem>
           <Link
-            to={`/1v1/?player1=${game.player1 || ""}&player2=${game.player2 || ""}`}
+            to={`/1v1/?player1=${props.player1 || ""}&player2=${props.player2 || ""}`}
             className="w-full px-4 py-2 text-left data-[focus]:bg-primary-background/50"
           >
             🥊 Compare 1v1 👀
           </Link>
         </MenuItem>
       )}
-      {showRegisterResultOption && (
+      {props.showRegisterResult && (
         <MenuItem>
           <Link
-            to={`/add-game/?player1=${game.player1 || ""}&player2=${game.player2 || ""}`}
+            to={`/add-game/?player1=${props.player1 || ""}&player2=${props.player2 || ""}`}
             className="w-full px-4 py-2 text-left data-[focus]:bg-primary-background/50"
           >
             🏆 Register result
           </Link>
         </MenuItem>
       )}
-      {showSkipGameOption && (
+      {props.showSkipGamePlayer1Advance?.show && (
         <MenuItem>
           <button
             className="w-full px-4 py-2 text-left data-[focus]:bg-primary-background/50"
-            onClick={() => {
-              context.tournaments.skipGame(
-                { advancing: game.player1!, eliminated: game.player2!, time: new Date().getTime() },
-                tournament.id,
-              );
-              rerender();
-            }}
+            onClick={props.showSkipGamePlayer1Advance.onSkip}
           >
-            🆓 Skip game ({game.player1} moves up)
+            🆓 Skip game ({props.player1} advances)
           </button>
         </MenuItem>
       )}
-      {showSkipGameOption && (
+      {props.showSkipGamePlayer2Advance?.show && (
         <MenuItem>
           <button
             className="w-full px-4 py-2 text-left data-[focus]:bg-primary-background/50"
-            onClick={() => {
-              context.tournaments.skipGame(
-                { advancing: game.player2!, eliminated: game.player1!, time: new Date().getTime() },
-                tournament.id,
-              );
-              rerender();
-            }}
+            onClick={props.showSkipGamePlayer2Advance.onSkip}
           >
-            🆓 Skip game ({game.player2} moves up)
+            🆓 Skip game ({props.player2} advances)
           </button>
         </MenuItem>
       )}
-      {showUndoSkipOption && (
+      {props.showUndoSkip?.show && (
         <MenuItem>
           <button
             className="w-full px-4 py-2 text-left data-[focus]:bg-primary-background/50"
-            onClick={() => {
-              context.tournaments.undoSkipGame(game.skipped!, tournament.id);
-              rerender();
-            }}
+            onClick={props.showUndoSkip.onUndoSkip}
           >
             ⏮️ Undo skip
           </button>
@@ -583,6 +637,10 @@ export const QuestionMark: React.FC<{ size: number }> = ({ size }) => {
   );
 };
 
-function getGameKeyFromPlayers(player1: string | undefined | null, player2: string | undefined | null) {
-  return `P1:${player1 ?? ""}:P2:${player2 ?? ""}`;
+export function getGameKeyFromPlayers(
+  player1: string | undefined | null,
+  player2: string | undefined | null,
+  where: "group" | "bracket",
+) {
+  return `P1:${player1 ?? ""}:P2:${player2 ?? ""}:${where}`;
 }
