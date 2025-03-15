@@ -1,20 +1,18 @@
-import { TournamentDB } from "../../../client-db/types";
+import { TournamentDB } from "../../client-db/types";
 import { ClientConfig } from "../get-client-config";
+import { GuestClient } from "./guest-client";
 
-export class OptioClient implements ClientConfig {
-  name = "Optio";
-  logo = (
-    <div className="py-4 px-6 bg-primary-background hover:bg-primary-background/70 rounded-full">Tennis🏆💔Table</div>
-  );
+export class LocalDevClient implements ClientConfig {
+  name = "Local dev";
+  logo = new GuestClient().logo;
   snow = false;
-  title = "Tennis🏆💔Table";
-  favicon = "🏓";
-  tournaments = [optioChristmasTournament, optioEasterTournament];
+  title = new GuestClient().title;
+  favicon = new GuestClient().favicon;
+  tournaments = [testGroupPlayTournament];
 }
 
-export const optioEasterTournament: TournamentDB = {
+export const testGroupPlayTournament: TournamentDB = {
   id: "randomid38",
-  // name: "Optio Easter Tournament 2025 🐣💛",
   name: "Test group play tournament",
   description: "This is a test tournament just to try out the group play feature",
   startDate: 0, // 1741535352817,
@@ -31,8 +29,8 @@ export const optioEasterTournament: TournamentDB = {
     "Oskar",
     "Rikard",
     "Erling",
-    "Daniel",
-    "Bendik",
+    // "Daniel",
+    // "Bendik",
     // "Sveinung",
     "Axel",
     "Fredrik H",
@@ -50,51 +48,14 @@ export const optioEasterTournament: TournamentDB = {
   ],
 };
 
-export const optioChristmasTournament: TournamentDB = {
-  id: "randomid37",
-  name: "Optio Christmas Tournament 2024 🏓🎅🏻",
-  description:
-    "The social happening of the year, and a long awaited feature!! Sign up with your player and join the tournament 🚀",
-  startDate: 1732613408196, // Nov 26 2024 10:30:08 GMT+0100
-  groupPlay: false,
-  signedUp: [],
-  skippedGames: [{ advancing: "Marius", eliminated: "Erling", time: 1732709055829 }],
-
-  // TODO: function to set playerOrder based on elo at the time. if some players are not ranked, order them last by theirs signup order
-  playerOrder: [
-    "Rasmus",
-    "Simone",
-    "Alexander",
-    "Fooa",
-    "Peder",
-    "Erling",
-    "Oskar",
-    "Fredrik H",
-    "Rikard",
-    "Ole",
-    "Marius",
-    "Gina",
-    "Gustas",
-    "Daniele",
-    "Ole Anders",
-    "Kevin",
-    "James 007",
-    "Chakib Youcefi",
-  ],
-};
-
-export const mockTournament2: TournamentDB = {
+export const testLargeTournament: TournamentDB = {
   id: "2",
-  name: "Test big numbers",
+  name: "Test big tournament",
   description: "Dette er en testturnering for å teste ut funksjonalitet i TennisTable",
-
   startDate: 1731524875192, // 13th nov, 20:08
-  // startDate: 0,
-  groupPlay: false,
+  groupPlay: true,
   signedUp: [],
   skippedGames: [],
-
-  // TODO: function to set playerOrder based on elo at the time. if some players are not ranked, order them last by theirs signup order
   playerOrder: [
     "Test name 1",
     "Test name 2",

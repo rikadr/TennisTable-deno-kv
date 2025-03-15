@@ -1,6 +1,6 @@
 import React from "react";
 import { Helmet } from "react-helmet";
-import { getClientConfig } from "../common/client-config/get-client-config";
+import { getClientConfig } from "../client/client-config/get-client-config";
 
 export const HelmetSetter: React.FC = () => {
   const { title, favicon } = getClientConfig();

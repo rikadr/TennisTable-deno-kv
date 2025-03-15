@@ -8,12 +8,12 @@ export class TournamentBracket {
 
   bracket: Bracket;
   bracketGames: {
-    // Games per layer
-    played: TournamentGame[];
+    // Games per bracket layer
+    played: TournamentGame[]; // Completed games
     pending: TournamentGame[]; // Games that can be played now
   }[];
   bracketStarted: number;
-  bracketEnded?: number; // TODO: Fill in. this is not in the old file
+  bracketEnded?: number;
 
   constructor(tournament: Tournament) {
     // Assumes no group play, or that group play has ended
@@ -29,6 +29,7 @@ export class TournamentBracket {
     this.bracket = this.#getStartingBracket();
     this.#fillBracketWithGames();
     this.bracketGames = this.#calculateBracketGames();
+    this.bracketEnded = this.bracket[0][0]?.completedAt;
   }
 
   get winner() {

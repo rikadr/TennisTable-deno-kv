@@ -7,7 +7,7 @@ import { httpClient } from "../../common/http-client";
 import { queryClient } from "../../common/query-client";
 import { ProfilePicture } from "../player/profile-picture";
 import { useClientDbContext } from "../../wrappers/client-db-context";
-import { Tournament } from "../../client-db/tournaments/tournament";
+import { Tournament } from "../../client/client-db/tournaments/tournament";
 
 export const TournamentSignup: React.FC<{ tournament: Tournament }> = ({ tournament }) => {
   const context = useClientDbContext();

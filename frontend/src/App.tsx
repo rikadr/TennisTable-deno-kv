@@ -23,7 +23,7 @@ import { WinLoss } from "./pages/simulations/win-loss";
 import { ExpectedScore } from "./pages/simulations/expected-score";
 import { TournamentsListPage } from "./pages/tournament/tournaments-list-page";
 import { TournamentPage } from "./pages/tournament/tournament-page";
-import { getClientConfig } from "./common/client-config/get-client-config";
+import { getClientConfig } from "./client/client-config/get-client-config";
 import Snowfall from "react-snowfall";
 import { HelmetSetter } from "./wrappers/helmet";
 

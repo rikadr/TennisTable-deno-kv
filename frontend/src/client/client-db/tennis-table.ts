@@ -5,7 +5,7 @@ import { PVP } from "./pvp";
 import { Simulations } from "./simulations";
 import { Tournaments } from "./tournaments/tournaments";
 import { ClientDbDTO, Game, Player, SignUpTournament } from "./types";
-import { getClientConfig } from "../common/client-config/get-client-config";
+import { getClientConfig } from "../client-config/get-client-config";
 
 export class TennisTable {
   isSimulatedState = false;

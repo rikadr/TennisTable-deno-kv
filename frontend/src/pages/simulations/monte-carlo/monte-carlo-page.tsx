@@ -1,7 +1,7 @@
 import React from "react";
 import { CandelStickData, CandleStickChart } from "./candel-stick";
 import { useClientDbContext } from "../../../wrappers/client-db-context";
-import { Elo } from "../../../client-db/elo";
+import { Elo } from "../../../client/client-db/elo";
 
 export const MonteCarlo: React.FC = () => {
   const context = useClientDbContext();

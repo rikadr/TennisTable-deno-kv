@@ -3,8 +3,8 @@ import { classNames } from "../../common/class-names";
 import { fmtNum } from "../../common/number-utils";
 import { useClientDbContext } from "../../wrappers/client-db-context";
 import { ProfilePicture } from "../player/profile-picture";
-import { Tournament } from "../../client-db/tournaments/tournament";
-import { GroupScorePlayer, TournamentGroupPlay } from "../../client-db/tournaments/group-play";
+import { Tournament } from "../../client/client-db/tournaments/tournament";
+import { GroupScorePlayer, TournamentGroupPlay } from "../../client/client-db/tournaments/group-play";
 
 export const TournamentGroupPlayComponent: React.FC<{ tournament: Tournament; rerender: () => void }> = ({
   tournament,

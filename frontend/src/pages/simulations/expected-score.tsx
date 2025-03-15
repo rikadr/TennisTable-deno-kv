@@ -1,7 +1,7 @@
 import React from "react";
 import { useRerender } from "../../hooks/use-rerender";
 import { useClientDbContext } from "../../wrappers/client-db-context";
-import { Elo } from "../../client-db/elo";
+import { Elo } from "../../client/client-db/elo";
 import { fmtNum } from "../../common/number-utils";
 
 export const ExpectedScore: React.FC = () => {

@@ -1,3 +1,4 @@
+import { ONE_WEEK } from "../../../common/time-in-ms";
 import { Game, SignUpTournament, TournamentDB } from "../types";
 import { TournamentBracket } from "./bracket";
 import { TournamentGroupPlay } from "./group-play";
@@ -19,7 +20,10 @@ export class Tournament {
   groupPlay?: TournamentGroupPlay;
   bracket?: TournamentBracket;
 
-  static GROUP_POINTS = { WIN: 3, LOSS: 1, DNF: 1 } as const;
+  static readonly GROUP_POINTS = { WIN: 3, LOSS: 1, DNF: 1 } as const;
+
+  private static readonly RECENT_WINNER_THRESHOLD = 2 * ONE_WEEK;
+  private static readonly SIGNUP_PERIOD = 2 * ONE_WEEK;
 
   constructor(tournamentDb: TournamentDB, games: Game[], signedUp: SignUpTournament[]) {
     this.tournamentDb = tournamentDb;
@@ -58,6 +62,33 @@ export class Tournament {
   }
   get winner() {
     return this.bracket?.winner;
+  }
+
+  get recentWinner(): string | undefined {
+    if (this.startDate > Date.now()) return undefined; // Has not started
+    if (this.endDate === undefined) return undefined; // Has not ended
+    if (this.winner === undefined) return undefined; // Has no winner
+    if (Date.now() - this.endDate > Tournament.RECENT_WINNER_THRESHOLD) return undefined; // Not recent
+    return this.winner;
+  }
+
+  get inSignupPeriod(): boolean {
+    if (this.startDate < Date.now()) return false; // Has started
+    if (this.startDate - Tournament.SIGNUP_PERIOD > Date.now()) return false; // Not yet in signup period
+    return true;
+  }
+
+  get hasPendingGames(): boolean {
+    if (this.startDate > Date.now()) return false; // Not started
+    if (this.endDate !== undefined) return false; // Has ended
+
+    // Check group play
+    if (this.groupPlay && this.groupPlay.groupPlayEnded === undefined) {
+      return this.groupPlay.groups.some((group) => group.pending.length > 0);
+    }
+
+    // Check bracket
+    return this.bracket!.bracketGames.some((layer) => layer.pending.length > 0);
   }
 
   /** Used by bracket and group play to get the relevant games and skips */

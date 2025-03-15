@@ -2,7 +2,8 @@ import React from "react";
 import { SkimoreClient } from "./clients/skimore-client";
 import { GuestClient } from "./clients/guest-client";
 import { OptioClient } from "./clients/optio-client";
-import { TournamentDB } from "../../client-db/types";
+import { TournamentDB } from "../client-db/types";
+import { LocalDevClient } from "./clients/local-dev-client";
 
 export abstract class ClientConfig {
   name: string;
@@ -33,6 +34,8 @@ export function getClientConfig() {
   const clientName = process.env.REACT_APP_CLIENT;
 
   switch (clientName) {
+    case "local":
+      return new LocalDevClient();
     case "skimore":
       return new SkimoreClient();
     case "optio":

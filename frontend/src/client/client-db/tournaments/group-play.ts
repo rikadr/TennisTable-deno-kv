@@ -20,7 +20,7 @@ export class TournamentGroupPlay {
   groups: {
     players: string[];
     played: GroupGame[];
-    pending: GroupGame[];
+    pending: Partial<GroupGame>[];
     groupGames: Partial<GroupGame>[];
   }[];
   groupScores: GroupScore;
@@ -39,7 +39,7 @@ export class TournamentGroupPlay {
       players,
       groupGames: groupGames[groupIndex],
       played: groupGames[groupIndex].filter((g) => !!g.completedAt) as GroupGame[],
-      pending: groupGames[groupIndex].filter((g) => !g.completedAt) as GroupGame[],
+      pending: groupGames[groupIndex].filter((g) => !g.completedAt),
     }));
   }
 

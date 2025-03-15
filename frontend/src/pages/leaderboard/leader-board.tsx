@@ -1,10 +1,11 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { PodiumPlace } from "./podium-place";
-import { Elo } from "../../client-db/elo";
+import { Elo } from "../../client/client-db/elo";
 import { useClientDbContext } from "../../wrappers/client-db-context";
 import { ProfilePicture } from "../player/profile-picture";
 import { RecentGames } from "./recent-games";
+import { TournamentHighlightsAndPendingGames } from "./tournament-pending-games";
 
 export const LeaderBoard: React.FC = () => {
   const context = useClientDbContext();
@@ -23,7 +24,7 @@ export const LeaderBoard: React.FC = () => {
   return (
     <div className="w-full px-4 flex flex-col justify-center items-center md:items-start gap-6 md:flex-row ">
       <div className="w-full max-w-96 sm:w-96 flex flex-col gap-2 items-center">
-        {/* <TournamentHighlightsAndPendingGames /> */}
+        <TournamentHighlightsAndPendingGames />
         <h1 className="text-2xl text-center my-2">Leaderboard</h1>
         {nr1 && <PodiumPlace name={nr1.name} size="default" place={1} playerSummary={nr1} profilePicture />}
         {nr2 && <PodiumPlace name={nr2.name} size="sm" place={2} playerSummary={nr2} profilePicture />}

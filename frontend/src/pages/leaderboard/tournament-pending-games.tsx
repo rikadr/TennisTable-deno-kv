@@ -3,70 +3,34 @@ import { ProfilePicture } from "../player/profile-picture";
 import { useClientDbContext } from "../../wrappers/client-db-context";
 import { relativeTimeString } from "../../common/date-utils";
 
-const ONE_WEEK = 7 * 24 * 60 * 60 * 1000;
-const RECENT_WINNER_THRESHOLD = ONE_WEEK;
-const SIGNUP_PERIOD = 20 * ONE_WEEK;
-
 export const TournamentHighlightsAndPendingGames: React.FC = () => {
   const context = useClientDbContext();
+  const tournaments = context.tournaments.getTournaments();
 
-  {
-    const anyPendingGames = context.tournaments.getTournaments().some(
-      (tournament) =>
-        tournament.startDate < new Date().getTime() && // Has started
-        tournament.bracketGames?.some((layer) => layer.pending.length > 0), // Has pending games
-    );
-
-    const anyRecentWinners = context.tournaments.getTournaments().some(
-      (tournament) =>
-        tournament.startDate < new Date().getTime() && // Has started
-        tournament.bracket![0]?.[0]?.winner !== undefined && // Has a winner
-        new Date().getTime() - tournament.bracket![0]?.[0]?.completedAt! < RECENT_WINNER_THRESHOLD, // Won less than 7 days ago
-    );
-
-    const anySignupPeriod = context.tournaments.getTournaments().some(
-      (tournament) =>
-        tournament.startDate > new Date().getTime() && // Has not yet started
-        tournament.startDate - SIGNUP_PERIOD < new Date().getTime(),
-    );
-
-    if (!anyPendingGames && !anyRecentWinners && !anySignupPeriod) {
-      return null;
-    }
+  const anyPendingGames = tournaments.some((tournament) => tournament.hasPendingGames);
+  const anyRecentWinners = tournaments.some((tournament) => tournament.recentWinner);
+  const anySignupPeriod = tournaments.some((tournament) => tournament.inSignupPeriod);
+  if (!anyPendingGames && !anyRecentWinners && !anySignupPeriod) {
+    return null;
   }
 
   return (
     <div className="w-full flex flex-col gap-4">
       <h1 className="text-2xl text-center m2-4">Tournaments</h1>
-      {context.tournaments.getTournaments().map((tournament) => {
-        const anyPendingGames =
-          tournament.startDate < new Date().getTime() && // Has started
-          tournament.bracketGames?.some((layer) => layer.pending.length > 0); // Has pending games
-
-        const recentWinner =
-          tournament.startDate < new Date().getTime() && // Has started
-          tournament.bracket![0]?.[0]?.winner !== undefined && // Has a winner
-          new Date().getTime() - tournament.bracket![0]?.[0]?.completedAt! < RECENT_WINNER_THRESHOLD && // Won less than 7 days ago
-          tournament.bracket![0]?.[0]?.winner; // Return winner
-
-        const signUpPeriod =
-          tournament.startDate > new Date().getTime() && // Has not yet started
-          tournament.startDate - SIGNUP_PERIOD < new Date().getTime();
-
-        if (!anyPendingGames && !recentWinner && !signUpPeriod) return null;
-
+      {tournaments.map(({ id, name, startDate, hasPendingGames, recentWinner, inSignupPeriod, groupPlay, bracket }) => {
+        if (!hasPendingGames && !recentWinner && !inSignupPeriod) return null;
         return (
-          <div key={tournament.id} className="space-y-1 p-2 ring-1 ring-secondary-background rounded-lg">
-            <Link to={`/tournament?tournament=${tournament.id}`}>
+          <div key={id} className="space-y-1 p-2 ring-1 ring-secondary-background rounded-lg">
+            <Link to={`/tournament?tournament=${id}`}>
               <button className="text-lg w-full py-1 px-2 rounded-md font-bold bg-secondary-background hover:bg-secondary-background/70 ">
-                {tournament.name}
+                {name}
               </button>
             </Link>
-            {signUpPeriod && (
-              <Link to={`/tournament?tournament=${tournament.id}`}>
+            {inSignupPeriod && (
+              <Link to={`/tournament?tournament=${id}`}>
                 <p className="text-xs text-center italic mt-2">Start date:</p>
                 <p className="text-sm text-center mb-2">
-                  {relativeTimeString(new Date(tournament.startDate))} (
+                  {relativeTimeString(new Date(startDate))} (
                   {new Intl.DateTimeFormat("en-US", {
                     minute: "numeric",
                     hour: "numeric",
@@ -74,15 +38,34 @@ export const TournamentHighlightsAndPendingGames: React.FC = () => {
                     day: "numeric",
                     month: "long",
                     year: "numeric",
-                  }).format(new Date(tournament.startDate))}
+                  }).format(new Date(startDate))}
                   )
                 </p>
                 <div className="w-full text-center py-1">Sign up now! ✍️🏆</div>
               </Link>
             )}
             {recentWinner && <WinnerBox winner={recentWinner} />}
-            {anyPendingGames &&
-              tournament.bracketGames?.map((layer, layerIndex) => (
+            {hasPendingGames && <h2>Pending games:</h2>}
+            {hasPendingGames &&
+              groupPlay &&
+              // Group play games
+              groupPlay.groups.map((group, groupIndex) => (
+                <div key={groupIndex} className="space-y-1">
+                  <h3 className="text-center text-sm">Group {groupIndex + 1}</h3>
+                  {group.pending.map((game) => (
+                    <PendingGame
+                      key={game.player1! + game.player2!}
+                      player1={game.player1!}
+                      player2={game.player2!}
+                      tournamentId={id}
+                    />
+                  ))}
+                </div>
+              ))}
+            {hasPendingGames &&
+              bracket &&
+              // Bracket games
+              bracket.bracketGames.map((layer, layerIndex) => (
                 <div key={layerIndex} className="space-y-1">
                   {layerIndexToTournamentRound(layerIndex) && layer.pending.length > 0 && (
                     <h3 className="text-center text-sm">{layerIndexToTournamentRound(layerIndex)}</h3>
@@ -92,7 +75,7 @@ export const TournamentHighlightsAndPendingGames: React.FC = () => {
                       key={game.player1 + game.player2}
                       player1={game.player1}
                       player2={game.player2}
-                      tournamentId={tournament.id}
+                      tournamentId={id}
                     />
                   ))}
                 </div>

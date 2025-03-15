@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Game } from "../../client-db/types";
+import { Game } from "../../client/client-db/types";
 import { useClientDbContext } from "../../wrappers/client-db-context";
 import { relativeTimeString } from "../../common/date-utils";
 import { fmtNum } from "../../common/number-utils";

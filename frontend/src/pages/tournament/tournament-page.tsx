@@ -11,7 +11,7 @@ import { useSessionStorage } from "usehooks-ts";
 import { relativeTimeString } from "../../common/date-utils";
 import { TournamentSignup } from "./tournament-signup";
 import { TournamentGroupPlayComponent } from "./tournament-group-play";
-import { Tournament, TournamentGame } from "../../client-db/tournaments/tournament";
+import { Tournament, TournamentGame } from "../../client/client-db/tournaments/tournament";
 
 export const TournamentPage: React.FC = () => {
   const { tournament: tournamentId, player1, player2 } = useTennisParams();
@@ -99,9 +99,9 @@ export const TournamentPage: React.FC = () => {
                 "Christoffer",
                 "Simone",
                 "Peder",
-                // "Erling",
-                // "Rikard",
-                // "Oskar",
+                "Erling",
+                "Rikard",
+                "Oskar",
               ];
               let winner: string | undefined = "";
               let winners: Record<string, number> = {};
