@@ -51,7 +51,7 @@ const GroupPlayRules: React.FC = () => (
       </p>
     </div>
     <div className="bg-secondary-background text-secondary-text w-96 space-y-2 py-2 px-4 rounded-lg m-4">
-      <p>Players on equal scores are split by the following criteria in this order:</p>
+      <p>Tie-breakers are determined by the following criteria in the given order:</p>
       <div className="italic font-light text-xs">
         <p>1: Most wins</p>
         <p>2: Least DNFs</p>
