@@ -45,23 +45,25 @@ export const TournamentHighlightsAndPendingGames: React.FC = () => {
               </Link>
             )}
             {recentWinner && <WinnerBox winner={recentWinner} />}
-            {hasPendingGames && <h2>Pending games:</h2>}
             {hasPendingGames &&
               groupPlay &&
               // Group play games
-              groupPlay.groups.map((group, groupIndex) => (
-                <div key={groupIndex} className="space-y-1">
-                  <h3 className="text-center text-sm">Group {groupIndex + 1}</h3>
-                  {group.pending.map((game) => (
-                    <PendingGame
-                      key={game.player1! + game.player2!}
-                      player1={game.player1!}
-                      player2={game.player2!}
-                      tournamentId={id}
-                    />
-                  ))}
-                </div>
-              ))}
+              groupPlay.groups.map(
+                (group, groupIndex) =>
+                  group.pending.length > 0 && (
+                    <div key={groupIndex} className="space-y-1">
+                      <h3 className="text-center text-sm">Group {groupIndex + 1}</h3>
+                      {group.pending.map((game) => (
+                        <PendingGame
+                          key={game.player1! + game.player2!}
+                          player1={game.player1!}
+                          player2={game.player2!}
+                          tournamentId={id}
+                        />
+                      ))}
+                    </div>
+                  ),
+              )}
             {hasPendingGames &&
               bracket &&
               // Bracket games
