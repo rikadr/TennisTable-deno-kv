@@ -1,5 +1,6 @@
-import { useLocalStorage } from "usehooks-ts";
+import { useLocalStorage, useWindowSize } from "usehooks-ts";
 import { classNames } from "../common/class-names";
+import { useEffect, useState } from "react";
 
 type Props = {
   children: React.ReactNode;
@@ -7,11 +8,23 @@ type Props = {
 
 export const ZoomWrapper: React.FC<Props> = ({ children }) => {
   const [zoomLevel, setZoomLevel] = useLocalStorage("app-zoom-level", 1);
+  const [sizeAdjustment, setSizeAdjustment] = useState(0);
+  const windowSize = useWindowSize();
+
+  useEffect(() => {
+    if (windowSize.width && windowSize.width < 400) {
+      setSizeAdjustment(-0.2);
+    } else if (windowSize.width && windowSize.width < 450) {
+      setSizeAdjustment(-0.1);
+    } else {
+      setSizeAdjustment(0);
+    }
+  }, [windowSize.width]);
 
   const showZoomControls = window.location.pathname === "/log-in";
 
   return (
-    <div className="relative" style={{ zoom: zoomLevel }}>
+    <div className="relative" style={{ zoom: zoomLevel + sizeAdjustment }}>
       <div className={classNames("absolute top-20 right-4 flex gap-2 z-50", showZoomControls === false && "hidden")}>
         <p>App zoom level: {Math.round(zoomLevel * 100)}%</p>
         <button
