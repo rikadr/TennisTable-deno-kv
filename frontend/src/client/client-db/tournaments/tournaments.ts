@@ -65,10 +65,17 @@ export class Tournaments {
     this.#tournamentsCache = undefined;
   }
 
-  findPendingGames(player1: string | null | undefined, player2: string | null | undefined) {
+  findAllPendingGames(player1: string | null | undefined, player2: string | null | undefined) {
     if (!player1 || !player2) return [];
     return this.getTournaments()
       .map((tournament) => tournament.findPendingGame(player1, player2))
+      .filter(isDefined);
+  }
+
+  findAllPendingGamesByPlayer(player: string | null | undefined) {
+    if (!player) return [];
+    return this.getTournaments()
+      .map((tournament) => tournament.findPendingGamesByPlayer(player))
       .filter(isDefined);
   }
 }

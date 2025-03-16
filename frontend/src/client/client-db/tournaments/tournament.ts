@@ -20,7 +20,7 @@ export class Tournament {
   groupPlay?: TournamentGroupPlay;
   bracket?: TournamentBracket;
 
-  static readonly GROUP_POINTS = { WIN: 3, LOSS: 1, DNF: 1 } as const;
+  static readonly GROUP_POINTS = { WIN: 3, LOSS: 1, DNF: 0 } as const;
 
   private static readonly RECENT_WINNER_THRESHOLD = 2 * ONE_WEEK;
   private static readonly SIGNUP_PERIOD = 2 * ONE_WEEK;
@@ -166,5 +166,49 @@ export class Tournament {
         layerIndex: pendingLayerIndex,
       };
     }
+  }
+
+  findPendingGamesByPlayer(player: string):
+    | {
+        tournament: { name: string; id: string };
+        games: { oponent: string; player1: string; player2: string }[];
+      }
+    | undefined {
+    if (this.startDate > Date.now()) return; // Not started
+    if (this.endDate !== undefined) return; // Has ended
+
+    const games: { oponent: string; player1: string; player2: string }[] = [];
+
+    // Check group play games
+    this.groupPlay?.groups.forEach((group) => {
+      group.pending.forEach((game) => {
+        if (game.player1 === player || game.player2 === player) {
+          games.push({
+            oponent: game.player1 === player ? game.player2! : game.player1!,
+            player1: game.player1!,
+            player2: game.player2!,
+          });
+        }
+      });
+    });
+
+    // Check bracket games
+    this.bracket?.bracketGames.forEach((layer) => {
+      layer.pending.forEach((game) => {
+        if (game.player1 === player || game.player2 === player) {
+          games.push({
+            oponent: game.player1 === player ? game.player2! : game.player1!,
+            player1: game.player1!,
+            player2: game.player2!,
+          });
+        }
+      });
+    });
+
+    if (games.length === 0) return;
+    return {
+      tournament: { name: this.name, id: this.id },
+      games,
+    };
   }
 }

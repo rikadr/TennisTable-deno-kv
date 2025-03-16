@@ -79,7 +79,7 @@ export const TournamentGroupScores: React.FC<{ tournament: Tournament }> = ({ to
       <td className="pl-4">{player.name}</td>
       <td className="text-lg bg-secondary-background/50 pl-3">{fmtNum(player.adjustedScore, 1)}</td>
       <td>{fmtNum(player.score, 1)}</td>
-      <td>{fmtNum(player.groupSizeAdjustmentFactor, 2)}</td>
+      <td>{player.groupSizeAdjustmentFactor === 1 ? "-" : fmtNum(player.groupSizeAdjustmentFactor, 2)}</td>
       <td>{fmtNum(player.wins)}</td>
       <td>{fmtNum(player.loss)}</td>
       <td>{fmtNum(player.dnf)}</td>

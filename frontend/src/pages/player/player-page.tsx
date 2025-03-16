@@ -18,6 +18,7 @@ export const PlayerPage: React.FC = () => {
   const context = useClientDbContext();
 
   const summary = context.leaderboard.getPlayerSummary(name || "");
+  const pendingGames = context.tournaments.findAllPendingGamesByPlayer(name);
 
   const reverseGames = useMemo(() => {
     if (!summary) return;
@@ -103,6 +104,42 @@ export const PlayerPage: React.FC = () => {
           </div>
         )}
       </div>
+      {pendingGames.length > 0 && (
+        <>
+          <h1 className="text-2xl text-center mt-4">Pending tournament games</h1>
+          {pendingGames.map((tournament) => (
+            <div
+              key={tournament.tournament.id}
+              className="max-w-96 w-full mt-2 space-y-2 ring-1 ring-secondary-background rounded-lg p-2"
+            >
+              <Link to={`/tournament?tournament=${tournament.tournament.id}`}>
+                <h1 className="text-center">{tournament.tournament.name}</h1>
+              </Link>
+              {tournament.games.map((game) => (
+                <Link
+                  key={tournament.tournament.id + name + game.oponent}
+                  to={`/tournament?tournament=${tournament.tournament.id}&player1=${game.player1}&player2=${game.player2}`}
+                >
+                  <div className="relative w-full px-4 py-2 mt-2 rounded-lg flex items-center gap-x-4 h-12 hover:bg-secondary-background/70 bg-secondary-background ring-2 ring-secondary-text">
+                    <h2 className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2">VS</h2>
+                    <div className="flex gap-3 items-center justify-center">
+                      <ProfilePicture name={name} size={35} shape="circle" clickToEdit={false} border={3} />
+
+                      <h3>{name}</h3>
+                    </div>
+                    <div className="grow" />
+                    <div className="flex gap-3 items-center justify-center">
+                      <h3>{game.oponent}</h3>
+
+                      <ProfilePicture name={game.oponent} size={35} shape="circle" clickToEdit={false} border={3} />
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          ))}
+        </>
+      )}
       {summary && (
         <div className="flex flex-col md:flex-row justify-evenly items-center md:items-start w-full md:mr-4">
           <div className="w-full max-w-2xl flex flex-col justify-center">

@@ -9,14 +9,23 @@ export class LocalDevClient implements ClientConfig {
   snow = false;
   title = new GuestClient().title;
   favicon = new GuestClient().favicon;
-  tournaments = [testGroupPlayTournament];
+  tournaments = [
+    testGroupPlayTournament,
+    {
+      ...testGroupPlayTournament,
+      id: "randomid39",
+      name: "Test group play tournament 2",
+      skippedGames: [{ advancing: "Rasmus", eliminated: "Axel", time: 1742059545417 }],
+    } as TournamentDB,
+  ];
 }
 
 export const testGroupPlayTournament: TournamentDB = {
   id: "randomid38",
-  name: "Test group play tournament",
+  name: "TEST: Group play tournament",
   description: "This is a test tournament just to try out the group play feature",
-  startDate: 1742055722505,
+  // startDate: 1742055722505,
+  startDate: 0,
   groupPlay: true,
   signedUp: [],
   skippedGames: [],

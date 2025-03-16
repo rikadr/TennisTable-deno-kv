@@ -22,7 +22,7 @@ export const AddGamePage: React.FC = () => {
 
   const [gameSuccessfullyAdded, setGameSuccessfullyAdded] = useState(false);
 
-  const isPendingTournamentGame = context.tournaments.findPendingGames(winner, loser);
+  const isPendingTournamentGame = context.tournaments.findAllPendingGames(winner, loser);
 
   const addGameMutation = useMutation<unknown, Error>({
     mutationFn: async () => {
