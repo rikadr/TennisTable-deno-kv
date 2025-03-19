@@ -16,13 +16,13 @@ export const TournamentHighlightsAndPendingGames: React.FC = () => {
 
   return (
     <div className="w-full flex flex-col gap-4">
-      <h1 className="text-2xl text-center m2-4">Tournaments</h1>
+      <h1 className="text-2xl text-center text-primary-text m2-4">Tournaments</h1>
       {tournaments.map(({ id, name, startDate, hasPendingGames, recentWinner, inSignupPeriod, groupPlay, bracket }) => {
         if (!hasPendingGames && !recentWinner && !inSignupPeriod) return null;
         return (
           <div key={id} className="space-y-1 p-2 ring-1 ring-secondary-background rounded-lg">
             <Link to={`/tournament?tournament=${id}`}>
-              <button className="text-lg w-full py-1 px-2 rounded-md font-bold bg-secondary-background hover:bg-secondary-background/70 ">
+              <button className="text-lg text-secondary-text w-full py-1 px-2 rounded-md font-bold bg-secondary-background hover:bg-secondary-background/70 ">
                 {name}
               </button>
             </Link>
@@ -52,7 +52,7 @@ export const TournamentHighlightsAndPendingGames: React.FC = () => {
                 (group, groupIndex) =>
                   group.pending.length > 0 && (
                     <div key={groupIndex} className="space-y-1">
-                      <h3 className="text-center text-sm">Group {groupIndex + 1}</h3>
+                      <h3 className="text-center text-sm text-primary-text">Group {groupIndex + 1}</h3>
                       {group.pending.map((game) => (
                         <PendingGame
                           key={game.player1! + game.player2!}
@@ -98,7 +98,7 @@ export const PendingGame: React.FC<PendingGameProps> = ({ player1, player2, tour
   return (
     <Link
       to={`/tournament?tournament=${tournamentId}&player1=${player1}&player2=${player2}`}
-      className="relative w-full px-4 py-2 rounded-lg flex items-center gap-x-4 h-12 bg-secondary-background hover:bg-secondary-background/70"
+      className="relative w-full px-4 py-2 rounded-lg flex items-center gap-x-4 h-12 bg-secondary-background hover:bg-secondary-background/70 text-secondary-text"
     >
       <h2 className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2">VS</h2>
       <div className="flex gap-3 items-center justify-center">

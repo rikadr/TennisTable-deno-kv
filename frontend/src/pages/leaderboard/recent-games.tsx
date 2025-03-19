@@ -23,8 +23,8 @@ export const RecentGames: React.FC = () => {
 
   return (
     <div>
-      <h1 className="text-2xl text-center mb-4 mt-[27.5px]">Recent games</h1>
-      <div className="flex flex-col divide-y divide-primary-text/50">
+      <h1 className="text-2xl text-center mb-4 mt-[27.5px] text-primary-text">Recent games</h1>
+      <div className="flex flex-col divide-y divide-primary-text text-primary-text">
         <div className="flex gap-4 text-base text-center mb-2">
           <div className="w-24 pl-5">Winner</div>
           <div className="w-32">Loser</div>
