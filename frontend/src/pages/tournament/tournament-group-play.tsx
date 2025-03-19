@@ -20,7 +20,7 @@ export const TournamentGroupPlayComponent: React.FC<{
   }
 
   return (
-    <div>
+    <div className="text-primary-text">
       <h1>Group play</h1>
       <div className="md:flex">
         <TournamentGroupScores tournament={tournament} />
@@ -34,7 +34,7 @@ export const TournamentGroupPlayComponent: React.FC<{
 };
 
 const GroupPlayRules: React.FC = () => (
-  <div>
+  <div className="text-primary-text">
     <h3 className="px-4 -mb-2 mt-2">Rules</h3>
     <div className="bg-secondary-background text-secondary-text w-96 space-y-2 py-2 px-4 rounded-lg m-4">
       <div className="flex gap-4">

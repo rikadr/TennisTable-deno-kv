@@ -10,12 +10,12 @@ export const TournamentsListPage: React.FC = () => {
   const sortedTournaments = [...tournaments].sort((a, b) => b.startDate - a.startDate);
 
   return (
-    <div className="max-w-96 mx-4 md:mx-10 space-y-4">
+    <div className="max-w-96 mx-4 md:mx-10 space-y-4 text-primary-text">
       <h1>Tournaments list</h1>
       <div className="max-w-96 flex flex-col gap-2">
         {sortedTournaments.map((t) => (
           <Link key={t.id} to={`/tournament?tournament=${t.id}`} className="group">
-            <div className="space-y-1 p-2 ring-1 ring-secondary-background rounded-lg group-hover:bg-secondary-background/50">
+            <div className="space-y-1 p-2 ring-1 ring-secondary-background rounded-lg group-hover:bg-secondary-background/30">
               <h2>{t.name}</h2>
               <p>{t.description}</p>
               <p className="text-xs text-center italic mt-2">Start date:</p>
