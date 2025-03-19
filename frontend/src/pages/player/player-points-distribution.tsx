@@ -15,7 +15,7 @@ export const PlayerPointsDistrubution: React.FC<Props> = ({ name }) => {
   const range = Math.max(Math.abs(highestPoints), Math.abs(lowestPoints));
 
   return (
-    <div className="flex flex-col w-full px-4 divide-y divide-primary-text/50">
+    <div className="flex flex-col w-full px-4 divide-y divide-primary-text">
       {summary?.pointsDistrubution.map(({ name, points }, index) => {
         const fraction = points / range;
         return (

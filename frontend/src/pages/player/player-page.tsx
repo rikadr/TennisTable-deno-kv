@@ -43,14 +43,14 @@ export const PlayerPage: React.FC = () => {
               data={summary?.games}
               margin={{ top: 5, right: 25, left: 0 }}
             >
-              <CartesianGrid strokeDasharray="1 4" vertical={false} stroke="#FFFFFF" opacity={0.3} />
+              <CartesianGrid strokeDasharray="1 4" vertical={false} stroke="var(--color-primary-text)" opacity={0.3} />
               <YAxis
                 type="number"
                 domain={["dataMin", "dataMax"]}
                 tickFormatter={(value) => value.toLocaleString("no-NO", { maximumFractionDigits: 0 })}
-                stroke="#FFFFFF"
+                stroke="var(--color-primary-text)"
               />
-              <XAxis dataKey="name" stroke="#FFFFFF" />
+              <XAxis dataKey="name" stroke="var(--color-primary-text)" />
               <Tooltip
                 formatter={(value) => [value.toLocaleString("no-NO", { maximumFractionDigits: 0 }), "Elo"]}
                 wrapperClassName="rounded-lg"
@@ -73,21 +73,26 @@ export const PlayerPage: React.FC = () => {
 
               <ReferenceLine
                 y={1000}
-                stroke="white"
-                label={{ value: "1 000", position: "insideBottom", fill: "white" }}
+                stroke="var(--color-primary-text)"
+                label={{ value: "1 000", position: "insideBottom", fill: "var(--color-primary-text)" }}
                 color="#"
               />
               {context.futureElo.predictedGames[0] && (
                 <ReferenceLine
                   x={context.games.filter((g) => g.winner === name || g.loser === name).length}
-                  stroke="white"
+                  stroke="var(--color-primary-text)"
                   opacity={0.5}
-                  label={{ value: "Now", position: "insideBottomLeft", fill: "white", opacity: 0.5 }}
+                  label={{
+                    value: "Now",
+                    position: "insideBottomLeft",
+                    fill: "var(--color-primary-text)",
+                    opacity: 0.5,
+                  }}
                   color="#"
                 />
               )}
             </LineChart>
-            <div className="m-auto w-fit -mt-2">
+            <div className="m-auto w-fit -mt-2 text-primary-text">
               <div className="">Longest win-streak 🔥🏆 {summary.streaks?.longestWin}</div>
               <div className="">Longest lose-streak 🔥💔 {summary.streaks?.longestLose}</div>
             </div>
@@ -106,21 +111,21 @@ export const PlayerPage: React.FC = () => {
       </div>
       {pendingGames.length > 0 && (
         <>
-          <h1 className="text-2xl text-center mt-4">Pending tournament games</h1>
+          <h1 className="text-2xl text-center mt-4 text-primary-text">Pending tournament games</h1>
           {pendingGames.map((tournament) => (
             <div
               key={tournament.tournament.id}
               className="max-w-96 w-full mt-2 space-y-2 ring-1 ring-secondary-background rounded-lg p-2"
             >
               <Link to={`/tournament?tournament=${tournament.tournament.id}`}>
-                <h1 className="text-center">{tournament.tournament.name}</h1>
+                <h1 className="text-center text-primary-text">{tournament.tournament.name}</h1>
               </Link>
               {tournament.games.map((game) => (
                 <Link
                   key={tournament.tournament.id + name + game.oponent}
                   to={`/tournament?tournament=${tournament.tournament.id}&player1=${game.player1}&player2=${game.player2}`}
                 >
-                  <div className="relative w-full px-4 py-2 mt-2 rounded-lg flex items-center gap-x-4 h-12 hover:bg-secondary-background/70 bg-secondary-background ring-2 ring-secondary-text">
+                  <div className="relative w-full px-4 py-2 mt-2 rounded-lg flex items-center gap-x-4 h-12 hover:bg-secondary-background/70 bg-secondary-background ring-2 ring-secondary-text text-secondary-text">
                     <h2 className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2">VS</h2>
                     <div className="flex gap-3 items-center justify-center">
                       <ProfilePicture name={name} size={35} shape="circle" clickToEdit={false} border={3} />
@@ -141,7 +146,7 @@ export const PlayerPage: React.FC = () => {
         </>
       )}
       {summary && (
-        <div className="flex flex-col md:flex-row justify-evenly items-center md:items-start w-full md:mr-4">
+        <div className="flex flex-col md:flex-row justify-evenly items-center md:items-start w-full md:mr-4 text-primary-text">
           <div className="w-full max-w-2xl flex flex-col justify-center">
             <div className="flex flex-col items-center">
               <h1 className="text-2xl text-center mt-4">Points distribution</h1>
@@ -160,7 +165,7 @@ export const PlayerPage: React.FC = () => {
 
           <div>
             <h1 className="text-2xl text-center mt-4">Last 10 games</h1>
-            <div className="flex flex-col divide-y divide-primary-text/50">
+            <div className="flex flex-col divide-y divide-primary-text">
               <div className="flex gap-4 text-base text-center mb-2">
                 <div className="w-36 ">Game</div>
                 <div className="w-12 pl-4 whitespace-nowrap">Elo +-</div>
