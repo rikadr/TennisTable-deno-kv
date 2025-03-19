@@ -8,6 +8,7 @@ import { LocalDevClient } from "./clients/local-dev-client";
 export abstract class ClientConfig {
   id: string | undefined;
   name: string;
+  theme: Theme;
   logo: React.ReactElement;
   snow: boolean;
   title: string;
@@ -17,6 +18,7 @@ export abstract class ClientConfig {
   protected constructor(data: {
     id?: string;
     name: string;
+    theme: Theme;
     logo: React.ReactElement;
     snow?: boolean;
     title: string;
@@ -25,6 +27,7 @@ export abstract class ClientConfig {
   }) {
     this.id = data.id;
     this.name = data.name;
+    this.theme = data.theme;
     this.logo = data.logo;
     this.snow = data.snow ?? false;
     this.title = data.title;
@@ -46,4 +49,17 @@ export function getClientConfig() {
     default:
       return new GuestClient();
   }
+}
+
+export enum Theme {
+  DEFAULT = "default",
+  HALLOWEEN = "halloween",
+  // CHRISTMAS = "christmas",
+  // VALENTINES = "valentines",
+  EASTER = "easter",
+  // SUMMER = "summer",
+  // FALL = "fall",
+  // WINTER = "winter",
+  CLIENT_SKIMORE = "skimore",
+  // CLIENT_OPTIO = "optio",
 }

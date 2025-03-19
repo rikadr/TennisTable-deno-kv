@@ -1,10 +1,11 @@
 import { TournamentDB } from "../../client-db/types";
-import { ClientConfig } from "../get-client-config";
+import { ClientConfig, Theme } from "../get-client-config";
 import { GuestClient } from "./guest-client";
 
 export class OptioClient implements ClientConfig {
   id = process.env.REACT_APP_CLIENT;
   name = "Optio";
+  theme = Theme.DEFAULT;
   logo = new GuestClient().logo;
   snow = false;
   title = new GuestClient().title;

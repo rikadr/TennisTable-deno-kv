@@ -2,6 +2,44 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  :root {
+    --color-primary-text: #ffffff;
+    --color-primary-background: #1e293b;
+    --color-secondary-text: #ffffff;
+    --color-secondary-background: #6b7280;
+    --color-tertiary-text: #000000;
+    --color-tertiary-background: #f9f9f9;
+  }
+}
+
+.theme-easter {
+  --color-primary-text: #ffffff;
+  --color-primary-background: #ff0080;
+  --color-secondary-text: #ff0080;
+  --color-secondary-background: #ffd700;
+  --color-tertiary-text: #000000;
+  --color-tertiary-background: #00ff00;
+}
+
+.theme-halloween {
+  --color-primary-text: #ffffff;
+  --color-primary-background: #1b0e01;
+  --color-secondary-text: #000000;
+  --color-secondary-background: #d97706;
+  --color-tertiary-text: #000000;
+  --color-tertiary-background: #f3ff07;
+}
+
+.theme-skimore {
+  --color-primary-text: #1f2a44;
+  --color-primary-background: #b7dce1;
+  --color-secondary-text: #ffffff;
+  --color-secondary-background: #1f2a44;
+  --color-tertiary-text: #ffffff;
+  --color-tertiary-background: #6abf4b;
+}
+
 body {
   @apply text-primary-text bg-primary-background;
 }

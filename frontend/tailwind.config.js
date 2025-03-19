@@ -9,32 +9,17 @@ module.exports = {
     },
     extend: {
       colors: {
-        // Halloween theme
-        // primary: {
-        //   text: "#FFFFFF",
-        //   background: "#1B0E01",
-        // },
-        // secondary: {
-        //   text: "#000000",
-        //   background: "#d97706",
-        // },
-        // Easter theme
-        // primary: {
-        //   text: "#000000",
-        //   background: "#fce803",
-        // },
-        // secondary: {
-        //   text: "#000000",
-        //   background: "#FFFFFF",
-        // },
-        // Default theme
         primary: {
-          text: "#FFFFFF",
-          background: "#1e293b",
+          text: "var(--color-primary-text)",
+          background: "var(--color-primary-background)",
         },
         secondary: {
-          text: "#FFFFFF",
-          background: "#6b7280",
+          text: "var(--color-secondary-text)",
+          background: "var(--color-secondary-background)",
+        },
+        tertiary: {
+          text: "var(--color-tertiary-text)",
+          background: "var(--color-tertiary-background)",
         },
       },
       animation: {

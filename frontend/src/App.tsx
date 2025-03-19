@@ -26,6 +26,8 @@ import { TournamentPage } from "./pages/tournament/tournament-page";
 import { getClientConfig } from "./client/client-config/get-client-config";
 import Snowfall from "react-snowfall";
 import { HelmetSetter } from "./wrappers/helmet";
+import { ThemeProvider } from "./wrappers/theme-provider";
+import { SettingsPage } from "./pages/settings-page";
 
 const RequireAuth: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   if (!session.isAuthenticated) {
@@ -41,59 +43,62 @@ function App() {
   const client = queryClient;
   return (
     <QueryClientProvider client={client}>
-      {clientConfig.snow && <Snowfall radius={[0.2, 1]} speed={[0.1, 0.3]} wind={[0, 1]} />}
-      <div className="bg-primary-background min-h-screen w-full overflow-auto">
-        <HelmetSetter />
-        <ZoomWrapper>
-          <WebSocketRefetcher>
-            <ClientDbWrapper>
-              <BrowserRouter>
-                <Routes>
-                  <Route path="/" element={<NavMenu />}>
-                    <Route index element={<Navigate to="/leader-board" />} />
-                    <Route path="/tennis-table" element={<Navigate to="/leader-board" />} />
-                    <Route path="/leader-board" element={<LeaderBoard />} />
-                    <Route path="/player/:name" element={<PlayerPage />} />
-                    <Route path="/1v1" element={<PvPPage />} />
-                    <Route path="/compare-players" element={<ComparePlayersPage />} />
-                    <Route path="/tournament">
-                      <Route index element={<TournamentPage />} />
-                      <Route path="list" element={<TournamentsListPage />} />
+      <ThemeProvider>
+        {clientConfig.snow && <Snowfall radius={[0.2, 1]} speed={[0.1, 0.3]} wind={[0, 1]} />}
+        <div className="bg-primary-background min-h-screen w-full overflow-auto">
+          <HelmetSetter />
+          <ZoomWrapper>
+            <WebSocketRefetcher>
+              <ClientDbWrapper>
+                <BrowserRouter>
+                  <Routes>
+                    <Route path="/" element={<NavMenu />}>
+                      <Route index element={<Navigate to="/leader-board" />} />
+                      <Route path="/tennis-table" element={<Navigate to="/leader-board" />} />
+                      <Route path="/leader-board" element={<LeaderBoard />} />
+                      <Route path="/player/:name" element={<PlayerPage />} />
+                      <Route path="/1v1" element={<PvPPage />} />
+                      <Route path="/compare-players" element={<ComparePlayersPage />} />
+                      <Route path="/tournament">
+                        <Route index element={<TournamentPage />} />
+                        <Route path="list" element={<TournamentsListPage />} />
+                      </Route>
+                      <Route path="/simulations">
+                        <Route index element={<SimulationsPage />} />
+                        <Route path="monte-carlo" element={<MonteCarlo />} />
+                        <Route path="win-loss" element={<WinLoss />} />
+                        <Route path="expected-score" element={<ExpectedScore />} />
+                      </Route>
+                      <Route path="/add-player" element={<AddPlayerPage />} />
+                      <Route path="/add-game" element={<AddGamePage />} />
+                      <Route path="/camera" element={<CameraPage />} />
+                      <Route path="/settings" element={<SettingsPage />} />
+                      <Route path="/log-in" element={<LoginPage />} />
+                      <Route path="/sign-up" element={<SignupPage />} />
+                      <Route
+                        path="/admin"
+                        element={
+                          <RequireAuth>
+                            <AdminPage />
+                          </RequireAuth>
+                        }
+                      />
+                      <Route
+                        path="/me"
+                        element={
+                          <RequireAuth>
+                            <MyPage />
+                          </RequireAuth>
+                        }
+                      />
                     </Route>
-                    <Route path="/simulations">
-                      <Route index element={<SimulationsPage />} />
-                      <Route path="monte-carlo" element={<MonteCarlo />} />
-                      <Route path="win-loss" element={<WinLoss />} />
-                      <Route path="expected-score" element={<ExpectedScore />} />
-                    </Route>
-                    <Route path="/add-player" element={<AddPlayerPage />} />
-                    <Route path="/add-game" element={<AddGamePage />} />
-                    <Route path="/camera" element={<CameraPage />} />
-                    <Route path="/log-in" element={<LoginPage />} />
-                    <Route path="/sign-up" element={<SignupPage />} />
-                    <Route
-                      path="/admin"
-                      element={
-                        <RequireAuth>
-                          <AdminPage />
-                        </RequireAuth>
-                      }
-                    />
-                    <Route
-                      path="/me"
-                      element={
-                        <RequireAuth>
-                          <MyPage />
-                        </RequireAuth>
-                      }
-                    />
-                  </Route>
-                </Routes>
-              </BrowserRouter>
-            </ClientDbWrapper>
-          </WebSocketRefetcher>
-        </ZoomWrapper>
-      </div>
+                  </Routes>
+                </BrowserRouter>
+              </ClientDbWrapper>
+            </WebSocketRefetcher>
+          </ZoomWrapper>
+        </div>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }
