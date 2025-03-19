@@ -118,11 +118,11 @@ export const AddGamePage: React.FC = () => {
         <div className="relative flex gap-2">
           <div className="w-40 h-20 flex flex-col items-center justify-center">
             <h1 className="text-5xl">🏆</h1>
-            <h1 className="uppercase">{winner || "???"}</h1>
+            <h1 className="uppercase text-primary-text">{winner || "???"}</h1>
           </div>
           <div className="w-40 h-20 flex flex-col items-center justify-center">
             <h1 className="text-5xl">💔</h1>
-            <h1 className="uppercase">{loser || "???"}</h1>
+            <h1 className="uppercase text-primary-text">{loser || "???"}</h1>
           </div>
           {(winner || loser) && (
             <button

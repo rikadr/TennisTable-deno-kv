@@ -16,7 +16,7 @@ export const PvPStats: React.FC<Props> = ({ player1, player2 }) => {
   }
   const { player1: p1, player2: p2, games } = context.pvp.compare(player1, player2);
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 text-primary-text">
       <div className="flex gap-2">
         <WinsPillar name={p1.name} wins={p1.wins} oponentWins={p2.wins} />
         <WinsPillar name={p2.name} wins={p2.wins} oponentWins={p1.wins} />
@@ -94,7 +94,7 @@ export const PvPStats: React.FC<Props> = ({ player1, player2 }) => {
         </section>
       </div>
       <div className="w-fit m-auto">
-        <div className="flex flex-col divide-y divide-primary-text/50">
+        <div className="flex flex-col divide-y divide-primary-text">
           <div className="flex gap-4 text-base text-center mb-2">
             <div className="w-32 text-left pl-2">Winner</div>
             <div className="w-8 text-right pl-8 whitespace-nowrap">Elo gained</div>
@@ -159,7 +159,7 @@ export const WinsPillar: React.FC<{ name: string; wins: number; oponentWins: num
         {showTextInside && winsText()}
         <div className="grow" />
         <p className="text-secondary-text text-xl sm:text-2xl md:text-3xl uppercase font-bold tracking-tight transition-all duration-500">
-          {name}{" "}
+          {name}
         </p>
       </div>
     </div>
