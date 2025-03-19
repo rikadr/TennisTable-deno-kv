@@ -70,9 +70,14 @@ export const ComparePlayersPage: React.FC = () => {
               margin={{ left: -10 }}
               data={graphDataToSee}
             >
-              <CartesianGrid strokeDasharray="1 4" vertical={false} />
-              <XAxis dataKey="name" />
-              <YAxis type="number" domain={["dataMin", "dataMax"]} tickFormatter={(value) => fmtNum(value)} />
+              <CartesianGrid strokeDasharray="1 4" vertical={false} stroke="rgb(var(--color-primary-text))" />
+              <XAxis dataKey="name" stroke="rgb(var(--color-primary-text))" />
+              <YAxis
+                type="number"
+                domain={["dataMin", "dataMax"]}
+                tickFormatter={(value) => fmtNum(value)}
+                stroke="rgb(var(--color-primary-text))"
+              />
               <Tooltip
                 formatter={(value) => [value.toLocaleString("no-NO", { maximumFractionDigits: 0 }), "Elo"]}
                 wrapperClassName="rounded-lg"
@@ -104,7 +109,11 @@ export const ComparePlayersPage: React.FC = () => {
                     opacity={0.5}
                   />
                 ))}
-              <ReferenceLine y={1000} stroke="white" label="1 000" />
+              <ReferenceLine
+                y={1000}
+                label={{ value: "1 000", position: "insideBottom", fill: "rgb(var(--color-primary-text))" }}
+                stroke="rgb(var(--color-primary-text))"
+              />
             </LineChart>
           ) : (
             <div className="w-[730px] h-[428px] rounded-lg bg-gray-300/50 animate-pulse" />
@@ -124,7 +133,7 @@ const PlayerSelector: React.FC<{
 
   const playersByName = useMemo(() => players.sort(), [players]);
   const playersByRank = context.leaderboard.getLeaderboard().rankedPlayers.map((p) => p.name);
-  const [byRank, setByRank] = useState(false);
+  const [byRank, setByRank] = useState(true);
   const allIsSelected = selectedPlayers.length === (byRank ? playersByRank.length : playersByName.length);
 
   useEffect(() => {
@@ -135,7 +144,7 @@ const PlayerSelector: React.FC<{
   }, [byRank]);
 
   return (
-    <div className="grid grid-cols-1 gap-1 grid-flow-row w-40 h-fit">
+    <div className="grid grid-cols-1 gap-1 grid-flow-row w-40 h-fit text-white">
       Comparing players by
       <Switch
         checked={byRank}

@@ -13,7 +13,7 @@ export const ZoomWrapper: React.FC<Props> = ({ children }) => {
 
   useEffect(() => {
     if (windowSize.width && windowSize.width < 400) {
-      setSizeAdjustment(-0.2);
+      setSizeAdjustment(-0.15);
     } else if (windowSize.width && windowSize.width < 450) {
       setSizeAdjustment(-0.1);
     } else {

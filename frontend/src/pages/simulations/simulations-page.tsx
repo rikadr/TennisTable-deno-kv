@@ -15,7 +15,7 @@ export const SimulationsPage: React.FC = () => {
         {simulations.map(({ name, url }) => (
           <Link
             key={url}
-            className="bg-secondary-background hover:bg-secondary-background/50 rounded-md py-4 text-center text-lg"
+            className="bg-secondary-background hover:bg-secondary-background/50 rounded-md py-4 text-center text-lg text-secondary-text"
             to={url}
           >
             {name}

@@ -10,16 +10,16 @@ module.exports = {
     extend: {
       colors: {
         primary: {
-          text: "var(--color-primary-text)",
-          background: "var(--color-primary-background)",
+          text: withOpacityValue("--color-primary-text"),
+          background: withOpacityValue("--color-primary-background"),
         },
         secondary: {
-          text: "var(--color-secondary-text)",
-          background: "var(--color-secondary-background)",
+          text: withOpacityValue("--color-secondary-text"),
+          background: withOpacityValue("--color-secondary-background"),
         },
         tertiary: {
-          text: "var(--color-tertiary-text)",
-          background: "var(--color-tertiary-background)",
+          text: withOpacityValue("--color-tertiary-text"),
+          background: withOpacityValue("--color-tertiary-background"),
         },
       },
       animation: {
@@ -50,3 +50,12 @@ module.exports = {
   },
   plugins: [],
 };
+
+function withOpacityValue(variable) {
+  return ({ opacityValue }) => {
+    if (opacityValue === undefined) {
+      return `rgb(var(${variable}))`;
+    }
+    return `rgba(var(${variable}),${opacityValue})`;
+  };
+}

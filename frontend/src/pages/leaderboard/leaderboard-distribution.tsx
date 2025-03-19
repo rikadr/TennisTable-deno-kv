@@ -11,7 +11,7 @@ export const LeaderboardDistrubution: React.FC = () => {
   const range = highestElo - lowestElo;
 
   return (
-    <div className="flex flex-col w-full divide-y divide-secondary-background">
+    <div className="flex flex-col w-full divide-y divide-secondary-background/50">
       {leaderboard?.rankedPlayers.map(({ name, elo }, index) => {
         const fraction = (elo - lowestElo) / range;
         return (

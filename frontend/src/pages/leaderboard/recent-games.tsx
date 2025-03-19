@@ -24,7 +24,7 @@ export const RecentGames: React.FC = () => {
   return (
     <div>
       <h1 className="text-2xl text-center mb-4 mt-[27.5px] text-primary-text">Recent games</h1>
-      <div className="flex flex-col divide-y divide-primary-text text-primary-text">
+      <div className="flex flex-col divide-y divide-primary-text/50 text-primary-text">
         <div className="flex gap-4 text-base text-center mb-2">
           <div className="w-24 pl-5">Winner</div>
           <div className="w-32">Loser</div>
@@ -37,7 +37,7 @@ export const RecentGames: React.FC = () => {
             <Link
               key={game!.time}
               to={`/1v1?player1=${game!.winner}&player2=${game!.loser}`}
-              className="bg-primary-background hover:bg-secondary-background/30 py-1 px-2 flex gap-4 text-xl font-light"
+              className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text py-1 px-2 flex gap-4 text-xl font-light"
             >
               <div className="w-24 font-normal whitespace-nowrap">🏆 {game!.winner}</div>
               <div className="w-32 text-right font-normal whitespace-nowrap">{game!.loser} 💔</div>

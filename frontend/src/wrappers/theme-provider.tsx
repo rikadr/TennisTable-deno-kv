@@ -17,5 +17,9 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return children;
   }
 
-  return <div className={"theme-" + themeToUse}>{children}</div>;
+  return (
+    <div id="headlessui-portal-root" className={"theme-" + themeToUse}>
+      {children}
+    </div>
+  );
 };

@@ -74,10 +74,10 @@ export const TournamentGroupScores: React.FC<{ tournament: Tournament }> = ({ to
   const cutOffIndex = tournament.groupPlay.getBracketSize();
 
   const row = (player: GroupScorePlayer, place: number) => (
-    <tr key={player.name} className="hover:bg-secondary-background/50">
+    <tr key={player.name} className="hover:bg-secondary-background/30">
       <td>#{fmtNum(place)}</td>
       <td className="pl-4">{player.name}</td>
-      <td className="text-lg bg-secondary-background/50 pl-3">{fmtNum(player.adjustedScore, 1)}</td>
+      <td className="text-lg bg-secondary-background/30 pl-3">{fmtNum(player.adjustedScore, 1)}</td>
       <td>{fmtNum(player.score, 1)}</td>
       <td>{player.groupSizeAdjustmentFactor === 1 ? "-" : fmtNum(player.groupSizeAdjustmentFactor, 2)}</td>
       <td>{fmtNum(player.wins)}</td>
@@ -87,7 +87,7 @@ export const TournamentGroupScores: React.FC<{ tournament: Tournament }> = ({ to
   );
 
   return (
-    <div>
+    <div className="text-primary-text">
       <h1>Score board</h1>
       <table>
         <thead>
@@ -148,7 +148,7 @@ export const TournamentGroups: React.FC<{
 
   return tournament.groupPlay.groups.map((group, groupIndex) => (
     <div key={groupIndex} className="max-w-96 w-full space-y-2">
-      <div className="rounded-lg ring-2 ring-secondary-background text-secondary-text p-2 px-4">
+      <div className="rounded-lg ring-2 ring-secondary-background bg-primary-background text-primary-text p-2 px-4">
         <section className="flex justify-between items-baseline">
           <h2 className="text-xl font-normal">Group {groupIndex + 1}</h2>
           <p className="text-xs">
@@ -193,9 +193,9 @@ export const TournamentGroups: React.FC<{
           <Menu key={gameKey} ref={(el) => (itemRefs.current[gameKey] = el)}>
             <MenuButton
               className={classNames(
-                "relative w-full px-4 py-2 rounded-lg flex items-center gap-x-4 h-12",
+                "relative w-full px-4 py-2 rounded-lg flex items-center gap-x-4 h-12 text-secondary-text",
                 "hover:bg-secondary-background/70",
-                isPending ? "bg-secondary-background ring-2 ring-secondary-text" : "bg-secondary-background/50",
+                isPending ? "bg-secondary-background ring-2 ring-secondary-text" : "bg-secondary-background/60",
                 isParamSelectedGame && "animate-wiggle",
               )}
             >

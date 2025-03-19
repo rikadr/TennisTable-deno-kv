@@ -4,40 +4,40 @@
 
 @layer base {
   :root {
-    --color-primary-text: #ffffff;
-    --color-primary-background: #1e293b;
-    --color-secondary-text: #ffffff;
-    --color-secondary-background: #6b7280;
-    --color-tertiary-text: #000000;
-    --color-tertiary-background: #f9f9f9;
+    --color-primary-text: 255,255,255;
+    --color-primary-background: 30,41,59;
+    --color-secondary-text: 255,255,255;
+    --color-secondary-background: 107,114,128;
+    --color-tertiary-text: 0,0,0;
+    --color-tertiary-background: 255,255,255;
   }
 }
 
 .theme-easter {
-  --color-primary-text: #ffffff;
-  --color-primary-background: #ff0080;
-  --color-secondary-text: #ff0080;
-  --color-secondary-background: #ffd700;
-  --color-tertiary-text: #000000;
-  --color-tertiary-background: #00ff00;
+  --color-primary-text: 255,255,255;
+  --color-primary-background: 255,0,128;
+  --color-secondary-text: 255,0,128;
+  --color-secondary-background: 255,215,0;
+  --color-tertiary-text: 0,0,0;
+  --color-tertiary-background: 0,255,0;
 }
 
 .theme-halloween {
-  --color-primary-text: #ffffff;
-  --color-primary-background: #1b0e01;
-  --color-secondary-text: #000000;
-  --color-secondary-background: #d97706;
-  --color-tertiary-text: #000000;
-  --color-tertiary-background: #f3ff07;
+  --color-primary-text: 255,255,255;
+  --color-primary-background: 27,14,1;
+  --color-secondary-text: 0,0,0;
+  --color-secondary-background: 217,119,6;
+  --color-tertiary-text: 0,0,0;
+  --color-tertiary-background: 243,255,7;
 }
 
 .theme-skimore {
-  --color-primary-text: #1f2a44;
-  --color-primary-background: #b7dce1;
-  --color-secondary-text: #ffffff;
-  --color-secondary-background: #1f2a44;
-  --color-tertiary-text: #ffffff;
-  --color-tertiary-background: #6abf4b;
+  --color-primary-text: 31,42,68;
+  --color-primary-background: 183,220,225;
+  --color-secondary-text: 255,255,255;
+  --color-secondary-background: 31,42,68;
+  --color-tertiary-text: 255,255,255;
+  --color-tertiary-background: 106,191,75;
 }
 
 body {

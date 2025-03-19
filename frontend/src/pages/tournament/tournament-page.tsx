@@ -51,7 +51,7 @@ export const TournamentPage: React.FC = () => {
 
   return (
     <div className="space-y-4">
-      <div className="ring-1 ring-secondary-background w-fit mx-4 px-4 md:mx-10 md:px-6 py-4 rounded-lg">
+      <div className="ring-1 ring-secondary-background w-fit mx-4 px-4 md:mx-10 md:px-6 py-4 rounded-lg text-primary-text">
         <p className="text-xs italic">Tournament:</p>
         <h1 className="mb-2">{tournament.name}</h1>
         <p className="text-xs italic">Description:</p>
@@ -72,7 +72,7 @@ export const TournamentPage: React.FC = () => {
         {tournament.winner && (
           <div className="min-w-80 max-w-96 space-y-2">
             <p className="text-xs italic">Won {relativeTimeString(new Date(tournament.endDate || 0))}</p>
-            <WinnerBox winner={tournament.winner} />{" "}
+            <WinnerBox winner={tournament.winner} />
           </div>
         )}
         {context.client.id === "local" && (
@@ -149,10 +149,20 @@ Other winners: ` + JSON.stringify(sortedWinners, null, 2),
                 onChange={setShowAsList}
                 className="ml-4 md:ml-10 group relative flex h-10 w-36 cursor-pointer rounded-full bg-secondary-background p-1 transition-colors duration-200 ease-in-out focus:outline-none data-[focus]:outline-1 data-[focus]:outline-white"
               >
-                <div className="absolute top-1/2 transform -translate-y-1/2 left-5 z-10">
+                <div
+                  className={classNames(
+                    "absolute top-1/2 transform -translate-y-1/2 left-5 z-10",
+                    showAsList ? "text-secondary-text" : "text-primary-text",
+                  )}
+                >
                   Tree {!showAsList && "🌲"}
                 </div>
-                <div className="absolute top-1/2 transform -translate-y-1/2 right-5 z-10">
+                <div
+                  className={classNames(
+                    "absolute top-1/2 transform -translate-y-1/2 right-5 z-10",
+                    showAsList ? "text-primary-text" : "text-secondary-text",
+                  )}
+                >
                   {showAsList && "🟰"} List{" "}
                 </div>
                 <span
@@ -198,7 +208,7 @@ const GamesList: React.FC<GamesListProps> = ({ tournament, rerender, itemRefs })
       {tournament.bracket &&
         tournament.bracket.bracket.map((layer, layerIndex) => (
           <div key={layerIndex} className="flex flex-col gap-1 w-full min-w-[22rem] max-w-[27rem]">
-            <h3 className="text-center text-sm">{layerIndexToTournamentRound(layerIndex)}</h3>
+            <h3 className="text-center text-sm text-primary-text">{layerIndexToTournamentRound(layerIndex)}</h3>
             {layer.map((game, gameIndex) => {
               // Skip empty qualifier games
               if (layerIndex === tournament.bracket!.bracket.length - 1 && !game.player1 && !game.player2) return null;
@@ -219,8 +229,8 @@ const GamesList: React.FC<GamesListProps> = ({ tournament, rerender, itemRefs })
                   <MenuButton
                     disabled={!showMenu}
                     className={classNames(
-                      "relative w-full px-4 py-2 rounded-lg flex items-center gap-x-4 h-12",
-                      isPending ? "bg-secondary-background ring-2 ring-secondary-text" : "bg-secondary-background/50",
+                      "relative w-full px-4 py-2 rounded-lg flex items-center gap-x-4 h-12 text-secondary-text",
+                      isPending ? "bg-secondary-background ring-2 ring-secondary-text" : "bg-secondary-background/60",
                       showMenu && "hover:bg-secondary-background/70",
                       isParamSelectedGame && "animate-wiggle",
                     )}
@@ -390,7 +400,7 @@ const GameTriangle: React.FC<GameTriangleProps> = ({ tournament, layerIndex, gam
   return (
     <div className="w-fit space-y-2">
       {layerIndex < 3 ? (
-        <h2 className="font-light text-sm text-center">{layerIndexToTournamentRound(layerIndex)}</h2>
+        <h2 className="font-light text-sm text-center text-primary-text">{layerIndexToTournamentRound(layerIndex)}</h2>
       ) : (
         <div className="h-0" />
       )}
@@ -400,8 +410,8 @@ const GameTriangle: React.FC<GameTriangleProps> = ({ tournament, layerIndex, gam
             disabled={!showMenu}
             className={classNames(
               wrapperStyles[size],
-              "rounded-lg mx-auto",
-              game.winner || game.skipped || !isPending ? "bg-secondary-background/50" : "bg-secondary-background",
+              "rounded-lg mx-auto text-secondary-text",
+              game.winner || game.skipped || !isPending ? "bg-secondary-background/60" : "bg-secondary-background",
               isPending && "bg-secondary-background ring-2 ring-secondary-text",
               showMenu && "hover:bg-secondary-background/70",
               isParamSelectedGame && "animate-wiggle",
@@ -569,13 +579,13 @@ export const GameMenuItems: React.FC<GameMenuItemsProps> = (props) => {
   return (
     <MenuItems
       anchor="bottom"
-      className="flex flex-col gap-0 rounded-lg bg-secondary-background ring-2 ring-secondary-text shadow-xl"
+      className="flex flex-col gap-0 rounded-lg bg-secondary-background ring-2 ring-secondary-text shadow-xl text-secondary-text"
     >
       {props.showCompare && (
         <MenuItem>
           <Link
             to={`/1v1/?player1=${props.player1 || ""}&player2=${props.player2 || ""}`}
-            className="w-full px-4 py-2 text-left data-[focus]:bg-primary-background/50"
+            className="w-full px-4 py-2 text-left data-[focus]:bg-secondary-text/30"
           >
             🥊 Compare 1v1 👀
           </Link>
@@ -585,7 +595,7 @@ export const GameMenuItems: React.FC<GameMenuItemsProps> = (props) => {
         <MenuItem>
           <Link
             to={`/add-game/?player1=${props.player1 || ""}&player2=${props.player2 || ""}`}
-            className="w-full px-4 py-2 text-left data-[focus]:bg-primary-background/50"
+            className="w-full px-4 py-2 text-left data-[focus]:bg-secondary-text/30"
           >
             🏆 Register result
           </Link>
@@ -594,7 +604,7 @@ export const GameMenuItems: React.FC<GameMenuItemsProps> = (props) => {
       {props.showSkipGamePlayer1Advance?.show && (
         <MenuItem>
           <button
-            className="w-full px-4 py-2 text-left data-[focus]:bg-primary-background/50"
+            className="w-full px-4 py-2 text-left data-[focus]:bg-secondary-text/30"
             onClick={props.showSkipGamePlayer1Advance.onSkip}
           >
             🆓 Skip game ({props.player1} advances)
@@ -604,7 +614,7 @@ export const GameMenuItems: React.FC<GameMenuItemsProps> = (props) => {
       {props.showSkipGamePlayer2Advance?.show && (
         <MenuItem>
           <button
-            className="w-full px-4 py-2 text-left data-[focus]:bg-primary-background/50"
+            className="w-full px-4 py-2 text-left data-[focus]:bg-secondary-text/30"
             onClick={props.showSkipGamePlayer2Advance.onSkip}
           >
             🆓 Skip game ({props.player2} advances)
@@ -614,7 +624,7 @@ export const GameMenuItems: React.FC<GameMenuItemsProps> = (props) => {
       {props.showUndoSkip?.show && (
         <MenuItem>
           <button
-            className="w-full px-4 py-2 text-left data-[focus]:bg-primary-background/50"
+            className="w-full px-4 py-2 text-left data-[focus]:bg-secondary-text/30"
             onClick={props.showUndoSkip.onUndoSkip}
           >
             ⏮️ Undo skip

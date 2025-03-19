@@ -33,7 +33,7 @@ export const LeaderBoard: React.FC = () => {
         <RecentGames />
       </div>
       <div>
-        <div className="flex flex-col divide-y divide-primary-text">
+        <div className="flex flex-col divide-y divide-primary-text/50">
           <div className="flex gap-4 text-base text-center mb-2 text-primary-text">
             <div className="w-5">#</div>
             <div className="w-40 text-left pl-2">Name</div>
@@ -45,7 +45,7 @@ export const LeaderBoard: React.FC = () => {
             <Link
               key={index}
               to={`/player/${player.name}`}
-              className="bg-primary-background hover:bg-secondary-background/30 py-1 px-2 flex items-center gap-4 text-xl font-light text-primary-text"
+              className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text py-1 px-2 flex items-center gap-4 text-xl font-light text-primary-text"
             >
               <div className="w-5 italic">{player.rank}</div>
               <ProfilePicture name={player.name} size={28} border={2} />
@@ -75,7 +75,7 @@ export const LeaderBoard: React.FC = () => {
         <p className="w-full text-center text-primary-text mb-4">
           Play {Elo.GAME_LIMIT_FOR_RANKED} or more games to get ranked
         </p>
-        <div className="flex flex-col divide-y divide-primary-text">
+        <div className="flex flex-col divide-y divide-primary-text/50">
           <div className="flex gap-4 text-base text-center text-primary-text mb-2">
             <div className="w-40 text-left pl-2">Name</div>
             <div className="w-12 text-right">Elo</div>
@@ -85,7 +85,7 @@ export const LeaderBoard: React.FC = () => {
             <Link
               key={index}
               to={`/player/${player.name}`}
-              className="bg-primary-background hover:bg-secondary-background/30 py-1 px-2 flex items-center gap-4 text-xl text-primary-text font-light"
+              className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text py-1 px-2 flex items-center gap-4 text-xl text-primary-text font-light"
             >
               <ProfilePicture name={player.name} size={28} border={2} />
 
@@ -106,7 +106,7 @@ export const LeaderBoard: React.FC = () => {
             <Link
               key={index}
               to={`/player/${player.name}`}
-              className="bg-primary-background hover:bg-secondary-background/30 py-1 px-2 flex items-center gap-4 text-xl text-primary-text font-light"
+              className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text py-1 px-2 flex items-center gap-4 text-xl text-primary-text font-light"
             >
               <ProfilePicture name={player.name} size={28} border={2} />
 

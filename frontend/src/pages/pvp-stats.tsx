@@ -94,7 +94,7 @@ export const PvPStats: React.FC<Props> = ({ player1, player2 }) => {
         </section>
       </div>
       <div className="w-fit m-auto">
-        <div className="flex flex-col divide-y divide-primary-text">
+        <div className="flex flex-col divide-y divide-primary-text/50">
           <div className="flex gap-4 text-base text-center mb-2">
             <div className="w-32 text-left pl-2">Winner</div>
             <div className="w-8 text-right pl-8 whitespace-nowrap">Elo gained</div>
@@ -106,7 +106,7 @@ export const PvPStats: React.FC<Props> = ({ player1, player2 }) => {
               <Link
                 key={p1.name + p2.name + index}
                 to={`/player/${game.result === "win" ? p1.name : p2.name}`}
-                className="bg-primary-background hover:bg-secondary-background/30 py-1 px-2 flex gap-4 text-xl font-light"
+                className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text py-1 px-2 flex gap-4 text-xl font-light"
               >
                 <div className="w-44 font-normal whitespace-nowrap flex gap-3">
                   <div className="w-5 shrink-0">{game.result === "win" && "🏆"}</div>

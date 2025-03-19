@@ -12,14 +12,8 @@ export const SettingsPage: React.FC = () => {
     themeToUse = overrideTheme;
   }
 
-  console.log({
-    theme,
-    overrideTheme,
-    themeToUse,
-  });
-
   return (
-    <div>
+    <div className="text-primary-text">
       <h1>Settings</h1>
       <h3>Theme</h3>
       <p>Client theme: {theme} </p>
@@ -37,6 +31,12 @@ export const SettingsPage: React.FC = () => {
           </option>
         ))}
       </select>
+
+      <div className="flex gap-2 m-10">
+        <div className="bg-primary-background text-primary-text ring ring-primary-text p-4">Primary</div>
+        <div className="bg-secondary-background text-secondary-text ring ring-secondary-text p-4">Secondary</div>
+        <div className="bg-tertiary-background text-tertiary-text ring ring-tertiary-text p-4">Tertiary</div>
+      </div>
     </div>
   );
 };

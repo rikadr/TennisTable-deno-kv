@@ -43,14 +43,19 @@ export const PlayerPage: React.FC = () => {
               data={summary?.games}
               margin={{ top: 5, right: 25, left: 0 }}
             >
-              <CartesianGrid strokeDasharray="1 4" vertical={false} stroke="var(--color-primary-text)" opacity={0.3} />
+              <CartesianGrid
+                strokeDasharray="1 4"
+                vertical={false}
+                stroke="rgb(var(--color-primary-text))"
+                opacity={1}
+              />
               <YAxis
                 type="number"
                 domain={["dataMin", "dataMax"]}
                 tickFormatter={(value) => value.toLocaleString("no-NO", { maximumFractionDigits: 0 })}
-                stroke="var(--color-primary-text)"
+                stroke="rgb(var(--color-primary-text))"
               />
-              <XAxis dataKey="name" stroke="var(--color-primary-text)" />
+              <XAxis dataKey="name" stroke="rgb(var(--color-primary-text))" />
               <Tooltip
                 formatter={(value) => [value.toLocaleString("no-NO", { maximumFractionDigits: 0 }), "Elo"]}
                 wrapperClassName="rounded-lg"
@@ -73,19 +78,19 @@ export const PlayerPage: React.FC = () => {
 
               <ReferenceLine
                 y={1000}
-                stroke="var(--color-primary-text)"
-                label={{ value: "1 000", position: "insideBottom", fill: "var(--color-primary-text)" }}
+                stroke="rgb(var(--color-primary-text))"
+                label={{ value: "1 000", position: "insideBottom", fill: "rgb(var(--color-primary-text))" }}
                 color="#"
               />
               {context.futureElo.predictedGames[0] && (
                 <ReferenceLine
                   x={context.games.filter((g) => g.winner === name || g.loser === name).length}
-                  stroke="var(--color-primary-text)"
+                  stroke="rgb(var(--color-primary-text))"
                   opacity={0.5}
                   label={{
                     value: "Now",
                     position: "insideBottomLeft",
-                    fill: "var(--color-primary-text)",
+                    fill: "rgb(var(--color-primary-text))",
                     opacity: 0.5,
                   }}
                   color="#"
@@ -165,7 +170,7 @@ export const PlayerPage: React.FC = () => {
 
           <div>
             <h1 className="text-2xl text-center mt-4">Last 10 games</h1>
-            <div className="flex flex-col divide-y divide-primary-text">
+            <div className="flex flex-col divide-y divide-primary-text/50">
               <div className="flex gap-4 text-base text-center mb-2">
                 <div className="w-36 ">Game</div>
                 <div className="w-12 pl-4 whitespace-nowrap">Elo +-</div>
@@ -175,7 +180,7 @@ export const PlayerPage: React.FC = () => {
                 <Link
                   key={(summary?.name ?? "-") + index + game.oponent}
                   to={`/player/${game.oponent}`}
-                  className="bg-primary-background hover:bg-secondary-background/30 py-1 px-2 flex gap-4 text-xl font-light"
+                  className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text py-1 px-2 flex gap-4 text-xl font-light"
                 >
                   <div className="w-32 font-normal whitespace-nowrap">
                     {game.result === "win" ? "🏆 " : "💔 "} {game.oponent}

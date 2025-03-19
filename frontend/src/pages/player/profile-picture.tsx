@@ -43,7 +43,7 @@ export const ProfilePicture: React.FC<Props> = ({
       onClick={() => clickToEdit && navigate(`/camera?player=${name}`)}
     >
       {clickToEdit && (
-        <div className="absolute text-primary-text bg-primary-background/30 px-3 py-0.5 rounded-lg bottom-0 text-sm font-thin left-1/2 transform -translate-x-1/2 transition-opacity duration-150">
+        <div className="absolute text-primary-text px-3 py-0.5 rounded-lg bottom-0 text-sm font-thin left-1/2 transform -translate-x-1/2 transition-opacity duration-150">
           Click to edit
         </div>
       )}

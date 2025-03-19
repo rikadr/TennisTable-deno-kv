@@ -27,7 +27,7 @@ export const TournamentHighlightsAndPendingGames: React.FC = () => {
               </button>
             </Link>
             {inSignupPeriod && (
-              <Link to={`/tournament?tournament=${id}`}>
+              <Link to={`/tournament?tournament=${id}`} className="text-primary-text">
                 <p className="text-xs text-center italic mt-2">Start date:</p>
                 <p className="text-sm text-center mb-2">
                   {relativeTimeString(new Date(startDate))} (
@@ -121,7 +121,7 @@ export const WinnerBox: React.FC<WinnerBoxProps> = ({ winner }) => {
   return (
     <Link
       to={`/player/${winner}`}
-      className="w-full px-4 py-2 rounded-lg flex items-center gap-x-4 h-16 bg-secondary-background hover:bg-secondary-background/70"
+      className="w-full px-4 py-2 rounded-lg flex items-center gap-x-4 h-16 bg-secondary-background text-secondary-text hover:bg-secondary-background/70"
     >
       <div className="flex gap-3 items-center justify-center">
         <ProfilePicture name={winner} size={50} shape="circle" clickToEdit={false} border={3} />

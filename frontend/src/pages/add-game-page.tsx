@@ -203,11 +203,10 @@ const PlayerList: React.FC<{
             disabled={disableSelection}
             key={player.name}
             className={classNames(
-              "h-8 text-left pl-4 rounded-lg",
-              "bg-gray-500/50",
-              isSelected && "bg-green-500/50 ring-2 ring-white",
-              (isDisabled || (!!selectedPlayer && !isSelected)) && "text-gray-500",
-              !isSelected && !isDisabled && "hover:bg-gray-500",
+              "h-8 text-left pl-4 rounded-lg text-secondary-text",
+              isSelected ? "bg-tertiary-background text-tertiary-text ring-2 ring-white" : "bg-secondary-background/70",
+              (isDisabled || (!!selectedPlayer && !isSelected)) && "text-secondary-text/40",
+              !isSelected && !isDisabled && "hover:bg-secondary-background hover:text-secondary-text",
             )}
             onClick={() => onClick(player.name)}
           >
