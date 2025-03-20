@@ -25,11 +25,6 @@ export const clientDBCacheManager = new ClientDBCacheManager();
 export const webSocketClientManager = new WebSocketClientManager();
 
 /**
- * Clear cashe on start or redeploy. New deployment could have changes in the data structure, invalidating the cache
- */
-await clientDBCacheManager.clearCache();
-
-/**
  * Run database migrations
  */
 await runMigrations();

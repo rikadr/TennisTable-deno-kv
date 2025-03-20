@@ -1,4 +1,5 @@
 import { kv } from "../db.ts";
+import { clientDBCacheManager } from "../server.ts";
 import { migrations } from "./migrations.ts";
 
 /**
@@ -15,6 +16,7 @@ export async function runMigrations() {
       console.log(`*Skip* Migration already executed: ${migration.name} at ${migrationStatus.timestamp}`);
       continue;
     }
+    await clientDBCacheManager.clearCache(); // Clear cache before migration
     console.log(`Executing migration: ${migration.name}`);
     await migration.up();
     await registerSuccessfulMigration(migration.name);
