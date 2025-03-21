@@ -40,9 +40,6 @@ export type PlayerComparison = {
   graphData: Record<string, number>[];
 };
 
-type Theme = "default" | "halloween";
-export const CURRENT_THEME: Theme = "default";
-
 export type TournamentDB = {
   id: string;
   name: string;

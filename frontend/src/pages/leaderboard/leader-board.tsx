@@ -1,15 +1,20 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { PodiumPlace } from "./podium-place";
+import { getEgg, getPumpkin, PodiumPlace } from "./podium-place";
 import { Elo } from "../../client/client-db/elo";
 import { useClientDbContext } from "../../wrappers/client-db-context";
 import { ProfilePicture } from "../player/profile-picture";
 import { RecentGames } from "./recent-games";
 import { TournamentHighlightsAndPendingGames } from "./tournament-pending-games";
+import { getClientConfig, Theme, themeOrOverrideTheme } from "../../client/client-config/get-client-config";
+import easterBunnyChick from "../../img/easter/bunny-chick.png";
 
 export const LeaderBoard: React.FC = () => {
   const context = useClientDbContext();
   const leaderboard = context.leaderboard.getLeaderboard();
+
+  const client = getClientConfig();
+  const theme = themeOrOverrideTheme(client.theme);
 
   const playersWithNoMatches = context.players.filter(
     (player) =>
@@ -21,6 +26,19 @@ export const LeaderBoard: React.FC = () => {
   const nr2 = leaderboard.rankedPlayers[1];
   const nr3 = leaderboard.rankedPlayers[2];
 
+  const themedPlaceNumber = (place: number) => {
+    let themedImage: string | undefined = undefined;
+    if (theme === Theme.HALLOWEEN) {
+      themedImage = getPumpkin(place);
+    }
+    if (theme === Theme.EASTER) {
+      themedImage = getEgg(place);
+    }
+    if (themedImage) {
+      return <img className="scale-[175%]" src={themedImage} alt="Themed place number" />;
+    }
+  };
+
   return (
     <div className="w-full px-4 flex flex-col justify-center items-center md:items-start gap-6 md:flex-row ">
       <div className="w-full max-w-96 sm:w-96 flex flex-col gap-2 items-center">
@@ -31,6 +49,7 @@ export const LeaderBoard: React.FC = () => {
         {nr3 && <PodiumPlace name={nr3.name} size="xs" place={3} playerSummary={nr3} profilePicture />}
         {/* <LeaderboardDistrubution /> */}
         <RecentGames />
+        {theme === Theme.EASTER && <img src={easterBunnyChick} alt="Easter bunny chick" />}
       </div>
       <div>
         <div className="flex flex-col divide-y divide-primary-text/50">
@@ -47,7 +66,7 @@ export const LeaderBoard: React.FC = () => {
               to={`/player/${player.name}`}
               className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text py-1 px-2 flex items-center gap-4 text-xl font-light text-primary-text"
             >
-              <div className="w-5 italic">{player.rank}</div>
+              <div className="w-5 italic">{themedPlaceNumber(player.rank) ?? player.rank}</div>
               <ProfilePicture name={player.name} size={28} border={2} />
               <div className="w-28 font-normal whitespace-nowrap">{player.name}</div>
               <div className="w-12 text-right">

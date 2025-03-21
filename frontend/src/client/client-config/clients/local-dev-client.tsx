@@ -5,7 +5,7 @@ import { GuestClient } from "./guest-client";
 export class LocalDevClient implements ClientConfig {
   id = new GuestClient().id;
   name = "Local dev";
-  theme = Theme.CLIENT_SKIMORE;
+  theme = Theme.EASTER;
   logo = new GuestClient().logo;
   snow = new GuestClient().snow;
   title = new GuestClient().title;

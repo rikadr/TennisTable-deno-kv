@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { CURRENT_THEME, PlayerSummary } from "../../client/client-db/types";
+import { PlayerSummary } from "../../client/client-db/types";
 import { classNames } from "../../common/class-names";
 
 import pumpkin1 from "../../img/halloween/pumpkin-numbers/1.png";
@@ -13,7 +13,21 @@ import pumpkin8 from "../../img/halloween/pumpkin-numbers/8.png";
 import pumpkin9 from "../../img/halloween/pumpkin-numbers/9.png";
 import pumpkin10 from "../../img/halloween/pumpkin-numbers/10.png";
 import pumpkinNotRanked from "../../img/halloween/pumpkin-numbers/not-ranked.png";
+
+import egg1 from "../../img/easter/eggs/easter 1.png";
+import egg2 from "../../img/easter/eggs/easter 2.png";
+import egg3 from "../../img/easter/eggs/easter 3.png";
+import egg4 from "../../img/easter/eggs/easter 4.png";
+import egg5 from "../../img/easter/eggs/easter 5.png";
+import egg6 from "../../img/easter/eggs/easter 6.png";
+import egg7 from "../../img/easter/eggs/easter 7.png";
+import egg8 from "../../img/easter/eggs/easter 8.png";
+import egg9 from "../../img/easter/eggs/easter 9.png";
+import egg10 from "../../img/easter/eggs/easter 10.png";
+import eggNotRanked from "../../img/easter/eggs/easter not ranked.png";
+
 import { ProfilePicture } from "../player/profile-picture";
+import { getClientConfig, Theme, themeOrOverrideTheme } from "../../client/client-config/get-client-config";
 
 const cardHeight: Record<Props["size"], string> = {
   default: "h-[5rem]",
@@ -51,7 +65,7 @@ const statsTextSize: Record<Props["size"], string> = {
   xs: "text-md",
 };
 
-function getPumpkin(place?: number): string | undefined {
+export function getPumpkin(place?: number): string | undefined {
   const pumpkins = [
     pumpkin1,
     pumpkin2,
@@ -69,6 +83,13 @@ function getPumpkin(place?: number): string | undefined {
   return pumpkins[place - 1];
 }
 
+export function getEgg(place?: number): string | undefined {
+  const pumpkins = [egg1, egg2, egg3, egg4, egg5, egg6, egg7, egg8, egg9, egg10];
+  if (!place) return eggNotRanked;
+
+  return pumpkins[place - 1];
+}
+
 type Props = {
   name: string;
   playerSummary?: PlayerSummary;
@@ -79,10 +100,18 @@ type Props = {
 
 export const PodiumPlace: React.FC<Props> = ({ name, playerSummary, place, size, profilePicture = false }) => {
   const placeNumberLength = place?.toString().length || 1;
+  const client = getClientConfig();
+  const theme = themeOrOverrideTheme(client.theme);
 
   const themedPlaceNumber = () => {
-    if (CURRENT_THEME === "halloween") {
+    if (theme === Theme.HALLOWEEN) {
       const pumpkin = getPumpkin(place);
+      if (pumpkin) {
+        return <img className={classNames("scale-125", placeBoxSize[size])} src={pumpkin} alt="Pumpkin" />;
+      }
+    }
+    if (theme === Theme.EASTER) {
+      const pumpkin = getEgg(place);
       if (pumpkin) {
         return <img className={classNames("scale-125", placeBoxSize[size])} src={pumpkin} alt="Pumpkin" />;
       }

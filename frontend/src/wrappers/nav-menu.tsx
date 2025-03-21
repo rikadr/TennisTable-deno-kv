@@ -4,9 +4,9 @@ import { Link, Outlet, useLocation } from "react-router-dom";
 import { classNames } from "../common/class-names";
 import { session } from "../services/auth";
 import pumpkinLogo from "../img/halloween/tennis-table.png";
-import { CURRENT_THEME } from "../client/client-db/types";
+import easterLogo from "../img/easter/easter-tennis-table.png";
 import { useClientDbContext } from "./client-db-context";
-import { getClientConfig } from "../client/client-config/get-client-config";
+import { getClientConfig, Theme, themeOrOverrideTheme } from "../client/client-config/get-client-config";
 
 const MENU_HEIGHT = "h-16 md:h-12";
 
@@ -77,10 +77,20 @@ export const NavMenu: React.FC = () => {
   };
 
   const themedLogo = () => {
-    if (CURRENT_THEME === "halloween") {
+    const client = getClientConfig();
+    const theme = themeOrOverrideTheme(client.theme);
+
+    if (theme === Theme.HALLOWEEN) {
       return (
         <div className="w-40 py-4 px-6 rounded-full bg-primary-background hover:bg-primary-background/70">
           <img className="" src={pumpkinLogo} alt="Pumpkin" />
+        </div>
+      );
+    }
+    if (theme === Theme.EASTER) {
+      return (
+        <div className="w-40 py-4 px-6 rounded-full bg-primary-background hover:bg-primary-background/70">
+          <img className="" src={easterLogo} alt="Pumpkin" />
         </div>
       );
     }

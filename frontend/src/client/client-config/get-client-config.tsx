@@ -4,6 +4,7 @@ import { GuestClient } from "./clients/guest-client";
 import { OptioClient } from "./clients/optio-client";
 import { TournamentDB } from "../client-db/types";
 import { LocalDevClient } from "./clients/local-dev-client";
+import { OVERRIDE_THEME_KEY } from "../../wrappers/theme-provider";
 
 export abstract class ClientConfig {
   id: string | undefined;
@@ -62,4 +63,12 @@ export enum Theme {
   // WINTER = "winter",
   CLIENT_SKIMORE = "skimore",
   // CLIENT_OPTIO = "optio",
+}
+
+export function themeOrOverrideTheme(theme: Theme): Theme {
+  const overrideTheme = window.localStorage.getItem(OVERRIDE_THEME_KEY)?.replaceAll('"', "");
+  if (overrideTheme) {
+    return overrideTheme as Theme;
+  }
+  return theme;
 }
