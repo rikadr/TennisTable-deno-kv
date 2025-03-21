@@ -2,6 +2,8 @@ import { useLocalStorage } from "usehooks-ts";
 import { getClientConfig, Theme } from "../client/client-config/get-client-config";
 import { OVERRIDE_THEME_KEY } from "../wrappers/theme-provider";
 
+const NO_OVERRIDE = "No override";
+
 export const SettingsPage: React.FC = () => {
   const { theme } = getClientConfig();
 
@@ -21,11 +23,11 @@ export const SettingsPage: React.FC = () => {
       <select
         className="bg-secondary-background text-secondary-text w-40 h-10"
         onChange={(e) => {
-          setOverrideTheme(e.target.value);
+          setOverrideTheme(e.target.value === NO_OVERRIDE ? "" : e.target.value);
         }}
         value={themeToUse}
       >
-        {["No override", ...Object.values(Theme)].map((theme) => (
+        {[NO_OVERRIDE, ...Object.values(Theme)].map((theme) => (
           <option key={theme} value={theme}>
             {theme}
           </option>
