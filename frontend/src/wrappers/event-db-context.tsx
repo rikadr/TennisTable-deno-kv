@@ -2,7 +2,7 @@ import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { httpClient } from "../common/http-client";
 import { createContext, useContext } from "react";
 import { TennisTable } from "../client/client-db/tennis-table";
-import { EventType } from "../client/event-db/event-types";
+import { EventType } from "../client/client-db/event-store/event-types";
 import { ClientDbDTO } from "../client/client-db/types";
 import { getClientConfig } from "../client/client-config/get-client-config";
 

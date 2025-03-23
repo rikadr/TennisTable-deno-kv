@@ -24,15 +24,15 @@ type GenericEvent<Type extends EventTypeEnum = EventTypeEnum, Data = unknown> = 
   data: Data;
 };
 
-type PlayerCreated = GenericEvent<EventTypeEnum.PLAYER_CREATED, { name: string }>;
-type PlayerDeactivated = GenericEvent<EventTypeEnum.PLAYER_DEACTIVATED, null>;
-type PlayerReactivated = GenericEvent<EventTypeEnum.PLAYER_REACTIVATED, null>;
+export type PlayerCreated = GenericEvent<EventTypeEnum.PLAYER_CREATED, { name: string }>;
+export type PlayerDeactivated = GenericEvent<EventTypeEnum.PLAYER_DEACTIVATED, null>;
+export type PlayerReactivated = GenericEvent<EventTypeEnum.PLAYER_REACTIVATED, null>;
 
-type GameCreated = GenericEvent<EventTypeEnum.GAME_CREATED, { playedAt: number; winner: string; loser: string }>; // Score???
-type GameDeleted = GenericEvent<EventTypeEnum.GAME_DELETED, null>;
+export type GameCreated = GenericEvent<EventTypeEnum.GAME_CREATED, { playedAt: number; winner: string; loser: string }>; // Score???
+export type GameDeleted = GenericEvent<EventTypeEnum.GAME_DELETED, null>;
 
-type TournamentSignup = GenericEvent<EventTypeEnum.TOURNAMENT_SIGNUP, { player: string }>;
-type TournamentCancelSignup = GenericEvent<EventTypeEnum.TOURNAMENT_CANCEL_SIGNUP, null>;
+export type TournamentSignup = GenericEvent<EventTypeEnum.TOURNAMENT_SIGNUP, { player: string }>;
+export type TournamentCancelSignup = GenericEvent<EventTypeEnum.TOURNAMENT_CANCEL_SIGNUP, null>;
 
 export type EventType =
   | PlayerCreated
