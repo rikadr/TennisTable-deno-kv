@@ -6,7 +6,7 @@ type Tournament = {
   signups: Map<string, SignUp>;
 };
 
-type SignUp = {
+export type SignUp = {
   player: string;
   time: number;
 };

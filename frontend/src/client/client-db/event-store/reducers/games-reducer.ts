@@ -1,13 +1,13 @@
 import { GameCreated, GameDeleted } from "../event-types";
 import { ValidatorResponse } from "./validator-types";
 
-type Game = { id: string; playedAt: number; winner: string; loser: string };
+export type Game = { id: string; playedAt: number; winner: string; loser: string };
 
 export class GamesReducer {
   #gamesMap = new Map<string, Game>();
 
   get games(): Game[] {
-    return Array.from(this.#gamesMap.values()).sort((a, b) => b.playedAt - a.playedAt);
+    return Array.from(this.#gamesMap.values()).sort((a, b) => a.playedAt - b.playedAt);
   }
 
   createGame(event: GameCreated) {
@@ -21,6 +21,9 @@ export class GamesReducer {
   }
 
   validateCreateGame(event: GameCreated): ValidatorResponse {
+    if (event.data.winner === event.data.loser) {
+      return { valid: false, message: "Winner and loser cannot be the same" };
+    }
     const games = Array.from(this.#gamesMap.values());
     if (games.some((game) => game.id === event.stream)) {
       return { valid: false, message: "Game stream already exists" };

@@ -4,7 +4,6 @@ import { CartesianGrid, Line, LineChart, ReferenceLine, Tooltip, TooltipProps, X
 import { useWindowSize } from "usehooks-ts";
 import { NameType, ValueType } from "recharts/types/component/DefaultTooltipContent";
 import { useEventDbContext } from "../wrappers/event-db-context";
-import { Switch } from "@headlessui/react";
 import { fmtNum } from "../common/number-utils";
 
 export function stringToColor(name?: string) {
@@ -48,11 +47,7 @@ export const ComparePlayersPage: React.FC = () => {
   return (
     <div className="flex flex-col items-center">
       <section className="flex flex-col-reverse items-center md:items-start md:flex-row md:gap-4">
-        <PlayerSelector
-          players={comparison.allPlayers}
-          selectedPlayers={selectedPlayers}
-          setSelectedPlayers={setSelectedPlayers}
-        />
+        <PlayerSelector selectedPlayers={selectedPlayers} setSelectedPlayers={setSelectedPlayers} />
         <div className="">
           <input
             className="w-full"
@@ -75,7 +70,7 @@ export const ComparePlayersPage: React.FC = () => {
               <YAxis
                 type="number"
                 domain={["dataMin", "dataMax"]}
-                tickFormatter={(value) => fmtNum(value)}
+                tickFormatter={(value) => fmtNum(value)!}
                 stroke="rgb(var(--color-primary-text))"
               />
               <Tooltip
@@ -125,71 +120,46 @@ export const ComparePlayersPage: React.FC = () => {
 };
 
 const PlayerSelector: React.FC<{
-  players: string[];
   selectedPlayers: string[];
   setSelectedPlayers: React.Dispatch<React.SetStateAction<string[]>>;
-}> = ({ players, selectedPlayers, setSelectedPlayers }) => {
+}> = ({ selectedPlayers, setSelectedPlayers }) => {
   const context = useEventDbContext();
 
-  const playersByName = useMemo(() => players.sort(), [players]);
-  const playersByRank = context.leaderboard.getLeaderboard().rankedPlayers.map((p) => p.name);
-  const [byRank, setByRank] = useState(true);
-  const allIsSelected = selectedPlayers.length === (byRank ? playersByRank.length : playersByName.length);
-
-  useEffect(() => {
-    if (byRank) {
-      setSelectedPlayers(selectedPlayers.filter((p) => playersByRank.includes(p)));
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [byRank]);
+  const playersByRank = context.leaderboard.getLeaderboard().rankedPlayers.map((p) => p.id);
+  const allIsSelected = selectedPlayers.length === playersByRank.length;
 
   return (
     <div className="grid grid-cols-1 gap-1 grid-flow-row w-40 h-fit text-white">
-      Comparing players by
-      <Switch
-        checked={byRank}
-        onChange={setByRank}
-        className="group relative flex h-10 w-[10rem] cursor-pointer rounded-full bg-secondary-background p-1 transition-colors duration-200 ease-in-out focus:outline-none data-[focus]:outline-1 data-[focus]:outline-white"
-      >
-        <div className="absolute top-1/2 transform -translate-y-1/2 left-[1rem] z-10">Name {!byRank && "🔡"}</div>
-        <div className="absolute top-1/2 transform -translate-y-1/2 right-[1rem] z-10">{byRank && "🥇 "} Rank </div>
-        <span
-          aria-hidden="true"
-          className="pointer-events-none inline-block h-8 w-[5.8rem] group-data-[checked]:w-[5.1rem] translate-x-0 rounded-full bg-primary-background ring-0 shadow-lg transition duration-200 ease-in-out group-data-[checked]:translate-x-[4.4rem]"
-        />
-      </Switch>
       <button
         className={classNames(
           "h-8 text-left pl-4 rounded-lg",
           "bg-gray-500/50",
           allIsSelected ? "bg-green-500/50 ring-2 ring-white hover:bg-green-300/50" : "hover:bg-gray-500",
         )}
-        onClick={() =>
-          allIsSelected ? setSelectedPlayers([]) : setSelectedPlayers(byRank ? playersByRank : playersByName)
-        }
+        onClick={() => (allIsSelected ? setSelectedPlayers([]) : setSelectedPlayers(playersByRank))}
       >
         {allIsSelected ? "Deselect all" : "Select all"}
       </button>
-      {(byRank ? playersByRank : playersByName).map((player, index) => {
-        const isSelected = selectedPlayers.includes(player);
+      {playersByRank.map((playerId, index) => {
+        const isSelected = selectedPlayers.includes(playerId);
         return (
           <button
-            key={player}
+            key={playerId}
             className={classNames(
               "h-8 text-left pl-4 rounded-lg",
               "bg-gray-500/50",
               isSelected ? "opacity-100 ring-2 ring-white" : "hover:opacity-100 opacity-75",
             )}
-            style={{ background: stringToColor(player) }}
+            style={{ background: stringToColor(playerId) }}
             onClick={() => {
               if (isSelected) {
-                setSelectedPlayers((prev) => prev.filter((name) => name !== player));
+                setSelectedPlayers((prev) => prev.filter((id) => id !== playerId));
               } else {
-                setSelectedPlayers((prev) => [...prev, player]);
+                setSelectedPlayers((prev) => [...prev, playerId]);
               }
             }}
           >
-            {byRank && `#${index + 1}`} {player}
+            #{index + 1} {context.getPlayer(playerId)?.name}
           </button>
         );
       })}
@@ -198,6 +168,8 @@ const PlayerSelector: React.FC<{
 };
 
 const CustomTooltip: React.FC = ({ active, payload, label }: TooltipProps<ValueType, NameType>) => {
+  const context = useEventDbContext();
+
   if (active && payload && payload.length) {
     const record = payload[0].payload as Record<string, number>;
     const entries = Object.entries(record);
@@ -207,7 +179,7 @@ const CustomTooltip: React.FC = ({ active, payload, label }: TooltipProps<ValueT
       <div className="p-2 bg-primary-background ring-1 ring-primary-text rounded-lg">
         {entries.map((entry) => (
           <p key={entry[0]} style={{ color: stringToColor(entry[0]) }}>
-            {`${entry[0]}: ${entry[1].toLocaleString("no-NO", { maximumFractionDigits: 0 })}`}
+            {`${context.getPlayer(entry[0])?.name}: ${entry[1].toLocaleString("no-NO", { maximumFractionDigits: 0 })}`}
           </p>
         ))}
       </div>

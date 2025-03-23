@@ -1,7 +1,7 @@
 import { PlayerCreated, PlayerDeactivated, PlayerReactivated } from "../event-types";
 import { ValidatorResponse } from "./validator-types";
 
-type Player = { id: string; name: string; active: boolean };
+export type Player = { id: string; name: string; active: boolean };
 
 export class PlyersReducer {
   #playersMap = new Map<string, Player>();
@@ -12,6 +12,10 @@ export class PlyersReducer {
 
   get inactivePlayers(): Player[] {
     return Array.from(this.#playersMap.values()).filter((player) => player.active === false);
+  }
+
+  getPlayer(id: string): Player | undefined {
+    return this.#playersMap.get(id);
   }
 
   createPlayer(event: PlayerCreated) {

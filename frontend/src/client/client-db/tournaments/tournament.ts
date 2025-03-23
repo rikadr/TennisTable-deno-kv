@@ -1,5 +1,7 @@
 import { ONE_WEEK } from "../../../common/time-in-ms";
-import { Game, SignUpTournament, TournamentDB } from "../types";
+import { Game } from "../event-store/reducers/games-reducer";
+import { SignUp } from "../event-store/reducers/tournaments-reducer";
+import { TournamentDB } from "../types";
 import { TournamentBracket } from "./bracket";
 import { TournamentGroupPlay } from "./group-play";
 
@@ -16,7 +18,7 @@ export type TournamentGame = {
 export class Tournament {
   readonly tournamentDb: TournamentDB;
   readonly #games: Game[];
-  readonly signedUp: SignUpTournament[];
+  readonly signedUp: SignUp[];
   groupPlay?: TournamentGroupPlay;
   bracket?: TournamentBracket;
 
@@ -25,7 +27,7 @@ export class Tournament {
   private static readonly RECENT_WINNER_THRESHOLD = 2 * ONE_WEEK;
   private static readonly SIGNUP_PERIOD = 2 * ONE_WEEK;
 
-  constructor(tournamentDb: TournamentDB, games: Game[], signedUp: SignUpTournament[]) {
+  constructor(tournamentDb: TournamentDB, games: Game[], signedUp: SignUp[]) {
     this.tournamentDb = tournamentDb;
     this.#games = games;
     this.signedUp = signedUp;
@@ -100,9 +102,9 @@ export class Tournament {
     )[] = [];
 
     this.#games
-      .filter((game) => game?.time > startTime)
+      .filter((game) => game?.playedAt > startTime)
       .forEach((game) =>
-        entries.push({ time: game.time, player1: game.winner, player2: game.loser, game, skip: undefined }),
+        entries.push({ time: game.playedAt, player1: game.winner, player2: game.loser, game, skip: undefined }),
       );
 
     this.tournamentDb.skippedGames

@@ -104,8 +104,8 @@ export const PvPStats: React.FC<Props> = ({ player1, player2 }) => {
             const game = list[list.length - 1 - index];
             return (
               <Link
-                key={p1.name + p2.name + index}
-                to={`/player/${game.result === "win" ? p1.name : p2.name}`}
+                key={p1.playerId + p2.playerId + index}
+                to={`/player/${game.result === "win" ? p1.playerId : p2.playerId}`}
                 className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text py-1 px-2 flex gap-4 text-xl font-light"
               >
                 <div className="w-44 font-normal whitespace-nowrap flex gap-3">

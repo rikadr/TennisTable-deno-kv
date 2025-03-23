@@ -9,7 +9,7 @@ import { useEventDbContext } from "../wrappers/event-db-context";
 import { EventTypeEnum, GameCreated } from "../client/client-db/event-store/event-types";
 import { newId } from "../common/nani-id";
 import { useEventMutation } from "../hooks/use-event-mutation";
-import { Player } from "../client/client-db/types";
+import { Player } from "../client/client-db/event-store/reducers/players-reducer";
 
 export const AddGamePage: React.FC = () => {
   const context = useEventDbContext();
@@ -124,11 +124,11 @@ export const AddGamePage: React.FC = () => {
         <div className="relative flex gap-2">
           <div className="w-40 h-20 flex flex-col items-center justify-center">
             <h1 className="text-5xl">🏆</h1>
-            <h1 className="uppercase text-primary-text">{winner || "???"}</h1>
+            <h1 className="uppercase text-primary-text">{context.getPlayer(winner || "?")?.name || "???"}</h1>
           </div>
           <div className="w-40 h-20 flex flex-col items-center justify-center">
             <h1 className="text-5xl">💔</h1>
-            <h1 className="uppercase text-primary-text">{loser || "???"}</h1>
+            <h1 className="uppercase text-primary-text">{context.getPlayer(loser || "?")?.name || "???"}</h1>
           </div>
           {(winner || loser) && (
             <button
@@ -143,16 +143,16 @@ export const AddGamePage: React.FC = () => {
           <div className="space-y-4">
             <PlayerList
               players={players}
-              onClick={(name) =>
+              onClick={(id) =>
                 setWinner((prev) => {
-                  if (name === loser) {
+                  if (id === loser) {
                     setLoser(undefined);
-                    return name;
+                    return id;
                   }
-                  if (prev === name) {
+                  if (prev === id) {
                     return undefined;
                   }
-                  return name;
+                  return id;
                 })
               }
               selectedPlayer={winner}
@@ -163,16 +163,16 @@ export const AddGamePage: React.FC = () => {
           <div className="space-y-4">
             <PlayerList
               players={players}
-              onClick={(name) =>
+              onClick={(id) =>
                 setLoser((prev) => {
-                  if (name === winner) {
+                  if (id === winner) {
                     setWinner(undefined);
-                    return name;
+                    return id;
                   }
-                  if (prev === name) {
+                  if (prev === id) {
                     return undefined;
                   }
-                  return name;
+                  return id;
                 })
               }
               selectedPlayer={loser}
@@ -190,7 +190,7 @@ const PlayerList: React.FC<{
   players?: Player[];
   selectedPlayer?: string;
   disabledPlayer?: string;
-  onClick: (name: string) => void;
+  onClick: (id: string) => void;
   disableSelection?: boolean;
 }> = ({ players, selectedPlayer, disabledPlayer, onClick, disableSelection = false }) => {
   if (!players) {
@@ -202,8 +202,8 @@ const PlayerList: React.FC<{
   return (
     <div className="grid grid-cols-1 gap-1 grid-flow-row w-40">
       {sortedPlayers.map((player) => {
-        const isSelected = selectedPlayer === player.name;
-        const isDisabled = disabledPlayer === player.name;
+        const isSelected = selectedPlayer === player.id;
+        const isDisabled = disabledPlayer === player.id;
         return (
           <button
             disabled={disableSelection}
@@ -214,7 +214,7 @@ const PlayerList: React.FC<{
               (isDisabled || (!!selectedPlayer && !isSelected)) && "text-secondary-text/40",
               !isSelected && !isDisabled && "hover:bg-secondary-background hover:text-secondary-text",
             )}
-            onClick={() => onClick(player.name)}
+            onClick={() => onClick(player.id)}
           >
             {player.name}
           </button>

@@ -1,4 +1,6 @@
+import { newId } from "../../common/nani-id";
 import { Elo } from "./elo";
+import { Game } from "./event-store/reducers/games-reducer";
 import { TennisTable } from "./tennis-table";
 
 type Fraction = { fraction: number; confidence: number };
@@ -15,7 +17,7 @@ export class FutureElo {
   playersMap = new Map<string, PlayerClass>();
   private playerPairings: { p1: string; p2: string; confidence?: number }[] = [];
   predictedGamesTemp: { winner: string; loser: string }[][] = [];
-  predictedGames: { winner: string; loser: string; time: number }[] = [];
+  predictedGames: Game[] = [];
 
   simulate() {
     this.parent.leaderboard.clearCaches();
@@ -115,13 +117,17 @@ export class FutureElo {
     const now = new Date().getTime();
     for (let i = 0; i < this.GAMES_TO_PREDICT_PER_OPONENT; i++) {
       for (let ii = 0; ii < this.predictedGamesTemp.length; ii++) {
-        this.predictedGames.push({ ...this.predictedGamesTemp[ii][i], time: now + this.predictedGames.length });
+        this.predictedGames.push({
+          ...this.predictedGamesTemp[ii][i],
+          playedAt: now + this.predictedGames.length,
+          id: newId(),
+        });
       }
     }
 
     this.predictedGames = this.parent.simulations.shuffleArray(this.predictedGames);
 
-    this.predictedGames.forEach((game, index) => (game.time = now + index)); // Set deterministic time in order after shuffle
+    this.predictedGames.forEach((game, index) => (game.playedAt = now + index)); // Set deterministic time in order after shuffle
   }
 
   private getDirectFraction(p1: string, p2: string): Fraction {

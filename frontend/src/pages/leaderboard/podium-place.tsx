@@ -28,6 +28,7 @@ import eggNotRanked from "../../img/easter/eggs/easter not ranked.png";
 
 import { ProfilePicture } from "../player/profile-picture";
 import { getClientConfig, Theme, themeOrOverrideTheme } from "../../client/client-config/get-client-config";
+import { useEventDbContext } from "../../wrappers/event-db-context";
 
 const cardHeight: Record<Props["size"], string> = {
   default: "h-[5rem]",
@@ -91,17 +92,18 @@ export function getEgg(place?: number): string | undefined {
 }
 
 type Props = {
-  name: string;
   playerSummary?: PlayerSummary;
   size: "default" | "sm" | "xs";
   place?: number;
   profilePicture?: boolean;
 };
 
-export const PodiumPlace: React.FC<Props> = ({ name, playerSummary, place, size, profilePicture = false }) => {
-  const placeNumberLength = place?.toString().length || 1;
+export const PodiumPlace: React.FC<Props> = ({ playerSummary, place, size, profilePicture = false }) => {
+  const context = useEventDbContext();
+  const player = context.getPlayer(playerSummary!.id);
   const client = getClientConfig();
   const theme = themeOrOverrideTheme(client.theme);
+  const placeNumberLength = place?.toString().length || 1;
 
   const themedPlaceNumber = () => {
     if (theme === Theme.HALLOWEEN) {
@@ -136,7 +138,7 @@ export const PodiumPlace: React.FC<Props> = ({ name, playerSummary, place, size,
 
   return (
     <Link
-      to={`/player/${name}`}
+      to={`/player/${playerSummary!.id}`}
       className={classNames(
         "w-full p-2 rounded-lg flex space-x-4 h-20 bg-secondary-background hover:bg-secondary-background/70",
         cardHeight[size],
@@ -144,7 +146,7 @@ export const PodiumPlace: React.FC<Props> = ({ name, playerSummary, place, size,
     >
       <div className="w-16 flex items-center justify-center shrink-0">{themedPlaceNumber()}</div>
       <section className="grow text-secondary-text">
-        <h2 className={classNames("uppercase", nameTextSize[size])}>{name} </h2>
+        <h2 className={classNames("uppercase", nameTextSize[size])}>{player?.name} </h2>
         <section className={classNames("flex space-x-4 font-medium", statsTextSize[size])}>
           <div>
             {playerSummary
@@ -165,7 +167,13 @@ export const PodiumPlace: React.FC<Props> = ({ name, playerSummary, place, size,
       </section>
       {profilePicture && (
         <div className="w-16 flex items-center justify-center shrink-0">
-          <ProfilePicture name={name} size={profilePictureSize[size]} shape="circle" clickToEdit={false} border={3} />
+          <ProfilePicture
+            playerId={playerSummary!.id}
+            size={profilePictureSize[size]}
+            shape="circle"
+            clickToEdit={false}
+            border={3}
+          />
         </div>
       )}
     </Link>

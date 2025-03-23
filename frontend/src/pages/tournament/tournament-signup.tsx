@@ -93,7 +93,7 @@ export const TournamentSignup: React.FC<{ tournament: Tournament }> = ({ tournam
           {context.players
             .filter((p) => !tournament.signedUp.some((s) => s.player === p.name))
             .map((player) => (
-              <option value={player.name} key={player.name}>
+              <option value={player.id} key={player.name}>
                 {player.name}
               </option>
             ))}
@@ -107,7 +107,7 @@ export const TournamentSignup: React.FC<{ tournament: Tournament }> = ({ tournam
           onClick={() => (signUpPlayer ? submitSignup(signUpPlayer) : setSignUpEdit(true))}
         >
           <h2 className="flex gap-2">
-            <div>Sign up {signUpPlayer ?? "here"}! </div>
+            <div>Sign up {context.getPlayer(signUpPlayer)?.name ?? "here"}! </div>
             <div className={classNames(addEventMutation.isPending && "animate-spin")}>✍️🏆</div>
           </h2>
           {showConfetti && <ConfettiExplosion particleCount={250} force={0.8} width={2_000} duration={10_000} />}
@@ -118,23 +118,26 @@ export const TournamentSignup: React.FC<{ tournament: Tournament }> = ({ tournam
           Signed up players{" "}
           <span className="pl-1 font-thin italic text-base text-primary-text">({tournament.signedUp.length})</span>
         </h1>
-        {tournament.signedUp.map((p) => (
-          <div key={p.player} className="flex justify-between items-center h-10 gap-4">
-            <div className="flex gap-2 items-center">
-              <ProfilePicture name={p.player} size={25} border={2} linkToPlayer />
-              <p className="text-lg">{p.player}</p>
+        {tournament.signedUp.map((p) => {
+          const player = context.getPlayer(p.player);
+          return (
+            <div key={p.player} className="flex justify-between items-center h-10 gap-4">
+              <div className="flex gap-2 items-center">
+                <ProfilePicture playerId={p.player} size={25} border={2} linkToPlayer />
+                <p className="text-lg">{player?.name}</p>
+              </div>
+              <button
+                className="italic text-primary-text/ font-thin text-xs"
+                onClick={() =>
+                  window.confirm(`Are you sure you want to withdraw ${player?.name} from the tournament?`) &&
+                  submitCancelSignup(p.player)
+                }
+              >
+                (Remove)
+              </button>
             </div>
-            <button
-              className="italic text-primary-text/ font-thin text-xs"
-              onClick={() =>
-                window.confirm(`Are you sure you want to withdraw ${p.player} from the tournament?`) &&
-                submitCancelSignup(p.player)
-              }
-            >
-              (Remove)
-            </button>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

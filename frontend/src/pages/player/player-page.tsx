@@ -12,13 +12,13 @@ import { stringToColor } from "../compare-players-page";
 import { PlayerGamesDistrubution } from "./player-games-distribution";
 
 export const PlayerPage: React.FC = () => {
-  const { name } = useParams();
+  const { name: playerId } = useParams();
   const { width = 0 } = useWindowSize();
 
   const context = useEventDbContext();
 
-  const summary = context.leaderboard.getPlayerSummary(name || "");
-  const pendingGames = context.tournaments.findAllPendingGamesByPlayer(name);
+  const summary = context.leaderboard.getPlayerSummary(playerId || "");
+  const pendingGames = context.tournaments.findAllPendingGamesByPlayer(playerId);
 
   const reverseGames = useMemo(() => {
     if (!summary) return;
@@ -29,13 +29,13 @@ export const PlayerPage: React.FC = () => {
     <div className="flex flex-col items-center">
       <div className="flex flex-col items-center md:flex-row md:items-start ">
         <div className="w-64">
-          <ProfilePicture name={name} clickToEdit border={8} shape="rounded" />
+          <ProfilePicture playerId={playerId} clickToEdit border={8} shape="rounded" />
           <div className="w-64 my-4">
-            {<PodiumPlace name={name ?? "-"} size="default" place={summary?.rank} playerSummary={summary} />}
+            <PodiumPlace size="default" place={summary?.rank} playerSummary={summary} />
           </div>
         </div>
 
-        {summary && (
+        {summary.games.length > 0 && (
           <div>
             <LineChart
               width={Math.min(1000, width < 768 ? width : width - 300)}
@@ -68,7 +68,7 @@ export const PlayerPage: React.FC = () => {
                     key={type}
                     type="monotone"
                     dataKey="eloAfterGame"
-                    stroke={type === "main" ? "white" : stringToColor(name)}
+                    stroke={type === "main" ? "white" : stringToColor(playerId)}
                     dot={false}
                     animationDuration={100}
                     strokeWidth={type === "main" ? 0.5 : 5}
@@ -84,7 +84,7 @@ export const PlayerPage: React.FC = () => {
               />
               {context.futureElo.predictedGames[0] && (
                 <ReferenceLine
-                  x={context.games.filter((g) => g.winner === name || g.loser === name).length}
+                  x={context.games.filter((g) => g.winner === playerId || g.loser === playerId).length}
                   stroke="rgb(var(--color-primary-text))"
                   opacity={0.5}
                   label={{
@@ -103,7 +103,7 @@ export const PlayerPage: React.FC = () => {
             </div>
           </div>
         )}
-        {!summary && (
+        {summary.games.length === 0 && (
           <div className="p-10">
             <h1>It's empty here...</h1>
             <br />
@@ -127,21 +127,21 @@ export const PlayerPage: React.FC = () => {
               </Link>
               {tournament.games.map((game) => (
                 <Link
-                  key={tournament.tournament.id + name + game.oponent}
+                  key={tournament.tournament.id + playerId + game.oponent}
                   to={`/tournament?tournament=${tournament.tournament.id}&player1=${game.player1}&player2=${game.player2}`}
                 >
                   <div className="relative w-full px-4 py-2 mt-2 rounded-lg flex items-center gap-x-4 h-12 hover:bg-secondary-background/70 bg-secondary-background ring-2 ring-secondary-text text-secondary-text">
                     <h2 className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2">VS</h2>
                     <div className="flex gap-3 items-center justify-center">
-                      <ProfilePicture name={name} size={35} shape="circle" clickToEdit={false} border={3} />
+                      <ProfilePicture playerId={playerId} size={35} shape="circle" clickToEdit={false} border={3} />
 
-                      <h3>{name}</h3>
+                      <h3>{playerId}</h3>
                     </div>
                     <div className="grow" />
                     <div className="flex gap-3 items-center justify-center">
                       <h3>{game.oponent}</h3>
 
-                      <ProfilePicture name={game.oponent} size={35} shape="circle" clickToEdit={false} border={3} />
+                      <ProfilePicture playerId={game.oponent} size={35} shape="circle" clickToEdit={false} border={3} />
                     </div>
                   </div>
                 </Link>
@@ -150,20 +150,20 @@ export const PlayerPage: React.FC = () => {
           ))}
         </>
       )}
-      {summary && (
+      {summary.games.length > 0 && (
         <div className="flex flex-col md:flex-row justify-evenly items-center md:items-start w-full md:mr-4 text-primary-text">
           <div className="w-full max-w-2xl flex flex-col justify-center">
             <div className="flex flex-col items-center">
               <h1 className="text-2xl text-center mt-4">Points distribution</h1>
               <div className="w-full max-w-2xl">
-                <PlayerPointsDistrubution name={summary?.name} />
+                <PlayerPointsDistrubution playerId={playerId} />
               </div>
             </div>
 
             <div className="flex flex-col items-center">
               <h1 className="text-2xl text-center mt-4">Games distribution</h1>
               <div className="w-full max-w-2xl">
-                <PlayerGamesDistrubution name={summary?.name} />
+                <PlayerGamesDistrubution playerId={playerId} />
               </div>
             </div>
           </div>
@@ -178,12 +178,12 @@ export const PlayerPage: React.FC = () => {
               </div>
               {reverseGames?.map((game, index) => (
                 <Link
-                  key={(summary?.name ?? "-") + index + game.oponent}
+                  key={(summary?.id ?? "-") + index + game.oponent}
                   to={`/player/${game.oponent}`}
                   className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text py-1 px-2 flex gap-4 text-xl font-light"
                 >
                   <div className="w-32 font-normal whitespace-nowrap">
-                    {game.result === "win" ? "🏆 " : "💔 "} {game.oponent}
+                    {game.result === "win" ? "🏆 " : "💔 "} {context.getPlayer(game.oponent)?.name}
                   </div>
                   <div className="w-12 text-right">
                     {game.pointsDiff.toLocaleString("no-NO", {
@@ -202,6 +202,7 @@ export const PlayerPage: React.FC = () => {
 };
 
 const CustomTooltip: React.FC = ({ active, payload, label }: TooltipProps<ValueType, NameType>) => {
+  const constext = useEventDbContext();
   if (active && payload && payload.length) {
     const game = payload[0].payload;
     return (
@@ -211,7 +212,7 @@ const CustomTooltip: React.FC = ({ active, payload, label }: TooltipProps<ValueT
           {game?.result === "win"
             ? `🏆 +${game.pointsDiff?.toLocaleString("no-NO", { maximumFractionDigits: 0 })} from`
             : `💔 ${game.pointsDiff?.toLocaleString("no-NO", { maximumFractionDigits: 0 })} to`}{" "}
-          {game?.oponent}
+          {game?.oponent ? constext.getPlayer(game.oponent)?.name : "?"}
         </p>
       </div>
     );

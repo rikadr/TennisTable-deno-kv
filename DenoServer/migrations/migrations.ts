@@ -22,7 +22,7 @@ export const migrations: Migration[] = [
   {
     name: "create-events-from-client-db",
     up: async () => {
-      let lastTime = 0;
+      let lastTime = 1_000;
       function getNextTime() {
         return lastTime++;
       }
@@ -33,6 +33,10 @@ export const migrations: Migration[] = [
         tournament: { signedUp },
       } = await getClientDbData();
 
+      function replaceName(name: string) {
+        return name === "Alejandro 🌮" ? "Alejandro" : name;
+      }
+
       const createPlayerEvents: Map<string, PlayerCreated> = new Map();
       const playersToDeactivate: Set<string> = new Set();
       const deactivatePlayersEvents: Map<string, PlayerDeactivated> = new Map();
@@ -41,11 +45,11 @@ export const migrations: Migration[] = [
 
       // Create player events
       for (const player of players) {
-        createPlayerEvents.set(player.name, {
+        createPlayerEvents.set(replaceName(player.name), {
           time: getNextTime(),
           stream: newId(),
           type: EventTypeEnum.PLAYER_CREATED,
-          data: { name: player.name },
+          data: { name: replaceName(player.name) },
         });
       }
 
@@ -53,7 +57,7 @@ export const migrations: Migration[] = [
       const sortedGames = games.sort((a, b) => a.time - b.time);
       for (const game of sortedGames) {
         // Check if winner and loser exist
-        for (const player of [game.winner, game.loser]) {
+        for (const player of [replaceName(game.winner), replaceName(game.loser)]) {
           if (!createPlayerEvents.has(player)) {
             createPlayerEvents.set(player, {
               time: getNextTime(),
@@ -71,8 +75,8 @@ export const migrations: Migration[] = [
           type: EventTypeEnum.GAME_CREATED,
           data: {
             playedAt: game.time,
-            winner: createPlayerEvents.get(game.winner)!.stream,
-            loser: createPlayerEvents.get(game.loser)!.stream,
+            winner: createPlayerEvents.get(replaceName(game.winner))!.stream,
+            loser: createPlayerEvents.get(replaceName(game.loser))!.stream,
           },
         });
       }
@@ -100,9 +104,9 @@ export const migrations: Migration[] = [
 
       // Deactivate players
       for (const player of playersToDeactivate) {
-        deactivatePlayersEvents.set(player, {
+        deactivatePlayersEvents.set(replaceName(player), {
           time: getNextTime(),
-          stream: createPlayerEvents.get(player)!.stream,
+          stream: createPlayerEvents.get(replaceName(player))!.stream,
           type: EventTypeEnum.PLAYER_DEACTIVATED,
           data: null,
         });

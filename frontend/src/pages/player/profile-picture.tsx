@@ -3,7 +3,7 @@ import { classNames } from "../../common/class-names";
 import { stringToColor } from "../compare-players-page";
 
 type Props = {
-  name?: string;
+  playerId?: string;
   size?: number;
   clickToEdit?: boolean;
   border?: number;
@@ -12,7 +12,7 @@ type Props = {
 };
 
 export const ProfilePicture: React.FC<Props> = ({
-  name = "default",
+  playerId = "default",
   clickToEdit = false,
   size = 256,
   border = 0,
@@ -27,7 +27,7 @@ export const ProfilePicture: React.FC<Props> = ({
         "w-full h-full object-cover",
         clickToEdit && " group-hover:opacity-50 transition-opacity duration-150",
       )}
-      src={`${process.env.REACT_APP_API_BASE_URL}/player/${name}/profile-picture`}
+      src={`${process.env.REACT_APP_API_BASE_URL}/player/${playerId}/profile-picture`} // TODO: Profile pictures are stored on the player name, not the player id... Need to fix
       alt="Profile"
     />
   );
@@ -39,16 +39,16 @@ export const ProfilePicture: React.FC<Props> = ({
         clickToEdit && "cursor-pointer",
         shape === "circle" ? "rounded-full" : "rounded-2xl",
       )}
-      style={{ borderWidth: border, borderColor: stringToColor(name || "1adagrsss"), height: size, width: size }}
-      onClick={() => clickToEdit && navigate(`/camera?player=${name}`)}
+      style={{ borderWidth: border, borderColor: stringToColor(playerId || "1adagrsss"), height: size, width: size }}
+      onClick={() => clickToEdit && navigate(`/camera?player=${playerId}`)}
     >
       {clickToEdit && (
         <div className="absolute text-primary-text px-3 py-0.5 rounded-lg bottom-0 text-sm font-thin left-1/2 transform -translate-x-1/2 transition-opacity duration-150">
           Click to edit
         </div>
       )}
-      {linkToPlayer && name !== "default" ? (
-        <Link aria-disabled to={`/player/${name}`}>
+      {linkToPlayer && playerId !== "default" ? (
+        <Link aria-disabled to={`/player/${playerId}`}>
           {img()}
         </Link>
       ) : (

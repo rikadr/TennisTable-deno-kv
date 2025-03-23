@@ -5,16 +5,18 @@ import { classNames } from "../../common/class-names";
 import { useMutation } from "@tanstack/react-query";
 import { httpClient } from "../../common/http-client";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useEventDbContext } from "../../wrappers/event-db-context";
 
 export const CameraPage: React.FC = () => {
+  const context = useEventDbContext();
   const navigate = useNavigate();
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
-  const name = queryParams.get("player");
+  const playerId = queryParams.get("player");
 
-  const postProfilePicture = useMutation<unknown, Error, { name: string; image: string }, unknown>({
-    mutationFn: async ({ name, image }) => {
-      return httpClient(`${process.env.REACT_APP_API_BASE_URL}/player/${name}/profile-picture`, {
+  const postProfilePicture = useMutation<unknown, Error, { playerId: string; image: string }, unknown>({
+    mutationFn: async ({ playerId, image }) => {
+      return httpClient(`${process.env.REACT_APP_API_BASE_URL}/player/${playerId}/profile-picture`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -25,7 +27,7 @@ export const CameraPage: React.FC = () => {
       });
     },
     onSuccess: (_, variables) => {
-      navigate(`/player/${variables.name}`);
+      navigate(`/player/${variables.playerId}`);
     },
   });
 
@@ -87,7 +89,7 @@ export const CameraPage: React.FC = () => {
 
   return (
     <div className="flex flex-col gap-4 items-center">
-      <h1>Take new profile picture for {name}</h1>
+      <h1>Take new profile picture for {context.getPlayer(playerId!)?.name}</h1>
       <p>Or select an image from your device...</p>
       <input
         type="file"
@@ -144,10 +146,12 @@ export const CameraPage: React.FC = () => {
         <button
           className={btnClassNames}
           onClick={async () =>
-            avatarUrl && name && postProfilePicture.mutate({ name: name, image: await compressImage(avatarUrl) })
+            avatarUrl &&
+            playerId &&
+            postProfilePicture.mutate({ playerId: playerId, image: await compressImage(avatarUrl) })
           }
         >
-          You look great 😘 Submit photo!
+          {context.getPlayer(playerId!)?.name}, you look great 😘 Submit photo!
         </button>
       )}
     </div>

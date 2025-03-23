@@ -35,12 +35,12 @@ export const SelectPlayer: React.FC<{ value?: string; onChange: (value: string) 
       >
         {!value && <option key="No selected">Select player</option>}
         {sortedPlayers.map((player) => (
-          <option value={player.name} key={player.name}>
+          <option value={player.id} key={player.name}>
             {player.name}
           </option>
         ))}
       </Select>
-      <ProfilePicture name={value} size={64} linkToPlayer border={3} />
+      <ProfilePicture playerId={value} size={64} linkToPlayer border={3} />
     </div>
   );
 };

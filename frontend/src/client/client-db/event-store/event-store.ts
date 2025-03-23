@@ -3,7 +3,6 @@ import { TennisTable } from "../tennis-table";
 import { PlyersReducer } from "./reducers/players-reducer";
 import { GamesReducer } from "./reducers/games-reducer";
 import { TournamentsReducer } from "./reducers/tournaments-reducer";
-import { Game, Player, SignUpTournament } from "../types";
 
 export class EventStore {
   private parent: TennisTable;
@@ -50,35 +49,5 @@ export class EventStore {
           break;
       }
     });
-  }
-
-  // ---------------------------------------------------------------
-  // The following methods are only used to convert to the old types while transitioning from crud db to event sourcing
-  // ---------------------------------------------------------------
-
-  get oldTypePlayers(): Player[] {
-    return this.playersReducer.players.filter((player) => player.active).map((player) => ({ name: player.name }));
-  }
-
-  get oldTypeGames(): Game[] {
-    return this.gamesReducer.games.map((game) => ({
-      winner: game.winner,
-      loser: game.loser,
-      time: game.playedAt,
-    }));
-  }
-
-  get oldTypeTournamentSignups(): SignUpTournament[] {
-    const signups: SignUpTournament[] = [];
-    this.tournamentsReducer.tournaments.forEach((tournament) => {
-      tournament.signups.forEach((signup) => {
-        signups.push({
-          player: signup.player,
-          time: signup.time,
-          tournamentId: tournament.id,
-        });
-      });
-    });
-    return signups;
   }
 }

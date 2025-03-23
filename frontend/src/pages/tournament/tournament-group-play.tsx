@@ -202,7 +202,7 @@ export const TournamentGroups: React.FC<{
               <h2 className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2">VS</h2>
               <div className="flex gap-3 items-center justify-center">
                 {game.player1 ? (
-                  <ProfilePicture name={game.player1} size={35} shape="circle" clickToEdit={false} border={3} />
+                  <ProfilePicture playerId={game.player1} size={35} shape="circle" clickToEdit={false} border={3} />
                 ) : (
                   <QuestionMark size={38} />
                 )}
@@ -216,7 +216,7 @@ export const TournamentGroups: React.FC<{
                   {winStateEmoji(p2IsWinner, game.skipped)} {game.player2}
                 </h3>
                 {game.player2 ? (
-                  <ProfilePicture name={game.player2} size={35} shape="circle" clickToEdit={false} border={3} />
+                  <ProfilePicture playerId={game.player2} size={35} shape="circle" clickToEdit={false} border={3} />
                 ) : (
                   <QuestionMark size={38} />
                 )}

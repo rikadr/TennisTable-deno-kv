@@ -1,8 +1,8 @@
-export type Player = { name: string };
-export type Game = { winner: string; loser: string; time: number };
+import { Player } from "./event-store/reducers/players-reducer";
 
 export type PlayerWithElo = Player & { elo: number };
 export type PlayerSummary = {
+  id: string;
   name: string;
   elo: number;
   wins: number;

@@ -12,18 +12,19 @@ export const LeaderboardDistrubution: React.FC = () => {
 
   return (
     <div className="flex flex-col w-full divide-y divide-secondary-background/50">
-      {leaderboard?.rankedPlayers.map(({ name, elo }, index) => {
+      {leaderboard?.rankedPlayers.map(({ id, elo }, index) => {
         const fraction = (elo - lowestElo) / range;
+        const player = context.getPlayer(id);
         return (
-          <Link to={`/player/${name}`} className="group" key={index}>
+          <Link to={`/player/${id}`} className="group" key={index}>
             <div className="relative w-full h-6 group-hover:bg-primary-text/5">
               <div
                 className={classNames(
                   "absolute h-6 group-hover:opacity-75 top-0 transition-all duration-100 left-0 rounded-r-md",
                 )}
-                style={{ width: `${fraction * 100}%`, backgroundColor: stringToColor(name) }}
+                style={{ width: `${fraction * 100}%`, backgroundColor: stringToColor(id) }}
               />
-              <div className="absolute top-0 left-2 text-primary-text">{name}</div>
+              <div className="absolute top-0 left-2 text-primary-text">{player?.name}</div>
             </div>
           </Link>
         );

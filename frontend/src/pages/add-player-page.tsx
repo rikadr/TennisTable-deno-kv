@@ -35,10 +35,6 @@ export const AddPlayerPage: React.FC = () => {
     }
   }, [playerName, context.players, playerSuccessfullyAdded]);
 
-  function fixName(n: string): string {
-    return (n[0]?.toUpperCase() + n.slice(1)).trim();
-  }
-
   function submitPlayer(name: string) {
     const event: PlayerCreated = {
       type: EventTypeEnum.PLAYER_CREATED,
@@ -59,9 +55,7 @@ export const AddPlayerPage: React.FC = () => {
         const data = event as PlayerCreated;
         queryClient.invalidateQueries();
         setPlayerSuccessfullyAdded(true);
-        setTimeout(() => {
-          navigate(`/player/${fixName(data.data.name)}`); // TODO change to id?
-        }, 2_000);
+        setTimeout(() => navigate(`/player/${data.stream}`), 2_000);
       },
       onError(error) {
         setErrorMessage(error.message);

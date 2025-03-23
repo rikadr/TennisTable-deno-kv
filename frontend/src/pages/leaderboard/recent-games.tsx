@@ -1,15 +1,15 @@
 import { Link } from "react-router-dom";
-import { Game } from "../../client/client-db/types";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { relativeTimeString } from "../../common/date-utils";
 import { fmtNum } from "../../common/number-utils";
+import { Game } from "../../client/client-db/event-store/reducers/games-reducer";
 
 const GAMES_COUNT = 5;
 
 export const RecentGames: React.FC = () => {
   const context = useEventDbContext();
   const leaderboardMap = context.leaderboard.getCachedLeaderboardMap();
-  const lastGames = context.games.slice(Math.max(context.games.length - GAMES_COUNT, 0)).toReversed();
+  const lastGames = context.games.toReversed().slice(0, GAMES_COUNT + 1);
 
   function getGame(game: Game) {
     const winner = leaderboardMap.get(game.winner);
@@ -17,7 +17,7 @@ export const RecentGames: React.FC = () => {
     if (!winner || !loser) {
       return undefined;
     }
-    const foundGame = winner!.games.toReversed().find((g) => g.time === game.time);
+    const foundGame = winner!.games.toReversed().find((g) => g.time === game.playedAt);
     return { ...game, ...foundGame };
   }
 
@@ -33,16 +33,18 @@ export const RecentGames: React.FC = () => {
         {lastGames
           .map(getGame)
           .filter(Boolean)
-          .map((game) => (
+          .map((game, index) => (
             <Link
-              key={game!.time}
+              key={index}
               to={`/1v1?player1=${game!.winner}&player2=${game!.loser}`}
               className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text py-1 px-2 flex gap-4 text-xl font-light"
             >
-              <div className="w-24 font-normal whitespace-nowrap">🏆 {game!.winner}</div>
-              <div className="w-32 text-right font-normal whitespace-nowrap">{game!.loser} 💔</div>
+              <div className="w-24 font-normal whitespace-nowrap">🏆 {context.getPlayer(game!.winner)?.name}</div>
+              <div className="w-32 text-right font-normal whitespace-nowrap">
+                {context.getPlayer(game!.loser)?.name} 💔
+              </div>
               <div className="w-6 text-right">{fmtNum(game!.pointsDiff, 0)}</div>
-              <div className="w-28 text-right text-base">{relativeTimeString(new Date(game!.time))}</div>
+              <div className="w-28 text-right text-base">{relativeTimeString(new Date(game!.playedAt))}</div>
             </Link>
           ))}
       </div>

@@ -85,22 +85,25 @@ export const AdminPage: React.FC = () => {
       <AllPlayerGamesDistrubution />
       <Users />
       <p>Active players: {eventStore.playersReducer.players.length}</p>
-      <p>Removing players is reverable. No games will be deleted.</p>
+      <p>
+        Deactivating players is reverable. No games will be deleted. It will only result in games with this player not
+        counting towards anyone's elo rating.
+      </p>
       <section className="flex flex-col gap-2 mt-2">
         {eventStore.playersReducer.players.map((player) => (
-          <div className="flex gap-2" key={player.name}>
+          <div className="flex gap-2" key={player.id}>
             <p>{player.name}</p>
             <button
               className="text-xs bg-red-500 hover:bg-red-700 text-white px-1 rounded-md"
               onClick={() => handleDeactivatePlayer(player.id)}
             >
-              Remove
+              Deactivate
             </button>
           </div>
         ))}
         <p>Inactive players: {eventStore.playersReducer.inactivePlayers.length}</p>
         {eventStore.playersReducer.inactivePlayers.map((player) => (
-          <div className="flex gap-2" key={player.name}>
+          <div className="flex gap-2" key={player.id}>
             <p>{player.name}</p>
             <button
               className="text-xs bg-gray-400 hover:bg-green-400 text-white px-1 rounded-md"
@@ -113,12 +116,16 @@ export const AdminPage: React.FC = () => {
       </section>
 
       <p>Games: {eventStore.gamesReducer.games.length}</p>
-      <p>Deleting games is permanent.</p>
+      <p>
+        Deleting games is not permanent BUT I'd prefer not to restore deleted games, so please try to just delete games
+        you want to delete.
+      </p>
       <section className="flex flex-col-reverse gap-2 mt-2">
         {eventStore.gamesReducer.games.map((game) => (
           <div className="flex gap-2" key={game.id}>
             <p>
-              {game.winner} won over {game.loser} {relativeTimeString(new Date(game.playedAt))}
+              {eventStore.playersReducer.getPlayer(game.winner)?.name} won over{" "}
+              {eventStore.playersReducer.getPlayer(game.loser)?.name} {relativeTimeString(new Date(game.playedAt))}
             </p>
             <button
               className="text-xs bg-red-500 hover:bg-red-800 text-white px-1 rounded-md"
