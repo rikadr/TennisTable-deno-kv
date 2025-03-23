@@ -8,8 +8,8 @@ import { WebSocketClientManager } from "./web-socket/web-socket-client-manager.t
 import { registerClientDbRoutes } from "./client-db/client-db.routes.ts";
 import { registerTournamentRoutes } from "./tournament/tournament.routes.ts";
 import { ClientDBCacheManager } from "./client-db/client-db-cache.ts";
-import { runMigrations } from "./migrations/index.ts";
 import { registerEventStoreRoutes } from "./event-store/event-store.routes.ts";
+import { registerMigrationsRoutes } from "./migrations/migrations.routes.ts";
 
 const app = new Application();
 const api = new Router();
@@ -28,7 +28,8 @@ export const webSocketClientManager = new WebSocketClientManager();
 /**
  * Run database migrations
  */
-await runMigrations();
+// await runMigrations();
+registerMigrationsRoutes(api);
 
 /**
  * Register routes
