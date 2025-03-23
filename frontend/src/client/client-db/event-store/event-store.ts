@@ -52,6 +52,10 @@ export class EventStore {
     });
   }
 
+  // ---------------------------------------------------------------
+  // The following methods are only used to convert to the old types while transitioning from crud db to event sourcing
+  // ---------------------------------------------------------------
+
   get oldTypePlayers(): Player[] {
     return this.playersReducer.players.filter((player) => player.active).map((player) => ({ name: player.name }));
   }
