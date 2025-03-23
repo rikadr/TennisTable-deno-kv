@@ -1,59 +1,65 @@
 import { Select } from "@headlessui/react";
-import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import ConfettiExplosion from "react-confetti-explosion";
 import { classNames } from "../../common/class-names";
-import { httpClient } from "../../common/http-client";
 import { queryClient } from "../../common/query-client";
 import { ProfilePicture } from "../player/profile-picture";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { Tournament } from "../../client/client-db/tournaments/tournament";
+import { useEventMutation } from "../../hooks/use-event-mutation";
+import {
+  EventTypeEnum,
+  TournamentCancelSignup,
+  TournamentSignup as TournamentSignupType,
+} from "../../client/client-db/event-store/event-types";
 
 export const TournamentSignup: React.FC<{ tournament: Tournament }> = ({ tournament }) => {
   const context = useEventDbContext();
+  const addEventMutation = useEventMutation();
   const [signUpEdit, setSignUpEdit] = useState(false);
   const [signUpPlayer, setSignUpPlayer] = useState<string>();
   const [showConfetti, setShowConfetti] = useState(false);
 
-  const signUpPlayerMutation = useMutation<unknown, Error>({
-    mutationFn: async () => {
-      return httpClient(`${process.env.REACT_APP_API_BASE_URL}/tournament/sign-up`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          tournamentId: tournament.id,
-          player: signUpPlayer,
-        }),
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries();
-      setShowConfetti(true);
-      setSignUpPlayer(undefined);
-      setSignUpEdit(false);
-    },
-  });
+  function submitSignup(player: string) {
+    const now = Date.now();
+    const event: TournamentSignupType = {
+      type: EventTypeEnum.TOURNAMENT_SIGNUP,
+      time: now,
+      stream: tournament.id,
+      data: { player },
+    };
+    const validateResponse = context.eventStore.tournamentsReducer.validateSignup(event);
+    if (validateResponse.valid === false) {
+      return;
+    }
+    addEventMutation.mutate(event, {
+      onSuccess: () => {
+        queryClient.invalidateQueries();
+        setShowConfetti(true);
+        setSignUpPlayer(undefined);
+        setSignUpEdit(false);
+      },
+    });
+  }
 
-  const deleteSignUpMutation = useMutation<unknown, Error, { player: string }>({
-    mutationFn: async ({ player }) => {
-      return httpClient(`${process.env.REACT_APP_API_BASE_URL}/tournament/sign-up`, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          tournamentId: tournament.id,
-
-          player,
-        }),
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries();
-    },
-  });
+  function submitCancelSignup(player: string) {
+    const now = Date.now();
+    const event: TournamentCancelSignup = {
+      type: EventTypeEnum.TOURNAMENT_CANCEL_SIGNUP,
+      time: now,
+      stream: tournament.id,
+      data: { player },
+    };
+    const validateResponse = context.eventStore.tournamentsReducer.validateCancelSignup(event);
+    if (validateResponse.valid === false) {
+      return;
+    }
+    addEventMutation.mutate(event, {
+      onSuccess: () => {
+        queryClient.invalidateQueries();
+      },
+    });
+  }
 
   return (
     <div className="m-auto space-y-4 max-w-96 flex flex-col items-center w-full">
@@ -96,11 +102,11 @@ export const TournamentSignup: React.FC<{ tournament: Tournament }> = ({ tournam
           className={classNames(
             "text-lg font-semibold w-full py-4 px-6 flex flex-col items-center bg-secondary-background hover:bg-secondary-background/70 text-secondary-text rounded-lg",
           )}
-          onClick={() => (signUpPlayer ? signUpPlayerMutation.mutate() : setSignUpEdit(true))}
+          onClick={() => (signUpPlayer ? submitSignup(signUpPlayer) : setSignUpEdit(true))}
         >
           <h2 className="flex gap-2">
             <div>Sign up {signUpPlayer ?? "here"}! </div>
-            <div className={classNames(signUpPlayerMutation.isPending && "animate-spin")}>✍️🏆</div>
+            <div className={classNames(addEventMutation.isPending && "animate-spin")}>✍️🏆</div>
           </h2>
           {showConfetti && <ConfettiExplosion particleCount={250} force={0.8} width={2_000} duration={10_000} />}
         </button>
@@ -120,7 +126,7 @@ export const TournamentSignup: React.FC<{ tournament: Tournament }> = ({ tournam
               className="italic text-primary-text/ font-thin text-xs"
               onClick={() =>
                 window.confirm(`Are you sure you want to withdraw ${p.player} from the tournament?`) &&
-                deleteSignUpMutation.mutate({ player: p.player })
+                submitCancelSignup(p.player)
               }
             >
               (Remove)

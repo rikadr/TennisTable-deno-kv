@@ -32,11 +32,7 @@ export const AddGamePage: React.FC = () => {
       type: EventTypeEnum.GAME_CREATED,
       time: now,
       stream: newId(),
-      data: {
-        winner,
-        loser,
-        playedAt: now,
-      },
+      data: { winner, loser, playedAt: now },
     };
 
     const validateResponse = context.eventStore.gamesReducer.validateCreateGame(event);

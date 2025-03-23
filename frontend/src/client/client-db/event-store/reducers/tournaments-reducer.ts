@@ -48,7 +48,7 @@ export class TournamentsReducer {
 
   cancelSignup(event: TournamentCancelSignup) {
     const tournament = this.#getOrCreateTournament(event.stream);
-    tournament.signups.delete(event.stream);
+    tournament.signups.delete(event.data.player);
   }
 
   validateCancelSignup(event: TournamentCancelSignup): ValidatorResponse {

@@ -44,9 +44,7 @@ export const AddPlayerPage: React.FC = () => {
       type: EventTypeEnum.PLAYER_CREATED,
       time: Date.now(),
       stream: newId(),
-      data: {
-        name,
-      },
+      data: { name },
     };
 
     const validateResponse = context.eventStore.playersReducer.validateCreatePlayer(event);
