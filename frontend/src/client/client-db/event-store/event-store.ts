@@ -7,9 +7,9 @@ import { Game, Player, SignUpTournament } from "../types";
 
 export class EventStore {
   private parent: TennisTable;
-  private playersReducer: PlyersReducer;
-  private gamesReducer: GamesReducer;
-  private tournamentsReducer: TournamentsReducer;
+  readonly playersReducer: PlyersReducer;
+  readonly gamesReducer: GamesReducer;
+  readonly tournamentsReducer: TournamentsReducer;
 
   constructor(parent: TennisTable) {
     this.parent = parent;
