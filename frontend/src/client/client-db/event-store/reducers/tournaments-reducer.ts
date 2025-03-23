@@ -1,4 +1,5 @@
 import { TournamentCancelSignup, TournamentSignup } from "../event-types";
+import { ValidatorResponse } from "./validator-types";
 
 type Tournament = {
   id: string;
@@ -21,6 +22,15 @@ export class TournamentsReducer {
     return Array.from(this.#tournamentsMap.get(tournamentId)?.signups.values() ?? []);
   }
 
+  #getOrCreateTournament(tournamentId: string) {
+    const found = this.#tournamentsMap.get(tournamentId);
+    if (found) {
+      return found;
+    }
+    this.#tournamentsMap.set(tournamentId, { id: tournamentId, signups: new Map() });
+    return this.#tournamentsMap.get(tournamentId)!;
+  }
+
   signup(event: TournamentSignup) {
     const tournament = this.#getOrCreateTournament(event.stream);
     tournament.signups.set(event.data.player, {
@@ -29,17 +39,22 @@ export class TournamentsReducer {
     });
   }
 
+  validateSignup(event: TournamentSignup): ValidatorResponse {
+    if (this.#tournamentsMap.get(event.stream)?.signups.has(event.data.player)) {
+      return { valid: false, message: "Player already signed up" };
+    }
+    return { valid: true };
+  }
+
   cancelSignup(event: TournamentCancelSignup) {
     const tournament = this.#getOrCreateTournament(event.stream);
     tournament.signups.delete(event.stream);
   }
 
-  #getOrCreateTournament(tournamentId: string) {
-    const found = this.#tournamentsMap.get(tournamentId);
-    if (found) {
-      return found;
+  validateCancelSignup(event: TournamentCancelSignup): ValidatorResponse {
+    if (this.#tournamentsMap.get(event.stream)?.signups.has(event.data.player) !== true) {
+      return { valid: false, message: "Player not signed up" };
     }
-    this.#tournamentsMap.set(tournamentId, { id: tournamentId, signups: new Map() });
-    return this.#tournamentsMap.get(tournamentId)!;
+    return { valid: true };
   }
 }

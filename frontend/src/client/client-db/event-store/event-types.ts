@@ -32,7 +32,7 @@ export type GameCreated = GenericEvent<EventTypeEnum.GAME_CREATED, { playedAt: n
 export type GameDeleted = GenericEvent<EventTypeEnum.GAME_DELETED, null>;
 
 export type TournamentSignup = GenericEvent<EventTypeEnum.TOURNAMENT_SIGNUP, { player: string }>;
-export type TournamentCancelSignup = GenericEvent<EventTypeEnum.TOURNAMENT_CANCEL_SIGNUP, null>;
+export type TournamentCancelSignup = GenericEvent<EventTypeEnum.TOURNAMENT_CANCEL_SIGNUP, { player: string }>;
 
 export type EventType =
   | PlayerCreated
