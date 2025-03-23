@@ -9,6 +9,7 @@ import { registerClientDbRoutes } from "./client-db/client-db.routes.ts";
 import { registerTournamentRoutes } from "./tournament/tournament.routes.ts";
 import { ClientDBCacheManager } from "./client-db/client-db-cache.ts";
 import { runMigrations } from "./migrations/index.ts";
+import { registerEventStoreRoutes } from "./event-store/event-store.routes.ts";
 
 const app = new Application();
 const api = new Router();
@@ -38,6 +39,8 @@ registerTournamentRoutes(api);
 registerWebSocketRoutes(api);
 registerClientDbRoutes(api);
 registerUserRoutes(api);
+
+registerEventStoreRoutes(api);
 
 app.use(api.routes());
 app.use(api.allowedMethods());
