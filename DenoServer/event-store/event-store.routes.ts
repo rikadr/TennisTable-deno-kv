@@ -40,4 +40,22 @@ export function registerEventStoreRoutes(api: Router) {
     const events = await getEventsAfter(0);
     context.response.body = events;
   });
+
+  /**
+   * Get all events after a certain time
+   */
+  api.get("/events-after", async (context) => {
+    const time = Number(context.request.url.searchParams.get("time"));
+    console.log({ time });
+
+    if (typeof time !== "number") {
+      context.response.status = 400;
+      return;
+    }
+
+    const events = await getEventsAfter(time);
+    console.log({ events });
+
+    context.response.body = events;
+  });
 }
