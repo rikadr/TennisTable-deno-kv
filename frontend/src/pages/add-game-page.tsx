@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { queryClient } from "../common/query-client";
 import { Link, useNavigate } from "react-router-dom";
-import { PlayersDTO } from "./admin/admin-page";
 import { classNames } from "../common/class-names";
 import ConfettiExplosion from "react-confetti-explosion";
 import { useTennisParams } from "../hooks/use-tennis-params";
@@ -10,6 +9,7 @@ import { useEventDbContext } from "../wrappers/event-db-context";
 import { EventTypeEnum, GameCreated } from "../client/client-db/event-store/event-types";
 import { newId } from "../common/nani-id";
 import { useEventMutation } from "../hooks/use-event-mutation";
+import { Player } from "../client/client-db/types";
 
 export const AddGamePage: React.FC = () => {
   const context = useEventDbContext();
@@ -37,6 +37,7 @@ export const AddGamePage: React.FC = () => {
 
     const validateResponse = context.eventStore.gamesReducer.validateCreateGame(event);
     if (validateResponse.valid === false) {
+      console.error(validateResponse.message);
       return;
     }
 
@@ -186,7 +187,7 @@ export const AddGamePage: React.FC = () => {
 };
 
 const PlayerList: React.FC<{
-  players?: PlayersDTO;
+  players?: Player[];
   selectedPlayer?: string;
   disabledPlayer?: string;
   onClick: (name: string) => void;

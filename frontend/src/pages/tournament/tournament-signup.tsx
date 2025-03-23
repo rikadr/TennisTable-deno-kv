@@ -30,6 +30,7 @@ export const TournamentSignup: React.FC<{ tournament: Tournament }> = ({ tournam
     };
     const validateResponse = context.eventStore.tournamentsReducer.validateSignup(event);
     if (validateResponse.valid === false) {
+      console.error(validateResponse.message);
       return;
     }
     addEventMutation.mutate(event, {
@@ -52,6 +53,7 @@ export const TournamentSignup: React.FC<{ tournament: Tournament }> = ({ tournam
     };
     const validateResponse = context.eventStore.tournamentsReducer.validateCancelSignup(event);
     if (validateResponse.valid === false) {
+      console.error(validateResponse.message);
       return;
     }
     addEventMutation.mutate(event, {

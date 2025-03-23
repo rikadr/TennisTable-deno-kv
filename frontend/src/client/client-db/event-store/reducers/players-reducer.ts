@@ -7,7 +7,11 @@ export class PlyersReducer {
   #playersMap = new Map<string, Player>();
 
   get players(): Player[] {
-    return Array.from(this.#playersMap.values());
+    return Array.from(this.#playersMap.values()).filter((player) => player.active);
+  }
+
+  get inactivePlayers(): Player[] {
+    return Array.from(this.#playersMap.values()).filter((player) => player.active === false);
   }
 
   createPlayer(event: PlayerCreated) {
@@ -34,8 +38,12 @@ export class PlyersReducer {
   }
 
   validateDeactivatePlayer(event: PlayerDeactivated): ValidatorResponse {
-    if (this.#playersMap.has(event.stream) === false) {
+    const player = this.#playersMap.get(event.stream);
+    if (player === undefined) {
       return { valid: false, message: "Player does not exist" };
+    }
+    if (player.active === false) {
+      return { valid: false, message: "Player is already inactive" };
     }
     return { valid: true };
   }

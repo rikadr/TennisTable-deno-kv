@@ -3,7 +3,7 @@ import { Leaderboard } from "./leaderboard";
 import { PVP } from "./pvp";
 import { Simulations } from "./simulations";
 import { Tournaments } from "./tournaments/tournaments";
-import { ClientDbDTO, Game, Player, SignUpTournament } from "./types";
+import { Game, Player, SignUpTournament } from "./types";
 import { getClientConfig } from "../client-config/get-client-config";
 import { EventType } from "./event-store/event-types";
 import { EventStore } from "./event-store/event-store";
@@ -39,7 +39,7 @@ export class TennisTable {
   simulations: Simulations;
   futureElo: FutureElo;
 
-  constructor(data: ClientDbDTO & { events: EventType[] }) {
+  constructor(data: { events: EventType[] }) {
     this.events = data.events;
     this.eventStore = new EventStore(this);
 
