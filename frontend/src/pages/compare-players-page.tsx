@@ -3,7 +3,7 @@ import { classNames } from "../common/class-names";
 import { CartesianGrid, Line, LineChart, ReferenceLine, Tooltip, TooltipProps, XAxis, YAxis } from "recharts";
 import { useWindowSize } from "usehooks-ts";
 import { NameType, ValueType } from "recharts/types/component/DefaultTooltipContent";
-import { useClientDbContext } from "../wrappers/client-db-context";
+import { useEventDbContext } from "../wrappers/event-db-context";
 import { Switch } from "@headlessui/react";
 import { fmtNum } from "../common/number-utils";
 
@@ -30,7 +30,7 @@ export function stringToColor(name?: string) {
 }
 
 export const ComparePlayersPage: React.FC = () => {
-  const context = useClientDbContext();
+  const context = useEventDbContext();
   const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
   const comparison = useMemo(
     () => context.leaderboard.comparePlayers(selectedPlayers),
@@ -129,7 +129,7 @@ const PlayerSelector: React.FC<{
   selectedPlayers: string[];
   setSelectedPlayers: React.Dispatch<React.SetStateAction<string[]>>;
 }> = ({ players, selectedPlayers, setSelectedPlayers }) => {
-  const context = useClientDbContext();
+  const context = useEventDbContext();
 
   const playersByName = useMemo(() => players.sort(), [players]);
   const playersByRank = context.leaderboard.getLeaderboard().rankedPlayers.map((p) => p.name);

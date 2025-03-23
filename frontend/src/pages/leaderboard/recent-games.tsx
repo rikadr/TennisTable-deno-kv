@@ -1,13 +1,13 @@
 import { Link } from "react-router-dom";
 import { Game } from "../../client/client-db/types";
-import { useClientDbContext } from "../../wrappers/client-db-context";
+import { useEventDbContext } from "../../wrappers/event-db-context";
 import { relativeTimeString } from "../../common/date-utils";
 import { fmtNum } from "../../common/number-utils";
 
 const GAMES_COUNT = 5;
 
 export const RecentGames: React.FC = () => {
-  const context = useClientDbContext();
+  const context = useEventDbContext();
   const leaderboardMap = context.leaderboard.getCachedLeaderboardMap();
   const lastGames = context.games.slice(Math.max(context.games.length - GAMES_COUNT, 0)).toReversed();
 

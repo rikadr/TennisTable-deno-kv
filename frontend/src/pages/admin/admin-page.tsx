@@ -4,7 +4,7 @@ import { queryClient } from "../../common/query-client";
 import { relativeTimeString } from "../../common/date-utils";
 import { httpClient } from "../../common/http-client";
 import { Users } from "../users";
-import { useClientDbContext } from "../../wrappers/client-db-context";
+import { useEventDbContext } from "../../wrappers/event-db-context";
 import { session } from "../../services/auth";
 import { AllPlayerGamesDistrubution } from "./all-player-games-distribution";
 
@@ -42,7 +42,7 @@ export const AdminPage: React.FC = () => {
     },
   });
 
-  const { games, players } = useClientDbContext();
+  const { games, players } = useEventDbContext();
 
   if (session.sessionData?.role !== "admin") {
     return <div>Not authorized</div>;

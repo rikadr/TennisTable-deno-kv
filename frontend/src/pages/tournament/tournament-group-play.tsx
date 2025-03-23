@@ -1,6 +1,6 @@
 import { classNames } from "../../common/class-names";
 import { fmtNum } from "../../common/number-utils";
-import { useClientDbContext } from "../../wrappers/client-db-context";
+import { useEventDbContext } from "../../wrappers/event-db-context";
 import { ProfilePicture } from "../player/profile-picture";
 import { Tournament } from "../../client/client-db/tournaments/tournament";
 import { GroupScorePlayer, TournamentGroupPlay } from "../../client/client-db/tournaments/group-play";
@@ -139,7 +139,7 @@ export const TournamentGroups: React.FC<{
     [key: string]: HTMLElement | null;
   }>;
 }> = ({ tournament, rerender, itemRefs }) => {
-  const { tournaments } = useClientDbContext();
+  const { tournaments } = useEventDbContext();
   const { player1: paramPlayer1, player2: paramPlayer2 } = useTennisParams();
 
   if (tournament.groupPlay?.groups === undefined) {

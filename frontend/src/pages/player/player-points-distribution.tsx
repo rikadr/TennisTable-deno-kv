@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { useClientDbContext } from "../../wrappers/client-db-context";
+import { useEventDbContext } from "../../wrappers/event-db-context";
 import { classNames } from "../../common/class-names";
 import { stringToColor } from "../compare-players-page";
 
@@ -8,7 +8,7 @@ type Props = {
 };
 
 export const PlayerPointsDistrubution: React.FC<Props> = ({ name }) => {
-  const context = useClientDbContext();
+  const context = useEventDbContext();
   const summary = context.leaderboard.getPlayerSummary(name || "");
   const highestPoints = summary?.pointsDistrubution[0]?.points || 0;
   const lowestPoints = summary?.pointsDistrubution[summary.pointsDistrubution.length - 1]?.points || 0;

@@ -1,10 +1,10 @@
 import React from "react";
-import { useClientDbContext } from "../../wrappers/client-db-context";
+import { useEventDbContext } from "../../wrappers/event-db-context";
 
 export const WinLoss: React.FC = () => {
   const {
     simulations: { expectedWinLoss },
-  } = useClientDbContext();
+  } = useEventDbContext();
   return (
     <div className="flex flex-col items-center">
       <h1 className="mb-6 text-2xl">Expected winn/loss rate</h1>

@@ -6,11 +6,11 @@ import { classNames } from "../../common/class-names";
 import { httpClient } from "../../common/http-client";
 import { queryClient } from "../../common/query-client";
 import { ProfilePicture } from "../player/profile-picture";
-import { useClientDbContext } from "../../wrappers/client-db-context";
+import { useEventDbContext } from "../../wrappers/event-db-context";
 import { Tournament } from "../../client/client-db/tournaments/tournament";
 
 export const TournamentSignup: React.FC<{ tournament: Tournament }> = ({ tournament }) => {
-  const context = useClientDbContext();
+  const context = useEventDbContext();
   const [signUpEdit, setSignUpEdit] = useState(false);
   const [signUpPlayer, setSignUpPlayer] = useState<string>();
   const [showConfetti, setShowConfetti] = useState(false);

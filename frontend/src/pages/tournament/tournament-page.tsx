@@ -1,5 +1,5 @@
 import { classNames } from "../../common/class-names";
-import { useClientDbContext } from "../../wrappers/client-db-context";
+import { useEventDbContext } from "../../wrappers/event-db-context";
 import { ProfilePicture } from "../player/profile-picture";
 import { layerIndexToTournamentRound, WinnerBox } from "../leaderboard/tournament-pending-games";
 import { Menu, MenuButton, MenuItem, MenuItems, Switch } from "@headlessui/react";
@@ -16,7 +16,7 @@ import { Tournament, TournamentGame } from "../../client/client-db/tournaments/t
 export const TournamentPage: React.FC = () => {
   const { tournament: tournamentId, player1, player2 } = useTennisParams();
   const rerender = useRerender();
-  const context = useClientDbContext();
+  const context = useEventDbContext();
   const tournament = context.tournaments.getTournament(tournamentId);
   const [showAsList, setShowAsList] = useSessionStorage(
     `show-tournament-as-list${tournamentId}`,
@@ -200,7 +200,7 @@ type GamesListProps = {
   }>;
 };
 const GamesList: React.FC<GamesListProps> = ({ tournament, rerender, itemRefs }) => {
-  const context = useClientDbContext();
+  const context = useEventDbContext();
   const { player1, player2 } = useTennisParams();
 
   return (
@@ -312,7 +312,7 @@ type GameTriangleProps = {
   }>;
 };
 const GameTriangle: React.FC<GameTriangleProps> = ({ tournament, layerIndex, gameIndex, rerender, itemRefs }) => {
-  const context = useClientDbContext();
+  const context = useEventDbContext();
   const { player1, player2 } = useTennisParams();
 
   let size: Size = "xxs";

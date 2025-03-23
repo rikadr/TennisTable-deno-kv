@@ -5,14 +5,14 @@ import { classNames } from "../common/class-names";
 import { session } from "../services/auth";
 import pumpkinLogo from "../img/halloween/tennis-table.png";
 import easterLogo from "../img/easter/easter-tennis-table.png";
-import { useClientDbContext } from "./client-db-context";
+import { useEventDbContext } from "./event-db-context";
 import { getClientConfig, Theme, themeOrOverrideTheme } from "../client/client-config/get-client-config";
 
 const MENU_HEIGHT = "h-16 md:h-12";
 
 export const NavMenu: React.FC = () => {
   const { pathname } = useLocation();
-  const context = useClientDbContext();
+  const context = useEventDbContext();
 
   const isSimulated = context.isSimulatedState;
 

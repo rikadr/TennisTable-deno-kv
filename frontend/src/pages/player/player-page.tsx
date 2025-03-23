@@ -4,7 +4,7 @@ import { relativeTimeString } from "../../common/date-utils";
 import { CartesianGrid, Line, LineChart, ReferenceLine, Tooltip, TooltipProps, XAxis, YAxis } from "recharts";
 import { NameType, ValueType } from "recharts/types/component/DefaultTooltipContent";
 import { useWindowSize } from "usehooks-ts";
-import { useClientDbContext } from "../../wrappers/client-db-context";
+import { useEventDbContext } from "../../wrappers/event-db-context";
 import { PodiumPlace } from "../leaderboard/podium-place";
 import { PlayerPointsDistrubution } from "./player-points-distribution";
 import { ProfilePicture } from "./profile-picture";
@@ -15,7 +15,7 @@ export const PlayerPage: React.FC = () => {
   const { name } = useParams();
   const { width = 0 } = useWindowSize();
 
-  const context = useClientDbContext();
+  const context = useEventDbContext();
 
   const summary = context.leaderboard.getPlayerSummary(name || "");
   const pendingGames = context.tournaments.findAllPendingGamesByPlayer(name);

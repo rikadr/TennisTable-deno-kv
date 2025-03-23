@@ -5,13 +5,13 @@ import { Link, useNavigate } from "react-router-dom";
 import { PlayersDTO } from "./admin/admin-page";
 import { classNames } from "../common/class-names";
 import { httpClient } from "../common/http-client";
-import { useClientDbContext } from "../wrappers/client-db-context";
 import ConfettiExplosion from "react-confetti-explosion";
 import { useTennisParams } from "../hooks/use-tennis-params";
 import { layerIndexToTournamentRound } from "./leaderboard/tournament-pending-games";
+import { useEventDbContext } from "../wrappers/event-db-context";
 
 export const AddGamePage: React.FC = () => {
-  const context = useClientDbContext();
+  const context = useEventDbContext();
 
   const navigate = useNavigate();
   const { player1: paramPlayer1, player2: paramPlayer2 } = useTennisParams();
@@ -50,7 +50,7 @@ export const AddGamePage: React.FC = () => {
     },
   });
 
-  const { players } = useClientDbContext();
+  const { players } = useEventDbContext();
 
   function swapPlayers() {
     if (addGameMutation.isPending || gameSuccessfullyAdded) return;

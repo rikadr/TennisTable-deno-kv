@@ -1,10 +1,10 @@
 import { Link } from "react-router-dom";
-import { useClientDbContext } from "../../wrappers/client-db-context";
+import { useEventDbContext } from "../../wrappers/event-db-context";
 import { classNames } from "../../common/class-names";
 import { stringToColor } from "../compare-players-page";
 
 export const LeaderboardDistrubution: React.FC = () => {
-  const context = useClientDbContext();
+  const context = useEventDbContext();
   const leaderboard = context.leaderboard.getLeaderboard();
   const highestElo = leaderboard.rankedPlayers[0]?.elo || 0;
   const lowestElo = leaderboard.rankedPlayers[leaderboard.rankedPlayers.length - 1]?.elo || 0;

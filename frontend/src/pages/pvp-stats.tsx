@@ -1,4 +1,4 @@
-import { useClientDbContext } from "../wrappers/client-db-context";
+import { useEventDbContext } from "../wrappers/event-db-context";
 import { classNames } from "../common/class-names";
 import { Link } from "react-router-dom";
 import { relativeTimeString } from "../common/date-utils";
@@ -9,7 +9,7 @@ type Props = {
 };
 
 export const PvPStats: React.FC<Props> = ({ player1, player2 }) => {
-  const context = useClientDbContext();
+  const context = useEventDbContext();
 
   if (!player1 || !player2) {
     return <div>Please select players</div>;

@@ -1,10 +1,10 @@
 import { Link } from "react-router-dom";
 import { ProfilePicture } from "../player/profile-picture";
-import { useClientDbContext } from "../../wrappers/client-db-context";
+import { useEventDbContext } from "../../wrappers/event-db-context";
 import { relativeTimeString } from "../../common/date-utils";
 
 export const TournamentHighlightsAndPendingGames: React.FC = () => {
-  const context = useClientDbContext();
+  const context = useEventDbContext();
   const tournaments = context.tournaments.getTournaments();
 
   const anyPendingGames = tournaments.some((tournament) => tournament.hasPendingGames);

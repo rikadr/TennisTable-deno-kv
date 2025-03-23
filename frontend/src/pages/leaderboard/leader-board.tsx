@@ -2,7 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { getEgg, getPumpkin, PodiumPlace } from "./podium-place";
 import { Elo } from "../../client/client-db/elo";
-import { useClientDbContext } from "../../wrappers/client-db-context";
+import { useEventDbContext } from "../../wrappers/event-db-context";
 import { ProfilePicture } from "../player/profile-picture";
 import { RecentGames } from "./recent-games";
 import { TournamentHighlightsAndPendingGames } from "./tournament-pending-games";
@@ -10,7 +10,7 @@ import { getClientConfig, Theme, themeOrOverrideTheme } from "../../client/clien
 import easterBunnyChick from "../../img/easter/bunny-chick.png";
 
 export const LeaderBoard: React.FC = () => {
-  const context = useClientDbContext();
+  const context = useEventDbContext();
   const leaderboard = context.leaderboard.getLeaderboard();
 
   const client = getClientConfig();

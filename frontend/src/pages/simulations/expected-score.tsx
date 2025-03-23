@@ -1,13 +1,13 @@
 import React from "react";
 import { useRerender } from "../../hooks/use-rerender";
-import { useClientDbContext } from "../../wrappers/client-db-context";
+import { useEventDbContext } from "../../wrappers/event-db-context";
 import { Elo } from "../../client/client-db/elo";
 import { fmtNum } from "../../common/number-utils";
 
 export const ExpectedScore: React.FC = () => {
   const rerender = useRerender();
 
-  const context = useClientDbContext();
+  const context = useEventDbContext();
 
   return (
     <div className="flex flex-col items-center">

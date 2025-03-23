@@ -3,13 +3,13 @@ import { useEffect, useState } from "react";
 import { queryClient } from "../common/query-client";
 import { useNavigate } from "react-router-dom";
 import { httpClient } from "../common/http-client";
-import { useClientDbContext } from "../wrappers/client-db-context";
 import { classNames } from "../common/class-names";
 import ConfettiExplosion from "react-confetti-explosion";
+import { useEventDbContext } from "../wrappers/event-db-context";
 
 export const AddPlayerPage: React.FC = () => {
   const navigate = useNavigate();
-  const context = useClientDbContext();
+  const context = useEventDbContext();
 
   const [playerName, setPlayerName] = useState("");
   const backendError = "An error occurred while adding player";
