@@ -50,7 +50,6 @@ export const AddPlayerPage: React.FC = () => {
     };
 
     const validateResponse = context.eventStore.playersReducer.validateCreatePlayer(event);
-
     if (validateResponse.valid === false) {
       setErrorMessage(validateResponse.message);
       return;

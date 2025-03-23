@@ -1,17 +1,19 @@
-import { useMutation } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { queryClient } from "../common/query-client";
 import { Link, useNavigate } from "react-router-dom";
 import { PlayersDTO } from "./admin/admin-page";
 import { classNames } from "../common/class-names";
-import { httpClient } from "../common/http-client";
 import ConfettiExplosion from "react-confetti-explosion";
 import { useTennisParams } from "../hooks/use-tennis-params";
 import { layerIndexToTournamentRound } from "./leaderboard/tournament-pending-games";
 import { useEventDbContext } from "../wrappers/event-db-context";
+import { EventTypeEnum, GameCreated } from "../client/client-db/event-store/event-types";
+import { newId } from "../common/nani-id";
+import { useEventMutation } from "../hooks/use-event-mutation";
 
 export const AddGamePage: React.FC = () => {
   const context = useEventDbContext();
+  const addEventMutation = useEventMutation();
 
   const navigate = useNavigate();
   const { player1: paramPlayer1, player2: paramPlayer2 } = useTennisParams();
@@ -24,36 +26,43 @@ export const AddGamePage: React.FC = () => {
 
   const isPendingTournamentGame = context.tournaments.findAllPendingGames(winner, loser);
 
-  const addGameMutation = useMutation<unknown, Error>({
-    mutationFn: async () => {
-      return httpClient(`${process.env.REACT_APP_API_BASE_URL}/game`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          winner,
-          loser,
-        }),
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries();
-      setGameSuccessfullyAdded(true);
-      setTimeout(() => {
-        navigate(
-          isPendingTournamentGame.length > 0
-            ? `/tournament?tournament=${isPendingTournamentGame[0].tournament.id}&player1=${isPendingTournamentGame[0].player1}&player2=${isPendingTournamentGame[0].player2}`
-            : `/1v1/?player1=${winner}&player2=${loser}`,
-        );
-      }, 2_000);
-    },
-  });
+  function submitGame(winner: string, loser: string) {
+    const now = Date.now();
+    const event: GameCreated = {
+      type: EventTypeEnum.GAME_CREATED,
+      time: now,
+      stream: newId(),
+      data: {
+        winner,
+        loser,
+        playedAt: now,
+      },
+    };
+
+    const validateResponse = context.eventStore.gamesReducer.validateCreateGame(event);
+    if (validateResponse.valid === false) {
+      return;
+    }
+
+    addEventMutation.mutate(event, {
+      onSuccess: () => {
+        queryClient.invalidateQueries();
+        setGameSuccessfullyAdded(true);
+        setTimeout(() => {
+          navigate(
+            isPendingTournamentGame.length > 0
+              ? `/tournament?tournament=${isPendingTournamentGame[0].tournament.id}&player1=${isPendingTournamentGame[0].player1}&player2=${isPendingTournamentGame[0].player2}`
+              : `/1v1/?player1=${winner}&player2=${loser}`,
+          );
+        }, 2_000);
+      },
+    });
+  }
 
   const { players } = useEventDbContext();
 
   function swapPlayers() {
-    if (addGameMutation.isPending || gameSuccessfullyAdded) return;
+    if (addEventMutation.isPending || gameSuccessfullyAdded) return;
     setWinner(loser);
     setLoser(winner);
   }
@@ -96,21 +105,21 @@ export const AddGamePage: React.FC = () => {
           </Link>
         ))}
         <button
-          disabled={!winner || !loser || addGameMutation.isPending}
+          disabled={!winner || !loser || addEventMutation.isPending}
           className={classNames(
             "text-lg font-semibold w-full py-4 px-6 flex flex-col items-center bg-secondary-background hover:bg-secondary-background/70 text-secondary-text rounded-lg",
             (!winner || !loser) && "cursor-not-allowed opacity-50 hover:bg-secondary-background",
             gameSuccessfullyAdded && "animate-ping-once",
           )}
-          onClick={() => addGameMutation.mutate()}
+          onClick={() => submitGame(winner!, loser!)}
         >
-          {addGameMutation.isPending && (
+          {addEventMutation.isPending && (
             <div className="flex items-center justify-center gap-2">
               Adding game ... <div className="animate-spin">🏓</div>
             </div>
           )}
           {gameSuccessfullyAdded && "Success ✅"}
-          {!addGameMutation.isPending && !gameSuccessfullyAdded && "Add game 🏓"}
+          {!addEventMutation.isPending && !gameSuccessfullyAdded && "Add game 🏓"}
           {gameSuccessfullyAdded && (
             <ConfettiExplosion particleCount={250} force={0.8} width={2_000} duration={10_000} />
           )}
@@ -151,7 +160,7 @@ export const AddGamePage: React.FC = () => {
               }
               selectedPlayer={winner}
               disabledPlayer={loser}
-              disableSelection={addGameMutation.isPending || gameSuccessfullyAdded}
+              disableSelection={addEventMutation.isPending || gameSuccessfullyAdded}
             />
           </div>
           <div className="space-y-4">
@@ -171,7 +180,7 @@ export const AddGamePage: React.FC = () => {
               }
               selectedPlayer={loser}
               disabledPlayer={winner}
-              disableSelection={addGameMutation.isPending || gameSuccessfullyAdded}
+              disableSelection={addEventMutation.isPending || gameSuccessfullyAdded}
             />
           </div>
         </div>
