@@ -159,7 +159,7 @@ const PlayerSelector: React.FC<{
               }
             }}
           >
-            #{index + 1} {context.getPlayer(playerId)?.name}
+            #{index + 1} {context.playerName(playerId)}
           </button>
         );
       })}
@@ -179,7 +179,7 @@ const CustomTooltip: React.FC = ({ active, payload, label }: TooltipProps<ValueT
       <div className="p-2 bg-primary-background ring-1 ring-primary-text rounded-lg">
         {entries.map((entry) => (
           <p key={entry[0]} style={{ color: stringToColor(entry[0]) }}>
-            {`${context.getPlayer(entry[0])?.name}: ${entry[1].toLocaleString("no-NO", { maximumFractionDigits: 0 })}`}
+            {`${context.playerName(entry[0])}: ${entry[1].toLocaleString("no-NO", { maximumFractionDigits: 0 })}`}
           </p>
         ))}
       </div>

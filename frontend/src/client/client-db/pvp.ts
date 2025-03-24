@@ -42,14 +42,14 @@ export class PVP {
     return {
       player1: {
         playerId: player1,
-        name: this.parent.getPlayer(player1)?.name || "?",
+        name: this.parent.playerName(player1),
         wins: player1Wins.length,
         streak: this._getWinStreak(player1, relevantGames),
         points: { currentElo: player1Summary?.elo || 0, ...points.p1 },
       },
       player2: {
         playerId: player2,
-        name: this.parent.getPlayer(player2)?.name || "?",
+        name: this.parent.playerName(player2),
         wins: player2Wins.length,
         streak: this._getWinStreak(player2, relevantGames),
         points: { currentElo: player2Summary?.elo || 0, ...points.p2 },

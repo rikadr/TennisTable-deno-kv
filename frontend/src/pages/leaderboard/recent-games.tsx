@@ -39,10 +39,8 @@ export const RecentGames: React.FC = () => {
               to={`/1v1?player1=${game!.winner}&player2=${game!.loser}`}
               className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text py-1 px-2 flex gap-4 text-xl font-light"
             >
-              <div className="w-24 font-normal whitespace-nowrap">🏆 {context.getPlayer(game!.winner)?.name}</div>
-              <div className="w-32 text-right font-normal whitespace-nowrap">
-                {context.getPlayer(game!.loser)?.name} 💔
-              </div>
+              <div className="w-24 font-normal whitespace-nowrap">🏆 {context.playerName(game?.winner)}</div>
+              <div className="w-32 text-right font-normal whitespace-nowrap">{context.playerName(game?.loser)} 💔</div>
               <div className="w-6 text-right">{fmtNum(game!.pointsDiff, 0)}</div>
               <div className="w-28 text-right text-base">{relativeTimeString(new Date(game!.playedAt))}</div>
             </Link>

@@ -183,7 +183,7 @@ export const PlayerPage: React.FC = () => {
                   className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text py-1 px-2 flex gap-4 text-xl font-light"
                 >
                   <div className="w-32 font-normal whitespace-nowrap">
-                    {game.result === "win" ? "🏆 " : "💔 "} {context.getPlayer(game.oponent)?.name}
+                    {game.result === "win" ? "🏆 " : "💔 "} {context.playerName(game.oponent)}
                   </div>
                   <div className="w-12 text-right">
                     {game.pointsDiff.toLocaleString("no-NO", {
@@ -212,7 +212,7 @@ const CustomTooltip: React.FC = ({ active, payload, label }: TooltipProps<ValueT
           {game?.result === "win"
             ? `🏆 +${game.pointsDiff?.toLocaleString("no-NO", { maximumFractionDigits: 0 })} from`
             : `💔 ${game.pointsDiff?.toLocaleString("no-NO", { maximumFractionDigits: 0 })} to`}{" "}
-          {game?.oponent ? constext.getPlayer(game.oponent)?.name : "?"}
+          {constext.playerName(game.oponent)}
         </p>
       </div>
     );

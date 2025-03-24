@@ -89,7 +89,7 @@ export const CameraPage: React.FC = () => {
 
   return (
     <div className="flex flex-col gap-4 items-center">
-      <h1>Take new profile picture for {context.getPlayer(playerId!)?.name}</h1>
+      <h1>Take new profile picture for {context.playerName(playerId)}</h1>
       <p>Or select an image from your device...</p>
       <input
         type="file"
@@ -151,7 +151,7 @@ export const CameraPage: React.FC = () => {
             postProfilePicture.mutate({ playerId: playerId, image: await compressImage(avatarUrl) })
           }
         >
-          {context.getPlayer(playerId!)?.name}, you look great 😘 Submit photo!
+          {context.playerName(playerId)}, you look great 😘 Submit photo!
         </button>
       )}
     </div>

@@ -100,7 +100,6 @@ type Props = {
 
 export const PodiumPlace: React.FC<Props> = ({ playerSummary, place, size, profilePicture = false }) => {
   const context = useEventDbContext();
-  const player = context.getPlayer(playerSummary!.id);
   const client = getClientConfig();
   const theme = themeOrOverrideTheme(client.theme);
   const placeNumberLength = place?.toString().length || 1;
@@ -146,7 +145,7 @@ export const PodiumPlace: React.FC<Props> = ({ playerSummary, place, size, profi
     >
       <div className="w-16 flex items-center justify-center shrink-0">{themedPlaceNumber()}</div>
       <section className="grow text-secondary-text">
-        <h2 className={classNames("uppercase", nameTextSize[size])}>{player?.name} </h2>
+        <h2 className={classNames("uppercase", nameTextSize[size])}>{context.playerName(playerSummary?.id)} </h2>
         <section className={classNames("flex space-x-4 font-medium", statsTextSize[size])}>
           <div>
             {playerSummary

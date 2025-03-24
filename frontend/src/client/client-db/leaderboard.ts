@@ -80,7 +80,7 @@ export class Leaderboard {
         wins: 0,
         loss: 0,
         games: [],
-        name: this.parent.getPlayer(id)?.name ?? "?",
+        name: this.parent.playerName(id),
         gamesDistribution: [],
         pointsDistrubution: [],
         isRanked: false,
@@ -206,7 +206,7 @@ export class Leaderboard {
       if (player) return player;
       leaderboardMap.set(id, {
         id,
-        name: this.parent.getPlayer(id)?.name ?? "?",
+        name: this.parent.playerName(id),
         elo: Elo.INITIAL_ELO,
         wins: 0,
         loss: 0,

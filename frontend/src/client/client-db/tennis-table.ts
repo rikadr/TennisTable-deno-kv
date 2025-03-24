@@ -53,7 +53,8 @@ export class TennisTable {
     return this.eventStore.gamesReducer.games;
   }
 
-  getPlayer(id: string) {
-    return this.eventStore.playersReducer.getPlayer(id);
+  playerName(id: string | undefined | null) {
+    if (!id) return "404 no id";
+    return this.eventStore.playersReducer.getPlayer(id)?.name ?? `404 ${id}`;
   }
 }

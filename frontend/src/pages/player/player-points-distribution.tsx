@@ -18,8 +18,6 @@ export const PlayerPointsDistrubution: React.FC<Props> = ({ playerId }) => {
     <div className="flex flex-col w-full px-4 divide-y divide-primary-text/50">
       {summary?.pointsDistrubution.map(({ oponentId, points }, index) => {
         const fraction = points / range;
-        const oponent = context.getPlayer(oponentId);
-
         return (
           <Link to={`/player/${oponentId}`} className="group" key={index}>
             <div className="relative w-full h-6 group-hover:bg-primary-text/5">
@@ -30,7 +28,7 @@ export const PlayerPointsDistrubution: React.FC<Props> = ({ playerId }) => {
                 )}
                 style={{ width: `${(Math.abs(fraction) / 2) * 100}%`, backgroundColor: stringToColor(oponentId) }}
               />
-              <div className="absolute top-0 left-2 text-primary-text">{oponent?.name}</div>
+              <div className="absolute top-0 left-2 text-primary-text">{context.playerName(oponentId)}</div>
               <div
                 className={classNames(
                   "absolute top-0 text-primary-text",

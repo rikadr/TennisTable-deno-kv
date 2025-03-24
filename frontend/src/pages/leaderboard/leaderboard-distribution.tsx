@@ -14,7 +14,6 @@ export const LeaderboardDistrubution: React.FC = () => {
     <div className="flex flex-col w-full divide-y divide-secondary-background/50">
       {leaderboard?.rankedPlayers.map(({ id, elo }, index) => {
         const fraction = (elo - lowestElo) / range;
-        const player = context.getPlayer(id);
         return (
           <Link to={`/player/${id}`} className="group" key={index}>
             <div className="relative w-full h-6 group-hover:bg-primary-text/5">
@@ -24,7 +23,7 @@ export const LeaderboardDistrubution: React.FC = () => {
                 )}
                 style={{ width: `${fraction * 100}%`, backgroundColor: stringToColor(id) }}
               />
-              <div className="absolute top-0 left-2 text-primary-text">{player?.name}</div>
+              <div className="absolute top-0 left-2 text-primary-text">{context.playerName(id)}</div>
             </div>
           </Link>
         );
