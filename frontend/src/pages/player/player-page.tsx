@@ -134,12 +134,11 @@ export const PlayerPage: React.FC = () => {
                     <h2 className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2">VS</h2>
                     <div className="flex gap-3 items-center justify-center">
                       <ProfilePicture playerId={playerId} size={35} shape="circle" clickToEdit={false} border={3} />
-
-                      <h3>{playerId}</h3>
+                      <h3>{context.playerName(playerId)}</h3>
                     </div>
                     <div className="grow" />
                     <div className="flex gap-3 items-center justify-center">
-                      <h3>{game.oponent}</h3>
+                      <h3>{context.playerName(game.oponent)}</h3>
 
                       <ProfilePicture playerId={game.oponent} size={35} shape="circle" clickToEdit={false} border={3} />
                     </div>

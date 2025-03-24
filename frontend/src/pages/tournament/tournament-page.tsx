@@ -95,7 +95,9 @@ export const TournamentPage: React.FC = () => {
                   return;
                 }
                 let tries = 0;
+
                 const likelyWinners = [
+                  // TODO Needs to convert to ids for it to work
                   "Alexander",
                   "Rasmus",
                   "Fooa",
@@ -249,13 +251,13 @@ const GamesList: React.FC<GamesListProps> = ({ tournament, rerender, itemRefs })
                         <QuestionMark size={38} />
                       )}
                       <h3 className={classNames(p1IsWinner && "font-semibold", p1IsLoser && "line-through font-thin")}>
-                        {game.player1} {winStateEmoji(p1IsWinner, game.skipped)}
+                        {game.player1 && context.playerName(game.player1)} {winStateEmoji(p1IsWinner, game.skipped)}
                       </h3>
                     </div>
                     <div className="grow" />
                     <div className="flex gap-3 items-center justify-center">
                       <h3 className={classNames(p2IsWinner && "font-semibold", p2IsLoser && "line-through font-thin")}>
-                        {winStateEmoji(p2IsWinner, game.skipped)} {game.player2}
+                        {winStateEmoji(p2IsWinner, game.skipped)} {game.player2 && context.playerName(game.player2)}
                       </h3>
                       {game.player2 ? (
                         <ProfilePicture
@@ -450,7 +452,7 @@ const GameTriangle: React.FC<GameTriangleProps> = ({ tournament, layerIndex, gam
                   p1IsLoser && "line-through font-thin",
                 )}
               >
-                {game.player1} {winStateEmoji(p1IsWinner, game.skipped)}
+                {game.player1 && context.playerName(game.player1)} {winStateEmoji(p1IsWinner, game.skipped)}
               </div>
             </div>
             {size !== "xxs" && <div className="w-full text-center font-thin italic text-xs">vs</div>}
@@ -466,7 +468,7 @@ const GameTriangle: React.FC<GameTriangleProps> = ({ tournament, layerIndex, gam
                   p2IsLoser && "line-through font-thin",
                 )}
               >
-                {winStateEmoji(p2IsWinner, game.skipped)} {game.player2}
+                {winStateEmoji(p2IsWinner, game.skipped)} {game.player2 && context.playerName(game.player2)}
               </div>
               {game.player2 ? (
                 <ProfilePicture
@@ -588,6 +590,7 @@ type GameMenuItemsProps = {
   showUndoSkip: { show: boolean; onUndoSkip: () => void };
 };
 export const GameMenuItems: React.FC<GameMenuItemsProps> = (props) => {
+  const context = useEventDbContext();
   return (
     <MenuItems
       anchor="bottom"
@@ -619,7 +622,7 @@ export const GameMenuItems: React.FC<GameMenuItemsProps> = (props) => {
             className="w-full px-4 py-2 text-left data-[focus]:bg-secondary-text/30"
             onClick={props.showSkipGamePlayer1Advance.onSkip}
           >
-            🆓 Skip game ({props.player1} advances)
+            🆓 Skip game ({context.playerName(props.player1)} advances)
           </button>
         </MenuItem>
       )}
@@ -629,7 +632,7 @@ export const GameMenuItems: React.FC<GameMenuItemsProps> = (props) => {
             className="w-full px-4 py-2 text-left data-[focus]:bg-secondary-text/30"
             onClick={props.showSkipGamePlayer2Advance.onSkip}
           >
-            🆓 Skip game ({props.player2} advances)
+            🆓 Skip game ({context.playerName(props.player2)} advances)
           </button>
         </MenuItem>
       )}

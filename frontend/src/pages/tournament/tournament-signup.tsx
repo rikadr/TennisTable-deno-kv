@@ -102,7 +102,7 @@ export const TournamentSignup: React.FC<{ tournament: Tournament }> = ({ tournam
       {signUpPlayer && (
         <button
           className={classNames(
-            "text-lg font-semibold w-full py-4 px-6 flex flex-col items-center bg-secondary-background hover:bg-secondary-background/70 text-secondary-text rounded-lg",
+            "text-lg font-semibold w-full py-4 px-6 flex flex-col items-center bg-tertiary-background hover:bg-tertiary-background/70 text-tertiary-text rounded-lg",
           )}
           onClick={() => (signUpPlayer ? submitSignup(signUpPlayer) : setSignUpEdit(true))}
         >
