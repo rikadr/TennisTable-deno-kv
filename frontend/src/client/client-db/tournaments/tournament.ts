@@ -1,6 +1,6 @@
 import { ONE_WEEK } from "../../../common/time-in-ms";
-import { Game } from "../event-store/reducers/games-reducer";
-import { SignUp } from "../event-store/reducers/tournaments-reducer";
+import { Game } from "../event-store/reducers/games-projector";
+import { SignUp } from "../event-store/reducers/tournaments-projector";
 import { TournamentDB } from "../types";
 import { TournamentBracket } from "./bracket";
 import { TournamentGroupPlay } from "./group-play";

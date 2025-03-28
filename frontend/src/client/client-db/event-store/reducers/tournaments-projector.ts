@@ -11,7 +11,7 @@ export type SignUp = {
   time: number;
 };
 
-export class TournamentsReducer {
+export class TournamentsProjector {
   #tournamentsMap = new Map<string, Tournament>();
 
   get tournaments() {

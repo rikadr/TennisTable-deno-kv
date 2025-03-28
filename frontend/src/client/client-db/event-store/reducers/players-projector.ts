@@ -3,7 +3,7 @@ import { ValidatorResponse } from "./validator-types";
 
 export type Player = { id: string; name: string; active: boolean };
 
-export class PlyersReducer {
+export class PlyersProjector {
   #playersMap = new Map<string, Player>();
 
   get players(): Player[] {

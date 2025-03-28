@@ -1,25 +1,25 @@
 import { EventTypeEnum } from "./event-types";
 import { TennisTable } from "../tennis-table";
-import { PlyersReducer } from "./reducers/players-reducer";
-import { GamesReducer } from "./reducers/games-reducer";
-import { TournamentsReducer } from "./reducers/tournaments-reducer";
+import { PlyersProjector } from "./reducers/players-projector";
+import { GamesProjector } from "./reducers/games-projector";
+import { TournamentsProjector } from "./reducers/tournaments-projector";
 
 export class EventStore {
   private parent: TennisTable;
-  readonly playersReducer: PlyersReducer;
-  readonly gamesReducer: GamesReducer;
-  readonly tournamentsReducer: TournamentsReducer;
+  readonly playersReducer: PlyersProjector;
+  readonly gamesReducer: GamesProjector;
+  readonly tournamentsReducer: TournamentsProjector;
 
   constructor(parent: TennisTable) {
     this.parent = parent;
-    this.playersReducer = new PlyersReducer();
-    this.gamesReducer = new GamesReducer();
-    this.tournamentsReducer = new TournamentsReducer();
+    this.playersReducer = new PlyersProjector();
+    this.gamesReducer = new GamesProjector();
+    this.tournamentsReducer = new TournamentsProjector();
 
-    this.#reduceEvents();
+    this.#projectEvents();
   }
 
-  #reduceEvents() {
+  #projectEvents() {
     this.parent.events.forEach((event) => {
       const { type } = event;
       switch (type) {

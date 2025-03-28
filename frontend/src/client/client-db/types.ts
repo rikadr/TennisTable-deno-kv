@@ -1,4 +1,4 @@
-import { Player } from "./event-store/reducers/players-reducer";
+import { Player } from "./event-store/reducers/players-projector";
 
 export type PlayerWithElo = Player & { elo: number };
 export type PlayerSummary = {

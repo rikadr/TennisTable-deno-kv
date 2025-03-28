@@ -3,7 +3,7 @@ import { ValidatorResponse } from "./validator-types";
 
 export type Game = { id: string; playedAt: number; winner: string; loser: string };
 
-export class GamesReducer {
+export class GamesProjector {
   #gamesMap = new Map<string, Game>();
 
   get games(): Game[] {

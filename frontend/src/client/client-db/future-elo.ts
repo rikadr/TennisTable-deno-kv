@@ -1,6 +1,6 @@
 import { newId } from "../../common/nani-id";
 import { Elo } from "./elo";
-import { Game } from "./event-store/reducers/games-reducer";
+import { Game } from "./event-store/reducers/games-projector";
 import { TennisTable } from "./tennis-table";
 
 type Fraction = { fraction: number; confidence: number };
