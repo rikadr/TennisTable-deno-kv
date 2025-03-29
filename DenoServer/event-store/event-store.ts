@@ -1,20 +1,22 @@
 import { kv } from "../db.ts";
 import { EventType } from "./event-types.ts";
 
-export async function storeEvent(event: EventType) {
+export function storeEvent(event: EventType) {
   // Validate time is after the latest event time
-  const latest = await getLatestEventTimestamp();
-  if (latest && event.time <= latest) {
-    console.error(`Event time ${event.time} is not after the latest event time ${latest}`);
-    throw new Error();
-  }
-  // Store event
-  const key = getEventKey(event.time);
-  const result = await kv.atomic().check({ key, versionstamp: null }).set(key, event).commit();
-  if (!result.ok) {
-    console.error(`Failed to store event ${event}`);
-    throw new Error();
-  }
+  console.log("Storing event", event);
+
+  // const latest = await getLatestEventTimestamp();
+  // if (latest && event.time <= latest) {
+  //   console.error(`Event time ${event.time} is not after the latest event time ${latest}`);
+  //   throw new Error();
+  // }
+  // // Store event
+  // const key = getEventKey(event.time);
+  // const result = await kv.atomic().check({ key, versionstamp: null }).set(key, event).commit();
+  // if (!result.ok) {
+  //   console.error(`Failed to store event ${event}`);
+  //   throw new Error();
+  // }
 }
 
 export async function getEventsAfter(time: number): Promise<EventType[]> {
