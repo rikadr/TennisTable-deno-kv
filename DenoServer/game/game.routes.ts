@@ -55,6 +55,6 @@ export function registerGameRoutes(api: Router) {
       skippedGames,
       signedUp: signedUp.length,
     };
-    await webSocketClientManager.reloadCacheAndClients();
+    webSocketClientManager.reloadClients();
   });
 }

@@ -5,9 +5,6 @@ import { registerGameRoutes } from "./game/game.routes.ts";
 import { registerUserRoutes } from "./user/user.routes.ts";
 import { registerWebSocketRoutes } from "./web-socket/web-socket.routs.ts";
 import { WebSocketClientManager } from "./web-socket/web-socket-client-manager.ts";
-import { registerClientDbRoutes } from "./client-db/client-db.routes.ts";
-import { registerTournamentRoutes } from "./tournament/tournament.routes.ts";
-import { ClientDBCacheManager } from "./client-db/client-db-cache.ts";
 import { registerEventStoreRoutes } from "./event-store/event-store.routes.ts";
 import { registerMigrationsRoutes } from "./migrations/migrations.routes.ts";
 import { EventCache } from "./event-store/event-cache.ts";
@@ -23,7 +20,6 @@ app.use(
   }),
 );
 
-export const clientDBCacheManager = new ClientDBCacheManager();
 export const eventCache = new EventCache();
 export const webSocketClientManager = new WebSocketClientManager();
 
@@ -38,9 +34,7 @@ registerMigrationsRoutes(api);
  */
 registerPlayerRoutes(api);
 registerGameRoutes(api);
-registerTournamentRoutes(api);
 registerWebSocketRoutes(api);
-registerClientDbRoutes(api);
 registerUserRoutes(api);
 
 registerEventStoreRoutes(api);

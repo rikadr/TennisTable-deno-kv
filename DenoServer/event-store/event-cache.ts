@@ -16,7 +16,7 @@ export class EventCache {
   async getEventData(): Promise<EventCacheData> {
     const latestEvent = await getLatestEventTimestamp();
     const cache = await this.#getEventCache();
-    if (cache && cache.events[cache.events.length - 1].time === latestEvent) {
+    if (cache && cache.events[cache.events.length - 1]?.time === latestEvent) {
       return cache;
     }
     const events = await getEventsAfter(0);

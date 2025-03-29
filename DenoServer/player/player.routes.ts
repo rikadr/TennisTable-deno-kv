@@ -27,7 +27,7 @@ export function registerPlayerRoutes(api: Router) {
     try {
       await uploadProfilePictureNew(playerId, base64);
       context.response.status = 204;
-      await webSocketClientManager.reloadCacheAndClients();
+      webSocketClientManager.reloadClients();
     } catch (err) {
       console.error("Error uploading base64 profile image:", err);
       context.response.status = 500;

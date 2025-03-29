@@ -18,7 +18,7 @@ export function registerEventStoreRoutes(api: Router) {
     await storeEvent(eventPayload);
 
     await eventCache.appendEventsToEventCache([eventPayload]);
-    await webSocketClientManager.reloadCacheAndClients();
+    webSocketClientManager.reloadClients();
     context.response.status = 201;
   });
 
@@ -32,7 +32,7 @@ export function registerEventStoreRoutes(api: Router) {
       await storeEvent(event);
     }
     await eventCache.appendEventsToEventCache(eventsPayload);
-    await webSocketClientManager.reloadCacheAndClients();
+    webSocketClientManager.reloadClients();
     context.response.status = 201;
   });
 
@@ -40,8 +40,8 @@ export function registerEventStoreRoutes(api: Router) {
    * Get all events
    */
   api.get("/events", async (context) => {
-    const events = await eventCache.getEventData();
-    context.response.body = events;
+    const eventData = await eventCache.getEventData();
+    context.response.body = eventData.events;
   });
 
   /**
