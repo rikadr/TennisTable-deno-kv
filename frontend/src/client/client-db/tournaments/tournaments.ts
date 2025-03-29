@@ -35,29 +35,10 @@ export class Tournaments {
 
   #initTournament(tournament: TournamentDB): Tournament {
     return new Tournament(
-      this.#replacePleyerOrderNamesWithIds(tournament),
+      tournament,
       [...this.parent.games, ...this.parent.futureElo.predictedGames],
       this.parent.eventStore.tournamentsReducer.getTournamentSignups(tournament.id),
     );
-  }
-
-  // Used for testing and transitioning to player ids. Staticly defined tournaments in client config will still have player names in playerOrder
-  #replacePleyerOrderNamesWithIds(tournament: TournamentDB): TournamentDB {
-    const playerIds = this.parent.players.map((p) => p.id);
-    const playerNames = this.parent.players.map((p) => p.name);
-    const playerMap = playerNames.reduce((acc, name, index) => {
-      acc[name] = playerIds[index];
-      return acc;
-    }, {} as Record<string, string>);
-    return {
-      ...tournament,
-      playerOrder: tournament.playerOrder?.map((player) => playerMap[player] ?? player),
-      skippedGames: tournament.skippedGames.map((skip) => ({
-        ...skip,
-        advancing: playerMap[skip.advancing] ?? skip.advancing,
-        eliminated: playerMap[skip.eliminated] ?? skip.eliminated,
-      })),
-    };
   }
 
   skipGame(skip: TournamentDB["skippedGames"][number], tournamentId: string) {
