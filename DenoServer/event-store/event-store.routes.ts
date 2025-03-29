@@ -41,7 +41,7 @@ export function registerEventStoreRoutes(api: Router) {
    */
   api.get("/events", async (context) => {
     const eventData = await eventCache.getEventData();
-    context.response.body = eventData;
+    context.response.body = eventData.events;
   });
 
   /**
