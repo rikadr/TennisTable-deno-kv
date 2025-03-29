@@ -46,6 +46,14 @@ export async function getLatestEventTimestamp(): Promise<number | null> {
   }
 }
 
+export async function deleteAllEvents() {
+  const iter = kv.list({ prefix: getEventKey() });
+  for await (const event of iter) {
+    const key = event.key;
+    await kv.delete(key);
+  }
+}
+
 function getEventKey(time?: number) {
   const key: (string | number)[] = ["event"];
   if (time !== undefined) {

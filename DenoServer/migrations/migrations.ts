@@ -21,7 +21,7 @@ type Migration = {
 
 export const migrations: Migration[] = [
   {
-    name: "create-events-from-client-db",
+    name: "create-events-from-client-db-v3",
     up: async () => {
       let lastTime = 1_000;
       function getNextTime() {
@@ -115,6 +115,8 @@ export const migrations: Migration[] = [
         ...createGameEvents,
         ...tournamentSignupEvents,
       ].sort((a, b) => a.time - b.time);
+
+      console.log(JSON.stringify(allEvents));
 
       // Save events
       for (const event of allEvents) {
