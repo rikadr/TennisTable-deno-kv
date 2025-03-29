@@ -3,18 +3,6 @@ import { kv } from "../db.ts";
 export type Player = { name: string };
 export type CreatePlayerPayload = { name: string };
 
-export async function getPlayer(name: string): Promise<Player | null> {
-  if (!name) {
-    throw new Error("name is required");
-  }
-  const res = await kv.get<Player>(["player", name]);
-
-  if (res.value) {
-    return res.value;
-  }
-  return null;
-}
-
 export async function getAllPlayers(): Promise<Player[]> {
   const players: Player[] = [];
   const res = kv.list<Player>({ prefix: ["player"] });
@@ -39,13 +27,6 @@ export async function createPlayer(payload: CreatePlayerPayload): Promise<Player
   } else {
     throw new Error("Failed to create player");
   }
-}
-
-export async function deletePlayer(name: string) {
-  if (!name) {
-    throw new Error("name is required");
-  }
-  await kv.delete(["player", name]);
 }
 
 export async function uploadProfilePicture(name: string, base64: string) {

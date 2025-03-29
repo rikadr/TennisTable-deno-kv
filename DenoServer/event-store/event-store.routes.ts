@@ -13,6 +13,7 @@ export function registerEventStoreRoutes(api: Router) {
     // Assume frontend has validated business logic for the event // TODO: Do reducer business logic backend too
     // Run zod validation??
     // Run authz validation for delete game and deactivate/reactivate players
+    // api.delete("/games", isAuthenticated, requireAuth("game", "delete"), async (context) => {
 
     await storeEvent(eventPayload);
 

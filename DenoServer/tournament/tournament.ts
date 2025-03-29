@@ -1,10 +1,14 @@
 import { kv } from "../db.ts";
-import { SignUpTournamentPayload } from "./tournament.routes.ts";
 
 export type SignUpTournament = {
   tournamentId: string;
   player: string;
   time: number;
+};
+
+type SignUpTournamentPayload = {
+  tournamentId: string;
+  player: string;
 };
 
 export async function signUp(payload: SignUpTournamentPayload): Promise<SignUpTournament> {
@@ -21,18 +25,6 @@ export async function signUp(payload: SignUpTournamentPayload): Promise<SignUpTo
     throw new Error("Failed to sign up player");
   }
   return value;
-}
-
-export async function deleteSignUp({ tournamentId, player }: SignUpTournamentPayload) {
-  await kv.delete(getTournamentSignupKey(tournamentId, player));
-}
-
-export async function getSignedUp({ tournamentId, player }: SignUpTournamentPayload): Promise<SignUpTournament | null> {
-  const res = await kv.get<SignUpTournament>(getTournamentSignupKey(tournamentId, player));
-  if (!res.value) {
-    return null;
-  }
-  return res.value;
 }
 
 export async function getAllSignedUp(): Promise<SignUpTournament[]> {
