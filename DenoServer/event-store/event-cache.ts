@@ -48,19 +48,19 @@ export class EventCache {
       return null;
     }
     if (cacheBatches[0].timeCreated + this.#CACHE_TTL < new Date().getTime()) {
-      await this.clearCache();
+      await this.#clearCache();
       return null;
     }
     return this.#parseCacheBatches(cacheBatches);
   }
 
   async #setEventCache(value: EventCacheData): Promise<void> {
-    await this.clearCache();
+    await this.#clearCache();
     const cacheBatches = this.#createCacheBatches(value);
     await this.#uploadCacheBatches(cacheBatches);
   }
 
-  async clearCache(): Promise<void> {
+  async #clearCache(): Promise<void> {
     const cacheBatches = kv.list<EventCacheBatch>({ prefix: this.#getCacheKey() });
     for await (const cache of cacheBatches) {
       const key = this.#getCacheKey(cache.value.batchIndex);

@@ -1,6 +1,6 @@
 import { Router } from "https://deno.land/x/oak@v16.0.0/router.ts";
 import { EventType } from "./event-types.ts";
-import { deleteAllEvents, getEventsAfter, storeEvent } from "./event-store.ts";
+import { storeEvent } from "./event-store.ts";
 import { eventCache, webSocketClientManager } from "../server.ts";
 
 export function registerEventStoreRoutes(api: Router) {
@@ -42,27 +42,5 @@ export function registerEventStoreRoutes(api: Router) {
   api.get("/events", async (context) => {
     const eventData = await eventCache.getEventData();
     context.response.body = eventData.events;
-  });
-
-  /**
-   * Get all events after a certain time
-   */
-  api.get("/events-after", async (context) => {
-    const time = Number(context.request.url.searchParams.get("time"));
-    if (typeof time !== "number") {
-      context.response.status = 400;
-      return;
-    }
-    const events = await getEventsAfter(time);
-    context.response.body = events;
-  });
-
-  /**
-   * Delete all events
-   */
-  api.delete("/events", async (context) => {
-    await deleteAllEvents();
-    await eventCache.clearCache();
-    context.response.status = 204;
   });
 }
