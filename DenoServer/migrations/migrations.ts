@@ -8,6 +8,7 @@ import {
   TournamentSignup,
 } from "../event-store/event-types.ts";
 import { newId } from "../event-store/nano-id.ts";
+import { deleteAllProfilePicturesOld, getProfilePictureOld, uploadProfilePictureNew } from "../player/player.ts";
 
 type Migration = {
   name: string;
@@ -33,10 +34,6 @@ export const migrations: Migration[] = [
         tournament: { signedUp },
       } = await getClientDbData();
 
-      function replaceName(name: string) {
-        return name === "Alejandro 🌮" ? "Alejandro" : name;
-      }
-
       const createPlayerEvents: Map<string, PlayerCreated> = new Map();
       const playersToDeactivate: Set<string> = new Set();
       const deactivatePlayersEvents: Map<string, PlayerDeactivated> = new Map();
@@ -45,11 +42,11 @@ export const migrations: Migration[] = [
 
       // Create player events
       for (const player of players) {
-        createPlayerEvents.set(replaceName(player.name), {
+        createPlayerEvents.set(player.name, {
           time: getNextTime(),
           stream: newId(),
           type: EventTypeEnum.PLAYER_CREATED,
-          data: { name: replaceName(player.name) },
+          data: { name: player.name },
         });
       }
 
@@ -57,7 +54,7 @@ export const migrations: Migration[] = [
       const sortedGames = games.sort((a, b) => a.time - b.time);
       for (const game of sortedGames) {
         // Check if winner and loser exist
-        for (const player of [replaceName(game.winner), replaceName(game.loser)]) {
+        for (const player of [game.winner, game.loser]) {
           if (!createPlayerEvents.has(player)) {
             createPlayerEvents.set(player, {
               time: getNextTime(),
@@ -75,8 +72,8 @@ export const migrations: Migration[] = [
           type: EventTypeEnum.GAME_CREATED,
           data: {
             playedAt: game.time,
-            winner: createPlayerEvents.get(replaceName(game.winner))!.stream,
-            loser: createPlayerEvents.get(replaceName(game.loser))!.stream,
+            winner: createPlayerEvents.get(game.winner)!.stream,
+            loser: createPlayerEvents.get(game.loser)!.stream,
           },
         });
       }
@@ -104,9 +101,9 @@ export const migrations: Migration[] = [
 
       // Deactivate players
       for (const player of playersToDeactivate) {
-        deactivatePlayersEvents.set(replaceName(player), {
+        deactivatePlayersEvents.set(player, {
           time: getNextTime(),
-          stream: createPlayerEvents.get(replaceName(player))!.stream,
+          stream: createPlayerEvents.get(player)!.stream,
           type: EventTypeEnum.PLAYER_DEACTIVATED,
           data: null,
         });
@@ -123,6 +120,14 @@ export const migrations: Migration[] = [
       for (const event of allEvents) {
         await storeEvent(event);
       }
+
+      //
+      for (const player of players) {
+        const profilePicture = await getProfilePictureOld(player.name);
+        const playerId = createPlayerEvents.get(player.name)?.stream;
+        profilePicture && playerId && (await uploadProfilePictureNew(playerId, profilePicture));
+      }
+      await deleteAllProfilePicturesOld();
     },
   },
 ];
