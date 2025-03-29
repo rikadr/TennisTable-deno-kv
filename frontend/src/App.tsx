@@ -11,7 +11,6 @@ import { AdminPage } from "./pages/admin/admin-page";
 import { session } from "./services/auth";
 import { SignupPage } from "./pages/sign-up";
 import { WebSocketRefetcher } from "./wrappers/web-socket-refetcher";
-import { ClientDbWrapper } from "./wrappers/client-db-context";
 import { NavMenu } from "./wrappers/nav-menu";
 import { ZoomWrapper } from "./wrappers/zoom-wrapper";
 import { PvPPage } from "./pages/pvp-page";
@@ -28,6 +27,7 @@ import Snowfall from "react-snowfall";
 import { HelmetSetter } from "./wrappers/helmet";
 import { ThemeProvider } from "./wrappers/theme-provider";
 import { SettingsPage } from "./pages/settings-page";
+import { EventDbWrapper } from "./wrappers/event-db-context";
 
 const RequireAuth: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   if (!session.isAuthenticated) {
@@ -49,7 +49,7 @@ function App() {
           <HelmetSetter />
           <ZoomWrapper>
             <WebSocketRefetcher>
-              <ClientDbWrapper>
+              <EventDbWrapper>
                 <BrowserRouter>
                   <Routes>
                     <Route path="/" element={<NavMenu />}>
@@ -94,7 +94,7 @@ function App() {
                     </Route>
                   </Routes>
                 </BrowserRouter>
-              </ClientDbWrapper>
+              </EventDbWrapper>
             </WebSocketRefetcher>
           </ZoomWrapper>
         </div>

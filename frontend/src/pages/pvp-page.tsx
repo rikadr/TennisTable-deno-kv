@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useClientDbContext } from "../wrappers/client-db-context";
+import { useEventDbContext } from "../wrappers/event-db-context";
 import { Select } from "@headlessui/react";
 import { PvPStats } from "./pvp-stats";
 import { ProfilePicture } from "./player/profile-picture";
@@ -23,7 +23,7 @@ export const PvPPage: React.FC = () => {
 };
 
 export const SelectPlayer: React.FC<{ value?: string; onChange: (value: string) => void }> = ({ value, onChange }) => {
-  const { players } = useClientDbContext();
+  const { players } = useEventDbContext();
   const sortedPlayers = players.sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
 
   return (
@@ -35,12 +35,12 @@ export const SelectPlayer: React.FC<{ value?: string; onChange: (value: string) 
       >
         {!value && <option key="No selected">Select player</option>}
         {sortedPlayers.map((player) => (
-          <option value={player.name} key={player.name}>
+          <option value={player.id} key={player.name}>
             {player.name}
           </option>
         ))}
       </Select>
-      <ProfilePicture name={value} size={64} linkToPlayer border={3} />
+      <ProfilePicture playerId={value} size={64} linkToPlayer border={3} />
     </div>
   );
 };

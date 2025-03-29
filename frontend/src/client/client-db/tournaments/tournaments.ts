@@ -36,8 +36,8 @@ export class Tournaments {
   #initTournament(tournament: TournamentDB): Tournament {
     return new Tournament(
       tournament,
-      [...this.parent.games, ...this.parent.futureElo.predictedGames], // Add simulated games too
-      this.parent.signedUp.filter((s) => s.tournamentId === tournament.id),
+      [...this.parent.games, ...this.parent.futureElo.predictedGames],
+      this.parent.eventStore.tournamentsReducer.getTournamentSignups(tournament.id),
     );
   }
 

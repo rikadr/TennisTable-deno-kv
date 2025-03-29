@@ -2,7 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { getEgg, getPumpkin, PodiumPlace } from "./podium-place";
 import { Elo } from "../../client/client-db/elo";
-import { useClientDbContext } from "../../wrappers/client-db-context";
+import { useEventDbContext } from "../../wrappers/event-db-context";
 import { ProfilePicture } from "../player/profile-picture";
 import { RecentGames } from "./recent-games";
 import { TournamentHighlightsAndPendingGames } from "./tournament-pending-games";
@@ -10,7 +10,7 @@ import { getClientConfig, Theme, themeOrOverrideTheme } from "../../client/clien
 import easterBunnyChick from "../../img/easter/bunny-chick.png";
 
 export const LeaderBoard: React.FC = () => {
-  const context = useClientDbContext();
+  const context = useEventDbContext();
   const leaderboard = context.leaderboard.getLeaderboard();
 
   const client = getClientConfig();
@@ -18,8 +18,8 @@ export const LeaderBoard: React.FC = () => {
 
   const playersWithNoMatches = context.players.filter(
     (player) =>
-      !leaderboard.rankedPlayers.some((r) => r.name === player.name) &&
-      !leaderboard.unrankedPlayers.some((u) => u.name === player.name),
+      !leaderboard.rankedPlayers.some((r) => r.id === player.id) &&
+      !leaderboard.unrankedPlayers.some((u) => u.id === player.id),
   );
 
   const nr1 = leaderboard.rankedPlayers[0];
@@ -44,9 +44,9 @@ export const LeaderBoard: React.FC = () => {
       <div className="w-full max-w-96 sm:w-96 flex flex-col gap-2 items-center">
         <TournamentHighlightsAndPendingGames />
         <h1 className="text-2xl text-center text-primary-text my-2">Leaderboard</h1>
-        {nr1 && <PodiumPlace name={nr1.name} size="default" place={1} playerSummary={nr1} profilePicture />}
-        {nr2 && <PodiumPlace name={nr2.name} size="sm" place={2} playerSummary={nr2} profilePicture />}
-        {nr3 && <PodiumPlace name={nr3.name} size="xs" place={3} playerSummary={nr3} profilePicture />}
+        {nr1 && <PodiumPlace size="default" place={1} playerSummary={nr1} profilePicture />}
+        {nr2 && <PodiumPlace size="sm" place={2} playerSummary={nr2} profilePicture />}
+        {nr3 && <PodiumPlace size="xs" place={3} playerSummary={nr3} profilePicture />}
         {/* <LeaderboardDistrubution /> */}
         <RecentGames />
         {theme === Theme.EASTER && <img src={easterBunnyChick} alt="Easter bunny chick" />}
@@ -63,11 +63,11 @@ export const LeaderBoard: React.FC = () => {
           {leaderboard.rankedPlayers.map((player, index, list) => (
             <Link
               key={index}
-              to={`/player/${player.name}`}
+              to={`/player/${player.id}`}
               className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text py-1 px-2 flex items-center gap-4 text-xl font-light text-primary-text"
             >
               <div className="w-5 italic">{themedPlaceNumber(player.rank) ?? player.rank}</div>
-              <ProfilePicture name={player.name} size={28} border={2} />
+              <ProfilePicture playerId={player.id} size={28} border={2} />
               <div className="w-28 font-normal whitespace-nowrap">{player.name}</div>
               <div className="w-12 text-right">
                 {player.elo.toLocaleString("no-NO", {
@@ -103,10 +103,10 @@ export const LeaderBoard: React.FC = () => {
           {leaderboard.unrankedPlayers.map((player, index) => (
             <Link
               key={index}
-              to={`/player/${player.name}`}
+              to={`/player/${player.id}`}
               className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text py-1 px-2 flex items-center gap-4 text-xl text-primary-text font-light"
             >
-              <ProfilePicture name={player.name} size={28} border={2} />
+              <ProfilePicture playerId={player.id} size={28} border={2} />
 
               <div className="w-28 font-normal whitespace-nowrap">{player.name}</div>
               <div className="w-12 text-right">
@@ -124,10 +124,10 @@ export const LeaderBoard: React.FC = () => {
           {playersWithNoMatches.map((player, index) => (
             <Link
               key={index}
-              to={`/player/${player.name}`}
+              to={`/player/${player.id}`}
               className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text py-1 px-2 flex items-center gap-4 text-xl text-primary-text font-light"
             >
-              <ProfilePicture name={player.name} size={28} border={2} />
+              <ProfilePicture playerId={player.id} size={28} border={2} />
 
               <div className="w-28 font-normal whitespace-nowrap">{player.name}</div>
               <div className="w-12 text-right">-</div>

@@ -1,10 +1,10 @@
 import { Link } from "react-router-dom";
 import { ProfilePicture } from "../player/profile-picture";
-import { useClientDbContext } from "../../wrappers/client-db-context";
+import { useEventDbContext } from "../../wrappers/event-db-context";
 import { relativeTimeString } from "../../common/date-utils";
 
 export const TournamentHighlightsAndPendingGames: React.FC = () => {
-  const context = useClientDbContext();
+  const context = useEventDbContext();
   const tournaments = context.tournaments.getTournaments();
 
   const anyPendingGames = tournaments.some((tournament) => tournament.hasPendingGames);
@@ -95,6 +95,7 @@ type PendingGameProps = {
   tournamentId: string;
 };
 export const PendingGame: React.FC<PendingGameProps> = ({ player1, player2, tournamentId }) => {
+  const context = useEventDbContext();
   return (
     <Link
       to={`/tournament?tournament=${tournamentId}&player1=${player1}&player2=${player2}`}
@@ -102,13 +103,13 @@ export const PendingGame: React.FC<PendingGameProps> = ({ player1, player2, tour
     >
       <h2 className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2">VS</h2>
       <div className="flex gap-3 items-center justify-center">
-        <ProfilePicture name={player1} size={35} shape="circle" clickToEdit={false} border={3} />
-        <h3 className="truncate">{player1}</h3>
+        <ProfilePicture playerId={player1} size={35} shape="circle" clickToEdit={false} border={3} />
+        <h3 className="truncate">{context.playerName(player1)}</h3>
       </div>
       <div className="grow" />
       <div className="flex gap-3 items-center justify-center">
-        <h3 className="truncate">{player2}</h3>
-        <ProfilePicture name={player2} size={35} shape="circle" clickToEdit={false} border={3} />
+        <h3 className="truncate">{context.playerName(player2)}</h3>
+        <ProfilePicture playerId={player2} size={35} shape="circle" clickToEdit={false} border={3} />
       </div>
     </Link>
   );
@@ -118,16 +119,17 @@ type WinnerBoxProps = {
   winner: string;
 };
 export const WinnerBox: React.FC<WinnerBoxProps> = ({ winner }) => {
+  const context = useEventDbContext();
   return (
     <Link
       to={`/player/${winner}`}
       className="w-full px-4 py-2 rounded-lg flex items-center gap-x-4 h-16 bg-secondary-background text-secondary-text hover:bg-secondary-background/70"
     >
       <div className="flex gap-3 items-center justify-center">
-        <ProfilePicture name={winner} size={50} shape="circle" clickToEdit={false} border={3} />
+        <ProfilePicture playerId={winner} size={50} shape="circle" clickToEdit={false} border={3} />
         <div className="-space-y-1">
           <div className="text-sm">Winner</div>
-          <h3 className="text-2xl font-bold uppercase">{winner}</h3>
+          <h3 className="text-2xl font-bold uppercase">{context.playerName(winner)}</h3>
         </div>
       </div>
       <div className="grow" />

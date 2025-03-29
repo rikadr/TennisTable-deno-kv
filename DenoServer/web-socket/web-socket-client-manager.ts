@@ -1,5 +1,4 @@
 import { RouterContext } from "oak";
-import { clientDBCacheManager } from "../server.ts";
 
 /**
  * Defined messages that can be broadcast to connected clients
@@ -8,6 +7,8 @@ enum WS_MESSAGE {
   RELOAD = "reload",
   CONNECTION_ID = "connection-id",
   HEART_BEAT = "heart-beat",
+  // NEW_EVENT = "new-event", // TODO
+  // REQUEST_ALL_NEW_EVENTS = "request-all-new-events", // TODO
 }
 
 export class WebSocketClientManager {
@@ -109,8 +110,7 @@ export class WebSocketClientManager {
    * Broadcast all connected clients a request to reload data their data.
    * Used for when games or player data is changed or updated.
    */
-  async reloadCacheAndClients() {
-    await clientDBCacheManager.reloadCache();
+  reloadClients() {
     this.broadcastMessage(WS_MESSAGE.RELOAD);
   }
 

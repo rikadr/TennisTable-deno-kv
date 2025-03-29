@@ -1,11 +1,11 @@
 import { Link } from "react-router-dom";
-import { useClientDbContext } from "../../wrappers/client-db-context";
+import { useEventDbContext } from "../../wrappers/event-db-context";
 import { relativeTimeString } from "../../common/date-utils";
 
 export const TournamentsListPage: React.FC = () => {
   const {
     client: { tournaments },
-  } = useClientDbContext();
+  } = useEventDbContext();
 
   const sortedTournaments = [...tournaments].sort((a, b) => b.startDate - a.startDate);
 

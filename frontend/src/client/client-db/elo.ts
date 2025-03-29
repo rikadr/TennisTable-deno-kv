@@ -1,4 +1,5 @@
-import { Game, Player } from "./types";
+import { Game } from "./event-store/reducers/games-projector";
+import { Player } from "./event-store/reducers/players-projector";
 
 type PlayerWithElo = Player & { elo: number; totalGames: number };
 
@@ -14,7 +15,7 @@ export abstract class Elo {
     onGameResult?: (map: Map<string, PlayerWithElo>, game: Game, pointsWon: number) => void,
   ): Map<string, PlayerWithElo> {
     const playerMap = new Map<string, PlayerWithElo>(
-      players.map((player) => [player.name, { ...player, elo: this.INITIAL_ELO, totalGames: 0 }]),
+      players.map((player) => [player.id, { ...player, elo: this.INITIAL_ELO, totalGames: 0 }]),
     );
 
     games.forEach((game) => {

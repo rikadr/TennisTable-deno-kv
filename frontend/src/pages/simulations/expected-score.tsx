@@ -1,16 +1,16 @@
 import React from "react";
 import { useRerender } from "../../hooks/use-rerender";
-import { useClientDbContext } from "../../wrappers/client-db-context";
+import { useEventDbContext } from "../../wrappers/event-db-context";
 import { Elo } from "../../client/client-db/elo";
 import { fmtNum } from "../../common/number-utils";
 
 export const ExpectedScore: React.FC = () => {
   const rerender = useRerender();
 
-  const context = useClientDbContext();
+  const context = useEventDbContext();
 
   return (
-    <div className="flex flex-col items-center">
+    <div className="flex flex-col items-center text-primary-text">
       <section className="w-96 mb-16 space-y-4">
         <h1 className="text-2xl">Expected score</h1>
         <p>
@@ -41,7 +41,7 @@ export const ExpectedScore: React.FC = () => {
 
       {context.futureElo.playersMap.size === 0 && (
         <button
-          className="bg-secondary-background hover:bg-secondary-background/50 rounded-lg px-10 py-2 my-2"
+          className="bg-secondary-background hover:bg-secondary-background/50 text-secondary-text rounded-lg px-10 py-2 my-2"
           onClick={async () => {
             window.tennisTable.futureElo.simulate();
             rerender();
@@ -52,23 +52,25 @@ export const ExpectedScore: React.FC = () => {
       )}
 
       <div>
-        <section className="w-96 mb-6 space-y-4">
-          <h1 className="text-2xl">Data dump 👇</h1>
-          <p>Feel free to naigate anywhere in the app to see the effects of the simulated games 😄</p>
-        </section>
+        {context.futureElo.playersMap.size > 0 ? (
+          <section className="w-96 mb-6 space-y-4">
+            <h1 className="text-2xl">Data dump 👇</h1>
+            <p>Feel free to naigate anywhere in the app to see the effects of the simulated games 😄</p>
+          </section>
+        ) : null}
         {Array.from(context.futureElo.playersMap.entries())
           .filter(([_, p]) => p.totalGames >= Elo.GAME_LIMIT_FOR_RANKED)
           .map(([name, player]) => (
             <div key={name}>
-              <h2 className="text-xl">{name}</h2>
+              <h2 className="text-xl">{context.playerName(name)}</h2>
               <div className="space-y-2 ml-6">
                 {Array.from(player.oponentsMap.entries()).map(([oponent, results]) => {
                   const fractions = [results.directFraction, results.oneLayerFraction, results.twoLayerFraction];
                   const combined = context.futureElo.combineFractions(fractions);
                   return (
                     <div key={name + oponent}>
-                      {name} {"->"} {oponent} {fmtNum((combined?.fraction || 0) * 100)}% @
-                      {fmtNum((combined?.confidence || 0) * 100)}%
+                      {context.playerName(name)} {"->"} {context.playerName(oponent)}{" "}
+                      {fmtNum((combined?.fraction || 0) * 100)}% @{fmtNum((combined?.confidence || 0) * 100)}%
                       <ul className="ml-6">
                         {fractions.map(
                           (fraction, index) =>

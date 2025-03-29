@@ -1,18 +1,19 @@
-import { useMutation } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { queryClient } from "../common/query-client";
 import { useNavigate } from "react-router-dom";
-import { httpClient } from "../common/http-client";
-import { useClientDbContext } from "../wrappers/client-db-context";
 import { classNames } from "../common/class-names";
 import ConfettiExplosion from "react-confetti-explosion";
+import { useEventDbContext } from "../wrappers/event-db-context";
+import { useEventMutation } from "../hooks/use-event-mutation";
+import { EventTypeEnum, PlayerCreated } from "../client/client-db/event-store/event-types";
+import { newId } from "../common/nani-id";
 
 export const AddPlayerPage: React.FC = () => {
   const navigate = useNavigate();
-  const context = useClientDbContext();
+  const context = useEventDbContext();
+  const addEventMutation = useEventMutation();
 
   const [playerName, setPlayerName] = useState("");
-  const backendError = "An error occurred while adding player";
 
   const [errorMessage, setErrorMessage] = useState<string>();
 
@@ -34,37 +35,33 @@ export const AddPlayerPage: React.FC = () => {
     }
   }, [playerName, context.players, playerSuccessfullyAdded]);
 
-  function fixName(n: string): string {
-    return (n[0]?.toUpperCase() + n.slice(1)).trim();
-  }
+  function submitPlayer(name: string) {
+    const event: PlayerCreated = {
+      type: EventTypeEnum.PLAYER_CREATED,
+      time: Date.now(),
+      stream: newId(),
+      data: { name },
+    };
 
-  const addPlayerMutation = useMutation<unknown, Error, { name: string }, unknown>({
-    mutationFn: async ({ name }) => {
-      try {
-        return await httpClient(`${process.env.REACT_APP_API_BASE_URL}/player`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            name: fixName(name),
-          }),
-        });
-      } catch (error) {
-        setErrorMessage(backendError);
-      }
-    },
-    onSuccess: (_, { name }) => {
-      queryClient.invalidateQueries();
-      setPlayerSuccessfullyAdded(true);
-      setTimeout(() => {
-        navigate(`/player/${fixName(name)}`);
-      }, 2_000);
-    },
-    onError(error) {
-      setErrorMessage(error.message);
-    },
-  });
+    const validateResponse = context.eventStore.playersReducer.validateCreatePlayer(event);
+    if (validateResponse.valid === false) {
+      console.error(validateResponse.message);
+      setErrorMessage(validateResponse.message);
+      return;
+    }
+
+    addEventMutation.mutate(event, {
+      onSuccess: (_, event) => {
+        const data = event as PlayerCreated;
+        queryClient.invalidateQueries();
+        setPlayerSuccessfullyAdded(true);
+        setTimeout(() => navigate(`/player/${data.stream}`), 2_000);
+      },
+      onError(error) {
+        setErrorMessage(error.message);
+      },
+    });
+  }
 
   return (
     <div className="flex flex-col items-center gap-2 w-96 m-auto">
@@ -79,21 +76,21 @@ export const AddPlayerPage: React.FC = () => {
       />
       {errorMessage && <p className="text-red-500">{errorMessage}</p>}
       <button
-        disabled={!!errorMessage || addPlayerMutation.isPending || !playerName}
+        disabled={!!errorMessage || addEventMutation.isPending || !playerName}
         className={classNames(
           "text-lg font-semibold w-full flex flex-col items-center py-4 px-6 bg-secondary-background hover:bg-secondary-background/70 text-secondary-text rounded-lg",
           (!!errorMessage || !playerName) && "cursor-not-allowed opacity-50 hover:bg-secondary-background",
           playerSuccessfullyAdded && "animate-ping-once",
         )}
-        onClick={() => addPlayerMutation.mutate({ name: playerName })}
+        onClick={() => submitPlayer(playerName)}
       >
-        {addPlayerMutation.isPending && (
+        {addEventMutation.isPending && (
           <div className="flex items-center justify-center gap-2">
             Adding player ... <div className="animate-spin">👤</div>
           </div>
         )}
         {playerSuccessfullyAdded && "Success ✅"}
-        {!addPlayerMutation.isPending && !playerSuccessfullyAdded && "Add player 👤"}
+        {!addEventMutation.isPending && !playerSuccessfullyAdded && "Add player 👤"}
         {playerSuccessfullyAdded && (
           <ConfettiExplosion particleCount={250} force={0.8} width={2_000} duration={10_000} />
         )}

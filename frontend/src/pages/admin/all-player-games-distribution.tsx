@@ -1,11 +1,11 @@
 import { Link } from "react-router-dom";
-import { useClientDbContext } from "../../wrappers/client-db-context";
+import { useEventDbContext } from "../../wrappers/event-db-context";
 import { classNames } from "../../common/class-names";
 import { stringToColor } from "../compare-players-page";
 import { fmtNum } from "../../common/number-utils";
 
 export const AllPlayerGamesDistrubution: React.FC = () => {
-  const context = useClientDbContext();
+  const context = useEventDbContext();
   const map: Record<string, number> = {};
   context.games.forEach((game) => {
     map[game.winner] = (map[game.winner] ?? 0) + 1;

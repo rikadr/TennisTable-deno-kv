@@ -49,32 +49,42 @@ export class Leaderboard {
     };
   }
 
-  getPlayerSummary(name: string) {
-    if (this._playerSummaryCache.has(name)) {
-      return this._playerSummaryCache.get(name)!;
+  getPlayerSummary(id: string) {
+    if (this._playerSummaryCache.has(id)) {
+      return this._playerSummaryCache.get(id)!;
     }
 
-    const playerSummary = this._getPlayerSummary(name);
+    const playerSummary = this._getPlayerSummary(id);
     if (playerSummary) {
-      this._playerSummaryCache.set(name, playerSummary);
+      this._playerSummaryCache.set(id, playerSummary);
     }
 
     return playerSummary;
   }
 
-  private _getPlayerSummary(name: string):
-    | (PlayerSummary & {
+  private _getPlayerSummary(id: string):
+    | PlayerSummary & {
         isRanked: boolean;
         rank?: number;
         streaks?: { longestWin: number; longestLose: number };
-        pointsDistrubution: { name: string; points: number }[];
-        gamesDistribution: { name: string; games: number }[];
-      })
-    | undefined {
+        pointsDistrubution: { oponentId: string; points: number }[];
+        gamesDistribution: { oponentId: string; games: number }[];
+      } {
     const leaderboardMap = this.getCachedLeaderboardMap();
 
-    const player = leaderboardMap.get(name);
-    if (!player) return undefined;
+    const player = leaderboardMap.get(id);
+    if (!player)
+      return {
+        id,
+        elo: Elo.INITIAL_ELO,
+        wins: 0,
+        loss: 0,
+        games: [],
+        name: this.parent.playerName(id),
+        gamesDistribution: [],
+        pointsDistrubution: [],
+        isRanked: false,
+      };
 
     const streaks = { longestWin: 0, longestLose: 0 };
     let winStreak = 0;
@@ -107,7 +117,7 @@ export class Leaderboard {
     }
 
     const pointsDistrubution = Object.keys(pointsMap)
-      .map((name) => ({ name, points: pointsMap[name] }))
+      .map((oponentId) => ({ oponentId, points: pointsMap[oponentId] }))
       .sort((a, b) => b.points - a.points);
 
     // Games distrubution
@@ -117,7 +127,7 @@ export class Leaderboard {
     }
 
     const gamesDistribution = Object.keys(gamesMap)
-      .map((name) => ({ name, games: gamesMap[name] }))
+      .map((oponentId) => ({ oponentId, games: gamesMap[oponentId] }))
       .sort((a, b) => b.games - a.games);
 
     return {
@@ -191,18 +201,19 @@ export class Leaderboard {
   private _getLeaderboardMap(): Map<string, PlayerSummary> {
     const leaderboardMap = new Map<string, PlayerSummary>();
 
-    function getPlayer(name: string): PlayerSummary {
-      const player = leaderboardMap.get(name);
+    const getPlayer = (id: string): PlayerSummary => {
+      const player = leaderboardMap.get(id);
       if (player) return player;
-      leaderboardMap.set(name, {
-        name,
+      leaderboardMap.set(id, {
+        id,
+        name: this.parent.playerName(id),
         elo: Elo.INITIAL_ELO,
         wins: 0,
         loss: 0,
         games: [],
       });
-      return leaderboardMap.get(name)!;
-    }
+      return leaderboardMap.get(id)!;
+    };
 
     Elo.eloCalculator(
       [...this.parent.games, ...this.parent.futureElo.predictedGames],
@@ -214,16 +225,16 @@ export class Leaderboard {
         const losersNewElo = map.get(game.loser)!.elo;
 
         winner.games.push({
-          time: game.time,
+          time: game.playedAt,
           result: "win",
-          oponent: loser.name,
+          oponent: loser.id,
           eloAfterGame: winnersNewElo,
           pointsDiff: pointsWon,
         });
         loser.games.push({
-          time: game.time,
+          time: game.playedAt,
           result: "loss",
-          oponent: winner.name,
+          oponent: winner.id,
           eloAfterGame: losersNewElo,
           pointsDiff: -pointsWon,
         });

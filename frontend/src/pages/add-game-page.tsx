@@ -1,17 +1,19 @@
-import { useMutation } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { queryClient } from "../common/query-client";
 import { Link, useNavigate } from "react-router-dom";
-import { PlayersDTO } from "./admin/admin-page";
 import { classNames } from "../common/class-names";
-import { httpClient } from "../common/http-client";
-import { useClientDbContext } from "../wrappers/client-db-context";
 import ConfettiExplosion from "react-confetti-explosion";
 import { useTennisParams } from "../hooks/use-tennis-params";
 import { layerIndexToTournamentRound } from "./leaderboard/tournament-pending-games";
+import { useEventDbContext } from "../wrappers/event-db-context";
+import { EventTypeEnum, GameCreated } from "../client/client-db/event-store/event-types";
+import { newId } from "../common/nani-id";
+import { useEventMutation } from "../hooks/use-event-mutation";
+import { Player } from "../client/client-db/event-store/reducers/players-projector";
 
 export const AddGamePage: React.FC = () => {
-  const context = useClientDbContext();
+  const context = useEventDbContext();
+  const addEventMutation = useEventMutation();
 
   const navigate = useNavigate();
   const { player1: paramPlayer1, player2: paramPlayer2 } = useTennisParams();
@@ -24,36 +26,40 @@ export const AddGamePage: React.FC = () => {
 
   const isPendingTournamentGame = context.tournaments.findAllPendingGames(winner, loser);
 
-  const addGameMutation = useMutation<unknown, Error>({
-    mutationFn: async () => {
-      return httpClient(`${process.env.REACT_APP_API_BASE_URL}/game`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          winner,
-          loser,
-        }),
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries();
-      setGameSuccessfullyAdded(true);
-      setTimeout(() => {
-        navigate(
-          isPendingTournamentGame.length > 0
-            ? `/tournament?tournament=${isPendingTournamentGame[0].tournament.id}&player1=${isPendingTournamentGame[0].player1}&player2=${isPendingTournamentGame[0].player2}`
-            : `/1v1/?player1=${winner}&player2=${loser}`,
-        );
-      }, 2_000);
-    },
-  });
+  function submitGame(winner: string, loser: string) {
+    const now = Date.now();
+    const event: GameCreated = {
+      type: EventTypeEnum.GAME_CREATED,
+      time: now,
+      stream: newId(),
+      data: { winner, loser, playedAt: now },
+    };
 
-  const { players } = useClientDbContext();
+    const validateResponse = context.eventStore.gamesReducer.validateCreateGame(event);
+    if (validateResponse.valid === false) {
+      console.error(validateResponse.message);
+      return;
+    }
+
+    addEventMutation.mutate(event, {
+      onSuccess: () => {
+        queryClient.invalidateQueries();
+        setGameSuccessfullyAdded(true);
+        setTimeout(() => {
+          navigate(
+            isPendingTournamentGame.length > 0
+              ? `/tournament?tournament=${isPendingTournamentGame[0].tournament.id}&player1=${isPendingTournamentGame[0].player1}&player2=${isPendingTournamentGame[0].player2}`
+              : `/1v1/?player1=${winner}&player2=${loser}`,
+          );
+        }, 2_000);
+      },
+    });
+  }
+
+  const { players } = useEventDbContext();
 
   function swapPlayers() {
-    if (addGameMutation.isPending || gameSuccessfullyAdded) return;
+    if (addEventMutation.isPending || gameSuccessfullyAdded) return;
     setWinner(loser);
     setLoser(winner);
   }
@@ -96,21 +102,21 @@ export const AddGamePage: React.FC = () => {
           </Link>
         ))}
         <button
-          disabled={!winner || !loser || addGameMutation.isPending}
+          disabled={!winner || !loser || addEventMutation.isPending}
           className={classNames(
             "text-lg font-semibold w-full py-4 px-6 flex flex-col items-center bg-secondary-background hover:bg-secondary-background/70 text-secondary-text rounded-lg",
             (!winner || !loser) && "cursor-not-allowed opacity-50 hover:bg-secondary-background",
             gameSuccessfullyAdded && "animate-ping-once",
           )}
-          onClick={() => addGameMutation.mutate()}
+          onClick={() => submitGame(winner!, loser!)}
         >
-          {addGameMutation.isPending && (
+          {addEventMutation.isPending && (
             <div className="flex items-center justify-center gap-2">
               Adding game ... <div className="animate-spin">🏓</div>
             </div>
           )}
           {gameSuccessfullyAdded && "Success ✅"}
-          {!addGameMutation.isPending && !gameSuccessfullyAdded && "Add game 🏓"}
+          {!addEventMutation.isPending && !gameSuccessfullyAdded && "Add game 🏓"}
           {gameSuccessfullyAdded && (
             <ConfettiExplosion particleCount={250} force={0.8} width={2_000} duration={10_000} />
           )}
@@ -118,11 +124,11 @@ export const AddGamePage: React.FC = () => {
         <div className="relative flex gap-2">
           <div className="w-40 h-20 flex flex-col items-center justify-center">
             <h1 className="text-5xl">🏆</h1>
-            <h1 className="uppercase text-primary-text">{winner || "???"}</h1>
+            <h1 className="uppercase text-primary-text">{context.playerName(winner)}</h1>
           </div>
           <div className="w-40 h-20 flex flex-col items-center justify-center">
             <h1 className="text-5xl">💔</h1>
-            <h1 className="uppercase text-primary-text">{loser || "???"}</h1>
+            <h1 className="uppercase text-primary-text">{context.playerName(loser)}</h1>
           </div>
           {(winner || loser) && (
             <button
@@ -137,41 +143,41 @@ export const AddGamePage: React.FC = () => {
           <div className="space-y-4">
             <PlayerList
               players={players}
-              onClick={(name) =>
+              onClick={(id) =>
                 setWinner((prev) => {
-                  if (name === loser) {
+                  if (id === loser) {
                     setLoser(undefined);
-                    return name;
+                    return id;
                   }
-                  if (prev === name) {
+                  if (prev === id) {
                     return undefined;
                   }
-                  return name;
+                  return id;
                 })
               }
               selectedPlayer={winner}
               disabledPlayer={loser}
-              disableSelection={addGameMutation.isPending || gameSuccessfullyAdded}
+              disableSelection={addEventMutation.isPending || gameSuccessfullyAdded}
             />
           </div>
           <div className="space-y-4">
             <PlayerList
               players={players}
-              onClick={(name) =>
+              onClick={(id) =>
                 setLoser((prev) => {
-                  if (name === winner) {
+                  if (id === winner) {
                     setWinner(undefined);
-                    return name;
+                    return id;
                   }
-                  if (prev === name) {
+                  if (prev === id) {
                     return undefined;
                   }
-                  return name;
+                  return id;
                 })
               }
               selectedPlayer={loser}
               disabledPlayer={winner}
-              disableSelection={addGameMutation.isPending || gameSuccessfullyAdded}
+              disableSelection={addEventMutation.isPending || gameSuccessfullyAdded}
             />
           </div>
         </div>
@@ -181,10 +187,10 @@ export const AddGamePage: React.FC = () => {
 };
 
 const PlayerList: React.FC<{
-  players?: PlayersDTO;
+  players?: Player[];
   selectedPlayer?: string;
   disabledPlayer?: string;
-  onClick: (name: string) => void;
+  onClick: (id: string) => void;
   disableSelection?: boolean;
 }> = ({ players, selectedPlayer, disabledPlayer, onClick, disableSelection = false }) => {
   if (!players) {
@@ -196,8 +202,8 @@ const PlayerList: React.FC<{
   return (
     <div className="grid grid-cols-1 gap-1 grid-flow-row w-40">
       {sortedPlayers.map((player) => {
-        const isSelected = selectedPlayer === player.name;
-        const isDisabled = disabledPlayer === player.name;
+        const isSelected = selectedPlayer === player.id;
+        const isDisabled = disabledPlayer === player.id;
         return (
           <button
             disabled={disableSelection}
@@ -208,7 +214,7 @@ const PlayerList: React.FC<{
               (isDisabled || (!!selectedPlayer && !isSelected)) && "text-secondary-text/40",
               !isSelected && !isDisabled && "hover:bg-secondary-background hover:text-secondary-text",
             )}
-            onClick={() => onClick(player.name)}
+            onClick={() => onClick(player.id)}
           >
             {player.name}
           </button>

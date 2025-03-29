@@ -1,5 +1,5 @@
 import { classNames } from "../../common/class-names";
-import { useClientDbContext } from "../../wrappers/client-db-context";
+import { useEventDbContext } from "../../wrappers/event-db-context";
 import { ProfilePicture } from "../player/profile-picture";
 import { layerIndexToTournamentRound, WinnerBox } from "../leaderboard/tournament-pending-games";
 import { Menu, MenuButton, MenuItem, MenuItems, Switch } from "@headlessui/react";
@@ -16,7 +16,7 @@ import { Tournament, TournamentGame } from "../../client/client-db/tournaments/t
 export const TournamentPage: React.FC = () => {
   const { tournament: tournamentId, player1, player2 } = useTennisParams();
   const rerender = useRerender();
-  const context = useClientDbContext();
+  const context = useEventDbContext();
   const tournament = context.tournaments.getTournament(tournamentId);
   const [showAsList, setShowAsList] = useSessionStorage(
     `show-tournament-as-list${tournamentId}`,
@@ -95,7 +95,9 @@ export const TournamentPage: React.FC = () => {
                   return;
                 }
                 let tries = 0;
+
                 const likelyWinners = [
+                  // TODO Needs to convert to ids for it to work
                   "Alexander",
                   "Rasmus",
                   "Fooa",
@@ -200,7 +202,7 @@ type GamesListProps = {
   }>;
 };
 const GamesList: React.FC<GamesListProps> = ({ tournament, rerender, itemRefs }) => {
-  const context = useClientDbContext();
+  const context = useEventDbContext();
   const { player1, player2 } = useTennisParams();
 
   return (
@@ -238,21 +240,33 @@ const GamesList: React.FC<GamesListProps> = ({ tournament, rerender, itemRefs })
                     <h2 className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2">VS</h2>
                     <div className="flex gap-3 items-center justify-center">
                       {game.player1 ? (
-                        <ProfilePicture name={game.player1} size={35} shape="circle" clickToEdit={false} border={3} />
+                        <ProfilePicture
+                          playerId={game.player1}
+                          size={35}
+                          shape="circle"
+                          clickToEdit={false}
+                          border={3}
+                        />
                       ) : (
                         <QuestionMark size={38} />
                       )}
                       <h3 className={classNames(p1IsWinner && "font-semibold", p1IsLoser && "line-through font-thin")}>
-                        {game.player1} {winStateEmoji(p1IsWinner, game.skipped)}
+                        {game.player1 && context.playerName(game.player1)} {winStateEmoji(p1IsWinner, game.skipped)}
                       </h3>
                     </div>
                     <div className="grow" />
                     <div className="flex gap-3 items-center justify-center">
                       <h3 className={classNames(p2IsWinner && "font-semibold", p2IsLoser && "line-through font-thin")}>
-                        {winStateEmoji(p2IsWinner, game.skipped)} {game.player2}
+                        {winStateEmoji(p2IsWinner, game.skipped)} {game.player2 && context.playerName(game.player2)}
                       </h3>
                       {game.player2 ? (
-                        <ProfilePicture name={game.player2} size={35} shape="circle" clickToEdit={false} border={3} />
+                        <ProfilePicture
+                          playerId={game.player2}
+                          size={35}
+                          shape="circle"
+                          clickToEdit={false}
+                          border={3}
+                        />
                       ) : (
                         <QuestionMark size={38} />
                       )}
@@ -312,7 +326,7 @@ type GameTriangleProps = {
   }>;
 };
 const GameTriangle: React.FC<GameTriangleProps> = ({ tournament, layerIndex, gameIndex, rerender, itemRefs }) => {
-  const context = useClientDbContext();
+  const context = useEventDbContext();
   const { player1, player2 } = useTennisParams();
 
   let size: Size = "xxs";
@@ -422,7 +436,7 @@ const GameTriangle: React.FC<GameTriangleProps> = ({ tournament, layerIndex, gam
             >
               {game.player1 ? (
                 <ProfilePicture
-                  name={game.player1}
+                  playerId={game.player1}
                   border={playerPictureBorder[size]}
                   shape="circle"
                   size={playerPictureSize[size]}
@@ -438,7 +452,7 @@ const GameTriangle: React.FC<GameTriangleProps> = ({ tournament, layerIndex, gam
                   p1IsLoser && "line-through font-thin",
                 )}
               >
-                {game.player1} {winStateEmoji(p1IsWinner, game.skipped)}
+                {game.player1 && context.playerName(game.player1)} {winStateEmoji(p1IsWinner, game.skipped)}
               </div>
             </div>
             {size !== "xxs" && <div className="w-full text-center font-thin italic text-xs">vs</div>}
@@ -454,11 +468,11 @@ const GameTriangle: React.FC<GameTriangleProps> = ({ tournament, layerIndex, gam
                   p2IsLoser && "line-through font-thin",
                 )}
               >
-                {winStateEmoji(p2IsWinner, game.skipped)} {game.player2}
+                {winStateEmoji(p2IsWinner, game.skipped)} {game.player2 && context.playerName(game.player2)}
               </div>
               {game.player2 ? (
                 <ProfilePicture
-                  name={game.player2}
+                  playerId={game.player2}
                   border={playerPictureBorder[size]}
                   shape="circle"
                   size={playerPictureSize[size]}
@@ -576,6 +590,7 @@ type GameMenuItemsProps = {
   showUndoSkip: { show: boolean; onUndoSkip: () => void };
 };
 export const GameMenuItems: React.FC<GameMenuItemsProps> = (props) => {
+  const context = useEventDbContext();
   return (
     <MenuItems
       anchor="bottom"
@@ -607,7 +622,7 @@ export const GameMenuItems: React.FC<GameMenuItemsProps> = (props) => {
             className="w-full px-4 py-2 text-left data-[focus]:bg-secondary-text/30"
             onClick={props.showSkipGamePlayer1Advance.onSkip}
           >
-            🆓 Skip game ({props.player1} advances)
+            🆓 Skip game ({context.playerName(props.player1)} advances)
           </button>
         </MenuItem>
       )}
@@ -617,7 +632,7 @@ export const GameMenuItems: React.FC<GameMenuItemsProps> = (props) => {
             className="w-full px-4 py-2 text-left data-[focus]:bg-secondary-text/30"
             onClick={props.showSkipGamePlayer2Advance.onSkip}
           >
-            🆓 Skip game ({props.player2} advances)
+            🆓 Skip game ({context.playerName(props.player2)} advances)
           </button>
         </MenuItem>
       )}

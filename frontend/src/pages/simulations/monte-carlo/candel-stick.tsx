@@ -174,7 +174,7 @@ const CustomTooltip: React.FC = ({ active, payload, label }: TooltipProps<ValueT
     return (
       <div className="relative p-2 bg-primary-background ring-1 ring-primary-text rounded-lg text-primary-text">
         <div className="absolute top-1 right-1">
-          <ProfilePicture name={name} size={35} border={2} />
+          <ProfilePicture playerId={name} size={35} border={2} />
         </div>
         <h3 className="mb-4">
           {rank}:{" "}

@@ -146,7 +146,7 @@ export class TournamentGroupPlay {
       )!;
       if (entry.game) {
         groupGames[matchedGroup][matchedGame].winner = entry.game.winner;
-        groupGames[matchedGroup][matchedGame].completedAt = entry.game.time;
+        groupGames[matchedGroup][matchedGame].completedAt = entry.game.playedAt;
       } else {
         groupGames[matchedGroup][matchedGame].skipped = entry.skip;
         groupGames[matchedGroup][matchedGame].winner = entry.skip.advancing;

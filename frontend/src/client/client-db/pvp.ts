@@ -1,5 +1,6 @@
+import { Game } from "./event-store/reducers/games-projector";
 import { TennisTable } from "./tennis-table";
-import { Game, PlayerSummary } from "./types";
+import { PlayerSummary } from "./types";
 
 export class PVP {
   private parent: TennisTable;
@@ -40,13 +41,15 @@ export class PVP {
 
     return {
       player1: {
-        name: player1,
+        playerId: player1,
+        name: this.parent.playerName(player1),
         wins: player1Wins.length,
         streak: this._getWinStreak(player1, relevantGames),
         points: { currentElo: player1Summary?.elo || 0, ...points.p1 },
       },
       player2: {
-        name: player2,
+        playerId: player2,
+        name: this.parent.playerName(player2),
         wins: player2Wins.length,
         streak: this._getWinStreak(player2, relevantGames),
         points: { currentElo: player2Summary?.elo || 0, ...points.p2 },
@@ -71,6 +74,7 @@ export class PVP {
 }
 
 type PlayerComparison = {
+  playerId: string;
   name: string;
   wins: number;
   streak: { longest: number; current: number };

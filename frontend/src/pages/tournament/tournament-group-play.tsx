@@ -1,6 +1,6 @@
 import { classNames } from "../../common/class-names";
 import { fmtNum } from "../../common/number-utils";
-import { useClientDbContext } from "../../wrappers/client-db-context";
+import { useEventDbContext } from "../../wrappers/event-db-context";
 import { ProfilePicture } from "../player/profile-picture";
 import { Tournament } from "../../client/client-db/tournaments/tournament";
 import { GroupScorePlayer, TournamentGroupPlay } from "../../client/client-db/tournaments/group-play";
@@ -66,6 +66,7 @@ const GroupPlayRules: React.FC = () => (
 );
 
 export const TournamentGroupScores: React.FC<{ tournament: Tournament }> = ({ tournament }) => {
+  const context = useEventDbContext();
   if (tournament.groupPlay?.groupScores === undefined) {
     return null;
   }
@@ -76,7 +77,7 @@ export const TournamentGroupScores: React.FC<{ tournament: Tournament }> = ({ to
   const row = (player: GroupScorePlayer, place: number) => (
     <tr key={player.name} className="hover:bg-secondary-background/30">
       <td>#{fmtNum(place)}</td>
-      <td className="pl-4">{player.name}</td>
+      <td className="pl-4">{context.playerName(player.name)}</td>
       <td className="text-lg bg-secondary-background/30 pl-3">{fmtNum(player.adjustedScore, 1)}</td>
       <td>{fmtNum(player.score, 1)}</td>
       <td>{player.groupSizeAdjustmentFactor === 1 ? "-" : fmtNum(player.groupSizeAdjustmentFactor, 2)}</td>
@@ -139,8 +140,8 @@ export const TournamentGroups: React.FC<{
     [key: string]: HTMLElement | null;
   }>;
 }> = ({ tournament, rerender, itemRefs }) => {
-  const { tournaments } = useClientDbContext();
   const { player1: paramPlayer1, player2: paramPlayer2 } = useTennisParams();
+  const context = useEventDbContext();
 
   if (tournament.groupPlay?.groups === undefined) {
     return null;
@@ -157,7 +158,7 @@ export const TournamentGroups: React.FC<{
           </p>
         </section>
         <p className="text-xs">{fmtNum(group.players.length)} players:</p>
-        <p>{group.players.join(", ")}</p>
+        <p>{group.players.map((p) => context.playerName(p)).join(", ")}</p>
       </div>
       {group.groupGames.map((game, gameIndex) => {
         const gameIsWon = game.winner !== undefined;
@@ -165,7 +166,7 @@ export const TournamentGroups: React.FC<{
         function handleSkip(player: string) {
           if (gameIsWon) return;
           if (!gameIsSkipped) {
-            tournaments.skipGame(
+            context.tournaments.skipGame(
               {
                 time: new Date().getTime(),
                 advancing: player,
@@ -202,21 +203,21 @@ export const TournamentGroups: React.FC<{
               <h2 className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2">VS</h2>
               <div className="flex gap-3 items-center justify-center">
                 {game.player1 ? (
-                  <ProfilePicture name={game.player1} size={35} shape="circle" clickToEdit={false} border={3} />
+                  <ProfilePicture playerId={game.player1} size={35} shape="circle" clickToEdit={false} border={3} />
                 ) : (
                   <QuestionMark size={38} />
                 )}
                 <h3 className={classNames(p1IsWinner && "font-semibold", p1IsLoser && "line-through font-thin")}>
-                  {game.player1} {winStateEmoji(p1IsWinner, game.skipped)}
+                  {context.playerName(game.player1)} {winStateEmoji(p1IsWinner, game.skipped)}
                 </h3>
               </div>
               <div className="grow" />
               <div className="flex gap-3 items-center justify-center">
                 <h3 className={classNames(p2IsWinner && "font-semibold", p2IsLoser && "line-through font-thin")}>
-                  {winStateEmoji(p2IsWinner, game.skipped)} {game.player2}
+                  {winStateEmoji(p2IsWinner, game.skipped)} {context.playerName(game.player2)}
                 </h3>
                 {game.player2 ? (
-                  <ProfilePicture name={game.player2} size={35} shape="circle" clickToEdit={false} border={3} />
+                  <ProfilePicture playerId={game.player2} size={35} shape="circle" clickToEdit={false} border={3} />
                 ) : (
                   <QuestionMark size={38} />
                 )}

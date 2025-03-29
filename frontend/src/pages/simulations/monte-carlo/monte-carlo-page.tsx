@@ -1,10 +1,10 @@
 import React from "react";
 import { CandelStickData, CandleStickChart } from "./candel-stick";
-import { useClientDbContext } from "../../../wrappers/client-db-context";
+import { useEventDbContext } from "../../../wrappers/event-db-context";
 import { Elo } from "../../../client/client-db/elo";
 
 export const MonteCarlo: React.FC = () => {
-  const context = useClientDbContext();
+  const context = useEventDbContext();
 
   const leaderboardMap = context.leaderboard.getCachedLeaderboardMap();
   const simulation = context.simulations.monteCarloSimulation(10_000);
