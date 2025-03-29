@@ -8,6 +8,7 @@ import { WebSocketClientManager } from "./web-socket/web-socket-client-manager.t
 import { registerEventStoreRoutes } from "./event-store/event-store.routes.ts";
 import { registerMigrationsRoutes } from "./migrations/migrations.routes.ts";
 import { EventCache } from "./event-store/event-cache.ts";
+import { runMigrations } from "./migrations/index.ts";
 
 const app = new Application();
 const api = new Router();
@@ -26,7 +27,7 @@ export const webSocketClientManager = new WebSocketClientManager();
 /**
  * Run database migrations
  */
-// await runMigrations();
+await runMigrations();
 registerMigrationsRoutes(api);
 
 /**

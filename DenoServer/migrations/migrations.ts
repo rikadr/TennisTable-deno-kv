@@ -121,12 +121,13 @@ export const migrations: Migration[] = [
         await storeEvent(event);
       }
 
-      //
+      // Move profile pictures to new ids
       for (const player of players) {
         const profilePicture = await getProfilePictureOld(player.name);
         const playerId = createPlayerEvents.get(player.name)?.stream;
         profilePicture && playerId && (await uploadProfilePictureNew(playerId, profilePicture));
       }
+      // Delete old profile pictures
       await deleteAllProfilePicturesOld();
     },
   },
