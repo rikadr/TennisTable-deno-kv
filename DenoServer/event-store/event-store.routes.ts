@@ -1,7 +1,7 @@
 import { Router } from "https://deno.land/x/oak@v16.0.0/router.ts";
 import { EventType } from "./event-types.ts";
 import { getEventsAfter, storeEvent } from "./event-store.ts";
-import { webSocketClientManager } from "../server.ts";
+import { eventCache, webSocketClientManager } from "../server.ts";
 
 export function registerEventStoreRoutes(api: Router) {
   /**
@@ -10,14 +10,14 @@ export function registerEventStoreRoutes(api: Router) {
   api.post("/event", async (context) => {
     const eventPayload = (await context.request.body.json()) as EventType;
 
-    // Assume frontend has validated business logic for the event
+    // Assume frontend has validated business logic for the event // TODO: Do reducer business logic backend too
     // Run zod validation??
+    // Run authz validation for delete game and deactivate/reactivate players
 
     await storeEvent(eventPayload);
 
-    // Add to event cache (cache must have some key for storing what the latest event is)
-    // Send new event to clients
-    await webSocketClientManager.reloadCacheAndClients(); // TODO: replace with event cache when implemented
+    await eventCache.appendEventsToEventCache([eventPayload]);
+    await webSocketClientManager.reloadCacheAndClients();
     context.response.status = 201;
   });
 
@@ -30,6 +30,8 @@ export function registerEventStoreRoutes(api: Router) {
     for (const event of eventsPayload) {
       await storeEvent(event);
     }
+    await eventCache.appendEventsToEventCache(eventsPayload);
+    await webSocketClientManager.reloadCacheAndClients();
     context.response.status = 201;
   });
 
@@ -37,7 +39,7 @@ export function registerEventStoreRoutes(api: Router) {
    * Get all events
    */
   api.get("/events", async (context) => {
-    const events = await getEventsAfter(0);
+    const events = await eventCache.getEventData();
     context.response.body = events;
   });
 

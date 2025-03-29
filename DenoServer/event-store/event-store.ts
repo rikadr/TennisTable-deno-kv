@@ -9,7 +9,7 @@ export async function storeEvent(event: EventType) {
     throw new Error();
   }
   // Store event
-  const key = ["event", event.time];
+  const key = getEventKey(event.time);
   const result = await kv.atomic().check({ key, versionstamp: null }).set(key, event).commit();
   if (!result.ok) {
     console.error(`Failed to store event ${event}`);
@@ -20,7 +20,7 @@ export async function storeEvent(event: EventType) {
 export async function getEventsAfter(time: number): Promise<EventType[]> {
   const events: EventType[] = [];
   // +1 to only get events after the given time
-  const res = kv.list<EventType>({ prefix: ["event"], start: ["event", time + 1] });
+  const res = kv.list<EventType>({ prefix: getEventKey(), start: getEventKey(time + 1) });
 
   for await (const event of res) {
     events.push(event.value);
@@ -28,8 +28,8 @@ export async function getEventsAfter(time: number): Promise<EventType[]> {
   return events;
 }
 
-async function getLatestEventTimestamp(): Promise<number | null> {
-  const iter = kv.list({ prefix: ["event"] }, { reverse: true, limit: 1 });
+export async function getLatestEventTimestamp(): Promise<number | null> {
+  const iter = kv.list({ prefix: getEventKey() }, { reverse: true, limit: 1 });
   const latest = (await iter.next()).value;
 
   if (!latest) {
@@ -42,4 +42,12 @@ async function getLatestEventTimestamp(): Promise<number | null> {
     console.error("Error parsing latest event timestamp", e);
     throw e;
   }
+}
+
+function getEventKey(time?: number) {
+  const key: (string | number)[] = ["event"];
+  if (time !== undefined) {
+    key.push(time);
+  }
+  return key;
 }

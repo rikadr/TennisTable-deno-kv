@@ -10,6 +10,7 @@ import { registerTournamentRoutes } from "./tournament/tournament.routes.ts";
 import { ClientDBCacheManager } from "./client-db/client-db-cache.ts";
 import { registerEventStoreRoutes } from "./event-store/event-store.routes.ts";
 import { registerMigrationsRoutes } from "./migrations/migrations.routes.ts";
+import { EventCache } from "./event-store/event-cache.ts";
 
 const app = new Application();
 const api = new Router();
@@ -23,6 +24,7 @@ app.use(
 );
 
 export const clientDBCacheManager = new ClientDBCacheManager();
+export const eventCache = new EventCache();
 export const webSocketClientManager = new WebSocketClientManager();
 
 /**
