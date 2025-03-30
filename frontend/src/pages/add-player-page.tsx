@@ -12,28 +12,19 @@ export const AddPlayerPage: React.FC = () => {
   const navigate = useNavigate();
   const context = useEventDbContext();
   const addEventMutation = useEventMutation();
-
   const [playerName, setPlayerName] = useState("");
-
   const [errorMessage, setErrorMessage] = useState<string>();
-
   const [playerSuccessfullyAdded, setPlayerSuccessfullyAdded] = useState(false);
 
   useEffect(() => {
-    const playerExists = !!context.players.find((p) => p.name.toLowerCase() === playerName.toLowerCase());
-    const firstLetterIsUpperCase = playerName[0] === playerName[0]?.toUpperCase();
-    const hasSpecialCharacters = /[!@#$%^&*()+=[\]{};':"\\|,.<>/?]+/.test(playerName);
+    const validateResponse = context.eventStore.playersReducer.validatePlayerName(playerName);
 
-    if (playerExists && !playerSuccessfullyAdded) {
-      setErrorMessage("Player already exists");
-    } else if (!firstLetterIsUpperCase) {
-      setErrorMessage("Please uppercase first letter");
-    } else if (hasSpecialCharacters) {
-      setErrorMessage("The string contains special or invalid characters.");
+    if (validateResponse.valid === false) {
+      setErrorMessage(validateResponse.message);
     } else {
-      setErrorMessage(undefined);
+      setErrorMessage("");
     }
-  }, [playerName, context.players, playerSuccessfullyAdded]);
+  }, [playerName, context.players, playerSuccessfullyAdded, context.eventStore.playersReducer]);
 
   function submitPlayer(name: string) {
     const event: PlayerCreated = {
@@ -74,7 +65,7 @@ export const AddPlayerPage: React.FC = () => {
         onChange={(e) => setPlayerName(e.target.value)}
         placeholder="Name"
       />
-      {errorMessage && <p className="text-red-500">{errorMessage}</p>}
+      {errorMessage && <p className="text-red-500 bg-gray-700">{errorMessage}</p>}
       <button
         disabled={!!errorMessage || addEventMutation.isPending || !playerName}
         className={classNames(

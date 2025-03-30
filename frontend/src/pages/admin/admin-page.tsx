@@ -12,6 +12,7 @@ import {
   PlayerDeactivated,
   PlayerReactivated,
 } from "../../client/client-db/event-store/event-types";
+import { EditPlayerName } from "./edit-player-name";
 
 export const AdminPage: React.FC = () => {
   const context = useEventDbContext();
@@ -102,6 +103,7 @@ export const AdminPage: React.FC = () => {
             >
               Deactivate
             </button>
+            <EditPlayerName playerId={player.id} />
           </div>
         ))}
         <p>Inactive players: {context.eventStore.playersReducer.inactivePlayers.length}</p>

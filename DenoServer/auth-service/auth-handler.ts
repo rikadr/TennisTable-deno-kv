@@ -5,7 +5,7 @@ export type Resource = keyof typeof resources;
 export type Action<T extends Resource> = (typeof resources)[T][number];
 
 const resources = {
-  player: ["deactivate", "reactivate"],
+  player: ["deactivate", "reactivate", "update"],
   game: ["delete"],
   user: ["read", "delete"],
   roles: ["write"],

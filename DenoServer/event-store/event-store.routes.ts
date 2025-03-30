@@ -26,6 +26,12 @@ export function registerEventStoreRoutes(api: Router) {
         return;
       }
     }
+    if (eventPayload.type === EventTypeEnum.PLAYER_NAME_UPDATED) {
+      if ((await hasAccess(context, "player", "update")) === false) {
+        context.response.status = 403;
+        return;
+      }
+    }
     if (eventPayload.type === EventTypeEnum.GAME_DELETED) {
       if ((await hasAccess(context, "game", "delete")) === false) {
         context.response.status = 403;

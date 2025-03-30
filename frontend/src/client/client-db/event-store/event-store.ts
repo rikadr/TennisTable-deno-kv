@@ -32,6 +32,9 @@ export class EventStore {
         case EventTypeEnum.PLAYER_REACTIVATED:
           this.playersReducer.reactivatePlayer(event);
           break;
+        case EventTypeEnum.PLAYER_NAME_UPDATED:
+          this.playersReducer.updateName(event);
+          break;
         case EventTypeEnum.GAME_CREATED:
           this.gamesReducer.createGame(event);
           break;
