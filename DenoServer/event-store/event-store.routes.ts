@@ -1,7 +1,8 @@
 import { Router } from "https://deno.land/x/oak@v16.0.0/router.ts";
-import { EventType } from "./event-types.ts";
+import { EventType, EventTypeEnum } from "./event-types.ts";
 import { storeEvent } from "./event-store.ts";
 import { eventCache, webSocketClientManager } from "../server.ts";
+import { hasAccess } from "../auth-service/middleware.ts";
 
 export function registerEventStoreRoutes(api: Router) {
   /**
@@ -12,8 +13,25 @@ export function registerEventStoreRoutes(api: Router) {
 
     // Assume frontend has validated business logic for the event // TODO: Do reducer business logic backend too
     // Run zod validation??
-    // Run authz validation for delete game and deactivate/reactivate players
-    // api.delete("/games", isAuthenticated, requireAuth("game", "delete"), async (context) => {
+
+    if (eventPayload.type === EventTypeEnum.PLAYER_DEACTIVATED) {
+      if ((await hasAccess(context, "player", "deactivate")) === false) {
+        context.response.status = 403;
+        return;
+      }
+    }
+    if (eventPayload.type === EventTypeEnum.PLAYER_REACTIVATED) {
+      if ((await hasAccess(context, "player", "reactivate")) === false) {
+        context.response.status = 403;
+        return;
+      }
+    }
+    if (eventPayload.type === EventTypeEnum.GAME_DELETED) {
+      if ((await hasAccess(context, "game", "delete")) === false) {
+        context.response.status = 403;
+        return;
+      }
+    }
 
     await storeEvent(eventPayload);
 

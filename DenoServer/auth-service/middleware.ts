@@ -1,5 +1,5 @@
 import { jwtVerify } from "jose";
-import { Middleware } from "oak";
+import { Context, Middleware } from "oak";
 import { ContextState, JWT_SECRET, SessionUser } from "./auth-service.ts";
 import { Action, Auth, Resource } from "./auth-handler.ts";
 
@@ -57,3 +57,37 @@ export const isAuthenticated: Middleware<ContextState> = async (context, next) =
 export const middleware = {
   isAuthenticated,
 };
+
+async function authenticate(context: Context) {
+  const authHeader = context.request.headers.get("Authorization");
+
+  if (!authHeader) {
+    throw new Error("Authorization header missing");
+  }
+
+  const token = authHeader.split(" ")[1];
+  if (!token) {
+    throw new Error("Token missing");
+  }
+
+  try {
+    const user = await jwtVerify<SessionUser>(token, JWT_SECRET);
+    context.state.user = user.payload;
+  } catch (_err) {
+    throw new Error("Invalid token");
+  }
+}
+
+export async function hasAccess<T extends Resource, K extends Action<T>>(
+  context: Context,
+  resource: T,
+  action: K,
+): Promise<boolean> {
+  try {
+    await authenticate(context);
+    const auth = new Auth(context);
+    return auth.can(resource, action);
+  } catch (_) {
+    return false;
+  }
+}

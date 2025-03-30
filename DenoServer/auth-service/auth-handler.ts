@@ -5,8 +5,8 @@ export type Resource = keyof typeof resources;
 export type Action<T extends Resource> = (typeof resources)[T][number];
 
 const resources = {
-  player: ["create", "read", "update", "delete"],
-  game: ["create", "read", "update", "delete"],
+  player: ["deactivate", "reactivate"],
+  game: ["delete"],
   user: ["read", "delete"],
   roles: ["write"],
 } as const;
@@ -33,7 +33,7 @@ export class Auth {
     }
 
     const assignedActionsToResource = roles[this.user.role as keyof typeof roles].find(
-      (role) => role.resource === resource
+      (role) => role.resource === resource,
     );
 
     if (!assignedActionsToResource) {
