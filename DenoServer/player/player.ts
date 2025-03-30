@@ -34,37 +34,6 @@ export async function getProfilePictureNew(name: string): Promise<string | null>
   return null;
 }
 
-export async function uploadProfilePictureOld(name: string, base64: string) {
-  if (!name) {
-    throw new Error("name is required");
-  }
-
-  if (!base64) {
-    throw new Error("base64 is required");
-  }
-
-  const res = await kv.set(["profile-picture-id", name], base64);
-
-  if (res.ok) {
-    return;
-  } else {
-    throw new Error("Failed to upload profile picture");
-  }
-}
-
-export async function getProfilePictureOld(name: string): Promise<string | null> {
-  if (!name) {
-    throw new Error("name is required");
-  }
-
-  const res = await kv.get(["profile-picture-id", name]);
-
-  if (res.value) {
-    return res.value as string;
-  }
-  return null;
-}
-
 export async function deleteAllProfilePicturesOld() {
   const res = kv.list({ prefix: ["profile-picture-id"] });
 
