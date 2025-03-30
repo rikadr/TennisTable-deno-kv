@@ -1,5 +1,5 @@
 import { Router } from "oak";
-import { DEFAULT_PROFILE_PHOTO, getProfilePictureNew, uploadProfilePictureNew } from "./player.ts";
+import { DEFAULT_PROFILE_PHOTO, getProfilePicture, uploadProfilePicture } from "./player.ts";
 import { webSocketClientManager } from "../server.ts";
 
 function decodeBase64(base64: string): Uint8Array {
@@ -25,7 +25,7 @@ export function registerPlayerRoutes(api: Router) {
     const playerId = context.params.player;
 
     try {
-      await uploadProfilePictureNew(playerId, base64);
+      await uploadProfilePicture(playerId, base64);
       context.response.status = 204;
       webSocketClientManager.reloadClients();
     } catch (err) {
@@ -39,7 +39,7 @@ export function registerPlayerRoutes(api: Router) {
    * Get a player profile picture
    */
   api.get("/player/:player/profile-picture", async (context) => {
-    let imgbase64 = await getProfilePictureNew(context.params.player!);
+    let imgbase64 = await getProfilePicture(context.params.player!);
 
     if (!imgbase64) {
       imgbase64 = DEFAULT_PROFILE_PHOTO;

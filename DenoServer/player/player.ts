@@ -3,7 +3,7 @@ import { kv } from "../db.ts";
 export type Player = { name: string };
 export type CreatePlayerPayload = { name: string };
 
-export async function uploadProfilePictureNew(name: string, base64: string) {
+export async function uploadProfilePicture(name: string, base64: string) {
   if (!name) {
     throw new Error("name is required");
   }
@@ -21,7 +21,7 @@ export async function uploadProfilePictureNew(name: string, base64: string) {
   }
 }
 
-export async function getProfilePictureNew(name: string): Promise<string | null> {
+export async function getProfilePicture(name: string): Promise<string | null> {
   if (!name) {
     throw new Error("name is required");
   }
@@ -32,14 +32,6 @@ export async function getProfilePictureNew(name: string): Promise<string | null>
     return res.value as string;
   }
   return null;
-}
-
-export async function deleteAllProfilePicturesOld() {
-  const res = kv.list({ prefix: ["profile-picture-id"] });
-
-  for await (const profile of res) {
-    await kv.delete(profile.key);
-  }
 }
 
 export const DEFAULT_PROFILE_PHOTO =

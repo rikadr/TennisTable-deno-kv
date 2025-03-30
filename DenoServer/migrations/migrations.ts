@@ -1,5 +1,3 @@
-import { deleteAllProfilePicturesOld } from "../player/player.ts";
-
 type Migration = {
   name: string;
   description?: string;
@@ -10,11 +8,10 @@ type Migration = {
 // ADD NEW MIGRATIONS TO THE END OF THE ARRAY
 
 export const migrations: Migration[] = [
-  {
-    name: "delete-old-profile-pictures",
-    up: async () => {
-      // Move profile pictures to new ids
-      await deleteAllProfilePicturesOld();
-    },
-  },
+  // {
+  //   name: "example-migration",
+  //   up: async () => {
+  //     console.log("Running example migration");
+  //   },
+  // },
 ];
