@@ -1,4 +1,5 @@
 import { kv } from "../db.ts";
+import { uploadProfilePicture } from "../player/player.ts";
 
 type Migration = {
   name: string;
@@ -12,20 +13,29 @@ type Migration = {
 
 export const migrations: Migration[] = [
   {
-    name: "delete old data",
+    name: "migrate-skimore-profile-pictures",
     up: async () => {
-      await deleteKVDBByPrefix("client-db-cache");
-      await deleteKVDBByPrefix("game");
-      await deleteKVDBByPrefix("player");
-      await deleteKVDBByPrefix("tournament");
+      const idss = ["JI2IoMDt6V", "PC6lk9OwY0"];
+      for (const id of idss) {
+        const res = await getProfilePictureOld(id);
+        if (res) {
+          await uploadProfilePicture(id, res);
+          await kv.delete(["profile-picture-id", id]);
+        }
+      }
     },
   },
 ];
 
-async function deleteKVDBByPrefix(prefix: string) {
-  const res = kv.list({ prefix: [prefix] });
-
-  for await (const profile of res) {
-    await kv.delete(profile.key);
+async function getProfilePictureOld(name: string): Promise<string | null> {
+  if (!name) {
+    throw new Error("name is required");
   }
+
+  const res = await kv.get(["profile-picture-id", name]);
+
+  if (res.value) {
+    return res.value as string;
+  }
+  return null;
 }
