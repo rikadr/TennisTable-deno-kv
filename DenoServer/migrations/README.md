@@ -11,3 +11,7 @@ migrations.
 Why inline migrations list instead of separate migration files?
 
 - because deno deploy does not support import of local files
+
+**IMPORTANT** The edge servers can easily run out of memory and crach mid
+migration. This will cause the next restart to retry the migration. If your
+migration script is not idempotent it can cause issues.
