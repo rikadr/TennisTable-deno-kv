@@ -1,3 +1,5 @@
+import { kv } from "../db.ts";
+
 type Migration = {
   name: string;
   description?: string;
@@ -9,10 +11,21 @@ type Migration = {
 // READ MORE LIMITATIONS IN README.md
 
 export const migrations: Migration[] = [
-  // {
-  //   name: "example-migration",
-  //   up: async () => {
-  //     console.log("Running example migration");
-  //   },
-  // },
+  {
+    name: "delete old data",
+    up: async () => {
+      await deleteKVDBByPrefix("client-db-cache");
+      await deleteKVDBByPrefix("game");
+      await deleteKVDBByPrefix("player");
+      await deleteKVDBByPrefix("tournament");
+    },
+  },
 ];
+
+async function deleteKVDBByPrefix(prefix: string) {
+  const res = kv.list({ prefix: [prefix] });
+
+  for await (const profile of res) {
+    await kv.delete(profile.key);
+  }
+}
