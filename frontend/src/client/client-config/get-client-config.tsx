@@ -65,11 +65,8 @@ export enum Theme {
   // CLIENT_OPTIO = "optio",
 }
 
-export const overrideTheme = window.localStorage.getItem(OVERRIDE_THEME_KEY)?.replaceAll('"', "");
-
 export function themeOrOverrideTheme(theme: Theme): Theme {
-  console.log({ overrideTheme, theme });
-
+  const overrideTheme = window.localStorage.getItem(OVERRIDE_THEME_KEY)?.replaceAll('"', "");
   if (overrideTheme) {
     return overrideTheme as Theme;
   }
