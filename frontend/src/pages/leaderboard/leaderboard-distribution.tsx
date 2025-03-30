@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { classNames } from "../../common/class-names";
-import { stringToColor } from "../compare-players-page";
+import { stringToColor } from "../../common/string-to-color";
 
 export const LeaderboardDistrubution: React.FC = () => {
   const context = useEventDbContext();

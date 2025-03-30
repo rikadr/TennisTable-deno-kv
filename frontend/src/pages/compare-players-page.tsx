@@ -5,28 +5,7 @@ import { useWindowSize } from "usehooks-ts";
 import { NameType, ValueType } from "recharts/types/component/DefaultTooltipContent";
 import { useEventDbContext } from "../wrappers/event-db-context";
 import { fmtNum } from "../common/number-utils";
-
-export function stringToColor(name?: string) {
-  if (!name) return "#4338ca";
-  switch (name) {
-    case "Peder":
-    case "Rikard":
-    case "Simone":
-      name = name.toLowerCase();
-  }
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  let color = "#";
-  const brightnessThreshold = 100; // Ensures brightness is above 50%
-  for (let i = 0; i < 3; i++) {
-    let value = (hash >> (i * 8)) & 0xff;
-    value = value < brightnessThreshold ? value * 1.11 : value;
-    color += ("00" + value.toString(16)).substr(-2);
-  }
-  return color;
-}
+import { stringToColor } from "../common/string-to-color";
 
 export const ComparePlayersPage: React.FC = () => {
   const context = useEventDbContext();

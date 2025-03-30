@@ -8,8 +8,8 @@ import { useEventDbContext } from "../../wrappers/event-db-context";
 import { PodiumPlace } from "../leaderboard/podium-place";
 import { PlayerPointsDistrubution } from "./player-points-distribution";
 import { ProfilePicture } from "./profile-picture";
-import { stringToColor } from "../compare-players-page";
 import { PlayerGamesDistrubution } from "./player-games-distribution";
+import { stringToColor } from "../../common/string-to-color";
 
 export const PlayerPage: React.FC = () => {
   const { name: playerId } = useParams();

@@ -6,6 +6,7 @@ type Migration = {
 
 // DO NOT MODIFY EXISTING MIGRATIONS
 // ADD NEW MIGRATIONS TO THE END OF THE ARRAY
+// READ MORE LIMITATIONS IN README.md
 
 export const migrations: Migration[] = [
   // {

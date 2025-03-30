@@ -13,7 +13,7 @@ import {
 import { BarRectangleItem } from "recharts/types/cartesian/Bar";
 import { NameType, ValueType } from "recharts/types/component/DefaultTooltipContent";
 import { ProfilePicture } from "../../player/profile-picture";
-import { stringToColor } from "../../compare-players-page";
+import { stringToColor } from "../../../common/string-to-color";
 
 export type CandelStickData = {
   name: string;

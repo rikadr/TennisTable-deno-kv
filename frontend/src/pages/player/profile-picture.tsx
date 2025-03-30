@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import { classNames } from "../../common/class-names";
-import { stringToColor } from "../compare-players-page";
+import { stringToColor } from "../../common/string-to-color";
 
 type Props = {
   playerId?: string;
