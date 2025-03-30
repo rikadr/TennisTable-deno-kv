@@ -54,7 +54,7 @@ export class TennisTable {
   }
 
   playerName(id: string | undefined | null) {
-    if (!id) return "404 no id";
-    return this.eventStore.playersReducer.getPlayer(id)?.name ?? `404 ${id}`;
+    if (!id) return "⛔️No id⛔️";
+    return this.eventStore.playersReducer.getPlayer(id)?.name ?? `⛔️${id}⛔️`;
   }
 }

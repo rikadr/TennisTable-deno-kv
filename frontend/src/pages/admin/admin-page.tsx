@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { queryClient } from "../../common/query-client";
 import { relativeTimeString } from "../../common/date-utils";
 import { Users } from "../users";
@@ -14,9 +14,11 @@ import {
 } from "../../client/client-db/event-store/event-types";
 
 export const AdminPage: React.FC = () => {
-  const { eventStore } = useEventDbContext();
+  const context = useEventDbContext();
 
   const addEventMutation = useEventMutation();
+
+  const [showGames, setShowGames] = useState(false);
 
   function handleDeactivatePlayer(playerId: string) {
     const event: PlayerDeactivated = {
@@ -26,7 +28,7 @@ export const AdminPage: React.FC = () => {
       data: null,
     };
 
-    const validateResponse = eventStore.playersReducer.validateDeactivatePlayer(event);
+    const validateResponse = context.eventStore.playersReducer.validateDeactivatePlayer(event);
     if (validateResponse.valid === false) {
       console.error(validateResponse.message);
       return;
@@ -43,7 +45,7 @@ export const AdminPage: React.FC = () => {
       data: null,
     };
 
-    const validateResponse = eventStore.playersReducer.validateReactivatePlayer(event);
+    const validateResponse = context.eventStore.playersReducer.validateReactivatePlayer(event);
     if (validateResponse.valid === false) {
       console.error(validateResponse.message);
       return;
@@ -60,7 +62,7 @@ export const AdminPage: React.FC = () => {
       data: null,
     };
 
-    const validateResponse = eventStore.gamesReducer.validateDeleteGame(event);
+    const validateResponse = context.eventStore.gamesReducer.validateDeleteGame(event);
     if (validateResponse.valid === false) {
       console.error(validateResponse.message);
       return;
@@ -82,15 +84,16 @@ export const AdminPage: React.FC = () => {
       <h1>ADMIN PAGE</h1>
       <br />
       <h2>Total distribution of games played</h2>
-      <AllPlayerGamesDistrubution />
+      <button onClick={() => setShowGames(!showGames)}>{showGames ? "Hide" : "Show"}</button>
+      {showGames && <AllPlayerGamesDistrubution />}
       <Users />
-      <p>Active players: {eventStore.playersReducer.players.length}</p>
+      <p>Active players: {context.eventStore.playersReducer.players.length}</p>
       <p>
         Deactivating players is reverable. No games will be deleted. It will only result in games with this player not
         counting towards anyone's elo rating.
       </p>
       <section className="flex flex-col gap-2 mt-2">
-        {eventStore.playersReducer.players.map((player) => (
+        {context.eventStore.playersReducer.players.map((player) => (
           <div className="flex gap-2" key={player.id}>
             <p>{player.name}</p>
             <button
@@ -101,8 +104,8 @@ export const AdminPage: React.FC = () => {
             </button>
           </div>
         ))}
-        <p>Inactive players: {eventStore.playersReducer.inactivePlayers.length}</p>
-        {eventStore.playersReducer.inactivePlayers.map((player) => (
+        <p>Inactive players: {context.eventStore.playersReducer.inactivePlayers.length}</p>
+        {context.eventStore.playersReducer.inactivePlayers.map((player) => (
           <div className="flex gap-2" key={player.id}>
             <p>{player.name}</p>
             <button
@@ -115,21 +118,28 @@ export const AdminPage: React.FC = () => {
         ))}
       </section>
 
-      <p>Games: {eventStore.gamesReducer.games.length}</p>
+      <p>Games: {context.eventStore.gamesReducer.games.length}</p>
       <p>
         Deleting games is not permanent BUT I'd prefer not to restore deleted games, so please try to just delete games
         you want to delete.
       </p>
       <section className="flex flex-col-reverse gap-2 mt-2">
-        {eventStore.gamesReducer.games.map((game) => (
+        {context.eventStore.gamesReducer.games.map((game) => (
           <div className="flex gap-2" key={game.id}>
             <p>
-              {eventStore.playersReducer.getPlayer(game.winner)?.name} won over{" "}
-              {eventStore.playersReducer.getPlayer(game.loser)?.name} {relativeTimeString(new Date(game.playedAt))}
+              {context.eventStore.playersReducer.getPlayer(game.winner)?.name} won over{" "}
+              {context.eventStore.playersReducer.getPlayer(game.loser)?.name}{" "}
+              {relativeTimeString(new Date(game.playedAt))}
             </p>
             <button
               className="text-xs bg-red-500 hover:bg-red-800 text-white px-1 rounded-md"
-              onClick={() => handleDeleteGame(game.id)}
+              onClick={() =>
+                window.confirm(
+                  `Are you sure you want to delete the game where ${
+                    context.eventStore.playersReducer.getPlayer(game.winner)?.name
+                  } won over ${context.eventStore.playersReducer.getPlayer(game.loser)?.name}?`,
+                ) && handleDeleteGame(game.id)
+              }
             >
               Delete
             </button>
