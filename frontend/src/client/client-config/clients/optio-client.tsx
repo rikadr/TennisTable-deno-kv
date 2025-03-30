@@ -66,7 +66,7 @@ const optioPlayers = {
 export class OptioClient implements ClientConfig {
   id = process.env.REACT_APP_CLIENT;
   name = "Optio";
-  theme = Theme.DEFAULT;
+  theme = Theme.EASTER;
   logo = new GuestClient().logo;
   snow = false;
   title = new GuestClient().title;
