@@ -31,7 +31,7 @@ export const TournamentsListPage: React.FC = () => {
                 )
               </p>
               {t.inSignupPeriod && (
-                <div className="bg-secondary-background text-secondary-text w-full text-center py-2 rounded-lg">
+                <div className="bg-secondary-background text-secondary-text w-full text-center py-2 rounded-lg font-semibold">
                   Sign up now!
                 </div>
               )}

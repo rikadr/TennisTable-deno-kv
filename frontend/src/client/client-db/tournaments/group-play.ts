@@ -187,8 +187,8 @@ export class TournamentGroupPlay {
         const loser = scores.get(loserName)!;
         if (game.skipped) {
           loser.dnf++;
-          loser.score += Tournament.GROUP_POINTS.DNF;
-          loser.adjustedScore += Tournament.GROUP_POINTS.DNF * loser.groupSizeAdjustmentFactor;
+          loser.score += Tournament.GROUP_POINTS.SKIP;
+          loser.adjustedScore += Tournament.GROUP_POINTS.SKIP * loser.groupSizeAdjustmentFactor;
         } else {
           loser.loss++;
           loser.score += Tournament.GROUP_POINTS.LOSS;

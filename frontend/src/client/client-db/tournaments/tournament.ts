@@ -22,7 +22,7 @@ export class Tournament {
   groupPlay?: TournamentGroupPlay;
   bracket?: TournamentBracket;
 
-  static readonly GROUP_POINTS = { WIN: 3, LOSS: 1, DNF: 0 } as const;
+  static readonly GROUP_POINTS = { WIN: 3, LOSS: 1, SKIP: 0 } as const;
 
   private static readonly RECENT_WINNER_THRESHOLD = 2 * ONE_WEEK;
   private static readonly SIGNUP_PERIOD = 2 * ONE_WEEK;

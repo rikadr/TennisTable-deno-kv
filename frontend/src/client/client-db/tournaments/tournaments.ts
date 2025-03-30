@@ -4,7 +4,7 @@ import { Tournament } from "./tournament";
 
 export class Tournaments {
   private readonly parent: TennisTable;
-  private readonly skipIsEnabled: boolean = true; // False for prod
+  private readonly skipIsEnabled: boolean = false; // False for prod
   #tournamentsCache: Tournament[] | undefined;
 
   constructor(parent: TennisTable) {

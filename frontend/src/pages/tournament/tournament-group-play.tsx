@@ -40,14 +40,14 @@ const GroupPlayRules: React.FC = () => (
       <div className="flex gap-4">
         <p>Win: {fmtNum(Tournament.GROUP_POINTS.WIN)}</p>
         <p>Loss: {fmtNum(Tournament.GROUP_POINTS.LOSS)}</p>
-        <p>DNF: {fmtNum(Tournament.GROUP_POINTS.DNF)}</p>
+        <p>Skip: {fmtNum(Tournament.GROUP_POINTS.SKIP)}</p>
       </div>
       <p className="font-light text-sm">
         Scores are multiplied by the <span className="font-bold underline">group size adjustment factor </span> to
         account for smaller groups having fewer games to score points in.
       </p>
       <p className="italic font-light text-xs">
-        * If a game is skipped the advancing player scores as a winner and the other player as a DNF
+        * If a game is skipped the advancing player scores as a <b>winner</b> and the other player as a <b>Skip</b>
       </p>
     </div>
     <div className="bg-secondary-background text-secondary-text w-96 space-y-2 py-2 px-4 rounded-lg m-4">
