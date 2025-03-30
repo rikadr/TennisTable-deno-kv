@@ -71,10 +71,21 @@ export class OptioClient implements ClientConfig {
   snow = false;
   title = new GuestClient().title;
   favicon = new GuestClient().favicon;
-  tournaments = [optioChristmasTournament];
+  tournaments = [optioChristmasTournament, optioEasterTournament];
 }
 
-export const optioChristmasTournament: TournamentDB = {
+const optioEasterTournament: TournamentDB = {
+  id: "bwzIXeHSRF",
+  name: "Easter Tournament 2025 🏓🐣",
+  description:
+    "Now with group play! All participants are first divided into groups where everyone plays everyone. Each game you score tournament-points to determin what players advance to the tournament finals. Sign up with your player and join the tournament 🚀",
+  startDate: 1744012800000, // "Apr 7 2025 09:00:00 GMT+0100"
+  groupPlay: true,
+  signedUp: [],
+  skippedGames: [],
+  playerOrder: ["Ask Rikard to start the tournament"],
+};
+const optioChristmasTournament: TournamentDB = {
   id: "randomid37",
   name: "Optio Christmas Tournament 2024 🏓🎅🏻",
   description:

@@ -1,13 +1,12 @@
 import { Link } from "react-router-dom";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { relativeTimeString } from "../../common/date-utils";
+import { WinnerBox } from "../leaderboard/tournament-pending-games";
 
 export const TournamentsListPage: React.FC = () => {
-  const {
-    client: { tournaments },
-  } = useEventDbContext();
+  const { tournaments } = useEventDbContext();
 
-  const sortedTournaments = [...tournaments].sort((a, b) => b.startDate - a.startDate);
+  const sortedTournaments = tournaments.getTournaments().sort((a, b) => b.startDate - a.startDate);
 
   return (
     <div className="max-w-96 mx-4 md:mx-10 space-y-4 text-primary-text">
@@ -15,7 +14,7 @@ export const TournamentsListPage: React.FC = () => {
       <div className="max-w-96 flex flex-col gap-2">
         {sortedTournaments.map((t) => (
           <Link key={t.id} to={`/tournament?tournament=${t.id}`} className="group">
-            <div className="space-y-1 p-2 ring-1 ring-secondary-background rounded-lg group-hover:bg-secondary-background/30">
+            <div className="space-y-2 p-4 ring-1 ring-secondary-background rounded-lg group-hover:bg-secondary-background/30">
               <h2>{t.name}</h2>
               <p>{t.description}</p>
               <p className="text-xs text-center italic mt-2">Start date:</p>
@@ -31,6 +30,17 @@ export const TournamentsListPage: React.FC = () => {
                 }).format(new Date(t.startDate))}
                 )
               </p>
+              {t.inSignupPeriod && (
+                <div className="bg-secondary-background text-secondary-text w-full text-center py-2 rounded-lg">
+                  Sign up now!
+                </div>
+              )}
+              {t.winner && (
+                <div className="min-w-80 max-w-96 space-y-2">
+                  <p className="text-xs italic">Won {relativeTimeString(new Date(t.endDate || 0))}</p>
+                  <WinnerBox winner={t.winner} />
+                </div>
+              )}
             </div>
           </Link>
         ))}

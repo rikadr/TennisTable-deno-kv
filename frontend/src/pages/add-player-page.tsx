@@ -65,7 +65,7 @@ export const AddPlayerPage: React.FC = () => {
         onChange={(e) => setPlayerName(e.target.value)}
         placeholder="Name"
       />
-      {errorMessage && <p className="text-red-500 bg-gray-700">{errorMessage}</p>}
+      {errorMessage && !playerSuccessfullyAdded && <p className="text-red-500 bg-gray-700">{errorMessage}</p>}
       <button
         disabled={!!errorMessage || addEventMutation.isPending || !playerName}
         className={classNames(
