@@ -49,7 +49,12 @@ export const LeaderBoard: React.FC = () => {
         {nr3 && <PodiumPlace size="xs" place={3} playerSummary={nr3} profilePicture />}
         {/* <LeaderboardDistrubution /> */}
         <RecentGames />
-        {theme === Theme.EASTER && <img src={easterBunnyChick} alt="Easter bunny chick" />}
+        {theme === Theme.EASTER && (
+          <>
+            <p>Showing easter image</p>
+            <img src={easterBunnyChick} alt="Easter bunny chick" />
+          </>
+        )}
       </div>
       <div>
         <div className="flex flex-col divide-y divide-primary-text/50">
