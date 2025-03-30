@@ -1,7 +1,6 @@
 import { Application, Router } from "oak";
 import { oakCors } from "cors";
 import { registerPlayerRoutes } from "./player/player.routes.ts";
-import { registerGameRoutes } from "./game/game.routes.ts";
 import { registerUserRoutes } from "./user/user.routes.ts";
 import { registerWebSocketRoutes } from "./web-socket/web-socket.routs.ts";
 import { WebSocketClientManager } from "./web-socket/web-socket-client-manager.ts";
@@ -33,7 +32,6 @@ registerMigrationsRoutes(api);
  * Register routes
  */
 registerPlayerRoutes(api);
-registerGameRoutes(api);
 registerWebSocketRoutes(api);
 registerUserRoutes(api);
 
