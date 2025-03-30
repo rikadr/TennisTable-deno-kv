@@ -12,7 +12,7 @@ export async function uploadProfilePictureNew(name: string, base64: string) {
     throw new Error("base64 is required");
   }
 
-  const res = await kv.set(["profile-picture-id", name], base64);
+  const res = await kv.set(["profile-picture-id-new", name], base64);
 
   if (res.ok) {
     return;
@@ -26,7 +26,7 @@ export async function getProfilePictureNew(name: string): Promise<string | null>
     throw new Error("name is required");
   }
 
-  const res = await kv.get(["profile-picture-id", name]);
+  const res = await kv.get(["profile-picture-id-new", name]);
 
   if (res.value) {
     return res.value as string;
@@ -43,7 +43,7 @@ export async function uploadProfilePictureOld(name: string, base64: string) {
     throw new Error("base64 is required");
   }
 
-  const res = await kv.set(["profile-picture", name], base64);
+  const res = await kv.set(["profile-picture-id", name], base64);
 
   if (res.ok) {
     return;
@@ -57,7 +57,7 @@ export async function getProfilePictureOld(name: string): Promise<string | null>
     throw new Error("name is required");
   }
 
-  const res = await kv.get(["profile-picture", name]);
+  const res = await kv.get(["profile-picture-id", name]);
 
   if (res.value) {
     return res.value as string;
@@ -66,7 +66,7 @@ export async function getProfilePictureOld(name: string): Promise<string | null>
 }
 
 export async function deleteAllProfilePicturesOld() {
-  const res = kv.list({ prefix: ["profile-picture"] });
+  const res = kv.list({ prefix: ["profile-picture-id"] });
 
   for await (const profile of res) {
     await kv.delete(profile.key);
