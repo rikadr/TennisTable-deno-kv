@@ -36,8 +36,10 @@ export class EventCache {
     let existingEvents: EventType[] = [];
     const cache = await this.#getEventCache();
     if (cache) {
+      console.log("Append to cached events");
       existingEvents = cache.events;
     } else {
+      console.log("Append to db fetched events");
       existingEvents = await getEventsAfter(0);
     }
 
