@@ -7,7 +7,7 @@ import { ProfilePicture } from "../player/profile-picture";
 import { RecentGames } from "./recent-games";
 import { TournamentHighlightsAndPendingGames } from "./tournament-pending-games";
 import { getClientConfig, Theme, themeOrOverrideTheme } from "../../client/client-config/get-client-config";
-import easterBunnyChick from "../../img/easter/bunny-chick.png";
+import easterBunny from "../../img/easter/easter-bunny-realistic.png";
 
 export const LeaderBoard: React.FC = () => {
   const context = useEventDbContext();
@@ -49,7 +49,7 @@ export const LeaderBoard: React.FC = () => {
         {nr3 && <PodiumPlace size="xs" place={3} playerSummary={nr3} profilePicture />}
         {/* <LeaderboardDistrubution /> */}
         <RecentGames />
-        {theme === Theme.EASTER && <img src={easterBunnyChick} alt="Easter bunny chick" />}
+        {theme === Theme.EASTER && <img src={easterBunny} alt="Easter bunny chick" />}
       </div>
       <div>
         <div className="flex flex-col divide-y divide-primary-text/50">
