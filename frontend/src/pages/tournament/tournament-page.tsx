@@ -12,6 +12,7 @@ import { relativeTimeString } from "../../common/date-utils";
 import { TournamentSignup } from "./tournament-signup";
 import { TournamentGroupPlayComponent } from "./tournament-group-play";
 import { Tournament, TournamentGame } from "../../client/client-db/tournaments/tournament";
+import { optioPlayersByName } from "../../client/client-config/clients/optio-client";
 
 export const TournamentPage: React.FC = () => {
   const { tournament: tournamentId, player1, player2 } = useTennisParams();
@@ -97,17 +98,16 @@ export const TournamentPage: React.FC = () => {
                 let tries = 0;
 
                 const likelyWinners = [
-                  // TODO Needs to convert to ids for it to work
-                  "Alexander",
-                  "Rasmus",
-                  "Fooa",
-                  "Christoffer",
-                  "Simone",
-                  "Peder",
-                  // "Erling",
-                  // "Rikard",
-                  // "Oskar",
-                ];
+                  optioPlayersByName.Alexander,
+                  optioPlayersByName.Rasmus,
+                  optioPlayersByName.Fooa,
+                  optioPlayersByName.Christoffer,
+                  optioPlayersByName.Simone,
+                  optioPlayersByName.Peder,
+                  // optioPlayersByName.Erling,
+                  // optioPlayersByName.Rikard,
+                  // optioPlayersByName.Oskar,
+                ] as string[];
                 let winner: string | undefined = "";
                 let winners: Record<string, number> = {};
 

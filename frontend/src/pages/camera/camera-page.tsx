@@ -6,6 +6,7 @@ import { useMutation } from "@tanstack/react-query";
 import { httpClient } from "../../common/http-client";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useEventDbContext } from "../../wrappers/event-db-context";
+import { getClientConfig } from "../../client/client-config/get-client-config";
 
 export const CameraPage: React.FC = () => {
   const context = useEventDbContext();
@@ -86,6 +87,21 @@ export const CameraPage: React.FC = () => {
   }
 
   const btnClassNames = "px-4 py-2 bg-green-700 hover:bg-green-900 text-white rounded-lg font-thin";
+
+  const client = getClientConfig();
+
+  if (client?.id === "optio") {
+    // Not available at the moment
+    return (
+      <div className="flex flex-col gap-4 items-center">
+        <h1>Take new profile picture for {context.playerName(playerId)}</h1>
+        <p>
+          Sorry, this feature is not available at the moment (maintenance onging). Please come back later, or ask Rikard
+          to add it in for you.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-4 items-center">

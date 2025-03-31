@@ -33,7 +33,7 @@ export const optioPlayersById = {
   XVUtdsdCFj: "Bendik",
 };
 
-const optioPlayers = {
+export const optioPlayersByName = {
   Rasmus: "fwSr2gbKZ9",
   Simone: "KvYCQupTl9",
   Alexander: "zAZF4oc08J",
@@ -93,25 +93,25 @@ const optioChristmasTournament: TournamentDB = {
   startDate: 1732613408196, // Nov 26 2024 10:30:08 GMT+0100
   groupPlay: false,
   signedUp: [],
-  skippedGames: [{ advancing: optioPlayers.Marius, eliminated: optioPlayers.Erling, time: 1732709055829 }], // Marius advancing, Erling eliminated
+  skippedGames: [{ advancing: optioPlayersByName.Marius, eliminated: optioPlayersByName.Erling, time: 1732709055829 }], // Marius advancing, Erling eliminated
   playerOrder: [
-    optioPlayers.Rasmus,
-    optioPlayers.Simone,
-    optioPlayers.Alexander,
-    optioPlayers.Fooa,
-    optioPlayers.Peder,
-    optioPlayers.Erling,
-    optioPlayers.Oskar,
-    optioPlayers["Fredrik H"],
-    optioPlayers.Rikard,
-    optioPlayers.Ole,
-    optioPlayers.Marius,
-    optioPlayers.Gina,
-    optioPlayers.Gustas,
-    optioPlayers.Daniele,
-    optioPlayers["Ole Anders"],
-    optioPlayers.Kevin,
-    optioPlayers["James 007"],
-    optioPlayers["Chakib Youcefi"],
+    optioPlayersByName.Rasmus,
+    optioPlayersByName.Simone,
+    optioPlayersByName.Alexander,
+    optioPlayersByName.Fooa,
+    optioPlayersByName.Peder,
+    optioPlayersByName.Erling,
+    optioPlayersByName.Oskar,
+    optioPlayersByName["Fredrik H"],
+    optioPlayersByName.Rikard,
+    optioPlayersByName.Ole,
+    optioPlayersByName.Marius,
+    optioPlayersByName.Gina,
+    optioPlayersByName.Gustas,
+    optioPlayersByName.Daniele,
+    optioPlayersByName["Ole Anders"],
+    optioPlayersByName.Kevin,
+    optioPlayersByName["James 007"],
+    optioPlayersByName["Chakib Youcefi"],
   ],
 };

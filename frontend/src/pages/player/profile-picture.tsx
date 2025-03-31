@@ -1,6 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { classNames } from "../../common/class-names";
 import { stringToColor } from "../../common/string-to-color";
+import { optioImageLookup } from "../../img/optio-profile-pictures/id-to-image-lookup";
 
 type Props = {
   playerId?: string;
@@ -27,7 +28,10 @@ export const ProfilePicture: React.FC<Props> = ({
         "w-full h-full object-cover",
         clickToEdit && " group-hover:opacity-50 transition-opacity duration-150",
       )}
-      src={`${process.env.REACT_APP_API_BASE_URL}/player/${playerId}/profile-picture`} // TODO: Profile pictures are stored on the player name, not the player id... Need to fix
+      src={
+        (playerId && optioImageLookup[playerId as keyof typeof optioImageLookup]) ??
+        `${process.env.REACT_APP_API_BASE_URL}/player/${playerId}/profile-picture`
+      }
       alt="Profile"
     />
   );
