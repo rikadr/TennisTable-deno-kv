@@ -7,6 +7,8 @@ import { GroupScorePlayer, TournamentGroupPlay } from "../../client/client-db/to
 import { GameMenuItems, getGameKeyFromPlayers, QuestionMark, winStateEmoji } from "./tournament-page";
 import { Menu, MenuButton } from "@headlessui/react";
 import { useTennisParams } from "../../hooks/use-tennis-params";
+import { optioPlayersById } from "../../client/client-config/clients/optio-client";
+import { useState } from "react";
 
 export const TournamentGroupPlayComponent: React.FC<{
   tournament: Tournament;
@@ -21,6 +23,7 @@ export const TournamentGroupPlayComponent: React.FC<{
 
   return (
     <div className="text-primary-text">
+      {/* <GroupDistribution tournament={tournament} /> */}
       <h1>Group play</h1>
       <div className="md:flex">
         <TournamentGroupScores tournament={tournament} />
@@ -54,7 +57,7 @@ const GroupPlayRules: React.FC = () => (
       <p>Tie-breakers are determined by the following criteria in the given order:</p>
       <div className="italic font-light text-xs">
         <p>1: Most wins</p>
-        <p>2: Least DNFs</p>
+        <p>2: Least skips</p>
         <p>3: Least losses</p>
         <p>4: Highest score before group size adjustment</p>
         <p>5: Highest ELO rating</p>
@@ -64,6 +67,53 @@ const GroupPlayRules: React.FC = () => (
     </div>
   </div>
 );
+
+export const PlacementBox: React.FC<{ on: boolean }> = ({ on }) => {
+  const [override, setOverride] = useState<boolean | null>(null);
+  return (
+    <div
+      onClick={() => setOverride((prev) => (prev === null ? !on : !prev))}
+      className={classNames(
+        "w-8 h-5 ring-secondary-background ring-[0.5px]",
+        ((on && override === null) || !!override) && "bg-secondary-background",
+      )}
+    />
+  );
+};
+/** Used to debug group distribution visually */
+export const GroupDistribution: React.FC<{ tournament: Tournament }> = ({ tournament }) => {
+  const players = tournament.groupPlay!.playerOrder;
+  const groups = tournament.groupPlay!.groups;
+  const groupDistribution: { id: string; groupIndex: number }[] = players.map((player) => ({
+    id: player,
+    groupIndex: groups.findIndex((group) => group.players.includes(player)),
+  }));
+  return (
+    <div className="flex flex-col ">
+      <div className="flex">
+        <div className="w-24 mr-2" />
+
+        {groups.map((group, index) => (
+          <div key={index} className="w-8">
+            {index + 1} ({group.players.length})
+          </div>
+        ))}
+      </div>
+      {groupDistribution.map((player, playerIndex) => (
+        <div
+          key={player.id}
+          className="text-primary-text ring-secondary-background ring-[0.5px] hover:bg-secondary-background/30 flex"
+        >
+          <p className="w-20 truncate">{optioPlayersById[player.id as keyof typeof optioPlayersById]}</p>
+          <p className="w-5 truncate">{playerIndex + 1}</p>
+          {groups.map((_, index) => (
+            <PlacementBox key={index} on={player.groupIndex === index} />
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+};
 
 export const TournamentGroupScores: React.FC<{ tournament: Tournament }> = ({ tournament }) => {
   const context = useEventDbContext();
@@ -111,7 +161,7 @@ export const TournamentGroupScores: React.FC<{ tournament: Tournament }> = ({ to
             </th>
             <th>Wins</th>
             <th>Loss</th>
-            <th>DNF</th>
+            <th>Skip</th>
           </tr>
         </thead>
         <tbody>

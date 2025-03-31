@@ -59,30 +59,44 @@ export class TournamentGroupPlay {
     const groups: string[][] = [];
     for (let i = 0; i < groupSizes.length; ++i) groups[i] = [];
 
+    // We can safely distribute this number of players in each group first
+    const lowestGroupSize = Math.min(...groupSizes);
+
     let assignedPlayers = 0;
     let lastAssignedTopPlayer = -1;
     let lastAssignedBottomPlayer = players.length;
 
-    while (assignedPlayers < players.length) {
+    // Fill the groups with an even number of players between the groups
+    for (let lowestGroupSizeIndex = 0; lowestGroupSizeIndex < lowestGroupSize; lowestGroupSizeIndex++) {
+      const fillFromBottom = lowestGroupSizeIndex % 2 === 0;
+      const fillFromStart = Math.floor(lowestGroupSizeIndex / 2) % 2 === 0;
       for (let i = 0; i < groups.length; i++) {
-        const worstRemainingPlayer = players[lastAssignedBottomPlayer - 1];
-        if (worstRemainingPlayer && groups[i].length < groupSizes[i]) {
-          // Only adds if room in group
-          groups[i].push(worstRemainingPlayer);
+        const playerToAssignIndex = fillFromBottom ? lastAssignedBottomPlayer - 1 : lastAssignedTopPlayer + 1;
+        const groupToAssignToIndex = fillFromStart ? i : groups.length - 1 - i;
+        groups[groupToAssignToIndex].push(players[playerToAssignIndex]);
+        if (fillFromBottom) {
           lastAssignedBottomPlayer--;
-          assignedPlayers++;
-        }
-        const bestRemainingPlayer = players[lastAssignedTopPlayer + 1];
-        if (bestRemainingPlayer && groups[i].length < groupSizes[i]) {
-          // Only adds if room in group
-          groups[i].push(bestRemainingPlayer);
+        } else {
           lastAssignedTopPlayer++;
-          assignedPlayers++;
         }
+        assignedPlayers++;
       }
     }
 
+    const remainingPlayers = players.length - assignedPlayers;
+
+    // Fill the rest of the players in the groups
+    const fillFromStart = Math.floor((lowestGroupSize - 1) / 2) % 2 === 1;
+    for (let i = 0; i < remainingPlayers; i++) {
+      const playerToAssignIndex = lastAssignedBottomPlayer - 1;
+      const groupToAssignToIndex = fillFromStart ? i : groups.length - 1 - i;
+      groups[groupToAssignToIndex].push(players[playerToAssignIndex]);
+      lastAssignedBottomPlayer--;
+      assignedPlayers++;
+    }
+
     for (const group of groups) {
+      // Sort players by their order in the tournament
       group.sort((a, b) => players.findIndex((n) => n === a) - players.findIndex((n) => n === b));
     }
     return groups;
