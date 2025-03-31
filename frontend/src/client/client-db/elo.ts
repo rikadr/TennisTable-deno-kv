@@ -7,7 +7,7 @@ export abstract class Elo {
   static readonly K = 32;
   static readonly DIVISOR = 400;
   static readonly INITIAL_ELO = 1_000;
-  static readonly GAME_LIMIT_FOR_RANKED = 5;
+  static readonly GAME_LIMIT_FOR_RANKED = 10;
 
   static eloCalculator(
     games: Game[],
