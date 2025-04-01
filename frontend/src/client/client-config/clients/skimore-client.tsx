@@ -13,5 +13,6 @@ export class SkimoreClient implements ClientConfig {
   snow = true;
   title = "SKIMORE - Ping pong klubb";
   favicon = "❄";
+  gameLimitForRanked = 5;
   tournaments = [];
 }

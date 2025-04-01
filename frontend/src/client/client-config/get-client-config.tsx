@@ -14,6 +14,7 @@ export abstract class ClientConfig {
   snow: boolean;
   title: string;
   favicon: string;
+  gameLimitForRanked: number;
   tournaments: TournamentDB[];
 
   protected constructor(data: {
@@ -24,6 +25,7 @@ export abstract class ClientConfig {
     snow?: boolean;
     title: string;
     favicon: string;
+    gameLimitForRanked: number;
     tournaments: TournamentDB[];
   }) {
     this.id = data.id;
@@ -33,6 +35,7 @@ export abstract class ClientConfig {
     this.snow = data.snow ?? false;
     this.title = data.title;
     this.favicon = data.favicon;
+    this.gameLimitForRanked = data.gameLimitForRanked;
     this.tournaments = data.tournaments;
   }
 }

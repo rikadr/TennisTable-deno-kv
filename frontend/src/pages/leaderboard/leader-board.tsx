@@ -1,7 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { getEgg, getPumpkin, PodiumPlace } from "./podium-place";
-import { Elo } from "../../client/client-db/elo";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { ProfilePicture } from "../player/profile-picture";
 import { RecentGames } from "./recent-games";
@@ -92,7 +91,7 @@ export const LeaderBoard: React.FC = () => {
 
         <h1 className="text-2xl text-center text-primary-text mt-10">Unranked players</h1>
         <p className="w-full text-center text-primary-text mb-4">
-          Play {Elo.GAME_LIMIT_FOR_RANKED} or more games to get ranked
+          Play {context.client.gameLimitForRanked} or more games to get ranked
         </p>
         <div className="flex flex-col divide-y divide-primary-text/50">
           <div className="flex gap-4 text-base text-center text-primary-text mb-2">

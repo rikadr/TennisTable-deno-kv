@@ -1,7 +1,6 @@
 import React from "react";
 import { CandelStickData, CandleStickChart } from "./candel-stick";
 import { useEventDbContext } from "../../../wrappers/event-db-context";
-import { Elo } from "../../../client/client-db/elo";
 
 export const MonteCarlo: React.FC = () => {
   const context = useEventDbContext();
@@ -10,7 +9,7 @@ export const MonteCarlo: React.FC = () => {
   const simulation = context.simulations.monteCarloSimulation(10_000);
 
   const formattedRawData: CandelStickData[] = simulation
-    .filter(({ name }) => (leaderboardMap.get(name)?.games.length || 0) >= Elo.GAME_LIMIT_FOR_RANKED)
+    .filter(({ name }) => (leaderboardMap.get(name)?.games.length || 0) >= context.client.gameLimitForRanked)
     .map(({ name, elo }, index) => ({
       name: name,
       rank: index + 1,

@@ -32,7 +32,7 @@ export class Leaderboard {
     const leaderboardMap = this.getCachedLeaderboardMap();
 
     const rankedPlayers: LeaderboardDTO["rankedPlayers"] = Array.from(leaderboardMap.values())
-      .filter((player) => player.games.length >= Elo.GAME_LIMIT_FOR_RANKED)
+      .filter((player) => player.games.length >= this.parent.client.gameLimitForRanked)
       .sort((a, b) => b.elo - a.elo)
       .map((player, index) => ({
         ...player,
@@ -40,7 +40,7 @@ export class Leaderboard {
       }));
 
     const unrankedPlayers: LeaderboardDTO["unrankedPlayers"] = Array.from(leaderboardMap.values())
-      .filter((player) => player.games.length < Elo.GAME_LIMIT_FOR_RANKED)
+      .filter((player) => player.games.length < this.parent.client.gameLimitForRanked)
       .sort((a, b) => b.elo - a.elo);
 
     return {
@@ -101,11 +101,12 @@ export class Leaderboard {
       }
     });
 
-    const playerIsRanked = player.games.length >= Elo.GAME_LIMIT_FOR_RANKED;
+    const playerIsRanked = player.games.length >= this.parent.client.gameLimitForRanked;
 
     const playersWithHigherElo = Array.from(leaderboardMap.values()).reduce(
       (acc, otherPlayer) =>
-        (acc += otherPlayer.games.length >= Elo.GAME_LIMIT_FOR_RANKED && otherPlayer.elo > player.elo ? 1 : 0),
+        (acc +=
+          otherPlayer.games.length >= this.parent.client.gameLimitForRanked && otherPlayer.elo > player.elo ? 1 : 0),
       0,
     );
 
@@ -132,7 +133,7 @@ export class Leaderboard {
 
     return {
       ...player,
-      isRanked: player.games.length >= Elo.GAME_LIMIT_FOR_RANKED,
+      isRanked: player.games.length >= this.parent.client.gameLimitForRanked,
       rank: playerIsRanked ? playersWithHigherElo + 1 : undefined,
       streaks,
       pointsDistrubution,

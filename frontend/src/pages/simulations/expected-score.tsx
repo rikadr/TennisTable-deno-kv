@@ -1,7 +1,6 @@
 import React from "react";
 import { useRerender } from "../../hooks/use-rerender";
 import { useEventDbContext } from "../../wrappers/event-db-context";
-import { Elo } from "../../client/client-db/elo";
 import { fmtNum } from "../../common/number-utils";
 
 export const ExpectedScore: React.FC = () => {
@@ -59,7 +58,7 @@ export const ExpectedScore: React.FC = () => {
           </section>
         ) : null}
         {Array.from(context.futureElo.playersMap.entries())
-          .filter(([_, p]) => p.totalGames >= Elo.GAME_LIMIT_FOR_RANKED)
+          .filter(([_, p]) => p.totalGames >= context.client.gameLimitForRanked)
           .map(([name, player]) => (
             <div key={name}>
               <h2 className="text-xl">{context.playerName(name)}</h2>

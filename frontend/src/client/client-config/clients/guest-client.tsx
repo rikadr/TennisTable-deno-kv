@@ -10,5 +10,6 @@ export class GuestClient implements ClientConfig {
   snow = false;
   title = "Tennis🏆💔Table";
   favicon = "🏓";
+  gameLimitForRanked = 5;
   tournaments = [];
 }

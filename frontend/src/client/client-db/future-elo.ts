@@ -63,7 +63,7 @@ export class FutureElo {
     // Create all ranked players pairings
     const rankedNames: string[] = [];
     this.playersMap.forEach(
-      (player) => player.totalGames >= Elo.GAME_LIMIT_FOR_RANKED && rankedNames.push(player.name),
+      (player) => player.totalGames >= this.parent.client.gameLimitForRanked && rankedNames.push(player.name),
     );
 
     // Create all unique permutations of player pairings
