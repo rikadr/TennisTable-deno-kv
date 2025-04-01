@@ -34,7 +34,6 @@ export const ProfilePicture: React.FC<Props> = ({
       path={playerId}
       transformation={[{ height: size * HighDefinitionScaleFactor, width: size * HighDefinitionScaleFactor }]}
       queryParameters={{ v: timestamp }}
-      loading="lazy"
     />
   );
 
