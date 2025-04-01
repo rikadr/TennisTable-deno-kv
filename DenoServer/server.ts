@@ -1,12 +1,12 @@
 import { Application, Router } from "oak";
 import { oakCors } from "cors";
-import { registerPlayerRoutes } from "./player/player.routes.ts";
 import { registerUserRoutes } from "./user/user.routes.ts";
 import { registerWebSocketRoutes } from "./web-socket/web-socket.routs.ts";
 import { WebSocketClientManager } from "./web-socket/web-socket-client-manager.ts";
 import { registerEventStoreRoutes } from "./event-store/event-store.routes.ts";
 import { registerMigrationsRoutes } from "./migrations/migrations.routes.ts";
 import { EventCache } from "./event-store/event-cache.ts";
+import { registerImageKitRoutes } from "./image-kit/image-kit.routes.ts";
 
 const app = new Application();
 const api = new Router();
@@ -31,7 +31,7 @@ registerMigrationsRoutes(api);
 /**
  * Register routes
  */
-registerPlayerRoutes(api);
+registerImageKitRoutes(api);
 registerWebSocketRoutes(api);
 registerUserRoutes(api);
 

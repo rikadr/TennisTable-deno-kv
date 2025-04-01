@@ -1,7 +1,8 @@
 import { Link, useNavigate } from "react-router-dom";
 import { classNames } from "../../common/class-names";
 import { stringToColor } from "../../common/string-to-color";
-import { optioImageLookup } from "../../img/optio-profile-pictures/id-to-image-lookup";
+import { IKImage } from "imagekitio-react";
+import { useImageKitTimestamp } from "../../wrappers/image-kit-context";
 
 type Props = {
   playerId?: string;
@@ -22,19 +23,21 @@ export const ProfilePicture: React.FC<Props> = ({
 }) => {
   const navigate = useNavigate();
 
+  const { timestamp } = useImageKitTimestamp();
+  const HighDefinitionScaleFactor = 4;
   const img = () => (
-    <img
+    <IKImage
       className={classNames(
         "w-full h-full object-cover",
         clickToEdit && " group-hover:opacity-50 transition-opacity duration-150",
       )}
-      src={
-        (playerId && optioImageLookup[playerId as keyof typeof optioImageLookup]) ??
-        `${process.env.REACT_APP_API_BASE_URL}/player/${playerId}/profile-picture`
-      }
-      alt="Profile"
+      path={playerId}
+      transformation={[{ height: size * HighDefinitionScaleFactor, width: size * HighDefinitionScaleFactor }]}
+      queryParameters={{ v: timestamp }}
+      loading="lazy"
     />
   );
+
   return (
     <div
       className={classNames(
