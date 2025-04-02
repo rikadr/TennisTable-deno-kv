@@ -8,6 +8,7 @@ import { ComparePlayersPage } from "./pages/compare-players-page";
 import { MyPage } from "./pages/my-page";
 import { LoginPage } from "./pages/login";
 import { AdminPage } from "./pages/admin/admin-page";
+import { Analytics } from "@vercel/analytics/react";
 import { session } from "./services/auth";
 import { SignupPage } from "./pages/sign-up";
 import { WebSocketRefetcher } from "./wrappers/web-socket-refetcher";
@@ -44,6 +45,7 @@ function App() {
   const client = queryClient;
   return (
     <QueryClientProvider client={client}>
+      <Analytics />
       <ImageKitContext>
         <ThemeProvider>
           {clientConfig.snow && <Snowfall radius={[0.2, 1]} speed={[0.1, 0.3]} wind={[0, 1]} />}
