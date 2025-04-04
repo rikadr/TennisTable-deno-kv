@@ -13,7 +13,7 @@ async function getAuthenticationParameters() {
   const privateKey = Deno.env.get("IMAGE_KIT_PRIVATE_KEY") || "";
 
   const token = crypto.randomUUID();
-  const expire = Math.floor(Date.now() / 1000) + 60 * 30;
+  const expire = Math.floor(Date.now() / 1000) + 60 * 30; // 30 minutes
   const signature = await createSignature(privateKey, token, expire);
 
   return {

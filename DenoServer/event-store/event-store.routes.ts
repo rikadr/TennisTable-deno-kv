@@ -3,10 +3,19 @@ import { EventType, EventTypeEnum } from "./event-types.ts";
 import { storeEvent } from "./event-store.ts";
 import { eventCache, webSocketClientManager } from "../server.ts";
 import { hasAccess } from "../auth-service/middleware.ts";
+import { kv } from "../db.ts";
 
 export function registerEventStoreRoutes(api: Router) {
   /**
-   * Stores new event
+   * Get all events
+   */
+  api.get("/events", async (context) => {
+    const eventData = await eventCache.getEventData();
+    context.response.body = eventData.events;
+  });
+
+  /**
+   * Stores a new event
    */
   api.post("/event", async (context) => {
     const eventPayload = (await context.request.body.json()) as EventType;
@@ -47,7 +56,17 @@ export function registerEventStoreRoutes(api: Router) {
   });
 
   /**
-   * DEBUG AND DEV ONLY: Stores multiple new events
+   * DEBUG AND DEV ONLY: Do not register the following routes in production
+   */
+  const environment = Deno.env.get("ENVIRONMENT");
+  if (environment !== "local") {
+    return;
+  }
+
+  console.log("******** Registering debug routes for event store");
+
+  /**
+   * Stores multiple new events
    */
   api.post("/events", async (context) => {
     const eventsPayload = (await context.request.body.json()) as EventType[];
@@ -57,14 +76,26 @@ export function registerEventStoreRoutes(api: Router) {
     }
     await eventCache.appendEventsToEventCache(eventsPayload);
     webSocketClientManager.reloadClients();
+
+    context.response.body = { uploadedCount: eventsPayload.length.toLocaleString() };
     context.response.status = 201;
   });
 
   /**
-   * Get all events
+   * Delete all events
    */
-  api.get("/events", async (context) => {
-    const eventData = await eventCache.getEventData();
-    context.response.body = eventData.events;
+  api.delete("/events", async (context) => {
+    let deletedCount = 0;
+
+    const events = kv.list<EventType>({ prefix: ["event"] });
+    for await (const event of events) {
+      await kv.delete(event.key);
+      deletedCount++;
+    }
+    await eventCache.clearCache();
+    webSocketClientManager.reloadClients();
+
+    console.log(`Deleted ${deletedCount.toLocaleString()} events`);
+    context.response.status = 204;
   });
 }
