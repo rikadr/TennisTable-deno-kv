@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { CandelStickData, CandleStickChart } from "./candel-stick";
 import { useEventDbContext } from "../../../wrappers/event-db-context";
 
@@ -8,18 +8,25 @@ export const MonteCarlo: React.FC = () => {
   const leaderboardMap = context.leaderboard.getCachedLeaderboardMap();
   const simulation = context.simulations.monteCarloSimulation(10_000);
 
-  const formattedRawData: CandelStickData[] = simulation
-    .filter(({ name }) => (leaderboardMap.get(name)?.games.length || 0) >= context.client.gameLimitForRanked)
-    .map(({ name, elo }, index) => ({
-      name: name,
-      rank: index + 1,
-      high: elo.max,
-      low: elo.min,
-      avg: elo.avg,
-      current: leaderboardMap.get(name)!.elo, // Bug when equal to avg
-      time: elo.avg,
-    }))
-    .sort((a, b) => b.current - a.current);
+  const formattedRawData: CandelStickData[] = useMemo(
+    () =>
+      simulation
+        .filter(
+          ({ playerId }) => (leaderboardMap.get(playerId)?.games.length || 0) >= context.client.gameLimitForRanked,
+        )
+        .map(({ playerId, elo }, index) => ({
+          playerId,
+          rank: index + 1,
+          high: elo.max,
+          low: elo.min,
+          avg: elo.avg,
+          current: leaderboardMap.get(playerId)!.elo, // Bug when equal to avg
+          time: elo.avg,
+        }))
+        .sort((a, b) => b.current - a.current),
+    [simulation, leaderboardMap, context.client.gameLimitForRanked],
+  );
+
   return (
     <div>
       <div className="mx-8">

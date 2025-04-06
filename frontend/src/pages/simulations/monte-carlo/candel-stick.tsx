@@ -14,9 +14,10 @@ import { BarRectangleItem } from "recharts/types/cartesian/Bar";
 import { NameType, ValueType } from "recharts/types/component/DefaultTooltipContent";
 import { ProfilePicture } from "../../player/profile-picture";
 import { stringToColor } from "../../../common/string-to-color";
+import { useEventDbContext } from "../../../wrappers/event-db-context";
 
 export type CandelStickData = {
-  name: string;
+  playerId: string;
   rank: number;
   high: number;
   low: number;
@@ -96,6 +97,7 @@ const prepareData = (data: CandelStickData[]) => {
 };
 
 export const CandleStickChart: React.FC<{ rawData: CandelStickData[] }> = ({ rawData }) => {
+  const context = useEventDbContext();
   const data = prepareData(rawData);
   const totalMinimum = data.reduce(
     (minValue, { low, high, avgCurrent: [avg, current] }) => (minValue = Math.min(minValue, low, high, avg, current)),
@@ -120,8 +122,8 @@ export const CandleStickChart: React.FC<{ rawData: CandelStickData[] }> = ({ raw
           ))} */}
         </Bar>
         <XAxis
-          dataKey="name"
-          tickFormatter={(v) => v}
+          dataKey="playerId"
+          tickFormatter={(v) => context.playerName(v)}
           angle={45}
           minTickGap={-15}
           tickMargin={0}
@@ -163,9 +165,10 @@ export const CandleStickChart: React.FC<{ rawData: CandelStickData[] }> = ({ raw
 // };
 
 const CustomTooltip: React.FC = ({ active, payload, label }: TooltipProps<ValueType, NameType>) => {
+  const context = useEventDbContext();
   if (active && payload && payload.length) {
     const {
-      name,
+      playerId,
       rank,
       high,
       low,
@@ -174,12 +177,12 @@ const CustomTooltip: React.FC = ({ active, payload, label }: TooltipProps<ValueT
     return (
       <div className="relative p-2 bg-primary-background ring-1 ring-primary-text rounded-lg text-primary-text">
         <div className="absolute top-1 right-1">
-          <ProfilePicture playerId={name} size={35} border={2} />
+          <ProfilePicture playerId={playerId} size={35} border={2} />
         </div>
         <h3 className="mb-4">
           {rank}:{" "}
-          <span className="font-semibold" style={{ color: stringToColor(name || "1adagrsss") }}>
-            {name}
+          <span className="font-semibold" style={{ color: stringToColor(playerId || "1adagrsss") }}>
+            {context.playerName(playerId)}
           </span>
         </h3>
         <p className="mb-4">

@@ -38,16 +38,16 @@ export class Simulations {
       const randomizedGames = this.shuffleArray([...this.parent.games, ...this.parent.futureElo.predictedGames]);
 
       const permutationResult = Elo.eloCalculator(randomizedGames, this.parent.players);
-      permutationResult.forEach(({ name, elo }) => {
-        if (!totalsMap.has(name)) {
-          totalsMap.set(name, [elo]);
+      permutationResult.forEach(({ id: playerId, elo }) => {
+        if (!totalsMap.has(playerId)) {
+          totalsMap.set(playerId, [elo]);
         }
-        totalsMap.get(name)!.push(elo);
+        totalsMap.get(playerId)!.push(elo);
       });
     }
 
     const simulationResult: Map<string, { avg: number; min: number; max: number }> = new Map();
-    totalsMap.forEach((elos, name) => {
+    totalsMap.forEach((elos, playerId) => {
       const avg = elos.reduce((acc, cur) => acc + cur, 0) / elos.length;
       const minMax = { min: 9999, max: 0 };
       for (const elo of elos) {
@@ -58,11 +58,11 @@ export class Simulations {
           minMax.max = elo;
         }
       }
-      simulationResult.set(name, { avg, ...minMax });
+      simulationResult.set(playerId, { avg, ...minMax });
     });
 
     return Array.from(simulationResult)
-      .map(([name, elo]) => ({ name, elo }))
+      .map(([playerId, elo]) => ({ playerId, elo }))
       .sort((a, b) => b.elo.avg - a.elo.avg);
   }
 
