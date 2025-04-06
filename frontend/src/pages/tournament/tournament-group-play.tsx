@@ -58,8 +58,8 @@ const GroupPlayRules: React.FC = () => (
       <div className="italic font-light text-xs">
         <p>1: Most wins</p>
         <p>2: Least skips</p>
-        <p>3: Least losses</p>
-        <p>4: Highest score before group size adjustment</p>
+        <p>3: Highest score before group size adjustment</p>
+        <p>4: Least losses</p>
         <p>5: Highest ELO rating</p>
         <p>6: First to sign up for the tournament</p>
         <p>7: If all the above somehow are equal: Highest bribe</p>
@@ -133,7 +133,7 @@ export const TournamentGroupScores: React.FC<{ tournament: Tournament }> = ({ to
       <td>{player.groupSizeAdjustmentFactor === 1 ? "-" : fmtNum(player.groupSizeAdjustmentFactor, 2)}</td>
       <td>{fmtNum(player.wins)}</td>
       <td>{fmtNum(player.loss)}</td>
-      <td>{fmtNum(player.dnf)}</td>
+      <td>{fmtNum(player.skips)}</td>
     </tr>
   );
 

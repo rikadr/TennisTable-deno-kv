@@ -104,14 +104,14 @@ export const TournamentPage: React.FC = () => {
                   optioPlayersByName.Christoffer,
                   optioPlayersByName.Simone,
                   optioPlayersByName.Peder,
-                  // optioPlayersByName.Erling,
-                  // optioPlayersByName.Rikard,
-                  // optioPlayersByName.Oskar,
+                  optioPlayersByName.Erling,
+                  optioPlayersByName.Rikard,
+                  optioPlayersByName.Oskar,
                 ] as string[];
                 let winner: string | undefined = "";
                 let winners: Record<string, number> = {};
 
-                while (tries < 10_000 && (winner === undefined || winner === "" || likelyWinners.includes(winner))) {
+                while (tries < 1_000 && (winner === undefined || winner === "" || likelyWinners.includes(winner))) {
                   tries++;
                   context.futureElo.simulate();
                   context.tournaments.clearTournamentCache();
@@ -129,9 +129,17 @@ export const TournamentPage: React.FC = () => {
 
                 rerender();
                 window.alert(
-                  `Winner: ${winner}!!!
+                  `Winner: ${context.playerName(winner)}!!!
 Simulated ${tries} tournaments. 
-Other winners: ` + JSON.stringify(sortedWinners, null, 2),
+Other winners: ` +
+                    JSON.stringify(
+                      Object.keys(sortedWinners).reduce((acc, key) => {
+                        acc[context.playerName(key)] = sortedWinners[key];
+                        return acc;
+                      }, {} as Record<string, number>),
+                      null,
+                      2,
+                    ),
                 );
               }}
             >

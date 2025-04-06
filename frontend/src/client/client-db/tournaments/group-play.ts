@@ -9,7 +9,7 @@ export type GroupScorePlayer = {
   groupSizeAdjustmentFactor: number;
   wins: number;
   loss: number;
-  dnf: number;
+  skips: number;
   playerOrderIndex: number;
 };
 
@@ -181,7 +181,7 @@ export class TournamentGroupPlay {
           groupSizeAdjustmentFactor: (biggestGroup - 1) / (group.length - 1),
           wins: 0,
           loss: 0,
-          dnf: 0,
+          skips: 0,
           playerOrderIndex: this.playerOrder.findIndex((p) => p === player),
         }),
       ),
@@ -200,7 +200,7 @@ export class TournamentGroupPlay {
         const loserName = [game.player1!, game.player2!].filter((player) => player !== game.winner)[0];
         const loser = scores.get(loserName)!;
         if (game.skipped) {
-          loser.dnf++;
+          loser.skips++;
           loser.score += Tournament.GROUP_POINTS.SKIP;
           loser.adjustedScore += Tournament.GROUP_POINTS.SKIP * loser.groupSizeAdjustmentFactor;
         } else {
@@ -233,14 +233,14 @@ export class TournamentGroupPlay {
     if (p1.wins !== p2.wins) {
       return p2.wins - p1.wins;
     }
-    if (p1.dnf !== p2.dnf) {
-      return p1.dnf - p2.dnf; // Reversed because fewer dnf is better
-    }
-    if (p1.loss !== p2.loss) {
-      return p1.loss - p2.loss; // Reversed because fewer loss is better
+    if (p1.skips !== p2.skips) {
+      return p1.skips - p2.skips; // Reversed because fewer dnf is better
     }
     if (p1.score !== p2.score) {
       return p2.score - p1.score;
+    }
+    if (p1.loss !== p2.loss) {
+      return p1.loss - p2.loss; // Reversed because fewer loss is better
     }
 
     return p1.playerOrderIndex - p2.playerOrderIndex; // Default to player order

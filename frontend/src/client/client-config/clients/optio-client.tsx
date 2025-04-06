@@ -80,7 +80,7 @@ const optioEasterTournament: TournamentDB = {
   name: "Easter Tournament 2025 🏓🐣",
   description:
     "Now with group play! All participants are first divided into groups where everyone plays everyone. Each game you score tournament-points to determin what players advance to the tournament finals. Sign up with your player and join the tournament 🚀",
-  startDate: 1744012800000, // "Apr 7 2025 09:00:00 GMT+0100"
+  startDate: 1744012800000, // "Apr 7 2025 09:00:00 GMT+0100" 10:00 Norwegian time
   groupPlay: true,
   signedUp: [],
   skippedGames: [],
@@ -112,7 +112,7 @@ const optioChristmasTournament: TournamentDB = {
   startDate: 1732613408196, // Nov 26 2024 10:30:08 GMT+0100
   groupPlay: false,
   signedUp: [],
-  skippedGames: [{ advancing: optioPlayersByName.Marius, eliminated: optioPlayersByName.Erling, time: 1732709055829 }], // Marius advancing, Erling eliminated
+  skippedGames: [{ advancing: optioPlayersByName.Marius, eliminated: optioPlayersByName.Erling, time: 1732709055829 }],
   playerOrder: [
     optioPlayersByName.Rasmus,
     optioPlayersByName.Simone,
