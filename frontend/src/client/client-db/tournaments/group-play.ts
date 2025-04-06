@@ -47,11 +47,11 @@ export class TournamentGroupPlay {
     return Array.from(this.groupScores)
       .sort(TournamentGroupPlay.sortGroupScores) // Sort by score
       .map((player) => player[0]) // Only get the name
-      .slice(0, Math.pow(2, Math.floor(Math.log2(this.playerOrder.length)))); // Slice to biggest full power of 2
+      .slice(0, this.getBracketSize());
   }
 
   getBracketSize(): number {
-    return Math.pow(2, Math.floor(Math.log2(this.playerOrder.length)));
+    return Math.pow(2, Math.floor(Math.log2(this.playerOrder.length))); // Floor to biggest possible full power of 2
   }
 
   #divideInGroups(players: string[]): string[][] {
