@@ -23,7 +23,7 @@ export const MonteCarlo: React.FC = () => {
           current: leaderboardMap.get(playerId)!.elo, // Bug when equal to avg
           time: elo.avg,
         }))
-        .sort((a, b) => b.current - a.current),
+        .sort((a, b) => b.avg - a.avg),
     [simulation, leaderboardMap, context.client.gameLimitForRanked],
   );
 
