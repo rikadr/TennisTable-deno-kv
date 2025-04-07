@@ -14,7 +14,7 @@ export const TournamentsListPage: React.FC = () => {
       <div className="max-w-96 flex flex-col gap-2">
         {sortedTournaments.map((t) => (
           <Link key={t.id} to={`/tournament?tournament=${t.id}`} className="group">
-            <div className="space-y-2 p-4 ring-1 ring-secondary-background rounded-lg group-hover:bg-secondary-background/30">
+            <div className="space-y-2 p-4 ring-1 ring-secondary-background rounded-lg group-hover:bg-secondary-background/30 bg-primary-background">
               <h2>{t.name}</h2>
               <p>{t.description}</p>
               <p className="text-xs text-center italic mt-2">Start date:</p>

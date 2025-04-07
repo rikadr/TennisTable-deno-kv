@@ -15,7 +15,7 @@ export const TournamentHighlightsAndPendingGames: React.FC = () => {
   }
 
   return (
-    <div className="w-full flex flex-col gap-4">
+    <div className="w-full flex flex-col gap-4 bg-primary-background rounded-lg">
       <h1 className="text-2xl text-center text-primary-text m2-4">Tournaments</h1>
       {tournaments.map(({ id, name, startDate, hasPendingGames, recentWinner, inSignupPeriod, groupPlay, bracket }) => {
         if (!hasPendingGames && !recentWinner && !inSignupPeriod) return null;

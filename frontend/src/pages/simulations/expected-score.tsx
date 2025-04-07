@@ -9,7 +9,7 @@ export const ExpectedScore: React.FC = () => {
   const context = useEventDbContext();
 
   return (
-    <div className="flex flex-col items-center text-primary-text">
+    <div className="flex flex-col items-center text-primary-text bg-primary-background rounded-lg p-4 w-fit m-auto">
       <section className="w-96 mb-16 space-y-4">
         <h1 className="text-2xl">Expected score</h1>
         <p>

@@ -28,7 +28,7 @@ export const MonteCarlo: React.FC = () => {
   );
 
   return (
-    <div>
+    <div className="bg-primary-background text-primary-text rounded-lg p-4 m-auto">
       <div className="mx-8">
         <h1>Monte Carlo simulation</h1>
         <p>Find the expected score of the players, compared to their actual score!</p>

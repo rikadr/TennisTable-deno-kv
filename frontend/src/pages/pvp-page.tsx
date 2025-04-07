@@ -12,7 +12,7 @@ export const PvPPage: React.FC = () => {
   const [player2, setPlayer2] = useState<string | undefined>(paramPlayer2 || undefined);
 
   return (
-    <div className="space-y-4 max-w-4xl m-auto px-4">
+    <div className="space-y-4 max-w-4xl m-auto p-4 bg-primary-background rounded-lg">
       <div className="flex gap-4 justify-around">
         <SelectPlayer value={player1} onChange={(value) => setPlayer1(value)} />
         <SelectPlayer value={player2} onChange={(value) => setPlayer2(value)} />

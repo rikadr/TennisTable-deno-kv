@@ -49,7 +49,7 @@ function App() {
       <ImageKitContext>
         <ThemeProvider>
           {clientConfig.snow && <Snowfall radius={[0.2, 1]} speed={[0.1, 0.3]} wind={[0, 1]} />}
-          <div className="bg-primary-background min-h-screen w-full overflow-auto">
+          <div className="min-h-screen w-full overflow-auto">
             <HelmetSetter />
             <ZoomWrapper>
               <WebSocketRefetcher>

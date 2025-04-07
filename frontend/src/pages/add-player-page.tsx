@@ -55,7 +55,7 @@ export const AddPlayerPage: React.FC = () => {
   }
 
   return (
-    <div className="flex flex-col items-center gap-2 w-96 m-auto">
+    <div className="flex flex-col items-center gap-2 w-96 m-auto bg-primary-background rounded-lg">
       <h1>Add player</h1>
       <p>Player name</p>
       <input

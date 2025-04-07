@@ -42,15 +42,17 @@ export const LeaderBoard: React.FC = () => {
     <div className="w-full px-4 flex flex-col justify-center items-center md:items-start gap-6 md:flex-row ">
       <div className="w-full max-w-96 sm:w-96 flex flex-col gap-2 items-center">
         <TournamentHighlightsAndPendingGames />
-        <h1 className="text-2xl text-center text-primary-text my-2">Leaderboard</h1>
-        {nr1 && <PodiumPlace size="default" place={1} playerSummary={nr1} profilePicture />}
-        {nr2 && <PodiumPlace size="sm" place={2} playerSummary={nr2} profilePicture />}
-        {nr3 && <PodiumPlace size="xs" place={3} playerSummary={nr3} profilePicture />}
+        <div className="bg-primary-background rounded-lg w-full space-y-2">
+          <h1 className="text-2xl text-center text-primary-text my-2">Leaderboard</h1>
+          {nr1 && <PodiumPlace size="default" place={1} playerSummary={nr1} profilePicture />}
+          {nr2 && <PodiumPlace size="sm" place={2} playerSummary={nr2} profilePicture />}
+          {nr3 && <PodiumPlace size="xs" place={3} playerSummary={nr3} profilePicture />}
+        </div>
         {/* <LeaderboardDistrubution /> */}
         <RecentGames />
         {theme === Theme.EASTER && <img src={easterBunny} alt="Easter bunny chick" />}
       </div>
-      <div>
+      <div className="bg-primary-background rounded-lg">
         <div className="flex flex-col divide-y divide-primary-text/50">
           <div className="flex gap-4 text-base text-center mb-2 text-primary-text">
             <div className="w-5">#</div>

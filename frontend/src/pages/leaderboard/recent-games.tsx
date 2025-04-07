@@ -22,7 +22,7 @@ export const RecentGames: React.FC = () => {
   }
 
   return (
-    <div>
+    <div className="bg-primary-background rounded-lg ">
       <h1 className="text-2xl text-center mb-4 mt-[27.5px] text-primary-text">Recent games</h1>
       <div className="flex flex-col divide-y divide-primary-text/50 text-primary-text">
         <div className="flex gap-4 text-base text-center mb-2">

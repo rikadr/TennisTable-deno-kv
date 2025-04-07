@@ -15,7 +15,7 @@ export const SettingsPage: React.FC = () => {
   }
 
   return (
-    <div className="text-primary-text flex flex-col items-center ">
+    <div className="text-primary-text flex flex-col items-center bg-primary-background rounded-lg p-4 w-fit m-auto">
       <h1>Settings</h1>
       <h3>Theme</h3>
       <p>Client theme: {theme} </p>

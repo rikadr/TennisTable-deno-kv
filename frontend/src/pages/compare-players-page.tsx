@@ -24,8 +24,8 @@ export const ComparePlayersPage: React.FC = () => {
   }, [comparison.graphData, range]);
 
   return (
-    <div className="flex flex-col items-center">
-      <section className="flex flex-col-reverse items-center md:items-start md:flex-row md:gap-4">
+    <div className="flex flex-col items-center ">
+      <section className="flex flex-col-reverse items-center md:items-start md:flex-row md:gap-4 bg-primary-background rounded-lg p-4">
         <PlayerSelector selectedPlayers={selectedPlayers} setSelectedPlayers={setSelectedPlayers} />
         <div className="">
           <input

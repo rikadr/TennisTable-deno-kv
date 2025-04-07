@@ -9,7 +9,7 @@ export const SimulationsPage: React.FC = () => {
   ];
 
   return (
-    <div className="flex flex-col items-center">
+    <div className="flex flex-col items-center bg-primary-background rounded-lg p-4 w-fit m-auto">
       <h1 className="mb-6 text-2xl text-primary-text">Simulations</h1>
       <div className="flex flex-col gap-4 w-96">
         {simulations.map(({ name, url }) => (

@@ -81,7 +81,7 @@ export const AddGamePage: React.FC = () => {
 
   return (
     <div className="w-full flex justify-center">
-      <div className="space-y-4 p-4 w-fit">
+      <div className="space-y-4 p-4 w-fit bg-primary-background rounded-lg">
         {isPendingTournamentGame.length > 0 && (
           <p className="italic w-full text-center mb-2">This game is pending in a tournament!</p>
         )}

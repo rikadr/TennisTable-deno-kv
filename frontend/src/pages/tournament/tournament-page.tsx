@@ -52,7 +52,7 @@ export const TournamentPage: React.FC = () => {
 
   return (
     <div className="space-y-4">
-      <div className="ring-1 ring-secondary-background w-fit mx-4 px-4 md:mx-10 md:px-6 py-4 rounded-lg text-primary-text">
+      <div className="ring-1 ring-secondary-background w-fit mx-4 px-4 md:mx-10 md:px-6 py-4 text-primary-text bg-primary-background rounded-lg">
         <p className="text-xs italic">Tournament:</p>
         <h1 className="mb-2">{tournament.name}</h1>
         <p className="text-xs italic">Description:</p>
@@ -183,7 +183,7 @@ Other winners: ` +
               {showAsList ? (
                 <GamesList tournament={tournament} rerender={rerender} itemRefs={itemRefs} />
               ) : (
-                <div className="w-fit m-auto">
+                <div className="w-fit m-auto bg-primary-background rounded-lg p-4 ">
                   <GameTriangle
                     tournament={tournament}
                     layerIndex={0}
@@ -214,7 +214,7 @@ const GamesList: React.FC<GamesListProps> = ({ tournament, rerender, itemRefs })
   const { player1, player2 } = useTennisParams();
 
   return (
-    <div className="flex flex-col items-center lg:flex-row-reverse lg:justify-end lg:items-start gap-2">
+    <div className="flex flex-col items-center lg:flex-row-reverse lg:justify-end lg:items-start gap-2 bg-primary-background rounded-lg py-4">
       {tournament.bracket &&
         tournament.bracket.bracket.map((layer, layerIndex) => (
           <div key={layerIndex} className="flex flex-col gap-1 w-full min-w-[22rem] max-w-[27rem]">

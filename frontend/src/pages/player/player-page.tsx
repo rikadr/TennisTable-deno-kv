@@ -36,7 +36,7 @@ export const PlayerPage: React.FC = () => {
         </div>
 
         {summary.games.length > 0 && (
-          <div>
+          <div className="bg-primary-background rounded-lg">
             <LineChart
               width={Math.min(1000, width < 768 ? width : width - 300)}
               height={300}
@@ -115,7 +115,7 @@ export const PlayerPage: React.FC = () => {
         )}
       </div>
       {pendingGames.length > 0 && (
-        <>
+        <div className="bg-primary-background rounded-lg w-96 mb-1">
           <h1 className="text-2xl text-center mt-4 text-primary-text">Pending tournament games</h1>
           {pendingGames.map((tournament) => (
             <div
@@ -147,19 +147,19 @@ export const PlayerPage: React.FC = () => {
               ))}
             </div>
           ))}
-        </>
+        </div>
       )}
       {summary.games.length > 0 && (
         <div className="flex flex-col md:flex-row justify-evenly items-center md:items-start w-full md:mr-4 text-primary-text">
           <div className="w-full max-w-2xl flex flex-col justify-center">
-            <div className="flex flex-col items-center">
+            <div className="flex flex-col items-center bg-primary-background rounded-lg">
               <h1 className="text-2xl text-center mt-4">Points distribution</h1>
               <div className="w-full max-w-2xl">
                 <PlayerPointsDistrubution playerId={playerId} />
               </div>
             </div>
 
-            <div className="flex flex-col items-center">
+            <div className="flex flex-col items-center bg-primary-background rounded-lg">
               <h1 className="text-2xl text-center mt-4">Games distribution</h1>
               <div className="w-full max-w-2xl">
                 <PlayerGamesDistrubution playerId={playerId} />
@@ -167,7 +167,7 @@ export const PlayerPage: React.FC = () => {
             </div>
           </div>
 
-          <div>
+          <div className="bg-primary-background rounded-lg">
             <h1 className="text-2xl text-center mt-4">Last 10 games</h1>
             <div className="flex flex-col divide-y divide-primary-text/50">
               <div className="flex gap-4 text-base text-center mb-2">

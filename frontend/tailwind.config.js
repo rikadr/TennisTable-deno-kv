@@ -22,6 +22,9 @@ module.exports = {
           background: withOpacityValue("--color-tertiary-background"),
         },
       },
+      backgroundImage: {
+        "theme-image": "var(--background-image-url)",
+      },
       animation: {
         "ping-once": "ping-once 1000ms ease-in-out 1000ms forwards",
         wiggle: "wiggle 1s ease-in-out 500ms forwards",

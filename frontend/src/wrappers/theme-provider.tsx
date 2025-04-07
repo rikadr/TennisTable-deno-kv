@@ -1,6 +1,7 @@
 import React from "react";
 import { getClientConfig, Theme } from "../client/client-config/get-client-config";
 import { useLocalStorage } from "usehooks-ts";
+import { classNames } from "../common/class-names";
 
 export const OVERRIDE_THEME_KEY = "override-theme";
 
@@ -18,7 +19,13 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }
 
   return (
-    <div id="headlessui-portal-root" className={"theme-" + themeToUse}>
+    <div
+      id="headlessui-portal-root"
+      className={classNames("theme-" + themeToUse, "bg-theme-image bg-center bg-primary-background")}
+      style={{
+        backgroundSize: "500px",
+      }}
+    >
       {children}
     </div>
   );

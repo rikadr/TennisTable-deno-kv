@@ -14,12 +14,13 @@
 }
 
 .theme-easter {
-  --color-primary-text: 255,255,255;
-  --color-primary-background: 255,0,128;
-  --color-secondary-text: 255,0,128;
-  --color-secondary-background: 255,215,0;
-  --color-tertiary-text: 0,0,0;
-  --color-tertiary-background: 0,255,0;
+  --color-primary-text: 255,225,0;
+  --color-primary-background: 99,103,79;
+  --color-secondary-text: 99,103,79;
+  --color-secondary-background: 255,225,0;
+  --color-tertiary-text: 255,255,255;
+  --color-tertiary-background: 238,154,75;
+  --background-image-url: url("img//easter/easter_theme.png");
 }
 
 .theme-halloween {
@@ -42,6 +43,7 @@
 
 body {
   @apply text-primary-text bg-primary-background;
+  background-image: var(--background-image-url);
 }
 
 h1 {

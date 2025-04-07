@@ -129,16 +129,16 @@ export const CandleStickChart: React.FC<{ rawData: CandelStickData[] }> = ({ raw
           tickMargin={0}
           tickSize={5}
           orientation="bottom"
-          tick={{ fill: "#FFFFFF" }}
+          tick={{ fill: "rgb(var(--color-primary-text))" }}
         />
         <YAxis
           type="number"
           domain={[totalMinimum, totalMaximum]}
           tickFormatter={(value) => value.toLocaleString("no-NO", { maximumFractionDigits: 0 })}
-          stroke="#FFFFFF"
+          stroke="rgb(var(--color-primary-text))"
         />
         {/* <CartesianGrid strokeDasharray="3 3" /> */}
-        <ReferenceLine y={1000} stroke="white" label="1 000" />
+        <ReferenceLine y={1000} stroke="rgb(var(--color-primary-text))" label="1 000" />
         <Tooltip
           formatter={(value) => [value.toLocaleString("no-NO", { maximumFractionDigits: 0 }), "Elo"]}
           wrapperClassName="rounded-lg bg-primary-background"
