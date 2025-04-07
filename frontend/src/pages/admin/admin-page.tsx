@@ -81,7 +81,7 @@ export const AdminPage: React.FC = () => {
   }
 
   return (
-    <div>
+    <div className="bg-primary-background">
       <h1>ADMIN PAGE</h1>
       <br />
       <h2>Total distribution of games played</h2>
