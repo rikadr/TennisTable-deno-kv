@@ -145,6 +145,52 @@ Other winners: ` +
             >
               Simulate unlikely winner tournament
             </button>
+            <button
+              onClick={() => {
+                if (
+                  window.confirm(
+                    "Are you sure you want to simulate to an unlikely winner? It may take over 60 seconds",
+                  ) === false
+                ) {
+                  return;
+                }
+                let tries = 0;
+                let winner: string | undefined = "";
+                let winners: Record<string, number> = {};
+
+                while (tries < 1_000) {
+                  tries++;
+                  context.futureElo.simulate();
+                  context.tournaments.clearTournamentCache();
+                  winner = context.tournaments.getTournament(tournament.id)?.winner;
+                  if (winner) {
+                    winners[winner] = (winners[winner] || 0) + 1;
+                  }
+                  if (tries % 100 === 0) {
+                    console.log(tries);
+                  }
+                }
+                const sortedEntries = Object.entries(winners).sort((a, b) => b[1] - a[1]);
+                const sortedWinners: Record<string, number> = Object.fromEntries(sortedEntries);
+                console.log(sortedWinners);
+
+                rerender();
+                window.alert(
+                  `Simulated ${tries} tournaments. 
+Wwinners: ` +
+                    JSON.stringify(
+                      Object.keys(sortedWinners).reduce((acc, key) => {
+                        acc[context.playerName(key)] = sortedWinners[key];
+                        return acc;
+                      }, {} as Record<string, number>),
+                      null,
+                      2,
+                    ),
+                );
+              }}
+            >
+              Simulate 10 000 tournaments
+            </button>
           </div>
         )}
       </div>
