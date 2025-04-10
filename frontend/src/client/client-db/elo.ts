@@ -48,23 +48,12 @@ export abstract class Elo {
     const expectedScoreWinner = 1 / (1 + Math.pow(10, (losersElo - winnersElo) / this.DIVISOR));
     const expectedScoreLoser = 1 / (1 + Math.pow(10, (winnersElo - losersElo) / this.DIVISOR));
 
-    const winnersNewElo = winnersElo + Elo.getK(winnersGames) * (1 - expectedScoreWinner);
-    const losersNewElo = losersElo + Elo.getK(losersGames) * (0 - expectedScoreLoser);
+    const winnersNewElo = winnersElo + Elo.K * (1 - expectedScoreWinner);
+    const losersNewElo = losersElo + Elo.K * (0 - expectedScoreLoser);
 
     return {
       winnersNewElo,
       losersNewElo,
     };
-  }
-
-  private static getK(games: number = 0) {
-    const kDegradeThreshold = 200;
-    const lowestK = 10;
-
-    if (games < kDegradeThreshold) {
-      return Elo.K;
-    } else {
-      return Math.min(lowestK, Elo.K * (kDegradeThreshold / games));
-    }
   }
 }
