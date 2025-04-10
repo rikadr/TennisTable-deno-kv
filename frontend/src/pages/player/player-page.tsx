@@ -10,6 +10,7 @@ import { PlayerPointsDistrubution } from "./player-points-distribution";
 import { ProfilePicture } from "./profile-picture";
 import { PlayerGamesDistrubution } from "./player-games-distribution";
 import { stringToColor } from "../../common/string-to-color";
+import { Elo } from "../../client/client-db/elo";
 
 export const PlayerPage: React.FC = () => {
   const { name: playerId } = useParams();
@@ -23,6 +24,12 @@ export const PlayerPage: React.FC = () => {
   const reverseGames = useMemo(() => {
     if (!summary) return;
     return summary?.games.slice(Math.max(summary?.games.length - 10, 0)).reverse();
+  }, [summary]);
+
+  const graphGames = useMemo(() => {
+    const games = [...summary.games];
+    games.unshift({ eloAfterGame: Elo.INITIAL_ELO, oponent: summary.id, pointsDiff: 0, result: "win", time: 0 });
+    return games;
   }, [summary]);
 
   return (
@@ -40,7 +47,7 @@ export const PlayerPage: React.FC = () => {
             <LineChart
               width={Math.min(1000, width < 768 ? width : width - 300)}
               height={300}
-              data={summary?.games}
+              data={graphGames}
               margin={{ top: 5, right: 25, left: 0 }}
             >
               <CartesianGrid
