@@ -158,7 +158,7 @@ Other winners: ` +
                 let winner: string | undefined = "";
                 let winners: Record<string, number> = {};
 
-                while (tries < 1_000) {
+                while (tries < 10_000) {
                   tries++;
                   context.futureElo.simulate();
                   context.tournaments.clearTournamentCache();
