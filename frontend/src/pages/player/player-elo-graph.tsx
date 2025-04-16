@@ -24,7 +24,12 @@ export const PlayerEloGraph: React.FC<{ playerId: string; showExpectedElo: boole
       const simulatedElos = context.simulations.expectedPlayerEloOverTime(playerId);
       return games.map((game, index) => {
         const simulatedElo = simulatedElos.find((e) => e.time === game.time);
-        if (!simulatedElo || simulatedElo.elo === Elo.INITIAL_ELO || simulatedElo.time !== game.time) {
+        if (
+          !simulatedElo ||
+          simulatedElo.elo === Elo.INITIAL_ELO ||
+          simulatedElo.time !== game.time ||
+          index < context.client.gameLimitForRanked - 1
+        ) {
           if (game.time === 1732874368730) {
           }
           return game;
