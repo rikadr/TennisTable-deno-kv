@@ -6,6 +6,7 @@ import { NameType, ValueType } from "recharts/types/component/DefaultTooltipCont
 import { useEventDbContext } from "../wrappers/event-db-context";
 import { fmtNum } from "../common/number-utils";
 import { stringToColor } from "../common/string-to-color";
+import { relativeTimeString } from "../common/date-utils";
 
 export const ComparePlayersPage: React.FC = () => {
   const context = useEventDbContext();
@@ -154,13 +155,21 @@ const CustomTooltip: React.FC = ({ active, payload, label }: TooltipProps<ValueT
     const entries = Object.entries(record);
     entries.sort((a, b) => b[1] - a[1]);
 
+    console.log(payload);
+
+    const gameTime = entries.find((e) => e[0] === "time");
+
     return (
       <div className="p-2 bg-primary-background ring-1 ring-primary-text rounded-lg">
-        {entries.map((entry) => (
-          <p key={entry[0]} style={{ color: stringToColor(entry[0]) }}>
-            {`${context.playerName(entry[0])}: ${entry[1].toLocaleString("no-NO", { maximumFractionDigits: 0 })}`}
-          </p>
-        ))}
+        {entries.map(
+          (entry) =>
+            entry[0] !== "time" && (
+              <p key={entry[0]} style={{ color: stringToColor(entry[0]) }}>
+                {`${context.playerName(entry[0])}: ${entry[1].toLocaleString("no-NO", { maximumFractionDigits: 0 })}`}
+              </p>
+            ),
+        )}
+        {gameTime && gameTime[1] > 0 && <p>{relativeTimeString(new Date(gameTime[1]))}</p>}
       </div>
     );
   }

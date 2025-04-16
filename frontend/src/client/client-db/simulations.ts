@@ -1,4 +1,5 @@
 import { Elo } from "./elo";
+import { Game } from "./event-store/reducers/games-projector";
 import { TennisTable } from "./tennis-table";
 
 export class Simulations {
@@ -29,6 +30,54 @@ export class Simulations {
       }
     }
     return wins / (loss ?? 1);
+  }
+
+  expectedPlayerEloOverTime(playerId: string): { elo: number; time: number }[] {
+    const player = this.parent.eventStore.playersReducer.getPlayer(playerId);
+    if (!player) return [];
+
+    const allGamesWithActivePlayers = this.parent.games.filter(
+      (game) =>
+        this.parent.eventStore.playersReducer.getPlayer(game.winner)?.active &&
+        this.parent.eventStore.playersReducer.getPlayer(game.loser)?.active,
+    );
+
+    const playerGameTimes = this.parent.games.reduce((acc, game) => {
+      const isPlayedByPlayer = [game.winner, game.loser].includes(playerId);
+      if (isPlayedByPlayer) {
+        acc.push(game.playedAt);
+      }
+      return acc;
+    }, [] as number[]);
+
+    const eloOverTime: { elo: number; time: number }[] = [];
+
+    for (const gameTime of playerGameTimes) {
+      const relevantGames = allGamesWithActivePlayers.filter((g) => g.playedAt <= gameTime);
+      const generatedGames = this.parent.futureElo.simulatedGamesForAGivenInputOfGames(relevantGames);
+      const totalGames = [...relevantGames, ...generatedGames];
+
+      const playerElos: number[] = [];
+
+      const iterations = gameTime === playerGameTimes[playerGameTimes.length - 1] ? 1000 : 35;
+
+      for (let i = 0; i < iterations; i++) {
+        this.shuffleArray(totalGames);
+        const eloMap = Elo.eloCalculator(
+          totalGames as Game[], // Casting, but its only using winner and loser inside it anyway
+          this.parent.eventStore.playersReducer.players.filter((p) => p.active),
+        );
+        const playerElo = eloMap.get(playerId)?.elo;
+        playerElo && playerElos.push(playerElo);
+      }
+      if (playerElos.length === 0) {
+        continue;
+      }
+      const avg = playerElos.reduce((acc, cur) => acc + cur, 0) / playerElos.length;
+      eloOverTime.push({ elo: avg, time: gameTime });
+    }
+
+    return eloOverTime;
   }
 
   monteCarloSimulation(permutations: number) {

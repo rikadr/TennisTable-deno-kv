@@ -1,21 +1,16 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { relativeTimeString } from "../../common/date-utils";
-import { CartesianGrid, Line, LineChart, ReferenceLine, Tooltip, TooltipProps, XAxis, YAxis } from "recharts";
-import { NameType, ValueType } from "recharts/types/component/DefaultTooltipContent";
-import { useWindowSize } from "usehooks-ts";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { PodiumPlace } from "../leaderboard/podium-place";
 import { PlayerPointsDistrubution } from "./player-points-distribution";
 import { ProfilePicture } from "./profile-picture";
 import { PlayerGamesDistrubution } from "./player-games-distribution";
-import { stringToColor } from "../../common/string-to-color";
-import { Elo } from "../../client/client-db/elo";
+
+import { PlayerEloGraph } from "./player-elo-graph";
 
 export const PlayerPage: React.FC = () => {
   const { name: playerId } = useParams();
-  const { width = 0 } = useWindowSize();
-
   const context = useEventDbContext();
 
   const summary = context.leaderboard.getPlayerSummary(playerId || "");
@@ -26,11 +21,7 @@ export const PlayerPage: React.FC = () => {
     return summary?.games.slice(Math.max(summary?.games.length - 10, 0)).reverse();
   }, [summary]);
 
-  const graphGames = useMemo(() => {
-    const games = [...summary.games];
-    games.unshift({ eloAfterGame: Elo.INITIAL_ELO, oponent: summary.id, pointsDiff: 0, result: "win", time: 0 });
-    return games;
-  }, [summary]);
+  const [showExpectedElo, setShowExpectedElo] = useState(false);
 
   return (
     <div className="flex flex-col items-center">
@@ -42,71 +33,26 @@ export const PlayerPage: React.FC = () => {
           </div>
         </div>
 
-        {summary.games.length > 0 && (
+        {playerId && summary.games.length > 0 && (
           <div className="bg-primary-background rounded-lg">
-            <LineChart
-              width={Math.min(1000, width < 768 ? width : width - 300)}
-              height={300}
-              data={graphGames}
-              margin={{ top: 5, right: 25, left: 0 }}
-            >
-              <CartesianGrid
-                strokeDasharray="1 4"
-                vertical={false}
-                stroke="rgb(var(--color-primary-text))"
-                opacity={1}
-              />
-              <YAxis
-                type="number"
-                domain={["dataMin", "dataMax"]}
-                tickFormatter={(value) => value.toLocaleString("no-NO", { maximumFractionDigits: 0 })}
-                stroke="rgb(var(--color-primary-text))"
-              />
-              <XAxis dataKey="name" stroke="rgb(var(--color-primary-text))" />
-              <Tooltip
-                formatter={(value) => [value.toLocaleString("no-NO", { maximumFractionDigits: 0 }), "Elo"]}
-                wrapperClassName="rounded-lg"
-                animationDuration={0}
-                content={<CustomTooltip />}
-              />
-              {["stroke", "main"].map((type) => {
-                return (
-                  <Line
-                    key={type}
-                    type="monotone"
-                    dataKey="eloAfterGame"
-                    stroke={type === "main" ? "white" : stringToColor(playerId)}
-                    dot={false}
-                    animationDuration={100}
-                    strokeWidth={type === "main" ? 0.5 : 5}
-                  />
-                );
-              })}
-
-              <ReferenceLine
-                y={1000}
-                stroke="rgb(var(--color-primary-text))"
-                label={{ value: "1 000", position: "insideBottom", fill: "rgb(var(--color-primary-text))" }}
-                color="#"
-              />
-              {context.futureElo.predictedGames[0] && (
-                <ReferenceLine
-                  x={context.games.filter((g) => g.winner === playerId || g.loser === playerId).length}
-                  stroke="rgb(var(--color-primary-text))"
-                  opacity={0.5}
-                  label={{
-                    value: "Now",
-                    position: "insideBottomLeft",
-                    fill: "rgb(var(--color-primary-text))",
-                    opacity: 0.5,
-                  }}
-                  color="#"
-                />
-              )}
-            </LineChart>
-            <div className="m-auto w-fit -mt-2 text-primary-text">
-              <div className="">Longest win-streak 🔥🏆 {summary.streaks?.longestWin}</div>
-              <div className="">Longest lose-streak 🔥💔 {summary.streaks?.longestLose}</div>
+            <PlayerEloGraph playerId={playerId} showExpectedElo={showExpectedElo} />
+            <div className="w-full flex flex-col md:flex-row justify-center items-center gap-x-6 gap-y-2 -mt-2 text-primary-text relative">
+              <div>
+                <div>Longest win-streak 🔥🏆 {summary.streaks?.longestWin}</div>
+                <div>Longest lose-streak 🔥💔 {summary.streaks?.longestLose}</div>
+              </div>
+              <button
+                className="px-2 py-1 bg-secondary-background text-secondary-text ring-1 ring-secondary-text hover:bg-secondary-background/50 rounded-lg"
+                onClick={() => setShowExpectedElo((prev) => !prev)}
+              >
+                {showExpectedElo ? "Hide" : "Show"} expected score
+                {showExpectedElo && (
+                  <>
+                    <p className="text-xs">* Might fluctuate wildly when too little data (few games)</p>
+                    <p className="text-xs">or more players join and the total points pool increases</p>
+                  </>
+                )}
+              </button>
             </div>
           </div>
         )}
@@ -205,24 +151,4 @@ export const PlayerPage: React.FC = () => {
       )}
     </div>
   );
-};
-
-const CustomTooltip: React.FC = ({ active, payload, label }: TooltipProps<ValueType, NameType>) => {
-  const constext = useEventDbContext();
-  if (active && payload && payload.length) {
-    const game = payload[0].payload;
-    return (
-      <div className="p-2 bg-primary-background ring-1 ring-primary-text rounded-lg text-primary-text">
-        <p className="">{`Elo : ${payload[0].value?.toLocaleString("no-NO", { maximumFractionDigits: 0 })}`}</p>
-        <p className="desc">
-          {game?.result === "win"
-            ? `🏆 +${game.pointsDiff?.toLocaleString("no-NO", { maximumFractionDigits: 0 })} from`
-            : `💔 ${game.pointsDiff?.toLocaleString("no-NO", { maximumFractionDigits: 0 })} to`}{" "}
-          {constext.playerName(game.oponent)}
-        </p>
-      </div>
-    );
-  }
-
-  return null;
 };

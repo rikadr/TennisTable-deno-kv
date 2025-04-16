@@ -1,5 +1,4 @@
 import { newId } from "../../common/nani-id";
-import { Elo } from "./elo";
 import { Game } from "./event-store/reducers/games-projector";
 import { TennisTable } from "./tennis-table";
 
@@ -20,13 +19,7 @@ export class FutureElo {
   predictedGames: Game[] = [];
 
   simulate() {
-    this.parent.leaderboard.clearCaches();
-    this.parent.tournaments.clearTournamentCache();
-    this.playersMap = new Map();
-    this.playerPairings = [];
-    this.predictedGamesTemp = [];
-    this.predictedGames = [];
-
+    this.reset();
     this.setup();
     this.createPredictedGames();
     this.shuffleGameOrder();
@@ -34,9 +27,29 @@ export class FutureElo {
     this.parent.isSimulatedState = true;
   }
 
-  setup() {
+  simulatedGamesForAGivenInputOfGames(games: Game[]) {
+    this.reset();
+    this.setup(games);
+    this.createPredictedGames();
+    this.shuffleGameOrder();
+    const simulatedGames = [...this.predictedGames];
+    this.reset();
+    return simulatedGames;
+  }
+
+  private reset() {
+    this.parent.leaderboard.clearCaches();
+    this.parent.tournaments.clearTournamentCache();
+    this.playersMap = new Map();
+    this.playerPairings = [];
+    this.predictedGamesTemp = [];
+    this.predictedGames = [];
+    this.parent.isSimulatedState = false;
+  }
+
+  setup(games?: Game[]) {
     // Add all existing games
-    for (const { winner, loser } of this.parent.games) {
+    for (const { winner, loser } of games ?? this.parent.games) {
       // Add players to map
       if (this.playersMap.has(winner) === false) {
         this.playersMap.set(winner, new PlayerClass(winner));
@@ -47,17 +60,9 @@ export class FutureElo {
       const winnerPlayer = this.playersMap.get(winner)!;
       const loserPlayer = this.playersMap.get(loser)!;
 
-      // Calculate elo
-      const { winnersNewElo, losersNewElo } = Elo.calculateELO(
-        winnerPlayer.elo,
-        loserPlayer.elo,
-        winnerPlayer.totalGames,
-        loserPlayer.totalGames,
-      );
-
       // Register games
-      winnerPlayer.registerGame(loser, winnersNewElo, "win");
-      loserPlayer.registerGame(winner, losersNewElo, "loss");
+      winnerPlayer.registerGame(loser, "win");
+      loserPlayer.registerGame(winner, "loss");
     }
 
     // Create all ranked players pairings
@@ -297,7 +302,6 @@ class PlayerClass {
   }
 
   readonly name: string;
-  elo = Elo.INITIAL_ELO;
   totalGames = 0;
   oponentsMap = new Map<
     string,
@@ -313,7 +317,7 @@ class PlayerClass {
     }
   }
 
-  registerGame(oponent: string, newElo: number, result: "win" | "loss") {
+  registerGame(oponent: string, result: "win" | "loss") {
     // Find oponent
     this.registerOponentIfNotExists(oponent);
     const oponentFromMap = this.oponentsMap.get(oponent)!;
@@ -326,6 +330,5 @@ class PlayerClass {
     }
 
     this.totalGames++;
-    this.elo = newElo;
   }
 }

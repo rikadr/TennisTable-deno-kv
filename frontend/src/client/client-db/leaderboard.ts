@@ -182,7 +182,7 @@ export class Leaderboard {
               graphEntry[game.loser] = newElo.elo;
             }
           }
-          graphData.push({ ...graphEntry });
+          graphData.push({ ...graphEntry, time: game.playedAt });
         }
       },
     );
