@@ -41,18 +41,20 @@ export const PlayerPage: React.FC = () => {
                 <div>Longest win-streak 🔥🏆 {summary.streaks?.longestWin}</div>
                 <div>Longest lose-streak 🔥💔 {summary.streaks?.longestLose}</div>
               </div>
-              <button
-                className="px-2 py-1 bg-secondary-background text-secondary-text ring-1 ring-secondary-text hover:bg-secondary-background/50 rounded-lg"
-                onClick={() => setShowExpectedElo((prev) => !prev)}
-              >
-                {showExpectedElo ? "Hide" : "Show"} expected score
-                {showExpectedElo && (
-                  <>
-                    <p className="text-xs">* Might fluctuate wildly when too little data (few games)</p>
-                    <p className="text-xs">or more players join and the total points pool increases</p>
-                  </>
-                )}
-              </button>
+              {summary.games.length >= context.client.gameLimitForRanked && (
+                <button
+                  className="px-2 py-1 bg-secondary-background text-secondary-text ring-1 ring-secondary-text hover:bg-secondary-background/50 rounded-lg"
+                  onClick={() => setShowExpectedElo((prev) => !prev)}
+                >
+                  {showExpectedElo ? "Hide" : "Show"} expected score
+                  {showExpectedElo && (
+                    <>
+                      <p className="text-xs">* Might fluctuate wildly when too little data (few games)</p>
+                      <p className="text-xs">or more players become ranked and the total points pool increases</p>
+                    </>
+                  )}
+                </button>
+              )}
             </div>
           </div>
         )}
