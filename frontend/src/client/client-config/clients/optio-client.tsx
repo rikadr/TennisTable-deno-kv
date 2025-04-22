@@ -83,7 +83,7 @@ const optioEasterTournament: TournamentDB = {
   startDate: 1744012800000, // "Apr 7 2025 09:00:00 GMT+0100" 10:00 Norwegian time
   groupPlay: true,
   signedUp: [],
-  skippedGames: [],
+  skippedGames: [{ advancing: optioPlayersByName.Axel, eliminated: optioPlayersByName.Ole, time: 1745324560434 }],
   playerOrder: [
     optioPlayersByName.Rasmus,
     optioPlayersByName.Fooa,
