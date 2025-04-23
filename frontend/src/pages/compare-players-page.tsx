@@ -60,17 +60,20 @@ export const ComparePlayersPage: React.FC = () => {
                 content={<CustomTooltip />}
               />
               {graphDataToSee[0] &&
-                Object.keys(graphDataToSee[0]).map((player) => (
-                  <Line
-                    key={player + "color"}
-                    type="monotone"
-                    dataKey={player}
-                    stroke={stringToColor(player)}
-                    dot={false}
-                    animationDuration={150}
-                    strokeWidth={3}
-                  />
-                ))}
+                Object.keys(graphDataToSee[0]).map((key) => {
+                  if (key === "time") return null;
+                  return (
+                    <Line
+                      key={key + "color"}
+                      type="monotone"
+                      dataKey={key}
+                      stroke={stringToColor(key)}
+                      dot={false}
+                      animationDuration={150}
+                      strokeWidth={3}
+                    />
+                  );
+                })}
               {graphDataToSee[0] &&
                 Object.keys(graphDataToSee[0]).map((key) => {
                   if (key === "time") return null;
