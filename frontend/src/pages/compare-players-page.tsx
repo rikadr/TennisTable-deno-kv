@@ -157,9 +157,6 @@ const CustomTooltip: React.FC = ({ active, payload, label }: TooltipProps<ValueT
     const record = payload[0].payload as Record<string, number>;
     const entries = Object.entries(record);
     entries.sort((a, b) => b[1] - a[1]);
-
-    console.log(payload);
-
     const gameTime = entries.find((e) => e[0] === "time");
 
     return (
