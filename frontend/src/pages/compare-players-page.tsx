@@ -11,12 +11,12 @@ import { relativeTimeString } from "../common/date-utils";
 export const ComparePlayersPage: React.FC = () => {
   const context = useEventDbContext();
   const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
-  const comparison = useMemo(
-    () => context.leaderboard.comparePlayers(selectedPlayers),
-    [context.leaderboard, selectedPlayers],
-  );
-  const [graphDataToSee, setGraphDataToSee] = useState<Record<string, number>[]>(comparison.graphData);
   const [range, setRange] = useState(0);
+  const comparison = useMemo(() => {
+    setRange(0);
+    return context.leaderboard.comparePlayers(selectedPlayers);
+  }, [context.leaderboard, selectedPlayers]);
+  const [graphDataToSee, setGraphDataToSee] = useState<Record<string, number>[]>(comparison.graphData);
 
   const { width = 0, height = 0 } = useWindowSize();
 
