@@ -30,8 +30,6 @@ export const PlayerEloGraph: React.FC<{ playerId: string; showExpectedElo: boole
           simulatedElo.time !== game.time ||
           index < context.client.gameLimitForRanked
         ) {
-          if (game.time === 1732874368730) {
-          }
           return game;
         }
         return { ...game, simulatedElo: simulatedElos[index - 1]?.elo };

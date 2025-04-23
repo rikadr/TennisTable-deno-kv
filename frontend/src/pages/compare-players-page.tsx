@@ -72,18 +72,21 @@ export const ComparePlayersPage: React.FC = () => {
                   />
                 ))}
               {graphDataToSee[0] &&
-                Object.keys(graphDataToSee[0]).map((player) => (
-                  <Line
-                    key={player + "main"}
-                    type="monotone"
-                    dataKey={player}
-                    stroke={"white"}
-                    dot={false}
-                    animationDuration={150}
-                    strokeWidth={0.5}
-                    opacity={0.5}
-                  />
-                ))}
+                Object.keys(graphDataToSee[0]).map((key) => {
+                  if (key === "time") return null;
+                  return (
+                    <Line
+                      key={key + "main"}
+                      type="monotone"
+                      dataKey={key}
+                      stroke={"white"}
+                      dot={false}
+                      animationDuration={150}
+                      strokeWidth={0.5}
+                      opacity={0.5}
+                    />
+                  );
+                })}
               <ReferenceLine
                 y={1000}
                 label={{ value: "1 000", position: "insideBottom", fill: "rgb(var(--color-primary-text))" }}
