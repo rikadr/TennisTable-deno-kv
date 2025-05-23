@@ -28,7 +28,7 @@ export const TournamentSignup: React.FC<{ tournament: Tournament }> = ({ tournam
       stream: tournament.id,
       data: { player },
     };
-    const validateResponse = context.eventStore.tournamentsReducer.validateSignup(event);
+    const validateResponse = context.eventStore.tournamentsProjector.validateSignup(event);
     if (validateResponse.valid === false) {
       console.error(validateResponse.message);
       return;
@@ -51,7 +51,7 @@ export const TournamentSignup: React.FC<{ tournament: Tournament }> = ({ tournam
       stream: tournament.id,
       data: { player },
     };
-    const validateResponse = context.eventStore.tournamentsReducer.validateCancelSignup(event);
+    const validateResponse = context.eventStore.tournamentsProjector.validateCancelSignup(event);
     if (validateResponse.valid === false) {
       console.error(validateResponse.message);
       return;

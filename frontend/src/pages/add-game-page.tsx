@@ -35,7 +35,7 @@ export const AddGamePage: React.FC = () => {
       data: { winner, loser, playedAt: now },
     };
 
-    const validateResponse = context.eventStore.gamesReducer.validateCreateGame(event);
+    const validateResponse = context.eventStore.gamesProjector.validateCreateGame(event);
     if (validateResponse.valid === false) {
       console.error(validateResponse.message);
       return;

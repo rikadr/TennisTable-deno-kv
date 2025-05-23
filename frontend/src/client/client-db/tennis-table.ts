@@ -47,14 +47,14 @@ export class TennisTable {
   }
 
   get players() {
-    return this.eventStore.playersReducer.players;
+    return this.eventStore.playersProjector.players;
   }
   get games() {
-    return this.eventStore.gamesReducer.games;
+    return this.eventStore.gamesProjector.games;
   }
 
   playerName(id: string | undefined | null) {
     if (!id) return "⛔️No id⛔️";
-    return this.eventStore.playersReducer.getPlayer(id)?.name ?? `⛔️${id}⛔️`;
+    return this.eventStore.playersProjector.getPlayer(id)?.name ?? `⛔️${id}⛔️`;
   }
 }

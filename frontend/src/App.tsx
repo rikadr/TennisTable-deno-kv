@@ -30,6 +30,7 @@ import { ThemeProvider } from "./wrappers/theme-provider";
 import { SettingsPage } from "./pages/settings-page";
 import { EventDbWrapper } from "./wrappers/event-db-context";
 import { ImageKitContext } from "./wrappers/image-kit-context";
+import { AddGamePageV2 } from "./pages/add-game/add-game-page";
 
 const RequireAuth: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   if (!session.isAuthenticated) {
@@ -74,7 +75,8 @@ function App() {
                           <Route path="expected-score" element={<ExpectedScore />} />
                         </Route>
                         <Route path="/add-player" element={<AddPlayerPage />} />
-                        <Route path="/add-game" element={<AddGamePage />} />
+                        <Route path="/add-game" element={<AddGamePageV2 />} />
+                        <Route path="/add-game/old" element={<AddGamePage />} />
                         <Route path="/camera" element={<CameraPage />} />
                         <Route path="/settings" element={<SettingsPage />} />
                         <Route path="/log-in" element={<LoginPage />} />

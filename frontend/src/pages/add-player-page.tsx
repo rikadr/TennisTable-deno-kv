@@ -17,14 +17,14 @@ export const AddPlayerPage: React.FC = () => {
   const [playerSuccessfullyAdded, setPlayerSuccessfullyAdded] = useState(false);
 
   useEffect(() => {
-    const validateResponse = context.eventStore.playersReducer.validatePlayerName(playerName);
+    const validateResponse = context.eventStore.playersProjector.validatePlayerName(playerName);
 
     if (validateResponse.valid === false) {
       setErrorMessage(validateResponse.message);
     } else {
       setErrorMessage("");
     }
-  }, [playerName, context.players, playerSuccessfullyAdded, context.eventStore.playersReducer]);
+  }, [playerName, context.players, playerSuccessfullyAdded, context.eventStore.playersProjector]);
 
   function submitPlayer(name: string) {
     const event: PlayerCreated = {
@@ -34,7 +34,7 @@ export const AddPlayerPage: React.FC = () => {
       data: { name },
     };
 
-    const validateResponse = context.eventStore.playersReducer.validateCreatePlayer(event);
+    const validateResponse = context.eventStore.playersProjector.validateCreatePlayer(event);
     if (validateResponse.valid === false) {
       console.error(validateResponse.message);
       setErrorMessage(validateResponse.message);

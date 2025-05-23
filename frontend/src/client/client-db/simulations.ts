@@ -33,13 +33,13 @@ export class Simulations {
   }
 
   expectedPlayerEloOverTime(playerId: string): { elo: number; time: number }[] {
-    const player = this.parent.eventStore.playersReducer.getPlayer(playerId);
+    const player = this.parent.eventStore.playersProjector.getPlayer(playerId);
     if (!player) return [];
 
     const allGamesWithActivePlayers = this.parent.games.filter(
       (game) =>
-        this.parent.eventStore.playersReducer.getPlayer(game.winner)?.active &&
-        this.parent.eventStore.playersReducer.getPlayer(game.loser)?.active,
+        this.parent.eventStore.playersProjector.getPlayer(game.winner)?.active &&
+        this.parent.eventStore.playersProjector.getPlayer(game.loser)?.active,
     );
 
     const playerGameTimes = this.parent.games.reduce((acc, game) => {
@@ -65,7 +65,7 @@ export class Simulations {
         this.shuffleArray(totalGames);
         const eloMap = Elo.eloCalculator(
           totalGames as Game[], // Casting, but its only using winner and loser inside it anyway
-          this.parent.eventStore.playersReducer.players.filter((p) => p.active),
+          this.parent.eventStore.playersProjector.players.filter((p) => p.active),
         );
         const playerElo = eloMap.get(playerId)?.elo;
         playerElo && playerElos.push(playerElo);

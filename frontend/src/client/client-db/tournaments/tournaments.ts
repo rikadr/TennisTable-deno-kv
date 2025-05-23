@@ -37,7 +37,7 @@ export class Tournaments {
     return new Tournament(
       tournament,
       [...this.parent.games, ...this.parent.futureElo.predictedGames],
-      this.parent.eventStore.tournamentsReducer.getTournamentSignups(tournament.id),
+      this.parent.eventStore.tournamentsProjector.getTournamentSignups(tournament.id),
     );
   }
 

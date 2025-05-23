@@ -6,15 +6,15 @@ import { TournamentsProjector } from "./reducers/tournaments-projector";
 
 export class EventStore {
   private parent: TennisTable;
-  readonly playersReducer: PlyersProjector;
-  readonly gamesReducer: GamesProjector;
-  readonly tournamentsReducer: TournamentsProjector;
+  readonly playersProjector: PlyersProjector;
+  readonly gamesProjector: GamesProjector;
+  readonly tournamentsProjector: TournamentsProjector;
 
   constructor(parent: TennisTable) {
     this.parent = parent;
-    this.playersReducer = new PlyersProjector();
-    this.gamesReducer = new GamesProjector();
-    this.tournamentsReducer = new TournamentsProjector();
+    this.playersProjector = new PlyersProjector();
+    this.gamesProjector = new GamesProjector();
+    this.tournamentsProjector = new TournamentsProjector();
 
     this.#projectEvents();
   }
@@ -24,28 +24,28 @@ export class EventStore {
       const { type } = event;
       switch (type) {
         case EventTypeEnum.PLAYER_CREATED:
-          this.playersReducer.createPlayer(event);
+          this.playersProjector.createPlayer(event);
           break;
         case EventTypeEnum.PLAYER_DEACTIVATED:
-          this.playersReducer.deactivatePlayer(event);
+          this.playersProjector.deactivatePlayer(event);
           break;
         case EventTypeEnum.PLAYER_REACTIVATED:
-          this.playersReducer.reactivatePlayer(event);
+          this.playersProjector.reactivatePlayer(event);
           break;
         case EventTypeEnum.PLAYER_NAME_UPDATED:
-          this.playersReducer.updateName(event);
+          this.playersProjector.updateName(event);
           break;
         case EventTypeEnum.GAME_CREATED:
-          this.gamesReducer.createGame(event);
+          this.gamesProjector.createGame(event);
           break;
         case EventTypeEnum.GAME_DELETED:
-          this.gamesReducer.deleteGame(event);
+          this.gamesProjector.deleteGame(event);
           break;
         case EventTypeEnum.TOURNAMENT_SIGNUP:
-          this.tournamentsReducer.signup(event);
+          this.tournamentsProjector.signup(event);
           break;
         case EventTypeEnum.TOURNAMENT_CANCEL_SIGNUP:
-          this.tournamentsReducer.cancelSignup(event);
+          this.tournamentsProjector.cancelSignup(event);
           break;
         default:
           ((_: never) => {})(type); // exhaustive check

@@ -19,7 +19,7 @@ export const EditPlayerName: React.FC<{ playerId: string }> = ({ playerId }) => 
       data: { updatedName: newName },
     };
 
-    const validateResponse = context.eventStore.playersReducer.validateUpdateName(event);
+    const validateResponse = context.eventStore.playersProjector.validateUpdateName(event);
     if (validateResponse.valid === false) {
       setValidationError(validateResponse.message);
       return;
