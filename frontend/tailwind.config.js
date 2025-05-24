@@ -8,6 +8,9 @@ module.exports = {
       display: ["Oooh Baby", "cursive"],
     },
     extend: {
+      screens: {
+        "xs": "470px", // or whatever value you need
+      },
       colors: {
         primary: {
           text: withOpacityValue("--color-primary-text"),
