@@ -1,4 +1,6 @@
+import { Elo } from "../../client/client-db/elo";
 import { classNames } from "../../common/class-names";
+import { fmtNum } from "../../common/number-utils";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { ProfilePicture } from "../player/profile-picture";
 
@@ -8,15 +10,36 @@ export const StepSelectWinner: React.FC<{
   winner: string | null;
   onWinnerSelect: (playerId: string) => void;
 }> = ({ player1, player2, winner, onWinnerSelect }) => {
+  const context = useEventDbContext();
+  const player1Elo = context.leaderboard.getPlayerSummary(player1).elo;
+  const player2Elo = context.leaderboard.getPlayerSummary(player2).elo;
+
+  const EloIfPlayer1Wins = Elo.calculateELO(player1Elo, player2Elo);
+  const EloIfPlayer2Wins = Elo.calculateELO(player2Elo, player1Elo);
+
   return (
     <div className="space-y-6 max-w-2xl mx-auto">
       <h2 className="text-xl font-bold text-primary-text text-center mb-6">Who won?</h2>
       <div className="space-y-4">
-        <PlayerBox playerId={player1} winner={winner} onWinnerSelect={onWinnerSelect} />
+        <PlayerBox
+          playerId={player1}
+          winner={winner}
+          onWinnerSelect={onWinnerSelect}
+          eloDiffAfterGame={
+            (winner === player2 ? EloIfPlayer2Wins.losersNewElo : EloIfPlayer1Wins.winnersNewElo) - player1Elo
+          }
+        />
         <div className="text-center py-4">
           <span className="text-4xl font-bold text-primary-text">VS</span>
         </div>
-        <PlayerBox playerId={player2} winner={winner} onWinnerSelect={onWinnerSelect} />
+        <PlayerBox
+          playerId={player2}
+          winner={winner}
+          onWinnerSelect={onWinnerSelect}
+          eloDiffAfterGame={
+            (winner === player1 ? EloIfPlayer1Wins.losersNewElo : EloIfPlayer2Wins.winnersNewElo) - player2Elo
+          }
+        />
       </div>
     </div>
   );
@@ -26,7 +49,8 @@ const PlayerBox: React.FC<{
   playerId: string;
   winner: string | null;
   onWinnerSelect: (playerId: string) => void;
-}> = ({ playerId, winner, onWinnerSelect }) => {
+  eloDiffAfterGame?: number;
+}> = ({ playerId, winner, onWinnerSelect, eloDiffAfterGame }) => {
   const context = useEventDbContext();
 
   const isWinner = playerId === winner;
@@ -44,6 +68,12 @@ const PlayerBox: React.FC<{
         <div className="flex items-center space-x-4">
           <ProfilePicture playerId={playerId} size={64} border={4} />
           <h3 className="text-xl font-semibold">{context.playerName(playerId)}</h3>
+          {eloDiffAfterGame && (
+            <span className="text-2xl italic font-thin">
+              {eloDiffAfterGame > 0 && "+"}
+              {fmtNum(eloDiffAfterGame)}
+            </span>
+          )}
         </div>
         {isWinner && (
           <div className="flex items-center space-x-2">

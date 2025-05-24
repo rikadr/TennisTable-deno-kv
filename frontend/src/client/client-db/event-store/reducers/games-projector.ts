@@ -1,4 +1,4 @@
-import { GameCreated, GameDeleted } from "../event-types";
+import { GameCreated, GameDeleted, GameScore } from "../event-types";
 import { ValidatorResponse } from "./validator-types";
 
 export type Game = { id: string; playedAt: number; winner: string; loser: string };
@@ -43,6 +43,43 @@ export class GamesProjector {
     if (this.#gamesMap.has(event.stream) === false) {
       return { valid: false, message: "Game does not exist" };
     }
+    return { valid: true };
+  }
+
+  validateScoreGame(event: GameScore, gameEvent: GameCreated): ValidatorResponse {
+    if (event.data.setsWon.gameWinner <= event.data.setsWon.gameLoser) {
+      return { valid: false, message: "Winner must win more sets than loser" };
+    }
+
+    if (event.data.setPoints.every((set) => set.gameWinner === 0 && set.gameLoser === 0)) {
+      return {
+        valid: false,
+        message: "If no points are recorded, the setPoints should not be included in the event data",
+      };
+    }
+
+    if (event.data.setPoints.some((set) => set.gameWinner === set.gameLoser)) {
+      return { valid: false, message: "Points are invalid. No sets can be tied" };
+    }
+
+    const gameWinnerSetPointsWins = event.data.setPoints.reduce((wins, set) => {
+      if (set.gameWinner > set.gameLoser) wins++;
+      return wins;
+    }, 0);
+    const gameLoserSetPointsWins = event.data.setPoints.reduce((wins, set) => {
+      if (set.gameLoser > set.gameWinner) wins++;
+      return wins;
+    }, 0);
+    if (gameWinnerSetPointsWins <= gameLoserSetPointsWins) {
+      return { valid: false, message: "Points are invalid. Winner must win more sets than loser" };
+    }
+    if (gameWinnerSetPointsWins !== event.data.setsWon.gameWinner) {
+      return { valid: false, message: "Points are invalid. Winner must win the correct amount of sets" };
+    }
+    if (gameLoserSetPointsWins !== event.data.setsWon.gameLoser) {
+      return { valid: false, message: "Points are invalid. Loser must win the correct amount of sets" };
+    }
+
     return { valid: true };
   }
 }
