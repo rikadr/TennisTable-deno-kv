@@ -15,8 +15,8 @@ export const StepSelectPlayers: React.FC<{
   const [player2Search, setPlayer2Search] = useState("");
 
   return (
-    <div>
-      <h2 className="text-xl font-bold text-primary-text text-center mb-6">Player 1</h2>
+    <div className="px-4 max-w-2xl m-auto">
+      <h2 className="text-xl font-bold text-primary-text text-left mb-2">Player 1</h2>
       {player1.id && <SelectedPlayerCard playerId={player1.id} onClear={() => player1.set(null)} />}
       {!player1.id && (
         <>
@@ -28,7 +28,8 @@ export const StepSelectPlayers: React.FC<{
           <PlayerList
             playerIds={players
               .filter(
-                (p) => p.id !== player2.id && p.name.toLowerCase().trim().includes(player1Search.toLowerCase().trim()),
+                (p) =>
+                  p.id !== player2.id && p.name.toLowerCase().trim().startsWith(player1Search.toLowerCase().trim()),
               )
               .map((player) => player.id)}
             onSelect={(playerId) => {
@@ -38,7 +39,7 @@ export const StepSelectPlayers: React.FC<{
           />
         </>
       )}
-      <h2 className="text-xl font-bold text-primary-text text-center mb-6">Player 2</h2>
+      <h2 className="text-xl font-bold text-primary-text text-left mb-2 mt-6">Player 2</h2>
       {player2.id && <SelectedPlayerCard playerId={player2.id} onClear={() => player2.set(null)} />}
       {player1.id && !player2.id && (
         <>
@@ -50,7 +51,8 @@ export const StepSelectPlayers: React.FC<{
           <PlayerList
             playerIds={players
               .filter(
-                (p) => p.id !== player1.id && p.name.toLowerCase().trim().includes(player2Search.toLowerCase().trim()),
+                (p) =>
+                  p.id !== player1.id && p.name.toLowerCase().trim().startsWith(player2Search.toLowerCase().trim()),
               )
               .map((player) => player.id)}
             onSelect={(playerId) => {

@@ -60,16 +60,16 @@ const SetPointsInput: React.FC<{
       <label className="block text-sm mb-1 -mt-6 text-center">{context.playerName(playerId)}</label>
       <div className="flex">
         <button
-          className="h-10 w-10 md:w-14 rounded-l-lg bg-secondary-background text-secondary-text ring-[2px] ring-secondary-text hover:bg-tertiary-background/50"
-          onClick={() => handleUpdatePoints(11)}
+          className="h-10 w-8 md:w-10 rounded-l-lg bg-secondary-background text-secondary-text ring-[2px] ring-secondary-text hover:bg-tertiary-background/50"
+          onClick={() => handleUpdatePoints(0)}
         >
-          11
+          0
         </button>
         <button
-          className="h-10 w-10 md:w-12 bg-secondary-background text-secondary-text ring-[2px] ring-secondary-text hover:bg-tertiary-background/50"
-          onClick={() => handleUpdatePoints(currentPoints + 1)}
+          className="h-10 w-10 bg-secondary-background text-secondary-text ring-[2px] ring-secondary-text hover:bg-tertiary-background/50"
+          onClick={() => handleUpdatePoints(currentPoints - 1)}
         >
-          +
+          -
         </button>
         <input
           type="number"
@@ -79,16 +79,16 @@ const SetPointsInput: React.FC<{
           onChange={(e) => handleUpdatePoints(e.target.value)}
         />
         <button
-          className="h-10 w-10 md:w-12 bg-secondary-background text-secondary-text ring-[2px] ring-secondary-text hover:bg-tertiary-background/50"
-          onClick={() => handleUpdatePoints(currentPoints - 1)}
+          className="h-10 w-10 bg-secondary-background text-secondary-text ring-[2px] ring-secondary-text hover:bg-tertiary-background/50"
+          onClick={() => handleUpdatePoints(currentPoints + 1)}
         >
-          -
+          +
         </button>
         <button
-          className="h-10 w-10 md:w-12 rounded-r-lg bg-secondary-background text-secondary-text ring-[2px] ring-secondary-text hover:bg-tertiary-background/50"
-          onClick={() => handleUpdatePoints(0)}
+          className="h-10 w-8 md:w-10 rounded-r-lg bg-secondary-background text-secondary-text ring-[2px] ring-secondary-text hover:bg-tertiary-background/50"
+          onClick={() => handleUpdatePoints(11)}
         >
-          0
+          11
         </button>
       </div>
     </div>
@@ -104,8 +104,8 @@ const SetPoints: React.FC<{
 }> = ({ player1, player2, setPoints }) => {
   const anyPointsSet = setPoints.setPoints.some((set) => set.player1 > 0 || set.player2 > 0);
   return (
-    <div className="space-y-4 text-primary-text">
-      <div className="grid grid-cols-1 gap-4">
+    <div className="text-primary-text">
+      <div className="grid grid-cols-1 gap-2">
         {setPoints.setPoints.map((_, index) => (
           <div
             key={index}
