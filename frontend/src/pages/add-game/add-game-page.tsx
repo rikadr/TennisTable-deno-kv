@@ -165,27 +165,42 @@ export const AddGamePageV2: React.FC = () => {
   return (
     <div>
       <StepIndicator currentStep={currentStep} />
-      {currentStep === 1 && (
-        <StepSelectPlayers player1={{ id: player1, set: setPlayer1 }} player2={{ id: player2, set: setPlayer2 }} />
+      {gameSuccessfullyAdded && (
+        <div className="flex justify-center">
+          <ConfettiExplosion particleCount={250} force={0.8} width={2_000} duration={10_000} />
+        </div>
       )}
-      {currentStep === 2 && player1 && player2 && (
-        <StepSelectWinner
-          player1={player1}
-          player2={player2}
-          winner={winner}
-          onWinnerSelect={(playerId) => setWinner(playerId)}
-        />
-      )}
-      {currentStep === 3 && player1 && player2 && winner && (
-        <StepAddScore
-          player1={{ id: player1, sets: player1Sets, setSets: setPlayer1Sets }}
-          player2={{ id: player2, sets: player2Sets, setSets: setPlayer2Sets }}
-          setPoints={{ setPoints, setSetPoints }}
-          winner={winner}
-          invalidScore={invalidScore}
-        />
-      )}
-      {validationError && <div className="bg-black text-red-500 text-center">Error: {validationError}</div>}
+      <div
+        className="overflow-y-auto py-8 h-16"
+        style={{
+          height: `calc(100dvh - 160.1px - 48px)`,
+          ...(window.innerWidth <= 768 && {
+            height: `calc(100dvh - 160.1px - 64px)`,
+          }),
+        }}
+      >
+        {currentStep === 1 && (
+          <StepSelectPlayers player1={{ id: player1, set: setPlayer1 }} player2={{ id: player2, set: setPlayer2 }} />
+        )}
+        {currentStep === 2 && player1 && player2 && (
+          <StepSelectWinner
+            player1={player1}
+            player2={player2}
+            winner={winner}
+            onWinnerSelect={(playerId) => setWinner(playerId)}
+          />
+        )}
+        {currentStep === 3 && player1 && player2 && winner && (
+          <StepAddScore
+            player1={{ id: player1, sets: player1Sets, setSets: setPlayer1Sets }}
+            player2={{ id: player2, sets: player2Sets, setSets: setPlayer2Sets }}
+            setPoints={{ setPoints, setSetPoints }}
+            winner={winner}
+            invalidScore={invalidScore}
+          />
+        )}
+        {validationError && <div className="bg-black text-red-500 text-center">Error: {validationError}</div>}
+      </div>
       <StepNavigator
         canProceed={canProceed(currentStep)}
         currentStep={currentStep}
@@ -195,21 +210,10 @@ export const AddGamePageV2: React.FC = () => {
           if (!player1 || !player2 || !winner) return;
           const loser = player1 === winner ? player2 : player1;
           submitGame(winner, loser);
-
-          console.log({
-            player1: context.playerName(player1),
-            player2: context.playerName(player2),
-            winner: context.playerName(winner),
-          });
         }}
         isSubmitting={addEventMutation.isPending}
         hasSubmitted={gameSuccessfullyAdded}
       />
-      {gameSuccessfullyAdded && (
-        <div className="flex justify-center">
-          <ConfettiExplosion particleCount={250} force={0.8} width={2_000} duration={10_000} />
-        </div>
-      )}
     </div>
   );
 };

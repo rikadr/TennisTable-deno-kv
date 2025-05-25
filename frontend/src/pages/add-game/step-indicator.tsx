@@ -38,7 +38,7 @@ export const StepIndicator: React.FC<{ currentStep: number }> = ({ currentStep }
   );
 
   return (
-    <div className="flex items-center m-8 mt-0">
+    <div className="flex items-center mx-8 my-0">
       {joinJSX(
         completedSteps.map((step) => step.component),
         divider(true),
