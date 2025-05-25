@@ -3,6 +3,8 @@ import { classNames } from "../../common/class-names";
 import { stringToColor } from "../../common/string-to-color";
 import { IKImage } from "imagekitio-react";
 import { useImageKitTimestamp } from "../../wrappers/image-kit-context";
+import { useState } from "react";
+import { useEventDbContext } from "../../wrappers/event-db-context";
 
 type Props = {
   playerId?: string;
@@ -21,7 +23,9 @@ export const ProfilePicture: React.FC<Props> = ({
   shape = "circle",
   linkToPlayer = false,
 }) => {
+  const context = useEventDbContext();
   const navigate = useNavigate();
+  const [imageError, setImageError] = useState(false);
 
   const { timestamp } = useImageKitTimestamp();
   const HighDefinitionScaleFactor = 4;
@@ -34,8 +38,22 @@ export const ProfilePicture: React.FC<Props> = ({
       path={playerId}
       transformation={[{ height: size * HighDefinitionScaleFactor, width: size * HighDefinitionScaleFactor }]}
       queryParameters={{ v: timestamp }}
+      onError={() => setImageError(true)}
     />
   );
+  const fallback = () => (
+    <div
+      className="w-full h-full flex items-center justify-center text-white font-bold "
+      style={{
+        backgroundColor: stringToColor(playerId || "1adagrsss"),
+        fontSize: size * 0.7, // Scale font size relative to component size
+      }}
+    >
+      {context.playerName(playerId)[0]}
+    </div>
+  );
+
+  const content = () => (imageError ? fallback() : img());
 
   return (
     <div
@@ -55,10 +73,10 @@ export const ProfilePicture: React.FC<Props> = ({
       )}
       {linkToPlayer && playerId !== "default" ? (
         <Link aria-disabled to={`/player/${playerId}`}>
-          {img()}
+          {content()}
         </Link>
       ) : (
-        img()
+        content()
       )}
     </div>
   );
