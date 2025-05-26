@@ -47,6 +47,7 @@ const SetPointsInput: React.FC<{
 }> = ({ playerId, setIndex, playerIndex, setPoints: { setPoints, setSetPoints } }) => {
   const context = useEventDbContext();
   const currentPoints = setPoints[setIndex][playerIndex];
+  const anyPointsSet = setPoints.some((set) => set.player1 > 0 || set.player2 > 0);
 
   function handleUpdatePoints(input: number | string) {
     const value = Math.max(typeof input === "string" ? parseInt(input) : input, 0);
@@ -75,7 +76,7 @@ const SetPointsInput: React.FC<{
           type="number"
           placeholder="0"
           className="w-14 pl-3 ring-[2px] ring-tertiary-background bg-tertiary-background text-tertiary-text text-center text-2xl font-semibold"
-          value={currentPoints}
+          value={anyPointsSet ? currentPoints : ""}
           onChange={(e) => handleUpdatePoints(e.target.value)}
         />
         <button
