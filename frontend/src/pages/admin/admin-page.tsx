@@ -13,6 +13,7 @@ import {
   PlayerReactivated,
 } from "../../client/client-db/event-store/event-types";
 import { EditPlayerName } from "./edit-player-name";
+import { fmtNum } from "../../common/number-utils";
 
 export const AdminPage: React.FC = () => {
   const context = useEventDbContext();
@@ -89,65 +90,136 @@ export const AdminPage: React.FC = () => {
       {showGames && <AllPlayerGamesDistrubution />}
       <Users />
       <p>Active players: {context.eventStore.playersProjector.players.length}</p>
+      <p className="mt-2 text-sm">Inactive players: {context.eventStore.playersProjector.inactivePlayers.length}</p>
       <p>
         Deactivating players is reverable. No games will be deleted. It will only result in games with this player not
         counting towards anyone's elo rating.
       </p>
-      <section className="flex flex-col gap-2 mt-2">
-        {context.eventStore.playersProjector.players.map((player) => (
-          <div className="flex gap-2" key={player.id}>
-            <p>{player.name}</p>
-            <button
-              className="text-xs bg-red-500 hover:bg-red-700 text-white px-1 rounded-md"
-              onClick={() => handleDeactivatePlayer(player.id)}
-            >
-              Deactivate
-            </button>
-            <EditPlayerName playerId={player.id} />
-          </div>
-        ))}
-        <p>Inactive players: {context.eventStore.playersProjector.inactivePlayers.length}</p>
-        {context.eventStore.playersProjector.inactivePlayers.map((player) => (
-          <div className="flex gap-2" key={player.id}>
-            <p>{player.name}</p>
-            <button
-              className="text-xs bg-gray-400 hover:bg-green-400 text-white px-1 rounded-md"
-              onClick={() => handleReactivatePlayer(player.id)}
-            >
-              Re-activate
-            </button>
-          </div>
-        ))}
-      </section>
+
+      <div className="mt-2 overflow-x-auto">
+        <table className="border-collapse border border-gray-300">
+          <thead>
+            <tr>
+              <th className="border border-gray-300 px-4 py-2 text-left">Player Name</th>
+              <th className="border border-gray-300 px-4 py-2 text-left">Status</th>
+              <th className="border border-gray-300 px-4 py-2 text-center">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {/* Active Players */}
+            {context.eventStore.playersProjector.players.map((player) => (
+              <tr key={player.id} className="hover:bg-secondary-background/50">
+                <td className="border border-gray-300 px-4 py-2">{player.name}</td>
+                <td className="border border-gray-300 px-4 py-2">
+                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                    Active
+                  </span>
+                </td>
+                <td className="border border-gray-300 px-4 py-2 text-center">
+                  <div className="flex gap-2 justify-center">
+                    <button
+                      className="text-xs bg-red-500 hover:bg-red-700 text-white px-2 py-1 rounded-md"
+                      onClick={() => handleDeactivatePlayer(player.id)}
+                    >
+                      Deactivate
+                    </button>
+                    <EditPlayerName playerId={player.id} />
+                  </div>
+                </td>
+              </tr>
+            ))}
+
+            {/* Inactive Players */}
+            {context.eventStore.playersProjector.inactivePlayers.map((player) => (
+              <tr key={player.id} className="hover:bg-secondary-background/50 bg-gray-25">
+                <td className="border border-gray-300 px-4 py-2 text-gray-600">{player.name}</td>
+                <td className="border border-gray-300 px-4 py-2">
+                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                    Inactive
+                  </span>
+                </td>
+                <td className="border border-gray-300 px-4 py-2 text-center">
+                  <button
+                    className="text-xs bg-gray-400 hover:bg-green-400 text-white px-2 py-1 rounded-md"
+                    onClick={() => handleReactivatePlayer(player.id)}
+                  >
+                    Re-activate
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
       <p>Games: {context.eventStore.gamesProjector.games.length}</p>
       <p>
         Deleting games is not permanent BUT I'd prefer not to restore deleted games, so please try to just delete games
         you want to delete.
       </p>
-      <section className="flex flex-col-reverse gap-2 mt-2">
-        {context.eventStore.gamesProjector.games.map((game) => (
-          <div className="flex gap-2" key={game.id}>
-            <p>
-              {context.eventStore.playersProjector.getPlayer(game.winner)?.name} won over{" "}
-              {context.eventStore.playersProjector.getPlayer(game.loser)?.name}{" "}
-              {relativeTimeString(new Date(game.playedAt))}
-            </p>
-            <button
-              className="text-xs bg-red-500 hover:bg-red-800 text-white px-1 rounded-md"
-              onClick={() =>
-                window.confirm(
-                  `Are you sure you want to delete the game where ${
-                    context.eventStore.playersProjector.getPlayer(game.winner)?.name
-                  } won over ${context.eventStore.playersProjector.getPlayer(game.loser)?.name}?`,
-                ) && handleDeleteGame(game.id)
-              }
-            >
-              Delete
-            </button>
-          </div>
-        ))}
-      </section>
+
+      <div className="mt-2 overflow-x-auto text-sm">
+        <table className="border-collapse border border-gray-300">
+          <thead>
+            <tr>
+              <th className="border border-gray-300 px-4 py-2 text-left">Result</th>
+              <th className="border border-gray-300 px-4 py-2 text-left">Time</th>
+              <th className="border border-gray-300 px-4 py-2 text-left">Score</th>
+              <th className="border border-gray-300 px-4 py-2 text-center">Actions</th>
+              <th className="border border-gray-300 px-4 py-2 text-center">#</th>
+            </tr>
+          </thead>
+          <tbody>
+            {context.eventStore.gamesProjector.games
+              .slice()
+              .reverse()
+              .map((game, index, list) => (
+                <tr key={game.id} className="hover:bg-secondary-background/50">
+                  <td className="border border-gray-300 px-4 py-1">
+                    {context.playerName(game.winner)} won over {context.playerName(game.loser)}
+                  </td>
+                  <td className="border border-gray-300 px-4 py-1">{relativeTimeString(new Date(game.playedAt))}</td>
+                  <td className="border border-gray-300 px-4 py-1">
+                    {game.score && (
+                      <div>
+                        <p>
+                          <span className="text-base font-bold">
+                            {game.score.setsWon.gameWinner}-{game.score.setsWon.gameLoser}
+                          </span>
+                          {game.score.setPoints && (
+                            <span className="text-xs">
+                              {" "}
+                              (
+                              {game.score.setPoints
+                                .map((points) => points.gameWinner + "-" + points.gameLoser)
+                                .join(", ")}
+                              )
+                            </span>
+                          )}
+                        </p>
+                      </div>
+                    )}
+                  </td>
+                  <td className="border border-gray-300 px-4 py-1 text-center">
+                    <button
+                      className="text-xs bg-red-500 hover:bg-red-800 text-white px-2 py-1 rounded-md"
+                      onClick={() =>
+                        window.confirm(
+                          `Are you sure you want to delete the game where ${context.playerName(
+                            game.winner,
+                          )} won over ${context.playerName(game.loser)}?`,
+                        ) && handleDeleteGame(game.id)
+                      }
+                    >
+                      Delete
+                    </button>
+                  </td>
+                  <td className="border border-gray-300 px-4 py-1">{fmtNum(list.length - index)}</td>
+                </tr>
+              ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };

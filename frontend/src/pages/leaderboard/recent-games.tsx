@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { relativeTimeString } from "../../common/date-utils";
 import { fmtNum } from "../../common/number-utils";
-import { Game } from "../../client/client-db/event-store/reducers/games-projector";
+import { Game } from "../../client/client-db/event-store/projectors/games-projector";
 
 const GAMES_COUNT = 5;
 

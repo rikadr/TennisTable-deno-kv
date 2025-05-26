@@ -1,8 +1,8 @@
 import { EventTypeEnum } from "./event-types";
 import { TennisTable } from "../tennis-table";
-import { PlyersProjector } from "./reducers/players-projector";
-import { GamesProjector } from "./reducers/games-projector";
-import { TournamentsProjector } from "./reducers/tournaments-projector";
+import { PlyersProjector } from "./projectors/players-projector";
+import { GamesProjector } from "./projectors/games-projector";
+import { TournamentsProjector } from "./projectors/tournaments-projector";
 
 export class EventStore {
   private parent: TennisTable;
@@ -40,6 +40,9 @@ export class EventStore {
           break;
         case EventTypeEnum.GAME_DELETED:
           this.gamesProjector.deleteGame(event);
+          break;
+        case EventTypeEnum.GAME_SCORE:
+          this.gamesProjector.setScore(event);
           break;
         case EventTypeEnum.TOURNAMENT_SIGNUP:
           this.tournamentsProjector.signup(event);

@@ -1,5 +1,5 @@
-import { Game } from "./event-store/reducers/games-projector";
-import { Player } from "./event-store/reducers/players-projector";
+import { Game } from "./event-store/projectors/games-projector";
+import { Player } from "./event-store/projectors/players-projector";
 
 type PlayerWithElo = Player & { elo: number; totalGames: number };
 

@@ -9,7 +9,7 @@ import { useEventDbContext } from "../wrappers/event-db-context";
 import { EventTypeEnum, GameCreated } from "../client/client-db/event-store/event-types";
 import { newId } from "../common/nani-id";
 import { useEventMutation } from "../hooks/use-event-mutation";
-import { Player } from "../client/client-db/event-store/reducers/players-projector";
+import { Player } from "../client/client-db/event-store/projectors/players-projector";
 
 export const AddGamePage: React.FC = () => {
   const context = useEventDbContext();

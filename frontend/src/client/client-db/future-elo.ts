@@ -1,5 +1,5 @@
 import { newId } from "../../common/nani-id";
-import { Game } from "./event-store/reducers/games-projector";
+import { Game } from "./event-store/projectors/games-projector";
 import { TennisTable } from "./tennis-table";
 
 type Fraction = { fraction: number; confidence: number };

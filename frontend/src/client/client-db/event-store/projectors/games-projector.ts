@@ -1,7 +1,7 @@
 import { GameCreated, GameDeleted, GameScore } from "../event-types";
 import { ValidatorResponse } from "./validator-types";
 
-export type Game = { id: string; playedAt: number; winner: string; loser: string };
+export type Game = { id: string; playedAt: number; winner: string; loser: string; score?: GameScore["data"] };
 
 export class GamesProjector {
   #gamesMap = new Map<string, Game>();
@@ -18,6 +18,12 @@ export class GamesProjector {
       loser: event.data.loser,
     };
     this.#gamesMap.set(event.stream, game);
+  }
+
+  setScore(event: GameScore) {
+    if (this.#gamesMap.has(event.stream)) {
+      this.#gamesMap.get(event.stream)!.score = event.data;
+    }
   }
 
   validateCreateGame(event: GameCreated): ValidatorResponse {

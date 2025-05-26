@@ -1,4 +1,4 @@
-import { Game } from "./event-store/reducers/games-projector";
+import { Game } from "./event-store/projectors/games-projector";
 import { TennisTable } from "./tennis-table";
 import { PlayerSummary } from "./types";
 
