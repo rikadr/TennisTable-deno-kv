@@ -34,7 +34,7 @@ export type GameCreated = GenericEvent<EventTypeEnum.GAME_CREATED, { playedAt: n
 export type GameDeleted = GenericEvent<EventTypeEnum.GAME_DELETED, null>;
 export type GameScore = GenericEvent<
   EventTypeEnum.GAME_SCORE,
-  { setsWon: { gameWinner: number; gameLoser: number }; setPoints: { gameWinner: number; gameLoser: number }[] }
+  { setsWon: { gameWinner: number; gameLoser: number }; setPoints?: { gameWinner: number; gameLoser: number }[] }
 >;
 
 export type TournamentSignup = GenericEvent<EventTypeEnum.TOURNAMENT_SIGNUP, { player: string }>;

@@ -51,33 +51,36 @@ export class GamesProjector {
       return { valid: false, message: "Winner must win more sets than loser" };
     }
 
-    if (event.data.setPoints.every((set) => set.gameWinner === 0 && set.gameLoser === 0)) {
+    if (event.data.setPoints && event.data.setPoints.every((set) => set.gameWinner === 0 && set.gameLoser === 0)) {
       return {
         valid: false,
         message: "If no points are recorded, the setPoints should not be included in the event data",
       };
     }
 
-    if (event.data.setPoints.some((set) => set.gameWinner === set.gameLoser)) {
+    if (event.data.setPoints && event.data.setPoints.some((set) => set.gameWinner === set.gameLoser)) {
       return { valid: false, message: "Points are invalid. No sets can be tied" };
     }
 
-    const gameWinnerSetPointsWins = event.data.setPoints.reduce((wins, set) => {
+    const gameWinnerSetPointsWins = event.data.setPoints?.reduce((wins, set) => {
       if (set.gameWinner > set.gameLoser) wins++;
       return wins;
     }, 0);
-    const gameLoserSetPointsWins = event.data.setPoints.reduce((wins, set) => {
+    const gameLoserSetPointsWins = event.data.setPoints?.reduce((wins, set) => {
       if (set.gameLoser > set.gameWinner) wins++;
       return wins;
     }, 0);
-    if (gameWinnerSetPointsWins <= gameLoserSetPointsWins) {
-      return { valid: false, message: "Points are invalid. Winner must win more sets than loser" };
-    }
-    if (gameWinnerSetPointsWins !== event.data.setsWon.gameWinner) {
-      return { valid: false, message: "Points are invalid. Winner must win the correct amount of sets" };
-    }
-    if (gameLoserSetPointsWins !== event.data.setsWon.gameLoser) {
-      return { valid: false, message: "Points are invalid. Loser must win the correct amount of sets" };
+
+    if (gameWinnerSetPointsWins !== undefined && gameLoserSetPointsWins !== undefined) {
+      if (gameWinnerSetPointsWins <= gameLoserSetPointsWins) {
+        return { valid: false, message: "Points are invalid. Winner must win more sets than loser" };
+      }
+      if (gameWinnerSetPointsWins !== event.data.setsWon.gameWinner) {
+        return { valid: false, message: "Points are invalid. Winner must win the correct amount of sets" };
+      }
+      if (gameLoserSetPointsWins !== event.data.setsWon.gameLoser) {
+        return { valid: false, message: "Points are invalid. Loser must win the correct amount of sets" };
+      }
     }
 
     return { valid: true };

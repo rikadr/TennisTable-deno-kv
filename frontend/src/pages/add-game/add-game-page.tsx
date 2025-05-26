@@ -83,6 +83,8 @@ export const AddGamePageV2: React.FC = () => {
       return;
     }
 
+    const setPointsAreSet = setPoints.some((set) => set.player1 > 0 || set.player2 > 0);
+
     const gameScoreEvent: GameScore = {
       type: EventTypeEnum.GAME_SCORE,
       time: gameCreatedEvent.time + 1,
@@ -92,10 +94,12 @@ export const AddGamePageV2: React.FC = () => {
           gameWinner: player1 === winner ? player1Sets : player2Sets,
           gameLoser: player1 === winner ? player2Sets : player1Sets,
         },
-        setPoints: setPoints.map((set) => ({
-          gameWinner: player1 === winner ? set.player1 : set.player2,
-          gameLoser: player1 === winner ? set.player2 : set.player1,
-        })),
+        setPoints: setPointsAreSet
+          ? setPoints.map((set) => ({
+              gameWinner: player1 === winner ? set.player1 : set.player2,
+              gameLoser: player1 === winner ? set.player2 : set.player1,
+            }))
+          : undefined,
       },
     };
 
