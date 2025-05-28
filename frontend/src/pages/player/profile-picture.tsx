@@ -43,7 +43,7 @@ export const ProfilePicture: React.FC<Props> = ({
   );
   const fallback = () => (
     <div
-      className="w-full h-full flex items-center justify-center text-white font-bold "
+      className="w-full h-full flex items-center justify-center text-white font-bold select-none"
       style={{
         backgroundColor: stringToColor(playerId || "1adagrsss"),
         fontSize: size * 0.7, // Scale font size relative to component size
