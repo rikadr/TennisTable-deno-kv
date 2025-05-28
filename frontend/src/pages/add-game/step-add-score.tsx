@@ -57,10 +57,10 @@ const SetPointsInput: React.FC<{
     setSetPoints(newPoints);
   }
   return (
-    <div>
-      <label className="block text-sm mb-1 -mt-6 text-center">{context.playerName(playerId)}</label>
+    <div className="-mt-2">
+      <label className="block text-sm mb-1 text-center">{context.playerName(playerId)}</label>
       <div className="flex">
-        <button
+        {/* <button
           className="h-10 w-8 md:w-10 rounded-l-lg bg-secondary-background text-secondary-text ring-[2px] ring-secondary-text hover:bg-tertiary-background/50"
           onClick={() => handleUpdatePoints(0)}
         >
@@ -71,15 +71,16 @@ const SetPointsInput: React.FC<{
           onClick={() => handleUpdatePoints(currentPoints - 1)}
         >
           -
-        </button>
+        </button> */}
         <input
           type="number"
           placeholder="0"
-          className="w-14 pl-3 ring-[2px] ring-tertiary-background bg-tertiary-background text-tertiary-text text-center text-2xl font-semibold"
+          // className="w-14 pl-3 ring-[2px] ring-tertiary-background bg-tertiary-background text-tertiary-text text-center text-2xl font-semibold"
+          className="w-16 h-12 pl-3 ring-[2px] ring-tertiary-background bg-tertiary-background text-tertiary-text text-center text-3xl font-semibold rounded-md"
           value={anyPointsSet ? currentPoints : ""}
           onChange={(e) => handleUpdatePoints(e.target.value)}
         />
-        <button
+        {/* <button
           className="h-10 w-10 bg-secondary-background text-secondary-text ring-[2px] ring-secondary-text hover:bg-tertiary-background/50"
           onClick={() => handleUpdatePoints(currentPoints + 1)}
         >
@@ -90,7 +91,7 @@ const SetPointsInput: React.FC<{
           onClick={() => handleUpdatePoints(11)}
         >
           11
-        </button>
+        </button> */}
       </div>
     </div>
   );
@@ -115,10 +116,11 @@ const SetPoints: React.FC<{
               anyPointsSet === false && "opacity-50",
             )}
           >
-            <h4 className="font-medium">Set {index + 1}</h4>
-            <div className="flex flex-col xs:flex-row items-center justify-evenly">
+            {index === 0 && <p className="text-center mb-4 text-base">(Also optional)</p>}
+            <div className="flex flex-row items-start justify-evenly h-16 max-w-96 m-auto">
+              <h4 className="font-medium">Set {index + 1}</h4>
               <SetPointsInput playerId={player1} playerIndex="player1" setIndex={index} setPoints={setPoints} />
-              <span className="text-2xl font-bold text-secondary-text opacity-0 xs:opacity-100">-</span>
+              <span className="text-2xl font-bold text-secondary-text mt-4">-</span>
               <SetPointsInput playerId={player2} playerIndex="player2" setIndex={index} setPoints={setPoints} />
             </div>
           </div>
