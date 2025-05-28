@@ -7,8 +7,8 @@ export const StepAddScore: React.FC<{
   player1: { id: string; sets: number; setSets: (sets: number) => void };
   player2: { id: string; sets: number; setSets: (sets: number) => void };
   setPoints: {
-    setPoints: { player1: number; player2: number }[];
-    setSetPoints: React.Dispatch<React.SetStateAction<{ player1: number; player2: number }[]>>;
+    setPoints: { player1?: number; player2?: number }[];
+    setSetPoints: React.Dispatch<React.SetStateAction<{ player1?: number; player2?: number }[]>>;
   };
   winner: string;
   invalidScore: boolean;
@@ -16,6 +16,8 @@ export const StepAddScore: React.FC<{
   return (
     <div className="space-y-2 max-w-2xl m-auto">
       <WinnerBox winner={winner} orientation={winner === player1.id ? "left" : "right"} />
+      {/* <h2 className="text-center text-xl">Add score for better simulations</h2> */}
+
       <div className="p-4 bg-secondary-background text-secondary-text rounded-xl">
         <h2 className="text-center text-2xl">Sets won</h2>
         <p className="text-center">(Optional)</p>
@@ -41,16 +43,19 @@ const SetPointsInput: React.FC<{
   setIndex: number;
   playerIndex: "player1" | "player2";
   setPoints: {
-    setPoints: { player1: number; player2: number }[];
-    setSetPoints: React.Dispatch<React.SetStateAction<{ player1: number; player2: number }[]>>;
+    setPoints: { player1?: number; player2?: number }[];
+    setSetPoints: React.Dispatch<React.SetStateAction<{ player1?: number; player2?: number }[]>>;
   };
 }> = ({ playerId, setIndex, playerIndex, setPoints: { setPoints, setSetPoints } }) => {
   const context = useEventDbContext();
   const currentPoints = setPoints[setIndex][playerIndex];
-  const anyPointsSet = setPoints.some((set) => set.player1 > 0 || set.player2 > 0);
 
   function handleUpdatePoints(input: number | string) {
-    const value = Math.max(typeof input === "string" ? parseInt(input) : input, 0);
+    let value: number | undefined = undefined;
+
+    if (input !== "") {
+      value = Math.max(typeof input === "string" ? parseInt(input) : input, 0);
+    }
 
     const newPoints = [...setPoints];
     newPoints[setIndex] = { ...newPoints[setIndex], [playerIndex]: value };
@@ -76,8 +81,8 @@ const SetPointsInput: React.FC<{
           type="number"
           placeholder="0"
           // className="w-14 pl-3 ring-[2px] ring-tertiary-background bg-tertiary-background text-tertiary-text text-center text-2xl font-semibold"
-          className="w-16 h-12 pl-3 ring-[2px] ring-tertiary-background bg-tertiary-background text-tertiary-text text-center text-3xl font-semibold rounded-md"
-          value={anyPointsSet ? currentPoints : ""}
+          className="w-24 h-12 pl-3 ring-[2px] ring-tertiary-background bg-tertiary-background text-tertiary-text text-center text-3xl font-semibold rounded-md"
+          value={currentPoints} // currentPoints: number | undefined
           onChange={(e) => handleUpdatePoints(e.target.value)}
         />
         {/* <button
@@ -100,11 +105,12 @@ const SetPoints: React.FC<{
   player1: string;
   player2: string;
   setPoints: {
-    setPoints: { player1: number; player2: number }[];
-    setSetPoints: React.Dispatch<React.SetStateAction<{ player1: number; player2: number }[]>>;
+    setPoints: { player1?: number; player2?: number }[];
+    setSetPoints: React.Dispatch<React.SetStateAction<{ player1?: number; player2?: number }[]>>;
   };
 }> = ({ player1, player2, setPoints }) => {
-  const anyPointsSet = setPoints.setPoints.some((set) => set.player1 > 0 || set.player2 > 0);
+  const anyPointsSet = setPoints.setPoints.some((set) => set.player1 !== undefined || set.player2 !== undefined);
+
   return (
     <div className="text-primary-text">
       <div className="grid grid-cols-1 gap-2">
@@ -116,11 +122,16 @@ const SetPoints: React.FC<{
               anyPointsSet === false && "opacity-50",
             )}
           >
-            {index === 0 && <p className="text-center mb-4 text-base">(Also optional)</p>}
+            {index === 0 && (
+              <>
+                <h2 className="text-center text-xl">Individual points pr. set</h2>
+                <p className="text-center mb-6">(Optional)</p>
+              </>
+            )}
             <div className="flex flex-row items-start justify-evenly h-16 max-w-96 m-auto">
               <h4 className="font-medium">Set {index + 1}</h4>
               <SetPointsInput playerId={player1} playerIndex="player1" setIndex={index} setPoints={setPoints} />
-              <span className="text-2xl font-bold text-secondary-text mt-4">-</span>
+              <span className="text-2xl font-bold text-secondary-text mt-5">-</span>
               <SetPointsInput playerId={player2} playerIndex="player2" setIndex={index} setPoints={setPoints} />
             </div>
           </div>
@@ -167,19 +178,19 @@ const WinnerBox: React.FC<{
 }> = ({ winner, orientation }) => {
   const context = useEventDbContext();
   return (
-    <div>
-      <div
-        className={classNames(
-          "py-3 px-6 flex justify-between items-center bg-secondary-background rounded-xl",
-          orientation === "right" && "flex-row-reverse",
-        )}
-      >
+    <div
+      className={classNames(
+        "relative py-3 px-6 flex justify-between items-center bg-secondary-background rounded-xl",
+        orientation === "right" && "flex-row-reverse",
+      )}
+    >
+      <div className={classNames("flex gap-2 items-center", orientation === "right" && "flex-row-reverse")}>
         <ProfilePicture playerId={winner} border={3} size={60} />
-        <div className="text-secondary-text">
-          <p className="text-center">Winner</p>
-          <h2 className="text-center text-2xl">{context.playerName(winner)}</h2>
-        </div>
         <p className="text-4xl text-center w-[60px]">🏆</p>
+      </div>
+      <div className="absolute inset-0 m-auto text-secondary-text flex flex-col justify-center">
+        <p className="text-center">Winner</p>
+        <h2 className="text-center text-2xl">{context.playerName(winner)}</h2>
       </div>
     </div>
   );

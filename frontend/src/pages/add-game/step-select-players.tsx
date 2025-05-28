@@ -15,7 +15,7 @@ export const StepSelectPlayers: React.FC<{
   const [player2Search, setPlayer2Search] = useState("");
 
   return (
-    <div className="px-4 max-w-2xl m-auto">
+    <div className="max-w-2xl m-auto">
       <h2 className="text-xl font-bold text-primary-text text-left mb-2">Player 1</h2>
       {player1.id && <SelectedPlayerCard playerId={player1.id} onClear={() => player1.set(null)} />}
       {!player1.id && (

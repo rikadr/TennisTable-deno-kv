@@ -30,7 +30,7 @@ export const AddGamePageV2: React.FC = () => {
   const [winner, setWinner] = useState<string | null>(null);
   const [player1Sets, setPlayer1Sets] = useState(0);
   const [player2Sets, setPlayer2Sets] = useState(0);
-  const [setPoints, setSetPoints] = useState<{ player1: number; player2: number }[]>([]);
+  const [setPoints, setSetPoints] = useState<{ player1?: number; player2?: number }[]>([]);
   const [gameSuccessfullyAdded, setGameSuccessfullyAdded] = useState(false);
   const [validationError, setValidationError] = useState("");
 
@@ -83,7 +83,12 @@ export const AddGamePageV2: React.FC = () => {
       return;
     }
 
-    const setPointsAreSet = setPoints.some((set) => set.player1 > 0 || set.player2 > 0);
+    const setPointsAreSet = setPoints.some((set) => set.player1 !== undefined || set.player2 !== undefined);
+    const allSetPointsAreSet = setPoints.every((set) => set.player1 && set.player2);
+    if (setPointsAreSet && allSetPointsAreSet === false) {
+      setValidationError("Missing some individual set points. Either add the missing or remove all.");
+      return;
+    }
 
     const gameScoreEvent: GameScore = {
       type: EventTypeEnum.GAME_SCORE,
@@ -96,8 +101,8 @@ export const AddGamePageV2: React.FC = () => {
         },
         setPoints: setPointsAreSet
           ? setPoints.map((set) => ({
-              gameWinner: player1 === winner ? set.player1 : set.player2,
-              gameLoser: player1 === winner ? set.player2 : set.player1,
+              gameWinner: player1 === winner ? set.player1! : set.player2!,
+              gameLoser: player1 === winner ? set.player2! : set.player1!,
             }))
           : undefined,
       },
@@ -146,7 +151,10 @@ export const AddGamePageV2: React.FC = () => {
     } else if (setPoints.length < totalSets) {
       // Set added
       const setsAdded = totalSets - setPoints.length;
-      const newSets = new Array<{ player1: number; player2: number }>(setsAdded).fill({ player1: 0, player2: 0 });
+      const newSets = new Array<{ player1?: number; player2?: number }>(setsAdded).fill({
+        player1: undefined,
+        player2: undefined,
+      });
       setSetPoints((prev) => [...prev, ...newSets]);
     } else if (setPoints.length > totalSets) {
       // Set removed
@@ -160,11 +168,21 @@ export const AddGamePageV2: React.FC = () => {
     if (winner && winner !== player1 && winner !== player2) {
       setWinner(null);
     }
+
     setPlayer1Sets(0);
     setPlayer2Sets(0);
     setSetPoints([]);
     setValidationError("");
   }, [winner, player1, player2]);
+
+  useEffect(() => {
+    if (currentStep === 1 && player1 && player2) {
+      handleNext();
+    }
+    setWinner(null);
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [player1, player2]);
 
   return (
     <div>
@@ -175,7 +193,7 @@ export const AddGamePageV2: React.FC = () => {
         </div>
       )}
       <div
-        className="overflow-y-auto py-8 h-16"
+        className="overflow-y-auto py-8 px-2 xs:px-4 h-16"
         style={{
           height: `calc(100dvh - 160.1px - 48px)`,
           ...(window.innerWidth <= 768 && {
