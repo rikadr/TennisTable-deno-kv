@@ -23,6 +23,16 @@ export const EditGameSore: React.FC = () => {
   const [validationError, setValidationError] = useState("");
 
   const invalidScore = (winnerSets === loserSets && winnerSets > 0) || loserSets > winnerSets;
+  const unchangedScore =
+    winnerSets === game?.score?.setsWon.gameWinner &&
+    loserSets === game?.score?.setsWon.gameLoser &&
+    setPoints.every(({ player1, player2 }, index) => {
+      return (
+        game.score?.setPoints &&
+        game.score.setPoints[index].gameWinner === player1 &&
+        game.score.setPoints[index].gameLoser === player2
+      );
+    });
 
   async function submitScore() {
     setValidationError("");
@@ -129,11 +139,11 @@ export const EditGameSore: React.FC = () => {
 
           <button
             onClick={!addEventMutation.isPending ? submitScore : undefined}
-            disabled={invalidScore || addEventMutation.isPending || addEventMutation.isSuccess}
+            disabled={unchangedScore || invalidScore || addEventMutation.isPending || addEventMutation.isSuccess}
             className={`
                   flex-1 py-3 px-4 rounded-xl font-semibold flex items-center justify-center space-x-2 transition-colors
                   ${
-                    !invalidScore && !addEventMutation.isPending && !addEventMutation.isSuccess
+                    !unchangedScore && !invalidScore && !addEventMutation.isPending && !addEventMutation.isSuccess
                       ? "bg-tertiary-background text-tertiary-text hover:bg-tertiary-background/75"
                       : "bg-tertiary-background/30 text-tertiary-text/50 cursor-not-allowed"
                   }
