@@ -84,7 +84,7 @@ export const AddGamePageV2: React.FC = () => {
     }
 
     const setPointsAreSet = setPoints.some((set) => set.player1 !== undefined || set.player2 !== undefined);
-    const allSetPointsAreSet = setPoints.every((set) => set.player1 && set.player2);
+    const allSetPointsAreSet = setPoints.every((set) => set.player1 !== undefined && set.player2 !== undefined);
     if (setPointsAreSet && allSetPointsAreSet === false) {
       setValidationError("Missing some individual set points. Either add the missing or remove all.");
       return;
@@ -110,7 +110,7 @@ export const AddGamePageV2: React.FC = () => {
 
     const recordScores = gameScoreEvent.data.setsWon.gameWinner > 0 || gameScoreEvent.data.setsWon.gameLoser > 0;
     if (recordScores) {
-      const validateScore = context.eventStore.gamesProjector.validateScoreGame(gameScoreEvent, gameCreatedEvent);
+      const validateScore = context.eventStore.gamesProjector.validateScoreGame(gameScoreEvent);
       if (validateScore.valid === false) {
         console.error(validateScore.message);
         setValidationError(validateScore.message);

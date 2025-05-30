@@ -14,9 +14,11 @@ import {
 } from "../../client/client-db/event-store/event-types";
 import { EditPlayerName } from "./edit-player-name";
 import { fmtNum } from "../../common/number-utils";
+import { useNavigate } from "react-router-dom";
 
 export const AdminPage: React.FC = () => {
   const context = useEventDbContext();
+  const navigate = useNavigate();
 
   const addEventMutation = useEventMutation();
 
@@ -201,18 +203,26 @@ export const AdminPage: React.FC = () => {
                     )}
                   </td>
                   <td className="border border-gray-300 px-4 py-1 text-center">
-                    <button
-                      className="text-xs bg-red-500 hover:bg-red-800 text-white px-2 py-1 rounded-md"
-                      onClick={() =>
-                        window.confirm(
-                          `Are you sure you want to delete the game where ${context.playerName(
-                            game.winner,
-                          )} won over ${context.playerName(game.loser)}?`,
-                        ) && handleDeleteGame(game.id)
-                      }
-                    >
-                      Delete
-                    </button>
+                    <div className="flex gap-2 justify-center">
+                      <button
+                        className="text-xs bg-blue-500 hover:bg-blue-700 text-white px-2 py-1 rounded-md"
+                        onClick={() => navigate(`/game/edit/score?gameId=${game.id}`)}
+                      >
+                        Edit Score
+                      </button>
+                      <button
+                        className="text-xs bg-red-500 hover:bg-red-800 text-white px-2 py-1 rounded-md"
+                        onClick={() =>
+                          window.confirm(
+                            `Are you sure you want to delete the game where ${context.playerName(
+                              game.winner,
+                            )} won over ${context.playerName(game.loser)}?`,
+                          ) && handleDeleteGame(game.id)
+                        }
+                      >
+                        Delete
+                      </button>
+                    </div>
                   </td>
                   <td className="border border-gray-300 px-4 py-1">{fmtNum(list.length - index)}</td>
                 </tr>

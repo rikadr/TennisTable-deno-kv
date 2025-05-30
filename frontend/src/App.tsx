@@ -3,7 +3,6 @@ import { queryClient } from "./common/query-client";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { PlayerPage } from "./pages/player/player-page";
 import { AddPlayerPage } from "./pages/add-player-page";
-import { AddGamePage } from "./pages/add-game-page";
 import { ComparePlayersPage } from "./pages/compare-players-page";
 import { MyPage } from "./pages/my-page";
 import { LoginPage } from "./pages/login";
@@ -31,6 +30,7 @@ import { SettingsPage } from "./pages/settings-page";
 import { EventDbWrapper } from "./wrappers/event-db-context";
 import { ImageKitContext } from "./wrappers/image-kit-context";
 import { AddGamePageV2 } from "./pages/add-game/add-game-page";
+import { EditGameSore } from "./pages/edit-game-score";
 
 const RequireAuth: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   if (!session.isAuthenticated) {
@@ -76,7 +76,7 @@ function App() {
                         </Route>
                         <Route path="/add-player" element={<AddPlayerPage />} />
                         <Route path="/add-game" element={<AddGamePageV2 />} />
-                        <Route path="/add-game/old" element={<AddGamePage />} />
+                        <Route path="/game/edit/score" element={<EditGameSore />} />
                         <Route path="/camera" element={<CameraPage />} />
                         <Route path="/settings" element={<SettingsPage />} />
                         <Route path="/log-in" element={<LoginPage />} />

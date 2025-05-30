@@ -10,6 +10,11 @@ export class GamesProjector {
     return Array.from(this.#gamesMap.values()).sort((a, b) => a.playedAt - b.playedAt);
   }
 
+  getGameById(gameId?: string | null) {
+    if (!gameId) return undefined;
+    return this.#gamesMap.get(gameId);
+  }
+
   createGame(event: GameCreated) {
     const game: Game = {
       id: event.stream,
@@ -52,7 +57,7 @@ export class GamesProjector {
     return { valid: true };
   }
 
-  validateScoreGame(event: GameScore, gameEvent: GameCreated): ValidatorResponse {
+  validateScoreGame(event: GameScore): ValidatorResponse {
     if (event.data.setsWon.gameWinner <= event.data.setsWon.gameLoser) {
       return { valid: false, message: "Winner must win more sets than loser" };
     }
