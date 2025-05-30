@@ -3,26 +3,26 @@ import { TennisTable } from "./tennis-table";
 
 export class IndividualPoints {
   private parent: TennisTable;
-  #playerMapCache: Map<string, PlayerWithIndividualPoints> | undefined;
+  playerMapCache: Map<string, PlayerWithIndividualPoints> | undefined;
 
   constructor(parent: TennisTable) {
     this.parent = parent;
   }
 
   playerMap(): Map<string, PlayerWithIndividualPoints> {
-    if (this.#playerMapCache) {
-      return this.#playerMapCache;
+    if (this.playerMapCache) {
+      return this.playerMapCache;
     }
     const map = this.#generatePlayerMap();
     console.log({ map });
 
-    this.#playerMapCache = map;
+    this.playerMapCache = map;
     return map;
   }
 
   #generatePlayerMap() {
     const map = new Map<string, PlayerWithIndividualPoints>();
-    for (const game of this.parent.games) {
+    for (const game of [...this.parent.games, ...this.parent.futureElo.predictedGames]) {
       if (
         !this.parent.eventStore.playersProjector.getPlayer(game.winner)?.active ||
         !this.parent.eventStore.playersProjector.getPlayer(game.loser)?.active
