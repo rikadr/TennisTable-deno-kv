@@ -59,7 +59,7 @@ export class Simulations {
 
       const playerElos: number[] = [];
 
-      const iterations = gameTime === playerGameTimes[playerGameTimes.length - 1] ? 1000 : 35;
+      const iterations = gameTime >= playerGameTimes[playerGameTimes.length - 2] ? 1000 : 30;
 
       for (let i = 0; i < iterations; i++) {
         this.shuffleArray(totalGames);
