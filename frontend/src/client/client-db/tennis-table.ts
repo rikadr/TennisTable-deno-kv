@@ -6,6 +6,7 @@ import { Tournaments } from "./tournaments/tournaments";
 import { getClientConfig } from "../client-config/get-client-config";
 import { EventType } from "./event-store/event-types";
 import { EventStore } from "./event-store/event-store";
+import { IndividualPoints } from "./individual-points";
 
 export class TennisTable {
   isSimulatedState = false;
@@ -34,6 +35,7 @@ export class TennisTable {
   tournaments: Tournaments;
   simulations: Simulations;
   futureElo: FutureElo;
+  individualPoints: IndividualPoints;
 
   constructor(data: { events: EventType[] }) {
     this.events = data.events;
@@ -44,6 +46,7 @@ export class TennisTable {
     this.tournaments = new Tournaments(this);
     this.simulations = new Simulations(this);
     this.futureElo = new FutureElo(this);
+    this.individualPoints = new IndividualPoints(this);
   }
 
   get players() {

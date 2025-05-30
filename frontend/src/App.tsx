@@ -31,6 +31,8 @@ import { EventDbWrapper } from "./wrappers/event-db-context";
 import { ImageKitContext } from "./wrappers/image-kit-context";
 import { AddGamePageV2 } from "./pages/add-game/add-game-page";
 import { EditGameSore } from "./pages/edit-game-score";
+import { IndividualPointsOverview } from "./pages/simulations/individual-points/individual-points-overview";
+import { IndividualPointsPlayer } from "./pages/simulations/individual-points/individual-points-player";
 
 const RequireAuth: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   if (!session.isAuthenticated) {
@@ -73,6 +75,8 @@ function App() {
                           <Route path="monte-carlo" element={<MonteCarlo />} />
                           <Route path="win-loss" element={<WinLoss />} />
                           <Route path="expected-score" element={<ExpectedScore />} />
+                          <Route path="individual-points" element={<IndividualPointsOverview />} />
+                          <Route path="individual-points/player" element={<IndividualPointsPlayer />} />
                         </Route>
                         <Route path="/add-player" element={<AddPlayerPage />} />
                         <Route path="/add-game" element={<AddGamePageV2 />} />

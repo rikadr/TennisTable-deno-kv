@@ -1,0 +1,33 @@
+import React from "react";
+import { useEventDbContext } from "../../../wrappers/event-db-context";
+import { ProfilePicture } from "../../player/profile-picture";
+import { fmtNum } from "../../../common/number-utils";
+import { PointsBar } from "./points-bar";
+import { Elo } from "../../../client/client-db/elo";
+
+export const IndividualPointsOverview: React.FC = () => {
+  const context = useEventDbContext();
+
+  const map = context.individualPoints.playerMap();
+  const players = Array.from(map).map(([_, player]) => player);
+  const highestElo = players.sort((a, b) => b.totalPoints - a.totalPoints)[0].totalPoints;
+  return (
+    <div className="px-4 text-primary-text">
+      <h1>Individually numbered points</h1>
+      <p className="mb-4">
+        Like numbered shares, track where your original {fmtNum(Elo.INITIAL_ELO)} points have ended up when using a
+        first in, first out order (FIFO)
+      </p>
+      {players.map((player) => (
+        <div key={player.id} className="flex items-center gap-2 hover:bg-primary-text/10">
+          <ProfilePicture playerId={player.id} border={3} size={36} linkToPlayer />
+          <div className="w-24 shrink-0">
+            <h2>{context.playerName(player.id)}</h2>
+            <p>{fmtNum(player.totalPoints)}</p>
+          </div>
+          <PointsBar highestElo={highestElo} totalPoints={player.totalPoints} pointsRanges={player.pointsRanges} />
+        </div>
+      ))}
+    </div>
+  );
+};
