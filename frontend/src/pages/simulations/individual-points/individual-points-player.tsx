@@ -6,6 +6,7 @@ import { PlayerWithIndividualPoints, PointsRange } from "../../../client/client-
 import { ProfilePicture } from "../../player/profile-picture";
 import { fmtNum } from "../../../common/number-utils";
 import { Link } from "react-router-dom";
+import { classNames } from "../../../common/class-names";
 
 export const IndividualPointsPlayer: React.FC = () => {
   const context = useEventDbContext();
@@ -61,7 +62,7 @@ const PlayerOverview: React.FC<{ player: PlayerWithIndividualPoints }> = ({ play
   }, [player, map]);
 
   return (
-    <div className="px-4 text-primary-text">
+    <div className="px-4 md:px-20 lg:md:px-32 xl:px-40 text-primary-text">
       <div className="flex gap-2">
         <ProfilePicture playerId={player.id} border={3} size={100} linkToPlayer shape="rounded" />
         <div className="">
@@ -80,7 +81,10 @@ const PlayerOverview: React.FC<{ player: PlayerWithIndividualPoints }> = ({ play
           <Link
             key={oponent.id}
             to={`/simulations/individual-points/player?playerId=${oponent.id}`}
-            className="flex items-center gap-2 px-4 hover:bg-primary-text/10"
+            className={classNames(
+              "flex items-center gap-2 px-4 hover:bg-primary-text/10 border-primary-text/30",
+              oponent.id === player.id && "border-2",
+            )}
           >
             <ProfilePicture playerId={oponent.id} border={3} size={36} />
             <div className="w-24 shrink-0">

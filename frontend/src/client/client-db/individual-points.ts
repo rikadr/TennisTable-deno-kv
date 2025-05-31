@@ -14,8 +14,6 @@ export class IndividualPoints {
       return this.playerMapCache;
     }
     const map = this.#generatePlayerMap();
-    console.log({ map });
-
     this.playerMapCache = map;
     return map;
   }
@@ -126,9 +124,49 @@ export class PlayerWithIndividualPoints {
 
     return rangesToGiveToWinner;
   }
-  losePointsLIFO(): PointsRange[] {
-    throw Error("Not implememted");
+  losePointsLIFO(pointsToLose: number, recieverPlayerId: string, time: number): PointsRange[] {
+    if (pointsToLose > this.totalPoints) {
+      throw Error(
+        `${this.id} does not have enough points to lose. Has ${this.totalPoints}, needs to lose ${pointsToLose}`,
+      );
+    }
+
+    const rangesToGiveToWinner: PointsRange[] = [];
+    let remainingPointsToCarveOut = pointsToLose;
+
+    while (remainingPointsToCarveOut > 0) {
+      const lastRange = this.pointsRanges.pop()!;
+      const pointsInRange = lastRange.to - lastRange.from;
+
+      if (pointsInRange <= remainingPointsToCarveOut) {
+        // Give whole range
+        rangesToGiveToWinner.unshift({
+          ...lastRange,
+          transactions: [...lastRange.transactions, { recieverPlayerId, time }],
+        });
+        remainingPointsToCarveOut -= pointsInRange;
+      } else {
+        // Split range and keep some of it
+        const carveOutKeep: PointsRange = {
+          originPlayerId: lastRange.originPlayerId,
+          from: lastRange.from,
+          to: lastRange.to - remainingPointsToCarveOut,
+          transactions: lastRange.transactions,
+        };
+        const carveOutGive: PointsRange = {
+          originPlayerId: lastRange.originPlayerId,
+          from: lastRange.to - remainingPointsToCarveOut,
+          to: lastRange.to,
+          transactions: [...lastRange.transactions, { recieverPlayerId, time }],
+        };
+        rangesToGiveToWinner.unshift(carveOutGive);
+        this.pointsRanges.push(carveOutKeep);
+        remainingPointsToCarveOut -= pointsInRange;
+      }
+    }
+    return rangesToGiveToWinner;
   }
+
   winPoints(pointsWon: PointsRange[]) {
     for (const range of pointsWon) {
       this.pointsRanges.push(range);

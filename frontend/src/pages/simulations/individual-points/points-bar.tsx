@@ -54,7 +54,7 @@ export const PointsBar: React.FC<PointsBarProps> = ({ pointsRanges, totalPoints,
   return (
     <>
       <div
-        className="h-8 flex rounded-lg overflow-hidden shadow-sm border border-primary-text"
+        className="h-8 flex rounded-lg overflow-hidden shadow-sm border border-primary-text shrink-0"
         style={{
           width: `${percentageHighestElo}%`,
         }}
@@ -117,7 +117,7 @@ const Tooltip: React.FC<TooltipProps> = ({ range, rangePoints, visible, x, y }) 
         Range: {fmtNum(range.from)} - {fmtNum(range.to)}
       </div>
       <div>Points: {fmtNum(rangePoints)}</div>
-      <div>{range.transactions.map((t) => context.playerName(t.recieverPlayerId)).join(" -> ")}</div>
+      <div>{range.transactions.map((t) => context.playerName(t.recieverPlayerId)).join(" → ")}</div>
       <div>{relativeTimeString(new Date(range.transactions[range.transactions.length - 1].time))}</div>
       {/* Triangle pointer */}
       <div className="absolute left-1/2 top-full transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-primary-text"></div>
