@@ -40,7 +40,7 @@ export class FutureElo {
   private reset() {
     this.parent.leaderboard.clearCaches();
     this.parent.tournaments.clearTournamentCache();
-    this.parent.individualPoints.playerMapCache = undefined;
+    this.parent.individualPoints.clearCache();
     this.playersMap = new Map();
     this.playerPairings = [];
     this.predictedGamesTemp = [];

@@ -5,7 +5,7 @@ import { PointsBar } from "./points-bar";
 import { PlayerWithIndividualPoints, PointsRange } from "../../../client/client-db/individual-points";
 import { ProfilePicture } from "../../player/profile-picture";
 import { fmtNum } from "../../../common/number-utils";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { classNames } from "../../../common/class-names";
 
 export const IndividualPointsPlayer: React.FC = () => {
@@ -28,6 +28,8 @@ export const IndividualPointsPlayer: React.FC = () => {
 const PlayerOverview: React.FC<{ player: PlayerWithIndividualPoints }> = ({ player }) => {
   const context = useEventDbContext();
   const map = context.individualPoints.playerMap();
+
+  const navigate = useNavigate();
 
   const groupedRanges = useMemo(() => {
     const grouped = new Map<string, { ranges: PointsRange[]; total: number }>();
@@ -69,6 +71,13 @@ const PlayerOverview: React.FC<{ player: PlayerWithIndividualPoints }> = ({ play
           <h1 className="text-4xl">{context.playerName(player.id)}</h1>
           <p>{fmtNum(player.totalPoints)} points</p>
         </div>
+        <div className="grow" />
+        <button
+          className="text-xs bg-secondary-background text-secondary-text hover:brightness-125 px-8 py-4 h-fit rounded-md"
+          onClick={() => navigate(`/simulations/individual-points`)}
+        >
+          Back
+        </button>
       </div>
       <p className="mt-4">Current points holding</p>
       <PointsBar highestElo={player.totalPoints} pointsRanges={player.pointsRanges} totalPoints={player.totalPoints} />

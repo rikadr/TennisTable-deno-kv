@@ -5,6 +5,7 @@ import { fmtNum } from "../../../common/number-utils";
 import { stringToColor } from "../../../common/string-to-color";
 import { useEventDbContext } from "../../../wrappers/event-db-context";
 import { relativeTimeString } from "../../../common/date-utils";
+import { joinJSX } from "../../../common/join-JSX";
 
 interface PointsBarProps {
   pointsRanges: PointsRange[];
@@ -109,7 +110,7 @@ const Tooltip: React.FC<TooltipProps> = ({ range, rangePoints, visible, x, y }) 
       style={{
         left: x,
         top: y - 8,
-        maxWidth: "200px",
+        maxWidth: `${200 + range.transactions.length * 15}px`,
       }}
     >
       <div className="font-semibold">Origin: {context.playerName(range.originPlayerId)}</div>
@@ -117,7 +118,21 @@ const Tooltip: React.FC<TooltipProps> = ({ range, rangePoints, visible, x, y }) 
         Range: {fmtNum(range.from)} - {fmtNum(range.to)}
       </div>
       <div>Points: {fmtNum(rangePoints)}</div>
-      <div>{range.transactions.map((t) => context.playerName(t.recieverPlayerId)).join(" → ")}</div>
+      {range.transactions.length > 1 && (
+        <div className="flex flex-wrap gap-1">
+          {joinJSX(
+            range.transactions.map((t) => (
+              <div
+                className="px-1.5 rounded-full text-[0.7rem] flex items-center justify-center"
+                style={{ background: stringToColor(t.recieverPlayerId) }}
+              >
+                {context.playerName(t.recieverPlayerId)}
+              </div>
+            )),
+            <> → </>,
+          )}
+        </div>
+      )}
       <div>{relativeTimeString(new Date(range.transactions[range.transactions.length - 1].time))}</div>
       {/* Triangle pointer */}
       <div className="absolute left-1/2 top-full transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-primary-text"></div>

@@ -3,22 +3,34 @@ import { TennisTable } from "./tennis-table";
 
 export class IndividualPoints {
   private parent: TennisTable;
-  playerMapCache: Map<string, PlayerWithIndividualPoints> | undefined;
+  #playerMapCache: { transactionOrder: "FIFO" | "LIFO"; map: Map<string, PlayerWithIndividualPoints> } | undefined;
 
   constructor(parent: TennisTable) {
     this.parent = parent;
   }
 
-  playerMap(): Map<string, PlayerWithIndividualPoints> {
-    if (this.playerMapCache) {
-      return this.playerMapCache;
+  clearCache() {
+    this.#playerMapCache = undefined;
+  }
+
+  get cachedTransactionOrder() {
+    return this.#playerMapCache?.transactionOrder;
+  }
+
+  playerMap(transactionOrder?: "FIFO" | "LIFO"): Map<string, PlayerWithIndividualPoints> {
+    if (this.#playerMapCache && transactionOrder === this.#playerMapCache.transactionOrder) {
+      return this.#playerMapCache.map;
     }
-    const map = this.#generatePlayerMap();
-    this.playerMapCache = map;
+    if (this.#playerMapCache && transactionOrder === undefined) {
+      return this.#playerMapCache.map;
+    }
+    transactionOrder = transactionOrder ?? this.#playerMapCache?.transactionOrder ?? "FIFO";
+    const map = this.#generatePlayerMap(transactionOrder);
+    this.#playerMapCache = { transactionOrder, map };
     return map;
   }
 
-  #generatePlayerMap() {
+  #generatePlayerMap(transactionOrder: "FIFO" | "LIFO") {
     const map = new Map<string, PlayerWithIndividualPoints>();
     for (const game of [...this.parent.games, ...this.parent.futureElo.predictedGames]) {
       if (
@@ -31,7 +43,10 @@ export class IndividualPoints {
       const loser = this.#getOrCreatePlayer(game.loser, map, game.playedAt);
       const { losersNewElo } = Elo.calculateELO(winner.totalPoints, loser.totalPoints);
 
-      const pointsExcanged = loser.losePointsFIFO(loser.totalPoints - losersNewElo, winner.id, game.playedAt);
+      const pointsExcanged =
+        transactionOrder === "FIFO"
+          ? loser.losePointsFIFO(loser.totalPoints - losersNewElo, winner.id, game.playedAt)
+          : loser.losePointsLIFO(loser.totalPoints - losersNewElo, winner.id, game.playedAt);
       winner.winPoints(pointsExcanged);
     }
     return map;
@@ -48,10 +63,10 @@ export class IndividualPoints {
     return map.get(playerId)!;
   }
 
-  playerOverview(playerId: string): { playerId: string; points: PointsRange[] }[] {
+  playerOverview(playerId: string, transactionOrder: "FIFO" | "LIFO"): { playerId: string; points: PointsRange[] }[] {
     const players: { playerId: string; points: PointsRange[] }[] = [];
 
-    this.playerMap().forEach((oponent) => {
+    this.playerMap(transactionOrder).forEach((oponent) => {
       const playersPoints = oponent.pointsRanges.filter((range) => range.originPlayerId === playerId);
       if (playersPoints.length === 0) return;
     });
