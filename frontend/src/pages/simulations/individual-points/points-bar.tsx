@@ -4,20 +4,15 @@ import { PointsRange } from "../../../client/client-db/individual-points";
 import { fmtNum } from "../../../common/number-utils";
 import { stringToColor } from "../../../common/string-to-color";
 import { useEventDbContext } from "../../../wrappers/event-db-context";
+import { relativeTimeString } from "../../../common/date-utils";
 
 interface PointsBarProps {
   pointsRanges: PointsRange[];
   totalPoints: number;
   highestElo: number;
-  showPercentageInTooltip?: boolean;
 }
 
-export const PointsBar: React.FC<PointsBarProps> = ({
-  pointsRanges,
-  totalPoints,
-  highestElo,
-  showPercentageInTooltip = true,
-}) => {
+export const PointsBar: React.FC<PointsBarProps> = ({ pointsRanges, totalPoints, highestElo }) => {
   const [tooltip, setTooltip] = useState<{
     visible: boolean;
     x: number;
@@ -29,7 +24,7 @@ export const PointsBar: React.FC<PointsBarProps> = ({
     visible: false,
     x: 0,
     y: 0,
-    range: { from: 0, to: 0, originPlayerId: "" },
+    range: { from: 0, to: 0, originPlayerId: "", transactions: [] },
     rangePoints: 0,
     percentage: 0,
   });
@@ -87,7 +82,6 @@ export const PointsBar: React.FC<PointsBarProps> = ({
       <Tooltip
         range={tooltip.range}
         rangePoints={tooltip.rangePoints}
-        percentage={showPercentageInTooltip ? tooltip.percentage : undefined}
         visible={tooltip.visible}
         x={tooltip.x}
         y={tooltip.y}
@@ -99,13 +93,12 @@ export const PointsBar: React.FC<PointsBarProps> = ({
 interface TooltipProps {
   range: PointsRange;
   rangePoints: number;
-  percentage?: number;
   visible: boolean;
   x: number;
   y: number;
 }
 
-const Tooltip: React.FC<TooltipProps> = ({ range, rangePoints, percentage, visible, x, y }) => {
+const Tooltip: React.FC<TooltipProps> = ({ range, rangePoints, visible, x, y }) => {
   const context = useEventDbContext();
 
   if (!visible) return null;
@@ -119,13 +112,15 @@ const Tooltip: React.FC<TooltipProps> = ({ range, rangePoints, percentage, visib
         maxWidth: "200px",
       }}
     >
-      <div className="font-semibold">From: {context.playerName(range.originPlayerId)}</div>
-      <div className="text-primary-text">
+      <div className="font-semibold">Origin: {context.playerName(range.originPlayerId)}</div>
+      <div>
         Range: {fmtNum(range.from)} - {fmtNum(range.to)}
       </div>
-      <div className="text-primary-text">
-        Points: {fmtNum(rangePoints)} {percentage && `(${percentage.toFixed(1)}%)`}
-      </div>
+      <div>0.8: {fmtNum(0.8)}</div>
+      <div>0.08: {fmtNum(0.08)}</div>
+      <div>Points: {fmtNum(rangePoints)}</div>
+      <div>{range.transactions.map((t) => context.playerName(t.recieverPlayerId)).join(" -> ")}</div>
+      <div>{relativeTimeString(new Date(range.transactions[range.transactions.length - 1].time))}</div>
       {/* Triangle pointer */}
       <div className="absolute left-1/2 top-full transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-primary-text"></div>
     </div>

@@ -37,8 +37,6 @@ const PlayerOverview: React.FC<{ player: PlayerWithIndividualPoints }> = ({ play
       grouped.get(range.originPlayerId)!.ranges.push(range);
       grouped.get(range.originPlayerId)!.total += range.to - range.from;
     }
-    // Sort ranges
-    grouped.forEach((entry) => entry.ranges.sort((a, b) => b.to - b.from - (a.to - a.from)));
 
     const listOfGrouped = Array.from(grouped)
       .map(([_, entry]) => entry)
@@ -89,12 +87,7 @@ const PlayerOverview: React.FC<{ player: PlayerWithIndividualPoints }> = ({ play
               <h2>{context.playerName(oponent.id)}</h2>
               <p>{fmtNum(oponent.total)}</p>
             </div>
-            <PointsBar
-              highestElo={player.totalPoints}
-              pointsRanges={oponent.ranges}
-              totalPoints={oponent.total}
-              showPercentageInTooltip={false}
-            />
+            <PointsBar highestElo={player.totalPoints} pointsRanges={oponent.ranges} totalPoints={oponent.total} />
           </Link>
         );
       })}

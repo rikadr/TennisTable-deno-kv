@@ -29,19 +29,23 @@ export class IndividualPoints {
       ) {
         continue; // Skip games with inactive players
       }
-      const winner = this.#getOrCreatePlayer(game.winner, map);
-      const loser = this.#getOrCreatePlayer(game.loser, map);
+      const winner = this.#getOrCreatePlayer(game.winner, map, game.playedAt);
+      const loser = this.#getOrCreatePlayer(game.loser, map, game.playedAt);
       const { losersNewElo } = Elo.calculateELO(winner.totalPoints, loser.totalPoints);
 
-      const pointsExcanged = loser.losePointsFIFO(loser.totalPoints - losersNewElo);
+      const pointsExcanged = loser.losePointsFIFO(loser.totalPoints - losersNewElo, winner.id, game.playedAt);
       winner.winPoints(pointsExcanged);
     }
     return map;
   }
 
-  #getOrCreatePlayer(playerId: string, map: Map<string, PlayerWithIndividualPoints>): PlayerWithIndividualPoints {
+  #getOrCreatePlayer(
+    playerId: string,
+    map: Map<string, PlayerWithIndividualPoints>,
+    time: number,
+  ): PlayerWithIndividualPoints {
     if (map.has(playerId) === false) {
-      map.set(playerId, new PlayerWithIndividualPoints(playerId));
+      map.set(playerId, new PlayerWithIndividualPoints(playerId, time));
     }
     return map.get(playerId)!;
   }
@@ -58,12 +62,19 @@ export class IndividualPoints {
   }
 }
 
-export type PointsRange = { originPlayerId: string; from: number; to: number };
+export type PointsRange = {
+  originPlayerId: string;
+  from: number;
+  to: number;
+  transactions: { recieverPlayerId: string; time: number }[];
+};
 
 export class PlayerWithIndividualPoints {
-  constructor(id: string) {
+  constructor(id: string, time: number) {
     this.id = id;
-    this.pointsRanges = [{ originPlayerId: id, from: 0, to: Elo.INITIAL_ELO }];
+    this.pointsRanges = [
+      { originPlayerId: id, from: 0, to: Elo.INITIAL_ELO, transactions: [{ recieverPlayerId: id, time }] },
+    ];
   }
   readonly id: string;
   pointsRanges: PointsRange[];
@@ -72,7 +83,7 @@ export class PlayerWithIndividualPoints {
     return this.pointsRanges.reduce((total, range) => (total += range.to - range.from), 0);
   }
 
-  losePointsFIFO(pointsToLose: number): PointsRange[] {
+  losePointsFIFO(pointsToLose: number, recieverPlayerId: string, time: number): PointsRange[] {
     if (pointsToLose > this.totalPoints) {
       throw Error(
         `${this.id} does not have enough points to lose. Has ${this.totalPoints}, needs to lose ${pointsToLose}`,
@@ -88,7 +99,10 @@ export class PlayerWithIndividualPoints {
 
       if (pointsInRange <= remainingPointsToCarveOut) {
         // Give whole range
-        rangesToGiveToWinner.push(firstRange);
+        rangesToGiveToWinner.push({
+          ...firstRange,
+          transactions: [...firstRange.transactions, { recieverPlayerId, time }],
+        });
         remainingPointsToCarveOut -= pointsInRange;
       } else {
         // Split range and keep some of it
@@ -96,11 +110,13 @@ export class PlayerWithIndividualPoints {
           originPlayerId: firstRange.originPlayerId,
           from: firstRange.from,
           to: firstRange.from + remainingPointsToCarveOut,
+          transactions: [...firstRange.transactions, { recieverPlayerId, time }],
         };
         const carveOutKeep: PointsRange = {
           originPlayerId: firstRange.originPlayerId,
           from: firstRange.from + remainingPointsToCarveOut,
           to: firstRange.to,
+          transactions: firstRange.transactions,
         };
         rangesToGiveToWinner.push(carveOutGive);
         this.pointsRanges.unshift(carveOutKeep);

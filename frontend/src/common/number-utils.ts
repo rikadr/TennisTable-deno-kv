@@ -2,11 +2,16 @@ export function fmtNum(number?: number, digits?: number) {
   if (number === undefined) {
     return undefined;
   }
-  if (digits === undefined) {
-    digits = 0;
+
+  let autoDigits = 0;
+  if (number < 1) {
+    autoDigits = 1;
+  }
+  if (number < 0.1) {
+    autoDigits = 2;
   }
 
   return number.toLocaleString("no-NO", {
-    maximumFractionDigits: digits,
+    maximumFractionDigits: digits ?? autoDigits,
   });
 }
