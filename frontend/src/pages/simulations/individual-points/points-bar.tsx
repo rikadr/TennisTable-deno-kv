@@ -6,6 +6,9 @@ import { stringToColor } from "../../../common/string-to-color";
 import { useEventDbContext } from "../../../wrappers/event-db-context";
 import { relativeTimeString } from "../../../common/date-utils";
 import { joinJSX } from "../../../common/join-JSX";
+import { classNames } from "../../../common/class-names";
+import { Elo } from "../../../client/client-db/elo";
+import { Shimmer } from "../../../common/shimmer";
 
 interface PointsBarProps {
   pointsRanges: PointsRange[];
@@ -65,17 +68,28 @@ export const PointsBar: React.FC<PointsBarProps> = ({ pointsRanges, totalPoints,
           const percentageSelf = (rangePoints / totalPoints) * 100;
 
           return (
-            <Link
+            <Shimmer
               key={index}
-              to={`/simulations/individual-points/player?playerId=${range.originPlayerId}`}
-              className="transition-all duration-300 hover:brightness-125 cursor-pointer"
+              intensity="strong"
+              duration={1500}
+              className="w-full h-full"
               style={{
                 width: `${percentageSelf}%`,
-                backgroundColor: stringToColor(range.originPlayerId || "1adagrsss"),
               }}
-              onMouseEnter={(e) => handleMouseEnter(e, range, rangePoints, percentageSelf)}
-              onMouseLeave={handleMouseLeave}
-            ></Link>
+              enabled={(range.from === 0 || range.to === Elo.INITIAL_ELO) && range.transactions.length > 1}
+            >
+              <Link
+                to={`/simulations/individual-points/player?playerId=${range.originPlayerId}`}
+                className={classNames(
+                  "block w-full h-full transition-all duration-300 hover:brightness-125 cursor-pointer",
+                )}
+                style={{
+                  backgroundColor: stringToColor(range.originPlayerId || "1adagrsss"),
+                }}
+                onMouseEnter={(e) => handleMouseEnter(e, range, rangePoints, percentageSelf)}
+                onMouseLeave={handleMouseLeave}
+              />
+            </Shimmer>
           );
         })}
       </div>

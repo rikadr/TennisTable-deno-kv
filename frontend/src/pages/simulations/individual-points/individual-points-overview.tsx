@@ -7,6 +7,7 @@ import { Elo } from "../../../client/client-db/elo";
 import { Link } from "react-router-dom";
 import { Switch } from "@headlessui/react";
 import { classNames } from "../../../common/class-names";
+import { Shimmer } from "../../../common/shimmer";
 
 export const IndividualPointsOverview: React.FC = () => {
   const context = useEventDbContext();
@@ -26,6 +27,10 @@ export const IndividualPointsOverview: React.FC = () => {
       <h1>Individually numbered points</h1>
       <p className="mb-4">
         Like numbered shares, track where your original {fmtNum(Elo.INITIAL_ELO)} points have ended up.
+      </p>
+      <p className="mb-4 flex gap-1">
+        Ranges with point no. 0 or {fmtNum(Elo.INITIAL_ELO)} are
+        <Shimmer className="w-fit">highlighted</Shimmer>
       </p>
       <Switch
         checked={transactionOrder === "LIFO"}

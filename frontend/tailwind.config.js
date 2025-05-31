@@ -31,6 +31,7 @@ module.exports = {
       animation: {
         "ping-once": "ping-once 1000ms ease-in-out 1000ms forwards",
         wiggle: "wiggle 1s ease-in-out 500ms forwards",
+        shimmer: "shimmer 2s ease-in-out infinite",
       },
       keyframes: {
         "ping-once": {
@@ -50,6 +51,14 @@ module.exports = {
           "80%": { transform: "rotate(2deg)" },
           "90%": { transform: "rotate(0deg)" },
           "100%": { transform: "rotate(0deg)" },
+        },
+        shimmer: {
+          "0%": {
+            transform: "translateX(-100%)",
+          },
+          "100%": {
+            transform: "translateX(100%)",
+          },
         },
       },
     },
