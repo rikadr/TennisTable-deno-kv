@@ -116,8 +116,6 @@ const Tooltip: React.FC<TooltipProps> = ({ range, rangePoints, visible, x, y }) 
       <div>
         Range: {fmtNum(range.from)} - {fmtNum(range.to)}
       </div>
-      <div>0.8: {fmtNum(0.8)}</div>
-      <div>0.08: {fmtNum(0.08)}</div>
       <div>Points: {fmtNum(rangePoints)}</div>
       <div>{range.transactions.map((t) => context.playerName(t.recieverPlayerId)).join(" -> ")}</div>
       <div>{relativeTimeString(new Date(range.transactions[range.transactions.length - 1].time))}</div>

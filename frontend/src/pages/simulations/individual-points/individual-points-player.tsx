@@ -69,11 +69,11 @@ const PlayerOverview: React.FC<{ player: PlayerWithIndividualPoints }> = ({ play
           <p>{fmtNum(player.totalPoints)} points</p>
         </div>
       </div>
-      <p className="mt-4">Current points holding in correct order</p>
+      <p className="mt-4">Current points holding</p>
       <PointsBar highestElo={player.totalPoints} pointsRanges={player.pointsRanges} totalPoints={player.totalPoints} />
-      <p className="mt-4">Sorted by size</p>
+      <p className="mt-4">Sorted by player</p>
       <PointsBar highestElo={player.totalPoints} pointsRanges={groupedRanges} totalPoints={player.totalPoints} />
-      <p className="mt-4">Oponents with your points</p>
+      <p className="mt-4">Players with your points</p>
       {oponentsWithYourPointsRanges.map((oponent) => {
         //
         return (
