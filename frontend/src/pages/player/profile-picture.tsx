@@ -7,7 +7,7 @@ import { useState } from "react";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 
 type Props = {
-  playerId?: string;
+  playerId?: string | null;
   size?: number;
   clickToEdit?: boolean;
   border?: number;
@@ -16,7 +16,7 @@ type Props = {
 };
 
 export const ProfilePicture: React.FC<Props> = ({
-  playerId = "default",
+  playerId,
   clickToEdit = false,
   size = 256,
   border = 0,
@@ -29,6 +29,9 @@ export const ProfilePicture: React.FC<Props> = ({
 
   const { timestamp } = useImageKitTimestamp();
   const HighDefinitionScaleFactor = 4;
+  if (!playerId) {
+    playerId = "default";
+  }
   const img = () => (
     <IKImage
       className={classNames(
@@ -67,7 +70,7 @@ export const ProfilePicture: React.FC<Props> = ({
       onClick={() => clickToEdit && navigate(`/camera?player=${playerId}`)}
     >
       {clickToEdit && (
-        <div className="absolute text-primary-text px-3 py-0.5 rounded-lg bottom-0 text-sm font-thin left-1/2 transform -translate-x-1/2 transition-opacity duration-150">
+        <div className="absolute text-primary-text py-0.5 rounded-lg bottom-0 text-xs whitespace-nowrap font-thin left-4 transition-opacity duration-150">
           Click to edit
         </div>
       )}

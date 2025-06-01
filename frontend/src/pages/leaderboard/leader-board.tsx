@@ -1,12 +1,13 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { getEgg, getPumpkin, PodiumPlace } from "./podium-place";
+import { PodiumPlace } from "./podium-place";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { ProfilePicture } from "../player/profile-picture";
 import { RecentGames } from "./recent-games";
 import { TournamentHighlightsAndPendingGames } from "./tournament-pending-games";
 import { getClientConfig, Theme, themeOrOverrideTheme } from "../../client/client-config/get-client-config";
 import easterBunny from "../../img/easter/easter-bunny-realistic.png";
+import { getEgg, getPumpkin } from "./themed-place-number";
 
 export const LeaderBoard: React.FC = () => {
   const context = useEventDbContext();
