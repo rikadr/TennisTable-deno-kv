@@ -43,12 +43,27 @@ export const PlayerEloGraph: React.FC<{ playerId: string; showExpectedElo: boole
     return null;
   }
 
+  const graphWidth = () => {
+    let output = width;
+
+    if (width > 768) {
+      output -= 160;
+    } else if (width > 450) {
+      output -= 120;
+    } else if (width > 400) {
+      output -= 60;
+    } else if (width > 350) {
+      output -= 40;
+    }
+    return Math.min(1140, output);
+  };
+
   return (
     <LineChart
-      width={Math.min(1000, width < 768 ? width : width - 300)}
-      height={300}
+      width={graphWidth()}
+      height={width > 768 ? 350 : 300}
       data={graphGames}
-      margin={{ top: 5, right: 25, left: 0 }}
+      margin={{ top: 5, right: 0, left: 0 }}
     >
       <CartesianGrid strokeDasharray="1 4" vertical={false} stroke="rgb(var(--color-primary-text))" opacity={1} />
       <YAxis
