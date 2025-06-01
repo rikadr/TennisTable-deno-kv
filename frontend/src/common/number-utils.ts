@@ -4,10 +4,10 @@ export function fmtNum(number?: number, digits?: number) {
   }
 
   let autoDigits = 0;
-  if (number < 1) {
+  if (number < 1 && number > -1) {
     autoDigits = 1;
   }
-  if (number < 0.1) {
+  if (number < 0.1 && number > -0.1) {
     autoDigits = 2;
   }
 

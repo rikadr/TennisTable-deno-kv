@@ -131,7 +131,7 @@ export const EditGameSore: React.FC = () => {
       <div className="p-6 bg-secondary-background">
         <div className="flex space-x-3">
           <button
-            onClick={() => navigate("/")}
+            onClick={() => navigate(-1)}
             className="flex-1 py-3 px-4 bg-primary-background hover:bg-primary-background/30 rounded-xl font-semibold flex items-center justify-center space-x-2 transition-colors"
           >
             <span>Cancel</span>

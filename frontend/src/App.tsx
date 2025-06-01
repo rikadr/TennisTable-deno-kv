@@ -1,7 +1,6 @@
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./common/query-client";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
-import { PlayerPage } from "./pages/player/player-page";
 import { AddPlayerPage } from "./pages/add-player-page";
 import { ComparePlayersPage } from "./pages/compare-players-page";
 import { MyPage } from "./pages/my-page";
@@ -33,7 +32,7 @@ import { AddGamePageV2 } from "./pages/add-game/add-game-page";
 import { EditGameSore } from "./pages/edit-game-score";
 import { IndividualPointsOverview } from "./pages/simulations/individual-points/individual-points-overview";
 import { IndividualPointsPlayer } from "./pages/simulations/individual-points/individual-points-player";
-import { PlayerPageNew } from "./pages/player-new/player-page-new";
+import { PlayerPage } from "./pages/player/player-page";
 
 const RequireAuth: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   if (!session.isAuthenticated) {
@@ -65,7 +64,6 @@ function App() {
                         <Route path="/tennis-table" element={<Navigate to="/leader-board" />} />
                         <Route path="/leader-board" element={<LeaderBoard />} />
                         <Route path="/player/:name" element={<PlayerPage />} />
-                        <Route path="/player/new" element={<PlayerPageNew />} />
                         <Route path="/1v1" element={<PvPPage />} />
                         <Route path="/compare-players" element={<ComparePlayersPage />} />
                         <Route path="/tournament">

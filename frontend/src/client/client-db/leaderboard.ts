@@ -231,6 +231,7 @@ export class Leaderboard {
           oponent: loser.id,
           eloAfterGame: winnersNewElo,
           pointsDiff: pointsWon,
+          score: game.score,
         });
         loser.games.push({
           time: game.playedAt,
@@ -238,6 +239,7 @@ export class Leaderboard {
           oponent: winner.id,
           eloAfterGame: losersNewElo,
           pointsDiff: -pointsWon,
+          score: game.score,
         });
 
         winner.wins++;

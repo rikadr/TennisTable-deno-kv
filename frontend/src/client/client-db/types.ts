@@ -1,3 +1,4 @@
+import { GameScore } from "./event-store/event-types";
 import { Player } from "./event-store/projectors/players-projector";
 
 export type PlayerWithElo = Player & { elo: number };
@@ -13,6 +14,7 @@ export type PlayerSummary = {
     oponent: string;
     eloAfterGame: number;
     pointsDiff: number;
+    score?: GameScore["data"];
   }[];
 };
 
