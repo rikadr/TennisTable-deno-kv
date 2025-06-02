@@ -13,7 +13,7 @@ export const PlayerGamesDistrubution: React.FC<Props> = ({ playerId }) => {
   const mostGames = summary?.gamesDistribution[0]?.games || 0;
 
   return (
-    <div className="flex flex-col w-full px-4 divide-y divide-primary-text/50">
+    <div className="flex flex-col w-full divide-y divide-primary-text/50">
       {summary?.gamesDistribution.map(({ oponentId, games }, index) => {
         const fraction = games / mostGames;
         return (
