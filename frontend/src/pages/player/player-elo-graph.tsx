@@ -129,12 +129,12 @@ export const PlayerEloGraph: React.FC<{ playerId: string }> = ({ playerId }) => 
       </LineChart>
 
       {showExpectedElo && lastGame.simulatedElo && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 max-w-[640px] gap-4 text-primary-text mb-2">
-          <div className="rounded-lg p-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 max-w-[640px] gap-x-4 text-primary-text mb-2">
+          <div className="p-1">
             <p className="text-sm mb-1 whitespace-nowrap">Expected score</p>
             <p className="text-2xl font-bold">{fmtNum(lastGame.simulatedElo)}</p>
           </div>
-          <div className="rounded-lg p-4">
+          <div className="p-1">
             <p className="text-sm mb-1 whitespace-nowrap">Distance from current</p>
             <p className="text-2xl font-bold">
               {fmtNum(lastGame.simulatedElo - lastGame.eloAfterGame, { signedPositive: true })}{" "}
@@ -142,8 +142,8 @@ export const PlayerEloGraph: React.FC<{ playerId: string }> = ({ playerId }) => 
             </p>
           </div>
           {summary.games.length >= context.client.gameLimitForRanked + 1 && nextLastGame?.simulatedElo && (
-            <div className="rounded-lg p-4">
-              <p className="text-sm mb-1 whitespace-nowrap">Last game</p>
+            <div className="p-1">
+              <p className="text-sm mb-1 whitespace-nowrap">Last game *</p>
               <p className="text-2xl font-bold">
                 {fmtNum(lastGame.simulatedElo - nextLastGame.simulatedElo, { digits: 0, signedPositive: true })}{" "}
                 {lastGame.simulatedElo - nextLastGame.simulatedElo > 0 ? "↗" : "↘"}
@@ -164,7 +164,8 @@ export const PlayerEloGraph: React.FC<{ playerId: string }> = ({ playerId }) => 
           className="mt-4 px-2 py-1 bg-secondary-background text-secondary-text ring-1 ring-secondary-text hover:bg-secondary-background/50 rounded-lg"
           onClick={() => setShowExpectedElo((prev) => !prev)}
         >
-          {showExpectedElo ? "Hide" : "Simulate"} expected score
+          {showExpectedElo ? "Hide" : "Simulate"} expected score{" "}
+          {!showExpectedElo && <span className="text-[0.7rem] italic">(~ 5 seconds)</span>}
         </button>
       )}
     </>

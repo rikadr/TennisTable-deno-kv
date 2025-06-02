@@ -50,7 +50,8 @@ export class FutureElo {
 
   setup(games?: Game[]) {
     // Add all existing games
-    for (const { winner, loser } of games ?? this.parent.games) {
+    for (const game of games ?? this.parent.games) {
+      const { winner, loser } = game;
       // Add players to map
       if (this.playersMap.has(winner) === false) {
         this.playersMap.set(winner, new PlayerClass(winner));
@@ -62,20 +63,20 @@ export class FutureElo {
       const loserPlayer = this.playersMap.get(loser)!;
 
       // Register games
-      winnerPlayer.registerGame(loser, "win");
-      loserPlayer.registerGame(winner, "loss");
+      winnerPlayer.registerGame(loser, "win", game);
+      loserPlayer.registerGame(winner, "loss", game);
     }
 
     // Create all ranked players pairings
-    const rankedNames: string[] = [];
+    const rankedPlayeIds: string[] = [];
     this.playersMap.forEach(
-      (player) => player.totalGames >= this.parent.client.gameLimitForRanked && rankedNames.push(player.name),
+      (player) => player.totalGames >= this.parent.client.gameLimitForRanked && rankedPlayeIds.push(player.id),
     );
 
     // Create all unique permutations of player pairings
-    for (let playerIndex = 0; playerIndex < rankedNames.length; playerIndex++) {
-      for (let oponentIndex = playerIndex + 1; oponentIndex < rankedNames.length; oponentIndex++) {
-        this.playerPairings.push({ p1: rankedNames[playerIndex], p2: rankedNames[oponentIndex] });
+    for (let playerIndex = 0; playerIndex < rankedPlayeIds.length; playerIndex++) {
+      for (let oponentIndex = playerIndex + 1; oponentIndex < rankedPlayeIds.length; oponentIndex++) {
+        this.playerPairings.push({ p1: rankedPlayeIds[playerIndex], p2: rankedPlayeIds[oponentIndex] });
       }
     }
 
@@ -153,25 +154,190 @@ export class FutureElo {
     if (wins === undefined && loss === undefined) {
       return { fraction: 0, confidence: 0 };
     }
-    if (wins === undefined) wins = 0;
-    if (loss === undefined) loss = 0;
 
-    if (wins === 0 && loss === 0) {
+    const totalWins = wins?.length ?? 0;
+    const totalLoss = loss?.length ?? 0;
+
+    if (totalWins === 0 && totalLoss === 0) {
       return { fraction: 0, confidence: 0 };
     }
-    const fraction = wins / (wins + loss);
 
-    const addition = wins + loss;
-    const product = wins * loss;
-    const confidencePoints = addition * 3 + product * 1;
+    const lastGameTime = Math.max(player1?.lastRegisteredGameTime ?? 0, player2?.lastRegisteredGameTime ?? 0);
+    const allGames = [...(wins ?? []), ...(loss ?? [])];
+    const allGamesIndividualFractions: Fraction[] = [];
 
-    const confidence = Math.min(confidencePoints, 100) / 100;
+    const noScoreFraction = this.getWinFractionWithConfidence({
+      wins: totalWins,
+      loss: totalLoss,
+      additions: 3,
+      products: 1,
+    });
+
+    for (const game of allGames) {
+      allGamesIndividualFractions.push({
+        fraction: noScoreFraction.fraction,
+        confidence: this.ageAdjustedConfidence(noScoreFraction.confidence, game.playedAt, lastGameTime),
+      });
+    }
+
+    const gamesWithScores = allGames.filter((game) => !!game.score);
+    if (gamesWithScores.length > 0) {
+      const setsWon =
+        (wins?.reduce((total, game) => (!!game.score ? (total += game.score.setsWon.gameWinner) : total), 0) ?? 0) +
+        (loss?.reduce((total, game) => (!!game.score ? (total += game.score.setsWon.gameLoser) : total), 0) ?? 0);
+      const setsLost =
+        (wins?.reduce((total, game) => (!!game.score ? (total += game.score.setsWon.gameLoser) : total), 0) ?? 0) +
+        (loss?.reduce((total, game) => (!!game.score ? (total += game.score.setsWon.gameWinner) : total), 0) ?? 0);
+
+      const setScoreFraction = this.getWinFractionWithConfidence({
+        wins: setsWon,
+        loss: setsLost,
+        additions: 3,
+        products: 0.5,
+      });
+
+      for (const game of gamesWithScores) {
+        allGamesIndividualFractions.push({
+          fraction: this.convertSetWinToGameWin(setScoreFraction.fraction),
+          confidence: this.ageAdjustedConfidence(setScoreFraction.confidence, game.playedAt, lastGameTime),
+        });
+      }
+    }
+
+    const gamesWithSetPoints = allGames.filter((game) => !!game.score && !!game.score.setPoints);
+    if (gamesWithSetPoints.length > 0) {
+      // 🤢🤮🍝
+      const pointsWon =
+        (wins?.reduce(
+          (total, game) =>
+            !!game.score && !!game.score.setPoints
+              ? (total += game.score.setPoints.reduce((points, set) => (points += set.gameWinner), 0))
+              : total,
+          0,
+        ) ?? 0) +
+        (loss?.reduce(
+          (total, game) =>
+            !!game.score && !!game.score.setPoints
+              ? (total += game.score.setPoints.reduce((points, set) => (points += set.gameLoser), 0))
+              : total,
+          0,
+        ) ?? 0);
+      const pointsLost =
+        (wins?.reduce(
+          (total, game) =>
+            !!game.score && !!game.score.setPoints
+              ? (total += game.score.setPoints.reduce((points, set) => (points += set.gameLoser), 0))
+              : total,
+          0,
+        ) ?? 0) +
+        (loss?.reduce(
+          (total, game) =>
+            !!game.score && !!game.score.setPoints
+              ? (total += game.score.setPoints.reduce((points, set) => (points += set.gameWinner), 0))
+              : total,
+          0,
+        ) ?? 0);
+
+      const setPointsFraction = this.getWinFractionWithConfidence({
+        wins: pointsWon,
+        loss: pointsLost,
+        additions: 1,
+        products: 0.1,
+      });
+
+      for (const game of gamesWithSetPoints) {
+        allGamesIndividualFractions.push({
+          fraction: this.convertPointWinToGameWin(setPointsFraction.fraction),
+          confidence: this.ageAdjustedConfidence(setPointsFraction.confidence, game.playedAt, lastGameTime),
+        });
+      }
+    }
+
+    const { fraction, confidence } = this.combineFractions(allGamesIndividualFractions);
 
     // Update cache
     player1!.oponentsMap.get(p2)!.directFraction = { fraction, confidence };
     player2!.oponentsMap.get(p1)!.directFraction = { fraction: 1 - fraction, confidence }; // Invert fraction for p2
 
     return { fraction, confidence };
+  }
+
+  private getWinFractionWithConfidence(input: {
+    wins: number;
+    loss: number;
+    additions: number;
+    products: number;
+  }): Fraction {
+    const { wins, loss, additions, products } = input;
+    const winFraction = wins / (wins + loss);
+
+    const addition = wins + loss;
+    const product = wins * loss;
+    const confidencePoints = addition * additions + product * products;
+
+    const confidence = Math.min(confidencePoints, 100) / 100;
+    return { fraction: winFraction, confidence };
+  }
+
+  private ageAdjustedConfidence(confidence: number, gameTime: number, referenceTime: number): number {
+    const age = Math.max(referenceTime - gameTime, 0);
+
+    // Time constants in milliseconds
+    const THREE_MONTHS_MS = 3 * 30 * 24 * 60 * 60 * 1000;
+    const ONE_YEAR_MS = (365 * 24 * 60 * 60 * 1000) / 2;
+    const TWO_YEARS_MS = (2 * 365 * 24 * 60 * 60 * 1000) / 2;
+
+    // No reduction if age is less than 3 months
+    if (age <= THREE_MONTHS_MS) {
+      return confidence;
+    }
+
+    // Linear decline from 3 months to 1 year (0% to 80% reduction)
+    if (age <= ONE_YEAR_MS) {
+      const timeSpan = ONE_YEAR_MS - THREE_MONTHS_MS;
+      const progress = (age - THREE_MONTHS_MS) / timeSpan; // 0 to 1
+      const reductionMultiplier = 1.0 - 0.8 * progress; // 1.0 to 0.2
+      return confidence * reductionMultiplier;
+    }
+
+    // Linear decline from 1 year to 2 years (80% to 100% reduction)
+    if (age <= TWO_YEARS_MS) {
+      const timeSpan = TWO_YEARS_MS - ONE_YEAR_MS;
+      const progress = (age - ONE_YEAR_MS) / timeSpan; // 0 to 1
+      const reductionMultiplier = 0.2 - 0.2 * progress; // 0.2 to 0.0
+      return confidence * reductionMultiplier;
+    }
+
+    // Complete reduction if age is 2 years or more
+    return 0;
+  }
+
+  private convertSetWinToGameWin(setWinRate: number): number {
+    const steepness = 1.6;
+    const x = setWinRate;
+
+    // Avoid division by zero at endpoints
+    if (x === 0) return 0;
+    if (x === 1) return 1;
+
+    const xPow = Math.pow(x, steepness);
+    const oneMinusXPow = Math.pow(1 - x, steepness);
+
+    return xPow / (xPow + oneMinusXPow);
+  }
+
+  private convertPointWinToGameWin(pointWinRate: number): number {
+    const steepness = 6.2;
+    const x = pointWinRate;
+
+    // Avoid division by zero at endpoints
+    if (x === 0) return 0;
+    if (x === 1) return 1;
+
+    const xPow = Math.pow(x, steepness);
+    const oneMinusXPow = Math.pow(1 - x, steepness);
+
+    return xPow / (xPow + oneMinusXPow);
   }
 
   private linkFractions(fraction1: Fraction, fraction2: Fraction): Fraction {
@@ -298,38 +464,46 @@ export class FutureElo {
 }
 
 class PlayerClass {
-  constructor(name: string) {
-    this.name = name;
+  constructor(id: string) {
+    this.id = id;
   }
 
-  readonly name: string;
+  readonly id: string;
   totalGames = 0;
+  lastRegisteredGameTime = 0;
   oponentsMap = new Map<
     string,
-    { wins: number; loss: number; directFraction?: Fraction; oneLayerFraction?: Fraction; twoLayerFraction?: Fraction }
+    {
+      wins: Game[];
+      loss: Game[];
+      directFraction?: Fraction;
+      oneLayerFraction?: Fraction;
+      twoLayerFraction?: Fraction;
+    }
   >();
 
   registerOponentIfNotExists(oponent: string) {
     if (this.oponentsMap.has(oponent) === false) {
       this.oponentsMap.set(oponent, {
-        wins: 0,
-        loss: 0,
+        wins: [],
+        loss: [],
       });
     }
   }
 
-  registerGame(oponent: string, result: "win" | "loss") {
+  registerGame(oponent: string, result: "win" | "loss", game: Game) {
     // Find oponent
     this.registerOponentIfNotExists(oponent);
     const oponentFromMap = this.oponentsMap.get(oponent)!;
 
     // Register game
     if (result === "win") {
-      oponentFromMap.wins++;
+      oponentFromMap.wins.push(game);
     } else {
-      oponentFromMap.loss++;
+      oponentFromMap.loss.push(game);
     }
 
     this.totalGames++;
+    this.lastRegisteredGameTime = Math.max(this.lastRegisteredGameTime, game.playedAt);
   }
 }
