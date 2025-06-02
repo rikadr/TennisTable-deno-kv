@@ -173,15 +173,16 @@ export class FutureElo {
       products: 1,
     });
 
-    for (const game of allGames) {
+    const gamesWithNoScore = allGames.filter((game) => !game.score);
+    for (const game of gamesWithNoScore) {
       allGamesIndividualFractions.push({
         fraction: noScoreFraction.fraction,
         confidence: this.ageAdjustedConfidence(noScoreFraction.confidence, game.playedAt, lastGameTime),
       });
     }
 
-    const gamesWithScores = allGames.filter((game) => !!game.score);
-    if (gamesWithScores.length > 0) {
+    const gamesWithJustSetScores = allGames.filter((game) => !!game.score && !game.score.setPoints);
+    if (gamesWithJustSetScores.length > 0) {
       const setsWon =
         (wins?.reduce((total, game) => (!!game.score ? (total += game.score.setsWon.gameWinner) : total), 0) ?? 0) +
         (loss?.reduce((total, game) => (!!game.score ? (total += game.score.setsWon.gameLoser) : total), 0) ?? 0);
@@ -196,7 +197,7 @@ export class FutureElo {
         products: 0.5,
       });
 
-      for (const game of gamesWithScores) {
+      for (const game of gamesWithJustSetScores) {
         allGamesIndividualFractions.push({
           fraction: this.convertSetWinToGameWin(setScoreFraction.fraction),
           confidence: this.ageAdjustedConfidence(setScoreFraction.confidence, game.playedAt, lastGameTime),
