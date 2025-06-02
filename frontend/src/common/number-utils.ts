@@ -1,4 +1,4 @@
-export function fmtNum(number?: number, digits?: number) {
+export function fmtNum(number?: number, options?: { digits?: number; signedPositive?: boolean }) {
   if (number === undefined) {
     return undefined;
   }
@@ -11,7 +11,13 @@ export function fmtNum(number?: number, digits?: number) {
     autoDigits = 2;
   }
 
-  return number.toLocaleString("no-NO", {
-    maximumFractionDigits: digits ?? autoDigits,
+  const stringified = number.toLocaleString("no-NO", {
+    maximumFractionDigits: options?.digits ?? autoDigits,
   });
+
+  if (options?.signedPositive && number > 0) {
+    return "+" + stringified;
+  }
+
+  return stringified;
 }

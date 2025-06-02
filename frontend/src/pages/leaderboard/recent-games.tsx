@@ -41,7 +41,7 @@ export const RecentGames: React.FC = () => {
             >
               <div className="w-24 font-normal whitespace-nowrap">🏆 {context.playerName(game?.winner)}</div>
               <div className="w-32 text-right font-normal whitespace-nowrap">{context.playerName(game?.loser)} 💔</div>
-              <div className="w-6 text-right">{fmtNum(game!.pointsDiff, 0)}</div>
+              <div className="w-6 text-right">{fmtNum(game!.pointsDiff, { digits: 0 })}</div>
               <div className="w-28 text-right text-base">{relativeTimeString(new Date(game!.playedAt))}</div>
             </Link>
           ))}

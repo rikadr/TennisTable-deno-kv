@@ -14,7 +14,7 @@ type TabType = "overview" | "matches" | "statistics" | "numbered-points";
 const tabs = [
   { id: "overview" as TabType, label: "Overview" },
   { id: "matches" as TabType, label: "Recent Matches" },
-  //   { id: "statistics" as TabType, label: "Statistics" },
+  { id: "statistics" as TabType, label: "Statistics" },
   //   { id: "numbered-points" as TabType, label: "Numbered Points" },
 ];
 
@@ -24,15 +24,16 @@ export const PlayerPage: React.FC = () => {
   const navigate = useNavigate();
 
   const summary = context.leaderboard.getPlayerSummary(playerId || "");
+  const leaderboard = context.leaderboard.getLeaderboard();
+  const playerInLeaderBoard = leaderboard.rankedPlayers.find((p) => p.id === playerId);
   const pendingGames = context.tournaments.findAllPendingGamesByPlayer(playerId);
 
   const [activeTab, setActiveTab] = useState<TabType>("overview");
-  const [showExpectedElo, setShowExpectedElo] = useState(false);
 
   return (
     <div className="max-w-7xl mx-auto px-1 md:px-4">
       <div className="bg-secondary-background text-secondary-text rounded-t-2xl shadow-sm px-6 md:px-8 py-4">
-        <div className="flex md:items-center gap-4">
+        <div className="flex gap-4">
           <div className="relative">
             <ProfilePicture playerId={playerId} border={8} size={150} shape="rounded" clickToEdit />
             {summary.isRanked && (
@@ -45,11 +46,13 @@ export const PlayerPage: React.FC = () => {
           </div>
 
           {/* Player Info */}
-          <div className="flex-1 flex flex-col gap-4 text-secondary-text md:flex-row md:items-center md:justify-between">
+          <div className="flex-1 flex flex-col gap-2 text-secondary-text sm:flex-row sm:justify-between">
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold">{context.playerName(playerId)}</h1>
+              <h1 className="text-3xl xs:text-4xl sm:text-5xl font-bold mb-1">{context.playerName(playerId)}</h1>
               {summary.isRanked ? (
-                <div className="text-base">🏆 Rank {summary.rank} of ??</div>
+                <div className="text-base">
+                  🏆 Rank {fmtNum(summary.rank)} of {fmtNum(leaderboard.rankedPlayers.length)}
+                </div>
               ) : (
                 <div className="text-base">
                   <p>Not yet ranked.</p>
@@ -150,65 +153,49 @@ export const PlayerPage: React.FC = () => {
               <ContentCard title="Score Timeline">
                 {playerId && summary.games.length > 0 && (
                   <div className="bg-primary-background rounded-lg">
-                    <PlayerEloGraph playerId={playerId} showExpectedElo={showExpectedElo} />
-                    <div className="m-auto w-fit">
-                      {summary.games.length >= context.client.gameLimitForRanked && (
-                        <button
-                          className="px-2 py-1 bg-secondary-background text-secondary-text ring-1 ring-secondary-text hover:bg-secondary-background/50 rounded-lg"
-                          onClick={() => setShowExpectedElo((prev) => !prev)}
-                        >
-                          {showExpectedElo ? "Hide" : "Show"} expected score
-                          {showExpectedElo && (
-                            <>
-                              <p className="text-xs">* Might fluctuate wildly when too little data (few games)</p>
-                              <p className="text-xs">
-                                or when the total points pool increases by more players becomeing ranked
-                              </p>
-                            </>
-                          )}
-                        </button>
-                      )}
-                    </div>
+                    <PlayerEloGraph playerId={playerId} />
+                    <div className="m-auto w-fit"></div>
                   </div>
                 )}
               </ContentCard>
-
-              <div className="grid grid-flow-row lg:grid-flow-col gap-6">
-                {/* Win/Loss Points */}
-                {playerId && (
-                  <ContentCard title="Points Exchange" description="Net points gained/lost to your opponents">
-                    <PlayerPointsDistrubution playerId={playerId} />
-                  </ContentCard>
-                )}
-
-                {/* Games Played */}
-                {playerId && (
-                  <ContentCard title="Games Frequency" description="Relative frequency of opponents you play">
-                    <PlayerGamesDistrubution playerId={playerId} />
-                  </ContentCard>
-                )}
-              </div>
             </div>
 
             {/* Quick Stats */}
-            {/* <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="bg-gray-50 rounded-lg p-4">
-                <p className="text-sm text-gray-600 mb-1">Win Rate</p>
-                <p className="text-2xl font-bold text-green-600">?%</p>
+            {playerInLeaderBoard && (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-primary-text">
+                <div className="bg-primary-background rounded-lg p-4">
+                  <p className="text-sm  mb-1">Win Rate (Ratio)</p>
+
+                  <p className="text-2xl font-bold">
+                    {fmtNum(100 * (playerInLeaderBoard.wins / (playerInLeaderBoard.wins + playerInLeaderBoard.loss)))}%
+                  </p>
+                </div>
+                <div className="bg-primary-background rounded-lg p-4">
+                  <p className="text-sm  mb-1">Win / Loss Ratio</p>
+                  <p className="text-2xl font-bold">
+                    {fmtNum(playerInLeaderBoard.wins / playerInLeaderBoard.loss, { digits: 1 })}
+                  </p>
+                </div>
+                {summary.streaks && (
+                  <>
+                    <div className="bg-primary-background rounded-lg p-4">
+                      <p className="text-sm  mb-1">Longest Win Streak</p>
+                      <p className="text-2xl font-bold">
+                        🏆🔥 {fmtNum(summary.streaks.longestWin)}{" "}
+                        <span className="text-lg font-normal">game{summary.streaks.longestWin > 1 && "s"}</span>
+                      </p>
+                    </div>
+                    <div className="bg-primary-background rounded-lg p-4">
+                      <p className="text-sm  mb-1">Longest Lose Streak</p>
+                      <p className="text-2xl font-bold">
+                        💔🔥 {fmtNum(summary.streaks.longestLose)}{" "}
+                        <span className="text-lg font-normal">game{summary.streaks.longestLose > 1 && "s"}</span>
+                      </p>
+                    </div>
+                  </>
+                )}
               </div>
-              <div className="bg-gray-50 rounded-lg p-4">
-                <p className="text-sm text-gray-600 mb-1">Total Games</p>
-                <p className="text-2xl font-bold text-gray-900">?</p>
-              </div>
-              <div className="bg-gray-50 rounded-lg p-4">
-                <p className="text-sm text-gray-600 mb-1">Win Streak</p>
-                <p className="text-2xl font-bold text-blue-600">?</p>
-              </div>
-              <div className="bg-gray-50 rounded-lg p-4">
-                <p className="text-sm text-gray-600 mb-1">Avg Points/Game</p>
-                <p className="text-2xl font-bold text-gray-900">+?</p>
-              </div>
-            </div> */}
+            )}
           </div>
         )}
 
@@ -287,6 +274,26 @@ export const PlayerPage: React.FC = () => {
               </tbody>
             </table>
             <h1>...</h1>
+          </div>
+        )}
+
+        {activeTab === "statistics" && (
+          <div className="space-y-6">
+            <div className="grid grid-flow-row lg:grid-flow-col gap-6">
+              {/* Win/Loss Points */}
+              {playerId && (
+                <ContentCard title="Points Exchange" description="Net points gained/lost to your opponents">
+                  <PlayerPointsDistrubution playerId={playerId} />
+                </ContentCard>
+              )}
+
+              {/* Games Played */}
+              {playerId && (
+                <ContentCard title="Games Frequency" description="Relative frequency of opponents you play">
+                  <PlayerGamesDistrubution playerId={playerId} />
+                </ContentCard>
+              )}
+            </div>
           </div>
         )}
       </div>
