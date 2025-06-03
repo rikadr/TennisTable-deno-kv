@@ -47,13 +47,13 @@ export const PlayerEloGraph: React.FC<{ playerId: string }> = ({ playerId }) => 
     let output = width;
 
     if (width > 768) {
-      output -= 160;
+      output -= 130;
+    } else if (width > 640) {
+      output -= 80;
     } else if (width > 450) {
-      output -= 120;
-    } else if (width > 400) {
       output -= 60;
-    } else if (width > 350) {
-      output -= 40;
+    } else if (width > 400) {
+      output -= 20;
     }
     return Math.min(1140, output);
   };

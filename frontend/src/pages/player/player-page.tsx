@@ -97,10 +97,10 @@ export const PlayerPage: React.FC = () => {
       </div>
 
       {/* Tab Content */}
-      <div className="bg-secondary-background rounded-b-2xl shadow-sm p-6 md:p-8">
+      <div className="bg-secondary-background rounded-b-2xl shadow-sm p-2 sm:p-4 md:p-8">
         {/* Overview Tab */}
         {activeTab === "overview" && (
-          <div className="space-y-6">
+          <div className="space-y-2 sm:space-y-6">
             {/* Pending tournament games */}
             {pendingGames.length > 0 && (
               <div className="bg-tertiary-background text-tertiary-text rounded-xl p-6 pt-3">
@@ -147,22 +147,19 @@ export const PlayerPage: React.FC = () => {
               </div>
             )}
 
-            {/* Graphs */}
-            <div className="space-y-6">
-              {/* Score Timeline */}
-              <ContentCard title="Score Timeline">
-                {playerId && summary.games.length > 0 && (
-                  <div className="bg-primary-background rounded-lg">
-                    <PlayerEloGraph playerId={playerId} />
-                    <div className="m-auto w-fit"></div>
-                  </div>
-                )}
-              </ContentCard>
-            </div>
+            {/* Score Timeline */}
+            <ContentCard title="Score Timeline">
+              {playerId && summary.games.length > 0 && (
+                <div className="bg-primary-background rounded-lg -mx-2">
+                  <PlayerEloGraph playerId={playerId} />
+                  <div className="m-auto w-fit"></div>
+                </div>
+              )}
+            </ContentCard>
 
             {/* Quick Stats */}
             {playerInLeaderBoard && (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-primary-text">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4 text-primary-text">
                 <div className="bg-primary-background rounded-lg p-4">
                   <p className="text-sm  mb-1">Win Rate (Ratio)</p>
 
