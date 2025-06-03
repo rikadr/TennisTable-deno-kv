@@ -58,6 +58,9 @@ export class Simulations {
     playerGameTimes.add(allGamesWithActivePlayers[allGamesWithActivePlayers.length - 1].playedAt);
 
     const sortedPlayerGameTimes = Array.from(playerGameTimes).sort((a, b) => a - b); // Verify ascending
+    const playerPlayedTheLastGame =
+      allGamesWithActivePlayers[allGamesWithActivePlayers.length - 1].winner === playerId ||
+      allGamesWithActivePlayers[allGamesWithActivePlayers.length - 1].loser === playerId;
 
     const eloOverTime: { elo: number; time: number }[] = [];
 
@@ -68,7 +71,10 @@ export class Simulations {
 
       const playerElos: number[] = [];
 
-      const iterations = gameTime >= sortedPlayerGameTimes[sortedPlayerGameTimes.length - 3] ? 3_000 : 35;
+      const iterations =
+        gameTime >= sortedPlayerGameTimes[sortedPlayerGameTimes.length - (playerPlayedTheLastGame ? 2 : 3)]
+          ? 3_000
+          : 35;
 
       for (let i = 0; i < iterations; i++) {
         this.shuffleArray(totalGames);
