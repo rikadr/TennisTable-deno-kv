@@ -10,8 +10,8 @@ export type PlayerSummary = {
   loss: number;
   games: {
     time: number;
-    result: "win" | "loss";
-    oponent: string;
+    result?: "win" | "loss";
+    oponent?: string;
     eloAfterGame: number;
     pointsDiff: number;
     score?: GameScore["data"];

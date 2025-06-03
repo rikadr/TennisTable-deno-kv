@@ -18,27 +18,44 @@ export const PlayerEloGraph: React.FC<{ playerId: string }> = ({ playerId }) => 
   const [range, setRange] = useState(0);
   const [showExpectedElo, setShowExpectedElo] = useState(false);
 
-  const graphGames: ((typeof summary.games)[number] & { simulatedElo?: number })[] = useMemo(() => {
-    const games = [...summary.games];
-    games.unshift({ eloAfterGame: Elo.INITIAL_ELO, oponent: summary.id, pointsDiff: 0, result: "win", time: 0 });
-    if (showExpectedElo) {
-      const simulatedElos = context.simulations.expectedPlayerEloOverTime(playerId);
-      return games.map((game, index) => {
-        const simulatedElo = simulatedElos.find((e) => e.time === game.time);
-        if (
-          !simulatedElo ||
-          simulatedElo.elo === Elo.INITIAL_ELO ||
-          simulatedElo.time !== game.time ||
-          index < context.client.gameLimitForRanked
-        ) {
-          return game;
+  const graphGames: ((typeof summary.games)[number] & { simulatedElo?: number; simulatedEloDiff?: number })[] =
+    useMemo(() => {
+      const games = [...summary.games];
+      if (showExpectedElo) {
+        const simulatedElos = context.simulations.expectedPlayerEloOverTime(playerId);
+        const entries: ((typeof summary.games)[number] & { simulatedElo?: number; simulatedEloDiff?: number })[] = [
+          { eloAfterGame: Elo.INITIAL_ELO, pointsDiff: 0, time: 0 },
+        ];
+        const allGameTimes = new Set<number>([...games.map((g) => g.time), ...simulatedElos.map((s) => s.time)]);
+        for (const gameTime of Array.from(allGameTimes).sort((a, b) => a - b)) {
+          const realGame = games.find((g) => g.time === gameTime);
+          const simulatedElo = simulatedElos.find((g) => g.time === gameTime);
+          if (!realGame && !simulatedElo) continue; // Verify if return is more correct
+          let newEntry = { ...entries[entries.length - 1] };
+          if (realGame) {
+            newEntry = { ...newEntry, ...realGame, score: undefined };
+          } else {
+            newEntry.oponent = undefined;
+            newEntry.pointsDiff = 0;
+            newEntry.result = undefined;
+          }
+          if (simulatedElo) {
+            newEntry.time = simulatedElo.time;
+            newEntry.simulatedEloDiff = simulatedElo.elo - (newEntry.simulatedElo ?? 0);
+            newEntry.simulatedElo = simulatedElo.elo;
+          } else {
+            newEntry.simulatedEloDiff = 0;
+          }
+          entries.push(newEntry);
         }
-        return { ...game, simulatedElo: simulatedElos[index - 1]?.elo };
-      });
-    }
-    return games;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showExpectedElo, playerId]);
+
+        return entries;
+      }
+      games.unshift({ eloAfterGame: Elo.INITIAL_ELO, pointsDiff: 0, time: 0 });
+
+      return games;
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [showExpectedElo, playerId]);
 
   if (summary.games.length === 0) {
     return null;
@@ -59,8 +76,9 @@ export const PlayerEloGraph: React.FC<{ playerId: string }> = ({ playerId }) => 
     return Math.min(1140, output);
   };
 
-  const lastGame = graphGames[graphGames.length - 1];
-  const nextLastGame = graphGames[graphGames.length - 2];
+  const playerPlayedTheLastGame = graphGames[graphGames.length - 1].oponent !== undefined;
+  const lastGame = graphGames[graphGames.length - (playerPlayedTheLastGame ? 1 : 2)];
+  const entryBeforeLastGame = graphGames[graphGames.length - (playerPlayedTheLastGame ? 2 : 3)];
 
   return (
     <>
@@ -153,12 +171,12 @@ export const PlayerEloGraph: React.FC<{ playerId: string }> = ({ playerId }) => 
               {lastGame.simulatedElo - lastGame.eloAfterGame > 0 ? "↗" : "↘"}
             </p>
           </div>
-          {summary.games.length >= context.client.gameLimitForRanked + 1 && nextLastGame?.simulatedElo && (
+          {summary.games.length >= context.client.gameLimitForRanked + 1 && entryBeforeLastGame?.simulatedElo && (
             <div className="p-1">
               <p className="text-sm mb-1 whitespace-nowrap">Last game *</p>
               <p className="text-2xl font-bold">
-                {fmtNum(lastGame.simulatedElo - nextLastGame.simulatedElo, { digits: 0, signedPositive: true })}{" "}
-                {lastGame.simulatedElo - nextLastGame.simulatedElo > 0 ? "↗" : "↘"}
+                {fmtNum(lastGame.simulatedElo - entryBeforeLastGame.simulatedElo, { digits: 0, signedPositive: true })}{" "}
+                {lastGame.simulatedElo - entryBeforeLastGame.simulatedElo > 0 ? "↗" : "↘"}
               </p>
             </div>
           )}
@@ -190,16 +208,24 @@ const CustomTooltip: React.FC = ({ active, payload, label }: TooltipProps<ValueT
     const game = payload[0].payload;
     return (
       <div className="p-2 bg-primary-background ring-1 ring-primary-text rounded-lg text-primary-text">
-        <p>
-          {`Elo : ${payload[0].value?.toLocaleString("no-NO", { maximumFractionDigits: 0 })}`}{" "}
-          {game.simulatedElo && `(${game.simulatedElo?.toLocaleString("no-NO", { maximumFractionDigits: 0 })})`}
-        </p>
-        <p className="desc">
-          {game?.result === "win"
-            ? `🏆 +${game.pointsDiff?.toLocaleString("no-NO", { maximumFractionDigits: 0 })} from`
-            : `💔 ${game.pointsDiff?.toLocaleString("no-NO", { maximumFractionDigits: 0 })} to`}{" "}
-          {constext.playerName(game.oponent)}
-        </p>
+        <p>Score: {fmtNum(payload[0].value as number, { digits: 0 })} </p>
+
+        {game?.result ? (
+          <p className="desc">
+            {game.result === "win"
+              ? `🏆 +${fmtNum(game.pointsDiff, { digits: 0 })} from`
+              : `💔 ${fmtNum(game.pointsDiff, { digits: 0 })} to`}{" "}
+            {constext.playerName(game.oponent)}
+          </p>
+        ) : (
+          <p className="text-primary-text/50">In between your games</p>
+        )}
+        {game.simulatedElo && game.simulatedEloDiff && (
+          <p>
+            Simulated: {fmtNum(game.simulatedElo, { digits: 0 })} (
+            {fmtNum(game.simulatedEloDiff, { signedPositive: true, digits: 0 })})
+          </p>
+        )}
         {game.time > 0 && <p>{relativeTimeString(new Date(game.time))}</p>}
       </div>
     );

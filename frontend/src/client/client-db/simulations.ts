@@ -42,24 +42,33 @@ export class Simulations {
         this.parent.eventStore.playersProjector.getPlayer(game.loser)?.active,
     );
 
-    const playerGameTimes = this.parent.games.reduce((acc, game) => {
+    const playerGameTimes = new Set<number>();
+    for (let i = 0; i < allGamesWithActivePlayers.length; i++) {
+      const game = allGamesWithActivePlayers[i];
       const isPlayedByPlayer = [game.winner, game.loser].includes(playerId);
       if (isPlayedByPlayer) {
-        acc.push(game.playedAt);
+        playerGameTimes.add(game.playedAt);
+        const gameBefore = allGamesWithActivePlayers[i - 1];
+        if (gameBefore) {
+          playerGameTimes.add(gameBefore.playedAt);
+        }
       }
-      return acc;
-    }, [] as number[]);
+    }
+    // Add latest game
+    playerGameTimes.add(allGamesWithActivePlayers[allGamesWithActivePlayers.length - 1].playedAt);
+
+    const sortedPlayerGameTimes = Array.from(playerGameTimes).sort((a, b) => a - b); // Verify ascending
 
     const eloOverTime: { elo: number; time: number }[] = [];
 
-    for (const gameTime of playerGameTimes) {
+    for (const gameTime of sortedPlayerGameTimes) {
       const relevantGames = allGamesWithActivePlayers.filter((g) => g.playedAt <= gameTime);
       const generatedGames = this.parent.futureElo.simulatedGamesForAGivenInputOfGames(relevantGames);
       const totalGames = [...relevantGames, ...generatedGames];
 
       const playerElos: number[] = [];
 
-      const iterations = gameTime >= playerGameTimes[playerGameTimes.length - 2] ? 3_000 : 35;
+      const iterations = gameTime >= sortedPlayerGameTimes[sortedPlayerGameTimes.length - 3] ? 3_000 : 35;
 
       for (let i = 0; i < iterations; i++) {
         this.shuffleArray(totalGames);
