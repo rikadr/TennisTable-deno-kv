@@ -15,6 +15,7 @@ export const PlayerEloGraph: React.FC<{ playerId: string }> = ({ playerId }) => 
   const context = useEventDbContext();
   const summary = context.leaderboard.getPlayerSummary(playerId || "");
 
+  const [range, setRange] = useState(0);
   const [showExpectedElo, setShowExpectedElo] = useState(false);
 
   const graphGames: ((typeof summary.games)[number] & { simulatedElo?: number })[] = useMemo(() => {
@@ -37,7 +38,7 @@ export const PlayerEloGraph: React.FC<{ playerId: string }> = ({ playerId }) => 
     }
     return games;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [summary, showExpectedElo, playerId]);
+  }, [showExpectedElo, playerId]);
 
   if (summary.games.length === 0) {
     return null;
@@ -66,7 +67,7 @@ export const PlayerEloGraph: React.FC<{ playerId: string }> = ({ playerId }) => 
       <LineChart
         width={graphWidth()}
         height={width > 768 ? 350 : 300}
-        data={graphGames}
+        data={graphGames.slice(range)}
         margin={{ top: 5, right: 0, left: -10 }}
       >
         <CartesianGrid strokeDasharray="1 4" vertical={false} stroke="rgb(var(--color-primary-text))" opacity={1} />
@@ -127,6 +128,17 @@ export const PlayerEloGraph: React.FC<{ playerId: string }> = ({ playerId }) => 
           />
         )}
       </LineChart>
+
+      {graphGames.length > 50 && (
+        <input
+          className="w-full my-4"
+          type="range"
+          min="2"
+          max={graphGames.length || 0}
+          value={range}
+          onChange={(e) => setRange(parseInt(e.target.value))}
+        />
+      )}
 
       {showExpectedElo && lastGame.simulatedElo && (
         <div className="grid grid-cols-2 sm:grid-cols-3 max-w-[640px] gap-x-4 text-primary-text mb-2">
