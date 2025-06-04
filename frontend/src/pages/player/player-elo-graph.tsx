@@ -22,6 +22,7 @@ export const PlayerEloGraph: React.FC<{ playerId: string }> = ({ playerId }) => 
     useMemo(() => {
       const games = [...summary.games];
       if (showExpectedElo) {
+        const firstRankedGameTime = games[context.client.gameLimitForRanked - 1].time;
         const simulatedElos = context.simulations.expectedPlayerEloOverTime(playerId);
         const entries: ((typeof summary.games)[number] & { simulatedElo?: number; simulatedEloDiff?: number })[] = [
           { eloAfterGame: Elo.INITIAL_ELO, pointsDiff: 0, time: 0 },
@@ -39,12 +40,14 @@ export const PlayerEloGraph: React.FC<{ playerId: string }> = ({ playerId }) => 
             newEntry.pointsDiff = 0;
             newEntry.result = undefined;
           }
-          if (simulatedElo) {
-            newEntry.time = simulatedElo.time;
-            newEntry.simulatedEloDiff = simulatedElo.elo - (newEntry.simulatedElo ?? 0);
-            newEntry.simulatedElo = simulatedElo.elo;
-          } else {
-            newEntry.simulatedEloDiff = 0;
+          if (gameTime > firstRankedGameTime) {
+            if (simulatedElo) {
+              newEntry.time = simulatedElo.time;
+              newEntry.simulatedEloDiff = simulatedElo.elo - (newEntry.simulatedElo ?? 0);
+              newEntry.simulatedElo = simulatedElo.elo;
+            } else {
+              newEntry.simulatedEloDiff = 0;
+            }
           }
           entries.push(newEntry);
         }
