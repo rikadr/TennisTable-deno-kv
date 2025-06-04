@@ -207,8 +207,7 @@ export const PlayerEloGraph: React.FC<{ playerId: string }> = ({ playerId }) => 
             })
           }
         >
-          {showExpectedElo ? "Hide" : "Simulate"} expected score{" "}
-          {!showExpectedElo && <span className="text-[0.7rem] italic">(~ 5 seconds)</span>}
+          {showExpectedElo ? "Hide" : "Simulate"} expected score
         </button>
       )}
     </>
