@@ -8,22 +8,23 @@ import { stringToColor } from "../../common/string-to-color";
 import { Elo } from "../../client/client-db/elo";
 import { relativeTimeString } from "../../common/date-utils";
 import { fmtNum } from "../../common/number-utils";
+import { useEloSimulationWorker } from "../../hooks/use-elo-simulation-worker";
 
 export const PlayerEloGraph: React.FC<{ playerId: string }> = ({ playerId }) => {
-  const { width = 0 } = useWindowSize();
-
   const context = useEventDbContext();
   const summary = context.leaderboard.getPlayerSummary(playerId || "");
 
+  const { width = 0 } = useWindowSize();
+
   const [range, setRange] = useState(0);
   const [showExpectedElo, setShowExpectedElo] = useState(false);
+  const { startSimulation, simulatedElos, simulationProgress, simulationIsDone } = useEloSimulationWorker();
 
   const graphGames: ((typeof summary.games)[number] & { simulatedElo?: number; simulatedEloDiff?: number })[] =
     useMemo(() => {
       const games = [...summary.games];
       if (showExpectedElo) {
         const firstRankedGameTime = games[context.client.gameLimitForRanked - 1].time;
-        const simulatedElos = context.simulations.expectedPlayerEloOverTime(playerId);
         const entries: ((typeof summary.games)[number] & { simulatedElo?: number; simulatedEloDiff?: number })[] = [
           { eloAfterGame: Elo.INITIAL_ELO, pointsDiff: 0, time: 0 },
         ];
@@ -58,7 +59,7 @@ export const PlayerEloGraph: React.FC<{ playerId: string }> = ({ playerId }) => 
 
       return games;
       // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [showExpectedElo, playerId]);
+    }, [showExpectedElo, simulatedElos, playerId]);
 
   if (summary.games.length === 0) {
     return null;
@@ -161,6 +162,7 @@ export const PlayerEloGraph: React.FC<{ playerId: string }> = ({ playerId }) => 
         />
       )}
 
+      {showExpectedElo && simulationIsDone === false && <ProgressBar progress={simulationProgress} />}
       {showExpectedElo && lastGame.simulatedElo && (
         <div className="grid grid-cols-2 sm:grid-cols-3 max-w-[640px] gap-x-4 text-primary-text mb-2">
           <div className="p-1">
@@ -195,7 +197,15 @@ export const PlayerEloGraph: React.FC<{ playerId: string }> = ({ playerId }) => 
       {summary.games.length >= context.client.gameLimitForRanked && (
         <button
           className="mt-4 px-2 py-1 bg-secondary-background text-secondary-text ring-1 ring-secondary-text hover:bg-secondary-background/50 rounded-lg"
-          onClick={() => setShowExpectedElo((prev) => !prev)}
+          onClick={() =>
+            setShowExpectedElo((prev) => {
+              const newValue = !prev;
+              if (newValue) {
+                startSimulation(playerId);
+              }
+              return newValue;
+            })
+          }
         >
           {showExpectedElo ? "Hide" : "Simulate"} expected score{" "}
           {!showExpectedElo && <span className="text-[0.7rem] italic">(~ 5 seconds)</span>}
@@ -236,3 +246,27 @@ const CustomTooltip: React.FC = ({ active, payload, label }: TooltipProps<ValueT
 
   return null;
 };
+
+interface ProgressBarProps {
+  progress: number; // 0 to 1
+}
+
+export function ProgressBar({ progress }: ProgressBarProps) {
+  const percentage = Math.round(Math.max(0, Math.min(1, progress)) * 100);
+
+  return (
+    <div className="w-full">
+      <div className="flex justify-between items-center mb-1">
+        <span className="text-sm text-primary-text">Progress</span>
+        <span className="text-sm text-primary-text">{percentage}%</span>
+      </div>
+
+      <div className="w-full ring-1 ring-secondary-background rounded-lg h-10">
+        <div
+          className="h-10 rounded-lg transition-all duration-1000 ease-out bg-secondary-background"
+          style={{ width: `${percentage}%` }}
+        />
+      </div>
+    </div>
+  );
+}

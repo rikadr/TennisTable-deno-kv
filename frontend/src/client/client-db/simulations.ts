@@ -32,9 +32,12 @@ export class Simulations {
     return wins / (loss ?? 1);
   }
 
-  expectedPlayerEloOverTime(playerId: string): { elo: number; time: number }[] {
+  expectedPlayerEloOverTime(
+    playerId: string,
+    workerCallback: (message: { elements: { elo: number; time: number }[]; progress: number }) => void,
+  ): void {
     const player = this.parent.eventStore.playersProjector.getPlayer(playerId);
-    if (!player) return [];
+    if (!player) return;
 
     const allGamesWithActivePlayers = this.parent.games.filter(
       (game) =>
@@ -62,7 +65,16 @@ export class Simulations {
       allGamesWithActivePlayers[allGamesWithActivePlayers.length - 1].winner === playerId ||
       allGamesWithActivePlayers[allGamesWithActivePlayers.length - 1].loser === playerId;
 
-    const eloOverTime: { elo: number; time: number }[] = [];
+    const BATCH_SIZE = 5;
+
+    const FAST_ITERATION = 35;
+    const DETAILED_ITERATION = 3_000;
+
+    const totalIterationsToSimulate =
+      FAST_ITERATION * sortedPlayerGameTimes.length + DETAILED_ITERATION * (playerPlayedTheLastGame ? 2 : 3);
+    let iterationsProgress = 0;
+
+    let eloOverTime: { elo: number; time: number }[] = [];
 
     for (const gameTime of sortedPlayerGameTimes) {
       const relevantGames = allGamesWithActivePlayers.filter((g) => g.playedAt <= gameTime);
@@ -73,8 +85,8 @@ export class Simulations {
 
       const iterations =
         gameTime >= sortedPlayerGameTimes[sortedPlayerGameTimes.length - (playerPlayedTheLastGame ? 2 : 3)]
-          ? 3_000
-          : 35;
+          ? DETAILED_ITERATION
+          : FAST_ITERATION;
 
       for (let i = 0; i < iterations; i++) {
         this.shuffleArray(totalGames);
@@ -90,9 +102,21 @@ export class Simulations {
       }
       const avg = playerElos.reduce((acc, cur) => acc + cur, 0) / playerElos.length;
       eloOverTime.push({ elo: avg, time: gameTime });
+
+      // Tally-up and do worker callback
+      iterationsProgress += iterations;
+      if (
+        eloOverTime.length >= BATCH_SIZE ||
+        iterations === DETAILED_ITERATION ||
+        gameTime === sortedPlayerGameTimes[sortedPlayerGameTimes.length - 1]
+      ) {
+        const progress = iterationsProgress / totalIterationsToSimulate;
+        workerCallback({ elements: [...eloOverTime], progress });
+        eloOverTime = [];
+      }
     }
 
-    return eloOverTime;
+    return;
   }
 
   monteCarloSimulation(permutations: number) {
