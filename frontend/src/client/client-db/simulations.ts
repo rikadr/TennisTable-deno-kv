@@ -65,7 +65,7 @@ export class Simulations {
       allGamesWithActivePlayers[allGamesWithActivePlayers.length - 1].winner === playerId ||
       allGamesWithActivePlayers[allGamesWithActivePlayers.length - 1].loser === playerId;
 
-    const BATCH_SIZE = 5;
+    const BATCH_SIZE = 1; // % seems reasonable but 1 works well on my beast mac and gives smooth frame rate
 
     const FAST_ITERATION = 35;
     const DETAILED_ITERATION = 3_000;
