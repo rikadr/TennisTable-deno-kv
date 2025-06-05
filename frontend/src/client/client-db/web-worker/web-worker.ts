@@ -19,7 +19,7 @@ function handleWorkerMessage(message: WorkerMessage) {
       tennisTable.simulations.expectedPlayerEloOverTime(message.data.playerId, (data) =>
         postWorkerMessage({ type: "simulated-elo-delivery", data }),
       );
-      postWorkerMessage({ type: "done-with-simulation" });
+      setTimeout(() => postWorkerMessage({ type: "done-with-simulation" }), 1000);
       break;
   }
 }
