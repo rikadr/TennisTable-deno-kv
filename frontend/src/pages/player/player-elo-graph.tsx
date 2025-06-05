@@ -1,5 +1,15 @@
 import React, { useMemo, useState } from "react";
-import { CartesianGrid, Line, LineChart, ReferenceLine, Tooltip, TooltipProps, XAxis, YAxis } from "recharts";
+import {
+  CartesianGrid,
+  Line,
+  LineChart,
+  ReferenceLine,
+  ResponsiveContainer,
+  Tooltip,
+  TooltipProps,
+  XAxis,
+  YAxis,
+} from "recharts";
 import { NameType, ValueType } from "recharts/types/component/DefaultTooltipContent";
 import { useWindowSize } from "usehooks-ts";
 import { useEventDbContext } from "../../wrappers/event-db-context";
@@ -65,21 +75,6 @@ export const PlayerEloGraph: React.FC<{ playerId: string }> = ({ playerId }) => 
     return null;
   }
 
-  const graphWidth = () => {
-    let output = width;
-
-    if (width > 768) {
-      output -= 130;
-    } else if (width > 640) {
-      output -= 80;
-    } else if (width > 450) {
-      output -= 60;
-    } else if (width > 400) {
-      output -= 20;
-    }
-    return Math.min(1140, output);
-  };
-
   const playerPlayedTheLastGame = graphGames[graphGames.length - 1].oponent !== undefined;
   const lastGame = graphGames[graphGames.length - (playerPlayedTheLastGame ? 1 : 2)];
   const entryBeforeLastGame = graphGames[graphGames.length - (playerPlayedTheLastGame ? 2 : 3)];
@@ -87,70 +82,67 @@ export const PlayerEloGraph: React.FC<{ playerId: string }> = ({ playerId }) => 
 
   return (
     <>
-      <LineChart
-        width={graphWidth()}
-        height={width > 768 ? 350 : 300}
-        data={graphGames.slice(range)}
-        margin={{ top: 5, right: 0, left: -10 }}
-      >
-        <CartesianGrid strokeDasharray="1 4" vertical={false} stroke="rgb(var(--color-primary-text))" opacity={1} />
-        <YAxis
-          type="number"
-          domain={["dataMin", "dataMax"]}
-          tickFormatter={(value) => value.toLocaleString("no-NO", { maximumFractionDigits: 0 })}
-          stroke="rgb(var(--color-primary-text))"
-        />
-        <XAxis dataKey="name" stroke="rgb(var(--color-primary-text))" />
-        <Tooltip
-          formatter={(value) => [value.toLocaleString("no-NO", { maximumFractionDigits: 0 }), "Elo"]}
-          wrapperClassName="rounded-lg"
-          animationDuration={0}
-          content={<CustomTooltip />}
-        />
-        {["stroke", "main"].map((type) => {
-          return (
-            <Line
-              key={type}
-              type="monotone"
-              dataKey="eloAfterGame"
-              stroke={type === "main" ? "white" : stringToColor(playerId)}
-              dot={false}
-              animationDuration={100}
-              strokeWidth={type === "main" ? 0.5 : 5}
-            />
-          );
-        })}
-
-        <Line
-          type="monotone"
-          dataKey="simulatedElo"
-          stroke="white"
-          dot={false}
-          animationDuration={100}
-          strokeWidth={0.5}
-        />
-
-        <ReferenceLine
-          y={1000}
-          stroke="rgb(var(--color-primary-text))"
-          label={{ value: "1 000", position: "insideBottom", fill: "rgb(var(--color-primary-text))" }}
-          color="#"
-        />
-        {context.futureElo.predictedGames[0] && (
-          <ReferenceLine
-            x={context.games.filter((g) => g.winner === playerId || g.loser === playerId).length}
+      <ResponsiveContainer width="100%" height={width > 768 ? 350 : 300}>
+        <LineChart data={graphGames.slice(range)} margin={{ top: 5, right: 0, left: -12 }}>
+          <CartesianGrid strokeDasharray="1 4" vertical={false} stroke="rgb(var(--color-primary-text))" opacity={1} />
+          <YAxis
+            type="number"
+            domain={["dataMin", "dataMax"]}
+            tickFormatter={(value) => value.toLocaleString("no-NO", { maximumFractionDigits: 0 })}
             stroke="rgb(var(--color-primary-text))"
-            opacity={0.5}
-            label={{
-              value: "Now",
-              position: "insideBottomLeft",
-              fill: "rgb(var(--color-primary-text))",
-              opacity: 0.5,
-            }}
+          />
+          <XAxis dataKey="name" stroke="rgb(var(--color-primary-text))" />
+          <Tooltip
+            formatter={(value) => [value.toLocaleString("no-NO", { maximumFractionDigits: 0 }), "Elo"]}
+            wrapperClassName="rounded-lg"
+            animationDuration={0}
+            content={<CustomTooltip />}
+          />
+          {["stroke", "main"].map((type) => {
+            return (
+              <Line
+                key={type}
+                type="monotone"
+                dataKey="eloAfterGame"
+                stroke={type === "main" ? "white" : stringToColor(playerId)}
+                dot={false}
+                animationDuration={100}
+                strokeWidth={type === "main" ? 0.5 : 5}
+              />
+            );
+          })}
+
+          <Line
+            type="monotone"
+            dataKey="simulatedElo"
+            stroke="white"
+            dot={false}
+            animationDuration={100}
+            strokeWidth={0.5}
+          />
+
+          <ReferenceLine
+            y={1000}
+            stroke="rgb(var(--color-primary-text))"
+            label={{ value: "1 000", position: "insideBottom", fill: "rgb(var(--color-primary-text))" }}
             color="#"
           />
-        )}
-      </LineChart>
+          {context.futureElo.predictedGames[0] && !showExpectedElo && (
+            <ReferenceLine
+              x={context.games.filter((g) => g.winner === playerId || g.loser === playerId).length - range}
+              stroke="rgb(var(--color-primary-text))"
+              opacity={0.5}
+              label={{
+                value: "Now",
+                position: "insideBottomLeft",
+                fill: "rgb(var(--color-primary-text))",
+                opacity: 0.5,
+              }}
+              color="#"
+            />
+          )}
+        </LineChart>
+      </ResponsiveContainer>
 
       {graphGames.length > 50 && (
         <input

@@ -15,13 +15,16 @@ import {
 import { EditPlayerName } from "./edit-player-name";
 import { fmtNum } from "../../common/number-utils";
 import { useNavigate } from "react-router-dom";
+import { GamesPerMonthChart } from "./games-per-month";
+import { GamesPerWeekChart } from "./games-per-week";
+import { TopGamingDays } from "./top-days";
 
 type TabType = "players" | "games" | "users" | "stats";
 const tabs: { id: TabType; label: string }[] = [
+  { id: "stats", label: "Stats" },
   { id: "games", label: "Games" },
   { id: "players", label: "Players" },
   { id: "users", label: "Users" },
-  { id: "stats", label: "Stats" },
 ];
 
 export const AdminPage: React.FC = () => {
@@ -30,7 +33,8 @@ export const AdminPage: React.FC = () => {
 
   const addEventMutation = useEventMutation();
 
-  const [activeTab, setActiveTab] = useState<TabType>("games");
+  const [activeTab, setActiveTab] = useState<TabType>("stats");
+  const [chartView, setChartView] = useState<"monthly" | "weekly">("monthly");
 
   function handleDeactivatePlayer(playerId: string) {
     const event: PlayerDeactivated = {
@@ -118,70 +122,40 @@ export const AdminPage: React.FC = () => {
         </div>
       </div>
 
-      {activeTab === "players" && (
+      {activeTab === "stats" && (
         <>
-          <p>Active players: {context.eventStore.playersProjector.players.length}</p>
-          <p className="mt-2 text-sm">Inactive players: {context.eventStore.playersProjector.inactivePlayers.length}</p>
-          <p>
-            Deactivating players is reverable. No games will be deleted. It will only result in games with this player
-            not counting towards anyone's elo rating.
-          </p>
-
-          <div className="mt-2 overflow-x-auto">
-            <table className="border-collapse border border-gray-300">
-              <thead>
-                <tr>
-                  <th className="border border-gray-300 px-4 py-2 text-left">Player Name</th>
-                  <th className="border border-gray-300 px-4 py-2 text-left">Status</th>
-                  <th className="border border-gray-300 px-4 py-2 text-center">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {/* Active Players */}
-                {context.eventStore.playersProjector.players.map((player) => (
-                  <tr key={player.id} className="hover:bg-secondary-background/50">
-                    <td className="border border-gray-300 px-4 py-2">{player.name}</td>
-                    <td className="border border-gray-300 px-4 py-2">
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                        Active
-                      </span>
-                    </td>
-                    <td className="border border-gray-300 px-4 py-2 text-center">
-                      <div className="flex gap-2 justify-center">
-                        <button
-                          className="text-xs bg-red-500 hover:bg-red-700 text-white px-2 py-1 rounded-md"
-                          onClick={() => handleDeactivatePlayer(player.id)}
-                        >
-                          Deactivate
-                        </button>
-                        <EditPlayerName playerId={player.id} />
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-
-                {/* Inactive Players */}
-                {context.eventStore.playersProjector.inactivePlayers.map((player) => (
-                  <tr key={player.id} className="hover:bg-secondary-background/50 bg-gray-25">
-                    <td className="border border-gray-300 px-4 py-2 text-gray-600">{player.name}</td>
-                    <td className="border border-gray-300 px-4 py-2">
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                        Inactive
-                      </span>
-                    </td>
-                    <td className="border border-gray-300 px-4 py-2 text-center">
-                      <button
-                        className="text-xs bg-gray-400 hover:bg-green-400 text-white px-2 py-1 rounded-md"
-                        onClick={() => handleReactivatePlayer(player.id)}
-                      >
-                        Re-activate
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          {/* Chart View Switcher */}
+          <div className="my-6">
+            <div className="flex gap-2 justify-center">
+              <button
+                onClick={() => setChartView("monthly")}
+                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                  chartView === "monthly"
+                    ? "bg-secondary-background text-secondary-text"
+                    : "bg-primary-background text-secondary-background border border-secondary-background hover:bg-secondary-background hover:text-secondary-text"
+                }`}
+              >
+                Monthly View
+              </button>
+              <button
+                onClick={() => setChartView("weekly")}
+                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                  chartView === "weekly"
+                    ? "bg-secondary-background text-secondary-text"
+                    : "bg-primary-background text-secondary-background border border-secondary-background hover:bg-secondary-background hover:text-secondary-text"
+                }`}
+              >
+                Weekly View
+              </button>
+            </div>
           </div>
+
+          {/* Chart Display */}
+          {chartView === "monthly" ? <GamesPerMonthChart /> : <GamesPerWeekChart />}
+
+          <TopGamingDays />
+          <h2>Total distribution of games played</h2>
+          <AllPlayerGamesDistrubution />
         </>
       )}
 
@@ -267,13 +241,75 @@ export const AdminPage: React.FC = () => {
           </div>
         </>
       )}
-      {activeTab === "users" && <Users />}
-      {activeTab === "stats" && (
+
+      {activeTab === "players" && (
         <>
-          <h2>Total distribution of games played</h2>
-          <AllPlayerGamesDistrubution />
+          <p>Active players: {context.eventStore.playersProjector.players.length}</p>
+          <p className="mt-2 text-sm">Inactive players: {context.eventStore.playersProjector.inactivePlayers.length}</p>
+          <p>
+            Deactivating players is reverable. No games will be deleted. It will only result in games with this player
+            not counting towards anyone's elo rating.
+          </p>
+
+          <div className="mt-2 overflow-x-auto">
+            <table className="border-collapse border border-gray-300">
+              <thead>
+                <tr>
+                  <th className="border border-gray-300 px-4 py-2 text-left">Player Name</th>
+                  <th className="border border-gray-300 px-4 py-2 text-left">Status</th>
+                  <th className="border border-gray-300 px-4 py-2 text-center">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {/* Active Players */}
+                {context.eventStore.playersProjector.players.map((player) => (
+                  <tr key={player.id} className="hover:bg-secondary-background/50">
+                    <td className="border border-gray-300 px-4 py-2">{player.name}</td>
+                    <td className="border border-gray-300 px-4 py-2">
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        Active
+                      </span>
+                    </td>
+                    <td className="border border-gray-300 px-4 py-2 text-center">
+                      <div className="flex gap-2 justify-center">
+                        <button
+                          className="text-xs bg-red-500 hover:bg-red-700 text-white px-2 py-1 rounded-md"
+                          onClick={() => handleDeactivatePlayer(player.id)}
+                        >
+                          Deactivate
+                        </button>
+                        <EditPlayerName playerId={player.id} />
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+
+                {/* Inactive Players */}
+                {context.eventStore.playersProjector.inactivePlayers.map((player) => (
+                  <tr key={player.id} className="hover:bg-secondary-background/50 bg-gray-25">
+                    <td className="border border-gray-300 px-4 py-2 text-gray-600">{player.name}</td>
+                    <td className="border border-gray-300 px-4 py-2">
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                        Inactive
+                      </span>
+                    </td>
+                    <td className="border border-gray-300 px-4 py-2 text-center">
+                      <button
+                        className="text-xs bg-gray-400 hover:bg-green-400 text-white px-2 py-1 rounded-md"
+                        onClick={() => handleReactivatePlayer(player.id)}
+                      >
+                        Re-activate
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </>
       )}
+
+      {activeTab === "users" && <Users />}
     </div>
   );
 };
