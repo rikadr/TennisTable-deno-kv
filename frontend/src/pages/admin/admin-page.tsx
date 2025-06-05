@@ -190,7 +190,18 @@ export const AdminPage: React.FC = () => {
                         {context.playerName(game.winner)} won over {context.playerName(game.loser)}
                       </td>
                       <td className="border border-gray-300 px-4 py-1">
-                        {relativeTimeString(new Date(game.playedAt))}
+                        <p>{relativeTimeString(new Date(game.playedAt))}</p>
+                        <p>
+                          {new Date(game.playedAt).toLocaleDateString("nb-NO", {
+                            weekday: "long",
+                            month: "long",
+                            day: "numeric",
+                            year: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            second: "2-digit",
+                          })}
+                        </p>
                       </td>
                       <td className="border border-gray-300 px-4 py-1">
                         {game.score && (
