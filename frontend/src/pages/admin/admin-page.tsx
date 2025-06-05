@@ -18,6 +18,7 @@ import { useNavigate } from "react-router-dom";
 import { GamesPerMonthChart } from "./games-per-month";
 import { GamesPerWeekChart } from "./games-per-week";
 import { TopGamingDays } from "./top-days";
+import { GamesPerWeekdayChart } from "./games-weekdays";
 
 type TabType = "players" | "games" | "users" | "stats";
 const tabs: { id: TabType; label: string }[] = [
@@ -153,6 +154,7 @@ export const AdminPage: React.FC = () => {
           {/* Chart Display */}
           {chartView === "monthly" ? <GamesPerMonthChart /> : <GamesPerWeekChart />}
 
+          <GamesPerWeekdayChart />
           <TopGamingDays />
           <h2>Total distribution of games played</h2>
           <AllPlayerGamesDistrubution />
