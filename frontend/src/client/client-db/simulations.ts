@@ -67,7 +67,7 @@ export class Simulations {
 
     const BATCH_SIZE = 1; // % seems reasonable but 1 works well on my beast mac and gives smooth frame rate
 
-    const FAST_ITERATION = 35;
+    const FAST_ITERATION = 50;
     const DETAILED_ITERATION = 3_000;
 
     const totalIterationsToSimulate =
