@@ -83,6 +83,7 @@ export const PlayerEloGraph: React.FC<{ playerId: string }> = ({ playerId }) => 
   const playerPlayedTheLastGame = graphGames[graphGames.length - 1].oponent !== undefined;
   const lastGame = graphGames[graphGames.length - (playerPlayedTheLastGame ? 1 : 2)];
   const entryBeforeLastGame = graphGames[graphGames.length - (playerPlayedTheLastGame ? 2 : 3)];
+  const lastEntry = graphGames[graphGames.length - 1];
 
   return (
     <>
@@ -167,13 +168,13 @@ export const PlayerEloGraph: React.FC<{ playerId: string }> = ({ playerId }) => 
         <div className="grid grid-cols-2 sm:grid-cols-3 max-w-[640px] gap-x-4 text-primary-text mb-2">
           <div className="p-1">
             <p className="text-sm mb-1 whitespace-nowrap">Expected score</p>
-            <p className="text-2xl font-bold">{fmtNum(lastGame.simulatedElo)}</p>
+            <p className="text-2xl font-bold">{fmtNum(lastEntry.simulatedElo)}</p>
           </div>
           <div className="p-1">
             <p className="text-sm mb-1 whitespace-nowrap">Distance from current</p>
             <p className="text-2xl font-bold">
-              {fmtNum(lastGame.simulatedElo - lastGame.eloAfterGame, { signedPositive: true })}{" "}
-              {lastGame.simulatedElo - lastGame.eloAfterGame > 0 ? "↗" : "↘"}
+              {fmtNum(lastEntry.simulatedElo! - lastEntry.eloAfterGame, { signedPositive: true })}{" "}
+              {lastEntry.simulatedElo! - lastEntry.eloAfterGame > 0 ? "↗" : "↘"}
             </p>
           </div>
           {summary.games.length >= context.client.gameLimitForRanked + 1 && entryBeforeLastGame?.simulatedElo && (
