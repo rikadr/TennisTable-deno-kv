@@ -151,7 +151,7 @@ export const PlayerEloGraph: React.FC<{ playerId: string }> = ({ playerId }) => 
           min="2"
           max={graphGames.length || 0}
           value={range}
-          onChange={(e) => setRange(parseInt(e.target.value))}
+          onChange={(e) => setRange(Math.min(parseInt(e.target.value), graphGames.length - Math.min(width, 1250) / 50))}
         />
       )}
 
