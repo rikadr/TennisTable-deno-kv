@@ -76,7 +76,7 @@ export class Simulations {
 
     let eloOverTime: { elo: number; time: number }[] = [];
 
-    for (const gameTime of sortedPlayerGameTimes) {
+    for (const gameTime of sortedPlayerGameTimes.toReversed()) {
       const relevantGames = allGamesWithActivePlayers.filter((g) => g.playedAt <= gameTime);
       const generatedGames = this.parent.futureElo.simulatedGamesForAGivenInputOfGames(relevantGames);
       const totalGames = [...relevantGames, ...generatedGames];

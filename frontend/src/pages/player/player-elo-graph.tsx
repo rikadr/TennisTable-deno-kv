@@ -156,7 +156,7 @@ export const PlayerEloGraph: React.FC<{ playerId: string }> = ({ playerId }) => 
       )}
 
       {showExpectedElo && simulationIsDone === false && <ProgressBar progress={simulationProgress} />}
-      {showExpectedElo && lastGame.simulatedElo && (
+      {showExpectedElo && lastEntry.simulatedElo && (
         <div className="grid grid-cols-2 sm:grid-cols-3 max-w-[640px] gap-x-4 text-primary-text mb-2">
           <div className="p-1">
             <p className="text-sm mb-1 whitespace-nowrap">Expected score</p>
@@ -165,19 +165,24 @@ export const PlayerEloGraph: React.FC<{ playerId: string }> = ({ playerId }) => 
           <div className="p-1">
             <p className="text-sm mb-1 whitespace-nowrap">Distance from current</p>
             <p className="text-2xl font-bold">
-              {fmtNum(lastEntry.simulatedElo! - lastEntry.eloAfterGame, { signedPositive: true })}{" "}
+              {fmtNum(lastEntry.simulatedElo! - lastEntry.eloAfterGame, { signedPositive: true, digits: 0 })}{" "}
               {lastEntry.simulatedElo! - lastEntry.eloAfterGame > 0 ? "↗" : "↘"}
             </p>
           </div>
-          {summary.games.length >= context.client.gameLimitForRanked + 1 && entryBeforeLastGame?.simulatedElo && (
-            <div className="p-1">
-              <p className="text-sm mb-1 whitespace-nowrap">Last game *</p>
-              <p className="text-2xl font-bold">
-                {fmtNum(lastGame.simulatedElo - entryBeforeLastGame.simulatedElo, { digits: 0, signedPositive: true })}{" "}
-                {lastGame.simulatedElo - entryBeforeLastGame.simulatedElo > 0 ? "↗" : "↘"}
-              </p>
-            </div>
-          )}
+          {summary.games.length >= context.client.gameLimitForRanked + 1 &&
+            entryBeforeLastGame?.simulatedElo &&
+            lastGame.simulatedElo && (
+              <div className="p-1">
+                <p className="text-sm mb-1 whitespace-nowrap">Last game *</p>
+                <p className="text-2xl font-bold">
+                  {fmtNum(lastGame.simulatedElo - entryBeforeLastGame.simulatedElo, {
+                    digits: 0,
+                    signedPositive: true,
+                  })}{" "}
+                  {lastGame.simulatedElo - entryBeforeLastGame.simulatedElo > 0 ? "↗" : "↘"}
+                </p>
+              </div>
+            )}
         </div>
       )}
       {showExpectedElo && (
