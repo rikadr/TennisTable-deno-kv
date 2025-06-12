@@ -253,6 +253,12 @@ export const PlayerPage: React.FC = () => {
                         <span className="text-secondary-text text-sm">{relativeTimeString(new Date(game.time))}</span>
                       </td>
                       <td className="p-1">
+                        <button
+                          className="text-xs text-tertiary-text bg-tertiary-background hover:bg-tertiary-background/50 px-2 py-1 rounded-md"
+                          onClick={() => navigate(`/1v1?player1=${playerId}&player2=${game.oponent}`)}
+                        >
+                          👥🥊 Compare 1v1
+                        </button>
                         {Date.now() - game.time < 7 * 24 * 60 * 60 * 1000 && (
                           <button
                             className="text-xs text-tertiary-text bg-tertiary-background hover:bg-tertiary-background/50 px-2 py-1 rounded-md"
