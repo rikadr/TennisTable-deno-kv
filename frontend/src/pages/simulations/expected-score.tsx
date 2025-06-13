@@ -69,7 +69,8 @@ export const ExpectedScore: React.FC = () => {
                   return (
                     <div key={name + oponent}>
                       {context.playerName(name)} {"->"} {context.playerName(oponent)}{" "}
-                      {fmtNum((combined?.fraction || 0) * 100)}% @{fmtNum((combined?.confidence || 0) * 100)}%
+                      <span className="font-bold text-lg">{fmtNum((combined?.fraction || 0) * 100)}%</span> win chanse @
+                      {fmtNum((combined?.confidence || 0) * 100)}% confidence
                       <ul className="ml-6">
                         {fractions.map(
                           (fraction, index) =>
@@ -80,7 +81,7 @@ export const ExpectedScore: React.FC = () => {
                               >
                                 <span className="opacity-50 font-light italic">{index}:</span>{" "}
                                 {fmtNum((fraction?.fraction || 0) * 100)}% @{fmtNum((fraction?.confidence || 0) * 100)}%{" "}
-                                {index === 0 && `${results.wins}:${results.loss}`}
+                                {index === 0 && `${results.wins.length}:${results.loss.length}`}
                               </li>
                             ),
                         )}
