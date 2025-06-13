@@ -97,7 +97,7 @@ export const PlayerPage: React.FC = () => {
       </div>
 
       {/* Tab Content */}
-      <div className="bg-secondary-background rounded-b-2xl shadow-sm p-2 sm:p-4 md:p-8">
+      <div className="bg-secondary-background rounded-b-2xl shadow-sm p-2 sm:p-4 md:p-8 pt-2">
         {/* Overview Tab */}
         {activeTab === "overview" && (
           <div className="space-y-2 sm:space-y-6">
