@@ -3,7 +3,6 @@ import { httpClient } from "../common/http-client";
 import { createContext, useContext } from "react";
 import { TennisTable } from "../client/client-db/tennis-table";
 import { EventType } from "../client/client-db/event-store/event-types";
-import { getClientConfig } from "../client/client-config/get-client-config";
 import { PingPongLoader } from "../common/ping-loader";
 
 export function useEventDb() {
@@ -34,7 +33,6 @@ export const EventDbWrapper: React.FC<{
   children: React.ReactNode;
 }> = ({ children }) => {
   const eventsQuery = useEventDb();
-  const client = getClientConfig();
 
   if (eventsQuery.isLoading) {
     return (

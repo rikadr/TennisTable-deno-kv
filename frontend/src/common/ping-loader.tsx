@@ -35,7 +35,6 @@ export const PingPongLoader: React.FC<PingPongLoaderProps> = ({
 
           {/* Net */}
           <rect x="99" y="48" width="2" height="16" fill="#64748b" />
-          {/* <rect x="90" y="48" width="20" height="2" fill="#64748b" /> */}
         </g>
 
         {/* Left Paddle */}
@@ -52,8 +51,8 @@ export const PingPongLoader: React.FC<PingPongLoaderProps> = ({
 
         {/* Ball */}
         <circle cx="100" cy="45" r="5" fill={ballColor} className="animate-ping-pong-ball">
-          <animate attributeName="cx" values="60;140;60" dur="2s" repeatCount="indefinite" />
-          <animate attributeName="cy" values="45;35;45" dur="1s" repeatCount="indefinite" />
+          <animate attributeName="cx" values="60;140;60" dur="1s" repeatCount="indefinite" />
+          <animate attributeName="cy" values="45;35;45" dur="0.5s" repeatCount="indefinite" />
         </circle>
 
         <style>{`
@@ -68,12 +67,12 @@ export const PingPongLoader: React.FC<PingPongLoaderProps> = ({
           }
           
           .animate-ping-pong-left {
-            animation: pingPongLeft 1s ease-in-out infinite;
+            animation: pingPongLeft 0.5s ease-in-out infinite;
           }
           
           .animate-ping-pong-right {
-            animation: pingPongRight 1s ease-in-out infinite;
-            animation-delay: 0.5s;
+            animation: pingPongRight 0.5s ease-in-out infinite;
+            animation-delay: 0.25s;
           }
         `}</style>
       </svg>
