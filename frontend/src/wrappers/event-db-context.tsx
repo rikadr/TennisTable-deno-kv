@@ -36,7 +36,7 @@ export const EventDbWrapper: React.FC<{
 
   if (eventsQuery.isLoading) {
     return (
-      <div className="w-full h-screen flex items-center justify-center">
+      <div className="w-full h-screen flex items-center justify-center bg-primary-background">
         <PingPongLoader />
       </div>
     );
