@@ -252,7 +252,7 @@ export const PlayerPage: React.FC = () => {
                       <td className="p-1">
                         <span className="text-secondary-text text-sm">{relativeTimeString(new Date(game.time))}</span>
                       </td>
-                      <td className="p-1">
+                      <td className="p-1 flex gap-2">
                         <button
                           className="text-xs text-tertiary-text bg-tertiary-background hover:bg-tertiary-background/50 px-2 py-1 rounded-md"
                           onClick={() => navigate(`/1v1?player1=${playerId}&player2=${game.oponent}`)}

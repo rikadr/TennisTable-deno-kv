@@ -157,7 +157,7 @@ export const PlayerEloGraph: React.FC<{ playerId: string }> = ({ playerId }) => 
 
       {showExpectedElo && simulationIsDone === false && <ProgressBar progress={simulationProgress} />}
       {showExpectedElo && lastEntry.simulatedElo && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 max-w-[640px] gap-x-4 text-primary-text mb-2">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 max-w-[800px] gap-x-4 text-primary-text mb-2">
           <div className="p-1">
             <p className="text-sm mb-1 whitespace-nowrap">Expected score</p>
             <p className="text-2xl font-bold">{fmtNum(lastEntry.simulatedElo)}</p>
@@ -173,7 +173,7 @@ export const PlayerEloGraph: React.FC<{ playerId: string }> = ({ playerId }) => 
             entryBeforeLastGame?.simulatedElo &&
             lastGame.simulatedElo && (
               <div className="p-1">
-                <p className="text-sm mb-1 whitespace-nowrap">Last game *</p>
+                <p className="text-sm mb-1 whitespace-nowrap">Last game</p>
                 <p className="text-2xl font-bold">
                   {fmtNum(lastGame.simulatedElo - entryBeforeLastGame.simulatedElo, {
                     digits: 0,
@@ -183,6 +183,20 @@ export const PlayerEloGraph: React.FC<{ playerId: string }> = ({ playerId }) => 
                 </p>
               </div>
             )}
+          {lastGame.simulatedElo && lastEntry.simulatedElo && (
+            <div className="p-1">
+              <p className="text-sm mb-1 whitespace-nowrap">Since your last game</p>
+              <p className="text-2xl font-bold">
+                {lastGame.time === lastEntry.time
+                  ? "-"
+                  : fmtNum(lastEntry.simulatedElo - lastGame.simulatedElo, {
+                      digits: 0,
+                      signedPositive: true,
+                    })}{" "}
+                {lastGame.time !== lastEntry.time && (lastEntry.simulatedElo - lastGame.simulatedElo > 0 ? "↗" : "↘")}
+              </p>
+            </div>
+          )}
         </div>
       )}
       {showExpectedElo && (

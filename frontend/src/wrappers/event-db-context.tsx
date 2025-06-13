@@ -4,6 +4,7 @@ import { createContext, useContext } from "react";
 import { TennisTable } from "../client/client-db/tennis-table";
 import { EventType } from "../client/client-db/event-store/event-types";
 import { getClientConfig } from "../client/client-config/get-client-config";
+import { PingPongLoader } from "../common/ping-loader";
 
 export function useEventDb() {
   return useQuery<EventType[]>({
@@ -38,7 +39,7 @@ export const EventDbWrapper: React.FC<{
   if (eventsQuery.isLoading) {
     return (
       <div className="w-full h-screen flex items-center justify-center">
-        <div className="animate-ping w-fit text-9xl pr-4">{client.favicon}</div>
+        <PingPongLoader />
       </div>
     );
   }
