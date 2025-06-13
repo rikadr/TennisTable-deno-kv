@@ -5,7 +5,6 @@ interface ShimmerProps {
   angle?: number;
   className?: string;
   enabled?: boolean;
-  style?: React.CSSProperties; // Add this line
 }
 
 export const Shimmer: React.FC<ShimmerProps> = ({
@@ -15,7 +14,6 @@ export const Shimmer: React.FC<ShimmerProps> = ({
   angle = 45,
   className = "",
   enabled = true,
-  style, // Add this
 }) => {
   const intensityClasses = {
     light: "from-transparent via-white/20 to-transparent",
@@ -29,7 +27,7 @@ export const Shimmer: React.FC<ShimmerProps> = ({
   };
 
   return (
-    <div className={`relative overflow-hidden ${className}`} style={style}>
+    <div className={`relative overflow-hidden ${className}`}>
       {children}
       <div className="absolute inset-0 pointer-events-none">
         <div

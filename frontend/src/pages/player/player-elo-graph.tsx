@@ -19,6 +19,7 @@ import { Elo } from "../../client/client-db/elo";
 import { relativeTimeString } from "../../common/date-utils";
 import { fmtNum } from "../../common/number-utils";
 import { useEloSimulationWorker } from "../../hooks/use-elo-simulation-worker";
+import { Shimmer } from "../../common/shimmer";
 
 export const PlayerEloGraph: React.FC<{ playerId: string }> = ({ playerId }) => {
   const context = useEventDbContext();
@@ -258,11 +259,7 @@ const CustomTooltip: React.FC = ({ active, payload, label }: TooltipProps<ValueT
   return null;
 };
 
-interface ProgressBarProps {
-  progress: number; // 0 to 1
-}
-
-export function ProgressBar({ progress }: ProgressBarProps) {
+export function ProgressBar({ progress }: { progress: number }) {
   const percentage = Math.round(Math.max(0, Math.min(1, progress)) * 100);
 
   return (
@@ -271,12 +268,15 @@ export function ProgressBar({ progress }: ProgressBarProps) {
         <span className="text-sm text-primary-text">Progress</span>
         <span className="text-sm text-primary-text">{percentage}%</span>
       </div>
-
       <div className="w-full ring-1 ring-secondary-background rounded-lg h-10">
-        <div
-          className="h-10 rounded-lg transition-all duration-1000 ease-out bg-secondary-background"
-          style={{ width: `${percentage}%` }}
-        />
+        <Shimmer duration={1200} intensity="light" className="rounded-lg">
+          <div className="w-full">
+            <div
+              className="h-10 rounded-lg transition-all duration-1000 ease-out bg-secondary-background"
+              style={{ width: `${percentage}%` }}
+            />
+          </div>
+        </Shimmer>
       </div>
     </div>
   );
