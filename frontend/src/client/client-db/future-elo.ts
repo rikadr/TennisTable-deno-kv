@@ -283,34 +283,18 @@ export class FutureElo {
   private ageAdjustedConfidence(confidence: number, gameTime: number, referenceTime: number): number {
     const age = Math.max(referenceTime - gameTime, 0);
 
-    // Time constants in milliseconds
-    const THREE_MONTHS_MS = 3 * 30 * 24 * 60 * 60 * 1000;
-    const ONE_YEAR_MS = (365 * 24 * 60 * 60 * 1000) / 2;
-    const TWO_YEARS_MS = (2 * 365 * 24 * 60 * 60 * 1000) / 2;
+    // Convert age to days for easier parameter tuning
+    const ageInDays = age / (24 * 60 * 60 * 1000);
 
-    // No reduction if age is less than 3 months
-    if (age <= THREE_MONTHS_MS) {
-      return confidence;
-    }
+    // S-curve parameters
+    const midpoint = 365; // Days where confidence = 0.5 (1 year)
+    const steepness = 0.01; // Controls how sharp the S-curve is (smaller = more gradual)
 
-    // Linear decline from 3 months to 1 year (0% to 80% reduction)
-    if (age <= ONE_YEAR_MS) {
-      const timeSpan = ONE_YEAR_MS - THREE_MONTHS_MS;
-      const progress = (age - THREE_MONTHS_MS) / timeSpan; // 0 to 1
-      const reductionMultiplier = 1.0 - 0.8 * progress; // 1.0 to 0.2
-      return confidence * reductionMultiplier;
-    }
+    // Sigmoid function: starts at 1, approaches 0 as age increases
+    // Formula: 1 / (1 + exp(steepness * (age - midpoint)))
+    const ageAdjustmentFactor = 1 / (1 + Math.exp(steepness * (ageInDays - midpoint)));
 
-    // Linear decline from 1 year to 2 years (80% to 100% reduction)
-    if (age <= TWO_YEARS_MS) {
-      const timeSpan = TWO_YEARS_MS - ONE_YEAR_MS;
-      const progress = (age - ONE_YEAR_MS) / timeSpan; // 0 to 1
-      const reductionMultiplier = 0.2 - 0.2 * progress; // 0.2 to 0.0
-      return confidence * reductionMultiplier;
-    }
-
-    // Complete reduction if age is 2 years or more
-    return 0;
+    return confidence * ageAdjustmentFactor;
   }
 
   private convertSetWinToGameWin(setWinRate: number): number {
