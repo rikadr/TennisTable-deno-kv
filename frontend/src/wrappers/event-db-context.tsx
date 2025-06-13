@@ -1,9 +1,10 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { httpClient } from "../common/http-client";
-import { createContext, useContext } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import { TennisTable } from "../client/client-db/tennis-table";
 import { EventType } from "../client/client-db/event-store/event-types";
 import { PingPongLoader } from "../common/ping-loader";
+import { classNames } from "../common/class-names";
 
 export function useEventDb() {
   return useQuery<EventType[]>({
@@ -33,11 +34,17 @@ export const EventDbWrapper: React.FC<{
   children: React.ReactNode;
 }> = ({ children }) => {
   const eventsQuery = useEventDb();
+  const [contentIsReady, setContentIsReady] = useState(false);
+  useEffect(() => {
+    eventsQuery.isLoading === false && setTimeout(() => setContentIsReady(true), 400);
+  }, [eventsQuery.isLoading]);
 
-  if (eventsQuery.isLoading) {
+  if (contentIsReady === false) {
     return (
       <div className="w-full h-screen flex items-center justify-center bg-primary-background">
-        <PingPongLoader />
+        <div className={classNames("pb-6 mt-6", eventsQuery.isLoading === false && "animate-ping")}>
+          <PingPongLoader />
+        </div>
       </div>
     );
   }
