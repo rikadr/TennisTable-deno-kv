@@ -27,7 +27,8 @@ export const PlayerEloGraph: React.FC<{ playerId: string }> = ({ playerId }) => 
 
   const { width = 0 } = useWindowSize();
 
-  const [range, setRange] = useState(0);
+  const [startRange, setStartRange] = useState(0);
+  const [endRange, setEndRange] = useState(0);
   const [showExpectedElo, setShowExpectedElo] = useState(false);
   const { startSimulation, simulatedElos, simulationProgress, simulationIsDone } = useEloSimulationWorker();
 
@@ -81,10 +82,15 @@ export const PlayerEloGraph: React.FC<{ playerId: string }> = ({ playerId }) => 
   const entryBeforeLastGame = graphGames[graphGames.length - (playerPlayedTheLastGame ? 2 : 3)];
   const lastEntry = graphGames[graphGames.length - 1];
 
+  const minimumEntriesOnScreen = Math.min(width, 1250) / 50;
+
   return (
     <>
       <ResponsiveContainer width="100%" height={width > 768 ? 350 : 300}>
-        <LineChart data={graphGames.slice(range)} margin={{ top: 5, right: 0, left: -12 }}>
+        <LineChart
+          data={graphGames.slice(startRange, graphGames.length - endRange)}
+          margin={{ top: 5, right: 0, left: -12 }}
+        >
           <CartesianGrid strokeDasharray="1 4" vertical={false} stroke="rgb(var(--color-primary-text))" opacity={1} />
           <YAxis
             type="number"
@@ -130,7 +136,7 @@ export const PlayerEloGraph: React.FC<{ playerId: string }> = ({ playerId }) => 
           />
           {context.futureElo.predictedGames[0] && !showExpectedElo && (
             <ReferenceLine
-              x={context.games.filter((g) => g.winner === playerId || g.loser === playerId).length - range}
+              x={context.games.filter((g) => g.winner === playerId || g.loser === playerId).length - startRange}
               stroke="rgb(var(--color-primary-text))"
               opacity={0.5}
               label={{
@@ -146,14 +152,52 @@ export const PlayerEloGraph: React.FC<{ playerId: string }> = ({ playerId }) => 
       </ResponsiveContainer>
 
       {graphGames.length > 50 && (
-        <input
-          className="w-full my-4"
-          type="range"
-          min="2"
-          max={graphGames.length || 0}
-          value={range}
-          onChange={(e) => setRange(Math.min(parseInt(e.target.value), graphGames.length - Math.min(width, 1250) / 50))}
-        />
+        <div className="flex items-center gap-4">
+          <button
+            className="px-2 py-1 whitespace-nowrap bg-secondary-background text-secondary-text ring-1 ring-secondary-text hover:bg-secondary-background/50 rounded-lg"
+            onClick={() => {
+              setStartRange(0);
+              setEndRange(0);
+            }}
+          >
+            &#8634; Reset
+          </button>
+          <div className="w-full">
+            <input
+              className="w-full "
+              type="range"
+              min="2"
+              max={graphGames.length || 0}
+              value={startRange}
+              onChange={(e) => {
+                const screenSizeLimited = Math.min(
+                  parseInt(e.target.value),
+                  graphGames.length - minimumEntriesOnScreen,
+                );
+                const rangeLimited = Math.min(screenSizeLimited, graphGames.length - endRange - minimumEntriesOnScreen);
+                setStartRange(rangeLimited);
+              }}
+            />
+            <input
+              className="w-full rotate-180"
+              type="range"
+              min="2"
+              max={graphGames.length || 0}
+              value={endRange}
+              onChange={(e) => {
+                const screenSizeLimited = Math.min(
+                  parseInt(e.target.value),
+                  graphGames.length - minimumEntriesOnScreen,
+                );
+                const rangeLimited = Math.min(
+                  screenSizeLimited,
+                  graphGames.length - startRange - minimumEntriesOnScreen,
+                );
+                setEndRange(rangeLimited);
+              }}
+            />
+          </div>
+        </div>
       )}
 
       {showExpectedElo && simulationIsDone === false && <ProgressBar progress={simulationProgress} />}
