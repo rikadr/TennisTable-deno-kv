@@ -55,12 +55,12 @@ export const AddPlayerPage: React.FC = () => {
   }
 
   return (
-    <div className="flex flex-col items-center gap-2 w-96 m-auto bg-primary-background rounded-lg">
+    <div className="flex flex-col items-center gap-2 w-96 m-auto bg-primary-background text-primary-text rounded-lg">
       <h1>Add player</h1>
       <p>Player name</p>
       <input
         type="text"
-        className="text-black"
+        className="text-black ring-1 ring-primary-text rounded-lg px-2 py-1"
         value={playerName}
         onChange={(e) => setPlayerName(e.target.value)}
         placeholder="Name"

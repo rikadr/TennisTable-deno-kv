@@ -41,6 +41,15 @@
   --color-tertiary-background: 106,191,75;
 }
 
+.theme-asplanviak {
+  --color-primary-text: 38,59,52;
+  --color-primary-background: 247,248,242;
+  --color-secondary-text: 38,59,52;
+  --color-secondary-background: 191,218,154;
+  --color-tertiary-text: 38,59,52;
+  --color-tertiary-background: 238,200,118;
+}
+
 body {
   @apply text-primary-text bg-primary-background;
   background-image: var(--background-image-url);

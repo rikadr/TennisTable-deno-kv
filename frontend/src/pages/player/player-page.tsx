@@ -85,7 +85,7 @@ export const PlayerPage: React.FC = () => {
                     ${
                       activeTab === tab.id
                         ? "text-secondary-text border-secondary-text"
-                        : "text-secondary-text/50 border-transparent hover:text-secondary-text hover:border-secondary-text border-dotted"
+                        : "text-secondary-text/80 border-transparent hover:text-secondary-text hover:border-secondary-text border-dotted"
                     }
                   `}
               >
@@ -198,14 +198,14 @@ export const PlayerPage: React.FC = () => {
 
         {/* Recent Matches Tab */}
         {activeTab === "matches" && (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto bg-primary-background text-primary-text rounded-lg px-1">
             <table className="w-full min-w-[550px]">
               <thead>
                 <tr className="border-b border-gray-200">
                   <th className="text-left py-3 px-4 font-medium  text-sm">Opponent</th>
                   <th className="text-left py-3 px-1 font-medium  text-sm">Result</th>
-                  <th className="text-left py-3 px-4 font-medium  text-sm">Score</th>
                   <th className="text-left py-3 px-1 font-medium  text-sm">Points</th>
+                  <th className="text-left py-3 px-4 font-medium  text-sm">Score</th>
                   <th className="text-left py-3 px-4 font-medium  text-sm">Time</th>
                   <th className="text-left py-3 px-4 font-medium  text-sm">Actions</th>
                 </tr>
@@ -215,10 +215,7 @@ export const PlayerPage: React.FC = () => {
                   .toReversed()
                   .slice(0, 10)
                   .map((game) => (
-                    <tr
-                      key={game.time}
-                      className="bg-secondary-background border-b border-secondary-text hover:brightness-110 transition-colors"
-                    >
+                    <tr key={game.time} className="border-b border-primary-text hover:brightness-110 transition-colors">
                       <td className="p-1">
                         <Link to={"/player/" + game.oponent}>
                           <span className="font-medium">{context.playerName(game.oponent)}</span>
@@ -226,6 +223,12 @@ export const PlayerPage: React.FC = () => {
                       </td>
                       <td className="p-1">
                         <span className="text-2xl">{game.result === "win" ? "🏆" : "💔"}</span>
+                      </td>
+                      <td className="p-1">
+                        <span className="font-medium flex items-center gap-1">
+                          {game.result === "win" ? "+" : ""}
+                          {fmtNum(game.pointsDiff)}
+                        </span>
                       </td>
                       <td className="p-1 md:flex items-baseline gap-3">
                         {game.score && (
@@ -244,13 +247,7 @@ export const PlayerPage: React.FC = () => {
                         )}
                       </td>
                       <td className="p-1">
-                        <span className="font-medium flex items-center gap-1">
-                          {game.result === "win" ? "+" : ""}
-                          {fmtNum(game.pointsDiff)}
-                        </span>
-                      </td>
-                      <td className="p-1">
-                        <span className="text-secondary-text text-sm">{relativeTimeString(new Date(game.time))}</span>
+                        <span className="text-primary-text text-sm">{relativeTimeString(new Date(game.time))}</span>
                       </td>
                       <td className="p-1 flex gap-2">
                         <button

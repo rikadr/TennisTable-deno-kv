@@ -66,7 +66,6 @@ export const PointsBar: React.FC<PointsBarProps> = ({ pointsRanges, totalPoints,
         {pointsRanges.map((range, index) => {
           const rangePoints = range.to - range.from;
           const percentageSelf = (rangePoints / totalPoints) * 100;
-
           return (
             <Shimmer
               key={index}

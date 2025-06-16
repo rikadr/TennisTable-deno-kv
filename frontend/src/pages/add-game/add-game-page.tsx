@@ -221,7 +221,7 @@ export const AddGamePageV2: React.FC = () => {
             invalidScore={invalidScore}
           />
         )}
-        {validationError && <div className="bg-black text-red-500 text-center">Error: {validationError}</div>}
+        {validationError && <div className="bg-white text-red-500 text-center">Error: {validationError}</div>}
       </div>
       <StepNavigator
         canProceed={canProceed(currentStep)}

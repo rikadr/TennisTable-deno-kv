@@ -16,8 +16,6 @@ export const StepAddScore: React.FC<{
   return (
     <div className="space-y-2 max-w-2xl m-auto">
       <WinnerBox winner={winner} orientation={winner === player1.id ? "left" : "right"} />
-      {/* <h2 className="text-center text-xl">Add score for better simulations</h2> */}
-
       <div className="p-4 bg-secondary-background text-secondary-text rounded-xl">
         <h2 className="text-center text-2xl">Sets won</h2>
         <p className="text-center">(Optional)</p>
@@ -28,7 +26,7 @@ export const StepAddScore: React.FC<{
           <SetCounter player={player2} />
         </div>
         {invalidScore && (
-          <p className="bg-black text-red-500 text-center mt-4">
+          <p className="bg-white text-red-500 text-center mt-4">
             Invalid score. Winner must have won more sets than the loser
           </p>
         )}
@@ -65,38 +63,13 @@ const SetPointsInput: React.FC<{
     <div className="-mt-2">
       <label className="block text-sm mb-1 text-center">{context.playerName(playerId)}</label>
       <div className="flex">
-        {/* <button
-          className="h-10 w-8 md:w-10 rounded-l-lg bg-secondary-background text-secondary-text ring-[2px] ring-secondary-text hover:bg-tertiary-background/50"
-          onClick={() => handleUpdatePoints(0)}
-        >
-          0
-        </button>
-        <button
-          className="h-10 w-10 bg-secondary-background text-secondary-text ring-[2px] ring-secondary-text hover:bg-tertiary-background/50"
-          onClick={() => handleUpdatePoints(currentPoints - 1)}
-        >
-          -
-        </button> */}
         <input
           type="number"
           placeholder="0"
-          // className="w-14 pl-3 ring-[2px] ring-tertiary-background bg-tertiary-background text-tertiary-text text-center text-2xl font-semibold"
-          className="w-24 h-12 pl-3 ring-[2px] ring-tertiary-background bg-tertiary-background text-tertiary-text text-center text-3xl font-semibold rounded-md"
-          value={currentPoints} // currentPoints: number | undefined
+          className="w-24 h-12 pl-3 ring-[2px] ring-white bg-white text-black text-center text-3xl font-semibold rounded-md"
+          value={currentPoints}
           onChange={(e) => handleUpdatePoints(e.target.value)}
         />
-        {/* <button
-          className="h-10 w-10 bg-secondary-background text-secondary-text ring-[2px] ring-secondary-text hover:bg-tertiary-background/50"
-          onClick={() => handleUpdatePoints(currentPoints + 1)}
-        >
-          +
-        </button>
-        <button
-          className="h-10 w-8 md:w-10 rounded-r-lg bg-secondary-background text-secondary-text ring-[2px] ring-secondary-text hover:bg-tertiary-background/50"
-          onClick={() => handleUpdatePoints(11)}
-        >
-          11
-        </button> */}
       </div>
     </div>
   );
@@ -150,19 +123,19 @@ const SetCounter: React.FC<{
       <h2>{context.playerName(id)}</h2>
       <div className="flex items-center gap-1">
         <button
-          className="w-12 aspect-square rounded-full bg-tertiary-background text-tertiary-text hover:bg-tertiary-background/75 "
+          className="w-12 aspect-square rounded-full bg-primary-background text-primary-text hover:bg-primary-background/75 "
           onClick={() => setSets(Math.max(sets - 1, 0))}
         >
           &#8722;
         </button>
         <div
-          className="w-24 aspect-square rounded-full flex items-center justify-center bg-tertiary-background text-tertiary-text text-4xl"
+          className="w-24 aspect-square rounded-full flex items-center justify-center bg-primary-background text-primary-text text-4xl"
           style={{ borderWidth: 12, borderColor: stringToColor(id || "1adagrsss") }}
         >
           {sets}
         </div>
         <button
-          className="w-12 aspect-square rounded-full bg-tertiary-background text-tertiary-text hover:bg-tertiary-background/75 "
+          className="w-12 aspect-square rounded-full bg-primary-background text-primary-text hover:bg-primary-background/75 "
           onClick={() => setSets(sets + 1)}
         >
           +

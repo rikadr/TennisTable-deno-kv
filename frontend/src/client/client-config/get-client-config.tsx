@@ -5,6 +5,7 @@ import { OptioClient } from "./clients/optio-client";
 import { TournamentDB } from "../client-db/types";
 import { LocalDevClient } from "./clients/local-dev-client";
 import { OVERRIDE_THEME_KEY } from "../../wrappers/theme-provider";
+import { AsplanViakClient } from "./clients/asplan-viak-client";
 
 export abstract class ClientConfig {
   id: string | undefined;
@@ -46,10 +47,12 @@ export function getClientConfig() {
   switch (clientName) {
     case "local":
       return new LocalDevClient();
-    case "skimore":
-      return new SkimoreClient();
     case "optio":
       return new OptioClient();
+    case "skimore":
+      return new SkimoreClient();
+    case "asplanviak":
+      return new AsplanViakClient();
     default:
       return new GuestClient();
   }
@@ -58,14 +61,9 @@ export function getClientConfig() {
 export enum Theme {
   DEFAULT = "default",
   HALLOWEEN = "halloween",
-  // CHRISTMAS = "christmas",
-  // VALENTINES = "valentines",
   EASTER = "easter",
-  // SUMMER = "summer",
-  // FALL = "fall",
-  // WINTER = "winter",
   CLIENT_SKIMORE = "skimore",
-  // CLIENT_OPTIO = "optio",
+  CLIENT_ASPLAN_VIAK = "asplanviak",
 }
 
 export function themeOrOverrideTheme(theme: Theme): Theme {

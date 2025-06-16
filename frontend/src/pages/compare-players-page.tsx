@@ -120,7 +120,7 @@ const PlayerSelector: React.FC<{
         className={classNames(
           "h-8 text-left pl-4 rounded-lg",
           "bg-gray-500/50",
-          allIsSelected ? "bg-green-500/50 ring-2 ring-white hover:bg-green-300/50" : "hover:bg-gray-500",
+          allIsSelected ? "bg-green-500/50 ring-2 ring-primary-text hover:bg-green-300/50" : "hover:bg-gray-500",
         )}
         onClick={() => (allIsSelected ? setSelectedPlayers([]) : setSelectedPlayers(playersByRank))}
       >
@@ -134,7 +134,7 @@ const PlayerSelector: React.FC<{
             className={classNames(
               "h-8 text-left pl-4 rounded-lg",
               "bg-gray-500/50",
-              isSelected ? "opacity-100 ring-2 ring-white" : "hover:opacity-100 opacity-75",
+              isSelected ? "opacity-100 ring-2 ring-primary-text" : "hover:opacity-100 opacity-75",
             )}
             style={{ background: stringToColor(playerId) }}
             onClick={() => {

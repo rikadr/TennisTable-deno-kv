@@ -15,7 +15,7 @@ export const StepNavigator: React.FC<{
           <button
             onClick={handleBack}
             disabled={hasSubmitted}
-            className="flex-1 py-3 px-4 bg-primary-background hover:bg-primary-background/30 rounded-xl font-semibold flex items-center justify-center space-x-2 transition-colors"
+            className="text-primary-text flex-1 py-3 px-4 bg-primary-background hover:bg-primary-background/80 rounded-xl font-semibold flex items-center justify-center space-x-2 transition-colors"
           >
             <span>← Back</span>
           </button>
@@ -25,11 +25,11 @@ export const StepNavigator: React.FC<{
           onClick={isLastStep ? (!isSubmitting ? handleSubmit : undefined) : handleNext}
           disabled={!canProceed || isSubmitting || hasSubmitted}
           className={`
-                  flex-1 py-3 px-4 rounded-xl font-semibold flex items-center justify-center space-x-2 transition-colors
+                  flex-1 py-3 px-4 rounded-xl font-semibold flex items-center justify-center space-x-2 transition-colors ring-1 ring-primary-background
                   ${
                     canProceed && !isSubmitting && !hasSubmitted
                       ? "bg-tertiary-background text-tertiary-text hover:bg-tertiary-background/75"
-                      : "bg-tertiary-background/30 text-tertiary-text/50 cursor-not-allowed"
+                      : "bg-tertiary-background/50 text-tertiary-text/50 cursor-not-allowed"
                   }
                 `}
         >

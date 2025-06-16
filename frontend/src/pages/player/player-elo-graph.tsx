@@ -164,7 +164,7 @@ export const PlayerEloGraph: React.FC<{ playerId: string }> = ({ playerId }) => 
           </button>
           <div className="w-full">
             <input
-              className="w-full "
+              className="w-full"
               type="range"
               min={0}
               max={graphGames.length || 0}
