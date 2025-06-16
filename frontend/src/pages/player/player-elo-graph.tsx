@@ -166,7 +166,7 @@ export const PlayerEloGraph: React.FC<{ playerId: string }> = ({ playerId }) => 
             <input
               className="w-full "
               type="range"
-              min="2"
+              min={0}
               max={graphGames.length || 0}
               value={startRange}
               onChange={(e) => {
@@ -181,7 +181,7 @@ export const PlayerEloGraph: React.FC<{ playerId: string }> = ({ playerId }) => 
             <input
               className="w-full rotate-180"
               type="range"
-              min="2"
+              min={0}
               max={graphGames.length || 0}
               value={endRange}
               onChange={(e) => {
