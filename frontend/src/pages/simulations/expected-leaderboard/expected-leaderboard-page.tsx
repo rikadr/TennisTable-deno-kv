@@ -62,12 +62,6 @@ export const SimulatedLeaderboard: React.FC = () => {
     return 0;
   };
 
-  const getRankChangeIcon = (change: number) => {
-    if (change > 0) return "↗";
-    if (change < 0) return "↘";
-    return "";
-  };
-
   const getLineColor = (change: number): string => {
     if (change > 0) return "#10b981"; // green
     if (change < 0) return "#ef4444"; // red
@@ -107,8 +101,7 @@ export const SimulatedLeaderboard: React.FC = () => {
 
         {/* Changes */}
         {showChanges && (
-          <div className="">
-            {getRankChangeIcon(rankChange)}
+          <div>
             {rankChange !== 0 && (
               <p className={`text-xs font-medium ${rankChange > 0 ? "text-green-600" : "text-red-600"}`}>
                 {fmtNum(rankChange, { signedPositive: true })} rank{Math.abs(rankChange) !== 1 && "s"}
@@ -126,48 +119,46 @@ export const SimulatedLeaderboard: React.FC = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto">
+    <div className="max-w-7xl mx-auto bg-primary-background">
       {/* Comparison Visualization */}
-      <div className="bg-white rounded-lg shadow-lg p-4 relative">
-        <div className="grid grid-cols-5 relative">
-          {/* Current Leaderboard */}
-          <div className="col-span-2">
-            <h2 className="text-xl font-bold text-blue-700 mb-4 text-center">Current Leaderboard</h2>
-            <div ref={currentListRef} className="space-y-2">
-              {leaderboardData.current.map((player) => (
-                <PlayerCard key={`current-${player.id}`} player={player} type="current" />
-              ))}
-            </div>
+      <div className="grid grid-cols-5 relative">
+        {/* Current Leaderboard */}
+        <div className="col-span-2">
+          <h2 className="text-xl font-bold text-primary-text mb-4 text-center">Current Leaderboard</h2>
+          <div ref={currentListRef} className="space-y-2">
+            {leaderboardData.current.map((player) => (
+              <PlayerCard key={`current-${player.id}`} player={player} type="current" />
+            ))}
           </div>
+        </div>
 
-          {/* Connection Lines */}
-          <div className="col-span-1 relative flex justify-center">
-            <svg ref={svgRef} className="absolute inset-0 w-full h-full pointer-events-none" style={{ zIndex: 1 }}>
-              {Array.from(playerPositions.entries()).map(([playerName, positions]) => {
-                const rankChange = getRankChange(playerName);
-                return (
-                  <line
-                    key={`line-${playerName}`}
-                    x1="0"
-                    y1={positions.current}
-                    x2="100%"
-                    y2={positions.simulated}
-                    stroke={getLineColor(rankChange)}
-                    strokeWidth="5"
-                  />
-                );
-              })}
-            </svg>
-          </div>
+        {/* Connection Lines */}
+        <div className="col-span-1 relative flex justify-center">
+          <svg ref={svgRef} className="absolute inset-0 w-full h-full pointer-events-none" style={{ zIndex: 1 }}>
+            {Array.from(playerPositions.entries()).map(([playerName, positions]) => {
+              const rankChange = getRankChange(playerName);
+              return (
+                <line
+                  key={`line-${playerName}`}
+                  x1="0"
+                  y1={positions.current}
+                  x2="100%"
+                  y2={positions.simulated}
+                  stroke={getLineColor(rankChange)}
+                  strokeWidth="5"
+                />
+              );
+            })}
+          </svg>
+        </div>
 
-          {/* Expected Leaderboard */}
-          <div className="col-span-2">
-            <h2 className="text-xl font-bold text-green-700 mb-4 text-center">Expected Leaderboard</h2>
-            <div ref={simulatedListRef} className="space-y-2">
-              {leaderboardData.expected.map((player) => (
-                <PlayerCard key={`simulated-${player.id}`} player={player} type="simulated" showChanges={true} />
-              ))}
-            </div>
+        {/* Expected Leaderboard */}
+        <div className="col-span-2">
+          <h2 className="text-xl font-bold text-primary-text mb-4 text-center">Expected Leaderboard</h2>
+          <div ref={simulatedListRef} className="space-y-2">
+            {leaderboardData.expected.map((player) => (
+              <PlayerCard key={`simulated-${player.id}`} player={player} type="simulated" showChanges={true} />
+            ))}
           </div>
         </div>
       </div>
