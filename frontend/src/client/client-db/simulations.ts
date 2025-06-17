@@ -119,41 +119,6 @@ export class Simulations {
     return;
   }
 
-  monteCarloSimulation(permutations: number) {
-    const totalsMap: Map<string, number[]> = new Map();
-
-    for (let i = 0; i < permutations; i++) {
-      const randomizedGames = this.shuffleArray([...this.parent.games, ...this.parent.futureElo.predictedGames]);
-
-      const permutationResult = Elo.eloCalculator(randomizedGames, this.parent.players);
-      permutationResult.forEach(({ id: playerId, elo }) => {
-        if (!totalsMap.has(playerId)) {
-          totalsMap.set(playerId, [elo]);
-        }
-        totalsMap.get(playerId)!.push(elo);
-      });
-    }
-
-    const simulationResult: Map<string, { avg: number; min: number; max: number }> = new Map();
-    totalsMap.forEach((elos, playerId) => {
-      const avg = elos.reduce((acc, cur) => acc + cur, 0) / elos.length;
-      const minMax = { min: 9999, max: 0 };
-      for (const elo of elos) {
-        if (elo < minMax.min) {
-          minMax.min = elo;
-        }
-        if (elo > minMax.max) {
-          minMax.max = elo;
-        }
-      }
-      simulationResult.set(playerId, { avg, ...minMax });
-    });
-
-    return Array.from(simulationResult)
-      .map(([playerId, elo]) => ({ playerId, elo }))
-      .sort((a, b) => b.elo.avg - a.elo.avg);
-  }
-
   // Fisher-Yates Shuffle
   shuffleArray<T>(array: T[]): T[] {
     for (let i = array.length - 1; i > 0; i--) {

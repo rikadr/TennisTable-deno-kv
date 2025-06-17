@@ -122,7 +122,7 @@ export const PlayerEloGraph: React.FC<{ playerId: string }> = ({ playerId }) => 
           <Line
             type="monotone"
             dataKey="simulatedElo"
-            stroke="white"
+            stroke="rgb(var(--color-primary-text))"
             dot={false}
             animationDuration={100}
             strokeWidth={0.5}

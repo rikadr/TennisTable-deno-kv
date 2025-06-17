@@ -16,7 +16,6 @@ import { PvPPage } from "./pages/pvp-page";
 import { CameraPage } from "./pages/camera/camera-page";
 import { LeaderBoard } from "./pages/leaderboard/leader-board";
 import { SimulationsPage } from "./pages/simulations/simulations-page";
-import { MonteCarlo } from "./pages/simulations/monte-carlo/monte-carlo-page";
 import { WinLoss } from "./pages/simulations/win-loss";
 import { ExpectedScore } from "./pages/simulations/expected-score";
 import { TournamentsListPage } from "./pages/tournament/tournaments-list-page";
@@ -33,6 +32,7 @@ import { EditGameSore } from "./pages/edit-game-score";
 import { IndividualPointsOverview } from "./pages/simulations/individual-points/individual-points-overview";
 import { IndividualPointsPlayer } from "./pages/simulations/individual-points/individual-points-player";
 import { PlayerPage } from "./pages/player/player-page";
+import { SimulatedLeaderboard } from "./pages/simulations/expected-leaderboard/expected-leaderboard-page";
 
 const RequireAuth: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   if (!session.isAuthenticated) {
@@ -72,9 +72,9 @@ function App() {
                         </Route>
                         <Route path="/simulations">
                           <Route index element={<SimulationsPage />} />
-                          <Route path="monte-carlo" element={<MonteCarlo />} />
                           <Route path="win-loss" element={<WinLoss />} />
                           <Route path="expected-score" element={<ExpectedScore />} />
+                          <Route path="expected-leaderboard" element={<SimulatedLeaderboard />} />
                           <Route path="individual-points" element={<IndividualPointsOverview />} />
                           <Route path="individual-points/player" element={<IndividualPointsPlayer />} />
                         </Route>
