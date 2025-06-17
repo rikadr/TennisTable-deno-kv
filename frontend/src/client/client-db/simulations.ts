@@ -32,6 +32,54 @@ export class Simulations {
     return wins / (loss ?? 1);
   }
 
+  expectedLeaderBoard(): {
+    current: { id: string; rank: number; score: number }[];
+    expected: { id: string; rank: number; score: number }[];
+  } {
+    //
+    const currentLeaderboard = this.parent.leaderboard.getLeaderboard();
+
+    const rankedPlayers = this.parent.players.filter((player) =>
+      currentLeaderboard.rankedPlayers.some((entry) => entry.id === player.id),
+    );
+    const allGamesWithActivePlayers = this.parent.games.filter(
+      (game) =>
+        this.parent.eventStore.playersProjector.getPlayer(game.winner)?.active &&
+        this.parent.eventStore.playersProjector.getPlayer(game.loser)?.active,
+    );
+    const generatedGames = this.parent.futureElo.simulatedGamesForAGivenInputOfGames(allGamesWithActivePlayers);
+    const totalGames = [...allGamesWithActivePlayers, ...generatedGames];
+
+    const simResultMap = new Map<string, number[]>();
+
+    for (let i = 0; i < 5_000; i++) {
+      this.shuffleArray(totalGames);
+      // Casting, but its only using winner and loser inside it anyway
+      const eloMap = Elo.eloCalculator(totalGames as Game[], rankedPlayers);
+      eloMap.forEach((player) => {
+        if (simResultMap.has(player.id) === false) {
+          simResultMap.set(player.id, []);
+        }
+        simResultMap.get(player.id)!.push(player.elo);
+      });
+    }
+
+    const avgSimResult: { id: string; rank: number; score: number }[] = [];
+    simResultMap.forEach((scores, playerId) =>
+      avgSimResult.push({
+        id: playerId,
+        rank: -1,
+        score: scores.reduce((acc, cur) => (acc += cur), 0) / scores.length,
+      }),
+    );
+    avgSimResult.sort((a, b) => b.score - a.score);
+
+    return {
+      current: currentLeaderboard.rankedPlayers.map(({ id, rank, elo }) => ({ id, rank, score: elo })),
+      expected: avgSimResult.map((player, index) => ({ ...player, rank: index + 1 })),
+    };
+  }
+
   expectedPlayerEloOverTime(
     playerId: string,
     workerCallback: (message: { elements: { elo: number; time: number }[]; progress: number }) => void,
@@ -65,7 +113,7 @@ export class Simulations {
       allGamesWithActivePlayers[allGamesWithActivePlayers.length - 1].winner === playerId ||
       allGamesWithActivePlayers[allGamesWithActivePlayers.length - 1].loser === playerId;
 
-    const BATCH_SIZE = 1; // % seems reasonable but 1 works well on my beast mac and gives smooth frame rate
+    const BATCH_SIZE = 1; // 5 seems reasonable but 1 works well on my beast mac and gives smooth frame rate
 
     const FAST_ITERATION = 50;
     const DETAILED_ITERATION = 3_000;

@@ -114,7 +114,7 @@ export class Leaderboard {
 
     const pointsMap: Record<string, number> = {};
     for (const game of player.games) {
-      pointsMap[game.oponent] = (pointsMap[game.oponent] || 0) + game.pointsDiff;
+      pointsMap[game.oponent!] = (pointsMap[game.oponent!] || 0) + game.pointsDiff;
     }
 
     const pointsDistrubution = Object.keys(pointsMap)
@@ -124,7 +124,7 @@ export class Leaderboard {
     // Games distrubution
     const gamesMap: Record<string, number> = {};
     for (const game of player.games) {
-      gamesMap[game.oponent] = (gamesMap[game.oponent] || 0) + 1;
+      gamesMap[game.oponent!] = (gamesMap[game.oponent!] || 0) + 1;
     }
 
     const gamesDistribution = Object.keys(gamesMap)
