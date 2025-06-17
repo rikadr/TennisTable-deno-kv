@@ -198,7 +198,7 @@ export const PlayerPage: React.FC = () => {
 
         {/* Recent Games Tab */}
         {activeTab === "games" && (
-          <div className="overflow-x-auto bg-primary-background text-primary-text rounded-lg px-1">
+          <div className="overflow-x-auto bg-primary-background text-primary-text rounded-xl px-1">
             <table className="w-full min-w-[550px]">
               <thead>
                 <tr className="border-b border-gray-200">
