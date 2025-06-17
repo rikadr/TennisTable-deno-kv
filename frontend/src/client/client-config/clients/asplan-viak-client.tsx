@@ -12,7 +12,7 @@ export class AsplanViakClient implements ClientConfig {
   );
   snow = false;
   title = "Asplan Viak - bordtennis";
-  favicon = "🏓";
+  favicon = "🏙️";
   gameLimitForRanked = 5;
   tournaments = [];
 }
