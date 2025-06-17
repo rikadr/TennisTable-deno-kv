@@ -98,7 +98,7 @@ export const AdminPage: React.FC = () => {
   }
 
   return (
-    <div className="bg-primary-background">
+    <div className="bg-primary-background text-primary-text">
       <h1>ADMIN PAGE</h1>
       {/* Tabs Navigation */}
       <div className="bg-secondary-background text-tertiary-text px-6 md:px-8">
@@ -134,7 +134,7 @@ export const AdminPage: React.FC = () => {
                 className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                   chartView === "monthly"
                     ? "bg-secondary-background text-secondary-text"
-                    : "bg-primary-background text-secondary-background border border-secondary-background hover:bg-secondary-background hover:text-secondary-text"
+                    : "bg-primary-background text-primary-text/75 border border-primary-text hover:bg-secondary-background hover:text-secondary-text"
                 }`}
               >
                 Monthly View
@@ -144,7 +144,7 @@ export const AdminPage: React.FC = () => {
                 className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                   chartView === "weekly"
                     ? "bg-secondary-background text-secondary-text"
-                    : "bg-primary-background text-secondary-background border border-secondary-background hover:bg-secondary-background hover:text-secondary-text"
+                    : "bg-primary-background text-primary-text/75 border border-primary-text hover:bg-secondary-background hover:text-secondary-text"
                 }`}
               >
                 Weekly View
