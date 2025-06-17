@@ -10,10 +10,10 @@ import { PlayerPointsDistrubution } from "./player-points-distribution";
 import { PlayerGamesDistrubution } from "./player-games-distribution";
 import { relativeTimeString } from "../../common/date-utils";
 
-type TabType = "overview" | "matches" | "statistics" | "numbered-points";
+type TabType = "overview" | "games" | "statistics" | "numbered-points";
 const tabs = [
   { id: "overview" as TabType, label: "Overview" },
-  { id: "matches" as TabType, label: "Recent Matches" },
+  { id: "games" as TabType, label: "Recent Games" },
   { id: "statistics" as TabType, label: "Statistics" },
   //   { id: "numbered-points" as TabType, label: "Numbered Points" },
 ];
@@ -196,8 +196,8 @@ export const PlayerPage: React.FC = () => {
           </div>
         )}
 
-        {/* Recent Matches Tab */}
-        {activeTab === "matches" && (
+        {/* Recent Games Tab */}
+        {activeTab === "games" && (
           <div className="overflow-x-auto bg-primary-background text-primary-text rounded-lg px-1">
             <table className="w-full min-w-[550px]">
               <thead>

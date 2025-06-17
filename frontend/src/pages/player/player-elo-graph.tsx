@@ -154,7 +154,7 @@ export const PlayerEloGraph: React.FC<{ playerId: string }> = ({ playerId }) => 
       {graphGames.length > 50 && (
         <div className="flex items-center gap-4">
           <button
-            className="px-2 py-1 whitespace-nowrap bg-secondary-background text-secondary-text ring-1 ring-secondary-text hover:bg-secondary-background/50 rounded-lg"
+            className="px-2 py-1 whitespace-nowrap bg-secondary-background text-secondary-text hover:bg-secondary-background/50 rounded-lg"
             onClick={() => {
               setStartRange(0);
               setEndRange(0);
@@ -253,7 +253,7 @@ export const PlayerEloGraph: React.FC<{ playerId: string }> = ({ playerId }) => 
       )}
       {summary.games.length >= context.client.gameLimitForRanked && (
         <button
-          className="mt-4 px-2 py-1 bg-secondary-background text-secondary-text ring-1 ring-secondary-text hover:bg-secondary-background/50 rounded-lg"
+          className="mt-4 px-2 py-1 bg-secondary-background text-secondary-text hover:bg-secondary-background/50 rounded-lg"
           onClick={() =>
             setShowExpectedElo((prev) => {
               const newValue = !prev;

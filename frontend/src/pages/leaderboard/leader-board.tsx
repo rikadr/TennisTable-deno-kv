@@ -58,7 +58,7 @@ export const LeaderBoard: React.FC = () => {
           <div className="flex gap-4 text-base text-center mb-2 text-primary-text">
             <div className="w-5">#</div>
             <div className="w-40 text-left pl-2">Name</div>
-            <div className="w-12 text-right">Elo</div>
+            <div className="w-12 text-right">Score</div>
             <div className="w-10 pl-1">Interval</div>
             <div className="w-14 text-right">🏆:💔</div>
           </div>
