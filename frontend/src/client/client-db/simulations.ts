@@ -39,9 +39,6 @@ export class Simulations {
     //
     const currentLeaderboard = this.parent.leaderboard.getLeaderboard();
 
-    const rankedPlayers = this.parent.players.filter((player) =>
-      currentLeaderboard.rankedPlayers.some((entry) => entry.id === player.id),
-    );
     const allGamesWithActivePlayers = this.parent.games.filter(
       (game) =>
         this.parent.eventStore.playersProjector.getPlayer(game.winner)?.active &&
@@ -55,7 +52,7 @@ export class Simulations {
     for (let i = 0; i < 5_000; i++) {
       this.shuffleArray(totalGames);
       // Casting, but its only using winner and loser inside it anyway
-      const eloMap = Elo.eloCalculator(totalGames as Game[], rankedPlayers);
+      const eloMap = Elo.eloCalculator(totalGames as Game[], this.parent.players);
       eloMap.forEach((player) => {
         if (simResultMap.has(player.id) === false) {
           simResultMap.set(player.id, []);
@@ -76,7 +73,9 @@ export class Simulations {
 
     return {
       current: currentLeaderboard.rankedPlayers.map(({ id, rank, elo }) => ({ id, rank, score: elo })),
-      expected: avgSimResult.map((player, index) => ({ ...player, rank: index + 1 })),
+      expected: avgSimResult
+        .filter((player) => currentLeaderboard.rankedPlayers.some((ranked) => ranked.id === player.id))
+        .map((player, index) => ({ ...player, rank: index + 1 })),
     };
   }
 
@@ -140,7 +139,7 @@ export class Simulations {
         this.shuffleArray(totalGames);
         const eloMap = Elo.eloCalculator(
           totalGames as Game[], // Casting, but its only using winner and loser inside it anyway
-          this.parent.eventStore.playersProjector.players.filter((p) => p.active),
+          this.parent.players,
         );
         const playerElo = eloMap.get(playerId)?.elo;
         playerElo && playerElos.push(playerElo);
