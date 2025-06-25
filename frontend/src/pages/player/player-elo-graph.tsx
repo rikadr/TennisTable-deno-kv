@@ -20,6 +20,8 @@ import { relativeTimeString } from "../../common/date-utils";
 import { fmtNum } from "../../common/number-utils";
 import { useEloSimulationWorker } from "../../hooks/use-elo-simulation-worker";
 import { Shimmer } from "../../common/shimmer";
+import { classNames } from "../../common/class-names";
+import { PingPongLoader } from "../../common/ping-loader";
 
 export const PlayerEloGraph: React.FC<{ playerId: string }> = ({ playerId }) => {
   const context = useEventDbContext();
@@ -153,15 +155,6 @@ export const PlayerEloGraph: React.FC<{ playerId: string }> = ({ playerId }) => 
 
       {graphGames.length > 50 && (
         <div className="flex items-center gap-4">
-          <button
-            className="px-2 py-1 whitespace-nowrap bg-secondary-background text-secondary-text hover:bg-secondary-background/50 rounded-lg"
-            onClick={() => {
-              setStartRange(0);
-              setEndRange(0);
-            }}
-          >
-            &#8634; Reset
-          </button>
           <div className="w-full">
             <input
               className="w-full"
@@ -197,12 +190,40 @@ export const PlayerEloGraph: React.FC<{ playerId: string }> = ({ playerId }) => 
               }}
             />
           </div>
+          <button
+            className={classNames(
+              "px-2 py-1 whitespace-nowrap bg-secondary-background text-secondary-text hover:bg-secondary-background/50 rounded-lg",
+              startRange === 0 && endRange === 0 && "opacity-0",
+            )}
+            disabled={startRange === 0 && endRange === 0}
+            onClick={() => {
+              setStartRange(0);
+              setEndRange(0);
+            }}
+          >
+            &#8634; Reset
+          </button>
         </div>
       )}
-
+      {!showExpectedElo && summary.games.length >= context.client.gameLimitForRanked && (
+        <button
+          className="mb-4 px-2 py-1 bg-secondary-background text-secondary-text hover:bg-secondary-background/50 rounded-lg"
+          onClick={() =>
+            setShowExpectedElo((prev) => {
+              const newValue = !prev;
+              if (newValue) {
+                startSimulation(playerId);
+              }
+              return newValue;
+            })
+          }
+        >
+          Simulate expected score
+        </button>
+      )}
       {showExpectedElo && simulationIsDone === false && <ProgressBar progress={simulationProgress} />}
       {showExpectedElo && lastEntry.simulatedElo && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 max-w-[800px] gap-x-4 text-primary-text mb-2">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 max-w-[800px] gap-x-4 text-primary-text">
           <div className="p-1">
             <p className="text-sm mb-1 whitespace-nowrap">Expected score</p>
             <p className="text-2xl font-bold">{fmtNum(lastEntry.simulatedElo)}</p>
@@ -245,27 +266,11 @@ export const PlayerEloGraph: React.FC<{ playerId: string }> = ({ playerId }) => 
         </div>
       )}
       {showExpectedElo && (
-        <>
+        <div className="mt-4">
           <p className="text-xs">* Simulation has some randomness every time.</p>
           <p className="text-xs">Might fluctuate wildly when too little data (few games)</p>
           <p className="text-xs">or when the total points pool increases by more players becomeing ranked</p>
-        </>
-      )}
-      {summary.games.length >= context.client.gameLimitForRanked && (
-        <button
-          className="mt-4 px-2 py-1 bg-secondary-background text-secondary-text hover:bg-secondary-background/50 rounded-lg"
-          onClick={() =>
-            setShowExpectedElo((prev) => {
-              const newValue = !prev;
-              if (newValue) {
-                startSimulation(playerId);
-              }
-              return newValue;
-            })
-          }
-        >
-          {showExpectedElo ? "Hide" : "Simulate"} expected score
-        </button>
+        </div>
       )}
     </>
   );
