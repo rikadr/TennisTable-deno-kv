@@ -46,7 +46,6 @@ export class LeaderboardChanges {
         });
       });
     }
-    console.log(scoreMaps.length);
 
     scoreMaps.forEach(({ time, map }) => {
       const leaderboard = Array.from(map)
