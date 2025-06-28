@@ -1,7 +1,5 @@
 import { GameScore } from "./event-store/event-types";
-import { Player } from "./event-store/projectors/players-projector";
 
-export type PlayerWithElo = Player & { elo: number };
 export type PlayerSummary = {
   id: string;
   name: string;

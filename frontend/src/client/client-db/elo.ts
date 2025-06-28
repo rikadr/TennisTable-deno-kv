@@ -1,7 +1,7 @@
 import { Game } from "./event-store/projectors/games-projector";
 import { Player } from "./event-store/projectors/players-projector";
 
-type PlayerWithElo = Player & { elo: number; totalGames: number };
+export type PlayerWithElo = Player & { elo: number; totalGames: number };
 
 export abstract class Elo {
   static readonly K = 32;

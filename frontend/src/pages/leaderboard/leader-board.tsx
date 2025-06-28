@@ -8,6 +8,7 @@ import { TournamentHighlightsAndPendingGames } from "./tournament-pending-games"
 import { getClientConfig, Theme, themeOrOverrideTheme } from "../../client/client-config/get-client-config";
 import easterBunny from "../../img/easter/easter-bunny-realistic.png";
 import { getEgg, getPumpkin } from "./themed-place-number";
+import { RecentLeaderBoardChanges } from "./recent-leaderboard-changes";
 
 export const LeaderBoard: React.FC = () => {
   const context = useEventDbContext();
@@ -51,6 +52,7 @@ export const LeaderBoard: React.FC = () => {
         </div>
         {/* <LeaderboardDistrubution /> */}
         <RecentGames />
+        <RecentLeaderBoardChanges />
         {theme === Theme.EASTER && <img src={easterBunny} alt="Easter bunny chick" />}
       </div>
       <div className="bg-primary-background rounded-lg">

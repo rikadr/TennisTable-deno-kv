@@ -7,6 +7,7 @@ import { getClientConfig } from "../client-config/get-client-config";
 import { EventType } from "./event-store/event-types";
 import { EventStore } from "./event-store/event-store";
 import { IndividualPoints } from "./individual-points";
+import { LeaderboardChanges } from "./leaderboard-changes";
 
 export class TennisTable {
   isSimulatedState = false;
@@ -31,6 +32,7 @@ export class TennisTable {
   // Business logic
   // --------------------------------------------------------------------------
   leaderboard: Leaderboard;
+  leaderboardChanges: LeaderboardChanges;
   pvp: PVP;
   tournaments: Tournaments;
   simulations: Simulations;
@@ -42,6 +44,7 @@ export class TennisTable {
     this.eventStore = new EventStore(this);
 
     this.leaderboard = new Leaderboard(this);
+    this.leaderboardChanges = new LeaderboardChanges(this);
     this.pvp = new PVP(this);
     this.tournaments = new Tournaments(this);
     this.simulations = new Simulations(this);

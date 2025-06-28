@@ -172,7 +172,9 @@ const CustomTooltip: React.FC = ({ active, payload, label }: TooltipProps<ValueT
               </p>
             ),
         )}
-        {gameTime && gameTime[1] > 0 && <p>{relativeTimeString(new Date(gameTime[1]))}</p>}
+        {gameTime && gameTime[1] > 0 && (
+          <p className="text-primary-text">{relativeTimeString(new Date(gameTime[1]))}</p>
+        )}
       </div>
     );
   }
