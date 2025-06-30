@@ -13,12 +13,12 @@ export const RecentLeaderBoardChanges: React.FC = () => {
 
   return (
     <div className="bg-primary-background rounded-lg ">
-      <h1 className="text-2xl text-center mb-4 mt-[27.5px] text-primary-text">Recent leaderboard changes</h1>
+      <h1 className="text-2xl text-center mb-4 mt-[27.5px] text-primary-text">Leaderboard changes last 7 days</h1>
       <div className="flex flex-col divide-y divide-primary-text/50 text-primary-text">
         <div className="flex gap-4 text-base text-center mb-2">
           <div className="w-20 pl-5">Player</div>
           <div className="w-24 whitespace-nowrap pl-5">Current place</div>
-          <div className="w-32 text-center pl-5">Net change</div>
+          <div className="w-32 text-center pl-5">Changes</div>
         </div>
         {leaderboardChanges.map((player) => (
           <Link
