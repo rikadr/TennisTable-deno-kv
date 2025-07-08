@@ -10,6 +10,7 @@ export const RecentLeaderBoardChanges: React.FC = () => {
   if (leaderboardChanges.length === 0) {
     return null;
   }
+  // HAllo test added comment
 
   return (
     <div className="bg-primary-background rounded-lg ">
