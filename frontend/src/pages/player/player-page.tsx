@@ -9,6 +9,7 @@ import { PlayerEloGraph } from "./player-elo-graph";
 import { PlayerPointsDistrubution } from "./player-points-distribution";
 import { PlayerGamesDistrubution } from "./player-games-distribution";
 import { relativeTimeString } from "../../common/date-utils";
+import { OponentsScores } from "./oponents-scores";
 
 type TabType = "overview" | "games" | "statistics" | "numbered-points";
 const tabs = [
@@ -279,18 +280,22 @@ export const PlayerPage: React.FC = () => {
 
         {activeTab === "statistics" && (
           <div className="space-y-6">
-            <div className="grid grid-flow-row lg:grid-flow-col gap-6">
-              {/* Win/Loss Points */}
+            <div className="grid grid-flow-row lg:grid-cols-2 gap-6">
               {playerId && (
-                <ContentCard title="Points Exchange" description="Net points gained/lost to your opponents">
+                <ContentCard title="Points Exchanged" description="Net points gained/lost to your opponents">
                   <PlayerPointsDistrubution playerId={playerId} />
                 </ContentCard>
               )}
 
-              {/* Games Played */}
               {playerId && (
-                <ContentCard title="Games Frequency" description="Relative frequency of opponents you play">
+                <ContentCard title="Oponent Frequency" description="Relative frequency of opponents you play">
                   <PlayerGamesDistrubution playerId={playerId} />
+                </ContentCard>
+              )}
+
+              {playerId && (
+                <ContentCard title="Oponent scores" description="Relative score of oponents you play">
+                  <OponentsScores playerId={playerId} />
                 </ContentCard>
               )}
             </div>

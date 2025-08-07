@@ -8,6 +8,7 @@ import { EventType } from "./event-store/event-types";
 import { EventStore } from "./event-store/event-store";
 import { IndividualPoints } from "./individual-points";
 import { LeaderboardChanges } from "./leaderboard-changes";
+import { PlayerOponentDistribution } from "./playerOponentDistribution";
 
 export class TennisTable {
   isSimulatedState = false;
@@ -38,6 +39,7 @@ export class TennisTable {
   simulations: Simulations;
   futureElo: FutureElo;
   individualPoints: IndividualPoints;
+  playerOponentDistribution: PlayerOponentDistribution;
 
   constructor(data: { events: EventType[] }) {
     this.events = data.events;
@@ -50,6 +52,7 @@ export class TennisTable {
     this.simulations = new Simulations(this);
     this.futureElo = new FutureElo(this);
     this.individualPoints = new IndividualPoints(this);
+    this.playerOponentDistribution = new PlayerOponentDistribution(this);
   }
 
   get players() {
