@@ -1,14 +1,14 @@
 import { RouterContext } from "oak";
+import { getLatestEventTimestamp } from "../event-store/event-store.ts";
 
 /**
  * Defined messages that can be broadcast to connected clients
  */
 enum WS_MESSAGE {
-  RELOAD = "reload",
   CONNECTION_ID = "connection-id",
   HEART_BEAT = "heart-beat",
-  // NEW_EVENT = "new-event", // TODO
-  // REQUEST_ALL_NEW_EVENTS = "request-all-new-events", // TODO
+  LATEST_EVENT = "latest-event",
+  RELOAD = "reload",
 }
 
 export class WebSocketClientManager {
@@ -46,7 +46,14 @@ export class WebSocketClientManager {
       const connectionId = message.split(":")[1];
       if (this.clientExists(connectionId) === false) {
         client.close();
+        return;
       }
+      client.send(WS_MESSAGE.HEART_BEAT + ":" + connectionId);
+      return;
+    }
+
+    if (message.startsWith(WS_MESSAGE.LATEST_EVENT)) {
+      this.sendLatestEventId(client);
     }
   }
 
@@ -58,8 +65,25 @@ export class WebSocketClientManager {
     if (client) {
       client.client.send(WS_MESSAGE.CONNECTION_ID + ":" + connectionId);
     }
-    //
   }
+
+  /**
+   * Send latest event id to the client
+   */
+  private sendLatestEventIdFromConnectionId(connectionId: string) {
+    const client = this.clients.get(connectionId);
+    if (!client) return;
+
+    this.sendLatestEventId(client.client);
+  }
+
+  private async sendLatestEventId(client: WebSocket) {
+    const lastEvent = await getLatestEventTimestamp();
+    if (!lastEvent) return;
+
+    client.send(WS_MESSAGE.LATEST_EVENT + ":" + lastEvent);
+  }
+
   /**
    * Send message to all open web sockets on the server managed by the manager
    */
@@ -88,6 +112,7 @@ export class WebSocketClientManager {
       const id = this.addClient(socket);
       connectionId = id;
       this.sendConnectionId(id);
+      this.sendLatestEventIdFromConnectionId(id);
     };
 
     socket.onmessage = ({ data: message }) => {

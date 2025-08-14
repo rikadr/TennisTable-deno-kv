@@ -55,8 +55,8 @@ function App() {
           <div className="min-h-screen w-full overflow-auto">
             <HelmetSetter />
             <ZoomWrapper>
-              <WebSocketRefetcher>
-                <EventDbWrapper>
+              <EventDbWrapper>
+                <WebSocketRefetcher>
                   <BrowserRouter>
                     <Routes>
                       <Route path="/" element={<NavMenu />}>
@@ -104,8 +104,8 @@ function App() {
                       </Route>
                     </Routes>
                   </BrowserRouter>
-                </EventDbWrapper>
-              </WebSocketRefetcher>
+                </WebSocketRefetcher>
+              </EventDbWrapper>
             </ZoomWrapper>
           </div>
         </ThemeProvider>

@@ -3,9 +3,10 @@ import { useEffect, useState } from "react";
  * Defined messages that can be broadcast to connected clients
  */
 export enum WS_MESSAGE {
-  RELOAD = "reload",
   CONNECTION_ID = "connection-id",
   HEART_BEAT = "heart-beat",
+  LATEST_EVENT = "latest-event",
+  RELOAD = "reload",
 }
 
 export const useWebSocket = (
@@ -21,7 +22,7 @@ export const useWebSocket = (
   function openWebSocket() {
     const socket = new WebSocket(url);
     socket.onmessage = (messageEvent) => {
-      onMessage && onMessage(messageEvent.data);
+      onMessage && typeof messageEvent.data === "string" && onMessage(messageEvent.data);
     };
     socket.onclose = () => {
       // Retry connection every 5 seconds
