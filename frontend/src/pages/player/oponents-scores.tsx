@@ -15,14 +15,19 @@ export const OponentsScores: React.FC<Props> = ({ playerId }) => {
 
   return (
     <div className="flex flex-col w-full divide-y divide-primary-text/50">
-      <p>Avg. score of oponent: {fmtNum(avgDiff, { digits: 0, signedPositive: true })}</p>
-      {diffGraphData.map((entry) => (
-        <div className={classNames("flex", entry.diffGroup === 0 && "bg-secondary-background text-secondary-text")}>
-          <p className="w-16">{entry.diffGroup}</p>
+      <p>Avg. oponent score:{fmtNum(avgDiff, { digits: 0, signedPositive: true })}</p>
+      {diffGraphData.toReversed().map((entry) => (
+        <div
+          className={classNames(
+            "flex items-center h-4",
+            entry.diffGroup === 0 && "bg-secondary-background text-secondary-text",
+          )}
+        >
+          <p className="w-10">{entry.diffGroup}</p>
           {Array(entry.count)
             .fill(0)
             .map(() => (
-              <pre>O</pre>
+              <pre>&#9724;</pre>
             ))}
         </div>
       ))}
