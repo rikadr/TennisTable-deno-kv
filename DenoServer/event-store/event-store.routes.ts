@@ -1,6 +1,6 @@
 import { Router } from "https://deno.land/x/oak@v16.0.0/router.ts";
 import { EventType, EventTypeEnum } from "./event-types.ts";
-import { storeEvent } from "./event-store.ts";
+import { getEventsAfter, storeEvent } from "./event-store.ts";
 import { eventCache, webSocketClientManager } from "../server.ts";
 import { hasAccess } from "../auth-service/middleware.ts";
 import { kv } from "../db.ts";
@@ -10,8 +10,9 @@ export function registerEventStoreRoutes(api: Router) {
    * Get all events
    */
   api.get("/events", async (context) => {
-    const eventData = await eventCache.getEventData();
-    context.response.body = eventData.events;
+    const events = await getEventsAfter(0);
+    await eventCache.clearCache();
+    context.response.body = events;
   });
 
   /**
@@ -49,8 +50,6 @@ export function registerEventStoreRoutes(api: Router) {
     }
 
     await storeEvent(eventPayload);
-
-    // await eventCache.appendEventsToEventCache([eventPayload]);
     webSocketClientManager.reloadClients();
     context.response.status = 201;
   });
@@ -74,7 +73,6 @@ export function registerEventStoreRoutes(api: Router) {
     for (const event of eventsPayload) {
       await storeEvent(event);
     }
-    await eventCache.appendEventsToEventCache(eventsPayload);
     webSocketClientManager.reloadClients();
 
     context.response.body = { uploadedCount: eventsPayload.length.toLocaleString() };
