@@ -14,17 +14,19 @@ export class EventCache {
    * Fetches events from db if no cache exists.
    */
   async getEventData(): Promise<EventCacheData> {
-    const latestEvent = await getLatestEventTimestamp();
-    const cache = await this.#getEventCache();
-    if (cache && cache.events[cache.events.length - 1]?.time === latestEvent) {
-      console.log("Event cache hit");
-      return cache;
-    }
-    console.log("Event cache miss");
     const events = await getEventsAfter(0);
-    const eventData: EventCacheData = { events };
-    await this.#setEventCache(eventData);
-    return eventData;
+    return { events };
+    // const latestEvent = await getLatestEventTimestamp();
+    // const cache = await this.#getEventCache();
+    // if (cache && cache.events[cache.events.length - 1]?.time === latestEvent) {
+    //   console.log("Event cache hit");
+    //   return cache;
+    // }
+    // console.log("Event cache miss");
+    // const events = await getEventsAfter(0);
+    // const eventData: EventCacheData = { events };
+    // await this.#setEventCache(eventData);
+    // return eventData;
   }
 
   /**
