@@ -50,7 +50,7 @@ export function registerEventStoreRoutes(api: Router) {
 
     await storeEvent(eventPayload);
 
-    await eventCache.appendEventsToEventCache([eventPayload]);
+    // await eventCache.appendEventsToEventCache([eventPayload]);
     webSocketClientManager.reloadClients();
     context.response.status = 201;
   });
