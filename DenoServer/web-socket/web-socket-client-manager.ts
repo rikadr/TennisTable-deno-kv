@@ -8,7 +8,6 @@ enum WS_MESSAGE {
   CONNECTION_ID = "connection-id",
   HEART_BEAT = "heart-beat",
   LATEST_EVENT = "latest-event",
-  RELOAD = "reload",
 }
 
 export class WebSocketClientManager {
@@ -132,8 +131,8 @@ export class WebSocketClientManager {
   }
 
   /**
-   * Broadcast all connected clients a request to reload data their data.
-   * Used for when games or player data is changed or updated.
+   * Broadcast all connected clients a request to check if they need to reload their data.
+   * Used for when new events are added.
    */
   async broadcastLatestEvent() {
     const lastEvent = await getLatestEventTimestamp();
