@@ -5,7 +5,6 @@ import { registerWebSocketRoutes } from "./web-socket/web-socket.routs.ts";
 import { WebSocketClientManager } from "./web-socket/web-socket-client-manager.ts";
 import { registerEventStoreRoutes } from "./event-store/event-store.routes.ts";
 import { registerMigrationsRoutes } from "./migrations/migrations.routes.ts";
-import { EventCache } from "./event-store/event-cache.ts";
 import { registerImageKitRoutes } from "./image-kit/image-kit.routes.ts";
 
 const app = new Application();
@@ -19,7 +18,6 @@ app.use(
   }),
 );
 
-export const eventCache = new EventCache();
 export const webSocketClientManager = new WebSocketClientManager();
 
 /**

@@ -42,13 +42,9 @@ export const WebSocketRefetcher: React.FC<Props> = ({ children }) => {
       // Use the ref instead of context directly
       const currentEvents = eventsRef.current;
       const latestLocalEvent = currentEvents[currentEvents.length - 1]?.time;
-      if (latestDbEvent && latestLocalEvent && latestLocalEvent !== latestDbEvent) {
+      if (latestDbEvent && latestLocalEvent !== latestDbEvent) {
         queryClient.invalidateQueries();
       }
-      return;
-    }
-    if (message === WS_MESSAGE.RELOAD) {
-      queryClient.invalidateQueries();
       return;
     }
   }

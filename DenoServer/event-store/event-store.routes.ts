@@ -1,7 +1,7 @@
 import { Router } from "https://deno.land/x/oak@v16.0.0/router.ts";
 import { EventType, EventTypeEnum } from "./event-types.ts";
 import { getEventsAfter, storeEvent } from "./event-store.ts";
-import { eventCache, webSocketClientManager } from "../server.ts";
+import { webSocketClientManager } from "../server.ts";
 import { hasAccess } from "../auth-service/middleware.ts";
 import { kv } from "../db.ts";
 
@@ -11,7 +11,6 @@ export function registerEventStoreRoutes(api: Router) {
    */
   api.get("/events", async (context) => {
     const events = await getEventsAfter(0);
-    await eventCache.clearCache();
     context.response.body = events;
   });
 
@@ -50,7 +49,7 @@ export function registerEventStoreRoutes(api: Router) {
     }
 
     await storeEvent(eventPayload);
-    webSocketClientManager.reloadClients();
+    webSocketClientManager.broadcastLatestEvent();
     context.response.status = 201;
   });
 
@@ -73,7 +72,7 @@ export function registerEventStoreRoutes(api: Router) {
     for (const event of eventsPayload) {
       await storeEvent(event);
     }
-    webSocketClientManager.reloadClients();
+    webSocketClientManager.broadcastLatestEvent();
 
     context.response.body = { uploadedCount: eventsPayload.length.toLocaleString() };
     context.response.status = 201;
@@ -90,8 +89,7 @@ export function registerEventStoreRoutes(api: Router) {
       await kv.delete(event.key);
       deletedCount++;
     }
-    await eventCache.clearCache();
-    webSocketClientManager.reloadClients();
+    webSocketClientManager.broadcastLatestEvent();
 
     console.log(`Deleted ${deletedCount.toLocaleString()} events`);
     context.response.status = 204;

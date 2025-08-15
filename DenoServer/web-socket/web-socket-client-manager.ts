@@ -53,7 +53,7 @@ export class WebSocketClientManager {
     }
 
     if (message.startsWith(WS_MESSAGE.LATEST_EVENT)) {
-      this.sendLatestEventId(client);
+      this.sendLatestEvent(client);
     }
   }
 
@@ -70,14 +70,14 @@ export class WebSocketClientManager {
   /**
    * Send latest event id to the client
    */
-  private sendLatestEventIdFromConnectionId(connectionId: string) {
+  private sendLatestEventFromConnectionId(connectionId: string) {
     const client = this.clients.get(connectionId);
     if (!client) return;
 
-    this.sendLatestEventId(client.client);
+    this.sendLatestEvent(client.client);
   }
 
-  private async sendLatestEventId(client: WebSocket) {
+  private async sendLatestEvent(client: WebSocket) {
     const lastEvent = await getLatestEventTimestamp();
     if (!lastEvent) return;
 
@@ -87,7 +87,7 @@ export class WebSocketClientManager {
   /**
    * Send message to all open web sockets on the server managed by the manager
    */
-  private broadcastMessage(message: WS_MESSAGE) {
+  private broadcastMessage(message: string) {
     for (const [_id, client] of this.clients) {
       if (client.client.readyState === WebSocket.OPEN) {
         client.client.send(message);
@@ -112,7 +112,7 @@ export class WebSocketClientManager {
       const id = this.addClient(socket);
       connectionId = id;
       this.sendConnectionId(id);
-      this.sendLatestEventIdFromConnectionId(id);
+      this.sendLatestEventFromConnectionId(id);
     };
 
     socket.onmessage = ({ data: message }) => {
@@ -135,8 +135,10 @@ export class WebSocketClientManager {
    * Broadcast all connected clients a request to reload data their data.
    * Used for when games or player data is changed or updated.
    */
-  reloadClients() {
-    this.broadcastMessage(WS_MESSAGE.RELOAD);
+  async broadcastLatestEvent() {
+    const lastEvent = await getLatestEventTimestamp();
+    if (!lastEvent) return;
+    this.broadcastMessage(WS_MESSAGE.LATEST_EVENT + ":" + lastEvent);
   }
 
   /**
