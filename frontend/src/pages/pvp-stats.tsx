@@ -2,6 +2,7 @@ import { useEventDbContext } from "../wrappers/event-db-context";
 import { classNames } from "../common/class-names";
 import { Link } from "react-router-dom";
 import { relativeTimeString } from "../common/date-utils";
+import { fmtNum } from "../common/number-utils";
 
 type Props = {
   player1?: string;
@@ -96,8 +97,9 @@ export const PvPStats: React.FC<Props> = ({ player1, player2 }) => {
       <div className="w-fit m-auto">
         <div className="flex flex-col divide-y divide-primary-text/50">
           <div className="flex gap-4 text-base text-center mb-2">
-            <div className="w-32 text-left pl-2">Winner</div>
-            <div className="w-8 text-right pl-8 whitespace-nowrap">Elo gained</div>
+            <div className="w-40 text-left pl-2">Winner</div>
+            <div className="w-16 text-right whitespace-nowrap">Points</div>
+            <div className="w-16text-right whitespace-nowrap">Score</div>
             <div className="w-32 text-right">Time</div>
           </div>
           {games.map((_, index, list) => {
@@ -113,10 +115,22 @@ export const PvPStats: React.FC<Props> = ({ player1, player2 }) => {
                   {game.result === "win" ? p1.name : p2.name}
                   <div className="w-5 shrink-0">{game.result === "loss" && "🏆"}</div>
                 </div>
-                <div className="w-8 text-right">
-                  {Math.abs(game.pointsDiff).toLocaleString("no-NO", {
-                    maximumFractionDigits: 0,
-                  })}
+                <div className="w-8 text-right">{fmtNum(game.pointsDiff, { signedPositive: true })}</div>
+                <div className="w-24">
+                  {game.score && (
+                    <div className="text-sm font-medium whitespace-nowrap">
+                      {game.result === "win"
+                        ? `${game.score?.setsWon.gameWinner} - ${game.score?.setsWon.gameLoser}`
+                        : `${game.score?.setsWon.gameLoser} - ${game.score?.setsWon.gameWinner}`}
+                    </div>
+                  )}
+                  {game.score?.setPoints && (
+                    <div className="font-light italic text-xs whitespace-nowrap">
+                      {game.result === "win"
+                        ? game.score.setPoints.map((set) => `${set.gameWinner}-${set.gameLoser}`).join(", ")
+                        : game.score.setPoints.map((set) => `${set.gameLoser}-${set.gameWinner}`).join(", ")}
+                    </div>
+                  )}
                 </div>
                 <div className="w-32 text-right text-base">{relativeTimeString(new Date(game.time))}</div>
               </Link>

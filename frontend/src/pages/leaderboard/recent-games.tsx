@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { useEventDbContext } from "../../wrappers/event-db-context";
-import { relativeTimeString } from "../../common/date-utils";
+import { RelativeTime } from "../../common/date-utils";
 import { fmtNum } from "../../common/number-utils";
 import { Game } from "../../client/client-db/event-store/projectors/games-projector";
 
@@ -42,7 +42,9 @@ export const RecentGames: React.FC = () => {
               <div className="w-24 font-normal whitespace-nowrap">🏆 {context.playerName(game?.winner)}</div>
               <div className="w-32 text-right font-normal whitespace-nowrap">{context.playerName(game?.loser)} 💔</div>
               <div className="w-6 text-right">{fmtNum(game!.pointsDiff, { digits: 0 })}</div>
-              <div className="w-28 text-right text-base">{relativeTimeString(new Date(game!.playedAt))}</div>
+              <div className="w-28 text-right text-base">
+                <RelativeTime date={new Date(game!.playedAt)} />
+              </div>
             </Link>
           ))}
       </div>

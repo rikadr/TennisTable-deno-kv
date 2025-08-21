@@ -1,3 +1,25 @@
+import { useEffect, useState } from "react";
+
+export const RelativeTime: React.FC<{ date: Date }> = ({ date }) => {
+  const [timeString, setTimeString] = useState(relativeTimeString(date));
+  const updateInterval = 5_000;
+
+  useEffect(() => {
+    // Update immediately
+    setTimeString(relativeTimeString(date));
+
+    // Set up interval to update every updateInterval milliseconds
+    const interval = setInterval(() => {
+      setTimeString(relativeTimeString(date));
+    }, updateInterval);
+
+    // Cleanup interval on unmount
+    return () => clearInterval(interval);
+  }, [date, updateInterval]);
+
+  return timeString;
+};
+
 export function relativeTimeString(date: Date): string {
   if (date.getTime() > new Date().getTime()) {
     return timeTo(date);
