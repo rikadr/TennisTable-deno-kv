@@ -33,6 +33,7 @@ import { IndividualPointsOverview } from "./pages/simulations/individual-points/
 import { IndividualPointsPlayer } from "./pages/simulations/individual-points/individual-points-player";
 import { PlayerPage } from "./pages/player/player-page";
 import { SimulatedLeaderboard } from "./pages/simulations/expected-leaderboard/expected-leaderboard-page";
+import { PlayerNetwork } from "./pages/player-network/player-network";
 
 const RequireAuth: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   if (!session.isAuthenticated) {
@@ -66,6 +67,7 @@ function App() {
                         <Route path="/player/:name" element={<PlayerPage />} />
                         <Route path="/1v1" element={<PvPPage />} />
                         <Route path="/compare-players" element={<ComparePlayersPage />} />
+                        <Route path="/player-network" element={<PlayerNetwork />} />
                         <Route path="/tournament">
                           <Route index element={<TournamentPage />} />
                           <Route path="list" element={<TournamentsListPage />} />
