@@ -26,11 +26,11 @@ interface Link extends d3.SimulationLinkDatum<Node> {
 
 // Fixed physics parameters (no longer state, just constants)
 const physicsParams = {
-  nodeRepulsion: -800,
-  linkDistance: 150,
+  nodeRepulsion: -260,
+  linkDistance: 200,
   linkStrength: 0.15,
   collisionPadding: 15,
-  centeringStrength: 0.005,
+  centeringStrength: 0.02,
 };
 
 export const PlayerNetwork: React.FC = () => {
@@ -38,7 +38,13 @@ export const PlayerNetwork: React.FC = () => {
   const { height } = useWindowSize();
   const svgRef = useRef<SVGSVGElement>(null);
   const [matches] = useState<Match[]>(
-    context.games.map((g) => ({ player1: g.winner, player2: g.loser, winner: g.winner })),
+    context.games
+      .filter(
+        (g) =>
+          context.eventStore.playersProjector.getPlayer(g.winner)?.active &&
+          context.eventStore.playersProjector.getPlayer(g.loser)?.active,
+      )
+      .map((g) => ({ player1: g.winner, player2: g.loser, winner: g.winner })),
   );
   const simulationRef = useRef<d3.Simulation<Node, Link> | null>(null);
 
