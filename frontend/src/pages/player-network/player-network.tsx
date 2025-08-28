@@ -293,7 +293,8 @@ export const PlayerNetwork: React.FC = () => {
         .attr("stroke", "#000000")
         .attr("stroke-width", 2)
         .attr("paint-order", "stroke fill")
-        .attr("opacity", isInitial ? 1 : 0);
+        .attr("opacity", isInitial ? 1 : 0)
+        .style("pointer-events", "none");
 
       const labelMerged = labelSelection.merge(labelEnter);
 
