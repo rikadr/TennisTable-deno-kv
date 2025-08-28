@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState, useCallback } from "react";
 import * as d3 from "d3";
 import { stringToColor } from "../../common/string-to-color";
 import { useEventDbContext } from "../../wrappers/event-db-context";
+import { useWindowSize } from "usehooks-ts";
 
 interface Match {
   player1: string;
@@ -23,8 +24,18 @@ interface Link extends d3.SimulationLinkDatum<Node> {
   matches: Match[];
 }
 
+// Fixed physics parameters (no longer state, just constants)
+const physicsParams = {
+  nodeRepulsion: -800,
+  linkDistance: 150,
+  linkStrength: 0.15,
+  collisionPadding: 15,
+  centeringStrength: 0.005,
+};
+
 export const PlayerNetwork: React.FC = () => {
   const context = useEventDbContext();
+  const { height } = useWindowSize();
   const svgRef = useRef<SVGSVGElement>(null);
   const [matches] = useState<Match[]>(
     context.games.map((g) => ({ player1: g.winner, player2: g.loser, winner: g.winner })),
@@ -33,15 +44,6 @@ export const PlayerNetwork: React.FC = () => {
 
   // Connection threshold slider
   const [connectionThreshold, setConnectionThreshold] = useState(15);
-
-  // Physics parameters with sliders
-  const [physicsParams, setPhysicsParams] = useState({
-    nodeRepulsion: -800,
-    linkDistance: 150,
-    linkStrength: 0.15,
-    collisionPadding: 15,
-    centeringStrength: 0.005,
-  });
 
   const processMatches = useCallback(
     (threshold: number = 15) => {
@@ -131,7 +133,7 @@ export const PlayerNetwork: React.FC = () => {
 
         (svgElement as d3.Selection<SVGSVGElement, unknown, null, undefined>).call(zoom);
 
-        // Create simulation with adjustable physics
+        // Create simulation with fixed physics
         const simulation = d3
           .forceSimulation<Node>(nodes)
           .force(
@@ -322,44 +324,8 @@ export const PlayerNetwork: React.FC = () => {
       // Restart simulation gently
       simulation.alpha(isInitial ? 1 : 0.1).restart();
     },
-    [physicsParams, context],
+    [context],
   );
-
-  // Update physics when parameters change
-  useEffect(() => {
-    if (simulationRef.current) {
-      const simulation = simulationRef.current;
-      const width = 800;
-      const height = 600;
-
-      // Update existing forces with new parameters
-      simulation
-        .force("charge", d3.forceManyBody().strength(physicsParams.nodeRepulsion).distanceMin(50).distanceMax(600))
-        .force(
-          "collision",
-          d3
-            .forceCollide()
-            .radius((d) => (d as Node).radius + physicsParams.collisionPadding)
-            .strength(1),
-        )
-        .force("x", d3.forceX(width / 2).strength(physicsParams.centeringStrength))
-        .force("y", d3.forceY(height / 2).strength(physicsParams.centeringStrength));
-
-      // Update link force if it exists
-      const linkForce = simulation.force<d3.ForceLink<Node, Link>>("link");
-      if (linkForce) {
-        linkForce
-          .distance((d) => {
-            const strengthFactor = Math.max(0.4, 1 - d.strength * 0.05);
-            return physicsParams.linkDistance * strengthFactor;
-          })
-          .strength(physicsParams.linkStrength);
-      }
-
-      // Restart simulation with new parameters
-      simulation.alpha(0.3).restart();
-    }
-  }, [physicsParams]);
 
   // Update visualization live
   useEffect(() => {
@@ -374,141 +340,31 @@ export const PlayerNetwork: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const updatePhysicsParam = (param: keyof typeof physicsParams, value: number) => {
-    setPhysicsParams((prev) => ({ ...prev, [param]: value }));
-  };
-
-  const resetPhysicsToDefaults = () => {
-    setPhysicsParams({
-      nodeRepulsion: -800,
-      linkDistance: 150,
-      linkStrength: 0.15,
-      collisionPadding: 15,
-      centeringStrength: 0.005,
-    });
-  };
-
   return (
     <div className="w-full ">
+      {/* Connection Threshold Slider */}
+      <div className="px-4 py-2 bg-secondary-background text-secondary-text rounded-lg">
+        <h3 className="text-lg font-semibold">Games per link</h3>
+        <input
+          type="range"
+          min="1"
+          max="50"
+          value={connectionThreshold}
+          onChange={(e) => setConnectionThreshold(Number(e.target.value))}
+          className="w-full h-3 bg-secondary-text rounded-lg appearance-none cursor-pointer slider-blue"
+          disabled={matches.length === 0}
+        />
+        <div className="flex justify-between text-xs text-secondary-text">
+          <span>1 game per link</span>
+          <span>Many games per link</span>
+        </div>
+      </div>
       <div className="border rounded-lg bg-gray-50">
         <svg
           ref={svgRef}
           className="w-full border rounded"
-          style={{ height: "80vh", background: "rgb(var(--color-primary-background))" }}
+          style={{ height: height - 170 + "px", background: "rgb(var(--color-primary-background))" }}
         />
-      </div>
-
-      <div className="mb-6">
-        <div className="flex gap-4 mb-4">
-          <button
-            onClick={resetPhysicsToDefaults}
-            className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 disabled:opacity-50"
-          >
-            Reset Physics
-          </button>
-        </div>
-
-        {/* Physics Control Sliders */}
-        <div className="mb-4 p-4 bg-gray-50 rounded-lg border">
-          <h3 className="text-lg font-semibold mb-3 text-gray-800">Physics Controls</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">
-                Node Repulsion: {physicsParams.nodeRepulsion}
-              </label>
-              <input
-                type="range"
-                min="-2000"
-                max="-100"
-                value={physicsParams.nodeRepulsion}
-                onChange={(e) => updatePhysicsParam("nodeRepulsion", Number(e.target.value))}
-                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-              />
-              <div className="text-xs text-gray-500">Higher = more spread out</div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">
-                Link Distance: {physicsParams.linkDistance}
-              </label>
-              <input
-                type="range"
-                min="50"
-                max="300"
-                value={physicsParams.linkDistance}
-                onChange={(e) => updatePhysicsParam("linkDistance", Number(e.target.value))}
-                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-              />
-              <div className="text-xs text-gray-500">Higher = longer connections</div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">
-                Link Strength: {physicsParams.linkStrength.toFixed(3)}
-              </label>
-              <input
-                type="range"
-                min="0.01"
-                max="1"
-                step="0.01"
-                value={physicsParams.linkStrength}
-                onChange={(e) => updatePhysicsParam("linkStrength", Number(e.target.value))}
-                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-              />
-              <div className="text-xs text-gray-500">Higher = stronger pull</div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">
-                Node Padding: {physicsParams.collisionPadding}
-              </label>
-              <input
-                type="range"
-                min="0"
-                max="50"
-                value={physicsParams.collisionPadding}
-                onChange={(e) => updatePhysicsParam("collisionPadding", Number(e.target.value))}
-                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-              />
-              <div className="text-xs text-gray-500">Higher = more spacing</div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">
-                Centering: {physicsParams.centeringStrength.toFixed(4)}
-              </label>
-              <input
-                type="range"
-                min="0"
-                max="0.1"
-                step="0.001"
-                value={physicsParams.centeringStrength}
-                onChange={(e) => updatePhysicsParam("centeringStrength", Number(e.target.value))}
-                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-              />
-              <div className="text-xs text-gray-500">Higher = pulled to center</div>
-            </div>
-          </div>
-        </div>
-        {/* Connection Threshold Slider */}
-        <div className="mb-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
-          <h3 className="text-lg font-semibold mb-3 text-blue-800">Games per link</h3>
-          <div className="space-y-2">
-            <input
-              type="range"
-              min="1"
-              max="50"
-              value={connectionThreshold}
-              onChange={(e) => setConnectionThreshold(Number(e.target.value))}
-              className="w-full h-3 bg-blue-200 rounded-lg appearance-none cursor-pointer slider-blue"
-              disabled={matches.length === 0}
-            />
-            <div className="flex justify-between text-xs text-blue-600">
-              <span>One matches per link</span>
-              <span>Many matches per link</span>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );
