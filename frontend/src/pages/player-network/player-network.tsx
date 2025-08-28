@@ -26,8 +26,9 @@ interface Link extends d3.SimulationLinkDatum<Node> {
 export const PlayerNetwork: React.FC = () => {
   const context = useEventDbContext();
   const svgRef = useRef<SVGSVGElement>(null);
-  const [matches, setMatches] = useState<Match[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [matches] = useState<Match[]>(
+    context.games.map((g) => ({ player1: g.winner, player2: g.loser, winner: g.winner })),
+  );
   const simulationRef = useRef<d3.Simulation<Node, Link> | null>(null);
 
   // Connection threshold slider
@@ -198,7 +199,7 @@ export const PlayerNetwork: React.FC = () => {
       const linkEnter = linkSelection
         .enter()
         .append("line")
-        .attr("stroke", "#999")
+        .attr("stroke", "rgb(var(--color-secondary-background))")
         .attr("stroke-opacity", 0)
         .attr("stroke-width", 0);
 
@@ -229,7 +230,7 @@ export const PlayerNetwork: React.FC = () => {
       const nodeEnter = nodeSelection
         .enter()
         .append("circle")
-        .attr("stroke", "#fff")
+        // .attr("stroke", "#fff")
         .attr("stroke-width", 1.5)
         .attr("r", isInitial ? (d: Node) => d.radius : 0)
         .attr("fill", "#ccc");
@@ -283,9 +284,9 @@ export const PlayerNetwork: React.FC = () => {
         .attr("font-weight", "500")
         .attr("text-anchor", "middle")
         .attr("dy", "0.3em")
-        .attr("fill", "#2d3748")
-        .attr("stroke", "#fff")
-        .attr("stroke-width", 0.5)
+        .attr("fill", "#ffffff")
+        .attr("stroke", "#000000")
+        .attr("stroke-width", 2)
         .attr("paint-order", "stroke fill")
         .attr("opacity", isInitial ? 1 : 0);
 
@@ -293,18 +294,14 @@ export const PlayerNetwork: React.FC = () => {
 
       labelMerged
         .text((d) => context.playerName(d.id))
-        .attr("font-size", (d) => `${Math.max(10, Math.min(14, 8 + d.radius * 0.3))}px`);
+        .attr("font-size", (d) => {
+          const chars = context.playerName(d.id).length;
+          return `${Math.max(12, (d.radius * 3.14) / Math.max(5, chars))}px`;
+        });
 
       if (!isInitial) {
         labelMerged.transition().duration(300).attr("opacity", 1);
       }
-
-      nodeMerged
-        .select("title")
-        .text(
-          (d) =>
-            `${d.id}\nMatches: ${d.matches}\nWins: ${d.wins}\nWin Rate: ${((d.wins / d.matches) * 100).toFixed(1)}%`,
-        );
 
       // Update positions on simulation tick
       simulation.on("tick", () => {
@@ -324,14 +321,6 @@ export const PlayerNetwork: React.FC = () => {
     },
     [physicsParams, context],
   );
-
-  // Update visualization when threshold changes
-  useEffect(() => {
-    if (matches.length > 0) {
-      const { nodes, links } = processMatches(matches, connectionThreshold);
-      createVisualization(nodes, links, false);
-    }
-  }, [connectionThreshold, matches, processMatches, createVisualization]);
 
   // Update physics when parameters change
   useEffect(() => {
@@ -369,16 +358,18 @@ export const PlayerNetwork: React.FC = () => {
     }
   }, [physicsParams]);
 
-  const loadAllMatches = () => {
-    setIsLoading(true);
-    const allMatches = context.games.map((g) => ({ player1: g.winner, player2: g.loser, winner: g.winner }));
-    setMatches(allMatches);
+  // Update visualization live
+  useEffect(() => {
+    const { nodes, links } = processMatches(matches, connectionThreshold);
+    createVisualization(nodes, links, false);
+  }, [connectionThreshold, matches, processMatches, createVisualization]);
 
-    const { nodes, links } = processMatches(allMatches, connectionThreshold);
+  // Initialize visualization
+  useEffect(() => {
+    const { nodes, links } = processMatches(matches, connectionThreshold);
     createVisualization(nodes, links, true);
-
-    setIsLoading(false);
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const updatePhysicsParam = (param: keyof typeof physicsParams, value: number) => {
     setPhysicsParams((prev) => ({ ...prev, [param]: value }));
@@ -394,49 +385,20 @@ export const PlayerNetwork: React.FC = () => {
     });
   };
 
-  const handleLoadSampleData = () => {
-    loadAllMatches();
-  };
-
-  const handleClearData = () => {
-    setMatches([]);
-    if (simulationRef.current) {
-      simulationRef.current.stop();
-      simulationRef.current = null;
-    }
-    d3.select(svgRef.current).selectAll("*").remove();
-  };
-
   return (
-    <div className="w-full max-w-6xl mx-auto p-6 bg-white rounded-lg shadow-lg">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-800 mb-4">Table Tennis Network Map</h1>
-        <p className="text-gray-600 mb-4">
-          Visualize the network of table tennis matches. Use the connection threshold slider to filter relationships.
-          Node size represents total matches played, each player has their own unique color, and link thickness shows
-          match frequency.
-        </p>
+    <div className="w-full ">
+      <div className="border rounded-lg bg-gray-50">
+        <svg
+          ref={svgRef}
+          className="w-full border rounded"
+          style={{ height: "80vh", background: "rgb(var(--color-primary-background))" }}
+        />
+      </div>
 
+      <div className="mb-6">
         <div className="flex gap-4 mb-4">
           <button
-            onClick={handleLoadSampleData}
-            disabled={isLoading}
-            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
-          >
-            {isLoading ? "Loading..." : "Load Sample Data"}
-          </button>
-
-          <button
-            onClick={handleClearData}
-            disabled={isLoading}
-            className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 disabled:opacity-50"
-          >
-            Clear
-          </button>
-
-          <button
             onClick={resetPhysicsToDefaults}
-            disabled={isLoading}
             className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 disabled:opacity-50"
           >
             Reset Physics
@@ -544,23 +506,6 @@ export const PlayerNetwork: React.FC = () => {
             </div>
           </div>
         </div>
-      </div>
-
-      <div className="border rounded-lg bg-gray-50 p-4">
-        <svg ref={svgRef} className="w-full border rounded" style={{ minHeight: "600px", background: "white" }} />
-      </div>
-
-      <div className="mt-4 text-sm text-gray-600">
-        <p>
-          <strong>Instructions:</strong>
-        </p>
-        <ul className="list-disc list-inside space-y-1">
-          <li>Drag nodes to reposition them</li>
-          <li>Scroll to zoom in/out</li>
-          <li>Hover over nodes and links for details</li>
-          <li>Node size: Larger = more matches played</li>
-          <li>Link thickness: Thicker = more matches between players</li>
-        </ul>
       </div>
     </div>
   );

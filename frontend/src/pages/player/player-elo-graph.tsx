@@ -21,7 +21,6 @@ import { fmtNum } from "../../common/number-utils";
 import { useEloSimulationWorker } from "../../hooks/use-elo-simulation-worker";
 import { Shimmer } from "../../common/shimmer";
 import { classNames } from "../../common/class-names";
-import { PingPongLoader } from "../../common/ping-loader";
 
 export const PlayerEloGraph: React.FC<{ playerId: string }> = ({ playerId }) => {
   const context = useEventDbContext();
