@@ -43,64 +43,67 @@ export const PlayerNetwork: React.FC = () => {
     centeringStrength: 0.005,
   });
 
-  const processMatches = useCallback((matchData: Match[], threshold: number = 15) => {
-    const playerStats = new Map<string, { matches: number; wins: number }>();
-    const connections = new Map<string, Match[]>();
+  const processMatches = useCallback(
+    (threshold: number = 15) => {
+      const playerStats = new Map<string, { matches: number; wins: number }>();
+      const connections = new Map<string, Match[]>();
 
-    matchData.forEach((match) => {
-      const { player1, player2, winner } = match;
+      matches.forEach((match) => {
+        const { player1, player2, winner } = match;
 
-      // Update player stats
-      if (!playerStats.has(player1)) {
-        playerStats.set(player1, { matches: 0, wins: 0 });
-      }
-      if (!playerStats.has(player2)) {
-        playerStats.set(player2, { matches: 0, wins: 0 });
-      }
+        // Update player stats
+        if (!playerStats.has(player1)) {
+          playerStats.set(player1, { matches: 0, wins: 0 });
+        }
+        if (!playerStats.has(player2)) {
+          playerStats.set(player2, { matches: 0, wins: 0 });
+        }
 
-      const p1Stats = playerStats.get(player1)!;
-      const p2Stats = playerStats.get(player2)!;
+        const p1Stats = playerStats.get(player1)!;
+        const p2Stats = playerStats.get(player2)!;
 
-      p1Stats.matches++;
-      p2Stats.matches++;
+        p1Stats.matches++;
+        p2Stats.matches++;
 
-      if (winner === player1) p1Stats.wins++;
-      if (winner === player2) p2Stats.wins++;
+        if (winner === player1) p1Stats.wins++;
+        if (winner === player2) p2Stats.wins++;
 
-      // Track connections
-      const connectionKey = [player1, player2].sort().join("-");
-      if (!connections.has(connectionKey)) {
-        connections.set(connectionKey, []);
-      }
-      connections.get(connectionKey)!.push(match);
-    });
-
-    // Create nodes
-    const nodes: Node[] = Array.from(playerStats.entries()).map(([id, stats]) => ({
-      id,
-      matches: stats.matches,
-      wins: stats.wins,
-      radius: Math.max(8, Math.sqrt(stats.matches) * 4),
-    }));
-
-    // Create links - only for pairings with threshold or more matches
-    const links: Link[] = Array.from(connections.entries())
-      .filter(([key, matchList]) => matchList.length >= threshold)
-      .map(([key, matchList]) => {
-        const [player1, player2] = key.split("-");
-        const source = nodes.find((n) => n.id === player1)!;
-        const target = nodes.find((n) => n.id === player2)!;
-
-        return {
-          source,
-          target,
-          strength: matchList.length,
-          matches: matchList,
-        };
+        // Track connections
+        const connectionKey = [player1, player2].sort().join("-");
+        if (!connections.has(connectionKey)) {
+          connections.set(connectionKey, []);
+        }
+        connections.get(connectionKey)!.push(match);
       });
 
-    return { nodes, links };
-  }, []);
+      // Create nodes
+      const nodes: Node[] = Array.from(playerStats.entries()).map(([id, stats]) => ({
+        id,
+        matches: stats.matches,
+        wins: stats.wins,
+        radius: Math.max(8, Math.sqrt(stats.matches) * 4),
+      }));
+
+      // Create links - only for pairings with threshold or more matches
+      const links: Link[] = Array.from(connections.entries())
+        .filter(([key, matchList]) => matchList.length >= threshold)
+        .map(([key, matchList]) => {
+          const [player1, player2] = key.split("-");
+          const source = nodes.find((n) => n.id === player1)!;
+          const target = nodes.find((n) => n.id === player2)!;
+
+          return {
+            source,
+            target,
+            strength: matchList.length,
+            matches: matchList,
+          };
+        });
+
+      return { nodes, links };
+    },
+    [matches],
+  );
 
   const createVisualization = useCallback(
     (nodes: Node[], links: Link[], isInitial: boolean = false) => {
@@ -360,13 +363,13 @@ export const PlayerNetwork: React.FC = () => {
 
   // Update visualization live
   useEffect(() => {
-    const { nodes, links } = processMatches(matches, connectionThreshold);
+    const { nodes, links } = processMatches(connectionThreshold);
     createVisualization(nodes, links, false);
   }, [connectionThreshold, matches, processMatches, createVisualization]);
 
   // Initialize visualization
   useEffect(() => {
-    const { nodes, links } = processMatches(matches, connectionThreshold);
+    const { nodes, links } = processMatches(connectionThreshold);
     createVisualization(nodes, links, true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
