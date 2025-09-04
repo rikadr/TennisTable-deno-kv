@@ -287,8 +287,8 @@ export class FutureElo {
     const ageInDays = age / (24 * 60 * 60 * 1000);
 
     // S-curve parameters
-    const midpoint = 365; // Days where confidence = 0.5 (1 year)
-    const steepness = 0.01; // Controls how sharp the S-curve is (smaller = more gradual)
+    const midpoint = 180; // Days where confidence = 0.5 (1 year)
+    const steepness = 0.02; // Controls how sharp the S-curve is (smaller = more gradual)
 
     // Sigmoid function: starts at 1, approaches 0 as age increases
     // Formula: 1 / (1 + exp(steepness * (age - midpoint)))
