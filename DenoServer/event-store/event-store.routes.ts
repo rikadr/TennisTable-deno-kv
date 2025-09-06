@@ -54,7 +54,8 @@ export function registerEventStoreRoutes(api: Router) {
   });
 
   /**
-   * DEBUG AND DEV ONLY: Do not register the following routes in production
+   * DEBUG AND DEV ONLY: -----------------------------------------------------------
+   * Do not register the following routes in production
    */
   const environment = Deno.env.get("ENVIRONMENT");
   if (environment !== "local") {

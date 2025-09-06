@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { queryClient } from "../../common/query-client";
 import { relativeTimeString } from "../../common/date-utils";
-import { Users } from "../users";
+import { Users } from "./users";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { session } from "../../services/auth";
 import { AllPlayerGamesDistrubution } from "./all-player-games-distribution";
@@ -20,13 +20,15 @@ import { GamesPerWeekChart } from "./games-per-week";
 import { TopGamingDays } from "./top-days";
 import { GamesPerWeekdayChart } from "./games-weekdays";
 import { GamesPerTimeChart } from "./hour-of-the-day";
+import { LocalAdminControls } from "./local-admin-controls";
 
-type TabType = "players" | "games" | "users" | "stats";
+type TabType = "stats" | "games" | "players" | "users" | "local";
 const tabs: { id: TabType; label: string }[] = [
   { id: "stats", label: "Stats" },
   { id: "games", label: "Games" },
   { id: "players", label: "Players" },
   { id: "users", label: "Users" },
+  { id: "local", label: "Local" },
 ];
 
 export const AdminPage: React.FC = () => {
@@ -103,12 +105,19 @@ export const AdminPage: React.FC = () => {
       {/* Tabs Navigation */}
       <div className="bg-secondary-background text-tertiary-text px-6 md:px-8">
         <div className="flex space-x-2">
-          {tabs.map((tab) => {
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`
+          {tabs
+            .filter((t) => {
+              if (t.id === "local" && process.env.REACT_APP_ENV !== "local") {
+                return false;
+              }
+              return true;
+            })
+            .map((tab) => {
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`
                     flex items-center py-2 px-4 border-b-4 font-medium text-sm transition-colors
                     ${
                       activeTab === tab.id
@@ -116,11 +125,11 @@ export const AdminPage: React.FC = () => {
                         : "text-secondary-text/50 border-transparent hover:text-secondary-text hover:border-secondary-text border-dotted"
                     }
                   `}
-              >
-                {tab.label}
-              </button>
-            );
-          })}
+                >
+                  {tab.label}
+                </button>
+              );
+            })}
         </div>
       </div>
 
@@ -325,6 +334,8 @@ export const AdminPage: React.FC = () => {
       )}
 
       {activeTab === "users" && <Users />}
+
+      {activeTab === "local" && process.env.REACT_APP_ENV === "local" && <LocalAdminControls />}
     </div>
   );
 };
