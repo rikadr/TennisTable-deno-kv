@@ -164,98 +164,95 @@ export class FutureElo {
 
     const lastGameTime = Math.max(player1?.lastRegisteredGameTime ?? 0, player2?.lastRegisteredGameTime ?? 0);
     const allGames = [...(wins ?? []), ...(loss ?? [])];
-    const allGamesIndividualFractions: Fraction[] = [];
+    const predictions: Fraction[] = [];
 
-    const TIME_WINDOW = 60 * 24 * 60 * 60 * 1000; // 60 days
+    // 1. Game-level prediction (all games)
+    let gameWinsWeighted = 0;
+    let gameLossesWeighted = 0;
 
     for (const game of allGames) {
-      let gamePrediction: Fraction;
-      const windowStart = game.playedAt - TIME_WINDOW;
-      const windowEnd = game.playedAt;
+      const ageWeight = this.ageAdjustedConfidence(1, game.playedAt, lastGameTime);
+      const isWin = game.winner === p1;
 
-      if (game.score?.setPoints) {
-        // Game has point data - pool with other games that have point data
-        const gamesWithPoints = allGames.filter(
-          (g) => g.score?.setPoints && g.playedAt >= windowStart && g.playedAt <= windowEnd,
-        );
-
-        let totalPointsWon = 0;
-        let totalPointsLost = 0;
-
-        for (const g of gamesWithPoints) {
-          const gameIsWin = g.winner === p1;
-          totalPointsWon += g.score!.setPoints!.reduce(
-            (sum, set) => sum + (gameIsWin ? set.gameWinner : set.gameLoser),
-            0,
-          );
-          totalPointsLost += g.score!.setPoints!.reduce(
-            (sum, set) => sum + (gameIsWin ? set.gameLoser : set.gameWinner),
-            0,
-          );
-        }
-
-        const pointFraction = this.getWinFractionWithConfidence({
-          wins: totalPointsWon,
-          loss: totalPointsLost,
-          additions: 1,
-          products: 0.1,
-        });
-
-        gamePrediction = {
-          fraction: this.convertPointWinToGameWin(pointFraction.fraction),
-          confidence: pointFraction.confidence,
-        };
-      } else if (game.score) {
-        // Game has set data - pool with games that have at least set data
-        const gamesWithSets = allGames.filter((g) => g.score && g.playedAt >= windowStart && g.playedAt <= windowEnd);
-
-        let totalSetsWon = 0;
-        let totalSetsLost = 0;
-
-        for (const g of gamesWithSets) {
-          const gameIsWin = g.winner === p1;
-          totalSetsWon += gameIsWin ? g.score!.setsWon.gameWinner : g.score!.setsWon.gameLoser;
-          totalSetsLost += gameIsWin ? g.score!.setsWon.gameLoser : g.score!.setsWon.gameWinner;
-        }
-
-        const setFraction = this.getWinFractionWithConfidence({
-          wins: totalSetsWon,
-          loss: totalSetsLost,
-          additions: 3,
-          products: 0.5,
-        });
-
-        gamePrediction = {
-          fraction: this.convertSetWinToGameWin(setFraction.fraction),
-          confidence: setFraction.confidence,
-        };
+      if (isWin) {
+        gameWinsWeighted += ageWeight;
       } else {
-        // No score data - pool with all games in window
-        const gamesInWindow = allGames.filter((g) => g.playedAt >= windowStart && g.playedAt <= windowEnd);
-
-        const windowWins = gamesInWindow.filter((g) => g.winner === p1).length;
-        const windowLosses = gamesInWindow.length - windowWins;
-
-        const pooledFraction = this.getWinFractionWithConfidence({
-          wins: windowWins,
-          loss: windowLosses,
-          additions: 3,
-          products: 1,
-        });
-
-        gamePrediction = {
-          fraction: pooledFraction.fraction,
-          confidence: pooledFraction.confidence,
-        };
+        gameLossesWeighted += ageWeight;
       }
-
-      // Apply age adjustment to all games
-      gamePrediction.confidence = this.ageAdjustedConfidence(gamePrediction.confidence, game.playedAt, lastGameTime);
-
-      allGamesIndividualFractions.push(gamePrediction);
     }
 
-    const { fraction, confidence } = this.combineFractions(allGamesIndividualFractions);
+    if (gameWinsWeighted + gameLossesWeighted > 0) {
+      const gameFraction = this.getWinFractionWithConfidence({
+        wins: gameWinsWeighted,
+        loss: gameLossesWeighted,
+        additions: 3,
+        products: 1,
+      });
+      predictions.push(gameFraction);
+    }
+
+    // 2. Set-level prediction (only games with sets)
+    let setWinsWeighted = 0;
+    let setLossesWeighted = 0;
+
+    const gamesWithSets = allGames.filter((g) => g.score);
+    for (const game of gamesWithSets) {
+      const ageWeight = this.ageAdjustedConfidence(1, game.playedAt, lastGameTime);
+      const isWin = game.winner === p1;
+
+      const setsWon = isWin ? game.score!.setsWon.gameWinner : game.score!.setsWon.gameLoser;
+      const setsLost = isWin ? game.score!.setsWon.gameLoser : game.score!.setsWon.gameWinner;
+
+      setWinsWeighted += setsWon * ageWeight;
+      setLossesWeighted += setsLost * ageWeight;
+    }
+
+    if (setWinsWeighted + setLossesWeighted > 0) {
+      const setFraction = this.getWinFractionWithConfidence({
+        wins: setWinsWeighted,
+        loss: setLossesWeighted,
+        additions: 3,
+        products: 0.5,
+      });
+
+      predictions.push({
+        fraction: this.convertSetWinToGameWin(setFraction.fraction),
+        confidence: setFraction.confidence,
+      });
+    }
+
+    // 3. Point-level prediction (only games with points)
+    let pointWinsWeighted = 0;
+    let pointLossesWeighted = 0;
+
+    const gamesWithPoints = allGames.filter((g) => g.score?.setPoints);
+    for (const game of gamesWithPoints) {
+      const ageWeight = this.ageAdjustedConfidence(1, game.playedAt, lastGameTime);
+      const isWin = game.winner === p1;
+
+      const pointsWon = game.score!.setPoints!.reduce((sum, set) => sum + (isWin ? set.gameWinner : set.gameLoser), 0);
+      const pointsLost = game.score!.setPoints!.reduce((sum, set) => sum + (isWin ? set.gameLoser : set.gameWinner), 0);
+
+      pointWinsWeighted += pointsWon * ageWeight;
+      pointLossesWeighted += pointsLost * ageWeight;
+    }
+
+    if (pointWinsWeighted + pointLossesWeighted > 0) {
+      const pointFraction = this.getWinFractionWithConfidence({
+        wins: pointWinsWeighted,
+        loss: pointLossesWeighted,
+        additions: 1,
+        products: 0.1,
+      });
+
+      predictions.push({
+        fraction: this.convertPointWinToGameWin(pointFraction.fraction),
+        confidence: pointFraction.confidence,
+      });
+    }
+
+    // Combine all predictions
+    const { fraction, confidence } = this.combineFractions(predictions);
 
     // Update cache
     player1!.oponentsMap.get(p2)!.directFraction = { fraction, confidence };
@@ -285,7 +282,7 @@ export class FutureElo {
     const age = Math.max(referenceTime - gameTime, 0);
     const ageInDays = age / (24 * 60 * 60 * 1000);
 
-    const halfLife = 45; // Days after which confidence is halved
+    const halfLife = 30; // Days after which confidence is halved
     const ageAdjustmentFactor = Math.pow(2, -ageInDays / halfLife);
 
     return confidence * ageAdjustmentFactor;
