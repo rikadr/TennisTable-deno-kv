@@ -94,7 +94,7 @@ export class FutureElo {
       const oneLayerFraction = this.getOneLayerFraction(p1, p2);
       const twoLayerFraction = this.getTwoLayerFraction(p1, p2);
 
-      const combinedFraction = this.combineFractions([directFraction, oneLayerFraction, twoLayerFraction]);
+      const combinedFraction = this.combinePrioritizedFractions([directFraction, oneLayerFraction, twoLayerFraction]);
 
       // Create games for wins and losses
       const predictedWins = this.GAMES_TO_PREDICT_PER_OPONENT * combinedFraction.fraction;
@@ -252,7 +252,7 @@ export class FutureElo {
     }
 
     // Combine all predictions
-    const { fraction, confidence } = this.combineFractions(predictions);
+    const { fraction, confidence } = this.combinePrioritizedFractions(predictions);
 
     // Update cache
     player1!.oponentsMap.get(p2)!.directFraction = { fraction, confidence };
@@ -282,7 +282,7 @@ export class FutureElo {
     const age = Math.max(referenceTime - gameTime, 0);
     const ageInDays = age / (24 * 60 * 60 * 1000);
 
-    const halfLife = 30; // Days after which confidence is halved
+    const halfLife = 45; // Days after which confidence is halved
     const ageAdjustmentFactor = Math.pow(2, -ageInDays / halfLife);
 
     return confidence * ageAdjustmentFactor;
@@ -345,6 +345,42 @@ export class FutureElo {
       totalWeight += item.confidence;
     }
 
+    if (totalWeight === 0) {
+      return { fraction: 0, confidence: 0 };
+    }
+
+    return {
+      fraction: weightedFractionSum / totalWeight,
+      confidence: weightedConfidenceSum / totalWeight,
+    };
+  }
+
+  combinePrioritizedFractions(fractions: (Fraction | undefined)[]): Fraction {
+    if (fractions.length === 0) {
+      return { fraction: 0, confidence: 0 };
+    }
+
+    let weightedFractionSum = 0;
+    let weightedConfidenceSum = 0;
+    let totalWeight = 0;
+    let remainingSpace = 1.0; // Start with 100% available space
+
+    for (const item of fractions) {
+      if (item === undefined || remainingSpace <= 0) continue;
+
+      // This fraction can only contribute based on remaining space
+      const contributionWeight = item.confidence * remainingSpace;
+
+      // Add to weighted averages (same as original but with prioritized weight)
+      weightedFractionSum += item.fraction * contributionWeight;
+      weightedConfidenceSum += item.confidence * contributionWeight;
+      totalWeight += contributionWeight;
+
+      // Reduce remaining space for next fractions
+      remainingSpace -= contributionWeight;
+    }
+
+    // Handle edge case where no fractions contributed
     if (totalWeight === 0) {
       return { fraction: 0, confidence: 0 };
     }
