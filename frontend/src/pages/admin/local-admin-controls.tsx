@@ -1,6 +1,7 @@
 import { useMutation } from "@tanstack/react-query";
 import React, { useState } from "react";
 import { httpClient } from "../../common/http-client";
+import { GenerateMockData } from "./mock-data/generate-mock-data";
 
 const LOCAL_API_BASE = process.env.REACT_APP_API_BASE_URL || "http://localhost:8000";
 
@@ -50,7 +51,7 @@ export const LocalAdminControls: React.FC = () => {
   const error = syncMutation.error || deleteMutation.error;
 
   return (
-    <div className="p-6 max-w-2xl mx-auto">
+    <div className="p-6 max-w-2xl mx-auto space-y-4">
       <div className="bg-secondary-background text-secondary-text rounded-lg shadow-lg p-6">
         <h2 className="text-2xl font-bold mb-6">Local Admin Controls</h2>
 
@@ -95,6 +96,8 @@ export const LocalAdminControls: React.FC = () => {
           </div>
         )}
       </div>
+
+      <GenerateMockData />
     </div>
   );
 };
