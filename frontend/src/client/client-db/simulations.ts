@@ -36,23 +36,20 @@ export class Simulations {
     current: { id: string; rank: number; score: number }[];
     expected: { id: string; rank: number; score: number }[];
   } {
-    //
     const currentLeaderboard = this.parent.leaderboard.getLeaderboard();
-
     const allGamesWithActivePlayers = this.parent.games.filter(
       (game) =>
         this.parent.eventStore.playersProjector.getPlayer(game.winner)?.active &&
         this.parent.eventStore.playersProjector.getPlayer(game.loser)?.active,
     );
-    const generatedGames = this.parent.futureElo.simulatedGamesForAGivenInputOfGames(allGamesWithActivePlayers);
-    const totalGames = [...allGamesWithActivePlayers, ...generatedGames];
+    const predictedGames = this.parent.futureElo.simulatedGamesForAGivenInputOfGames(allGamesWithActivePlayers);
 
     const simResultMap = new Map<string, number[]>();
 
     for (let i = 0; i < 5_000; i++) {
-      this.shuffleArray(totalGames);
+      this.shuffleArray(predictedGames);
       // Casting, but its only using winner and loser inside it anyway
-      const eloMap = Elo.eloCalculator(totalGames as Game[], this.parent.players);
+      const eloMap = Elo.eloCalculator(predictedGames as Game[], this.parent.players);
       eloMap.forEach((player) => {
         if (simResultMap.has(player.id) === false) {
           simResultMap.set(player.id, []);
@@ -125,8 +122,7 @@ export class Simulations {
 
     for (const gameTime of sortedPlayerGameTimes.toReversed()) {
       const relevantGames = allGamesWithActivePlayers.filter((g) => g.playedAt <= gameTime);
-      const generatedGames = this.parent.futureElo.simulatedGamesForAGivenInputOfGames(relevantGames);
-      const totalGames = [...relevantGames, ...generatedGames];
+      const predictedGames = this.parent.futureElo.simulatedGamesForAGivenInputOfGames(relevantGames);
 
       const playerElos: number[] = [];
 
@@ -136,9 +132,9 @@ export class Simulations {
           : FAST_ITERATION;
 
       for (let i = 0; i < iterations; i++) {
-        this.shuffleArray(totalGames);
+        this.shuffleArray(predictedGames);
         const eloMap = Elo.eloCalculator(
-          totalGames as Game[], // Casting, but its only using winner and loser inside it anyway
+          predictedGames as Game[], // Casting, but its only using winner and loser inside it anyway
           this.parent.players,
         );
         const playerElo = eloMap.get(playerId)?.elo;
