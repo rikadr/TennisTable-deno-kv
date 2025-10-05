@@ -222,10 +222,7 @@ export class FutureElo {
         },
       });
 
-      predictions.push({
-        fraction: this.convertSetWinToGameWin(setFraction.fraction),
-        confidence: setFraction.confidence,
-      });
+      predictions.push(setFraction);
     }
 
     // 3. Point-level prediction (only games with points)
@@ -255,10 +252,7 @@ export class FutureElo {
         },
       });
 
-      predictions.push({
-        fraction: this.convertPointWinToGameWin(pointFraction.fraction),
-        confidence: pointFraction.confidence,
-      });
+      predictions.push(pointFraction);
     }
 
     // Combine all predictions
@@ -335,34 +329,6 @@ export class FutureElo {
     return confidence * ageAdjustmentFactor;
   }
 
-  private convertSetWinToGameWin(setWinRate: number): number {
-    const steepness = 1.6;
-    const x = setWinRate;
-
-    // Avoid division by zero at endpoints
-    if (x === 0) return 0;
-    if (x === 1) return 1;
-
-    const xPow = Math.pow(x, steepness);
-    const oneMinusXPow = Math.pow(1 - x, steepness);
-
-    return xPow / (xPow + oneMinusXPow);
-  }
-
-  private convertPointWinToGameWin(pointWinRate: number): number {
-    const steepness = 6.2;
-    const x = pointWinRate;
-
-    // Avoid division by zero at endpoints
-    if (x === 0) return 0;
-    if (x === 1) return 1;
-
-    const xPow = Math.pow(x, steepness);
-    const oneMinusXPow = Math.pow(1 - x, steepness);
-
-    return xPow / (xPow + oneMinusXPow);
-  }
-
   private linkFractions(fraction1: Fraction, fraction2: Fraction): Fraction {
     const numerator = fraction1.fraction * fraction2.fraction;
     const denominator = numerator + (1 - fraction1.fraction) * (1 - fraction2.fraction);
@@ -376,7 +342,7 @@ export class FutureElo {
     };
   }
 
-  combineFractions(fractions: (Fraction | undefined)[]): Fraction {
+  private combineFractions(fractions: (Fraction | undefined)[]): Fraction {
     if (fractions.length === 0) {
       return { fraction: 0, confidence: 0 };
     }
