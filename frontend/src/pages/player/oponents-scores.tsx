@@ -16,8 +16,9 @@ export const OponentsScores: React.FC<Props> = ({ playerId }) => {
   return (
     <div className="flex flex-col w-full divide-y divide-primary-text/50">
       <p>Avg. oponent score:{fmtNum(avgDiff, { digits: 0, signedPositive: true })}</p>
-      {diffGraphData.toReversed().map((entry) => (
+      {diffGraphData.toReversed().map((entry, i) => (
         <div
+          key={i}
           className={classNames(
             "flex items-center h-4",
             entry.diffGroup === 0 && "bg-secondary-background text-secondary-text",
@@ -26,8 +27,8 @@ export const OponentsScores: React.FC<Props> = ({ playerId }) => {
           <p className="w-10">{entry.diffGroup}</p>
           {Array(entry.count)
             .fill(0)
-            .map(() => (
-              <pre>&#9724;</pre>
+            .map((_, ii) => (
+              <pre key={ii}>&#9724;</pre>
             ))}
         </div>
       ))}

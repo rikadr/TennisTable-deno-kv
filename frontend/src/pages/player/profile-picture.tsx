@@ -73,7 +73,7 @@ export const ProfilePicture: React.FC<Props> = ({
         </div>
       )}
       {linkToPlayer && playerId !== "default" ? (
-        <Link aria-disabled to={`/player/${playerId}`}>
+        <Link aria-disabled to={`/player/${playerId}`} onClick={(e) => e.stopPropagation()}>
           {content()}
         </Link>
       ) : (

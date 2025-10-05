@@ -10,13 +10,14 @@ import { PlayerPointsDistrubution } from "./player-points-distribution";
 import { PlayerGamesDistrubution } from "./player-games-distribution";
 import { relativeTimeString } from "../../common/date-utils";
 import { OponentsScores } from "./oponents-scores";
+import { PlayerPredictions } from "./player-predictions";
 
-type TabType = "overview" | "games" | "statistics" | "numbered-points";
-const tabs = [
-  { id: "overview" as TabType, label: "Overview" },
-  { id: "games" as TabType, label: "Recent Games" },
-  { id: "statistics" as TabType, label: "Statistics" },
-  //   { id: "numbered-points" as TabType, label: "Numbered Points" },
+type TabType = "overview" | "games" | "statistics" | "predictions";
+const tabs: { id: TabType; label: string }[] = [
+  { id: "overview", label: "Overview" },
+  { id: "games", label: "Recent Games" },
+  { id: "statistics", label: "Statistics" },
+  { id: "predictions", label: "Predictions" },
 ];
 
 export const PlayerPage: React.FC = () => {
@@ -301,6 +302,7 @@ export const PlayerPage: React.FC = () => {
             </div>
           </div>
         )}
+        {activeTab === "predictions" && playerId && <PlayerPredictions playerId={playerId} />}
       </div>
     </div>
   );
