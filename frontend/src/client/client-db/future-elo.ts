@@ -329,7 +329,7 @@ export class FutureElo {
     const age = Math.max(referenceTime - gameTime, 0);
     const ageInDays = age / (24 * 60 * 60 * 1000);
 
-    const halfLife = 45; // Days after which confidence is halved
+    const halfLife = 60; // Days after which confidence is halved
     const ageAdjustmentFactor = Math.pow(2, -ageInDays / halfLife);
 
     return confidence * ageAdjustmentFactor;
