@@ -19,13 +19,15 @@ export class FutureElo {
   predictedGamesTemp: { winner: string; loser: string }[][] = [];
   predictedGames: Game[] = [];
 
-  simulate() {
+  calculatePlayerFractions() {
     this.reset();
     this.setup();
-    this.createPredictedGames();
-    this.shuffleGameOrder();
-
-    this.parent.isSimulatedState = true;
+    // Calculate win fraction for all player pairings
+    for (const { p1, p2 } of this.playerPairings) {
+      this.getDirectFraction(p1, p2);
+      this.getOneLayerFraction(p1, p2);
+      this.getTwoLayerFraction(p1, p2);
+    }
   }
 
   simulatedGamesForAGivenInputOfGames(games: Game[]) {
@@ -46,10 +48,9 @@ export class FutureElo {
     this.playerPairings = [];
     this.predictedGamesTemp = [];
     this.predictedGames = [];
-    this.parent.isSimulatedState = false;
   }
 
-  setup(games?: Game[]) {
+  private setup(games?: Game[]) {
     // Add all existing games
     for (const game of games ?? this.parent.games) {
       const { winner, loser } = game;
@@ -404,7 +405,7 @@ export class FutureElo {
     };
   }
 
-  getOneLayerFraction(p1: string, p2: string): Fraction {
+  private getOneLayerFraction(p1: string, p2: string): Fraction {
     const player1 = this.playersMap.get(p1)!;
     const player2 = this.playersMap.get(p2)!;
 
@@ -443,7 +444,7 @@ export class FutureElo {
     return combinedFraction;
   }
 
-  getTwoLayerFraction(p1: string, p2: string): Fraction {
+  private getTwoLayerFraction(p1: string, p2: string): Fraction {
     const player1 = this.playersMap.get(p1)!;
     const player2 = this.playersMap.get(p2)!;
 

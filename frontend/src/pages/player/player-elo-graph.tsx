@@ -135,20 +135,6 @@ export const PlayerEloGraph: React.FC<{ playerId: string }> = ({ playerId }) => 
             label={{ value: "1 000", position: "insideBottom", fill: "rgb(var(--color-primary-text))" }}
             color="#"
           />
-          {context.futureElo.predictedGames[0] && !showExpectedElo && (
-            <ReferenceLine
-              x={context.games.filter((g) => g.winner === playerId || g.loser === playerId).length - startRange}
-              stroke="rgb(var(--color-primary-text))"
-              opacity={0.5}
-              label={{
-                value: "Now",
-                position: "insideBottomLeft",
-                fill: "rgb(var(--color-primary-text))",
-                opacity: 0.5,
-              }}
-              color="#"
-            />
-          )}
         </LineChart>
       </ResponsiveContainer>
 

@@ -12,7 +12,6 @@ import { relativeTimeString } from "../../common/date-utils";
 import { TournamentSignup } from "./tournament-signup";
 import { TournamentGroupPlayComponent } from "./tournament-group-play";
 import { Tournament, TournamentGame } from "../../client/client-db/tournaments/tournament";
-import { optioPlayersByName } from "../../client/client-config/clients/optio-client";
 
 export const TournamentPage: React.FC = () => {
   const { tournament: tournamentId, player1, player2 } = useTennisParams();
@@ -74,123 +73,6 @@ export const TournamentPage: React.FC = () => {
           <div className="min-w-80 max-w-96 space-y-2">
             <p className="text-xs italic">Won {relativeTimeString(new Date(tournament.endDate || 0))}</p>
             <WinnerBox winner={tournament.winner} />
-          </div>
-        )}
-        {context.client.id === "local" && (
-          <div className="flex flex-col items-start">
-            <button
-              onClick={() => {
-                context.futureElo.simulate();
-                rerender();
-              }}
-            >
-              Simulate tournament
-            </button>
-            <button
-              onClick={() => {
-                if (
-                  window.confirm(
-                    "Are you sure you want to simulate to an unlikely winner? It may take over 60 seconds",
-                  ) === false
-                ) {
-                  return;
-                }
-                let tries = 0;
-
-                const likelyWinners = [
-                  optioPlayersByName.Alexander,
-                  optioPlayersByName.Rasmus,
-                  optioPlayersByName.Fooa,
-                  optioPlayersByName.Christoffer,
-                  optioPlayersByName.Simone,
-                  optioPlayersByName.Peder,
-                  optioPlayersByName.Erling,
-                  optioPlayersByName.Rikard,
-                  optioPlayersByName.Oskar,
-                ] as string[];
-                let winner: string | undefined = "";
-                let winners: Record<string, number> = {};
-
-                while (tries < 1_000 && (winner === undefined || winner === "" || likelyWinners.includes(winner))) {
-                  tries++;
-                  context.futureElo.simulate();
-                  context.tournaments.clearTournamentCache();
-                  winner = context.tournaments.getTournament(tournament.id)?.winner;
-                  if (winner) {
-                    winners[winner] = (winners[winner] || 0) + 1;
-                  }
-                  if (tries % 100 === 0) {
-                    console.log(tries);
-                  }
-                }
-                const sortedEntries = Object.entries(winners).sort((a, b) => b[1] - a[1]);
-                const sortedWinners: Record<string, number> = Object.fromEntries(sortedEntries);
-                console.log(sortedWinners);
-
-                rerender();
-                window.alert(
-                  `Winner: ${context.playerName(winner)}!!!
-Simulated ${tries} tournaments. 
-Other winners: ` +
-                    JSON.stringify(
-                      Object.keys(sortedWinners).reduce((acc, key) => {
-                        acc[context.playerName(key)] = sortedWinners[key];
-                        return acc;
-                      }, {} as Record<string, number>),
-                      null,
-                      2,
-                    ),
-                );
-              }}
-            >
-              Simulate unlikely winner tournament
-            </button>
-            <button
-              onClick={() => {
-                if (
-                  window.confirm(
-                    "Are you sure you want to simulate to an unlikely winner? It may take over 60 seconds",
-                  ) === false
-                ) {
-                  return;
-                }
-                let tries = 0;
-                let winner: string | undefined = "";
-                let winners: Record<string, number> = {};
-
-                while (tries < 10_000) {
-                  tries++;
-                  context.futureElo.simulate();
-                  context.tournaments.clearTournamentCache();
-                  winner = context.tournaments.getTournament(tournament.id)?.winner;
-                  if (winner) {
-                    winners[winner] = (winners[winner] || 0) + 1;
-                  }
-                  if (tries % 100 === 0) {
-                    console.log(tries);
-                  }
-                }
-                const sortedEntries = Object.entries(winners).sort((a, b) => b[1] - a[1]);
-                const sortedWinners: Record<string, number> = Object.fromEntries(sortedEntries);
-                console.log(sortedWinners);
-
-                rerender();
-                window.alert(
-                  `Simulated ${tries} tournaments. 
-Wwinners: ` +
-                    JSON.stringify(
-                      Object.keys(sortedWinners).reduce((acc, key) => {
-                        acc[context.playerName(key)] = sortedWinners[key];
-                        return acc;
-                      }, {} as Record<string, number>),
-                      null,
-                      2,
-                    ),
-                );
-              }}
-            >
-              Simulate 10 000 tournaments
-            </button>
           </div>
         )}
       </div>

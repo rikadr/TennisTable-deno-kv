@@ -5,16 +5,12 @@ import { classNames } from "../common/class-names";
 import { session } from "../services/auth";
 import pumpkinLogo from "../img/halloween/tennis-table.png";
 import easterLogo from "../img/easter/easter-tennis-table.png";
-import { useEventDbContext } from "./event-db-context";
 import { getClientConfig, Theme, themeOrOverrideTheme } from "../client/client-config/get-client-config";
 
 const MENU_HEIGHT = "h-16 md:h-12";
 
 export const NavMenu: React.FC = () => {
   const { pathname } = useLocation();
-  const context = useEventDbContext();
-
-  const isSimulated = context.isSimulatedState;
 
   useEffect(() => {
     // Scroll to top whenever the path changes
@@ -96,17 +92,13 @@ export const NavMenu: React.FC = () => {
       );
     }
 
-    if (isSimulated) {
-      return <div className="bg-red-600 hover:bg-red-900 rounded-full py-4 px-6">Simulation 🔴</div>;
-    }
-
     const clientConfig = getClientConfig();
 
     return clientConfig.logo;
   };
 
   return (
-    <div className={classNames("min-h-svh", isSimulated && " border-4 border-red-500")}>
+    <div className="min-h-svh">
       <div aria-label="menu displacer" className={MENU_HEIGHT} />
       <div
         className={classNames(

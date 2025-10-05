@@ -36,7 +36,7 @@ export class Tournaments {
   #initTournament(tournament: TournamentDB): Tournament {
     return new Tournament(
       tournament,
-      [...this.parent.games, ...this.parent.futureElo.predictedGames],
+      this.parent.games,
       this.parent.eventStore.tournamentsProjector.getTournamentSignups(tournament.id),
     );
   }

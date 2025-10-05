@@ -12,7 +12,7 @@ export class PVP {
     player1: string,
     player2: string,
   ): { player1: PlayerComparison; player2: PlayerComparison; games: PlayerSummary["games"] } {
-    const relevantGames = [...this.parent.games, ...this.parent.futureElo.predictedGames].filter(
+    const relevantGames = this.parent.games.filter(
       (game) =>
         // Player 1 wins
         (game.winner === player1 && game.loser === player2) ||

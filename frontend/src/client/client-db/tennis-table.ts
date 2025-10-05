@@ -11,8 +11,6 @@ import { LeaderboardChanges } from "./leaderboard-changes";
 import { PlayerOponentDistribution } from "./playerOponentDistribution";
 
 export class TennisTable {
-  isSimulatedState = false;
-
   // --------------------------------------------------------------------------
   // Data from db
   // --------------------------------------------------------------------------

@@ -32,7 +32,7 @@ export class IndividualPoints {
 
   #generatePlayerMap(transactionOrder: "FIFO" | "LIFO") {
     const map = new Map<string, PlayerWithIndividualPoints>();
-    for (const game of [...this.parent.games, ...this.parent.futureElo.predictedGames]) {
+    for (const game of this.parent.games) {
       if (
         !this.parent.eventStore.playersProjector.getPlayer(game.winner)?.active ||
         !this.parent.eventStore.playersProjector.getPlayer(game.loser)?.active
