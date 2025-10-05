@@ -1,5 +1,6 @@
 import { newId } from "../../common/nani-id";
 import { Game } from "./event-store/projectors/games-projector";
+import { gameToGame, pointToGame, setToGame } from "./future-elo-probability-lookups";
 import { TennisTable } from "./tennis-table";
 
 type Fraction = { fraction: number; confidence: number };
@@ -185,8 +186,11 @@ export class FutureElo {
       const gameFraction = this.getWinFractionWithConfidence({
         wins: gameWinsWeighted,
         loss: gameLossesWeighted,
-        additions: 3,
-        products: 1,
+        probabilityLookup: gameToGame,
+        confidenceConfig: {
+          additions: 3,
+          products: 1,
+        },
       });
       predictions.push(gameFraction);
     }
@@ -211,8 +215,11 @@ export class FutureElo {
       const setFraction = this.getWinFractionWithConfidence({
         wins: setWinsWeighted,
         loss: setLossesWeighted,
-        additions: 3,
-        products: 0.5,
+        probabilityLookup: setToGame,
+        confidenceConfig: {
+          additions: 2,
+          products: 0.3,
+        },
       });
 
       predictions.push({
@@ -241,8 +248,11 @@ export class FutureElo {
       const pointFraction = this.getWinFractionWithConfidence({
         wins: pointWinsWeighted,
         loss: pointLossesWeighted,
-        additions: 1,
-        products: 0.1,
+        probabilityLookup: pointToGame,
+        confidenceConfig: {
+          additions: 0.3,
+          products: 0.008,
+        },
       });
 
       predictions.push({
@@ -264,18 +274,55 @@ export class FutureElo {
   private getWinFractionWithConfidence(input: {
     wins: number;
     loss: number;
-    additions: number;
-    products: number;
+    probabilityLookup: number[]; // The pre-generated probability table
+    confidenceConfig: {
+      additions: number;
+      products: number;
+    };
   }): Fraction {
-    const { wins, loss, additions, products } = input;
-    const winFraction = wins / (wins + loss);
+    const {
+      wins,
+      loss,
+      probabilityLookup,
+      confidenceConfig: { additions, products },
+    } = input;
 
+    // Calculate raw win fraction (0 to 1)
+    const rawWinFraction = wins / (wins + loss);
+
+    // Convert to continuous index (0 to 100)
+    const exactIndex = rawWinFraction * 100;
+
+    // Get the two surrounding indices
+    const lowerIndex = Math.floor(exactIndex);
+    const upperIndex = Math.ceil(exactIndex);
+
+    let expectedWinProbability = 0;
+
+    // Handle edge cases
+    if (lowerIndex === upperIndex || upperIndex > 100) {
+      // Exact match or at boundary
+      const index = Math.min(Math.max(Math.round(exactIndex), 0), 100);
+      expectedWinProbability = probabilityLookup[index];
+    } else {
+      // Linear interpolation between the two closest values
+      const lowerValue = probabilityLookup[lowerIndex];
+      const upperValue = probabilityLookup[upperIndex];
+      const fraction = exactIndex - lowerIndex; // How far between the two indices (0 to 1)
+
+      expectedWinProbability = lowerValue + (upperValue - lowerValue) * fraction;
+    }
+
+    // Calculate confidence based on sample size
     const addition = wins + loss;
     const product = wins * loss;
     const confidencePoints = addition * additions + product * products;
-
     const confidence = Math.min(confidencePoints, 100) / 100;
-    return { fraction: winFraction, confidence };
+
+    return {
+      fraction: expectedWinProbability,
+      confidence,
+    };
   }
 
   private ageAdjustedConfidence(confidence: number, gameTime: number, referenceTime: number): number {
