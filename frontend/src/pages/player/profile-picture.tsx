@@ -29,16 +29,14 @@ export const ProfilePicture: React.FC<Props> = ({
 
   const { timestamp } = useImageKitTimestamp();
   const HighDefinitionScaleFactor = 4;
-  if (!playerId) {
-    playerId = "default";
-  }
+
   const img = () => (
     <IKImage
       className={classNames(
         "w-full h-full object-cover",
         clickToEdit && " group-hover:opacity-50 transition-opacity duration-150",
       )}
-      path={playerId}
+      path={playerId ?? ""}
       transformation={[{ height: size * HighDefinitionScaleFactor, width: size * HighDefinitionScaleFactor }]}
       queryParameters={{ v: timestamp }}
       onError={() => setImageError(true)}
@@ -52,11 +50,11 @@ export const ProfilePicture: React.FC<Props> = ({
         fontSize: size * 0.7, // Scale font size relative to component size
       }}
     >
-      {context.playerName(playerId)[0]}
+      {playerId ? context.playerName(playerId)[0] : "?"}
     </div>
   );
 
-  const content = () => (imageError ? fallback() : img());
+  const content = () => (imageError || !playerId ? fallback() : img());
 
   return (
     <div
