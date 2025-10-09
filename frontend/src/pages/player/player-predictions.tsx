@@ -45,9 +45,13 @@ export const PlayerPredictions: React.FC<Props> = ({ playerId }) => {
     <div className="space-y-2">
       <h2>Predicted win chance</h2>
 
-      {opponents.map(([oponentId, oponent]) => {
+      {opponents.map(([oponentId]) => {
         const isExpanded = expandedPlayers.has(oponentId);
-        const fractions = [oponent.directFraction, oponent.oneLayerFraction, oponent.twoLayerFraction];
+        const fractions = [
+          context.futureElo.getDirectGameFraction(playerId, oponentId).fraction,
+          context.futureElo.getDirectSetFraction(playerId, oponentId).fraction,
+          context.futureElo.getDirectPointFraction(playerId, oponentId).fraction,
+        ];
         const combined = context.futureElo.combinePrioritizedFractions(fractions);
         const winChance = combined?.fraction || 0;
         const confidence = combined?.confidence || 0;
@@ -99,7 +103,7 @@ export const PlayerPredictions: React.FC<Props> = ({ playerId }) => {
 
                       return (
                         <li
-                          key={playerId + oponent + index}
+                          key={playerId + oponentId + index}
                           className={`text-sm flex items-center gap-2 whitespace-nowrap text-right ${
                             hasNoConfidence ? "line-through opacity-30" : ""
                           }`}
@@ -148,7 +152,7 @@ export const PlayerPredictions: React.FC<Props> = ({ playerId }) => {
 
                         return (
                           <li
-                            key={"score fractions " + playerId + oponent + index}
+                            key={"score fractions " + playerId + oponentId + index}
                             className={classNames(
                               "text-sm flex items-center gap-2 whitespace-nowrap",
                               hasNoConfidence && "line-through opacity-30",
@@ -203,7 +207,7 @@ export const PlayerPredictions: React.FC<Props> = ({ playerId }) => {
 
                         return (
                           <li
-                            key={"score fractions " + playerId + oponent + index}
+                            key={"score fractions " + playerId + oponentId + index}
                             className={classNames(
                               "text-sm flex items-center gap-2 whitespace-nowrap",
                               hasNoData && "line-through opacity-30",
