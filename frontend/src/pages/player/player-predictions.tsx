@@ -224,7 +224,7 @@ export const PlayerPredictions: React.FC<Props> = ({ playerId }) => {
                   </ul>
                 </div>
                 <div className="text-xs pl-7 pt-4 font-light italic">
-                  *All prediction win% and confidence% are age adjusted to promote recency bias
+                  *Prediction win% and confidence% are all age adjusted to promote recency bias.
                 </div>
               </div>
             )}
