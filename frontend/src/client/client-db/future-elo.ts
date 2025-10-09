@@ -3,7 +3,7 @@ import { Game } from "./event-store/projectors/games-projector";
 import { gameToGame, pointToGame, setToGame } from "./future-elo-probability-lookups";
 import { TennisTable } from "./tennis-table";
 
-type Fraction = { fraction: number; confidence: number };
+export type Fraction = { fraction: number; confidence: number };
 
 export class FutureElo {
   constructor(parent: TennisTable) {
@@ -164,7 +164,7 @@ export class FutureElo {
       return { fraction: 0, confidence: 0 };
     }
 
-    const lastGameTime = Math.max(player1?.lastRegisteredGameTime ?? 0, player2?.lastRegisteredGameTime ?? 0);
+    const lastGameTime = Math.max(player1?.lastRegisteredGameTime ?? 0, player2?.lastRegisteredGameTime ?? 0); // TODO: Tghis will give wrong confidence for players
     const allGames = [...(wins ?? []), ...(loss ?? [])];
     const predictions: Fraction[] = [];
 
@@ -264,6 +264,178 @@ export class FutureElo {
     player2!.oponentsMap.get(p1)!.directFraction = { fraction: 1 - fraction, confidence }; // Invert fraction for p2
 
     return { fraction, confidence };
+  }
+
+  getDirectGameFraction(p1: string, p2: string): { fraction: Fraction; won: number; lost: number } {
+    const fallback = { fraction: { fraction: 0, confidence: 0 }, won: 0, lost: 0 };
+
+    const player1 = this.playersMap.get(p1);
+
+    let wins = player1?.oponentsMap.get(p2)?.wins;
+    let loss = player1?.oponentsMap.get(p2)?.loss;
+
+    if (wins === undefined && loss === undefined) {
+      return fallback;
+    }
+
+    const totalWins = wins?.length ?? 0;
+    const totalLoss = loss?.length ?? 0;
+
+    if (totalWins === 0 && totalLoss === 0) {
+      return fallback;
+    }
+
+    const allGames = [...(wins ?? []), ...(loss ?? [])];
+
+    let gameWinsWeighted = 0;
+    let gameLossesWeighted = 0;
+
+    for (const game of allGames) {
+      const ageWeight = this.ageAdjustedConfidence(1, game.playedAt, Date.now());
+      const isWin = game.winner === p1;
+
+      if (isWin) {
+        gameWinsWeighted += ageWeight;
+      } else {
+        gameLossesWeighted += ageWeight;
+      }
+    }
+
+    if (gameWinsWeighted + gameLossesWeighted === 0) {
+      return fallback;
+    }
+
+    return {
+      fraction: this.getWinFractionWithConfidence({
+        wins: gameWinsWeighted,
+        loss: gameLossesWeighted,
+        probabilityLookup: gameToGame,
+        confidenceConfig: {
+          additions: 6,
+          products: 2,
+        },
+      }),
+      won: totalWins,
+      lost: totalLoss,
+    };
+  }
+
+  getDirectSetFraction(p1: string, p2: string): { fraction: Fraction; won: number; lost: number } {
+    const fallback = { fraction: { fraction: 0, confidence: 0 }, won: 0, lost: 0 };
+
+    const player1 = this.playersMap.get(p1);
+
+    let wins = player1?.oponentsMap.get(p2)?.wins;
+    let loss = player1?.oponentsMap.get(p2)?.loss;
+
+    if (wins === undefined && loss === undefined) {
+      return fallback;
+    }
+
+    const totalWins = wins?.length ?? 0;
+    const totalLoss = loss?.length ?? 0;
+
+    if (totalWins === 0 && totalLoss === 0) {
+      return fallback;
+    }
+
+    const allGames = [...(wins ?? []), ...(loss ?? [])];
+
+    let setWins = 0;
+    let setLosses = 0;
+    let setWinsWeighted = 0;
+    let setLossesWeighted = 0;
+
+    const gamesWithSets = allGames.filter((g) => g.score);
+    for (const game of gamesWithSets) {
+      const ageWeight = this.ageAdjustedConfidence(1, game.playedAt, Date.now());
+      const isWin = game.winner === p1;
+
+      const setsWon = isWin ? game.score!.setsWon.gameWinner : game.score!.setsWon.gameLoser;
+      const setsLost = isWin ? game.score!.setsWon.gameLoser : game.score!.setsWon.gameWinner;
+
+      setWins += setsWon;
+      setLosses += setsLost;
+      setWinsWeighted += setsWon * ageWeight;
+      setLossesWeighted += setsLost * ageWeight;
+    }
+
+    if (setWinsWeighted + setLossesWeighted === 0) {
+      return fallback;
+    }
+
+    return {
+      fraction: this.getWinFractionWithConfidence({
+        wins: setWinsWeighted,
+        loss: setLossesWeighted,
+        probabilityLookup: setToGame,
+        confidenceConfig: {
+          additions: 3,
+          products: 1,
+        },
+      }),
+      won: setWins,
+      lost: setLosses,
+    };
+  }
+
+  getDirectPointFraction(p1: string, p2: string): { fraction: Fraction; won: number; lost: number } {
+    const fallback = { fraction: { fraction: 0, confidence: 0 }, won: 0, lost: 0 };
+
+    const player1 = this.playersMap.get(p1);
+
+    let wins = player1?.oponentsMap.get(p2)?.wins;
+    let loss = player1?.oponentsMap.get(p2)?.loss;
+
+    if (wins === undefined && loss === undefined) {
+      return fallback;
+    }
+
+    const totalWins = wins?.length ?? 0;
+    const totalLoss = loss?.length ?? 0;
+
+    if (totalWins === 0 && totalLoss === 0) {
+      return fallback;
+    }
+
+    const allGames = [...(wins ?? []), ...(loss ?? [])];
+
+    let pointWins = 0;
+    let pointLosses = 0;
+    let pointWinsWeighted = 0;
+    let pointLossesWeighted = 0;
+
+    const gamesWithPoints = allGames.filter((g) => g.score?.setPoints);
+    for (const game of gamesWithPoints) {
+      const ageWeight = this.ageAdjustedConfidence(1, game.playedAt, Date.now());
+      const isWin = game.winner === p1;
+
+      const pointsWon = game.score!.setPoints!.reduce((sum, set) => sum + (isWin ? set.gameWinner : set.gameLoser), 0);
+      const pointsLost = game.score!.setPoints!.reduce((sum, set) => sum + (isWin ? set.gameLoser : set.gameWinner), 0);
+
+      pointWins += pointsWon;
+      pointLosses += pointsLost;
+      pointWinsWeighted += pointsWon * ageWeight;
+      pointLossesWeighted += pointsLost * ageWeight;
+    }
+
+    if (pointWinsWeighted + pointLossesWeighted === 0) {
+      return fallback;
+    }
+
+    return {
+      fraction: this.getWinFractionWithConfidence({
+        wins: pointWinsWeighted,
+        loss: pointLossesWeighted,
+        probabilityLookup: pointToGame,
+        confidenceConfig: {
+          additions: 0.5,
+          products: 0.01,
+        },
+      }),
+      won: pointWins,
+      lost: pointLosses,
+    };
   }
 
   private getWinFractionWithConfidence(input: {

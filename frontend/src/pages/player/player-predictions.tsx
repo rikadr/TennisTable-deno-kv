@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { ProfilePicture } from "./profile-picture";
 import { fmtNum } from "../../common/number-utils";
+import { Fraction } from "../../client/client-db/future-elo";
+import { classNames } from "../../common/class-names";
 
 type Props = {
   playerId: string;
@@ -40,7 +42,7 @@ export const PlayerPredictions: React.FC<Props> = ({ playerId }) => {
     });
 
   return (
-    <div className="">
+    <div className="space-y-2">
       <h2>Predicted win chance</h2>
 
       {opponents.map(([oponentId, oponent]) => {
@@ -51,12 +53,11 @@ export const PlayerPredictions: React.FC<Props> = ({ playerId }) => {
         const confidence = combined?.confidence || 0;
 
         return (
-          <div key={oponentId} className="border border-gray-700 rounded-lg overflow-hidden">
+          <div key={oponentId} className="border border-secondary-text/20 rounded-lg overflow-hidden">
             {/* Player Header - Clickable */}
             <button
               onClick={() => togglePlayer(oponentId)}
-              className="w-full px-4 py-1 bg-secondary-background hover:bg-gray-700 transition-colors 
-                                   flex items-center justify-between group text-secondary-text"
+              className="w-full px-4 py-1 bg-secondary-background hover:bg-secondary-text/20 flex items-center justify-between group text-secondary-text"
             >
               <div className="flex items-center gap-2">
                 {isExpanded ? "▼" : "▶"}
@@ -74,34 +75,156 @@ export const PlayerPredictions: React.FC<Props> = ({ playerId }) => {
 
             {/* Player Content - Expandable */}
             {isExpanded && (
-              <div className="p-4 bg-primary-background space-y-3">
-                <div key={playerId + oponent} className="border-l-2 border-gray-600 pl-4 py-2">
+              <div className="p-4 bg-primary-background text-primary-text ">
+                <div className="flex gap-0 md:gap-2 lg:gap-6 border-l-2 border-secondary-background py-2 overflow-auto">
                   {/* Probability Breakdown */}
                   <ul className="ml-6 space-y-1">
+                    <li className="text-sm flex items-center gap-2 whitespace-nowrap">Indirect level analysis</li>
                     {fractions.map((fraction, index) => {
-                      if (!fraction) return null;
                       const hasNoConfidence = (fraction?.confidence || 0) === 0;
+
+                      let lable = "";
+
+                      switch (index) {
+                        case 0:
+                          lable = "Direct";
+                          break;
+                        case 1:
+                          lable = "1 intermediary";
+                          break;
+                        case 2:
+                          lable = "2 intermediaries";
+                          break;
+                      }
 
                       return (
                         <li
                           key={playerId + oponent + index}
-                          className={`text-sm flex items-center gap-2 ${
+                          className={`text-sm flex items-center gap-2 whitespace-nowrap text-right ${
                             hasNoConfidence ? "line-through opacity-30" : ""
                           }`}
                         >
-                          <span className={`opacity-70 font-light italic`}>{index}:</span>
+                          <span className="opacity-70 font-light italic text-primary-text w-28">{lable}:</span>
                           <span>
                             {fmtNum((fraction?.fraction || 0) * 100)}% @{fmtNum((fraction?.confidence || 0) * 100)}%
                           </span>
-                          {index === 0 && oponent.wins && oponent.loss && (
-                            <span className="ml-2 px-2 py-0.5 bg-gray-700 rounded text-xs">
-                              {oponent.wins.length}:{oponent.loss.length}
-                            </span>
-                          )}
                         </li>
                       );
                     })}
                   </ul>
+                  <ul className="ml-6 space-y-1">
+                    <li className="text-sm flex items-center gap-2 whitespace-nowrap">Per score level analysis</li>
+
+                    {Array(3)
+                      .fill(1)
+                      .map((_, index) => {
+                        let fraction: Fraction | undefined = undefined;
+                        let lable = "";
+
+                        switch (index) {
+                          case 0:
+                            {
+                              const game = context.futureElo.getDirectGameFraction(playerId, oponentId);
+                              fraction = game.fraction;
+                              lable = "Games";
+                            }
+                            break;
+                          case 1:
+                            {
+                              const game = context.futureElo.getDirectSetFraction(playerId, oponentId);
+                              fraction = game.fraction;
+                              lable = "Sets -> game";
+                            }
+                            break;
+                          case 2:
+                            {
+                              const game = context.futureElo.getDirectPointFraction(playerId, oponentId);
+                              fraction = game.fraction;
+                              lable = "Points -> game";
+                            }
+                            break;
+                        }
+                        const hasNoConfidence = (fraction?.confidence || 0) === 0;
+
+                        return (
+                          <li
+                            key={"score fractions " + playerId + oponent + index}
+                            className={classNames(
+                              "text-sm flex items-center gap-2 whitespace-nowrap",
+                              hasNoConfidence && "line-through opacity-30",
+                            )}
+                          >
+                            <span className="opacity-70 font-light italic text-primary-text w-28 text-right">
+                              {lable}:
+                            </span>
+                            <span className="w-20">
+                              {fmtNum((fraction?.fraction || 0) * 100)}% @{fmtNum((fraction?.confidence || 0) * 100)}%
+                            </span>
+                          </li>
+                        );
+                      })}
+                  </ul>
+                  <ul className="ml-6 space-y-1 pr-6">
+                    <li className="text-sm flex items-center gap-2 whitespace-nowrap">Total scored</li>
+                    {Array(3)
+                      .fill(1)
+                      .map((_, index) => {
+                        let lable = "";
+                        let won = 0;
+                        let lost = 0;
+
+                        switch (index) {
+                          case 0:
+                            {
+                              const game = context.futureElo.getDirectGameFraction(playerId, oponentId);
+                              won = game.won;
+                              lost = game.lost;
+                              lable = "Games";
+                            }
+                            break;
+                          case 1:
+                            {
+                              const game = context.futureElo.getDirectSetFraction(playerId, oponentId);
+                              won = game.won;
+                              lost = game.lost;
+                              lable = "Sets";
+                            }
+                            break;
+                          case 2:
+                            {
+                              const game = context.futureElo.getDirectPointFraction(playerId, oponentId);
+                              won = game.won;
+                              lost = game.lost;
+                              lable = "Points";
+                            }
+                            break;
+                        }
+                        const hasNoData = !won && !lost;
+
+                        return (
+                          <li
+                            key={"score fractions " + playerId + oponent + index}
+                            className={classNames(
+                              "text-sm flex items-center gap-2 whitespace-nowrap",
+                              hasNoData && "line-through opacity-30",
+                            )}
+                          >
+                            <span className="opacity-70 font-light italic text-primary-text w-12 text-right">
+                              {lable}:
+                            </span>
+                            <span className="w-8">{!!won || !!lost ? fmtNum((won / (won + lost)) * 100) : "- "}%</span>
+                            {(!!won || !!lost) && (
+                              <span className="ml-2 px-2 py-0.5 bg-secondary-background text-secondary-text rounded text-xs">
+                                {fmtNum(won)} : {fmtNum(lost)}
+                              </span>
+                            )}
+                          </li>
+                        );
+                      })}
+                  </ul>
+                </div>
+                <div className="text-xs pl-7 pt-4 font-light italic">
+                  *All prediction win% and confidence% are age adjusted to promote recency bias
                 </div>
               </div>
             )}
