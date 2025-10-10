@@ -4,6 +4,7 @@ import { ProfilePicture } from "./profile-picture";
 import { fmtNum } from "../../common/number-utils";
 import { Fraction } from "../../client/client-db/future-elo";
 import { classNames } from "../../common/class-names";
+import { Link } from "react-router-dom";
 
 type Props = {
   playerId: string;
@@ -59,7 +60,7 @@ export const PlayerPredictions: React.FC<Props> = ({ playerId }) => {
               onClick={() => togglePlayer(oponentId)}
               className="w-full px-4 py-1 bg-secondary-background hover:bg-secondary-text/20 flex items-center justify-between group text-secondary-text"
             >
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 w-full">
                 {isExpanded ? "▼" : "▶"}
                 <ProfilePicture playerId={oponentId} border={3} size={50} shape="rounded" linkToPlayer />
                 <span className="text-xl font-semibold w-28 text-left">{context.playerName(oponentId)}</span>
@@ -70,6 +71,13 @@ export const PlayerPredictions: React.FC<Props> = ({ playerId }) => {
                   </p>
                   <p>@{fmtNum(confidence * 100)}% confidence</p>
                 </div>
+                <div className="grow" />
+                <Link
+                  to={`/1v1/?player1=${playerId}&player2=${oponentId}`}
+                  className="text-xs text-tertiary-text bg-tertiary-background hover:bg-tertiary-background/50 px-2 py-1 rounded-md"
+                >
+                  👥🥊 Compare 1v1
+                </Link>
               </div>
             </button>
 
