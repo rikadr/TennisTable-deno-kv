@@ -79,7 +79,7 @@ export const ExpectedScore: React.FC = () => {
         <button
           className="bg-secondary-background hover:bg-secondary-background/50 text-secondary-text rounded-lg px-10 py-2 my-2"
           onClick={async () => {
-            window.tennisTable.futureElo.calculatePlayerFractions();
+            window.tennisTable.futureElo.calculatePlayerFractionsForToday();
             rerender();
           }}
         >

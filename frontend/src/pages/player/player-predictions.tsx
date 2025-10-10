@@ -25,7 +25,7 @@ export const PlayerPredictions: React.FC<Props> = ({ playerId }) => {
   };
 
   const context = useEventDbContext();
-  context.futureElo.calculatePlayerFractions();
+  context.futureElo.calculatePlayerFractionsForToday();
 
   const leaderboard = context.leaderboard.getLeaderboard();
 

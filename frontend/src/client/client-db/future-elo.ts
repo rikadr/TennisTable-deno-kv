@@ -19,14 +19,14 @@ export class FutureElo {
   predictedGamesTemp: { winner: string; loser: string }[][] = [];
   predictedGames: Game[] = [];
 
-  calculatePlayerFractions() {
+  calculatePlayerFractionsForToday() {
     this.reset();
     this.setup();
     // Calculate win fraction for all player pairings
     for (const { p1, p2 } of this.playerPairings) {
-      this.getDirectFraction(p1, p2);
-      this.getOneLayerFraction(p1, p2);
-      this.getTwoLayerFraction(p1, p2);
+      this.getDirectFraction(p1, p2, Date.now());
+      this.getOneLayerFraction(p1, p2, Date.now());
+      this.getTwoLayerFraction(p1, p2, Date.now());
     }
   }
 
@@ -139,7 +139,7 @@ export class FutureElo {
     this.predictedGames.forEach((game, index) => (game.playedAt = now + index)); // Set deterministic time in order after shuffle
   }
 
-  private getDirectFraction(p1: string, p2: string): Fraction {
+  private getDirectFraction(p1: string, p2: string, ageAdjustFrom?: number): Fraction {
     const player1 = this.playersMap.get(p1);
     const player2 = this.playersMap.get(p2);
 
@@ -173,7 +173,7 @@ export class FutureElo {
     let gameLossesWeighted = 0;
 
     for (const game of allGames) {
-      const ageWeight = this.ageAdjustedConfidence(1, game.playedAt, lastGameTime);
+      const ageWeight = this.ageAdjustedConfidence(1, game.playedAt, ageAdjustFrom ?? lastGameTime);
       const isWin = game.winner === p1;
 
       if (isWin) {
@@ -577,7 +577,7 @@ export class FutureElo {
     };
   }
 
-  private getOneLayerFraction(p1: string, p2: string): Fraction {
+  private getOneLayerFraction(p1: string, p2: string, ageAdjustFrom?: number): Fraction {
     const player1 = this.playersMap.get(p1)!;
     const player2 = this.playersMap.get(p2)!;
 
@@ -590,14 +590,14 @@ export class FutureElo {
     const fractions: Fraction[] = [];
 
     player1.oponentsMap.forEach((_, intermediaryName) => {
-      const p1TointermediaryFraction = this.getDirectFraction(p1, intermediaryName);
+      const p1TointermediaryFraction = this.getDirectFraction(p1, intermediaryName, ageAdjustFrom);
 
       const intermediary = this.playersMap.get(intermediaryName)!;
       const intermediaryToP2Results = intermediary.oponentsMap.get(p2);
       if (intermediaryToP2Results === undefined) {
         return; // Intermediary2 has no games against p2. Blocks intermediary and p2 being the same player
       }
-      const intermediaryToP2Fraction = this.getDirectFraction(intermediaryName, p2);
+      const intermediaryToP2Fraction = this.getDirectFraction(intermediaryName, p2, ageAdjustFrom);
 
       const linkedFraction = this.linkFractions(p1TointermediaryFraction, intermediaryToP2Fraction);
 
@@ -616,7 +616,7 @@ export class FutureElo {
     return combinedFraction;
   }
 
-  private getTwoLayerFraction(p1: string, p2: string): Fraction {
+  private getTwoLayerFraction(p1: string, p2: string, ageAdjustFrom?: number): Fraction {
     const player1 = this.playersMap.get(p1)!;
     const player2 = this.playersMap.get(p2)!;
 
@@ -629,7 +629,7 @@ export class FutureElo {
 
     player1.oponentsMap.forEach((_, intermediary1Name) => {
       const intermediary1 = this.playersMap.get(intermediary1Name)!;
-      const p1Tointermediary1Fraction = this.getDirectFraction(p1, intermediary1Name);
+      const p1Tointermediary1Fraction = this.getDirectFraction(p1, intermediary1Name, ageAdjustFrom);
 
       intermediary1.oponentsMap.forEach((_, intermediary2Name) => {
         if ([p1, p2].includes(intermediary2Name)) {
@@ -639,8 +639,12 @@ export class FutureElo {
         if (intermediary2.oponentsMap.has(p2) === false) {
           return; // Intermidiary 2 has no results to p2
         }
-        const intermediary1Tointermediary2Fraction = this.getDirectFraction(intermediary1Name, intermediary2Name);
-        const intermediary2ToP2Fraction = this.getDirectFraction(intermediary2Name, p2);
+        const intermediary1Tointermediary2Fraction = this.getDirectFraction(
+          intermediary1Name,
+          intermediary2Name,
+          ageAdjustFrom,
+        );
+        const intermediary2ToP2Fraction = this.getDirectFraction(intermediary2Name, p2, ageAdjustFrom);
 
         const step1 = this.linkFractions(p1Tointermediary1Fraction, intermediary1Tointermediary2Fraction);
         const step2 = this.linkFractions(step1, intermediary2ToP2Fraction);

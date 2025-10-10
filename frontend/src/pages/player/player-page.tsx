@@ -11,6 +11,7 @@ import { PlayerGamesDistrubution } from "./player-games-distribution";
 import { relativeTimeString } from "../../common/date-utils";
 import { OponentsScores } from "./oponents-scores";
 import { PlayerPredictions } from "./player-predictions";
+import { session } from "../../services/auth";
 
 type TabType = "overview" | "games" | "statistics" | "predictions";
 const tabs: { id: TabType; label: string }[] = [
@@ -31,6 +32,8 @@ export const PlayerPage: React.FC = () => {
   const pendingGames = context.tournaments.findAllPendingGamesByPlayer(playerId);
 
   const [activeTab, setActiveTab] = useState<TabType>("overview");
+
+  const isAdmin = session.isAuthenticated && session.sessionData?.role === "admin";
 
   return (
     <div className="max-w-7xl mx-auto px-1 md:px-4">
@@ -215,7 +218,7 @@ export const PlayerPage: React.FC = () => {
               <tbody>
                 {summary.games
                   .toReversed()
-                  .slice(0, 10)
+                  .slice(0, isAdmin ? undefined : 10)
                   .map((game) => (
                     <tr key={game.time} className="border-b border-primary-text hover:brightness-110 transition-colors">
                       <td className="p-1">
@@ -275,7 +278,7 @@ export const PlayerPage: React.FC = () => {
                   ))}
               </tbody>
             </table>
-            <h1>...</h1>
+            <h1>{isAdmin ? "" : "Log in as admin to see full list"}</h1>
           </div>
         )}
 
