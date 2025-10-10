@@ -45,13 +45,9 @@ export const PlayerPredictions: React.FC<Props> = ({ playerId }) => {
     <div className="space-y-2">
       <h2>Predicted win chance</h2>
 
-      {opponents.map(([oponentId]) => {
+      {opponents.map(([oponentId, oponent]) => {
         const isExpanded = expandedPlayers.has(oponentId);
-        const fractions = [
-          context.futureElo.getDirectGameFraction(playerId, oponentId).fraction,
-          context.futureElo.getDirectSetFraction(playerId, oponentId).fraction,
-          context.futureElo.getDirectPointFraction(playerId, oponentId).fraction,
-        ];
+        const fractions = [oponent.directFraction, oponent.oneLayerFraction, oponent.twoLayerFraction];
         const combined = context.futureElo.combinePrioritizedFractions(fractions);
         const winChance = combined?.fraction || 0;
         const confidence = combined?.confidence || 0;
