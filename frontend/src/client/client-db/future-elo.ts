@@ -189,8 +189,8 @@ export class FutureElo {
         loss: gameLossesWeighted,
         probabilityLookup: gameToGame,
         confidenceConfig: {
-          additions: 6,
-          products: 2,
+          additions: 5,
+          products: 1,
         },
       });
       predictions.push(gameFraction);
@@ -218,8 +218,8 @@ export class FutureElo {
         loss: setLossesWeighted,
         probabilityLookup: setToGame,
         confidenceConfig: {
-          additions: 3,
-          products: 1,
+          additions: 3.2,
+          products: 0.4,
         },
       });
 
@@ -248,8 +248,8 @@ export class FutureElo {
         loss: pointLossesWeighted,
         probabilityLookup: pointToGame,
         confidenceConfig: {
-          additions: 0.5,
-          products: 0.01,
+          additions: 0.7,
+          products: 0,
         },
       });
 
@@ -311,8 +311,8 @@ export class FutureElo {
         loss: gameLossesWeighted,
         probabilityLookup: gameToGame,
         confidenceConfig: {
-          additions: 6,
-          products: 2,
+          additions: 5,
+          products: 1,
         },
       }),
       won: totalWins,
@@ -370,8 +370,8 @@ export class FutureElo {
         loss: setLossesWeighted,
         probabilityLookup: setToGame,
         confidenceConfig: {
-          additions: 3,
-          products: 1,
+          additions: 3.2,
+          products: 0.4,
         },
       }),
       won: setWins,
@@ -429,8 +429,8 @@ export class FutureElo {
         loss: pointLossesWeighted,
         probabilityLookup: pointToGame,
         confidenceConfig: {
-          additions: 0.5,
-          products: 0.01,
+          additions: 0.7,
+          products: 0,
         },
       }),
       won: pointWins,
