@@ -3,9 +3,8 @@ import { Link } from "react-router-dom";
 
 export const SimulationsPage: React.FC = () => {
   const simulations: { name: string; url: string }[] = [
-    { name: "Expected win/loss rate 🏆💔", url: "win-loss" },
-    { name: "Expected score 💯", url: "expected-score" },
     { name: "Expected leaderboard 🥇🥈🥉", url: "expected-leaderboard" },
+    { name: "Expected win/loss rate 🏆💔", url: "win-loss" },
     { name: "Numbered points 🔢🧮 ", url: "individual-points" },
   ];
 
