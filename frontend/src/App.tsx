@@ -17,7 +17,6 @@ import { CameraPage } from "./pages/camera/camera-page";
 import { LeaderBoard } from "./pages/leaderboard/leader-board";
 import { SimulationsPage } from "./pages/simulations/simulations-page";
 import { WinLoss } from "./pages/simulations/win-loss";
-import { ExpectedScore } from "./pages/simulations/expected-score";
 import { TournamentsListPage } from "./pages/tournament/tournaments-list-page";
 import { TournamentPage } from "./pages/tournament/tournament-page";
 import { getClientConfig } from "./client/client-config/get-client-config";
@@ -34,6 +33,7 @@ import { IndividualPointsPlayer } from "./pages/simulations/individual-points/in
 import { PlayerPage } from "./pages/player/player-page";
 import { SimulatedLeaderboard } from "./pages/simulations/expected-leaderboard/expected-leaderboard-page";
 import { PlayerNetwork } from "./pages/player-network/player-network";
+import { TrackGamePage } from "./pages/add-game/track-game/track-game";
 
 const RequireAuth: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   if (!session.isAuthenticated) {
@@ -75,13 +75,13 @@ function App() {
                         <Route path="/simulations">
                           <Route index element={<SimulationsPage />} />
                           <Route path="win-loss" element={<WinLoss />} />
-                          <Route path="expected-score" element={<ExpectedScore />} />
                           <Route path="expected-leaderboard" element={<SimulatedLeaderboard />} />
                           <Route path="individual-points" element={<IndividualPointsOverview />} />
                           <Route path="individual-points/player" element={<IndividualPointsPlayer />} />
                         </Route>
                         <Route path="/add-player" element={<AddPlayerPage />} />
                         <Route path="/add-game" element={<AddGamePageV2 />} />
+                        <Route path="/track-game" element={<TrackGamePage />} />
                         <Route path="/game/edit/score" element={<EditGameSore />} />
                         <Route path="/camera" element={<CameraPage />} />
                         <Route path="/settings" element={<SettingsPage />} />
