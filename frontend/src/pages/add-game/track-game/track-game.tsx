@@ -6,6 +6,7 @@ import { queryClient } from "../../../common/query-client";
 import { useNavigate } from "react-router-dom";
 import { EventTypeEnum, GameCreated, GameScore } from "../../../client/client-db/event-store/event-types";
 import { newId } from "../../../common/nani-id";
+import ConfettiExplosion from "react-confetti-explosion";
 
 interface SetPoint {
   player1: number;
@@ -39,6 +40,7 @@ export const TrackGamePage: React.FC = () => {
     player2: 0,
   });
   const [validationError, setValidationError] = useState<string>("");
+  const [gameSuccessfullyAdded, setGameSuccessfullyAdded] = useState(false);
 
   const addPoint = (player: number) => {
     setCurrentSetScore((prev) => ({
@@ -145,6 +147,7 @@ export const TrackGamePage: React.FC = () => {
             : `/1v1/?player1=${winner}&player2=${loser}`,
         );
       }, 2_000);
+      setGameSuccessfullyAdded(true);
     }
 
     if (recordScores) {
@@ -367,6 +370,11 @@ export const TrackGamePage: React.FC = () => {
 
     return (
       <div className="min-h-screen p-4">
+        {gameSuccessfullyAdded && (
+          <div className="flex justify-center">
+            <ConfettiExplosion particleCount={250} force={0.8} width={2_000} duration={10_000} />
+          </div>
+        )}
         <div className="max-w-sm mx-auto pt-8">
           <div className="bg-white rounded-xl shadow-lg p-6">
             <div className="text-center mb-6">
