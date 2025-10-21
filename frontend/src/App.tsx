@@ -33,7 +33,8 @@ import { IndividualPointsPlayer } from "./pages/simulations/individual-points/in
 import { PlayerPage } from "./pages/player/player-page";
 import { SimulatedLeaderboard } from "./pages/simulations/expected-leaderboard/expected-leaderboard-page";
 import { PlayerNetwork } from "./pages/player-network/player-network";
-import { TrackGamePage } from "./pages/add-game/track-game/track-game";
+import { TrackGamePage } from "./pages/add-game/track-game";
+import { ChooseAddOrTrack } from "./pages/add-game/choose-add-or-track";
 
 const RequireAuth: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   if (!session.isAuthenticated) {
@@ -80,8 +81,9 @@ function App() {
                           <Route path="individual-points/player" element={<IndividualPointsPlayer />} />
                         </Route>
                         <Route path="/add-player" element={<AddPlayerPage />} />
-                        <Route path="/add-game" element={<AddGamePageV2 />} />
-                        <Route path="/track-game" element={<TrackGamePage />} />
+                        <Route path="/add-game" element={<ChooseAddOrTrack />} />
+                        <Route path="/add-game-add" element={<AddGamePageV2 />} />
+                        <Route path="/add-game-track" element={<TrackGamePage />} />
                         <Route path="/game/edit/score" element={<EditGameSore />} />
                         <Route path="/camera" element={<CameraPage />} />
                         <Route path="/settings" element={<SettingsPage />} />

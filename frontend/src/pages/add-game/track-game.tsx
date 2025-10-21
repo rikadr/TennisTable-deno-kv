@@ -1,11 +1,11 @@
 import React, { useState } from "react";
-import { StepSelectPlayers } from "../step-select-players";
-import { useEventDbContext } from "../../../wrappers/event-db-context";
-import { useEventMutation } from "../../../hooks/use-event-mutation";
-import { queryClient } from "../../../common/query-client";
+import { StepSelectPlayers } from "./step-select-players";
+import { useEventDbContext } from "../../wrappers/event-db-context";
+import { useEventMutation } from "../../hooks/use-event-mutation";
+import { queryClient } from "../../common/query-client";
 import { useNavigate } from "react-router-dom";
-import { EventTypeEnum, GameCreated, GameScore } from "../../../client/client-db/event-store/event-types";
-import { newId } from "../../../common/nani-id";
+import { EventTypeEnum, GameCreated, GameScore } from "../../client/client-db/event-store/event-types";
+import { newId } from "../../common/nani-id";
 import ConfettiExplosion from "react-confetti-explosion";
 
 interface SetPoint {
@@ -98,15 +98,9 @@ export const TrackGamePage: React.FC = () => {
       return;
     }
 
-    // Convert setPoints to the format expected by validation
+    // Since our setPoints always have values (never undefined), we consider them all "set"
+    // We only send setPoints if we actually recorded them (which we always do in this flow)
     const setPointsForValidation = matchData.setPoints || [];
-    const setPointsAreSet = setPointsForValidation.some((set) => set.player1 !== 0 || set.player2 !== 0);
-    const allSetPointsAreSet = setPointsForValidation.every((set) => set.player1 !== 0 && set.player2 !== 0);
-
-    if (setPointsAreSet && allSetPointsAreSet === false) {
-      setValidationError("Missing some individual set points. Either add the missing or remove all.");
-      return;
-    }
 
     const gameScoreEvent: GameScore = {
       type: EventTypeEnum.GAME_SCORE,
@@ -117,12 +111,13 @@ export const TrackGamePage: React.FC = () => {
           gameWinner: player1 === winner ? matchData.setsWon.player1 : matchData.setsWon.player2,
           gameLoser: player1 === winner ? matchData.setsWon.player2 : matchData.setsWon.player1,
         },
-        setPoints: setPointsAreSet
-          ? setPointsForValidation.map((set) => ({
-              gameWinner: player1 === winner ? set.player1 : set.player2,
-              gameLoser: player1 === winner ? set.player2 : set.player1,
-            }))
-          : undefined,
+        setPoints:
+          setPointsForValidation.length > 0
+            ? setPointsForValidation.map((set) => ({
+                gameWinner: player1 === winner ? set.player1 : set.player2,
+                gameLoser: player1 === winner ? set.player2 : set.player1,
+              }))
+            : undefined,
       },
     };
 
@@ -435,7 +430,7 @@ export const TrackGamePage: React.FC = () => {
             {/* Action Buttons */}
             <div className="space-y-3">
               <button
-                onClick={confirmMatch}
+                onClick={() => !gameSuccessfullyAdded && confirmMatch()}
                 disabled={addEventMutation.isPending}
                 className={`w-full py-4 rounded-lg font-semibold transition flex items-center justify-center gap-2 text-base ${
                   addEventMutation.isPending
