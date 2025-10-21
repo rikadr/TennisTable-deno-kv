@@ -1,6 +1,11 @@
 import React, { useState } from "react";
 import { StepSelectPlayers } from "../step-select-players";
 import { useEventDbContext } from "../../../wrappers/event-db-context";
+import { useEventMutation } from "../../../hooks/use-event-mutation";
+import { queryClient } from "../../../common/query-client";
+import { useNavigate } from "react-router-dom";
+import { EventTypeEnum, GameCreated, GameScore } from "../../../client/client-db/event-store/event-types";
+import { newId } from "../../../common/nani-id";
 
 interface SetPoint {
   player1: number;
@@ -19,6 +24,9 @@ type Stage = "player-selection" | "scoring" | "summary";
 
 export const TrackGamePage: React.FC = () => {
   const context = useEventDbContext();
+  const addEventMutation = useEventMutation();
+  const navigate = useNavigate();
+
   const [stage, setStage] = useState<Stage>("player-selection");
   const [player1, setPlayer1] = useState<string | null>(null);
   const [player2, setPlayer2] = useState<string | null>(null);
@@ -30,6 +38,7 @@ export const TrackGamePage: React.FC = () => {
     player1: 0,
     player2: 0,
   });
+  const [validationError, setValidationError] = useState<string>("");
 
   const addPoint = (player: number) => {
     setCurrentSetScore((prev) => ({
@@ -65,44 +74,119 @@ export const TrackGamePage: React.FC = () => {
   const startMatch = () => {
     setStage("scoring");
   };
+
   const endMatch = () => {
     setStage("summary");
   };
 
-  const confirmMatch = () => {
-    // This is where you'd save the match data
-    console.log("Match confirmed:", {
-      player1,
-      player2,
-      matchData,
-    });
+  async function submitGame(winner: string, loser: string) {
+    setValidationError("");
+    const now = Date.now();
+    const gameCreatedEvent: GameCreated = {
+      type: EventTypeEnum.GAME_CREATED,
+      time: now,
+      stream: newId(),
+      data: { winner, loser, playedAt: now },
+    };
 
-    // Reset everything
-    setStage("player-selection");
-    setPlayer1("");
-    setPlayer2("");
-    setMatchData({
-      setsWon: { player1: 0, player2: 0 },
-      setPoints: [],
-    });
-    setCurrentSetScore({ player1: 0, player2: 0 });
+    const validateCreated = context.eventStore.gamesProjector.validateCreateGame(gameCreatedEvent);
+    if (validateCreated.valid === false) {
+      console.error(validateCreated.message);
+      setValidationError(validateCreated.message);
+      return;
+    }
+
+    // Convert setPoints to the format expected by validation
+    const setPointsForValidation = matchData.setPoints || [];
+    const setPointsAreSet = setPointsForValidation.some((set) => set.player1 !== 0 || set.player2 !== 0);
+    const allSetPointsAreSet = setPointsForValidation.every((set) => set.player1 !== 0 && set.player2 !== 0);
+
+    if (setPointsAreSet && allSetPointsAreSet === false) {
+      setValidationError("Missing some individual set points. Either add the missing or remove all.");
+      return;
+    }
+
+    const gameScoreEvent: GameScore = {
+      type: EventTypeEnum.GAME_SCORE,
+      time: gameCreatedEvent.time + 1,
+      stream: gameCreatedEvent.stream,
+      data: {
+        setsWon: {
+          gameWinner: player1 === winner ? matchData.setsWon.player1 : matchData.setsWon.player2,
+          gameLoser: player1 === winner ? matchData.setsWon.player2 : matchData.setsWon.player1,
+        },
+        setPoints: setPointsAreSet
+          ? setPointsForValidation.map((set) => ({
+              gameWinner: player1 === winner ? set.player1 : set.player2,
+              gameLoser: player1 === winner ? set.player2 : set.player1,
+            }))
+          : undefined,
+      },
+    };
+
+    const recordScores = gameScoreEvent.data.setsWon.gameWinner > 0 || gameScoreEvent.data.setsWon.gameLoser > 0;
+    if (recordScores) {
+      const validateScore = context.eventStore.gamesProjector.validateScoreGame(gameScoreEvent);
+      if (validateScore.valid === false) {
+        console.error(validateScore.message);
+        setValidationError(validateScore.message);
+        return;
+      }
+    }
+
+    const isPendingTournamentGame = context.tournaments.findAllPendingGames(winner, loser);
+
+    async function onSuccess() {
+      queryClient.invalidateQueries();
+      setTimeout(() => {
+        navigate(
+          isPendingTournamentGame.length > 0
+            ? `/tournament?tournament=${isPendingTournamentGame[0].tournament.id}&player1=${isPendingTournamentGame[0].player1}&player2=${isPendingTournamentGame[0].player2}`
+            : `/1v1/?player1=${winner}&player2=${loser}`,
+        );
+      }, 2_000);
+    }
+
+    if (recordScores) {
+      await addEventMutation.mutateAsync(gameCreatedEvent);
+      await addEventMutation.mutateAsync(gameScoreEvent, {
+        onSuccess,
+      });
+    } else {
+      await addEventMutation.mutateAsync(gameCreatedEvent, {
+        onSuccess,
+      });
+    }
+  }
+
+  const confirmMatch = () => {
+    if (!player1 || !player2) {
+      setValidationError("Both players must be selected");
+      return;
+    }
+
+    const winner = matchData.setsWon.player1 > matchData.setsWon.player2 ? player1 : player2;
+    const loser = matchData.setsWon.player1 > matchData.setsWon.player2 ? player2 : player1;
+
+    submitGame(winner, loser);
   };
 
   const cancelMatch = () => {
     setStage("player-selection");
-    setPlayer1("");
-    setPlayer2("");
+    setPlayer1(null);
+    setPlayer2(null);
     setMatchData({
       setsWon: { player1: 0, player2: 0 },
       setPoints: [],
     });
     setCurrentSetScore({ player1: 0, player2: 0 });
+    setValidationError("");
   };
 
   // Player Selection Screen
   if (stage === "player-selection") {
     return (
-      <div className="min-h-scre p-4">
+      <div className="min-h-screen p-4">
         <div className="max-w-sm mx-auto pt-8 space-y-4">
           <StepSelectPlayers player1={{ id: player1, set: setPlayer1 }} player2={{ id: player2, set: setPlayer2 }} />
           {player1 && player2 && (
@@ -180,7 +264,7 @@ export const TrackGamePage: React.FC = () => {
                     <button
                       onClick={() => removePoint(2)}
                       disabled={currentSetScore.player2 === 0}
-                      className={`w-12 text-center rounded-lg transition ${
+                      className={`w-12 text-center p-3 rounded-lg transition ${
                         currentSetScore.player2 === 0
                           ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                           : "bg-purple-400 text-white hover:bg-purple-500"
@@ -333,17 +417,37 @@ export const TrackGamePage: React.FC = () => {
               </div>
             )}
 
+            {/* Validation Error */}
+            {validationError && (
+              <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg text-sm">
+                {validationError}
+              </div>
+            )}
+
             {/* Action Buttons */}
             <div className="space-y-3">
               <button
                 onClick={confirmMatch}
-                className="w-full bg-green-600 text-white py-4 rounded-lg font-semibold hover:bg-green-700 transition flex items-center justify-center gap-2 text-base"
+                disabled={addEventMutation.isPending}
+                className={`w-full py-4 rounded-lg font-semibold transition flex items-center justify-center gap-2 text-base ${
+                  addEventMutation.isPending
+                    ? "bg-gray-400 text-white cursor-not-allowed"
+                    : "bg-green-600 text-white hover:bg-green-700"
+                }`}
               >
-                ✅ Confirm & Save
+                {addEventMutation.isPending ? "Submitting..." : "✅ Confirm & Save"}
+              </button>
+              <button
+                onClick={() => setStage("scoring")}
+                disabled={addEventMutation.isPending}
+                className="w-full bg-gray-200 text-gray-700 py-4 rounded-lg font-semibold hover:bg-gray-300 transition flex items-center justify-center gap-2 text-base disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {"<-"} Back
               </button>
               <button
                 onClick={cancelMatch}
-                className="w-full bg-gray-200 text-gray-700 py-4 rounded-lg font-semibold hover:bg-gray-300 transition flex items-center justify-center gap-2 text-base"
+                disabled={addEventMutation.isPending}
+                className="w-full bg-gray-200 text-gray-700 py-4 rounded-lg font-semibold hover:bg-gray-300 transition flex items-center justify-center gap-2 text-base disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 ❌ Cancel
               </button>
