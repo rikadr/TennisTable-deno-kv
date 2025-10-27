@@ -545,7 +545,7 @@ export const GameMenuItems: React.FC<GameMenuItemsProps> = (props) => {
       {props.showRegisterResult && (
         <MenuItem>
           <Link
-            to={`/add-game/?player1=${props.player1 || ""}&player2=${props.player2 || ""}`}
+            to={`/add-game-add/?player1=${props.player1 || ""}&player2=${props.player2 || ""}`}
             className="w-full px-4 py-2 text-left data-[focus]:bg-secondary-text/30"
           >
             🏆 Register result
