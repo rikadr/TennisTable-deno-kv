@@ -266,8 +266,11 @@ export class FutureElo {
     return { fraction, confidence };
   }
 
-  getDirectGameFraction(p1: string, p2: string): { fraction: Fraction; won: number; lost: number } {
-    const fallback = { fraction: { fraction: 0, confidence: 0 }, won: 0, lost: 0 };
+  getDirectGameFraction(
+    p1: string,
+    p2: string,
+  ): { fraction: Fraction; won: number; lost: number; weightedWins: number; weightedLost: number } {
+    const fallback = { fraction: { fraction: 0, confidence: 0 }, won: 0, lost: 0, weightedWins: 0, weightedLost: 0 };
 
     const player1 = this.playersMap.get(p1);
 
@@ -317,11 +320,16 @@ export class FutureElo {
       }),
       won: totalWins,
       lost: totalLoss,
+      weightedWins: gameWinsWeighted,
+      weightedLost: gameLossesWeighted,
     };
   }
 
-  getDirectSetFraction(p1: string, p2: string): { fraction: Fraction; won: number; lost: number } {
-    const fallback = { fraction: { fraction: 0, confidence: 0 }, won: 0, lost: 0 };
+  getDirectSetFraction(
+    p1: string,
+    p2: string,
+  ): { fraction: Fraction; won: number; lost: number; weightedWins: number; weightedLost: number } {
+    const fallback = { fraction: { fraction: 0, confidence: 0 }, won: 0, lost: 0, weightedWins: 0, weightedLost: 0 };
 
     const player1 = this.playersMap.get(p1);
 
@@ -376,11 +384,16 @@ export class FutureElo {
       }),
       won: setWins,
       lost: setLosses,
+      weightedWins: setWinsWeighted,
+      weightedLost: setLossesWeighted,
     };
   }
 
-  getDirectPointFraction(p1: string, p2: string): { fraction: Fraction; won: number; lost: number } {
-    const fallback = { fraction: { fraction: 0, confidence: 0 }, won: 0, lost: 0 };
+  getDirectPointFraction(
+    p1: string,
+    p2: string,
+  ): { fraction: Fraction; won: number; lost: number; weightedWins: number; weightedLost: number } {
+    const fallback = { fraction: { fraction: 0, confidence: 0 }, won: 0, lost: 0, weightedWins: 0, weightedLost: 0 };
 
     const player1 = this.playersMap.get(p1);
 
@@ -435,6 +448,8 @@ export class FutureElo {
       }),
       won: pointWins,
       lost: pointLosses,
+      weightedWins: pointWinsWeighted,
+      weightedLost: pointLossesWeighted,
     };
   }
 

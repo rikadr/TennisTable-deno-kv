@@ -84,9 +84,9 @@ export const PlayerPredictions: React.FC<Props> = ({ playerId }) => {
             {/* Player Content - Expandable */}
             {isExpanded && (
               <div className="p-4 bg-primary-background text-primary-text ">
-                <div className="flex gap-0 md:gap-2 lg:gap-6 border-l-2 border-secondary-background py-2 overflow-auto">
+                <div className="flex gap-4 border-l-2 border-secondary-background py-2 overflow-auto pl-6">
                   {/* Probability Breakdown */}
-                  <ul className="ml-6 space-y-1">
+                  <ul className="space-y-1">
                     <li className="text-sm flex items-center gap-2 whitespace-nowrap">Indirect level analysis</li>
                     {fractions.map((fraction, index) => {
                       const hasNoConfidence = (fraction?.confidence || 0) === 0;
@@ -120,7 +120,12 @@ export const PlayerPredictions: React.FC<Props> = ({ playerId }) => {
                       );
                     })}
                   </ul>
-                  <ul className="ml-6 space-y-1">
+                  <div>
+                    <p className="text-2xl">&larr;</p>
+                    <p className="text-xl rotate-90">&#x21b5;</p>
+                    <p className="text-xl rotate-90">&#x21b5;</p>
+                  </div>
+                  <ul className="space-y-1">
                     <li className="text-sm flex items-center gap-2 whitespace-nowrap">Per score level analysis</li>
 
                     {Array(3)
@@ -172,7 +177,67 @@ export const PlayerPredictions: React.FC<Props> = ({ playerId }) => {
                         );
                       })}
                   </ul>
-                  <ul className="ml-6 space-y-1 pr-6">
+                  <div className="text-2xl">&larr;</div>
+                  <ul className="space-y-1 pr-6">
+                    <li className="text-sm flex items-center gap-2 whitespace-nowrap">Recency bias adjusted scores</li>
+                    {Array(3)
+                      .fill(1)
+                      .map((_, index) => {
+                        let lable = "";
+                        let won = 0;
+                        let lost = 0;
+
+                        switch (index) {
+                          case 0:
+                            {
+                              const game = context.futureElo.getDirectGameFraction(playerId, oponentId);
+                              won = game.weightedWins;
+                              lost = game.weightedLost;
+                              lable = "Games";
+                            }
+                            break;
+                          case 1:
+                            {
+                              const game = context.futureElo.getDirectSetFraction(playerId, oponentId);
+                              won = game.weightedWins;
+                              lost = game.weightedLost;
+                              lable = "Sets";
+                            }
+                            break;
+                          case 2:
+                            {
+                              const game = context.futureElo.getDirectPointFraction(playerId, oponentId);
+                              won = game.weightedWins;
+                              lost = game.weightedLost;
+                              lable = "Points";
+                            }
+                            break;
+                        }
+                        const hasNoData = !won && !lost;
+
+                        return (
+                          <li
+                            key={"score fractions " + playerId + oponentId + index}
+                            className={classNames(
+                              "text-sm flex items-center gap-2 whitespace-nowrap",
+                              hasNoData && "line-through opacity-30",
+                            )}
+                          >
+                            <span className="opacity-70 font-light italic text-primary-text w-12 text-right">
+                              {lable}:
+                            </span>
+                            <span className="w-8">{!!won || !!lost ? fmtNum((won / (won + lost)) * 100) : "- "}%</span>
+                            {(!!won || !!lost) && (
+                              <span className="ml-2 px-2 py-0.5 bg-secondary-background text-secondary-text rounded text-xs">
+                                {fmtNum(won, { digits: 1 })} : {fmtNum(lost, { digits: 1 })}
+                              </span>
+                            )}
+                          </li>
+                        );
+                      })}
+                  </ul>
+                  <div className="text-2xl">&larr;</div>
+                  <ul className="space-y-1 pr-6">
                     <li className="text-sm flex items-center gap-2 whitespace-nowrap">Total scored</li>
                     {Array(3)
                       .fill(1)
