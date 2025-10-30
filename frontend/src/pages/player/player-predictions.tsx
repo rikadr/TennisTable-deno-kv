@@ -86,6 +86,11 @@ export const PlayerPredictions: React.FC<Props> = ({ playerId }) => {
               <div className="p-4 bg-primary-background text-primary-text ">
                 <div className="flex gap-4 border-l-2 border-secondary-background py-2 overflow-auto pl-6">
                   {/* Probability Breakdown */}
+                  <div className="mt-4 -space-y-0 opacity-50">
+                    <p className="text-base rotate-90">&#x21b5;</p>
+                    <p className="text-base rotate-90">&#x21b5;</p>
+                    <p className="text-base rotate-90">&#x21b5;</p>
+                  </div>
                   <ul className="space-y-1">
                     <li className="text-sm flex items-center gap-2 whitespace-nowrap">Indirect level analysis</li>
                     {fractions.map((fraction, index) => {
@@ -120,10 +125,10 @@ export const PlayerPredictions: React.FC<Props> = ({ playerId }) => {
                       );
                     })}
                   </ul>
-                  <div>
-                    <p className="text-2xl">&larr;</p>
-                    <p className="text-xl rotate-90">&#x21b5;</p>
-                    <p className="text-xl rotate-90">&#x21b5;</p>
+                  <div className="mt-5 -space-y-1 opacity-50">
+                    <p className="text-lg">&larr;</p>
+                    <p className="text-base rotate-90">&#x21b5;</p>
+                    <p className="text-base rotate-90">&#x21b5;</p>
                   </div>
                   <ul className="space-y-1">
                     <li className="text-sm flex items-center gap-2 whitespace-nowrap">Per score level analysis</li>
@@ -177,7 +182,11 @@ export const PlayerPredictions: React.FC<Props> = ({ playerId }) => {
                         );
                       })}
                   </ul>
-                  <div className="text-2xl">&larr;</div>
+                  <div className="mt-5 -space-y-1 opacity-50">
+                    <p className="text-lg">&larr;</p>
+                    <p className="text-lg">&larr;</p>
+                    <p className="text-lg">&larr;</p>
+                  </div>
                   <ul className="space-y-1 pr-6">
                     <li className="text-sm flex items-center gap-2 whitespace-nowrap">Recency bias adjusted scores</li>
                     {Array(3)
@@ -236,7 +245,11 @@ export const PlayerPredictions: React.FC<Props> = ({ playerId }) => {
                         );
                       })}
                   </ul>
-                  <div className="text-2xl">&larr;</div>
+                  <div className="mt-5 -space-y-1 opacity-50">
+                    <p className="text-lg">&larr;</p>
+                    <p className="text-lg">&larr;</p>
+                    <p className="text-lg">&larr;</p>
+                  </div>
                   <ul className="space-y-1 pr-6">
                     <li className="text-sm flex items-center gap-2 whitespace-nowrap">Total scored</li>
                     {Array(3)
