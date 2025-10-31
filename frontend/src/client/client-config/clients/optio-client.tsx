@@ -62,19 +62,33 @@ export const optioPlayersByName = {
   Daniel: "o8GLyAvjYV",
   Sveinung: "xz8yoKjeSp",
   Bendik: "XVUtdsdCFj",
+  Mads: "cTwA5h5Eph",
+  Francesco: "m7FzHJvxnc",
+  Magnus: "5MYtada4AW",
 } as const;
 export class OptioClient implements ClientConfig {
   id = process.env.REACT_APP_CLIENT;
   name = "Optio";
-  // theme = Theme.DEFAULT;
-  theme = Theme.HALLOWEEN;
+  theme = Theme.DEFAULT;
   logo = new GuestClient().logo;
   snow = false;
   title = new GuestClient().title;
   favicon = new GuestClient().favicon;
   gameLimitForRanked = 15;
-  tournaments = [optioChristmasTournament, optioEasterTournament];
+  tournaments = [optioChristmasTournament, optioEasterTournament, the2025YearEndOfficeOpen];
 }
+
+const the2025YearEndOfficeOpen: TournamentDB = {
+  id: "2XQllk6sPF",
+  name: "2025 Year-End Office Open 🏆🏓",
+  description:
+    "Join the 2025 Year-End Office Open starting November 5th! Compete in group play where everyone faces everyone, then advance to knockout finals based on your points. Sign up and claim your bragging rights! 🏓",
+  startDate: 1762333200000,
+  groupPlay: true,
+  signedUp: [],
+  skippedGames: [],
+  playerOrder: [],
+};
 
 const optioEasterTournament: TournamentDB = {
   id: "bwzIXeHSRF",
