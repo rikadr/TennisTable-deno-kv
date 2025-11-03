@@ -14,7 +14,7 @@ import {
 } from "../../client/client-db/event-store/event-types";
 import { EditPlayerName } from "./edit-player-name";
 import { fmtNum } from "../../common/number-utils";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { GamesPerMonthChart } from "./games-per-month";
 import { GamesPerWeekChart } from "./games-per-week";
 import { TopGamingDays } from "./top-days";
@@ -281,41 +281,117 @@ export const AdminPage: React.FC = () => {
                 <tr>
                   <th className="border border-gray-300 px-4 py-2 text-left">Player Name</th>
                   <th className="border border-gray-300 px-4 py-2 text-left">Status</th>
+                  <th className="border border-gray-300 px-4 py-2 text-left">Created at</th>
+                  <th className="border border-gray-300 px-4 py-2 text-left">Updated at</th>
                   <th className="border border-gray-300 px-4 py-2 text-center">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {/* Active Players */}
-                {context.eventStore.playersProjector.players.map((player) => (
-                  <tr key={player.id} className="hover:bg-secondary-background/50">
-                    <td className="border border-gray-300 px-4 py-2">{player.name}</td>
-                    <td className="border border-gray-300 px-4 py-2">
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                        Active
-                      </span>
-                    </td>
-                    <td className="border border-gray-300 px-4 py-2 text-center">
-                      <div className="flex gap-2 justify-center">
-                        <button
-                          className="text-xs bg-red-500 hover:bg-red-700 text-white px-2 py-1 rounded-md"
-                          onClick={() => handleDeactivatePlayer(player.id)}
-                        >
-                          Deactivate
-                        </button>
-                        <EditPlayerName playerId={player.id} />
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                {context.eventStore.playersProjector.players
+                  .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" }))
+                  .map((player) => (
+                    <tr key={player.id} className="hover:bg-secondary-background/50">
+                      <td className="border border-gray-300 px-4 py-2">
+                        <Link to={`/player/${player.id}`}>{player.name}</Link>
+                      </td>
+                      <td className="border border-gray-300 px-4 py-2">
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          Active
+                        </span>
+                      </td>
+                      <td className="border border-gray-300 px-4 py-1">
+                        <p>{relativeTimeString(new Date(player.createdAt))}</p>
+                        <p>
+                          {new Date(player.createdAt).toLocaleDateString("nb-NO", {
+                            weekday: "long",
+                            month: "long",
+                            day: "numeric",
+                            year: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            second: "2-digit",
+                          })}
+                        </p>
+                      </td>
+                      <td className="border border-gray-300 px-4 py-1">
+                        {player.createdAt !== player.updatedAt ? (
+                          <>
+                            <p>{relativeTimeString(new Date(player.updatedAt))}</p>
+                            <p>
+                              {new Date(player.updatedAt).toLocaleDateString("nb-NO", {
+                                weekday: "long",
+                                month: "long",
+                                day: "numeric",
+                                year: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                                second: "2-digit",
+                              })}
+                            </p>
+                            {player.updateAction && <p>{player.updateAction}</p>}
+                          </>
+                        ) : (
+                          <>-</>
+                        )}
+                      </td>
+                      <td className="border border-gray-300 px-4 py-2 text-center">
+                        <div className="flex gap-2 justify-center">
+                          <button
+                            className="text-xs bg-red-500 hover:bg-red-700 text-white px-2 py-1 rounded-md"
+                            onClick={() => handleDeactivatePlayer(player.id)}
+                          >
+                            Deactivate
+                          </button>
+                          <EditPlayerName playerId={player.id} />
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
 
                 {/* Inactive Players */}
                 {context.eventStore.playersProjector.inactivePlayers.map((player) => (
                   <tr key={player.id} className="hover:bg-secondary-background/50 bg-gray-25">
                     <td className="border border-gray-300 px-4 py-2 text-gray-600">{player.name}</td>
                     <td className="border border-gray-300 px-4 py-2">
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-400 text-gray-800">
                         Inactive
                       </span>
+                    </td>
+                    <td className="border border-gray-300 px-4 py-1">
+                      <p>{relativeTimeString(new Date(player.createdAt))}</p>
+                      <p>
+                        {new Date(player.createdAt).toLocaleDateString("nb-NO", {
+                          weekday: "long",
+                          month: "long",
+                          day: "numeric",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                          second: "2-digit",
+                        })}
+                      </p>
+                    </td>
+                    <td className="border border-gray-300 px-4 py-1">
+                      {player.createdAt !== player.updatedAt ? (
+                        <>
+                          <p>{relativeTimeString(new Date(player.updatedAt))}</p>
+                          <p>
+                            {new Date(player.updatedAt).toLocaleDateString("nb-NO", {
+                              weekday: "long",
+                              month: "long",
+                              day: "numeric",
+                              year: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                              second: "2-digit",
+                            })}
+                          </p>
+                          {player.updateAction && <p>{player.updateAction}</p>}
+                        </>
+                      ) : (
+                        <>-</>
+                      )}
                     </td>
                     <td className="border border-gray-300 px-4 py-2 text-center">
                       <button
