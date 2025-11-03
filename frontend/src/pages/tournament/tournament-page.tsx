@@ -538,7 +538,7 @@ export const GameMenuItems: React.FC<GameMenuItemsProps> = (props) => {
             to={`/1v1/?player1=${props.player1 || ""}&player2=${props.player2 || ""}`}
             className="w-full px-4 py-2 text-left data-[focus]:bg-secondary-text/30"
           >
-            🥊 Compare 1v1 👀
+            🥊👀 Compare 1v1
           </Link>
         </MenuItem>
       )}
@@ -548,7 +548,17 @@ export const GameMenuItems: React.FC<GameMenuItemsProps> = (props) => {
             to={`/add-game-add/?player1=${props.player1 || ""}&player2=${props.player2 || ""}`}
             className="w-full px-4 py-2 text-left data-[focus]:bg-secondary-text/30"
           >
-            🏆 Register result
+            🏆🤝 Register completed result
+          </Link>
+        </MenuItem>
+      )}
+      {props.showRegisterResult && (
+        <MenuItem>
+          <Link
+            to={`/add-game-track/?player1=${props.player1 || ""}&player2=${props.player2 || ""}`}
+            className="w-full px-4 py-2 text-left data-[focus]:bg-secondary-text/30"
+          >
+            🏆🔴 Track game live
           </Link>
         </MenuItem>
       )}

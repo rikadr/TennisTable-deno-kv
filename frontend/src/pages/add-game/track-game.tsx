@@ -7,6 +7,10 @@ import { useNavigate } from "react-router-dom";
 import { EventTypeEnum, GameCreated, GameScore } from "../../client/client-db/event-store/event-types";
 import { newId } from "../../common/nani-id";
 import ConfettiExplosion from "react-confetti-explosion";
+import { PendingTournamentGame } from "./pending-tournament-game";
+import { useTennisParams } from "../../hooks/use-tennis-params";
+import { classNames } from "../../common/class-names";
+import { ProfilePicture } from "../player/profile-picture";
 
 interface SetPoint {
   player1: number;
@@ -27,10 +31,11 @@ export const TrackGamePage: React.FC = () => {
   const context = useEventDbContext();
   const addEventMutation = useEventMutation();
   const navigate = useNavigate();
+  const params = useTennisParams();
 
   const [stage, setStage] = useState<Stage>("player-selection");
-  const [player1, setPlayer1] = useState<string | null>(null);
-  const [player2, setPlayer2] = useState<string | null>(null);
+  const [player1, setPlayer1] = useState<string | null>(params.player1);
+  const [player2, setPlayer2] = useState<string | null>(params.player2);
   const [matchData, setMatchData] = useState<MatchData>({
     setsWon: { player1: 0, player2: 0 },
     setPoints: [],
@@ -184,7 +189,9 @@ export const TrackGamePage: React.FC = () => {
   // Player Selection Screen
   if (stage === "player-selection") {
     return (
-      <div className="min-h-screen p-4">
+      <div className="p-4 max-w-xl m-auto">
+        {player1 && player2 && <PendingTournamentGame player1={player1} player2={player2} />}
+
         <div className="max-w-sm mx-auto pt-8 space-y-4">
           <StepSelectPlayers player1={{ id: player1, set: setPlayer1 }} player2={{ id: player2, set: setPlayer2 }} />
           {player1 && player2 && (
@@ -209,7 +216,7 @@ export const TrackGamePage: React.FC = () => {
       (matchData.setPoints?.length || 0) > 0 && isSetEmpty && matchData.setsWon.player1 !== matchData.setsWon.player2;
 
     return (
-      <div className="min-h-screen text-black p-4">
+      <div className="text-black p-4">
         <div className="max-w-sm mx-auto">
           <div className="bg-white rounded-xl shadow-lg p-4 mb-4">
             <div className="text-center mb-4">
@@ -339,14 +346,21 @@ export const TrackGamePage: React.FC = () => {
                     <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg text-sm">
                       <span className="font-semibold text-gray-700">Set {index + 1}</span>
                       <div className="flex items-center gap-3">
-                        <span className={`font-bold ${setWinner === 1 ? "text-blue-600" : "text-gray-400"}`}>
-                          {set.player1}
-                        </span>
-                        <span className="text-gray-400">-</span>
-                        <span className={`font-bold ${setWinner === 2 ? "text-purple-600" : "text-gray-400"}`}>
-                          {set.player2}
-                        </span>
-                        🏆
+                        <div className="w-5">{setWinner === 1 && "🏆"}</div>
+                        <div className="w-16 flex items-center justify-between text-lg">
+                          <span
+                            className={classNames("font-bold", setWinner === 1 ? "text-blue-600" : "text-gray-400")}
+                          >
+                            {set.player1}
+                          </span>
+                          <span className="text-gray-400">-</span>
+                          <span
+                            className={classNames("font-bold", setWinner === 2 ? "text-purple-600" : "text-gray-400")}
+                          >
+                            {set.player2}
+                          </span>
+                        </div>
+                        <div className="w-5">{setWinner === 2 && "🏆"}</div>
                       </div>
                     </div>
                   );
@@ -364,7 +378,7 @@ export const TrackGamePage: React.FC = () => {
     const winner = matchData.setsWon.player1 > matchData.setsWon.player2 ? player1 : player2;
 
     return (
-      <div className="min-h-screen p-4">
+      <div className="p-4">
         {gameSuccessfullyAdded && (
           <div className="flex justify-center">
             <ConfettiExplosion particleCount={250} force={0.8} width={2_000} duration={10_000} />
@@ -375,9 +389,12 @@ export const TrackGamePage: React.FC = () => {
             <div className="text-center mb-6">
               🏆
               <h1 className="text-2xl font-bold text-gray-800 mb-2">Match Complete!</h1>
-              <p className="text-lg text-gray-600">
+              <p className="text-lg text-gray-600 text-center">
                 Winner: <span className="font-bold text-indigo-600">{context.playerName(winner)}</span>
               </p>
+              <div className="m-auto w-fit">
+                <ProfilePicture playerId={winner} border={12} shape="rounded" />
+              </div>
             </div>
 
             {/* Final Score */}
@@ -400,22 +417,31 @@ export const TrackGamePage: React.FC = () => {
               <div className="mb-6">
                 <h3 className="text-base font-bold text-gray-800 mb-3">Set Details</h3>
                 <div className="space-y-2">
-                  {matchData.setPoints.map((set, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg text-sm">
-                      <span className="font-semibold text-gray-700">Set {index + 1}</span>
-                      <div className="flex items-center gap-3">
-                        <span className={`font-bold ${set.player1 > set.player2 ? "text-blue-600" : "text-gray-400"}`}>
-                          {set.player1}
-                        </span>
-                        <span className="text-gray-400">-</span>
-                        <span
-                          className={`font-bold ${set.player2 > set.player1 ? "text-purple-600" : "text-gray-400"}`}
-                        >
-                          {set.player2}
-                        </span>
+                  {matchData.setPoints.map((set, index) => {
+                    const setWinner = set.player1 > set.player2 ? 1 : 2;
+                    return (
+                      <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg text-sm">
+                        <span className="font-semibold text-gray-700">Set {index + 1}</span>
+                        <div className="flex items-center gap-3">
+                          <div className="w-5">{setWinner === 1 && "🏆"}</div>
+                          <div className="w-16 flex items-center justify-between text-lg">
+                            <span
+                              className={classNames("font-bold", setWinner === 1 ? "text-blue-600" : "text-gray-400")}
+                            >
+                              {set.player1}
+                            </span>
+                            <span className="text-gray-400">-</span>
+                            <span
+                              className={classNames("font-bold", setWinner === 2 ? "text-purple-600" : "text-gray-400")}
+                            >
+                              {set.player2}
+                            </span>
+                          </div>
+                          <div className="w-5">{setWinner === 2 && "🏆"}</div>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}

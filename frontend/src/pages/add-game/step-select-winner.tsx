@@ -3,6 +3,7 @@ import { classNames } from "../../common/class-names";
 import { fmtNum } from "../../common/number-utils";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { ProfilePicture } from "../player/profile-picture";
+import { PendingTournamentGame } from "./pending-tournament-game";
 
 export const StepSelectWinner: React.FC<{
   player1: string;
@@ -19,6 +20,7 @@ export const StepSelectWinner: React.FC<{
 
   return (
     <div className="space-y-6 max-w-2xl mx-auto">
+      <PendingTournamentGame player1={player1} player2={player2} />
       <h2 className="text-xl font-bold text-primary-text text-center mb-6">Who won?</h2>
       <div className="space-y-4">
         <PlayerBox
