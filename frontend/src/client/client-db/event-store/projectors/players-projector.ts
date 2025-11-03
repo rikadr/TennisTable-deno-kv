@@ -1,7 +1,14 @@
 import { PlayerCreated, PlayerDeactivated, PlayerNameUpdated, PlayerReactivated } from "../event-types";
 import { ValidatorResponse } from "./validator-types";
 
-export type Player = { id: string; name: string; active: boolean };
+export type Player = {
+  id: string;
+  name: string;
+  active: boolean;
+  createdAt: number;
+  updatedAt: number;
+  updateAction?: string;
+};
 
 export class PlyersProjector {
   #playersMap = new Map<string, Player>();
@@ -19,7 +26,13 @@ export class PlyersProjector {
   }
 
   createPlayer(event: PlayerCreated) {
-    const player: Player = { id: event.stream, name: event.data.name, active: true };
+    const player: Player = {
+      id: event.stream,
+      name: event.data.name,
+      active: true,
+      createdAt: event.time,
+      updatedAt: event.time,
+    };
     this.#playersMap.set(event.stream, player);
   }
 
@@ -42,6 +55,8 @@ export class PlyersProjector {
     const player = this.#playersMap.get(event.stream);
     if (player) {
       player.active = false;
+      player.updatedAt = event.time;
+      player.updateAction = "Deactivated";
     }
   }
 
@@ -60,6 +75,8 @@ export class PlyersProjector {
     const player = this.#playersMap.get(event.stream);
     if (player) {
       player.active = true;
+      player.updatedAt = event.time;
+      player.updateAction = "Re-activated";
     }
   }
 
@@ -78,7 +95,9 @@ export class PlyersProjector {
   updateName(event: PlayerNameUpdated) {
     const player = this.#playersMap.get(event.stream);
     if (player) {
+      player.updateAction = "Name Updated from " + player.name;
       player.name = event.data.updatedName;
+      player.updatedAt = event.time;
     }
   }
 
