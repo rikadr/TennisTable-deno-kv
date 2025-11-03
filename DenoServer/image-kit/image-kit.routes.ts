@@ -1,4 +1,4 @@
-import { Router } from "https://deno.land/x/oak@v16.0.0/router.ts";
+import { Router } from "oak";
 
 export function registerImageKitRoutes(api: Router) {
   api.get("/image-kit-auth", async (context) => {

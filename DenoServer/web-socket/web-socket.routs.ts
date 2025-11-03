@@ -1,4 +1,4 @@
-import { Router, RouterContext } from "https://deno.land/x/oak@v16.0.0/router.ts";
+import { Router, RouterContext } from "oak";
 import { webSocketClientManager } from "../server.ts";
 
 export function registerWebSocketRoutes(api: Router) {

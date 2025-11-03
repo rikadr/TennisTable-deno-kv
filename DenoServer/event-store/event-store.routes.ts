@@ -1,9 +1,9 @@
-import { Router } from "https://deno.land/x/oak@v16.0.0/router.ts";
 import { EventType, EventTypeEnum } from "./event-types.ts";
 import { getEventsAfter, storeEvent } from "./event-store.ts";
 import { webSocketClientManager } from "../server.ts";
 import { hasAccess } from "../auth-service/middleware.ts";
 import { kv } from "../db.ts";
+import { Router } from "oak";
 
 export function registerEventStoreRoutes(api: Router) {
   /**
