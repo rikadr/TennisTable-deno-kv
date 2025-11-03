@@ -102,17 +102,19 @@ export class TournamentGroupPlay {
     return groups;
   }
 
-  #getGroupSizes(players: number): number[] {
-    if (players === 24) return [5, 5, 5, 5, 4]; // Special case
-
-    function getPreferredGroupSize(players: number): number {
-      if (players <= 8) return 3;
-      if (players === 11) return 3; // 4, 4, 3 instead of 6, 5
-      if (players <= 19) return 4;
-      if (players >= 21 && players <= 23) return 4;
-      return 5;
+  #getPreferredGroupSize(players: number): number {
+    if (this.#tournament.tournamentDb.overridePreferredGroupSize) {
+      return this.#tournament.tournamentDb.overridePreferredGroupSize;
     }
-    const groupSize = getPreferredGroupSize(players);
+    if (players <= 8) return 3;
+    if (players === 12) return 5; // 6, 6 instead of 4, 4, 4
+    if (players <= 14) return 4;
+    if (players === 19) return 4; // 5, 5, 5, 4 instead of 6, 6, 7
+    return 5;
+  }
+
+  #getGroupSizes(players: number): number[] {
+    const groupSize = this.#getPreferredGroupSize(players);
     const fullGroups = Math.floor(players / groupSize);
     const restPlayers = players % groupSize;
 

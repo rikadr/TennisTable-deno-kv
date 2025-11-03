@@ -1,6 +1,6 @@
 import { optioPlayersById } from "../client/client-config/clients/optio-client";
 
-export function stringToColor(playerId?: string) {
+export function stringToColor(playerId?: string): string {
   if (!playerId) return "#4338ca";
 
   if (playerId in optioPlayersById) {

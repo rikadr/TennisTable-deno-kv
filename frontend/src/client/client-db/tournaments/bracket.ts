@@ -29,11 +29,11 @@ export class TournamentBracket {
     this.bracket = this.#getStartingBracket();
     this.#fillBracketWithGames();
     this.bracketGames = this.#calculateBracketGames();
-    this.bracketEnded = this.bracket[0][0]?.completedAt;
+    this.bracketEnded = this.bracket[0]?.[0]?.completedAt;
   }
 
   get winner() {
-    return this.bracket[0][0]?.winner;
+    return this.bracket[0]?.[0]?.winner;
   }
 
   #getStartingBracket(): Bracket {
