@@ -1,3 +1,4 @@
 .env
 *.env
 /DenoServer/.env
+/DenoServer/node_modules
