@@ -92,6 +92,7 @@ export const TournamentSignup: React.FC<{ tournament: Tournament }> = ({ tournam
           )}
           {context.players
             .filter((p) => !tournament.signedUp.some((s) => s.player === p.name))
+            .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" }))
             .map((player) => (
               <option value={player.id} key={player.name}>
                 {player.name}
