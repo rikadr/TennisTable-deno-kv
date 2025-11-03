@@ -339,7 +339,10 @@ export const AdminPage: React.FC = () => {
                         <div className="flex gap-2 justify-center">
                           <button
                             className="text-xs bg-red-500 hover:bg-red-700 text-white px-2 py-1 rounded-md"
-                            onClick={() => handleDeactivatePlayer(player.id)}
+                            onClick={() =>
+                              window.confirm("Are you sure you want to deactivate " + context.playerName(player.id)) &&
+                              handleDeactivatePlayer(player.id)
+                            }
                           >
                             Deactivate
                           </button>
@@ -396,7 +399,10 @@ export const AdminPage: React.FC = () => {
                     <td className="border border-gray-300 px-4 py-2 text-center">
                       <button
                         className="text-xs bg-gray-400 hover:bg-green-400 text-white px-2 py-1 rounded-md"
-                        onClick={() => handleReactivatePlayer(player.id)}
+                        onClick={() =>
+                          window.confirm("Are you sure you want to re-activate " + context.playerName(player.id)) &&
+                          handleReactivatePlayer(player.id)
+                        }
                       >
                         Re-activate
                       </button>

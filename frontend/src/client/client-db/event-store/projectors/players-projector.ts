@@ -95,7 +95,7 @@ export class PlyersProjector {
   updateName(event: PlayerNameUpdated) {
     const player = this.#playersMap.get(event.stream);
     if (player) {
-      player.updateAction = "Name Updated from " + player.name;
+      player.updateAction = "Name updated from " + player.name;
       player.name = event.data.updatedName;
       player.updatedAt = event.time;
     }
