@@ -1,4 +1,5 @@
 {
+  "nodeModulesDir": "auto",
   "tasks": {
     "dev": "deno run --allow-net --allow-env --allow-read --env --watch --unstable-kv server.ts"
   },
@@ -11,7 +12,7 @@
   "imports": {
     "bcrypt": "https://deno.land/x/bcrypt@v0.4.1/mod.ts",
     "jose": "https://deno.land/x/jose@v5.3.0/index.ts",
-    "oak": "https://deno.land/x/oak@v16.0.0/mod.ts",
+    "oak": "jsr:@oak/oak@^17.1.6",
     "cors": "https://deno.land/x/cors@v1.2.2/mod.ts",
     "nanoid": "https://deno.land/x/nanoid/mod.ts"
   }
