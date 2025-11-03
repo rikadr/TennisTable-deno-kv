@@ -82,7 +82,7 @@ const the2025YearEndOfficeOpen: TournamentDB = {
   id: "2XQllk6sPF",
   name: "2025 Year-End Office Open 🏆🏓",
   description:
-    "Join the 2025 Year-End Office Open starting November 5th! Compete in group play where everyone faces everyone, then advance to knockout finals based on your points. Sign up and claim your bragging rights! 🏓",
+    "Join the 2025 Year-End Office Open starting November 5th! Compete in group play where everyone faces everyone in your group, then advance to knockout finals. Sign up and claim your bragging rights! 🏓",
   startDate: 1762333200000,
   groupPlay: true,
   signedUp: [],
