@@ -21,13 +21,15 @@ import { TopGamingDays } from "./top-days";
 import { GamesPerWeekdayChart } from "./games-weekdays";
 import { GamesPerTimeChart } from "./hour-of-the-day";
 import { LocalAdminControls } from "./local-admin-controls";
+import { Events } from "./events";
 
-type TabType = "stats" | "games" | "players" | "users" | "local";
+type TabType = "stats" | "games" | "players" | "users" | "events" | "local";
 const tabs: { id: TabType; label: string }[] = [
   { id: "stats", label: "Stats" },
   { id: "games", label: "Games" },
   { id: "players", label: "Players" },
   { id: "users", label: "Users" },
+  { id: "events", label: "Events" },
   { id: "local", label: "Local" },
 ];
 
@@ -416,6 +418,8 @@ export const AdminPage: React.FC = () => {
       )}
 
       {activeTab === "users" && <Users />}
+
+      {activeTab === "events" && <Events />}
 
       {activeTab === "local" && process.env.REACT_APP_ENV === "local" && <LocalAdminControls />}
     </div>
