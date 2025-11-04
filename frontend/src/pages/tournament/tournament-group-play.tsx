@@ -89,10 +89,9 @@ export const GroupDistribution: React.FC<{ tournament: Tournament }> = ({ tourna
     groupIndex: groups.findIndex((group) => group.players.includes(player)),
   }));
   return (
-    <div className="flex flex-col ">
+    <div className="flex flex-col">
       <div className="flex">
         <div className="w-24 mr-2" />
-
         {groups.map((group, index) => (
           <div key={index} className="w-8">
             {index + 1} ({group.players.length})

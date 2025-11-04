@@ -7,12 +7,15 @@ import { useEventDbContext } from "../wrappers/event-db-context";
 import { useEventMutation } from "../hooks/use-event-mutation";
 import { EventTypeEnum, PlayerCreated } from "../client/client-db/event-store/event-types";
 import { newId } from "../common/nani-id";
+import { stringToColor } from "../common/string-to-color";
 
 export const AddPlayerPage: React.FC = () => {
   const navigate = useNavigate();
   const context = useEventDbContext();
   const addEventMutation = useEventMutation();
   const [playerName, setPlayerName] = useState("");
+  const [playerId, setPlayerId] = useState(newId());
+  const [colorOptions, setColorOptions] = useState([newId(), newId(), newId()]);
   const [errorMessage, setErrorMessage] = useState<string>();
   const [playerSuccessfullyAdded, setPlayerSuccessfullyAdded] = useState(false);
 
@@ -30,7 +33,7 @@ export const AddPlayerPage: React.FC = () => {
     const event: PlayerCreated = {
       type: EventTypeEnum.PLAYER_CREATED,
       time: Date.now(),
-      stream: newId(),
+      stream: playerId,
       data: { name },
     };
 
@@ -54,38 +57,100 @@ export const AddPlayerPage: React.FC = () => {
     });
   }
 
+  function selectColor(selectedId: string) {
+    setPlayerId(selectedId);
+    // Generate 3 new random color options
+    setColorOptions([newId(), newId(), newId()]);
+  }
+
   return (
-    <div className="flex flex-col items-center gap-2 w-96 m-auto bg-primary-background text-primary-text rounded-lg">
-      <h1>Add player</h1>
-      <p>Player name</p>
-      <input
-        type="text"
-        className="text-black ring-1 ring-primary-text rounded-lg px-2 py-1"
-        value={playerName}
-        onChange={(e) => setPlayerName(e.target.value)}
-        placeholder="Name"
-      />
-      {errorMessage && !playerSuccessfullyAdded && <p className="text-red-500 bg-gray-700">{errorMessage}</p>}
-      <button
-        disabled={!!errorMessage || addEventMutation.isPending || !playerName}
-        className={classNames(
-          "text-lg font-semibold w-full flex flex-col items-center py-4 px-6 bg-secondary-background hover:bg-secondary-background/70 text-secondary-text rounded-lg",
-          (!!errorMessage || !playerName) && "cursor-not-allowed opacity-50 hover:bg-secondary-background",
-          playerSuccessfullyAdded && "animate-ping-once",
-        )}
-        onClick={() => submitPlayer(playerName)}
-      >
-        {addEventMutation.isPending && (
-          <div className="flex items-center justify-center gap-2">
-            Adding player ... <div className="animate-spin">👤</div>
+    <div className="min-h-screen bg-primary-background py-8 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md mx-auto">
+        <div className="bg-primary-background text-primary-text rounded-lg shadow-lg p-6 sm:p-8 space-y-6">
+          {/* Header */}
+          <div className="text-center space-y-2">
+            <h1 className="text-2xl sm:text-3xl font-bold">Add Player</h1>
+            <p className="text-sm sm:text-base text-primary-text/70">Create a new player profile</p>
           </div>
-        )}
-        {playerSuccessfullyAdded && "Success ✅"}
-        {!addEventMutation.isPending && !playerSuccessfullyAdded && "Add player 👤"}
-        {playerSuccessfullyAdded && (
-          <ConfettiExplosion particleCount={250} force={0.8} width={2_000} duration={10_000} />
-        )}
-      </button>
+
+          {/* Player Name Input */}
+          <div className="space-y-2">
+            <label htmlFor="playerName" className="block text-sm font-medium">
+              Player Name
+            </label>
+            <input
+              id="playerName"
+              type="text"
+              className="w-full text-black ring-1 ring-primary-text rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-primary-text/50 transition-all"
+              value={playerName}
+              onChange={(e) => setPlayerName(e.target.value)}
+              placeholder="Enter player name"
+            />
+            {errorMessage && !playerSuccessfullyAdded && (
+              <p className="text-sm text-red-400 bg-red-950/30 px-3 py-2 rounded-md border border-red-900/50">
+                {errorMessage}
+              </p>
+            )}
+          </div>
+
+          {/* Color Picker */}
+          <div className="space-y-3">
+            <div
+              className="w-full text-center flex items-center justify-center flex-col p-6 rounded-lg shadow-md"
+              style={{ background: stringToColor(playerId) }}
+            >
+              <div className="size-24 font-bold rounded-full bg-white/20 backdrop-blur-sm mb-2 flex items-center justify-center text-7xl">
+                {playerName[0]}
+              </div>
+              <span className="font-semibold text-white drop-shadow-md">Player color</span>
+            </div>
+
+            {/* Color Options */}
+            <p className="text-xs text-center text-primary-text">Click a color to select another color:</p>
+            <div className="grid grid-cols-3 gap-3">
+              {colorOptions.map((optionId) => (
+                <button
+                  key={optionId}
+                  type="button"
+                  className="aspect-square rounded-lg transition-all hover:scale-105 active:scale-95 shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-white/50"
+                  style={{ background: stringToColor(optionId) }}
+                  onClick={() => selectColor(optionId)}
+                  aria-label="Select this color"
+                >
+                  Select
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Submit Button */}
+          <button
+            disabled={!!errorMessage || addEventMutation.isPending || !playerName}
+            className={classNames(
+              "w-full text-lg font-semibold flex flex-col items-center justify-center py-4 px-6 rounded-lg transition-all shadow-md",
+              "bg-secondary-background hover:bg-secondary-background/70 text-secondary-text",
+              "focus:outline-none focus:ring-2 focus:ring-secondary-background/50",
+              (!!errorMessage || !playerName) && "cursor-not-allowed opacity-50 hover:bg-secondary-background",
+              playerSuccessfullyAdded && "animate-ping-once",
+            )}
+            onClick={() => submitPlayer(playerName)}
+          >
+            {addEventMutation.isPending && (
+              <div className="flex items-center justify-center gap-2">
+                <span>Adding player...</span>
+                <div className="animate-spin">👤</div>
+              </div>
+            )}
+            {playerSuccessfullyAdded && (
+              <>
+                <span>Success ✅</span>
+                <ConfettiExplosion particleCount={250} force={0.8} width={2_000} duration={10_000} />
+              </>
+            )}
+            {!addEventMutation.isPending && !playerSuccessfullyAdded && "Add Player 👤"}
+          </button>
+        </div>
+      </div>
     </div>
   );
 };
