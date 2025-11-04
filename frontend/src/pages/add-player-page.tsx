@@ -15,7 +15,16 @@ export const AddPlayerPage: React.FC = () => {
   const addEventMutation = useEventMutation();
   const [playerName, setPlayerName] = useState("");
   const [playerId, setPlayerId] = useState(newId());
-  const [colorOptions, setColorOptions] = useState([newId(), newId(), newId()]);
+  const [colorOptions, setColorOptions] = useState([
+    newId(),
+    newId(),
+    newId(),
+    newId(),
+    newId(),
+    newId(),
+    newId(),
+    newId(),
+  ]);
   const [errorMessage, setErrorMessage] = useState<string>();
   const [playerSuccessfullyAdded, setPlayerSuccessfullyAdded] = useState(false);
 
@@ -59,8 +68,7 @@ export const AddPlayerPage: React.FC = () => {
 
   function selectColor(selectedId: string) {
     setPlayerId(selectedId);
-    // Generate 3 new random color options
-    setColorOptions([newId(), newId(), newId()]);
+    setColorOptions([newId(), newId(), newId(), newId(), newId(), newId(), newId(), newId()]);
   }
 
   return (
@@ -68,10 +76,7 @@ export const AddPlayerPage: React.FC = () => {
       <div className="max-w-md mx-auto">
         <div className="bg-primary-background text-primary-text rounded-lg shadow-lg p-6 sm:p-8 space-y-6">
           {/* Header */}
-          <div className="text-center space-y-2">
-            <h1 className="text-2xl sm:text-3xl font-bold">Add Player</h1>
-            <p className="text-sm sm:text-base text-primary-text/70">Create a new player profile</p>
-          </div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-center">Add Player</h1>
 
           {/* Player Name Input */}
           <div className="space-y-2">
@@ -99,7 +104,7 @@ export const AddPlayerPage: React.FC = () => {
               className="w-full text-center flex items-center justify-center flex-col p-6 rounded-lg shadow-md"
               style={{ background: stringToColor(playerId) }}
             >
-              <div className="size-24 font-bold rounded-full bg-white/20 backdrop-blur-sm mb-2 flex items-center justify-center text-7xl">
+              <div className="size-24 font-bold rounded-full ring ring-white backdrop-blur-sm mb-2 flex items-center justify-center text-7xl">
                 {playerName[0]}
               </div>
               <span className="font-semibold text-white drop-shadow-md">Player color</span>
@@ -107,7 +112,7 @@ export const AddPlayerPage: React.FC = () => {
 
             {/* Color Options */}
             <p className="text-xs text-center text-primary-text">Click a color to select another color:</p>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-4 gap-2">
               {colorOptions.map((optionId) => (
                 <button
                   key={optionId}
