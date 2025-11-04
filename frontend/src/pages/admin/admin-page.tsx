@@ -118,7 +118,17 @@ export const AdminPage: React.FC = () => {
               return (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
+                  onClick={() => {
+                    if (
+                      tab.id === "events" &&
+                      window.confirm(
+                        "You should not go here if you don't know what you are doing. This is only for developers.",
+                      ) === false
+                    ) {
+                      return;
+                    }
+                    setActiveTab(tab.id);
+                  }}
                   className={`
                     flex items-center py-2 px-4 border-b-4 font-medium text-sm transition-colors
                     ${
