@@ -81,7 +81,7 @@ export const AddPlayerPage: React.FC = () => {
           {/* Player Name Input */}
           <div className="space-y-2">
             <label htmlFor="playerName" className="block text-sm font-medium">
-              Player Name
+              Player Name <span className="text-primary-background">{playerId}</span>
             </label>
             <input
               id="playerName"
