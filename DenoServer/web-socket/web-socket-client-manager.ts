@@ -141,6 +141,13 @@ export class WebSocketClientManager {
   }
 
   /**
+   * Only for event manipulation... dont use this if you can avoid it
+   */
+  broadcastRefetch() {
+    this.broadcastMessage(WS_MESSAGE.LATEST_EVENT + ":999999999999999");
+  }
+
+  /**
    * List all clients and their current state
    */
   listAllClients(): {

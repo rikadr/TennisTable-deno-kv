@@ -1,5 +1,5 @@
 import { EventType, EventTypeEnum } from "./event-types.ts";
-import { getEventsAfter, storeEvent } from "./event-store.ts";
+import { deleteEvent, getEventsAfter, storeEvent, updateEvent } from "./event-store.ts";
 import { webSocketClientManager } from "../server.ts";
 import { hasAccess } from "../auth-service/middleware.ts";
 import { kv } from "../db.ts";
@@ -50,6 +50,40 @@ export function registerEventStoreRoutes(api: Router) {
 
     await storeEvent(eventPayload);
     webSocketClientManager.broadcastLatestEvent();
+    context.response.status = 201;
+  });
+
+  /**
+   * Update an new event. USE WITH CAUTION
+   */
+  api.put("/event", async (context) => {
+    if ((await hasAccess(context, "event", "manage")) === false) {
+      context.response.status = 403;
+      return;
+    }
+    const eventPayload = (await context.request.body.json()) as { oldEventTime: number; updatedEvent: EventType };
+    // Assume frontend has validated business logic for the event // TODO: Do reducer business logic backend too
+    // Run zod validation??
+
+    await updateEvent(eventPayload);
+    webSocketClientManager.broadcastRefetch();
+    context.response.status = 201;
+  });
+
+  /**
+   * Delete an new event. USE WITH CAUTION
+   */
+  api.delete("/event", async (context) => {
+    if ((await hasAccess(context, "event", "manage")) === false) {
+      context.response.status = 403;
+      return;
+    }
+    const { eventTime } = (await context.request.body.json()) as { eventTime: number };
+    // Assume frontend has validated business logic for the event // TODO: Do reducer business logic backend too
+    // Run zod validation??
+
+    await deleteEvent(eventTime);
+    webSocketClientManager.broadcastRefetch();
     context.response.status = 201;
   });
 

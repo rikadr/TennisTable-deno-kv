@@ -3,6 +3,7 @@ import { useEventDbContext } from "../../wrappers/event-db-context";
 import { EventType } from "../../client/client-db/event-store/event-types";
 import { relativeTimeString } from "../../common/date-utils";
 import { session } from "../../services/auth";
+import { useDeleteEventMutation, useUpdateEventMutation } from "../../hooks/use-event-mutation";
 
 export const Events = () => {
   const context = useEventDbContext();
@@ -12,6 +13,9 @@ export const Events = () => {
   const [pageSize, setPageSize] = useState(50);
   const [searchTerm, setSearchTerm] = useState("");
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
+
+  const updateEvent = useUpdateEventMutation();
+  const deleteEvent = useDeleteEventMutation();
 
   // Filter and search
   const filteredEvents = useMemo(() => {
@@ -56,7 +60,7 @@ export const Events = () => {
 
   const handleSave = () => {
     if (editForm && editingId) {
-      // context.updateEvent(editingId, editForm);
+      updateEvent.mutate({ oldEventTime: editingId, updatedEvent: editForm });
       setEditingId(null);
       setEditForm(null);
     }
@@ -73,7 +77,7 @@ export const Events = () => {
         "⚠️ WARNING ⚠️ Are you sure you want to delete this event? It can NEVER be recovered. - aka DESTRUCTIVE delete. Also, if you are not carefull you can break business logic that depends on events to exist.",
       )
     ) {
-      // context.deleteEvent(eventTime);
+      deleteEvent.mutate(eventTime);
     }
   };
 
@@ -244,8 +248,12 @@ export const Events = () => {
                         })}
                       </p>
                     </td>
-                    <td className="border border-gray-300 px-4 py-2">{event.type}</td>
-                    <td className="border border-gray-300 px-4 py-2">{event.stream}</td>
+                    <td className="border border-gray-300 px-4 py-2">
+                      <button onClick={() => setSearchTerm(event.type)}>{event.type}</button>
+                    </td>
+                    <td className="border border-gray-300 px-4 py-2">
+                      <button onClick={() => setSearchTerm(event.stream)}>{event.stream}</button>
+                    </td>
                     <td className="border border-gray-300 px-4 py-2">
                       {expandedRows.has(event.time) ? (
                         <div className="space-y-2">

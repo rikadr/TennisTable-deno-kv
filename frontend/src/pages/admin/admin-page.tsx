@@ -22,6 +22,7 @@ import { GamesPerWeekdayChart } from "./games-weekdays";
 import { GamesPerTimeChart } from "./hour-of-the-day";
 import { LocalAdminControls } from "./local-admin-controls";
 import { Events } from "./events";
+import { classNames } from "../../common/class-names";
 
 type TabType = "stats" | "games" | "players" | "users" | "events" | "local";
 const tabs: { id: TabType; label: string }[] = [
@@ -129,14 +130,12 @@ export const AdminPage: React.FC = () => {
                     }
                     setActiveTab(tab.id);
                   }}
-                  className={`
-                    flex items-center py-2 px-4 border-b-4 font-medium text-sm transition-colors
-                    ${
-                      activeTab === tab.id
-                        ? "text-secondary-text border-secondary-text"
-                        : "text-secondary-text/50 border-transparent hover:text-secondary-text hover:border-secondary-text border-dotted"
-                    }
-                  `}
+                  className={classNames(
+                    "flex items-center py-2 px-4 border-b-4 font-medium text-sm transition-colors",
+                    activeTab === tab.id
+                      ? "text-secondary-text border-secondary-text"
+                      : "text-secondary-text/50 border-transparent hover:text-secondary-text hover:border-secondary-text border-dotted",
+                  )}
                 >
                   {tab.label}
                 </button>
