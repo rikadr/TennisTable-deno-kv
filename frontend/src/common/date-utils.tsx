@@ -131,8 +131,8 @@ function formatDistance(laterDate: Date, earlierDate: Date, options?: FormatDist
   }
 
   if (options?.addSuffix) {
-    return isPast ? `${result} ago` : `in ${result}`;
+    result = isPast ? `${result} ago` : `in ${result}`;
   }
 
-  return result;
+  return result[0].toUpperCase() + result.slice(1);
 }

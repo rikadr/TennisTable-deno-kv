@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { EventType } from "../../client/client-db/event-store/event-types";
 import { relativeTimeString } from "../../common/date-utils";
@@ -40,6 +40,10 @@ export const Events = () => {
   }, [filteredEvents, page, pageSize]);
 
   const totalPages = Math.ceil(filteredEvents.length / pageSize);
+
+  useEffect(() => {
+    setPage(0); // Reset to first page on search
+  }, [searchTerm]);
 
   const toggleExpanded = (time: number) => {
     setExpandedRows((prev) => {
@@ -103,7 +107,9 @@ export const Events = () => {
           }}
           className="border rounded px-3 py-2 flex-1 min-w-[200px] bg-primary-background"
         />
-
+        <button onClick={() => setSearchTerm("")} className="px-3 py-1 border rounded  hover:bg-primary-text/20">
+          Clear search
+        </button>
         <select
           value={pageSize}
           onChange={(e) => {
@@ -124,14 +130,14 @@ export const Events = () => {
         <button
           onClick={() => setPage(0)}
           disabled={page === 0}
-          className="px-3 py-1 border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
+          className="px-3 py-1 border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-primary-text/20"
         >
           First
         </button>
         <button
           onClick={() => setPage((p) => Math.max(0, p - 1))}
           disabled={page === 0}
-          className="px-3 py-1 border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
+          className="px-3 py-1 border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-primary-text/20"
         >
           Previous
         </button>
@@ -141,14 +147,14 @@ export const Events = () => {
         <button
           onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
           disabled={page >= totalPages - 1}
-          className="px-3 py-1 border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
+          className="px-3 py-1 border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-primary-text/20"
         >
           Next
         </button>
         <button
           onClick={() => setPage(totalPages - 1)}
           disabled={page >= totalPages - 1}
-          className="px-3 py-1 border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
+          className="px-3 py-1 border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-primary-text/20"
         >
           Last
         </button>
