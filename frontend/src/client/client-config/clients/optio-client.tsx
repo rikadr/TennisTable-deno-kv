@@ -65,6 +65,8 @@ export const optioPlayersByName = {
   Mads: "cTwA5h5Eph",
   Francesco: "m7FzHJvxnc",
   Magnus: "5MYtada4AW",
+  Marko: "lMKPVqZFLO",
+  Mikael: "MeWj9HIBk0",
 } as const;
 export class OptioClient implements ClientConfig {
   id = process.env.REACT_APP_CLIENT;
@@ -87,7 +89,32 @@ const the2025YearEndOfficeOpen: TournamentDB = {
   groupPlay: true,
   signedUp: [],
   skippedGames: [],
-  playerOrder: [],
+  playerOrder: [
+    optioPlayersByName.Rasmus,
+    optioPlayersByName.Alexander,
+    optioPlayersByName.Fooa,
+    optioPlayersByName.Oskar,
+    optioPlayersByName.Simone,
+    optioPlayersByName.Peder,
+    optioPlayersByName.Gustas,
+    optioPlayersByName.Christoffer,
+    optioPlayersByName.Erling,
+    optioPlayersByName.Rikard,
+    optioPlayersByName.Ole,
+    optioPlayersByName["Fredrik H"],
+    optioPlayersByName.Bendik,
+    optioPlayersByName.Axel,
+    optioPlayersByName.Marius,
+    optioPlayersByName.Anders,
+    optioPlayersByName.Francesco,
+    optioPlayersByName.Mads,
+    optioPlayersByName.Daniel,
+    optioPlayersByName.Magnus,
+    optioPlayersByName.Marko,
+    optioPlayersByName.Mikael,
+    optioPlayersByName["Alejandro 🌮"],
+    optioPlayersByName["Yngve"],
+  ],
 };
 
 const optioEasterTournament: TournamentDB = {
