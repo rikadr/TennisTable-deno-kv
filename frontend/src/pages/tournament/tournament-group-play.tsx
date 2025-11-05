@@ -241,8 +241,10 @@ export const TournamentGroupScores: React.FC<{ tournament: Tournament }> = ({ to
               <td className="px-4 py-2 text-center">
                 <span className="text-secondary-text">⚠️</span>
               </td>
-              <td className="px-4 py-2 font-bold text-secondary-text">Elimination Zone</td>
-              <td colSpan={6} className="px-4 py-2 text-center text-secondary-text/80 text-sm">
+              <td colSpan={2} className="px-4 py-2 font-bold text-secondary-text">
+                Elimination Zone
+              </td>
+              <td colSpan={5} className="px-4 py-2 text-center text-secondary-text/80 text-sm">
                 Players below this line are eliminated from advancing
               </td>
             </tr>
