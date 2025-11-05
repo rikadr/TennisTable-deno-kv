@@ -66,7 +66,7 @@ export const optioPlayersByName = {
   Francesco: "m7FzHJvxnc",
   Magnus: "5MYtada4AW",
   Marko: "lMKPVqZFLO",
-  Mikael: "MeWj9HIBk0",
+  Mikael: "nbn4DSc5Zj",
 } as const;
 export class OptioClient implements ClientConfig {
   id = process.env.REACT_APP_CLIENT;
