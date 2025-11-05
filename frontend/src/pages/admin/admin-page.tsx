@@ -203,74 +203,71 @@ export const AdminPage: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {context.eventStore.gamesProjector.games
-                  .slice()
-                  .reverse()
-                  .map((game, index, list) => (
-                    <tr key={game.id} className="hover:bg-secondary-background/50">
-                      <td className="border border-gray-300 px-4 py-1">
-                        {context.playerName(game.winner)} won over {context.playerName(game.loser)}
-                      </td>
-                      <td className="border border-gray-300 px-4 py-1">
-                        <p>{relativeTimeString(new Date(game.playedAt))}</p>
-                        <p>
-                          {new Date(game.playedAt).toLocaleDateString("nb-NO", {
-                            weekday: "long",
-                            month: "long",
-                            day: "numeric",
-                            year: "numeric",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                            second: "2-digit",
-                          })}
-                        </p>
-                      </td>
-                      <td className="border border-gray-300 px-4 py-1">
-                        {game.score && (
-                          <div>
-                            <p>
-                              <span className="text-base font-bold">
-                                {game.score.setsWon.gameWinner}-{game.score.setsWon.gameLoser}
+                {context.eventStore.gamesProjector.games.toReversed().map((game, index, list) => (
+                  <tr key={game.id} className="hover:bg-secondary-background/50">
+                    <td className="border border-gray-300 px-4 py-1">
+                      {context.playerName(game.winner)} won over {context.playerName(game.loser)}
+                    </td>
+                    <td className="border border-gray-300 px-4 py-1">
+                      <p>{relativeTimeString(new Date(game.playedAt))}</p>
+                      <p>
+                        {new Date(game.playedAt).toLocaleDateString("nb-NO", {
+                          weekday: "long",
+                          month: "long",
+                          day: "numeric",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                          second: "2-digit",
+                        })}
+                      </p>
+                    </td>
+                    <td className="border border-gray-300 px-4 py-1">
+                      {game.score && (
+                        <div>
+                          <p>
+                            <span className="text-base font-bold">
+                              {game.score.setsWon.gameWinner}-{game.score.setsWon.gameLoser}
+                            </span>
+                            {game.score.setPoints && (
+                              <span className="text-xs">
+                                {" "}
+                                (
+                                {game.score.setPoints
+                                  .map((points) => points.gameWinner + "-" + points.gameLoser)
+                                  .join(", ")}
+                                )
                               </span>
-                              {game.score.setPoints && (
-                                <span className="text-xs">
-                                  {" "}
-                                  (
-                                  {game.score.setPoints
-                                    .map((points) => points.gameWinner + "-" + points.gameLoser)
-                                    .join(", ")}
-                                  )
-                                </span>
-                              )}
-                            </p>
-                          </div>
-                        )}
-                      </td>
-                      <td className="border border-gray-300 px-4 py-1 text-center">
-                        <div className="flex gap-2 justify-center">
-                          <button
-                            className="text-xs bg-blue-500 hover:bg-blue-700 text-white px-2 py-1 rounded-md"
-                            onClick={() => navigate(`/game/edit/score?gameId=${game.id}`)}
-                          >
-                            Edit Score
-                          </button>
-                          <button
-                            className="text-xs bg-red-500 hover:bg-red-800 text-white px-2 py-1 rounded-md"
-                            onClick={() =>
-                              window.confirm(
-                                `Are you sure you want to delete the game where ${context.playerName(
-                                  game.winner,
-                                )} won over ${context.playerName(game.loser)}?`,
-                              ) && handleDeleteGame(game.id)
-                            }
-                          >
-                            Delete
-                          </button>
+                            )}
+                          </p>
                         </div>
-                      </td>
-                      <td className="border border-gray-300 px-4 py-1">{fmtNum(list.length - index)}</td>
-                    </tr>
-                  ))}
+                      )}
+                    </td>
+                    <td className="border border-gray-300 px-4 py-1 text-center">
+                      <div className="flex gap-2 justify-center">
+                        <button
+                          className="text-xs bg-blue-500 hover:bg-blue-700 text-white px-2 py-1 rounded-md"
+                          onClick={() => navigate(`/game/edit/score?gameId=${game.id}`)}
+                        >
+                          Edit Score
+                        </button>
+                        <button
+                          className="text-xs bg-red-500 hover:bg-red-800 text-white px-2 py-1 rounded-md"
+                          onClick={() =>
+                            window.confirm(
+                              `Are you sure you want to delete the game where ${context.playerName(
+                                game.winner,
+                              )} won over ${context.playerName(game.loser)}?`,
+                            ) && handleDeleteGame(game.id)
+                          }
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                    <td className="border border-gray-300 px-4 py-1">{fmtNum(list.length - index)}</td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>

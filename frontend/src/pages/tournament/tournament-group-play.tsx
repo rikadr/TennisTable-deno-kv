@@ -9,6 +9,7 @@ import { Menu, MenuButton } from "@headlessui/react";
 import { useTennisParams } from "../../hooks/use-tennis-params";
 import { optioPlayersById } from "../../client/client-config/clients/optio-client";
 import { useState } from "react";
+import { Link } from "react-router-dom";
 
 export const TournamentGroupPlayComponent: React.FC<{
   tournament: Tournament;
@@ -37,32 +38,75 @@ export const TournamentGroupPlayComponent: React.FC<{
 };
 
 const GroupPlayRules: React.FC = () => (
-  <div className="text-primary-text bg-primary-background rounded-lg p-4 h-fit">
-    <h3 className="px-4 -mb-2 mt-2">Rules</h3>
-    <div className="bg-secondary-background text-secondary-text w-96 space-y-2 py-2 px-4 rounded-lg m-4">
-      <div className="flex gap-4">
-        <p>Win: {fmtNum(Tournament.GROUP_POINTS.WIN)}</p>
-        <p>Loss: {fmtNum(Tournament.GROUP_POINTS.LOSS)}</p>
-        <p>Skip: {fmtNum(Tournament.GROUP_POINTS.SKIP)}</p>
+  <div className="text-primary-text bg-primary-background rounded-lg p-6 h-fit shadow-sm">
+    <h3 className="text-2xl font-bold mb-6">Rules</h3>
+
+    {/* Scoring Section */}
+    <div className="bg-secondary-background/30 text-secondary-text rounded-lg p-5 mb-4 border border-secondary-background/40">
+      <h4 className="font-semibold text-lg mb-4 text-secondary-text">Point System</h4>
+
+      <div className="flex gap-6 mb-4 text-lg">
+        <div className="flex items-center gap-2">
+          <span className="font-semibold">Win:</span>
+          <span className="font-bold text-secondary-text">{fmtNum(Tournament.GROUP_POINTS.WIN)}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="font-semibold">Loss:</span>
+          <span className="font-bold text-secondary-text">{fmtNum(Tournament.GROUP_POINTS.LOSS)}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="font-semibold">Skip:</span>
+          <span className="font-bold text-secondary-text">{fmtNum(Tournament.GROUP_POINTS.SKIP)}</span>
+        </div>
       </div>
-      <p className="font-light text-sm">
-        Scores are multiplied by the <span className="font-bold underline">group size adjustment factor </span> to
-        account for smaller groups having fewer games to score points in.
-      </p>
-      <p className="italic font-light text-xs">
-        * If a game is skipped the advancing player scores as a <b>winner</b> and the other player as a <b>Skip</b>
-      </p>
+
+      <div className="space-y-3 text-sm">
+        <p className="text-secondary-text/80 leading-relaxed">
+          Scores are multiplied by the{" "}
+          <span className="font-semibold text-secondary-text underline decoration-secondary-text/50">
+            group size adjustment factor
+          </span>{" "}
+          to account for smaller groups having fewer games to score points in.
+        </p>
+
+        <div className="bg-secondary-background/20 rounded p-3 border-l-4 border-secondary-background/60">
+          <p className="text-xs text-secondary-text/70 italic">
+            <span className="font-semibold not-italic text-secondary-text">Note:</span> If a game is skipped, the
+            advancing player scores as a <span className="font-semibold">winner</span> and the other player scores as a{" "}
+            <span className="font-semibold">skip</span>.
+          </p>
+        </div>
+      </div>
     </div>
-    <div className="bg-secondary-background text-secondary-text w-96 space-y-2 py-2 px-4 rounded-lg m-4">
-      <p>Tie-breakers are determined by the following criteria in the given order:</p>
-      <div className="italic font-light text-xs">
-        <p>1: Most wins</p>
-        <p>2: Least skips</p>
-        <p>3: Highest score before group size adjustment</p>
-        <p>4: Least losses</p>
-        <p>5: Highest ELO rating</p>
-        <p>6: First to sign up for the tournament</p>
-        <p>7: If all the above somehow are equal: Highest bribe</p>
+
+    {/* Tie-breaker Section */}
+    <div className="bg-secondary-background/30 text-secondary-text rounded-lg p-5 border border-secondary-background/40">
+      <h4 className="font-semibold text-lg mb-4 text-secondary-text">Tie-breaker Priority</h4>
+
+      <p className="text-sm mb-4 text-secondary-text/80">
+        When players have equal adjusted scores, ties are resolved using the following criteria in order:
+      </p>
+
+      <div className="space-y-2">
+        {[
+          { rank: 1, text: "Most wins" },
+          { rank: 2, text: "Least skips" },
+          { rank: 3, text: "Highest score before group size adjustment" },
+          { rank: 4, text: "Least losses" },
+          { rank: 5, text: "Highest ELO rating" },
+          { rank: 6, text: "First to sign up for the tournament" },
+          { rank: 7, text: "If all the above are equal: Highest bribe 😉" },
+        ].map(({ rank, text }) => (
+          <div
+            key={rank}
+            className="flex items-start gap-3 py-1.5 px-3 rounded hover:bg-secondary-background/20 transition-colors"
+          >
+            <div className="flex-shrink-0 w-6 h-6 rounded-full bg-secondary-background/50 flex items-center justify-center">
+              <span className="text-xs font-bold text-secondary-text">{rank}</span>
+            </div>
+            <p className="text-sm text-secondary-text/90 leading-relaxed pt-0.5">{text}</p>
+          </div>
+        ))}
       </div>
     </div>
   </div>
@@ -113,9 +157,9 @@ export const GroupDistribution: React.FC<{ tournament: Tournament }> = ({ tourna
     </div>
   );
 };
-
 export const TournamentGroupScores: React.FC<{ tournament: Tournament }> = ({ tournament }) => {
   const context = useEventDbContext();
+
   if (tournament.groupPlay?.groupScores === undefined) {
     return null;
   }
@@ -123,61 +167,109 @@ export const TournamentGroupScores: React.FC<{ tournament: Tournament }> = ({ to
   const scores = Array.from(tournament.groupPlay.groupScores).sort(TournamentGroupPlay.sortGroupScores);
   const cutOffIndex = tournament.groupPlay.getBracketSize();
 
-  const row = (player: GroupScorePlayer, place: number) => (
-    <tr key={player.name} className="hover:bg-secondary-background/30">
-      <td>#{fmtNum(place)}</td>
-      <td className="pl-4">{context.playerName(player.name)}</td>
-      <td className="text-lg bg-secondary-background/30 pl-3">{fmtNum(player.adjustedScore, { digits: 1 })}</td>
-      <td>{fmtNum(player.score, { digits: 1 })}</td>
-      <td>{player.groupSizeAdjustmentFactor === 1 ? "-" : fmtNum(player.groupSizeAdjustmentFactor, { digits: 2 })}</td>
-      <td>{fmtNum(player.wins)}</td>
-      <td>{fmtNum(player.loss)}</td>
-      <td>{fmtNum(player.skips)}</td>
+  const row = (player: GroupScorePlayer, place: number, isEliminated: boolean = false) => (
+    <tr
+      key={player.name}
+      className={`
+        transition-colors border-b border-secondary-background/20
+        ${
+          isEliminated
+            ? "hover:bg-secondary-background/40 bg-secondary-background/20"
+            : "hover:bg-secondary-background/30"
+        }
+      `}
+    >
+      <td className="px-4 py-1 text-center font-semibold">{place}</td>
+      <td className="px-4 py-1 font-medium">
+        <Link
+          to={`/player/${player.name}`}
+          className="text-secondary-text hover:text-secondary-text/80 hover:underline"
+        >
+          {context.playerName(player.name)}
+        </Link>
+      </td>
+      <td className="px-4 py-1 text-center bg-secondary-background/30 font-bold text-lg">
+        {fmtNum(player.adjustedScore, { digits: 1 })}
+      </td>
+      <td className="px-4 py-1 text-center text-secondary-text/70">{fmtNum(player.score, { digits: 1 })}</td>
+      <td className="px-4 py-1 text-center text-secondary-text/70">
+        {player.groupSizeAdjustmentFactor === 1 ? (
+          <span className="text-secondary-text/40">—</span>
+        ) : (
+          fmtNum(player.groupSizeAdjustmentFactor, { digits: 2 })
+        )}
+      </td>
+      <td className="px-4 py-1 text-center text-secondary-text font-medium">{fmtNum(player.wins)}</td>
+      <td className="px-4 py-1 text-center text-secondary-text font-medium">{fmtNum(player.loss)}</td>
+      <td className="px-4 py-1 text-center text-secondary-text/60">{fmtNum(player.skips)}</td>
     </tr>
   );
 
   return (
-    <div className="text-primary-text bg-primary-background rounded-lg p-4">
-      <h1>Score board</h1>
-      <table>
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Player</th>
-            <th>
-              <p>Adjusted</p>
-              <p>Score</p>
-            </th>
-            <th>
-              <p>Score</p>
-              <p>before</p>
-              <p>adjustment</p>
-            </th>
-            <th>
-              <p>Group size</p>
-              <p>Adjustment</p>
-              <p>Factor</p>
-            </th>
-            <th>Wins</th>
-            <th>Loss</th>
-            <th>Skip</th>
-          </tr>
-        </thead>
-        <tbody>
-          {scores.slice(0, cutOffIndex).map(([_name, player], index) => row(player, index + 1))}
-          <tr>
-            <td></td>
-            <td className="font-bold pl-4">Elimination zone</td>
-            <td>---</td>
-            <td>---</td>
-            <td>---</td>
-            <td>---</td>
-            <td>---</td>
-            <td>---</td>
-          </tr>
-          {scores.slice(cutOffIndex).map(([_name, player], index) => row(player, index + cutOffIndex + 1))}
-        </tbody>
-      </table>
+    <div className="text-primary-text bg-primary-background rounded-lg p-6 shadow-sm">
+      <h1 className="text-2xl font-bold mb-6">Score Board</h1>
+
+      <div className="overflow-x-auto rounded-lg border border-secondary-background/30 shadow-sm">
+        <table className="min-w-full border-collapse bg-primary-background">
+          <thead className="bg-secondary-background/20">
+            <tr className="border-b-2 border-secondary-background/40">
+              <th className="px-4 py-3 text-center font-semibold text-secondary-text">#</th>
+              <th className="px-4 py-3 text-left font-semibold text-secondary-text">Player</th>
+              <th className="px-4 py-3 text-center font-semibold text-secondary-text">
+                <div>Adjusted</div>
+                <div className="text-xs font-normal text-secondary-text/60">Score</div>
+              </th>
+              <th className="px-4 py-3 text-center font-semibold text-secondary-text">
+                <div>Score</div>
+                <div className="text-xs font-normal text-secondary-text/60">Before Adjustment</div>
+              </th>
+              <th className="px-4 py-3 text-center font-semibold text-secondary-text">
+                <div>Group Size</div>
+                <div className="text-xs font-normal text-secondary-text/60">Adjustment Factor</div>
+              </th>
+              <th className="px-4 py-3 text-center font-semibold text-secondary-text">Wins</th>
+              <th className="px-4 py-3 text-center font-semibold text-secondary-text">Loss</th>
+              <th className="px-4 py-3 text-center font-semibold text-secondary-text">Skips</th>
+            </tr>
+          </thead>
+          <tbody>
+            {/* Qualified Players */}
+            {scores.slice(0, cutOffIndex).map(([_name, player], index) => row(player, index + 1, false))}
+
+            {/* Elimination Zone Divider */}
+            <tr className="bg-secondary-background/50 border-y-2 border-secondary-background/60">
+              <td className="px-4 py-2 text-center">
+                <span className="text-secondary-text">⚠️</span>
+              </td>
+              <td className="px-4 py-2 font-bold text-secondary-text">Elimination Zone</td>
+              <td colSpan={6} className="px-4 py-2 text-center text-secondary-text/80 text-sm">
+                Players below this line are eliminated from advancing
+              </td>
+            </tr>
+            <tr className="border-b-2 border-secondary-background/40">
+              <th className="px-4 py-1 text-sm text-center font-semibold text-secondary-text">#</th>
+              <th className="px-4 py-1 text-sm text-left font-semibold text-secondary-text">Player</th>
+              <th className="px-4 py-1 text-sm text-center font-semibold text-secondary-text">
+                <div>Adjusted</div>
+                <div className="text-xs font-normal text-secondary-text/60">Score</div>
+              </th>
+              <th className="px-4 py-1 text-sm text-center font-semibold text-secondary-text">
+                <div>Score</div>
+                <div className="text-xs font-normal text-secondary-text/60">Before Adjustment</div>
+              </th>
+              <th className="px-4 py-1 text-sm text-center font-semibold text-secondary-text">
+                <div>Group Size</div>
+                <div className="text-xs font-normal text-secondary-text/60">Adjustment Factor</div>
+              </th>
+              <th className="px-4 py-1 text-sm text-center font-semibold text-secondary-text">Wins</th>
+              <th className="px-4 py-1 text-sm text-center font-semibold text-secondary-text">Loss</th>
+              <th className="px-4 py-1 text-sm text-center font-semibold text-secondary-text">Skips</th>
+            </tr>
+            {/* Eliminated Players */}
+            {scores.slice(cutOffIndex).map(([_name, player], index) => row(player, index + cutOffIndex + 1, true))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };
