@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { ProfilePicture } from "../player/profile-picture";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { relativeTimeString } from "../../common/date-utils";
+import { TournamentGroupPlay } from "../../client/client-db/tournaments/group-play";
 
 export const TournamentHighlightsAndPendingGames: React.FC = () => {
   const context = useEventDbContext();
@@ -53,14 +54,7 @@ export const TournamentHighlightsAndPendingGames: React.FC = () => {
                   group.pending.length > 0 && (
                     <div key={groupIndex} className="space-y-1">
                       <h3 className="text-center text-sm text-primary-text">Group {groupIndex + 1}</h3>
-                      {group.pending.map((game) => (
-                        <PendingGame
-                          key={game.player1! + game.player2!}
-                          player1={game.player1!}
-                          player2={game.player2!}
-                          tournamentId={id}
-                        />
-                      ))}
+                      <PendingGameGroup group={group} groupIndex={groupIndex} tournamentId={id} />
                     </div>
                   ),
               )}
@@ -89,12 +83,106 @@ export const TournamentHighlightsAndPendingGames: React.FC = () => {
   );
 };
 
+type PendingGameGroupProps = {
+  group: (typeof TournamentGroupPlay.prototype.groups)[number];
+  groupIndex: number;
+  tournamentId: string;
+};
+
+const PendingGameGroup: React.FC<PendingGameGroupProps> = ({ group, groupIndex, tournamentId }) => {
+  const context = useEventDbContext();
+
+  if (group.pending.length === 0) {
+    return null;
+  }
+
+  const pendingMap = new Map<string, Set<string>>();
+  group.pending.forEach((p) => {
+    if (pendingMap.has(p.player1!) === false) {
+      pendingMap.set(p.player1!, new Set());
+    }
+    if (pendingMap.has(p.player2!) === false) {
+      pendingMap.set(p.player2!, new Set());
+    }
+    pendingMap.get(p.player1!)?.add(p.player2!);
+    pendingMap.get(p.player2!)?.add(p.player1!);
+  });
+
+  if (group.pending.length <= pendingMap.size) {
+    // Fewer entries to just list the pending games
+    return group.pending.map((game) => (
+      <PendingGame
+        key={game.player1! + game.player2!}
+        player1={game.player1!}
+        player2={game.player2!}
+        tournamentId={tournamentId}
+      />
+    ));
+  }
+
+  // Component for rendering overlapping profile pictures
+  const OverlappingProfilePictures: React.FC<{ opponents: Set<string> }> = ({ opponents }) => {
+    const opponentsArray = Array.from(opponents);
+    const PICTURE_SIZE = 35;
+    const OVERLAP_OFFSET = 24; // Fixed spacing - pictures overlap by 11px (35 - 24)
+
+    // Calculate total width needed: last picture position + picture size
+    const totalWidth = opponentsArray.length > 0 ? (opponentsArray.length - 1) * OVERLAP_OFFSET + PICTURE_SIZE : 0;
+
+    return (
+      <div
+        className="relative flex items-center"
+        style={{
+          width: `${totalWidth}px`,
+          height: `${PICTURE_SIZE}px`,
+        }}
+      >
+        {opponentsArray.map((opponent, index) => (
+          <div
+            key={opponent}
+            className="absolute"
+            style={{
+              left: `${index * OVERLAP_OFFSET}px`,
+              zIndex: opponentsArray.length - index, // First picture has highest z-index
+            }}
+          >
+            <ProfilePicture playerId={opponent} size={PICTURE_SIZE} shape="circle" border={3} />
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  return Array.from(pendingMap).map(([playerId, opponents]) => {
+    if (opponents.size === 1) {
+      return (
+        <PendingGame key={playerId} player1={playerId} player2={Array.from(opponents)[0]} tournamentId={tournamentId} />
+      );
+    }
+    return (
+      <Link
+        key={playerId}
+        to={`/player/${playerId}`}
+        className="relative w-full px-4 py-2 rounded-lg flex items-center gap-x-4 h-12 bg-secondary-background hover:bg-secondary-background/70 text-secondary-text"
+      >
+        <h2 className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 font-bold text-lg">VS</h2>
+        <div className="flex gap-3 items-center justify-center">
+          <ProfilePicture playerId={playerId} size={35} shape="circle" border={3} />
+          <h3 className="truncate">{context.playerName(playerId)}</h3>
+        </div>
+        <div className="grow" />
+        <OverlappingProfilePictures opponents={opponents} />
+      </Link>
+    );
+  });
+};
+
 type PendingGameProps = {
   player1: string;
   player2: string;
   tournamentId: string;
 };
-export const PendingGame: React.FC<PendingGameProps> = ({ player1, player2, tournamentId }) => {
+const PendingGame: React.FC<PendingGameProps> = ({ player1, player2, tournamentId }) => {
   const context = useEventDbContext();
   return (
     <Link
@@ -103,13 +191,13 @@ export const PendingGame: React.FC<PendingGameProps> = ({ player1, player2, tour
     >
       <h2 className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2">VS</h2>
       <div className="flex gap-3 items-center justify-center">
-        <ProfilePicture playerId={player1} size={35} shape="circle" clickToEdit={false} border={3} />
+        <ProfilePicture playerId={player1} size={35} shape="circle" border={3} />
         <h3 className="truncate">{context.playerName(player1)}</h3>
       </div>
       <div className="grow" />
       <div className="flex gap-3 items-center justify-center">
         <h3 className="truncate">{context.playerName(player2)}</h3>
-        <ProfilePicture playerId={player2} size={35} shape="circle" clickToEdit={false} border={3} />
+        <ProfilePicture playerId={player2} size={35} shape="circle" border={3} />
       </div>
     </Link>
   );
@@ -126,7 +214,7 @@ export const WinnerBox: React.FC<WinnerBoxProps> = ({ winner }) => {
       className="w-full px-4 py-2 rounded-lg flex items-center gap-x-4 h-16 bg-secondary-background text-secondary-text hover:bg-secondary-background/70"
     >
       <div className="flex gap-3 items-center justify-center">
-        <ProfilePicture playerId={winner} size={50} shape="circle" clickToEdit={false} border={3} />
+        <ProfilePicture playerId={winner} size={50} shape="circle" border={3} />
         <div className="-space-y-1">
           <div className="text-sm">Winner</div>
           <h3 className="text-2xl font-bold uppercase">{context.playerName(winner)}</h3>
