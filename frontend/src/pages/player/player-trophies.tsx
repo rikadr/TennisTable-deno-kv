@@ -1,5 +1,7 @@
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { relativeTimeString } from "../../common/date-utils";
+import { Shimmer } from "../../common/shimmer";
+import { classNames } from "../../common/class-names";
 
 type Props = {
   playerId?: string;
@@ -10,62 +12,85 @@ const TROPHY_CONFIG = {
   "donut-1": {
     emoji: "🍩",
     label: "Donut",
-    color: "bg-orange-100 border-orange-300 text-orange-800",
+    bgGradient: "from-orange-400 to-orange-600",
+    cardColor: "bg-orange-50 border-orange-300 text-orange-900",
+    shimmer: true,
     description: "Won a set without opponent scoring",
   },
   "donut-5": {
-    emoji: "🍩✨",
+    emoji: "🍩",
     label: "Donut Master",
-    color: "bg-yellow-100 border-yellow-400 text-yellow-900",
+    bgGradient: "from-yellow-400 via-amber-500 to-orange-500",
+    cardColor: "bg-yellow-50 border-yellow-400 text-yellow-900",
+    shimmer: true,
     description: "Achieved 5 donut sets",
+    badge: "✨",
   },
   "streak-all-10": {
     emoji: "🔥",
     label: "Win Streak",
-    color: "bg-red-100 border-red-300 text-red-800",
+    bgGradient: "from-red-500 to-orange-600",
+    cardColor: "bg-red-50 border-red-400 text-red-900",
+    shimmer: true,
     description: "Won 10 games in a row",
   },
   "streak-player-10": {
     emoji: "🎯",
     label: "Domination Streak",
-    color: "bg-purple-100 border-purple-300 text-purple-800",
+    bgGradient: "from-purple-500 to-pink-600",
+    cardColor: "bg-purple-50 border-purple-400 text-purple-900",
+    shimmer: true,
     description: "Won 10 games in a row against the same opponent",
   },
   "back-after-6-months": {
     emoji: "👋",
     label: "Welcome Back",
-    color: "bg-blue-100 border-blue-300 text-blue-800",
+    bgGradient: "from-blue-400 to-cyan-500",
+    cardColor: "bg-blue-50 border-blue-300 text-blue-900",
+    shimmer: false,
     description: "Returned after 6+ months",
   },
   "back-after-1-year": {
     emoji: "🎊",
     label: "Long Return",
-    color: "bg-indigo-100 border-indigo-300 text-indigo-800",
+    bgGradient: "from-indigo-500 to-purple-600",
+    cardColor: "bg-indigo-50 border-indigo-400 text-indigo-900",
+    shimmer: true,
     description: "Returned after 1+ year",
   },
   "back-after-2-years": {
     emoji: "🎉",
     label: "Epic Return",
-    color: "bg-pink-100 border-pink-300 text-pink-800",
+    bgGradient: "from-pink-500 via-rose-500 to-red-500",
+    cardColor: "bg-pink-50 border-pink-400 text-pink-900",
+    shimmer: true,
     description: "Returned after 2+ years",
+    badge: "🌟",
   },
   "active-6-months": {
     emoji: "⭐",
     label: "Regular Player",
-    color: "bg-green-100 border-green-300 text-green-800",
+    bgGradient: "from-green-400 to-emerald-600",
+    cardColor: "bg-green-50 border-green-300 text-green-900",
+    shimmer: false,
     description: "Active for 6+ months",
   },
   "active-1-year": {
     emoji: "🌟",
     label: "Dedicated Player",
-    color: "bg-teal-100 border-teal-300 text-teal-800",
+    bgGradient: "from-teal-500 to-cyan-600",
+    cardColor: "bg-teal-50 border-teal-400 text-teal-900",
+    shimmer: true,
     description: "Active for 1+ year",
   },
   "active-2-years": {
     emoji: "💎",
     label: "Veteran Player",
-    color: "bg-cyan-100 border-cyan-300 text-cyan-800",
+    bgGradient: "from-cyan-500 via-blue-500 to-indigo-600",
+    cardColor: "bg-cyan-50 border-cyan-400 text-cyan-900",
+    shimmer: true,
     description: "Active for 2+ years",
+    badge: "👑",
   },
 } as const;
 
@@ -109,7 +134,16 @@ export const PlayerTrophies: React.FC<Props> = ({ playerId }) => {
               <div key={type} className="space-y-4">
                 {/* Type Header */}
                 <div className="flex items-center gap-3">
-                  <div className="text-3xl">{config.emoji}</div>
+                  <div className="relative">
+                    <div
+                      className={`w-16 h-16 rounded-full bg-gradient-to-br ${config.bgGradient} flex items-center justify-center text-3xl shadow-lg`}
+                    >
+                      {config.emoji}
+                    </div>
+                    {"badge" in config && config.badge && (
+                      <div className="absolute -top-1 -right-1 text-2xl drop-shadow-lg">{config.badge}</div>
+                    )}
+                  </div>
                   <div>
                     <h3 className="text-xl font-bold text-secondary-text">{config.label}</h3>
                     <p className="text-sm text-secondary-text/60">
@@ -139,21 +173,56 @@ const TrophyCard: React.FC<{
   config: (typeof TROPHY_CONFIG)[TrophyType];
   context: any;
 }> = ({ trophy, config, context }) => {
+  const BadgeContent = () => (
+    <div className="relative">
+      <div
+        className={`w-20 h-20 rounded-full bg-gradient-to-br ${config.bgGradient} flex items-center justify-center shadow-lg relative overflow-hidden`}
+      >
+        {/* Glow effect */}
+        <div className="absolute inset-0 bg-white/20 rounded-full blur-sm" />
+
+        {/* Emoji */}
+        <span className="text-4xl relative z-10 drop-shadow-lg">{config.emoji}</span>
+      </div>
+
+      {/* Optional badge overlay */}
+      {"badge" in config && config.badge && (
+        <div className="absolute -top-2 -right-2 text-2xl drop-shadow-lg animate-bounce">{config.badge}</div>
+      )}
+    </div>
+  );
+
   return (
-    <div className={`${config.color} rounded-lg p-4 border-2 shadow-sm hover:shadow-md transition-shadow`}>
+    <div
+      className={classNames(
+        "rounded-lg p-5 border-2 shadow-md hover:shadow-xl transition-all hover:scale-105 duration-300",
+        config.cardColor,
+      )}
+    >
       {/* Trophy Badge */}
-      <div className="flex items-start justify-between mb-3">
-        <div className="text-4xl">{config.emoji}</div>
-        <div className="text-xs opacity-75 text-right">{relativeTimeString(new Date(trophy.earnedAt))}</div>
+      <div className="flex items-start justify-between mb-4">
+        {config.shimmer ? (
+          <Shimmer>
+            <BadgeContent />
+          </Shimmer>
+        ) : (
+          <BadgeContent />
+        )}
+
+        <div className="text-right">
+          <div className="text-xs opacity-75 bg-white/40 px-2 py-1 rounded-full">
+            {relativeTimeString(new Date(trophy.earnedAt))}
+          </div>
+        </div>
       </div>
 
       {/* Trophy Details */}
-      <div className="space-y-0 text-sm">
+      <div className="space-y-1 text-sm">
         {/* Opponent (for relevant trophies) */}
         {trophy.data.opponent && (
           <div className="flex items-center gap-2">
             <span className="opacity-75">vs</span>
-            <span className="font-semibold">{context.playerName(trophy.data.opponent)}</span>
+            <span className="font-semibold truncate">{context.playerName(trophy.data.opponent)}</span>
           </div>
         )}
 
@@ -161,7 +230,7 @@ const TrophyCard: React.FC<{
         {trophy.data.startedAt && (
           <div className="flex items-center gap-2">
             <span className="opacity-75">Started</span>
-            <span className="font-medium">{dateString(trophy.data.startedAt)}</span>
+            <span className="font-medium text-xs">{dateString(trophy.data.startedAt)}</span>
           </div>
         )}
 
@@ -169,7 +238,7 @@ const TrophyCard: React.FC<{
         {trophy.data.lastGameAt && (
           <div className="flex items-center gap-2">
             <span className="opacity-75">Last played</span>
-            <span className="font-medium">{dateString(trophy.data.lastGameAt)}</span>
+            <span className="font-medium text-xs">{dateString(trophy.data.lastGameAt)}</span>
           </div>
         )}
 
@@ -177,14 +246,14 @@ const TrophyCard: React.FC<{
         {trophy.data.firstGameInPeriod && (
           <div className="flex items-center gap-2">
             <span className="opacity-75">Since</span>
-            <span className="font-medium">{dateString(trophy.data.firstGameInPeriod)}</span>
+            <span className="font-medium text-xs">{dateString(trophy.data.firstGameInPeriod)}</span>
           </div>
         )}
 
         {/* Earned Date (full format) */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 pt-2 border-t border-current/20 mt-2">
           <span className="opacity-75">Earned</span>
-          <span className="font-medium">{dateString(trophy.earnedAt)}</span>
+          <span className="font-medium text-xs">{dateString(trophy.earnedAt)}</span>
         </div>
       </div>
     </div>
