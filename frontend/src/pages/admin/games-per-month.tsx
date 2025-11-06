@@ -73,7 +73,7 @@ export const GamesPerMonthChart: React.FC = () => {
     // Filter tournaments that fall within the data range
     const tournaments = context.client.tournaments;
     const tournamentsInRange = tournaments.filter((tournament) => {
-      return tournament.startDate >= minTimestamp && tournament.startDate <= maxTimestamp;
+      return tournament.startDate >= minTimestamp && tournament.startDate <= Date.now();
     });
 
     return { monthlyData: sortedMonthlyData, tournamentsInRange };
@@ -150,10 +150,11 @@ export const GamesPerMonthChart: React.FC = () => {
               strokeWidth={2}
               label={{
                 value: tournament.name,
-                textAnchor: "middle",
-                position: "top",
+                angle: -5,
+                textAnchor: "end",
+                position: "insideTopRight",
+                offset: 10,
                 style: {
-                  textAnchor: "middle",
                   fontSize: "12px",
                   fill: "rgb(var(--color-tertiary-background))",
                 },
