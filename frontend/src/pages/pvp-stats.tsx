@@ -114,7 +114,7 @@ export const PvPStats: React.FC<Props> = ({ player1, player2 }) => {
                     <Link
                       key={`${p1.playerId}-${p2.playerId}-${index}`}
                       to={`/player/${winner.playerId}`}
-                      className="flex gap-4 py-2.5 px-2 rounded-lg bg-primary-background hover:bg-secondary-background/30 transition-colors group"
+                      className="flex gap-4 px-2 rounded-lg border-t-[0.5px] border-primary-text/50 bg-primary-background hover:bg-secondary-background/30 transition-colors group"
                     >
                       {/* Winner Name with Trophy */}
                       <div className="w-44 font-medium flex items-center gap-2">
