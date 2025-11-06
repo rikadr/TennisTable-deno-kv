@@ -1,5 +1,6 @@
 import { classNames } from "../../common/class-names";
 import { fmtNum } from "../../common/number-utils";
+import { stringToColor } from "../../common/string-to-color";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 
 type Props = {
@@ -13,25 +14,51 @@ export const OponentsScores: React.FC<Props> = ({ playerId }) => {
 
   const { avgDiff, diffGraphData } = context.playerOponentDistribution.get(playerId);
 
+  // Find the maximum count for scaling
+  const maxCount = Math.max(...diffGraphData.map((entry) => entry.count));
+
   return (
-    <div className="flex flex-col w-full divide-y divide-primary-text/50">
-      <p>Avg. oponent score:{fmtNum(avgDiff, { digits: 0, signedPositive: true })}</p>
-      {diffGraphData.toReversed().map((entry, i) => (
-        <div
-          key={i}
-          className={classNames(
-            "flex items-center h-4",
-            entry.diffGroup === 0 && "bg-secondary-background text-secondary-text",
-          )}
-        >
-          <p className="w-10">{entry.diffGroup}</p>
-          {Array(entry.count)
-            .fill(0)
-            .map((_, ii) => (
-              <pre key={ii}>&#9724;</pre>
-            ))}
-        </div>
-      ))}
+    <div className="flex flex-col w-full">
+      {/* Vertical Bar Chart */}
+      <div className="flex items-end gap-1 h-64 pb-2">
+        {diffGraphData.map((entry, i) => {
+          const fraction = entry.count / maxCount;
+          const barHeight = Math.max(fraction * 100, 0.5); // Minimum 0.5% height to be visible
+
+          return (
+            <div key={i} className="flex-1 flex flex-col items-center justify-end h-full min-w-0">
+              {/* Bar */}
+              <div
+                className="w-full rounded-t-md"
+                style={{
+                  height: `${barHeight}%`,
+                  backgroundColor: entry.diffGroup === 0 ? "rgb(var(--color-primary-text))" : stringToColor(playerId),
+                }}
+              />
+
+              {/* Label - positioned below bar with fixed height */}
+              <div
+                className={classNames(
+                  "h-5 w-8 text-xs text-primary-text whitespace-nowrap rotate-45 text-left translate-x-2",
+                  entry.diffGroup === 0 ? "translate-y-2" : "translate-y-1",
+                )}
+              >
+                {entry.diffGroup > 0 ? "+" : ""}
+                {entry.diffGroup}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      {/* Header */}
+      <div>
+        <p className="text-sm text-primary-text/80">
+          Average opponent score difference:{" "}
+          <span className="font-semibold text-lg text-primary-text">
+            {fmtNum(avgDiff, { digits: 0, signedPositive: true })}
+          </span>
+        </p>
+      </div>
     </div>
   );
 };
