@@ -24,7 +24,6 @@ const TROPHY_CONFIG = {
     cardColor: "bg-yellow-50 border-yellow-400 text-yellow-900",
     shimmer: true,
     description: "Achieved 5 donut sets",
-    badge: "✨",
   },
   "streak-all-10": {
     emoji: "🔥",
@@ -65,7 +64,6 @@ const TROPHY_CONFIG = {
     cardColor: "bg-pink-50 border-pink-400 text-pink-900",
     shimmer: true,
     description: "Returned after 2+ years",
-    badge: "🌟",
   },
   "active-6-months": {
     emoji: "⭐",
@@ -90,7 +88,6 @@ const TROPHY_CONFIG = {
     cardColor: "bg-cyan-50 border-cyan-400 text-cyan-900",
     shimmer: true,
     description: "Active for 2+ years",
-    badge: "👑",
   },
 } as const;
 
@@ -140,9 +137,6 @@ export const PlayerTrophies: React.FC<Props> = ({ playerId }) => {
                     >
                       {config.emoji}
                     </div>
-                    {"badge" in config && config.badge && (
-                      <div className="absolute -top-1 -right-1 text-2xl drop-shadow-lg">{config.badge}</div>
-                    )}
                   </div>
                   <div>
                     <h3 className="text-xl font-bold text-secondary-text">{config.label}</h3>
@@ -174,7 +168,7 @@ const TrophyCard: React.FC<{
   context: any;
 }> = ({ trophy, config, context }) => {
   const BadgeContent = () => (
-    <div className="relative">
+    <div className="relative overflow-visible">
       <div
         className={`w-20 h-20 rounded-full bg-gradient-to-br ${config.bgGradient} flex items-center justify-center shadow-lg relative overflow-hidden`}
       >
@@ -184,76 +178,78 @@ const TrophyCard: React.FC<{
         {/* Emoji */}
         <span className="text-4xl relative z-10 drop-shadow-lg">{config.emoji}</span>
       </div>
-
-      {/* Optional badge overlay */}
-      {"badge" in config && config.badge && (
-        <div className="absolute -top-2 -right-2 text-2xl drop-shadow-lg animate-bounce">{config.badge}</div>
-      )}
     </div>
   );
 
   return (
     <div
       className={classNames(
-        "rounded-lg p-5 border-2 shadow-md hover:shadow-xl transition-all hover:scale-105 duration-300",
+        "rounded-lg p-4 border-2 shadow-md hover:shadow-xl transition-all hover:scale-105 duration-300",
         config.cardColor,
       )}
     >
-      {/* Trophy Badge */}
-      <div className="flex items-start justify-between mb-4">
-        {config.shimmer ? (
-          <Shimmer>
+      {/* Horizontal Layout: Badge on left, content on right */}
+      <div className="flex gap-4">
+        {/* Trophy Badge */}
+        <div className="flex-shrink-0">
+          {config.shimmer ? (
+            <Shimmer>
+              <BadgeContent />
+            </Shimmer>
+          ) : (
             <BadgeContent />
-          </Shimmer>
-        ) : (
-          <BadgeContent />
-        )}
-
-        <div className="text-right">
-          <div className="text-xs opacity-75 bg-white/40 px-2 py-1 rounded-full">
-            {relativeTimeString(new Date(trophy.earnedAt))}
-          </div>
+          )}
         </div>
-      </div>
 
-      {/* Trophy Details */}
-      <div className="space-y-1 text-sm">
-        {/* Opponent (for relevant trophies) */}
-        {trophy.data.opponent && (
-          <div className="flex items-center gap-2">
-            <span className="opacity-75">vs</span>
-            <span className="font-semibold truncate">{context.playerName(trophy.data.opponent)}</span>
+        {/* Trophy Details */}
+        <div className="flex-1 min-w-0 flex flex-col justify-between">
+          {/* Top section: relative time */}
+          <div className="text-right mb-2">
+            <div className="text-xs opacity-75 bg-white/40 px-2 py-1 rounded-full inline-block">
+              {relativeTimeString(new Date(trophy.earnedAt))}
+            </div>
           </div>
-        )}
 
-        {/* Started At (for streak trophies) */}
-        {trophy.data.startedAt && (
-          <div className="flex items-center gap-2">
-            <span className="opacity-75">Started</span>
-            <span className="font-medium text-xs">{dateString(trophy.data.startedAt)}</span>
+          {/* Middle section: trophy data */}
+          <div className="space-y-1 text-sm flex-1">
+            {/* Opponent (for relevant trophies) */}
+            {trophy.data.opponent && (
+              <div className="flex items-center gap-2">
+                <span className="opacity-75">vs</span>
+                <span className="font-semibold truncate">{context.playerName(trophy.data.opponent)}</span>
+              </div>
+            )}
+
+            {/* Started At (for streak trophies) */}
+            {trophy.data.startedAt && (
+              <div className="flex items-center gap-2">
+                <span className="opacity-75">Started</span>
+                <span className="font-medium text-xs">{dateString(trophy.data.startedAt)}</span>
+              </div>
+            )}
+
+            {/* Last Game (for back after trophies) */}
+            {trophy.data.lastGameAt && (
+              <div className="flex items-center gap-2">
+                <span className="opacity-75">Last played</span>
+                <span className="font-medium text-xs">{dateString(trophy.data.lastGameAt)}</span>
+              </div>
+            )}
+
+            {/* First Game in Period (for active trophies) */}
+            {trophy.data.firstGameInPeriod && (
+              <div className="flex items-center gap-2">
+                <span className="opacity-75">Since</span>
+                <span className="font-medium text-xs">{dateString(trophy.data.firstGameInPeriod)}</span>
+              </div>
+            )}
           </div>
-        )}
 
-        {/* Last Game (for back after trophies) */}
-        {trophy.data.lastGameAt && (
-          <div className="flex items-center gap-2">
-            <span className="opacity-75">Last played</span>
-            <span className="font-medium text-xs">{dateString(trophy.data.lastGameAt)}</span>
+          {/* Bottom section: Earned date */}
+          <div className="flex items-center gap-2 pt-2 border-t border-current/20 mt-2">
+            <span className="opacity-75 text-sm">Earned</span>
+            <span className="font-medium text-xs">{dateString(trophy.earnedAt)}</span>
           </div>
-        )}
-
-        {/* First Game in Period (for active trophies) */}
-        {trophy.data.firstGameInPeriod && (
-          <div className="flex items-center gap-2">
-            <span className="opacity-75">Since</span>
-            <span className="font-medium text-xs">{dateString(trophy.data.firstGameInPeriod)}</span>
-          </div>
-        )}
-
-        {/* Earned Date (full format) */}
-        <div className="flex items-center gap-2 pt-2 border-t border-current/20 mt-2">
-          <span className="opacity-75">Earned</span>
-          <span className="font-medium text-xs">{dateString(trophy.earnedAt)}</span>
         </div>
       </div>
     </div>
