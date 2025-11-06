@@ -45,7 +45,7 @@ export const PvPStats: React.FC<Props> = ({ player1, player2 }) => {
       {/* Prediction Section */}
       {combinedPrediction !== undefined && (
         <div className="bg-secondary-background/20 rounded-lg p-5 border border-secondary-background/30">
-          <h3 className="text-lg font-semibold mb-4 text-center">Win Probability Prediction</h3>
+          <h3 className="text-lg font-semibold mb-4 text-center">Win Chanse Prediction</h3>
           <div className="flex items-center gap-4">
             {/* Player 1 Probability */}
             <div className="flex-1 text-center">
