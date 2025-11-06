@@ -167,6 +167,8 @@ export const TournamentGroupScores: React.FC<{ tournament: Tournament }> = ({ to
   const scores = Array.from(tournament.groupPlay.groupScores).sort(TournamentGroupPlay.sortGroupScores);
   const cutOffIndex = tournament.groupPlay.getBracketSize();
 
+  const hasGroupSizeAdjustment = scores.some(([_, s]) => s.groupSizeAdjustmentFactor !== 1);
+
   const row = (player: GroupScorePlayer, place: number, isEliminated: boolean = false) => (
     <tr
       key={player.name}
@@ -191,14 +193,18 @@ export const TournamentGroupScores: React.FC<{ tournament: Tournament }> = ({ to
       <td className="px-4 py-1 text-center bg-secondary-background/30 font-bold text-lg">
         {fmtNum(player.adjustedScore, { digits: 1 })}
       </td>
-      <td className="px-4 py-1 text-center text-secondary-text/70">{fmtNum(player.score, { digits: 1 })}</td>
-      <td className="px-4 py-1 text-center text-secondary-text/70">
-        {player.groupSizeAdjustmentFactor === 1 ? (
-          <span className="text-secondary-text/40">—</span>
-        ) : (
-          fmtNum(player.groupSizeAdjustmentFactor, { digits: 2 })
-        )}
-      </td>
+      {hasGroupSizeAdjustment && (
+        <>
+          <td className="px-4 py-1 text-center text-secondary-text/70">{fmtNum(player.score, { digits: 1 })}</td>
+          <td className="px-4 py-1 text-center text-secondary-text/70">
+            {player.groupSizeAdjustmentFactor === 1 ? (
+              <span className="text-secondary-text/40">—</span>
+            ) : (
+              fmtNum(player.groupSizeAdjustmentFactor, { digits: 2 })
+            )}
+          </td>
+        </>
+      )}
       <td className="px-4 py-1 text-center text-secondary-text font-medium">{fmtNum(player.wins)}</td>
       <td className="px-4 py-1 text-center text-secondary-text font-medium">{fmtNum(player.loss)}</td>
       <td className="px-4 py-1 text-center text-secondary-text/60">{fmtNum(player.skips)}</td>
@@ -215,18 +221,28 @@ export const TournamentGroupScores: React.FC<{ tournament: Tournament }> = ({ to
             <tr className="border-b-2 border-secondary-background/40">
               <th className="px-4 py-3 text-center font-semibold text-secondary-text">#</th>
               <th className="px-4 py-3 text-left font-semibold text-secondary-text">Player</th>
-              <th className="px-4 py-3 text-center font-semibold text-secondary-text">
-                <div>Adjusted</div>
-                <div className="text-xs font-normal text-secondary-text/60">Score</div>
-              </th>
-              <th className="px-4 py-3 text-center font-semibold text-secondary-text">
-                <div>Score</div>
-                <div className="text-xs font-normal text-secondary-text/60">Before Adjustment</div>
-              </th>
-              <th className="px-4 py-3 text-center font-semibold text-secondary-text">
-                <div>Group Size</div>
-                <div className="text-xs font-normal text-secondary-text/60">Adjustment Factor</div>
-              </th>
+              {hasGroupSizeAdjustment ? (
+                <th className="px-4 py-3 text-center font-semibold text-secondary-text">
+                  <div>Adjusted</div>
+                  <div className="text-xs font-normal text-secondary-text/60">Score</div>
+                </th>
+              ) : (
+                <th className="px-4 py-3 text-center font-semibold text-secondary-text">
+                  <div>Score</div>
+                </th>
+              )}
+              {hasGroupSizeAdjustment && (
+                <>
+                  <th className="px-4 py-3 text-center font-semibold text-secondary-text">
+                    <div>Score</div>
+                    <div className="text-xs font-normal text-secondary-text/60">Before Adjustment</div>
+                  </th>
+                  <th className="px-4 py-3 text-center font-semibold text-secondary-text">
+                    <div>Group Size</div>
+                    <div className="text-xs font-normal text-secondary-text/60">Adjustment Factor</div>
+                  </th>
+                </>
+              )}
               <th className="px-4 py-3 text-center font-semibold text-secondary-text">Wins</th>
               <th className="px-4 py-3 text-center font-semibold text-secondary-text">Loss</th>
               <th className="px-4 py-3 text-center font-semibold text-secondary-text">Skips</th>
@@ -251,18 +267,28 @@ export const TournamentGroupScores: React.FC<{ tournament: Tournament }> = ({ to
             <tr className="border-b-2 border-secondary-background/40">
               <th className="px-4 py-1 text-sm text-center font-semibold text-secondary-text">#</th>
               <th className="px-4 py-1 text-sm text-left font-semibold text-secondary-text">Player</th>
-              <th className="px-4 py-1 text-sm text-center font-semibold text-secondary-text">
-                <div>Adjusted</div>
-                <div className="text-xs font-normal text-secondary-text/60">Score</div>
-              </th>
-              <th className="px-4 py-1 text-sm text-center font-semibold text-secondary-text">
-                <div>Score</div>
-                <div className="text-xs font-normal text-secondary-text/60">Before Adjustment</div>
-              </th>
-              <th className="px-4 py-1 text-sm text-center font-semibold text-secondary-text">
-                <div>Group Size</div>
-                <div className="text-xs font-normal text-secondary-text/60">Adjustment Factor</div>
-              </th>
+              {hasGroupSizeAdjustment ? (
+                <th className="px-4 py-1 text-sm text-center font-semibold text-secondary-text">
+                  <div>Adjusted</div>
+                  <div className="text-xs font-normal text-secondary-text/60">Score</div>
+                </th>
+              ) : (
+                <th className="px-4 py-1 text-sm text-center font-semibold text-secondary-text">
+                  <div>Score</div>
+                </th>
+              )}
+              {hasGroupSizeAdjustment && (
+                <>
+                  <th className="px-4 py-1 text-sm text-center font-semibold text-secondary-text">
+                    <div>Score</div>
+                    <div className="text-xs font-normal text-secondary-text/60">Before Adjustment</div>
+                  </th>
+                  <th className="px-4 py-1 text-sm text-center font-semibold text-secondary-text">
+                    <div>Group Size</div>
+                    <div className="text-xs font-normal text-secondary-text/60">Adjustment Factor</div>
+                  </th>
+                </>
+              )}
               <th className="px-4 py-1 text-sm text-center font-semibold text-secondary-text">Wins</th>
               <th className="px-4 py-1 text-sm text-center font-semibold text-secondary-text">Loss</th>
               <th className="px-4 py-1 text-sm text-center font-semibold text-secondary-text">Skips</th>
