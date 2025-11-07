@@ -34,6 +34,9 @@ export const PvPStats: React.FC<Props> = ({ player1, player2 }) => {
 
   const { player1: p1, player2: p2, games } = context.pvp.compare(player1, player2);
 
+  const p1IsRanked = !!context.leaderboard.getPlayerSummary(player1)?.isRanked;
+  const p2IsRanked = !!context.leaderboard.getPlayerSummary(player2)?.isRanked;
+
   return (
     <div className="space-y-6 text-primary-text">
       {/* Win Rate Pillars */}
@@ -46,35 +49,43 @@ export const PvPStats: React.FC<Props> = ({ player1, player2 }) => {
       {combinedPrediction !== undefined && (
         <div className="bg-secondary-background/20 rounded-lg p-5 border border-secondary-background/30">
           <h3 className="text-lg font-semibold mb-4 text-center">Win Chanse Prediction</h3>
-          <div className="flex items-center gap-4">
-            {/* Player 1 Probability */}
-            <div className="flex-1 text-center">
-              <div className="text-3xl font-bold text-secondary-text">{fmtNum(combinedPrediction.fraction * 100)}%</div>
-              <div className="text-sm text-secondary-text/70 mt-1">{p1.name}</div>
-            </div>
+          {p1IsRanked && p2IsRanked ? (
+            <>
+              <div className="flex items-center gap-4">
+                {/* Player 1 Probability */}
+                <div className="flex-1 text-center">
+                  <div className="text-3xl font-bold text-secondary-text">
+                    {fmtNum(combinedPrediction.fraction * 100)}%
+                  </div>
+                  <div className="text-sm text-secondary-text/70 mt-1">{p1.name}</div>
+                </div>
 
-            {/* Visual Bar */}
-            <div className="flex-[3] h-8 bg-secondary-background/30 rounded-full overflow-hidden relative">
-              <div
-                className="h-full bg-secondary-background transition-all duration-500"
-                style={{ width: `${combinedPrediction.fraction * 100}%` }}
-              />
-              <div className="absolute inset-0 flex items-center justify-center text-xs font-semibold text-secondary-text">
-                VS
-              </div>
-            </div>
+                {/* Visual Bar */}
+                <div className="flex-[3] h-8 bg-secondary-background/30 rounded-full overflow-hidden relative">
+                  <div
+                    className="h-full bg-secondary-background transition-all duration-500"
+                    style={{ width: `${combinedPrediction.fraction * 100}%` }}
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center text-xs font-semibold text-secondary-text">
+                    VS
+                  </div>
+                </div>
 
-            {/* Player 2 Probability */}
-            <div className="flex-1 text-center">
-              <div className="text-3xl font-bold text-secondary-text">
-                {fmtNum((1 - combinedPrediction.fraction) * 100)}%
+                {/* Player 2 Probability */}
+                <div className="flex-1 text-center">
+                  <div className="text-3xl font-bold text-secondary-text">
+                    {fmtNum((1 - combinedPrediction.fraction) * 100)}%
+                  </div>
+                  <div className="text-sm text-secondary-text/70 mt-1">{p2.name}</div>
+                </div>
               </div>
-              <div className="text-sm text-secondary-text/70 mt-1">{p2.name}</div>
-            </div>
-          </div>
-          <p className="text-center text-secondary-text/50">
-            At {fmtNum(combinedPrediction.confidence * 100)}% confidence
-          </p>
+              <p className="text-center text-secondary-text/50">
+                At {fmtNum(combinedPrediction.confidence * 100)}% confidence
+              </p>
+            </>
+          ) : (
+            <p className="text-center">Both players must be ranked to generate a predicion</p>
+          )}
         </div>
       )}
 
@@ -91,19 +102,19 @@ export const PvPStats: React.FC<Props> = ({ player1, player2 }) => {
       <div className="bg-primary-background rounded-lg p-5 border border-secondary-background/30">
         <h3 className="text-xl font-semibold mb-4">Match History</h3>
         <div className="overflow-x-auto">
-          <div className="min-w-[600px]">
+          <div className="min-w-[450px]">
             {/* Table Header */}
-            <div className="flex gap-4 text-sm font-semibold text-secondary-text/80 mb-3 pb-2 border-b border-secondary-background/30">
-              <div className="w-44 pl-2">Winner</div>
-              <div className="w-20 text-center">Points</div>
-              <div className="w-32 text-center">Score</div>
+            <div className="flex text-sm font-semibold text-primary-text mb-3">
+              <div className="w-40 pl-2">Winner</div>
+              <div className="w-16 text-center">Points</div>
+              <div className="w-24 text-center">Score</div>
               <div className="flex-1 text-right pr-2">Time</div>
             </div>
 
             {/* Games List */}
-            <div className="space-y-1">
+            <div>
               {games.length === 0 ? (
-                <div className="text-center py-8 text-secondary-text/60">No games played yet</div>
+                <div className="text-center py-8 text-primary-text/60">No games played yet</div>
               ) : (
                 games.map((_, index, list) => {
                   const game = list[list.length - 1 - index];
@@ -114,14 +125,14 @@ export const PvPStats: React.FC<Props> = ({ player1, player2 }) => {
                     <Link
                       key={`${p1.playerId}-${p2.playerId}-${index}`}
                       to={`/player/${winner.playerId}`}
-                      className="flex gap-4 px-2 rounded-lg border-t-[0.5px] border-primary-text/50 bg-primary-background hover:bg-secondary-background/30 transition-colors group"
+                      className="flex gap-4 px-2 rounded-lg border-t-[0.5px] border-primary-text/50 bg-primary-background hover:bg-primary-text/10 transition-colors group"
                     >
                       {/* Winner Name with Trophy */}
-                      <div className="w-44 font-medium flex items-center gap-2">
+                      <div className="w-36 font-medium flex items-center gap-0">
                         {/* Left side trophy (for player 1 wins) */}
                         <span className="text-lg w-6 flex-shrink-0 text-center">{isPlayer1Win && "🏆"}</span>
                         {/* Name (centered, truncates if too long) */}
-                        <span className="truncate group-hover:text-secondary-text transition-colors flex-1 text-center">
+                        <span className="truncate group-hover:text-primary-text transition-colors flex-1 text-center">
                           {winner.name}
                         </span>
                         {/* Right side trophy (for player 2 wins) */}
@@ -129,14 +140,14 @@ export const PvPStats: React.FC<Props> = ({ player1, player2 }) => {
                       </div>
 
                       {/* Points Difference */}
-                      <div className="w-20 text-center flex items-center justify-center">
-                        <span className="text-sm font-semibold px-2 py-1 rounded text-secondary-text bg-secondary-background/20">
+                      <div className="w-10 text-center flex items-center justify-center">
+                        <span className="text-md font-light italic">
                           {fmtNum(Math.abs(game.pointsDiff), { signedPositive: true })}
                         </span>
                       </div>
 
                       {/* Score */}
-                      <div className="w-32 flex flex-col items-center justify-center">
+                      <div className="w-24 flex flex-col items-center justify-center">
                         {game.score && (
                           <>
                             <div className="text-sm font-semibold">
@@ -145,7 +156,7 @@ export const PvPStats: React.FC<Props> = ({ player1, player2 }) => {
                                 : `${game.score.setsWon.gameLoser} - ${game.score.setsWon.gameWinner}`}
                             </div>
                             {game.score.setPoints && (
-                              <div className="text-xs text-secondary-text/60 italic">
+                              <div className="text-xs text-primary-text/60 italic whitespace-nowrap">
                                 (
                                 {isPlayer1Win
                                   ? game.score.setPoints.map((set) => `${set.gameWinner}-${set.gameLoser}`).join(", ")
@@ -158,7 +169,7 @@ export const PvPStats: React.FC<Props> = ({ player1, player2 }) => {
                       </div>
 
                       {/* Time */}
-                      <div className="flex-1 text-right text-sm text-secondary-text/70 flex items-center justify-end pr-2">
+                      <div className="flex-1 text-right text-sm text-primary-text/70 flex items-center justify-end pr-2 whitespace-nowrap">
                         {relativeTimeString(new Date(game.time))}
                       </div>
                     </Link>
