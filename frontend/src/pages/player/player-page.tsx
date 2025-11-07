@@ -80,8 +80,8 @@ export const PlayerPage: React.FC = () => {
       </div>
 
       {/* Tabs Navigation */}
-      <div className="bg-secondary-background text-tertiary-text px-6 md:px-8">
-        <div className="flex space-x-2">
+      <div className="bg-secondary-background  px-6 md:px-8">
+        <div className="flex space-x-2 overflow-auto">
           {tabs.map((tab) => {
             return (
               <button

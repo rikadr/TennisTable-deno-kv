@@ -20,18 +20,23 @@ export const OponentsScores: React.FC<Props> = ({ playerId }) => {
   return (
     <div className="flex flex-col w-full">
       {/* Vertical Bar Chart */}
-      <div className="flex items-end gap-1 h-64 pb-2">
+      <div className="flex items-end gap-0.5 h-64 pb-2">
         {diffGraphData.map((entry, i) => {
           const fraction = entry.count / maxCount;
           const barHeight = Math.max(fraction * 100, 0.5); // Minimum 0.5% height to be visible
 
           return (
-            <div key={i} className="flex-1 flex flex-col items-center justify-end h-full min-w-0">
+            <div
+              key={i}
+              className="flex flex-col items-center justify-end h-full"
+              style={{ flex: `1 1 0px`, minWidth: 0 }}
+            >
               {/* Bar */}
               <div
                 className="w-full rounded-t-md"
                 style={{
                   height: `${barHeight}%`,
+                  minWidth: "2px",
                   backgroundColor: entry.diffGroup === 0 ? "rgb(var(--color-primary-text))" : stringToColor(playerId),
                 }}
               />
@@ -39,8 +44,7 @@ export const OponentsScores: React.FC<Props> = ({ playerId }) => {
               {/* Label - positioned below bar with fixed height */}
               <div
                 className={classNames(
-                  "h-5 w-8 text-xs text-primary-text whitespace-nowrap rotate-45 text-left translate-x-2",
-                  entry.diffGroup === 0 ? "translate-y-2" : "translate-y-1",
+                  "h-5 text-[9px] text-primary-text whitespace-nowrap origin-bottom-left rotate-45 -translate-x-2 -translate-y-1.5",
                 )}
               >
                 {entry.diffGroup > 0 ? "+" : ""}
