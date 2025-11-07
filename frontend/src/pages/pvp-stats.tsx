@@ -90,13 +90,7 @@ export const PvPStats: React.FC<Props> = ({ player1, player2 }) => {
       )}
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Player 1 Stats */}
-        <StatCard player={p1} opponent={p2} totalGames={games.length} />
-
-        {/* Player 2 Stats */}
-        <StatCard player={p2} opponent={p1} totalGames={games.length} />
-      </div>
+      <CombinedStatCard player1={p1} player2={p2} />
 
       {/* Games History */}
       <div className="bg-primary-background rounded-lg p-5 border border-secondary-background/30">
@@ -184,80 +178,119 @@ export const PvPStats: React.FC<Props> = ({ player1, player2 }) => {
   );
 };
 
-const StatCard: React.FC<{
-  player: any;
-  opponent: any;
-  totalGames: number;
-}> = ({ player, opponent, totalGames }) => {
-  const eloDiff = player.points.currentElo - opponent.points.currentElo;
-  const pointsNet = player.points.gained - player.points.lost;
+const CombinedStatCard: React.FC<{
+  player1: any;
+  player2: any;
+}> = ({ player1, player2 }) => {
+  const eloDiff = player1.points.currentElo - player2.points.currentElo;
+  const pointsNet1 = player1.points.gained - player1.points.lost;
+  const pointsNet2 = player2.points.gained - player2.points.lost;
 
   return (
-    <div className="bg-secondary-background/20 rounded-lg p-5 border border-secondary-background/30">
-      <h3 className="text-xl font-bold mb-4 text-center">{player.name}</h3>
+    <div className="bg-secondary-background/20 rounded-lg p-4 border border-secondary-background/30">
+      {/* Player Names Header */}
+      <div className="grid grid-cols-3 gap-2 mb-3 pb-2 border-b border-secondary-background/30">
+        <div className="text-right">
+          <h3 className="text-lg font-bold text-secondary-text">{player1.name}</h3>
+        </div>
+        <div></div>
+        <div className="text-left">
+          <h3 className="text-lg font-bold text-secondary-text">{player2.name}</h3>
+        </div>
+      </div>
 
-      <div className="space-y-4">
+      <div className="space-y-3">
+        {/* Streaks */}
         <div>
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-lg">🔥</span>
-            <h4 className="font-semibold text-secondary-text">Streaks</h4>
+          <div className="flex items-center justify-center gap-2 mb-1.5">
+            <span className="text-base">🔥</span>
+            <h4 className="font-semibold text-sm text-secondary-text">Streaks</h4>
           </div>
-          <div className="pl-7 space-y-1 text-sm">
-            <div className="flex justify-between">
-              <span className="text-secondary-text/70">Longest:</span>
-              <span className="font-semibold">{player.streak.longest}</span>
+          <div className="grid grid-cols-3 gap-2 text-sm">
+            <div className="text-right space-y-0.5">
+              <div className="font-semibold">{player1.streak.longest}</div>
+              <div className="font-semibold">{player1.streak.current}</div>
             </div>
-            <div className="flex justify-between">
-              <span className="text-secondary-text/70">Current:</span>
-              <span className="font-semibold">{player.streak.current}</span>
+            <div className="text-center space-y-0.5 text-secondary-text/70 text-xs">
+              <div>Longest</div>
+              <div>Current</div>
+            </div>
+            <div className="text-left space-y-0.5">
+              <div className="font-semibold">{player2.streak.longest}</div>
+              <div className="font-semibold">{player2.streak.current}</div>
             </div>
           </div>
         </div>
 
+        {/* Score Comparison */}
         <div>
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-lg">⭐</span>
-            <h4 className="font-semibold text-secondary-text">Score comparison</h4>
+          <div className="flex items-center justify-center gap-2 mb-1.5">
+            <span className="text-base">⭐</span>
+            <h4 className="font-semibold text-sm text-secondary-text">Score Comparison</h4>
           </div>
-          <div className="pl-7 space-y-1 text-sm">
-            <div className="flex justify-between">
-              <span className="text-secondary-text/70">Current:</span>
-              <span className="font-semibold">{fmtNum(player.points.currentElo)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-secondary-text/70">Difference:</span>
-              <span
+          <div className="grid grid-cols-3 gap-2 text-sm">
+            <div className="text-right space-y-0.5">
+              <div className="font-semibold">{fmtNum(player1.points.currentElo)}</div>
+              <div
                 className={classNames("font-semibold", eloDiff > 0 ? "text-secondary-text" : "text-secondary-text/60")}
               >
                 {eloDiff > 0 ? "+" : ""}
                 {fmtNum(eloDiff)}
-              </span>
+              </div>
+            </div>
+            <div className="text-center space-y-0.5 text-secondary-text/70 text-xs">
+              <div>Current</div>
+              <div>Difference</div>
+            </div>
+            <div className="text-left space-y-0.5">
+              <div className="font-semibold">{fmtNum(player2.points.currentElo)}</div>
+              <div
+                className={classNames("font-semibold", eloDiff < 0 ? "text-secondary-text" : "text-secondary-text/60")}
+              >
+                {eloDiff < 0 ? "+" : ""}
+                {fmtNum(-eloDiff)}
+              </div>
             </div>
           </div>
         </div>
 
+        {/* Score Exchange */}
         <div>
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-lg">📊</span>
-            <h4 className="font-semibold text-secondary-text">Score exchange</h4>
+          <div className="flex items-center justify-center gap-2 mb-1.5">
+            <span className="text-base">📊</span>
+            <h4 className="font-semibold text-sm text-secondary-text">Score Exchange</h4>
           </div>
-          <div className="pl-7 space-y-1 text-sm">
-            <div className="flex justify-between">
-              <span className="text-secondary-text/70">Gained:</span>
-              <span className="font-semibold text-secondary-text">{fmtNum(player.points.gained)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-secondary-text/70">Lost:</span>
-              <span className="font-semibold text-secondary-text/60">{fmtNum(player.points.lost)}</span>
-            </div>
-            <div className="flex justify-between pt-1 border-t border-secondary-background/30">
-              <span className="text-secondary-text/70">Net:</span>
-              <span
-                className={classNames("font-bold", pointsNet > 0 ? "text-secondary-text" : "text-secondary-text/60")}
+          <div className="grid grid-cols-3 gap-2 text-sm">
+            <div className="text-right space-y-0.5">
+              <div className="font-semibold text-secondary-text">{fmtNum(player1.points.gained)}</div>
+              <div className="font-semibold text-secondary-text/60">{fmtNum(player1.points.lost)}</div>
+              <div
+                className={classNames(
+                  "font-bold pt-0.5",
+                  pointsNet1 > 0 ? "text-secondary-text" : "text-secondary-text/60",
+                )}
               >
-                {pointsNet > 0 ? "+" : ""}
-                {fmtNum(pointsNet)}
-              </span>
+                {pointsNet1 > 0 ? "+" : ""}
+                {fmtNum(pointsNet1)}
+              </div>
+            </div>
+            <div className="text-center space-y-0.5 text-secondary-text/70 text-xs">
+              <div>Gained</div>
+              <div>Lost</div>
+              <div className="pt-0.5 border-t border-secondary-background/30">Net</div>
+            </div>
+            <div className="text-left space-y-0.5">
+              <div className="font-semibold text-secondary-text">{fmtNum(player2.points.gained)}</div>
+              <div className="font-semibold text-secondary-text/60">{fmtNum(player2.points.lost)}</div>
+              <div
+                className={classNames(
+                  "font-bold pt-0.5",
+                  pointsNet2 > 0 ? "text-secondary-text" : "text-secondary-text/60",
+                )}
+              >
+                {pointsNet2 > 0 ? "+" : ""}
+                {fmtNum(pointsNet2)}
+              </div>
             </div>
           </div>
         </div>
