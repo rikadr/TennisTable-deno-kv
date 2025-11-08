@@ -811,58 +811,42 @@ export class Achievements {
     progression["punching-bag"].current = currentLoseStreakAll;
     progression["never-give-up"].current = currentLoseStreakAll;
 
-    // Calculate best-friends progression - only count games within 1-year windows
-    let maxGamesInYear = 0;
-    const opponentGamesInYear = new Map<string, { count: number; timespan: number }>();
+    // Calculate best-friends progression - count games within last 1 year from now
+    const now = Date.now();
+    let maxGamesInLastYear = 0;
+    const opponentGamesInLastYear = new Map<string, { count: number; timespan: number }>();
 
     gamesPerOpponent.forEach((_, opponent) => {
-      // For each opponent, find the maximum number of games within any 1-year window
-      const gamesWithOpponent: number[] = [];
+      // Count games with this opponent in the last year
+      let gamesInLastYear = 0;
+      let firstGameInWindow: number | null = null;
+      let lastGameInWindow: number | null = null;
+
       this.parent.games.forEach((game) => {
         const isPlayerGame =
           (game.winner === playerId && game.loser === opponent) ||
           (game.loser === playerId && game.winner === opponent);
-        if (isPlayerGame) {
-          gamesWithOpponent.push(game.playedAt);
+
+        // Check if game is within last year from now
+        if (isPlayerGame && now - game.playedAt <= ONE_YEAR) {
+          gamesInLastYear++;
+          if (firstGameInWindow === null) {
+            firstGameInWindow = game.playedAt;
+          }
+          lastGameInWindow = game.playedAt;
         }
       });
 
-      // Sort games by time
-      gamesWithOpponent.sort((a, b) => a - b);
-
-      // Find maximum games within any 1-year sliding window
-      let maxInWindow = 0;
-      let bestWindowStart = 0;
-      let bestWindowEnd = 0;
-
-      for (let windowEnd = 0; windowEnd < gamesWithOpponent.length; windowEnd++) {
-        // Move window start forward while window is larger than 1 year
-        let windowStart = 0;
-        for (let i = 0; i <= windowEnd; i++) {
-          if (gamesWithOpponent[windowEnd] - gamesWithOpponent[i] <= ONE_YEAR) {
-            windowStart = i;
-            break;
-          }
-        }
-
-        const gamesInWindow = windowEnd - windowStart + 1;
-        if (gamesInWindow > maxInWindow) {
-          maxInWindow = gamesInWindow;
-          bestWindowStart = windowStart;
-          bestWindowEnd = windowEnd;
-        }
+      if (gamesInLastYear > 0 && firstGameInWindow !== null && lastGameInWindow !== null) {
+        const timespan = lastGameInWindow - firstGameInWindow;
+        opponentGamesInLastYear.set(opponent, { count: gamesInLastYear, timespan });
       }
 
-      if (maxInWindow > 0) {
-        const timespan = gamesWithOpponent[bestWindowEnd] - gamesWithOpponent[bestWindowStart];
-        opponentGamesInYear.set(opponent, { count: maxInWindow, timespan });
-      }
-
-      maxGamesInYear = Math.max(maxGamesInYear, maxInWindow);
+      maxGamesInLastYear = Math.max(maxGamesInLastYear, gamesInLastYear);
     });
 
-    progression["best-friends"].current = maxGamesInYear;
-    progression["best-friends"].perOpponent = opponentGamesInYear;
+    progression["best-friends"].current = maxGamesInLastYear;
+    progression["best-friends"].perOpponent = opponentGamesInLastYear;
 
     // Add per-opponent streak details
     streaksPerOpponent.forEach((streak, opponent) => {

@@ -390,7 +390,13 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                                 .sort((a, b) => b[1] - a[1])
                                 .slice(0, 5)
                                 .map(([opponent, streak]) => (
-                                  <div key={opponent} className="flex items-center justify-between text-xs">
+                                  <div
+                                    key={opponent}
+                                    className={classNames(
+                                      "flex items-center justify-between text-xs",
+                                      streak >= data.target && "line-through",
+                                    )}
+                                  >
                                     <Link to={"/player/" + opponent}>
                                       <span className="text-secondary-text">{context.playerName(opponent)}</span>
                                     </Link>
@@ -420,13 +426,29 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                                 .slice(0, 5)
                                 .map(([opponent, info]) => {
                                   const days = Math.floor(info.timespan / (24 * 60 * 60 * 1000));
+                                  // Check if achievement already earned with this opponent
+                                  const alreadyEarned = context.achievements
+                                    .getAchievements(playerId)
+                                    .some(
+                                      (achievement) =>
+                                        achievement.type === "best-friends" &&
+                                        achievement.data &&
+                                        "opponent" in achievement.data &&
+                                        achievement.data.opponent === opponent,
+                                    );
                                   return (
-                                    <div key={opponent} className="flex items-center justify-between text-xs gap-4">
+                                    <div
+                                      key={opponent}
+                                      className={classNames(
+                                        "flex items-center justify-between text-xs gap-4",
+                                        alreadyEarned && "line-through",
+                                      )}
+                                    >
                                       <Link to={"/player/" + opponent}>
                                         <span className="text-secondary-text">{context.playerName(opponent)}</span>
                                       </Link>
                                       <span className="text-primary-text font-medium">
-                                        {info.count} games ({days} days)
+                                        {info.count} games in last {days} days
                                       </span>
                                     </div>
                                   );
