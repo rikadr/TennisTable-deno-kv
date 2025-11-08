@@ -35,6 +35,7 @@ import { SimulatedLeaderboard } from "./pages/simulations/expected-leaderboard/e
 import { PlayerNetwork } from "./pages/player-network/player-network";
 import { TrackGamePage } from "./pages/add-game/track-game";
 import { ChooseAddOrTrack } from "./pages/add-game/choose-add-or-track";
+import { AchievementsPage } from "./pages/achievements-page";
 
 const RequireAuth: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   if (!session.isAuthenticated) {
@@ -73,6 +74,7 @@ function App() {
                           <Route index element={<TournamentPage />} />
                           <Route path="list" element={<TournamentsListPage />} />
                         </Route>
+                        <Route path="/achievements" element={<AchievementsPage />} />
                         <Route path="/simulations">
                           <Route index element={<SimulationsPage />} />
                           <Route path="win-loss" element={<WinLoss />} />

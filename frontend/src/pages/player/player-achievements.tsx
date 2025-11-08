@@ -8,7 +8,7 @@ type Props = {
   playerId?: string;
 };
 
-const ACHIEVEMENT_LABELS: Record<string, { title: string; description: string; icon: string }> = {
+export const ACHIEVEMENT_LABELS: Record<string, { title: string; description: string; icon: string }> = {
   "donut-1": {
     title: "Donut",
     description: "Won a set without opponent scoring",
@@ -362,7 +362,7 @@ function formatTimePeriod(ms?: number): string {
   return `${days} day${days !== 1 ? "s" : ""}`;
 }
 
-function dateString(time: number) {
+export function dateString(time: number) {
   return new Date(time).toLocaleDateString("nb-NO", {
     day: "numeric",
     month: "long",
