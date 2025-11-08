@@ -20,6 +20,8 @@ export class Achievements {
         lastActiveAt: number;
         winStreakAll: number;
         winStreakAllStartedAt: number;
+        loseStreakAll: number;
+        loseStreakAllStartedAt: number;
         winStreakPlayer: Map<string, { count: number; startedAt: number }>;
         donutCount: number;
         closeCallsCount: number;
@@ -39,6 +41,8 @@ export class Achievements {
           lastActiveAt: game.playedAt,
           winStreakAll: 0,
           winStreakAllStartedAt: game.playedAt,
+          loseStreakAll: 0,
+          loseStreakAllStartedAt: game.playedAt,
           winStreakPlayer: new Map(),
           donutCount: 0,
           closeCallsCount: 0,
@@ -55,6 +59,8 @@ export class Achievements {
           lastActiveAt: game.playedAt,
           winStreakAll: 0,
           winStreakAllStartedAt: game.playedAt,
+          loseStreakAll: 0,
+          loseStreakAllStartedAt: game.playedAt,
           winStreakPlayer: new Map(),
           donutCount: 0,
           closeCallsCount: 0,
@@ -165,6 +171,23 @@ export class Achievements {
       }
       winner.winStreakAll++;
 
+      // Check if winner just broke a lose streak
+      if (winner.loseStreakAll >= 20) {
+        this.#addAchievement(
+          game.winner,
+          this.#createAchievement("unbreakable-spirit", game.winner, game.playedAt, undefined),
+        );
+      } else if (winner.loseStreakAll >= 10) {
+        this.#addAchievement(
+          game.winner,
+          this.#createAchievement("comeback-kid", game.winner, game.playedAt, undefined),
+        );
+      }
+
+      // Winner resets their lose streak
+      winner.loseStreakAll = 0;
+      winner.loseStreakAllStartedAt = game.playedAt;
+
       // Update player-specific win streak
       if (!winner.winStreakPlayer.has(game.loser)) {
         winner.winStreakPlayer.set(game.loser, { count: 0, startedAt: game.playedAt });
@@ -180,6 +203,29 @@ export class Achievements {
       loser.winStreakAll = 0;
       loser.winStreakAllStartedAt = game.playedAt;
       loser.winStreakPlayer.set(game.winner, { count: 0, startedAt: game.playedAt });
+
+      // Start or continue lose streak for loser
+      if (loser.loseStreakAll === 0) {
+        loser.loseStreakAllStartedAt = game.playedAt;
+      }
+      loser.loseStreakAll++;
+
+      // Check for lose streak achievements for loser
+      if (loser.loseStreakAll === 10) {
+        this.#addAchievement(
+          game.loser,
+          this.#createAchievement("punching-bag", game.loser, game.playedAt, {
+            startedAt: loser.loseStreakAllStartedAt,
+          }),
+        );
+      } else if (loser.loseStreakAll === 20) {
+        this.#addAchievement(
+          game.loser,
+          this.#createAchievement("never-give-up", game.loser, game.playedAt, {
+            startedAt: loser.loseStreakAllStartedAt,
+          }),
+        );
+      }
 
       // Check for donut achievements (individual sets where loser scored 0)
       if (game.score?.setPoints) {
@@ -624,6 +670,10 @@ export class Achievements {
       "streak-all-10": { current: 0, target: 10, earned: 0 },
       "streak-player-10": { current: 0, target: 10, perOpponent: new Map(), earned: 0 },
       "streak-player-20": { current: 0, target: 20, perOpponent: new Map(), earned: 0 },
+      "punching-bag": { current: 0, target: 10, earned: 0 },
+      "never-give-up": { current: 0, target: 20, earned: 0 },
+      "comeback-kid": { earned: 0 },
+      "unbreakable-spirit": { earned: 0 },
       "back-after-6-months": { earned: 0, target: SIX_MONTHS },
       "back-after-1-year": { earned: 0, target: ONE_YEAR },
       "back-after-2-years": { earned: 0, target: TWO_YEARS },
@@ -644,6 +694,7 @@ export class Achievements {
     let firstActiveAt: number | null = null;
     let lastActiveAt: number | null = null;
     let currentWinStreakAll = 0;
+    let currentLoseStreakAll = 0;
     let donutCount = 0;
     let closeCallsCount = 0;
     let edgeLordCount = 0;
@@ -710,6 +761,7 @@ export class Achievements {
       if (isWinner) {
         // Track win streak against all
         currentWinStreakAll++;
+        currentLoseStreakAll = 0;
 
         // Track win streak against specific opponent
         streaksPerOpponent.set(opponent, (streaksPerOpponent.get(opponent) || 0) + 1);
@@ -723,8 +775,10 @@ export class Achievements {
           });
         }
       } else {
-        // Lost a game - reset win streak
+        // Lost a game - reset win streak and increment lose streak
         currentWinStreakAll = 0;
+        currentLoseStreakAll++;
+
         // Reset streak against this specific opponent
         if (isLoser) {
           streaksPerOpponent.set(game.winner, 0);
@@ -754,6 +808,8 @@ export class Achievements {
     progression["consistency-is-key"].current = consistencyCount;
     progression["variety-player"].current = opponentsPlayed.size;
     progression["variety-player"].opponents = opponentsPlayed;
+    progression["punching-bag"].current = currentLoseStreakAll;
+    progression["never-give-up"].current = currentLoseStreakAll;
 
     // Calculate best-friends progression - only count games within 1-year windows
     let maxGamesInYear = 0;
@@ -882,6 +938,10 @@ type AchievementDefinitions = {
   "variety-player": undefined;
   "best-friends": { opponent: string; firstGame: number };
   "welcome-committee": { opponents: string[] };
+  "punching-bag": { startedAt: number };
+  "never-give-up": { startedAt: number };
+  "comeback-kid": undefined;
+  "unbreakable-spirit": undefined;
 };
 
 type AchievementType = keyof AchievementDefinitions;
@@ -950,4 +1010,8 @@ export type AchievementProgression = {
   "variety-player": VarietyPlayerProgression;
   "best-friends": BestFriendsProgression;
   "welcome-committee": WelcomeCommitteeProgression;
+  "punching-bag": ProgressionWithTarget;
+  "never-give-up": ProgressionWithTarget;
+  "comeback-kid": BaseProgression;
+  "unbreakable-spirit": BaseProgression;
 };

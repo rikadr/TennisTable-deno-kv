@@ -35,6 +35,26 @@ export const ACHIEVEMENT_LABELS: Record<string, { title: string; description: st
     description: "Won 20 games in a row against the same opponent",
     icon: "👹",
   },
+  "punching-bag": {
+    title: "Punching Bag",
+    description: "Lose 10 games in a row",
+    icon: "🥊",
+  },
+  "never-give-up": {
+    title: "Never Give Up",
+    description: "Lose 20 games in a row",
+    icon: "🫠",
+  },
+  "comeback-kid": {
+    title: "Comeback Kid",
+    description: "Win a game after losing 10 in a row",
+    icon: "💪",
+  },
+  "unbreakable-spirit": {
+    title: "Unbreakable Spirit",
+    description: "Win a game after losing 20 in a row",
+    icon: "💎",
+  },
   "back-after-6-months": {
     title: "Welcome Back",
     description: "Return after 6 months of inactivity",
@@ -233,6 +253,12 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
                     From {dateString(achievement.data.firstGameInPeriod)} to {dateString(achievement.earnedAt)}
                   </p>
                 )}
+
+                {achievement.data && "startedAt" in achievement.data && (
+                  <p className="text-xs text-secondary-text/70 mt-2">
+                    From {dateString(achievement.data.startedAt)} to {dateString(achievement.earnedAt)}
+                  </p>
+                )}
               </div>
             </div>
           </div>
@@ -428,7 +454,7 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                           <div className="flex flex-wrap gap-1">
                             {Array.from(data.newPlayers).map((player: string) => (
                               <Link to={"/player/" + player} key={player}>
-                                <span className="text-xs bg-background px-2 py-1 rounded text-secondary-text">
+                                <span className="text-xs bg-background pr-2 py-1 rounded text-secondary-text">
                                   {context.playerName(player)}
                                 </span>
                               </Link>
