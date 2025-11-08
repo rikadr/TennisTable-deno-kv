@@ -239,8 +239,15 @@ export class Achievements {
         winner.donutCount += donutsEarned;
 
         // Check if player reached 5 total donuts
+        // Only award if they haven't already earned this achievement
         if (winner.donutCount === 5) {
-          this.#addAchievement(game.winner, this.#createAchievement("donut-5", game.winner, game.playedAt, undefined));
+          const hasDonut5 = this.achievementMap.get(game.winner)?.some((a) => a.type === "donut-5");
+          if (!hasDonut5) {
+            this.#addAchievement(
+              game.winner,
+              this.#createAchievement("donut-5", game.winner, game.playedAt, undefined),
+            );
+          }
         }
 
         // Check for "Nice Game" achievement (total points = 69)
