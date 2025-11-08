@@ -23,7 +23,10 @@ export const RelativeTime: React.FC<{ date: Date }> = ({ date }) => {
   return <>{timeString}</>;
 };
 
-export function relativeTimeString(date: Date): string {
+export function relativeTimeString(date?: Date): string {
+  if (!date || date instanceof Date === false) {
+    return "";
+  }
   const now = new Date();
   return formatDistance(date, now, { addSuffix: true });
 }

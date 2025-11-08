@@ -9,7 +9,7 @@ import { EventStore } from "./event-store/event-store";
 import { IndividualPoints } from "./individual-points";
 import { LeaderboardChanges } from "./leaderboard-changes";
 import { PlayerOponentDistribution } from "./playerOponentDistribution";
-import { PlayerTrophies } from "./player-trophies";
+import { Achievements } from "./achievements";
 
 export class TennisTable {
   // --------------------------------------------------------------------------
@@ -39,7 +39,7 @@ export class TennisTable {
   futureElo: FutureElo;
   individualPoints: IndividualPoints;
   playerOponentDistribution: PlayerOponentDistribution;
-  playerTrophies: PlayerTrophies;
+  achievements: Achievements;
 
   constructor(data: { events: EventType[] }) {
     this.events = data.events;
@@ -53,7 +53,7 @@ export class TennisTable {
     this.futureElo = new FutureElo(this);
     this.individualPoints = new IndividualPoints(this);
     this.playerOponentDistribution = new PlayerOponentDistribution(this);
-    this.playerTrophies = new PlayerTrophies(this);
+    this.achievements = new Achievements(this);
   }
 
   get players() {

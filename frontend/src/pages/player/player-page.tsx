@@ -12,14 +12,14 @@ import { relativeTimeString } from "../../common/date-utils";
 import { OponentsScores } from "./oponents-scores";
 import { PlayerPredictions } from "./player-predictions";
 import { session } from "../../services/auth";
-import { PlayerTrophies } from "./player-trophies";
+import { PlayerAchievements } from "./player-achievements";
 
-type TabType = "overview" | "games" | "statistics" | "trophies" | "predictions";
+type TabType = "overview" | "games" | "statistics" | "achievements" | "predictions";
 const tabs: { id: TabType; label: string }[] = [
   { id: "overview", label: "Overview" },
   { id: "games", label: "Recent Games" },
   { id: "statistics", label: "Statistics" },
-  { id: "trophies", label: "Trophies" },
+  { id: "achievements", label: "Achievements" },
   { id: "predictions", label: "Predictions" },
 ];
 
@@ -307,7 +307,7 @@ export const PlayerPage: React.FC = () => {
             </div>
           </div>
         )}
-        {activeTab === "trophies" && playerId && <PlayerTrophies playerId={playerId} />}
+        {activeTab === "achievements" && playerId && <PlayerAchievements playerId={playerId} />}
         {activeTab === "predictions" && playerId && <PlayerPredictions playerId={playerId} />}
       </div>
     </div>
