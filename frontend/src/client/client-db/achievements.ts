@@ -23,6 +23,7 @@ export class Achievements {
         winStreakPlayer: Map<string, { count: number; startedAt: number }>;
         donutCount: number; // Track total donuts for donut-5 achievement
         closeCallsCount: number; // Track total close calls for close-calls achievement
+        edgeLordCount: number; // Track total close calls for edge-lord achievement
       }
     >();
 
@@ -37,6 +38,7 @@ export class Achievements {
           winStreakPlayer: new Map(),
           donutCount: 0,
           closeCallsCount: 0,
+          edgeLordCount: 0,
         });
       }
       if (!playerTracker.has(game.loser)) {
@@ -48,6 +50,7 @@ export class Achievements {
           winStreakPlayer: new Map(),
           donutCount: 0,
           closeCallsCount: 0,
+          edgeLordCount: 0,
         });
       }
 
@@ -107,11 +110,11 @@ export class Achievements {
         if (isCloseCall) {
           winner.closeCallsCount++;
           loser.closeCallsCount++;
+          winner.edgeLordCount++;
+          loser.edgeLordCount++;
 
-          // Award achievement when reaching 5 close calls
+          // Award "Close Calls" achievement when reaching 5
           if (winner.closeCallsCount === 5) {
-            console.log(this.parent.playerName(game.winner));
-
             this.#addAchievement(
               game.winner,
               this.#createAchievement("close-calls", game.winner, game.playedAt, undefined),
@@ -119,10 +122,24 @@ export class Achievements {
           }
 
           if (loser.closeCallsCount === 5) {
-            console.log(this.parent.playerName(game.loser));
             this.#addAchievement(
               game.loser,
               this.#createAchievement("close-calls", game.loser, game.playedAt, undefined),
+            );
+          }
+
+          // Award "Edge Lord" achievement when reaching 20
+          if (winner.edgeLordCount === 20) {
+            this.#addAchievement(
+              game.winner,
+              this.#createAchievement("edge-lord", game.winner, game.playedAt, undefined),
+            );
+          }
+
+          if (loser.edgeLordCount === 20) {
+            this.#addAchievement(
+              game.loser,
+              this.#createAchievement("edge-lord", game.loser, game.playedAt, undefined),
             );
           }
         }
@@ -489,6 +506,7 @@ export class Achievements {
       "tournament-winner": { earned: 0 },
       "nice-game": { earned: 0 },
       "close-calls": { current: 0, target: 5, earned: 0 },
+      "edge-lord": { current: 0, target: 20, earned: 0 },
     };
 
     let firstActiveAt: number | null = null;
@@ -496,6 +514,7 @@ export class Achievements {
     let currentWinStreakAll = 0;
     let donutCount = 0;
     let closeCallsCount = 0;
+    let edgeLordCount = 0;
     const streaksPerOpponent = new Map<string, number>();
 
     // Calculate current stats by iterating through games
@@ -541,6 +560,7 @@ export class Achievements {
       // Count close calls for both winners and losers
       if (game.score?.setPoints && this.#checkCloseCallGame(game.score.setPoints)) {
         closeCallsCount++;
+        edgeLordCount++;
       }
     });
 
@@ -551,6 +571,7 @@ export class Achievements {
     progression["streak-player-10"].current = Math.max(...Array.from(streaksPerOpponent.values()), 0);
     progression["streak-player-20"].current = Math.max(...Array.from(streaksPerOpponent.values()), 0);
     progression["close-calls"].current = closeCallsCount;
+    progression["edge-lord"].current = edgeLordCount;
 
     // Add per-opponent streak details
     streaksPerOpponent.forEach((streak, opponent) => {
@@ -621,6 +642,7 @@ type AchievementDefinitions = {
   "tournament-winner": { tournamentId: string };
   "nice-game": { gameId: string; opponent: string };
   "close-calls": undefined;
+  "edge-lord": undefined;
 };
 
 type AchievementType = keyof AchievementDefinitions;
@@ -672,4 +694,5 @@ export type AchievementProgression = {
   "tournament-winner": BaseProgression;
   "nice-game": BaseProgression;
   "close-calls": ProgressionWithTarget;
+  "edge-lord": ProgressionWithTarget;
 };

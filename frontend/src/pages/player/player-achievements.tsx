@@ -84,6 +84,11 @@ const ACHIEVEMENT_LABELS: Record<string, { title: string; description: string; i
     description: "Play 5 games where all sets are decided by 2 points or less",
     icon: "😰",
   },
+  "edge-lord": {
+    title: "Edge Lord",
+    description: "Play 20 games where all sets are decided by 2 points or less",
+    icon: "🔪",
+  },
 };
 
 export const PlayerAchievements: React.FC<Props> = ({ playerId }) => {
