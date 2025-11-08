@@ -480,10 +480,18 @@ export class Achievements {
 
     // Calculate active period with 30-day reset logic
     const activityPeriod = this.#calculateActivityPeriod(playerId);
-    if (activityPeriod) {
-      progression["active-6-months"].current = activityPeriod.period;
-      progression["active-1-year"].current = activityPeriod.period;
-      progression["active-2-years"].current = activityPeriod.period;
+    if (activityPeriod && lastActiveAt !== null) {
+      const now = Date.now();
+      const timeSinceLastGame = now - lastActiveAt;
+      const THIRTY_DAYS = 30 * 24 * 60 * 60 * 1000;
+
+      // If it's been less than 30 days since last game, include that time in the ongoing period
+      // Otherwise, the activity period has been reset and they're starting fresh
+      const ongoingPeriod = timeSinceLastGame < THIRTY_DAYS ? activityPeriod.period + timeSinceLastGame : 0;
+
+      progression["active-6-months"].current = ongoingPeriod;
+      progression["active-1-year"].current = ongoingPeriod;
+      progression["active-2-years"].current = ongoingPeriod;
     }
 
     // Calculate back-after progression (time since last activity)
