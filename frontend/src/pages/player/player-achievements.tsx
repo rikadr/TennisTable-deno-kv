@@ -296,179 +296,171 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
         const hasCurrent = "current" in data && !!data.current;
         const isComplete = hasTarget && hasCurrent && data.current! >= data.target!;
         const percentage = hasTarget && hasCurrent ? Math.min((data.current! / data.target!) * 100, 100) : 0;
+        const hasEarned = data.earned > 0;
 
         return (
           <div
             key={type}
             className={classNames(
-              "bg-background-secondary rounded-lg p-4 border transition-colors",
-              isComplete ? "border-accent/50 bg-accent/5" : "border-border",
+              "bg-background-secondary rounded-lg overflow-hidden border transition-colors relative",
+              hasEarned && "bg-green-500",
             )}
           >
-            <div className="flex items-start gap-4">
-              <div className="text-3xl">{label.icon}</div>
-              <div className="flex-1">
-                <div className="flex items-center justify-between mb-2">
-                  <div>
-                    <h3 className="font-semibold text-primary-text">{label.title}</h3>
-                    <p className="text-sm text-secondary-text">{label.description}</p>
-                  </div>
-                  {data.earned > 0 && (
-                    <div className="bg-accent/20 text-accent text-xs font-semibold px-2 py-1 rounded">
-                      Earned {data.earned} time{data.earned > 1 && "s"}
-                    </div>
+            {/* Progress bar background */}
+            {hasTarget && (
+              <div className="absolute inset-0 pointer-events-none">
+                <div
+                  className={classNames(
+                    "h-full transition-all duration-300",
+                    isComplete ? "bg-green-500" : "bg-blue-400",
                   )}
-                </div>
+                  style={{ width: `${percentage}%` }}
+                />
+              </div>
+            )}
 
-                {hasTarget ? (
-                  <>
-                    {/* Progress bar */}
-                    <div className="mt-3">
-                      <div className="flex items-center justify-between text-xs text-secondary-text mb-1">
-                        <span
-                          className={classNames(
-                            !!data.current && !!data.target && data.current >= data.target && "line-through",
-                          )}
-                        >
-                          {type.startsWith("active-") || type.startsWith("back-after-")
-                            ? formatTimePeriod(data.current)
-                            : data.current}{" "}
-                          /{" "}
-                          {type.startsWith("active-") || type.startsWith("back-after-")
-                            ? formatTimePeriod(data.target)
-                            : data.target}
-                        </span>
-                        <span>{percentage.toFixed(0)}%</span>
+            <div className="relative p-4">
+              <div className="flex items-start gap-4">
+                <div className="text-3xl">{label.icon}</div>
+                <div className="flex-1">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3">
+                        <h3 className="font-semibold text-primary-text">{label.title}</h3>
+                        {hasTarget && (
+                          <span
+                            className={classNames(
+                              "text-lg font-bold",
+                              isComplete ? "text-accent" : "text-primary-text",
+                            )}
+                          >
+                            {percentage.toFixed(0)}%
+                          </span>
+                        )}
                       </div>
-                      <div className="h-2 bg-background rounded-full overflow-hidden">
-                        <div
-                          className={classNames(
-                            "h-full transition-all duration-300",
-                            isComplete ? "bg-accent" : "bg-accent/70",
-                          )}
-                          style={{ width: `${percentage}%` }}
-                        />
-                      </div>
+                      <p className="text-sm text-secondary-text">{label.description}</p>
                     </div>
-
-                    {/* Show last active time for back-after achievements */}
-                    {type.startsWith("back-after-") && "lastActiveAt" in data && data.lastActiveAt && (
-                      <div className="mt-2 text-xs text-secondary-text/70">
-                        Last active: {dateString(data.lastActiveAt)}
+                    {data.earned > 0 && (
+                      <div className="bg-accent/20 text-accent text-xs font-semibold px-2 py-1 rounded">
+                        Earned {data.earned} time{data.earned > 1 && "s"}
                       </div>
                     )}
+                  </div>
 
-                    {/* Show start date for active achievements */}
-                    {type.startsWith("active-") && "current" in data && data.current && (
-                      <div className="mt-2 text-xs text-secondary-text/70">
-                        Since: {dateString(Date.now() - data.current)}
+                  {hasTarget ? (
+                    <>
+                      {/* Progress info */}
+                      <div className="mt-2">
+                        <div className="text-sm text-secondary-text">
+                          <span className="font-medium">
+                            {type.startsWith("active-") || type.startsWith("back-after-")
+                              ? formatTimePeriod(data.current)
+                              : data.current}{" "}
+                            /{" "}
+                            {type.startsWith("active-") || type.startsWith("back-after-")
+                              ? formatTimePeriod(data.target)
+                              : data.target}
+                          </span>
+                        </div>
                       </div>
-                    )}
 
-                    {/* Per-opponent breakdown for streak achievements */}
-                    {(type === "streak-player-10" || type === "streak-player-20") &&
-                      "perOpponent" in data &&
-                      data.perOpponent &&
-                      data.perOpponent.size > 0 && (
-                        <div className="mt-3 pt-3 border-t border-border/50">
-                          <p className="text-xs text-secondary-text/70 mb-2">Current highest streaks:</p>
-                          <div className="space-y-1 w-fit">
-                            {Array.from(data.perOpponent.entries() as IterableIterator<[string, number]>)
-                              .sort((a, b) => b[1] - a[1])
-                              .slice(0, 5)
-                              .map(([opponent, streak]) => (
-                                <div
-                                  key={opponent}
-                                  className={classNames(
-                                    "flex items-center justify-between text-xs",
-                                    streak >= data.target && "line-through",
-                                  )}
-                                >
-                                  <Link to={"/player/" + opponent}>
-                                    <span className="text-secondary-text">{context.playerName(opponent)}</span>
-                                  </Link>
-                                  <span className="text-primary-text font-medium ml-2">
-                                    {streak}/{data.target}
-                                  </span>
-                                </div>
-                              ))}
-                          </div>
+                      {/* Show last active time for back-after achievements */}
+                      {type.startsWith("back-after-") && "lastActiveAt" in data && data.lastActiveAt && (
+                        <div className="mt-2 text-xs text-secondary-text/70">
+                          Last active: {dateString(data.lastActiveAt)}
                         </div>
                       )}
 
-                    {/* Per-opponent breakdown for best-friends achievement */}
-                    {type === "best-friends" &&
-                      "perOpponent" in data &&
-                      data.perOpponent &&
-                      data.perOpponent.size > 0 && (
-                        <div className="mt-3 pt-3 border-t border-border/50">
-                          <p className="text-xs text-secondary-text/70 mb-2">Games with opponents:</p>
-                          <div className="space-y-1 w-fit">
-                            {Array.from(
-                              data.perOpponent.entries() as IterableIterator<
-                                [string, { count: number; timespan: number }]
-                              >,
-                            )
-                              .sort((a, b) => b[1].count - a[1].count)
-                              .slice(0, 5)
-                              .map(([opponent, info]) => {
-                                const days = Math.floor(info.timespan / (24 * 60 * 60 * 1000));
-                                // Check if achievement already earned with this opponent
-                                const alreadyEarned = context.achievements
-                                  .getAchievements(playerId)
-                                  .some(
-                                    (achievement) =>
-                                      achievement.type === "best-friends" &&
-                                      achievement.data &&
-                                      "opponent" in achievement.data &&
-                                      achievement.data.opponent === opponent,
-                                  );
-                                return (
-                                  <div
-                                    key={opponent}
-                                    className={classNames(
-                                      "flex items-center justify-between text-xs gap-4",
-                                      alreadyEarned && "line-through",
-                                    )}
-                                  >
+                      {/* Show start date for active achievements */}
+                      {type.startsWith("active-") && "current" in data && data.current && (
+                        <div className="mt-2 text-xs text-secondary-text/70">
+                          Since: {dateString(Date.now() - data.current)}
+                        </div>
+                      )}
+
+                      {/* Per-opponent breakdown for streak achievements */}
+                      {(type === "streak-player-10" || type === "streak-player-20") &&
+                        "perOpponent" in data &&
+                        data.perOpponent &&
+                        data.perOpponent.size > 0 && (
+                          <div className="mt-3 pt-3 border-t border-border/50">
+                            <p className="text-xs text-secondary-text/70 mb-2">Current highest streaks:</p>
+                            <div className="space-y-1 w-fit">
+                              {Array.from(data.perOpponent.entries() as IterableIterator<[string, number]>)
+                                .sort((a, b) => b[1] - a[1])
+                                .slice(0, 5)
+                                .map(([opponent, streak]) => (
+                                  <div key={opponent} className="flex items-center justify-between text-xs">
                                     <Link to={"/player/" + opponent}>
                                       <span className="text-secondary-text">{context.playerName(opponent)}</span>
                                     </Link>
-                                    <span className="text-primary-text font-medium">
-                                      {info.count} games ({days} days)
+                                    <span className="text-primary-text font-medium ml-2">
+                                      {streak}/{data.target}
                                     </span>
                                   </div>
-                                );
-                              })}
+                                ))}
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        )}
 
-                    {/* New players list for welcome-committee achievement */}
-                    {type === "welcome-committee" &&
-                      "newPlayers" in data &&
-                      data.newPlayers &&
-                      data.newPlayers.size > 0 && (
-                        <div className="mt-3 pt-3 border-t border-border/50">
-                          <p className="text-xs text-secondary-text/70 mb-2">First opponent for:</p>
-                          <div className="flex flex-wrap gap-1">
-                            {Array.from(data.newPlayers).map((player: string) => (
-                              <Link to={"/player/" + player} key={player}>
-                                <span className="text-xs bg-background pr-2 py-1 rounded text-secondary-text">
-                                  {context.playerName(player)}
-                                </span>
-                              </Link>
-                            ))}
+                      {/* Per-opponent breakdown for best-friends achievement */}
+                      {type === "best-friends" &&
+                        "perOpponent" in data &&
+                        data.perOpponent &&
+                        data.perOpponent.size > 0 && (
+                          <div className="mt-3 pt-3 border-t border-border/50">
+                            <p className="text-xs text-secondary-text/70 mb-2">Games with opponents:</p>
+                            <div className="space-y-1 w-fit">
+                              {Array.from(
+                                data.perOpponent.entries() as IterableIterator<
+                                  [string, { count: number; timespan: number }]
+                                >,
+                              )
+                                .sort((a, b) => b[1].count - a[1].count)
+                                .slice(0, 5)
+                                .map(([opponent, info]) => {
+                                  const days = Math.floor(info.timespan / (24 * 60 * 60 * 1000));
+                                  return (
+                                    <div key={opponent} className="flex items-center justify-between text-xs gap-4">
+                                      <Link to={"/player/" + opponent}>
+                                        <span className="text-secondary-text">{context.playerName(opponent)}</span>
+                                      </Link>
+                                      <span className="text-primary-text font-medium">
+                                        {info.count} games ({days} days)
+                                      </span>
+                                    </div>
+                                  );
+                                })}
+                            </div>
                           </div>
-                        </div>
-                      )}
-                  </>
-                ) : (
-                  // Fallback for achievements without targets (like tournament achievements)
-                  <div className="mt-2 text-xs text-secondary-text/70">
-                    {data.earned > 0 ? `Earned ${data.earned} time${data.earned > 1 ? "s" : ""}` : "No progress yet"}
-                  </div>
-                )}
+                        )}
+
+                      {/* New players list for welcome-committee achievement */}
+                      {type === "welcome-committee" &&
+                        "newPlayers" in data &&
+                        data.newPlayers &&
+                        data.newPlayers.size > 0 && (
+                          <div className="mt-3 pt-3 border-t border-border/50">
+                            <p className="text-xs text-secondary-text/70 mb-2">First opponent for:</p>
+                            <div className="flex flex-wrap gap-1">
+                              {Array.from(data.newPlayers).map((player: string) => (
+                                <Link to={"/player/" + player} key={player}>
+                                  <span className="text-xs bg-background px-2 py-1 rounded text-secondary-text">
+                                    {context.playerName(player)}
+                                  </span>
+                                </Link>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                    </>
+                  ) : (
+                    // Fallback for achievements without targets (like tournament achievements)
+                    <div className="mt-2 text-xs text-secondary-text/70">
+                      {data.earned > 0 ? `Earned ${data.earned} time${data.earned > 1 ? "s" : ""}` : "No progress yet"}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
