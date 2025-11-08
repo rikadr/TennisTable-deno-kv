@@ -2,6 +2,7 @@ import { TennisTable } from "./tennis-table";
 
 export class Achievements {
   private parent: TennisTable;
+  private hasCalculated = false;
 
   achievementMap: Map<string, Achievement[]> = new Map();
 
@@ -10,6 +11,9 @@ export class Achievements {
   }
 
   calculateAchievements() {
+    if (this.hasCalculated === true) {
+      return;
+    }
     // Clear existing achievements
     this.achievementMap.clear();
 
@@ -363,6 +367,7 @@ export class Achievements {
 
     // Check for tournament achievements
     this.#checkTournamentAchievements();
+    this.hasCalculated = true;
   }
 
   #checkDonutAchievements(
