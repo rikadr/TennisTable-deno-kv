@@ -54,26 +54,26 @@ export const AchievementsPage: React.FC = () => {
   }, [allAchievements, selectedType]);
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full text-primary-text bg-primary-background">
       {/* Header with filter */}
-      <div className="p-6 border-b border-border">
+      <div className="p-6 border-b border-primary-text">
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-2xl font-bold text-primary-text">All Achievements</h1>
-          <div className="text-sm text-secondary-text">
+          <div className="text-sm">
             {filteredAchievements.length} achievement{filteredAchievements.length !== 1 && "s"}
           </div>
         </div>
 
         {/* Filter dropdown */}
         <div className="flex items-center gap-3">
-          <label htmlFor="achievement-filter" className="text-sm text-secondary-text font-medium">
+          <label htmlFor="achievement-filter" className="text-sm font-medium">
             Filter:
           </label>
           <select
             id="achievement-filter"
             value={selectedType}
             onChange={(e) => setSelectedType(e.target.value)}
-            className="px-3 py-2 bg-secondary-background border border-border rounded text-primary-text text-sm focus:outline-none focus:border-accent"
+            className="px-3 py-2 bg-secondary-background text-secondary-text border border-primary-text rounded text-sm"
           >
             <option value="all">All Achievements ({allAchievements.length})</option>
             {achievementTypes.map((type) => {
@@ -93,8 +93,8 @@ export const AchievementsPage: React.FC = () => {
         {filteredAchievements.length === 0 ? (
           <div className="text-center py-12">
             <div className="text-6xl mb-4">🏆</div>
-            <p className="text-secondary-text">No achievements yet</p>
-            <p className="text-sm text-secondary-text/70 mt-2">Keep playing to unlock achievements!</p>
+            <p>No achievements yet</p>
+            <p className="text-sm/70 mt-2">Keep playing to unlock achievements!</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -108,7 +108,7 @@ export const AchievementsPage: React.FC = () => {
               return (
                 <div
                   key={`${achievement.type}-${achievement.earnedBy}-${achievement.earnedAt}-${index}`}
-                  className="bg-background-secondary rounded-lg p-4 border border-border hover:border-accent/50 transition-colors"
+                  className="bg-background-secondary rounded-lg p-4 border border-primary-text hover:border-accent/50 transition-colors text-primary-text"
                 >
                   <div className="flex items-start gap-4">
                     <div className="text-4xl">{label.icon}</div>
@@ -116,43 +116,41 @@ export const AchievementsPage: React.FC = () => {
                       <div className="flex items-center justify-between">
                         <div>
                           <h3 className="font-semibold text-primary-text">{label.title}</h3>
-                          <p className="text-sm text-secondary-text mt-1">{label.description}</p>
+                          <p className="text-sm mt-1">{label.description}</p>
                         </div>
-                        <span className="text-xs text-secondary-text whitespace-nowrap ml-4">
+                        <span className="text-xs whitespace-nowrap ml-4">
                           {relativeTimeString(new Date(achievement.earnedAt))} - {dateString(achievement.earnedAt)}
                         </span>
                       </div>
                       <div>
                         {achievement.data && "opponent" in achievement.data && (
-                          <span className="text-xs text-secondary-text/70">
-                            vs {context.playerName(achievement.data.opponent)}
-                          </span>
+                          <span className="text-xs/70">vs {context.playerName(achievement.data.opponent)}</span>
                         )}
                         {achievement.data && "tournamentId" in achievement.data && (
-                          <span className="text-xs text-secondary-text/70">
+                          <span className="text-xs/70">
                             Tournament:{" "}
                             {context.tournaments.getTournament(achievement.data.tournamentId)?.tournamentDb.name ||
                               "Unknown"}
                           </span>
                         )}
                         {achievement.data && "opponents" in achievement.data && achievement.data.opponents && (
-                          <div className="mt-2 text-xs text-secondary-text/70">
+                          <div className="mt-2 text-xs/70">
                             Welcomed:{" "}
                             {achievement.data.opponents.map((player: string) => context.playerName(player)).join(", ")}
                           </div>
                         )}
                         {achievement.data && "firstGameInPeriod" in achievement.data && (
-                          <span className="text-xs text-secondary-text/70">
+                          <span className="text-xs/70">
                             From {dateString(achievement.data.firstGameInPeriod)} to {dateString(achievement.earnedAt)}
                           </span>
                         )}
                         {achievement.data && "startedAt" in achievement.data && (
-                          <p className="text-xs text-secondary-text/70 mt-2">
+                          <p className="text-xs/70 mt-2">
                             From {dateString(achievement.data.startedAt)} to {dateString(achievement.earnedAt)}
                           </p>
                         )}
                         {achievement.data && "lastGameAt" in achievement.data && (
-                          <p className="text-xs text-secondary-text/70 mt-2">
+                          <p className="text-xs/70 mt-2">
                             From {dateString(achievement.data.lastGameAt)} to {dateString(achievement.earnedAt)}
                           </p>
                         )}

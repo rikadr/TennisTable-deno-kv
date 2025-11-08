@@ -151,14 +151,12 @@ export const PlayerAchievements: React.FC<Props> = ({ playerId }) => {
   return (
     <div className="flex flex-col h-full sm:-mt-4 md:-mt-8">
       {/* Tabs */}
-      <div className="flex border-b border-border">
+      <div className="flex border-b border-secondary-text">
         <button
           onClick={() => setActiveTab("achievements")}
           className={classNames(
-            "px-6 py-3 font-medium transition-colors",
-            activeTab === "achievements"
-              ? "text-primary-text border-b-2 border-accent"
-              : "text-secondary-text hover:text-primary-text",
+            "px-6 py-3 font-medium transition-colors text-secondary-text",
+            activeTab === "achievements" ? "border-b-2 border-secondary-text" : "hover:text-secondary-text/70",
           )}
         >
           Achievements ({achievements.length})
@@ -166,10 +164,8 @@ export const PlayerAchievements: React.FC<Props> = ({ playerId }) => {
         <button
           onClick={() => setActiveTab("progress")}
           className={classNames(
-            "px-6 py-3 font-medium transition-colors",
-            activeTab === "progress"
-              ? "text-primary-text border-b-2 border-accent"
-              : "text-secondary-text hover:text-primary-text",
+            "px-6 py-3 font-medium transition-colors text-secondary-text",
+            activeTab === "progress" ? "border-b-2 border-secondary-text" : "hover:text-secondary-text/70",
           )}
         >
           Progress
@@ -217,13 +213,13 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
         return (
           <div
             key={`${achievement.type}-${achievement.earnedAt}-${index}`}
-            className="bg-background-secondary rounded-lg p-4 border border-border hover:border-accent/50 transition-colors"
+            className="bg-background-secondary rounded-lg p-4 border border-secondary-text"
           >
             <div className="flex items-start gap-4">
               <div className="text-4xl">{label.icon}</div>
               <div className="flex-1">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-semibold text-primary-text">{label.title}</h3>
+                  <h3 className="font-semibold text-secondary-text">{label.title}</h3>
                   <span className="text-xs text-secondary-text">
                     {relativeTimeString(new Date(achievement.earnedAt))} - {dateString(achievement.earnedAt)}
                   </span>
@@ -298,7 +294,7 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
   });
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 text-secondary-text">
       {progressItems.map(({ type, label, data }) => {
         const hasTarget = "target" in data && !!data.target;
         const hasCurrent = "current" in data && !!data.current;
@@ -310,7 +306,7 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
           <div
             key={type}
             className={classNames(
-              "bg-background-secondary rounded-lg overflow-hidden border transition-colors relative",
+              "bg-background-secondary rounded-lg overflow-hidden border border-secondary-text transition-colors relative",
               hasEarned && "bg-green-500",
             )}
           >
@@ -334,22 +330,13 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex-1">
                       <div className="flex items-center gap-3">
-                        <h3 className="font-semibold text-primary-text">{label.title}</h3>
-                        {hasTarget && (
-                          <span
-                            className={classNames(
-                              "text-lg font-bold",
-                              isComplete ? "text-accent" : "text-primary-text",
-                            )}
-                          >
-                            {percentage.toFixed(0)}%
-                          </span>
-                        )}
+                        <h3 className="font-semibold ">{label.title}</h3>
+                        {hasTarget && <span className="text-lg font-bold">{percentage.toFixed(0)}%</span>}
                       </div>
                       <p className="text-sm text-secondary-text">{label.description}</p>
                     </div>
                     {data.earned > 0 && (
-                      <div className="bg-accent/20 text-accent text-xs font-semibold px-2 py-1 rounded">
+                      <div className="text-xs font-semibold px-2 py-1 rounded">
                         Earned {data.earned} time{data.earned > 1 && "s"}
                       </div>
                     )}
@@ -391,7 +378,7 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                         "perOpponent" in data &&
                         data.perOpponent &&
                         data.perOpponent.size > 0 && (
-                          <div className="mt-3 pt-3 border-t border-border/50">
+                          <div className="mt-3 pt-3 border-t border-secondary-text/50">
                             <p className="text-xs text-secondary-text/70 mb-2">Current highest streaks:</p>
                             <div className="space-y-1 w-fit">
                               {Array.from(data.perOpponent.entries() as IterableIterator<[string, number]>)
@@ -408,7 +395,7 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                                     <Link to={"/player/" + opponent}>
                                       <span className="text-secondary-text">{context.playerName(opponent)}</span>
                                     </Link>
-                                    <span className="text-primary-text font-medium ml-2">
+                                    <span className="font-medium ml-2">
                                       {streak}/{data.target}
                                     </span>
                                   </div>
@@ -422,7 +409,7 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                         "perOpponent" in data &&
                         data.perOpponent &&
                         data.perOpponent.size > 0 && (
-                          <div className="mt-3 pt-3 border-t border-border/50">
+                          <div className="mt-3 pt-3 border-t border-secondary-text/50">
                             <p className="text-xs text-secondary-text/70 mb-2">Games with opponents:</p>
                             <div className="space-y-1 w-fit">
                               {Array.from(
@@ -455,7 +442,7 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                                       <Link to={"/player/" + opponent}>
                                         <span className="text-secondary-text">{context.playerName(opponent)}</span>
                                       </Link>
-                                      <span className="text-primary-text font-medium">
+                                      <span className="font-medium">
                                         {info.count} games in last {days} days
                                       </span>
                                     </div>
@@ -470,7 +457,7 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                         "newPlayers" in data &&
                         data.newPlayers &&
                         data.newPlayers.size > 0 && (
-                          <div className="mt-3 pt-3 border-t border-border/50">
+                          <div className="mt-3 pt-3 border-t border-secondary-text/50">
                             <p className="text-xs text-secondary-text/70 mb-2">First opponent for:</p>
                             <div className="flex flex-wrap gap-1">
                               {Array.from(data.newPlayers).map((player: string) => (
