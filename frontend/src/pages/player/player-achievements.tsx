@@ -285,7 +285,11 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                     {/* Progress bar */}
                     <div className="mt-3">
                       <div className="flex items-center justify-between text-xs text-secondary-text mb-1">
-                        <span>
+                        <span
+                          className={classNames(
+                            !!data.current && !!data.target && data.current >= data.target && "line-through",
+                          )}
+                        >
                           {type.startsWith("active-") || type.startsWith("back-after-")
                             ? formatTimePeriod(data.current)
                             : data.current}{" "}
@@ -378,21 +382,15 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                                       achievement.data.opponent === opponent,
                                   );
                                 return (
-                                  <div key={opponent} className="flex items-center justify-between text-xs gap-4">
-                                    <span
-                                      className={classNames(
-                                        "text-secondary-text",
-                                        alreadyEarned && "line-through opacity-60",
-                                      )}
-                                    >
-                                      {context.playerName(opponent)}
-                                    </span>
-                                    <span
-                                      className={classNames(
-                                        "text-primary-text font-medium",
-                                        alreadyEarned && "line-through opacity-60",
-                                      )}
-                                    >
+                                  <div
+                                    key={opponent}
+                                    className={classNames(
+                                      "flex items-center justify-between text-xs gap-4",
+                                      alreadyEarned && "line-through",
+                                    )}
+                                  >
+                                    <span className="text-secondary-text">{context.playerName(opponent)}</span>
+                                    <span className="text-primary-text font-medium">
                                       {info.count} games ({days} days)
                                     </span>
                                   </div>
