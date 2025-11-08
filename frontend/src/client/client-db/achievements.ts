@@ -829,7 +829,6 @@ export class Achievements {
       // Count games with this opponent in the last year
       let gamesInLastYear = 0;
       let firstGameInWindow: number | null = null;
-      let lastGameInWindow: number | null = null;
 
       this.parent.games.forEach((game) => {
         const isPlayerGame =
@@ -842,12 +841,12 @@ export class Achievements {
           if (firstGameInWindow === null) {
             firstGameInWindow = game.playedAt;
           }
-          lastGameInWindow = game.playedAt;
         }
       });
 
-      if (gamesInLastYear > 0 && firstGameInWindow !== null && lastGameInWindow !== null) {
-        const timespan = lastGameInWindow - firstGameInWindow;
+      if (gamesInLastYear > 0 && firstGameInWindow !== null) {
+        // Timespan is from the first game in the window to now
+        const timespan = now - firstGameInWindow;
         opponentGamesInLastYear.set(opponent, { count: gamesInLastYear, timespan });
       }
 

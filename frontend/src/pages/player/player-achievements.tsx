@@ -380,7 +380,7 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                       )}
 
                       {/* Show start date for active achievements */}
-                      {type.startsWith("active-") && "current" in data && data.current && (
+                      {type.startsWith("active-") && "current" in data && !!data.current && (
                         <div className="mt-2 text-xs text-secondary-text/70">
                           Since: {dateString(Date.now() - data.current)}
                         </div>
