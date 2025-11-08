@@ -93,13 +93,7 @@ export class Achievements {
 
         // Check if player reached 5 total donuts
         if (winner.donutCount === 5) {
-          this.#addAchievement(
-            game.winner,
-            this.#createAchievement("donut-5", game.winner, game.playedAt, {
-              gameId: game.id,
-              opponent: game.loser,
-            }),
-          );
+          this.#addAchievement(game.winner, this.#createAchievement("donut-5", game.winner, game.playedAt, undefined));
         }
       }
 
@@ -499,7 +493,7 @@ export class Achievements {
 // Type Definitions
 type AchievementDefinitions = {
   "donut-1": { gameId: string; opponent: string };
-  "donut-5": { gameId: string; opponent: string };
+  "donut-5": undefined;
   "streak-all-10": { startedAt: number };
   "streak-player-10": { opponent: string; startedAt: number };
   "streak-player-20": { opponent: string; startedAt: number };

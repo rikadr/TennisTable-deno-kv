@@ -173,18 +173,18 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
                   </span>
                 </div>
                 <p className="text-sm text-secondary-text mt-1">{label.description}</p>
-                {"opponent" in achievement.data && (
+                {achievement.data && "opponent" in achievement.data && (
                   <p className="text-xs text-secondary-text/70 mt-2">
                     vs {context.playerName(achievement.data.opponent)}
                   </p>
                 )}
-                {"tournamentId" in achievement.data && (
+                {achievement.data && "tournamentId" in achievement.data && (
                   <p className="text-xs text-secondary-text/70 mt-2">
                     Tournament:{" "}
                     {context.tournaments.getTournament(achievement.data.tournamentId)?.tournamentDb.name || "Unknown"}
                   </p>
                 )}
-                {"firstGameInPeriod" in achievement.data && (
+                {achievement.data && "firstGameInPeriod" in achievement.data && (
                   <p className="text-xs text-secondary-text/70 mt-2">
                     From {dateString(achievement.data.firstGameInPeriod)} to {dateString(achievement.earnedAt)}
                   </p>
