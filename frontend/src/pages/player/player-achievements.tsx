@@ -79,6 +79,11 @@ const ACHIEVEMENT_LABELS: Record<string, { title: string; description: string; i
     description: "Play a game where total points scored is 69",
     icon: "👌",
   },
+  "close-calls": {
+    title: "Close Calls",
+    description: "Play 5 games where all sets are decided by 2 points or less",
+    icon: "😰",
+  },
 };
 
 export const PlayerAchievements: React.FC<Props> = ({ playerId }) => {

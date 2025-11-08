@@ -22,6 +22,7 @@ export class Achievements {
         winStreakAllStartedAt: number;
         winStreakPlayer: Map<string, { count: number; startedAt: number }>;
         donutCount: number; // Track total donuts for donut-5 achievement
+        closeCallsCount: number; // Track total close calls for close-calls achievement
       }
     >();
 
@@ -35,6 +36,7 @@ export class Achievements {
           winStreakAllStartedAt: game.playedAt,
           winStreakPlayer: new Map(),
           donutCount: 0,
+          closeCallsCount: 0,
         });
       }
       if (!playerTracker.has(game.loser)) {
@@ -45,6 +47,7 @@ export class Achievements {
           winStreakAllStartedAt: game.playedAt,
           winStreakPlayer: new Map(),
           donutCount: 0,
+          closeCallsCount: 0,
         });
       }
 
@@ -98,6 +101,31 @@ export class Achievements {
 
         // Check for "Nice Game" achievement (total points = 69)
         this.#checkNiceGameAchievement(game.winner, game.loser, game.id, game.score.setPoints, game.playedAt);
+
+        // Check for "Close Calls" achievement (all sets decided by 2 points or less)
+        const isCloseCall = this.#checkCloseCallGame(game.score.setPoints);
+        if (isCloseCall) {
+          winner.closeCallsCount++;
+          loser.closeCallsCount++;
+
+          // Award achievement when reaching 5 close calls
+          if (winner.closeCallsCount === 5) {
+            console.log(this.parent.playerName(game.winner));
+
+            this.#addAchievement(
+              game.winner,
+              this.#createAchievement("close-calls", game.winner, game.playedAt, undefined),
+            );
+          }
+
+          if (loser.closeCallsCount === 5) {
+            console.log(this.parent.playerName(game.loser));
+            this.#addAchievement(
+              game.loser,
+              this.#createAchievement("close-calls", game.loser, game.playedAt, undefined),
+            );
+          }
+        }
       }
 
       // Check for streak achievements
@@ -204,6 +232,19 @@ export class Achievements {
         }),
       );
     }
+  }
+
+  #checkCloseCallGame(setPoints: { gameWinner: number; gameLoser: number }[]): boolean {
+    // Must have at least 2 sets
+    if (setPoints.length < 2) {
+      return false;
+    }
+
+    // All sets must be decided by 2 points or less
+    return setPoints.every((set) => {
+      const difference = Math.abs(set.gameWinner - set.gameLoser);
+      return difference <= 2;
+    });
   }
 
   #checkStreakAchievements(
@@ -447,12 +488,14 @@ export class Achievements {
       "tournament-participated": { earned: 0 },
       "tournament-winner": { earned: 0 },
       "nice-game": { earned: 0 },
+      "close-calls": { current: 0, target: 5, earned: 0 },
     };
 
     let firstActiveAt: number | null = null;
     let lastActiveAt: number | null = null;
     let currentWinStreakAll = 0;
     let donutCount = 0;
+    let closeCallsCount = 0;
     const streaksPerOpponent = new Map<string, number>();
 
     // Calculate current stats by iterating through games
@@ -478,7 +521,7 @@ export class Achievements {
         const opponent = game.loser;
         streaksPerOpponent.set(opponent, (streaksPerOpponent.get(opponent) || 0) + 1);
 
-        // Count donuts
+        // Count donuts (only for winners)
         if (game.score?.setPoints) {
           game.score.setPoints.forEach((set) => {
             if (set.gameLoser === 0) {
@@ -494,6 +537,11 @@ export class Achievements {
           streaksPerOpponent.set(game.winner, 0);
         }
       }
+
+      // Count close calls for both winners and losers
+      if (game.score?.setPoints && this.#checkCloseCallGame(game.score.setPoints)) {
+        closeCallsCount++;
+      }
     });
 
     // Update progression with current stats
@@ -502,6 +550,7 @@ export class Achievements {
     progression["streak-all-10"].current = currentWinStreakAll;
     progression["streak-player-10"].current = Math.max(...Array.from(streaksPerOpponent.values()), 0);
     progression["streak-player-20"].current = Math.max(...Array.from(streaksPerOpponent.values()), 0);
+    progression["close-calls"].current = closeCallsCount;
 
     // Add per-opponent streak details
     streaksPerOpponent.forEach((streak, opponent) => {
@@ -571,6 +620,7 @@ type AchievementDefinitions = {
   "tournament-participated": { tournamentId: string };
   "tournament-winner": { tournamentId: string };
   "nice-game": { gameId: string; opponent: string };
+  "close-calls": undefined;
 };
 
 type AchievementType = keyof AchievementDefinitions;
@@ -621,4 +671,5 @@ export type AchievementProgression = {
   "tournament-participated": BaseProgression;
   "tournament-winner": BaseProgression;
   "nice-game": BaseProgression;
+  "close-calls": ProgressionWithTarget;
 };
