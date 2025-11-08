@@ -47,17 +47,17 @@ const ACHIEVEMENT_LABELS: Record<string, { title: string; description: string; i
   },
   "active-6-months": {
     title: "Regular",
-    description: "Active for 6 months",
+    description: "Active for 6 months without a 30-day break",
     icon: "📅",
   },
   "active-1-year": {
     title: "Dedicated",
-    description: "Active for 1 year",
+    description: "Active for 1 year without a 30-day break",
     icon: "🌟",
   },
   "active-2-years": {
     title: "Veteran",
-    description: "Active for 2 years",
+    description: "Active for 2 years without a 30-day break",
     icon: "🎖️",
   },
 };

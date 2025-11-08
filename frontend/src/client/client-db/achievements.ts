@@ -115,8 +115,24 @@ export class Achievements {
       );
 
       // Check for activity period achievements for both players
-      this.#checkActivityAchievements(game.winner, winner.firstActiveAt, game.playedAt);
-      this.#checkActivityAchievements(game.loser, loser.firstActiveAt, game.playedAt);
+      const winnerActivityPeriod = this.#calculateActivityPeriod(game.winner);
+      const loserActivityPeriod = this.#calculateActivityPeriod(game.loser);
+
+      if (winnerActivityPeriod) {
+        this.#checkActivityAchievements(
+          game.winner,
+          winnerActivityPeriod.startDate,
+          winnerActivityPeriod.startDate + winnerActivityPeriod.period,
+        );
+      }
+
+      if (loserActivityPeriod) {
+        this.#checkActivityAchievements(
+          game.loser,
+          loserActivityPeriod.startDate,
+          loserActivityPeriod.startDate + loserActivityPeriod.period,
+        );
+      }
     });
   }
 
@@ -245,6 +261,45 @@ export class Achievements {
     }
   }
 
+  // Calculate activity period with reset logic for 30+ day gaps
+  #calculateActivityPeriod(playerId: string): { period: number; startDate: number } | null {
+    const THIRTY_DAYS = 30 * 24 * 60 * 60 * 1000;
+
+    let periodStart: number | null = null;
+    let lastGameAt: number | null = null;
+
+    // Iterate through games to find continuous activity period
+    this.parent.games.forEach((game) => {
+      const isPlayer = game.winner === playerId || game.loser === playerId;
+      if (!isPlayer) return;
+
+      // First game sets the start
+      if (periodStart === null) {
+        periodStart = game.playedAt;
+        lastGameAt = game.playedAt;
+        return;
+      }
+
+      // Check if there's a 30+ day gap
+      const gapSinceLastGame = game.playedAt - lastGameAt!;
+      if (gapSinceLastGame >= THIRTY_DAYS) {
+        // Reset the period - start over from this game
+        periodStart = game.playedAt;
+      }
+
+      lastGameAt = game.playedAt;
+    });
+
+    if (periodStart === null || lastGameAt === null) {
+      return null;
+    }
+
+    return {
+      period: lastGameAt - periodStart,
+      startDate: periodStart,
+    };
+  }
+
   #addAchievement(playerId: string, achievement: Achievement) {
     if (!this.achievementMap.has(playerId)) {
       this.achievementMap.set(playerId, []);
@@ -297,7 +352,6 @@ export class Achievements {
     };
 
     let firstActiveAt: number | null = null;
-    let lastActiveAt: number | null = null;
     let currentWinStreakAll = 0;
     let donutCount = 0;
     const streaksPerOpponent = new Map<string, number>();
@@ -309,11 +363,10 @@ export class Achievements {
 
       if (!isWinner && !isLoser) return;
 
-      // Track first and last active times
+      // Track first active time
       if (firstActiveAt === null) {
         firstActiveAt = game.playedAt;
       }
-      lastActiveAt = game.playedAt;
 
       if (isWinner) {
         // Track win streak against all
@@ -354,12 +407,12 @@ export class Achievements {
       }
     });
 
-    // Calculate active period
-    if (firstActiveAt !== null && lastActiveAt !== null) {
-      const activePeriod = lastActiveAt - firstActiveAt;
-      progression["active-6-months"].current = activePeriod;
-      progression["active-1-year"].current = activePeriod;
-      progression["active-2-years"].current = activePeriod;
+    // Calculate active period with 30-day reset logic
+    const activityPeriod = this.#calculateActivityPeriod(playerId);
+    if (activityPeriod) {
+      progression["active-6-months"].current = activityPeriod.period;
+      progression["active-1-year"].current = activityPeriod.period;
+      progression["active-2-years"].current = activityPeriod.period;
     }
 
     // Count earned achievements
