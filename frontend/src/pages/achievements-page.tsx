@@ -151,6 +151,11 @@ export const AchievementsPage: React.FC = () => {
                             From {dateString(achievement.data.startedAt)} to {dateString(achievement.earnedAt)}
                           </p>
                         )}
+                        {achievement.data && "lastGameAt" in achievement.data && (
+                          <p className="text-xs text-secondary-text/70 mt-2">
+                            From {dateString(achievement.data.lastGameAt)} to {dateString(achievement.earnedAt)}
+                          </p>
+                        )}
                         <Link to={"/player/" + achievement.earnedBy}>
                           <div
                             className="flex gap-3 items-center pr-4 p-1 rounded-full w-fit mt-2"
