@@ -801,8 +801,6 @@ export class Achievements {
     progression["donut-1"].current = donutCount;
     progression["donut-5"].current = donutCount;
     progression["streak-all-10"].current = currentWinStreakAll;
-    progression["streak-player-10"].current = Math.max(...Array.from(streaksPerOpponent.values()), 0);
-    progression["streak-player-20"].current = Math.max(...Array.from(streaksPerOpponent.values()), 0);
     progression["close-calls"].current = closeCallsCount;
     progression["edge-lord"].current = edgeLordCount;
     progression["consistency-is-key"].current = consistencyCount;
@@ -811,20 +809,21 @@ export class Achievements {
     progression["punching-bag"].current = currentLoseStreakAll;
     progression["never-give-up"].current = currentLoseStreakAll;
 
-    // Calculate best-friends progression - count games within last 1 year from now
-    const now = Date.now();
-    let maxGamesInLastYear = 0;
-    let maxGamesUnderTarget = 0; // Track highest count that hasn't reached target yet
-    const opponentGamesInLastYear = new Map<string, { count: number; timespan: number }>();
-
-    // Get list of opponents we've already earned best-friends achievement with
+    // Get list of opponents we've already earned achievements with
     const earnedBestFriendsOpponents = new Set<string>();
     const playerAchievements = this.achievementMap.get(playerId) || [];
     playerAchievements.forEach((achievement) => {
       if (achievement.type === "best-friends" && achievement.data) {
         earnedBestFriendsOpponents.add(achievement.data.opponent);
       }
+      // Note: We don't filter out streak achievements here because they can be earned multiple times
     });
+
+    // Calculate best-friends progression - count games within last 1 year from now
+    const now = Date.now();
+    let maxGamesInLastYear = 0;
+    let maxGamesUnderTarget = 0; // Track highest count that hasn't reached target yet
+    const opponentGamesInLastYear = new Map<string, { count: number; timespan: number }>();
 
     gamesPerOpponent.forEach((_, opponent) => {
       // Count games with this opponent in the last year
@@ -866,13 +865,32 @@ export class Achievements {
     progression["best-friends"].current = maxGamesUnderTarget > 0 ? maxGamesUnderTarget : maxGamesInLastYear;
     progression["best-friends"].perOpponent = opponentGamesInLastYear;
 
+    // Track max streaks under target for streak-player achievements
+    let maxStreakUnder10 = 0;
+    let maxStreakUnder20 = 0;
+
     // Add per-opponent streak details
     streaksPerOpponent.forEach((streak, opponent) => {
       if (streak > 0) {
         progression["streak-player-10"].perOpponent!.set(opponent, streak);
         progression["streak-player-20"].perOpponent!.set(opponent, streak);
+
+        // Track highest streak under 10 (regardless of past achievements)
+        if (streak < 10) {
+          maxStreakUnder10 = Math.max(maxStreakUnder10, streak);
+        }
+
+        // Track highest streak under 20 (regardless of past achievements)
+        if (streak < 20) {
+          maxStreakUnder20 = Math.max(maxStreakUnder20, streak);
+        }
       }
     });
+
+    // Set current to max under target, or the actual max if all are at/over
+    const maxStreak = Math.max(...Array.from(streaksPerOpponent.values()), 0);
+    progression["streak-player-10"].current = maxStreakUnder10 > 0 ? maxStreakUnder10 : maxStreak;
+    progression["streak-player-20"].current = maxStreakUnder20 > 0 ? maxStreakUnder20 : maxStreak;
 
     // Calculate active period with 30-day reset logic
     const activityPeriod = this.#calculateActivityPeriod(playerId);
