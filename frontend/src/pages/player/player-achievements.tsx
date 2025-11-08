@@ -99,6 +99,11 @@ export const ACHIEVEMENT_LABELS: Record<string, { title: string; description: st
     description: "Play against 10 different opponents",
     icon: "🎲",
   },
+  "best-friends": {
+    title: "Best Friends",
+    description: "Play 50 games with a single opponent within 1 year",
+    icon: "💙",
+  },
 };
 
 export const PlayerAchievements: React.FC<Props> = ({ playerId }) => {
@@ -228,7 +233,7 @@ type ProgressTabProps = {
   playerId: string;
 };
 
-const ProgressTab: React.FC<ProgressTabProps> = ({ progression }) => {
+const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
   const context = useEventDbContext();
   const progressItems = Object.entries(progression).map(([type, data]) => {
     const label = ACHIEVEMENT_LABELS[type] || {
@@ -322,18 +327,77 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression }) => {
                       data.perOpponent &&
                       data.perOpponent.size > 0 && (
                         <div className="mt-3 pt-3 border-t border-border/50">
-                          <p className="text-xs text-secondary-text/70 mb-2">Current streaks:</p>
+                          <p className="text-xs text-secondary-text/70 mb-2">Current highest streaks:</p>
                           <div className="space-y-1 w-fit">
-                            {Array.from(data.perOpponent.entries())
+                            {Array.from(data.perOpponent.entries() as IterableIterator<[string, number]>)
                               .sort((a, b) => b[1] - a[1])
-                              .map(([opponent, streak]: [string, number]) => (
-                                <div key={opponent} className="flex items-center justify-between text-xs">
+                              .slice(0, 5)
+                              .map(([opponent, streak]) => (
+                                <div
+                                  key={opponent}
+                                  className={classNames(
+                                    "flex items-center justify-between text-xs",
+                                    streak >= data.target && "line-through",
+                                  )}
+                                >
                                   <span className="text-secondary-text">{context.playerName(opponent)}</span>
                                   <span className="text-primary-text font-medium ml-2">
                                     {streak}/{data.target}
                                   </span>
                                 </div>
                               ))}
+                          </div>
+                        </div>
+                      )}
+
+                    {/* Per-opponent breakdown for best-friends achievement */}
+                    {type === "best-friends" &&
+                      "perOpponent" in data &&
+                      data.perOpponent &&
+                      data.perOpponent.size > 0 && (
+                        <div className="mt-3 pt-3 border-t border-border/50">
+                          <p className="text-xs text-secondary-text/70 mb-2">Games with opponents:</p>
+                          <div className="space-y-1 w-fit">
+                            {Array.from(
+                              data.perOpponent.entries() as IterableIterator<
+                                [string, { count: number; timespan: number }]
+                              >,
+                            )
+                              .sort((a, b) => b[1].count - a[1].count)
+                              .slice(0, 5)
+                              .map(([opponent, info]) => {
+                                const days = Math.floor(info.timespan / (24 * 60 * 60 * 1000));
+                                // Check if achievement already earned with this opponent
+                                const alreadyEarned = context.achievements
+                                  .getAchievements(playerId)
+                                  .some(
+                                    (achievement) =>
+                                      achievement.type === "best-friends" &&
+                                      achievement.data &&
+                                      "opponent" in achievement.data &&
+                                      achievement.data.opponent === opponent,
+                                  );
+                                return (
+                                  <div key={opponent} className="flex items-center justify-between text-xs gap-4">
+                                    <span
+                                      className={classNames(
+                                        "text-secondary-text",
+                                        alreadyEarned && "line-through opacity-60",
+                                      )}
+                                    >
+                                      {context.playerName(opponent)}
+                                    </span>
+                                    <span
+                                      className={classNames(
+                                        "text-primary-text font-medium",
+                                        alreadyEarned && "line-through opacity-60",
+                                      )}
+                                    >
+                                      {info.count} games ({days} days)
+                                    </span>
+                                  </div>
+                                );
+                              })}
                           </div>
                         </div>
                       )}

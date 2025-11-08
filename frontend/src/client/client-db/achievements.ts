@@ -21,11 +21,12 @@ export class Achievements {
         winStreakAll: number;
         winStreakAllStartedAt: number;
         winStreakPlayer: Map<string, { count: number; startedAt: number }>;
-        donutCount: number; // Track total donuts for donut-5 achievement
-        closeCallsCount: number; // Track total close calls for close-calls achievement
-        edgeLordCount: number; // Track total close calls for edge-lord achievement
-        consistencyCount: number; // Track consistent score games for consistency-is-key achievement
-        opponentsPlayed: Set<string>; // Track unique opponents for variety-player achievement
+        donutCount: number;
+        closeCallsCount: number;
+        edgeLordCount: number;
+        consistencyCount: number;
+        opponentsPlayed: Set<string>;
+        gamesPerOpponent: Map<string, { count: number; firstGame: number }>;
       }
     >();
 
@@ -43,6 +44,7 @@ export class Achievements {
           edgeLordCount: 0,
           consistencyCount: 0,
           opponentsPlayed: new Set(),
+          gamesPerOpponent: new Map(),
         });
       }
       if (!playerTracker.has(game.loser)) {
@@ -57,6 +59,7 @@ export class Achievements {
           edgeLordCount: 0,
           consistencyCount: 0,
           opponentsPlayed: new Set(),
+          gamesPerOpponent: new Map(),
         });
       }
 
@@ -82,6 +85,41 @@ export class Achievements {
         this.#addAchievement(
           game.loser,
           this.#createAchievement("variety-player", game.loser, game.playedAt, undefined),
+        );
+      }
+
+      // Track games per opponent for best-friends achievement
+      if (!winner.gamesPerOpponent.has(game.loser)) {
+        winner.gamesPerOpponent.set(game.loser, { count: 0, firstGame: game.playedAt });
+      }
+      if (!loser.gamesPerOpponent.has(game.winner)) {
+        loser.gamesPerOpponent.set(game.winner, { count: 0, firstGame: game.playedAt });
+      }
+
+      const winnerOpponentData = winner.gamesPerOpponent.get(game.loser)!;
+      const loserOpponentData = loser.gamesPerOpponent.get(game.winner)!;
+
+      winnerOpponentData.count++;
+      loserOpponentData.count++;
+
+      // Check for best-friends achievement (50 games within 1 year)
+      const ONE_YEAR = 365 * 24 * 60 * 60 * 1000;
+      if (winnerOpponentData.count === 50 && game.playedAt - winnerOpponentData.firstGame <= ONE_YEAR) {
+        this.#addAchievement(
+          game.winner,
+          this.#createAchievement("best-friends", game.winner, game.playedAt, {
+            opponent: game.loser,
+            firstGame: winnerOpponentData.firstGame,
+          }),
+        );
+      }
+      if (loserOpponentData.count === 50 && game.playedAt - loserOpponentData.firstGame <= ONE_YEAR) {
+        this.#addAchievement(
+          game.loser,
+          this.#createAchievement("best-friends", game.loser, game.playedAt, {
+            opponent: game.winner,
+            firstGame: loserOpponentData.firstGame,
+          }),
         );
       }
 
@@ -570,6 +608,7 @@ export class Achievements {
       "edge-lord": { current: 0, target: 20, earned: 0 },
       "consistency-is-key": { current: 0, target: 5, earned: 0 },
       "variety-player": { current: 0, target: 10, opponents: new Set(), earned: 0 },
+      "best-friends": { current: 0, target: 50, perOpponent: new Map(), earned: 0 },
     };
 
     let firstActiveAt: number | null = null;
@@ -581,6 +620,7 @@ export class Achievements {
     let consistencyCount = 0;
     const streaksPerOpponent = new Map<string, number>();
     const opponentsPlayed = new Set<string>();
+    const gamesPerOpponent = new Map<string, { count: number; firstGame: number; lastGame: number }>();
 
     // Calculate current stats by iterating through games
     this.parent.games.forEach((game) => {
@@ -598,18 +638,26 @@ export class Achievements {
       lastActiveAt = game.playedAt;
 
       // Track opponents
+      const opponent = isWinner ? game.loser : game.winner;
       if (isWinner) {
         opponentsPlayed.add(game.loser);
       } else {
         opponentsPlayed.add(game.winner);
       }
 
+      // Track games per opponent for best-friends progression
+      if (!gamesPerOpponent.has(opponent)) {
+        gamesPerOpponent.set(opponent, { count: 0, firstGame: game.playedAt, lastGame: game.playedAt });
+      }
+      const opponentData = gamesPerOpponent.get(opponent)!;
+      opponentData.count++;
+      opponentData.lastGame = game.playedAt;
+
       if (isWinner) {
         // Track win streak against all
         currentWinStreakAll++;
 
         // Track win streak against specific opponent
-        const opponent = game.loser;
         streaksPerOpponent.set(opponent, (streaksPerOpponent.get(opponent) || 0) + 1);
 
         // Count donuts (only for winners)
@@ -652,6 +700,59 @@ export class Achievements {
     progression["consistency-is-key"].current = consistencyCount;
     progression["variety-player"].current = opponentsPlayed.size;
     progression["variety-player"].opponents = opponentsPlayed;
+
+    // Calculate best-friends progression - only count games within 1-year windows
+    let maxGamesInYear = 0;
+    const opponentGamesInYear = new Map<string, { count: number; timespan: number }>();
+
+    gamesPerOpponent.forEach((_, opponent) => {
+      // For each opponent, find the maximum number of games within any 1-year window
+      const gamesWithOpponent: number[] = [];
+      this.parent.games.forEach((game) => {
+        const isPlayerGame =
+          (game.winner === playerId && game.loser === opponent) ||
+          (game.loser === playerId && game.winner === opponent);
+        if (isPlayerGame) {
+          gamesWithOpponent.push(game.playedAt);
+        }
+      });
+
+      // Sort games by time
+      gamesWithOpponent.sort((a, b) => a - b);
+
+      // Find maximum games within any 1-year sliding window
+      let maxInWindow = 0;
+      let bestWindowStart = 0;
+      let bestWindowEnd = 0;
+
+      for (let windowEnd = 0; windowEnd < gamesWithOpponent.length; windowEnd++) {
+        // Move window start forward while window is larger than 1 year
+        let windowStart = 0;
+        for (let i = 0; i <= windowEnd; i++) {
+          if (gamesWithOpponent[windowEnd] - gamesWithOpponent[i] <= ONE_YEAR) {
+            windowStart = i;
+            break;
+          }
+        }
+
+        const gamesInWindow = windowEnd - windowStart + 1;
+        if (gamesInWindow > maxInWindow) {
+          maxInWindow = gamesInWindow;
+          bestWindowStart = windowStart;
+          bestWindowEnd = windowEnd;
+        }
+      }
+
+      if (maxInWindow > 0) {
+        const timespan = gamesWithOpponent[bestWindowEnd] - gamesWithOpponent[bestWindowStart];
+        opponentGamesInYear.set(opponent, { count: maxInWindow, timespan });
+      }
+
+      maxGamesInYear = Math.max(maxGamesInYear, maxInWindow);
+    });
+
+    progression["best-friends"].current = maxGamesInYear;
+    progression["best-friends"].perOpponent = opponentGamesInYear;
 
     // Add per-opponent streak details
     streaksPerOpponent.forEach((streak, opponent) => {
@@ -725,6 +826,7 @@ type AchievementDefinitions = {
   "edge-lord": undefined;
   "consistency-is-key": undefined;
   "variety-player": undefined;
+  "best-friends": { opponent: string; firstGame: number };
 };
 
 type AchievementType = keyof AchievementDefinitions;
@@ -764,6 +866,10 @@ type VarietyPlayerProgression = ProgressionWithTarget & {
   opponents?: Set<string>; // List of opponents played against
 };
 
+type BestFriendsProgression = ProgressionWithTarget & {
+  perOpponent?: Map<string, { count: number; timespan: number }>;
+};
+
 export type AchievementProgression = {
   "donut-1": ProgressionWithTarget;
   "donut-5": ProgressionWithTarget;
@@ -783,4 +889,5 @@ export type AchievementProgression = {
   "edge-lord": ProgressionWithTarget;
   "consistency-is-key": ProgressionWithTarget;
   "variety-player": VarietyPlayerProgression;
+  "best-friends": BestFriendsProgression;
 };
