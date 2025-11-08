@@ -95,6 +95,9 @@ export class Achievements {
         if (winner.donutCount === 5) {
           this.#addAchievement(game.winner, this.#createAchievement("donut-5", game.winner, game.playedAt, undefined));
         }
+
+        // Check for "Nice Game" achievement (total points = 69)
+        this.#checkNiceGameAchievement(game.winner, game.loser, game.id, game.score.setPoints, game.playedAt);
       }
 
       // Check for streak achievements
@@ -172,6 +175,35 @@ export class Achievements {
     });
 
     return donutsEarned;
+  }
+
+  #checkNiceGameAchievement(
+    winner: string,
+    loser: string,
+    gameId: string,
+    setPoints: { gameWinner: number; gameLoser: number }[],
+    playedAt: number,
+  ) {
+    // Calculate total points scored by both players
+    const totalPoints = setPoints.reduce((sum, set) => sum + set.gameWinner + set.gameLoser, 0);
+
+    if (totalPoints === 69) {
+      // Award achievement to both players
+      this.#addAchievement(
+        winner,
+        this.#createAchievement("nice-game", winner, playedAt, {
+          gameId,
+          opponent: loser,
+        }),
+      );
+      this.#addAchievement(
+        loser,
+        this.#createAchievement("nice-game", loser, playedAt, {
+          gameId,
+          opponent: winner,
+        }),
+      );
+    }
   }
 
   #checkStreakAchievements(
@@ -414,6 +446,7 @@ export class Achievements {
       "active-2-years": { current: 0, target: TWO_YEARS, earned: 0 },
       "tournament-participated": { earned: 0 },
       "tournament-winner": { earned: 0 },
+      "nice-game": { earned: 0 },
     };
 
     let firstActiveAt: number | null = null;
@@ -537,6 +570,7 @@ type AchievementDefinitions = {
   "active-2-years": { firstGameInPeriod: number };
   "tournament-participated": { tournamentId: string };
   "tournament-winner": { tournamentId: string };
+  "nice-game": { gameId: string; opponent: string };
 };
 
 type AchievementType = keyof AchievementDefinitions;
@@ -586,4 +620,5 @@ export type AchievementProgression = {
   "active-2-years": ProgressionWithTarget;
   "tournament-participated": BaseProgression;
   "tournament-winner": BaseProgression;
+  "nice-game": BaseProgression;
 };
