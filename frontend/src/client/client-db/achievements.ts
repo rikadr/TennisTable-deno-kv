@@ -27,6 +27,7 @@ export class Achievements {
         consistencyCount: number;
         opponentsPlayed: Set<string>;
         gamesPerOpponent: Map<string, { count: number; firstGame: number }>;
+        firstOpponentFor: Set<string>; // Track players this person was first opponent for
       }
     >();
 
@@ -45,6 +46,7 @@ export class Achievements {
           consistencyCount: 0,
           opponentsPlayed: new Set(),
           gamesPerOpponent: new Map(),
+          firstOpponentFor: new Set(),
         });
       }
       if (!playerTracker.has(game.loser)) {
@@ -60,11 +62,38 @@ export class Achievements {
           consistencyCount: 0,
           opponentsPlayed: new Set(),
           gamesPerOpponent: new Map(),
+          firstOpponentFor: new Set(),
         });
       }
 
       const winner = playerTracker.get(game.winner)!;
       const loser = playerTracker.get(game.loser)!;
+
+      // Check for Welcome Committee achievement
+      // If this is the loser's first game ever, the winner is their first opponent
+      if (loser.firstActiveAt === game.playedAt) {
+        winner.firstOpponentFor.add(game.loser);
+        if (winner.firstOpponentFor.size === 3) {
+          this.#addAchievement(
+            game.winner,
+            this.#createAchievement("welcome-committee", game.winner, game.playedAt, {
+              opponents: Array.from(winner.firstOpponentFor),
+            }),
+          );
+        }
+      }
+      // If this is the winner's first game ever, the loser is their first opponent
+      if (winner.firstActiveAt === game.playedAt) {
+        loser.firstOpponentFor.add(game.winner);
+        if (loser.firstOpponentFor.size === 3) {
+          this.#addAchievement(
+            game.loser,
+            this.#createAchievement("welcome-committee", game.loser, game.playedAt, {
+              opponents: Array.from(loser.firstOpponentFor),
+            }),
+          );
+        }
+      }
 
       // Track opponents for variety-player achievement
       const winnerPrevOpponentCount = winner.opponentsPlayed.size;
@@ -609,6 +638,7 @@ export class Achievements {
       "consistency-is-key": { current: 0, target: 5, earned: 0 },
       "variety-player": { current: 0, target: 10, opponents: new Set(), earned: 0 },
       "best-friends": { current: 0, target: 50, perOpponent: new Map(), earned: 0 },
+      "welcome-committee": { current: 0, target: 3, newPlayers: new Set(), earned: 0 },
     };
 
     let firstActiveAt: number | null = null;
@@ -621,6 +651,30 @@ export class Achievements {
     const streaksPerOpponent = new Map<string, number>();
     const opponentsPlayed = new Set<string>();
     const gamesPerOpponent = new Map<string, { count: number; firstGame: number; lastGame: number }>();
+    const firstOpponentForSet = new Set<string>();
+
+    // Track first games for each player to determine who was their first opponent
+    const playerFirstGames = new Map<string, { opponent: string; timestamp: number }>();
+
+    this.parent.games.forEach((game) => {
+      // Track first opponent for each player
+      if (!playerFirstGames.has(game.winner)) {
+        playerFirstGames.set(game.winner, { opponent: game.loser, timestamp: game.playedAt });
+      }
+      if (!playerFirstGames.has(game.loser)) {
+        playerFirstGames.set(game.loser, { opponent: game.winner, timestamp: game.playedAt });
+      }
+    });
+
+    // Count how many players have this playerId as their first opponent
+    playerFirstGames.forEach((firstGame, player) => {
+      if (firstGame.opponent === playerId) {
+        firstOpponentForSet.add(player);
+      }
+    });
+
+    progression["welcome-committee"].current = firstOpponentForSet.size;
+    progression["welcome-committee"].newPlayers = firstOpponentForSet;
 
     // Calculate current stats by iterating through games
     this.parent.games.forEach((game) => {
@@ -827,6 +881,7 @@ type AchievementDefinitions = {
   "consistency-is-key": undefined;
   "variety-player": undefined;
   "best-friends": { opponent: string; firstGame: number };
+  "welcome-committee": { opponents: string[] };
 };
 
 type AchievementType = keyof AchievementDefinitions;
@@ -870,6 +925,10 @@ type BestFriendsProgression = ProgressionWithTarget & {
   perOpponent?: Map<string, { count: number; timespan: number }>;
 };
 
+type WelcomeCommitteeProgression = ProgressionWithTarget & {
+  newPlayers?: Set<string>; // List of new players this person was first opponent for
+};
+
 export type AchievementProgression = {
   "donut-1": ProgressionWithTarget;
   "donut-5": ProgressionWithTarget;
@@ -890,4 +949,5 @@ export type AchievementProgression = {
   "consistency-is-key": ProgressionWithTarget;
   "variety-player": VarietyPlayerProgression;
   "best-friends": BestFriendsProgression;
+  "welcome-committee": WelcomeCommitteeProgression;
 };

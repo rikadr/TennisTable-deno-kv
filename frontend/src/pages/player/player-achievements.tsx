@@ -3,6 +3,7 @@ import { relativeTimeString } from "../../common/date-utils";
 import { classNames } from "../../common/class-names";
 import { useState } from "react";
 import { Achievement, AchievementProgression } from "../../client/client-db/achievements";
+import { Link } from "react-router-dom";
 
 type Props = {
   playerId?: string;
@@ -104,6 +105,11 @@ export const ACHIEVEMENT_LABELS: Record<string, { title: string; description: st
     description: "Play 50 games with a single opponent within 1 year",
     icon: "💙",
   },
+  "welcome-committee": {
+    title: "Welcome Committee",
+    description: "Be the first opponent for 3 different new players",
+    icon: "👥",
+  },
 };
 
 export const PlayerAchievements: React.FC<Props> = ({ playerId }) => {
@@ -123,7 +129,7 @@ export const PlayerAchievements: React.FC<Props> = ({ playerId }) => {
   const sortedAchievements = [...achievements].sort((a, b) => b.earnedAt - a.earnedAt);
 
   return (
-    <div className="flex flex-col h-full -mt-8">
+    <div className="flex flex-col h-full sm:-mt-4 md:-mt-8">
       {/* Tabs */}
       <div className="flex border-b border-border">
         <button
@@ -214,6 +220,14 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
                     {context.tournaments.getTournament(achievement.data.tournamentId)?.tournamentDb.name || "Unknown"}
                   </p>
                 )}
+
+                {achievement.data && "opponents" in achievement.data && achievement.data.opponents && (
+                  <div className="mt-2 text-xs text-secondary-text/70">
+                    Welcomed:{" "}
+                    {achievement.data.opponents.map((player: string) => context.playerName(player)).join(", ")}
+                  </div>
+                )}
+
                 {achievement.data && "firstGameInPeriod" in achievement.data && (
                   <p className="text-xs text-secondary-text/70 mt-2">
                     From {dateString(achievement.data.firstGameInPeriod)} to {dateString(achievement.earnedAt)}
@@ -344,7 +358,9 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                                     streak >= data.target && "line-through",
                                   )}
                                 >
-                                  <span className="text-secondary-text">{context.playerName(opponent)}</span>
+                                  <Link to={"/player/" + opponent}>
+                                    <span className="text-secondary-text">{context.playerName(opponent)}</span>
+                                  </Link>
                                   <span className="text-primary-text font-medium ml-2">
                                     {streak}/{data.target}
                                   </span>
@@ -389,13 +405,34 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                                       alreadyEarned && "line-through",
                                     )}
                                   >
-                                    <span className="text-secondary-text">{context.playerName(opponent)}</span>
+                                    <Link to={"/player/" + opponent}>
+                                      <span className="text-secondary-text">{context.playerName(opponent)}</span>
+                                    </Link>
                                     <span className="text-primary-text font-medium">
                                       {info.count} games ({days} days)
                                     </span>
                                   </div>
                                 );
                               })}
+                          </div>
+                        </div>
+                      )}
+
+                    {/* New players list for welcome-committee achievement */}
+                    {type === "welcome-committee" &&
+                      "newPlayers" in data &&
+                      data.newPlayers &&
+                      data.newPlayers.size > 0 && (
+                        <div className="mt-3 pt-3 border-t border-border/50">
+                          <p className="text-xs text-secondary-text/70 mb-2">First opponent for:</p>
+                          <div className="flex flex-wrap gap-1">
+                            {Array.from(data.newPlayers).map((player: string) => (
+                              <Link to={"/player/" + player} key={player}>
+                                <span className="text-xs bg-background px-2 py-1 rounded text-secondary-text">
+                                  {context.playerName(player)}
+                                </span>
+                              </Link>
+                            ))}
                           </div>
                         </div>
                       )}

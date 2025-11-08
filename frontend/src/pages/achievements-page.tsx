@@ -122,10 +122,33 @@ export const AchievementsPage: React.FC = () => {
                           {relativeTimeString(new Date(achievement.earnedAt))} - {dateString(achievement.earnedAt)}
                         </span>
                       </div>
-                      <div className="mt-2">
+                      <div>
+                        {achievement.data && "opponent" in achievement.data && (
+                          <span className="text-xs text-secondary-text/70">
+                            vs {context.playerName(achievement.data.opponent)}
+                          </span>
+                        )}
+                        {achievement.data && "tournamentId" in achievement.data && (
+                          <span className="text-xs text-secondary-text/70">
+                            Tournament:{" "}
+                            {context.tournaments.getTournament(achievement.data.tournamentId)?.tournamentDb.name ||
+                              "Unknown"}
+                          </span>
+                        )}
+                        {achievement.data && "opponents" in achievement.data && achievement.data.opponents && (
+                          <div className="mt-2 text-xs text-secondary-text/70">
+                            Welcomed:{" "}
+                            {achievement.data.opponents.map((player: string) => context.playerName(player)).join(", ")}
+                          </div>
+                        )}
+                        {achievement.data && "firstGameInPeriod" in achievement.data && (
+                          <span className="text-xs text-secondary-text/70">
+                            From {dateString(achievement.data.firstGameInPeriod)} to {dateString(achievement.earnedAt)}
+                          </span>
+                        )}
                         <Link to={"/player/" + achievement.earnedBy}>
                           <div
-                            className="flex gap-3 items-center pr-4 p-1 rounded-full w-fit"
+                            className="flex gap-3 items-center pr-4 p-1 rounded-full w-fit mt-2"
                             style={{ background: stringToColor(achievement.earnedBy) }}
                           >
                             <ProfilePicture playerId={achievement.earnedBy} size={20} />
@@ -134,23 +157,6 @@ export const AchievementsPage: React.FC = () => {
                             </span>
                           </div>
                         </Link>
-                        {achievement.data && "opponent" in achievement.data && (
-                          <span className="text-xs text-secondary-text/70 ml-2">
-                            vs {context.playerName(achievement.data.opponent)}
-                          </span>
-                        )}
-                        {achievement.data && "tournamentId" in achievement.data && (
-                          <span className="text-xs text-secondary-text/70 ml-2">
-                            Tournament:{" "}
-                            {context.tournaments.getTournament(achievement.data.tournamentId)?.tournamentDb.name ||
-                              "Unknown"}
-                          </span>
-                        )}
-                        {achievement.data && "firstGameInPeriod" in achievement.data && (
-                          <span className="text-xs text-secondary-text/70 ml-2">
-                            From {dateString(achievement.data.firstGameInPeriod)} to {dateString(achievement.earnedAt)}
-                          </span>
-                        )}
                       </div>
                     </div>
                   </div>
