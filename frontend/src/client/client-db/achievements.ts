@@ -25,6 +25,7 @@ export class Achievements {
         closeCallsCount: number; // Track total close calls for close-calls achievement
         edgeLordCount: number; // Track total close calls for edge-lord achievement
         consistencyCount: number; // Track consistent score games for consistency-is-key achievement
+        opponentsPlayed: Set<string>; // Track unique opponents for variety-player achievement
       }
     >();
 
@@ -41,6 +42,7 @@ export class Achievements {
           closeCallsCount: 0,
           edgeLordCount: 0,
           consistencyCount: 0,
+          opponentsPlayed: new Set(),
         });
       }
       if (!playerTracker.has(game.loser)) {
@@ -54,11 +56,34 @@ export class Achievements {
           closeCallsCount: 0,
           edgeLordCount: 0,
           consistencyCount: 0,
+          opponentsPlayed: new Set(),
         });
       }
 
       const winner = playerTracker.get(game.winner)!;
       const loser = playerTracker.get(game.loser)!;
+
+      // Track opponents for variety-player achievement
+      const winnerPrevOpponentCount = winner.opponentsPlayed.size;
+      const loserPrevOpponentCount = loser.opponentsPlayed.size;
+
+      winner.opponentsPlayed.add(game.loser);
+      loser.opponentsPlayed.add(game.winner);
+
+      // Check for variety-player achievement (10 different opponents)
+      // Only award when crossing the threshold from 9 to 10
+      if (winnerPrevOpponentCount < 10 && winner.opponentsPlayed.size === 10) {
+        this.#addAchievement(
+          game.winner,
+          this.#createAchievement("variety-player", game.winner, game.playedAt, undefined),
+        );
+      }
+      if (loserPrevOpponentCount < 10 && loser.opponentsPlayed.size === 10) {
+        this.#addAchievement(
+          game.loser,
+          this.#createAchievement("variety-player", game.loser, game.playedAt, undefined),
+        );
+      }
 
       // Check for "Back After" achievements before updating lastActiveAt
       this.#checkBackAfterAchievement(game.winner, winner.lastActiveAt, game.playedAt);
@@ -544,6 +569,7 @@ export class Achievements {
       "close-calls": { current: 0, target: 5, earned: 0 },
       "edge-lord": { current: 0, target: 20, earned: 0 },
       "consistency-is-key": { current: 0, target: 5, earned: 0 },
+      "variety-player": { current: 0, target: 10, opponents: new Set(), earned: 0 },
     };
 
     let firstActiveAt: number | null = null;
@@ -554,6 +580,7 @@ export class Achievements {
     let edgeLordCount = 0;
     let consistencyCount = 0;
     const streaksPerOpponent = new Map<string, number>();
+    const opponentsPlayed = new Set<string>();
 
     // Calculate current stats by iterating through games
     this.parent.games.forEach((game) => {
@@ -569,6 +596,13 @@ export class Achievements {
 
       // Track last active time
       lastActiveAt = game.playedAt;
+
+      // Track opponents
+      if (isWinner) {
+        opponentsPlayed.add(game.loser);
+      } else {
+        opponentsPlayed.add(game.winner);
+      }
 
       if (isWinner) {
         // Track win streak against all
@@ -616,6 +650,8 @@ export class Achievements {
     progression["close-calls"].current = closeCallsCount;
     progression["edge-lord"].current = edgeLordCount;
     progression["consistency-is-key"].current = consistencyCount;
+    progression["variety-player"].current = opponentsPlayed.size;
+    progression["variety-player"].opponents = opponentsPlayed;
 
     // Add per-opponent streak details
     streaksPerOpponent.forEach((streak, opponent) => {
@@ -688,6 +724,7 @@ type AchievementDefinitions = {
   "close-calls": undefined;
   "edge-lord": undefined;
   "consistency-is-key": undefined;
+  "variety-player": undefined;
 };
 
 type AchievementType = keyof AchievementDefinitions;
@@ -723,6 +760,10 @@ type StreakPlayerProgression = ProgressionWithTarget & {
   perOpponent?: Map<string, number>; // Breakdown of current streaks per opponent
 };
 
+type VarietyPlayerProgression = ProgressionWithTarget & {
+  opponents?: Set<string>; // List of opponents played against
+};
+
 export type AchievementProgression = {
   "donut-1": ProgressionWithTarget;
   "donut-5": ProgressionWithTarget;
@@ -741,4 +782,5 @@ export type AchievementProgression = {
   "close-calls": ProgressionWithTarget;
   "edge-lord": ProgressionWithTarget;
   "consistency-is-key": ProgressionWithTarget;
+  "variety-player": VarietyPlayerProgression;
 };
