@@ -93,7 +93,7 @@ export const PlayerAchievements: React.FC<Props> = ({ playerId }) => {
   const sortedAchievements = [...achievements].sort((a, b) => b.earnedAt - a.earnedAt);
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full -mt-8">
       {/* Tabs */}
       <div className="flex border-b border-border">
         <button

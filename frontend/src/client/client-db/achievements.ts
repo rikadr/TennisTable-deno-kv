@@ -108,7 +108,8 @@ export class Achievements {
         game.playedAt,
       );
 
-      // Check for activity period achievements for both players
+      // Check for activity period achievements for both players during the game loop
+      // This captures activity periods that may have started and ended in the past
       const winnerActivityPeriod = this.#calculateActivityPeriod(game.winner);
       const loserActivityPeriod = this.#calculateActivityPeriod(game.loser);
 
@@ -125,6 +126,19 @@ export class Achievements {
           game.loser,
           loserActivityPeriod.startDate,
           loserActivityPeriod.startDate + loserActivityPeriod.period,
+        );
+      }
+    });
+
+    // Check activity achievements for all players after processing all games
+    // This ensures players get achievements even if they haven't played recently
+    playerTracker.forEach((_, playerId) => {
+      const activityPeriod = this.#calculateActivityPeriod(playerId);
+      if (activityPeriod) {
+        this.#checkActivityAchievements(
+          playerId,
+          activityPeriod.startDate,
+          activityPeriod.startDate + activityPeriod.period,
         );
       }
     });
@@ -241,28 +255,38 @@ export class Achievements {
     const TWO_YEARS = 2 * ONE_YEAR;
 
     const existingAchievements = this.getAchievements(playerId);
-    const hasActiveAchievement = (type: AchievementType) => existingAchievements.some((t) => t.type === type);
+
+    // Check if this specific activity period already has this achievement
+    const hasAchievementForPeriod = (type: AchievementType) =>
+      existingAchievements.some(
+        (achievement) =>
+          achievement.type === type &&
+          achievement.data &&
+          "firstGameInPeriod" in achievement.data &&
+          achievement.data.firstGameInPeriod === firstActiveAt,
+      );
 
     // Award activity achievements when the player crosses the threshold
-    // Only award once - check if they already have it
-    if (activePeriod >= TWO_YEARS && !hasActiveAchievement("active-2-years")) {
+    // Can be earned multiple times, but only once per activity period
+    // Set earnedAt to when they actually completed the achievement (firstActiveAt + period)
+    if (activePeriod >= TWO_YEARS && !hasAchievementForPeriod("active-2-years")) {
       this.#addAchievement(
         playerId,
-        this.#createAchievement("active-2-years", playerId, currentGameAt, {
+        this.#createAchievement("active-2-years", playerId, firstActiveAt + TWO_YEARS, {
           firstGameInPeriod: firstActiveAt,
         }),
       );
-    } else if (activePeriod >= ONE_YEAR && !hasActiveAchievement("active-1-year")) {
+    } else if (activePeriod >= ONE_YEAR && !hasAchievementForPeriod("active-1-year")) {
       this.#addAchievement(
         playerId,
-        this.#createAchievement("active-1-year", playerId, currentGameAt, {
+        this.#createAchievement("active-1-year", playerId, firstActiveAt + ONE_YEAR, {
           firstGameInPeriod: firstActiveAt,
         }),
       );
-    } else if (activePeriod >= SIX_MONTHS && !hasActiveAchievement("active-6-months")) {
+    } else if (activePeriod >= SIX_MONTHS && !hasAchievementForPeriod("active-6-months")) {
       this.#addAchievement(
         playerId,
-        this.#createAchievement("active-6-months", playerId, currentGameAt, {
+        this.#createAchievement("active-6-months", playerId, firstActiveAt + SIX_MONTHS, {
           firstGameInPeriod: firstActiveAt,
         }),
       );
