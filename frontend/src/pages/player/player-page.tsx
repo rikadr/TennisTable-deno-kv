@@ -86,7 +86,6 @@ export const PlayerPage: React.FC = () => {
             .filter((t) => {
               switch (t.id) {
                 case "statistics":
-                case "achievements":
                   return summary.games.length > 0;
                 case "predictions":
                   return summary.isRanked;
