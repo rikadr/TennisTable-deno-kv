@@ -814,7 +814,17 @@ export class Achievements {
     // Calculate best-friends progression - count games within last 1 year from now
     const now = Date.now();
     let maxGamesInLastYear = 0;
+    let maxGamesUnderTarget = 0; // Track highest count that hasn't reached target yet
     const opponentGamesInLastYear = new Map<string, { count: number; timespan: number }>();
+
+    // Get list of opponents we've already earned best-friends achievement with
+    const earnedBestFriendsOpponents = new Set<string>();
+    const playerAchievements = this.achievementMap.get(playerId) || [];
+    playerAchievements.forEach((achievement) => {
+      if (achievement.type === "best-friends" && achievement.data) {
+        earnedBestFriendsOpponents.add(achievement.data.opponent);
+      }
+    });
 
     gamesPerOpponent.forEach((_, opponent) => {
       // Count games with this opponent in the last year
@@ -843,9 +853,17 @@ export class Achievements {
       }
 
       maxGamesInLastYear = Math.max(maxGamesInLastYear, gamesInLastYear);
+
+      // Track the highest count that's still under the target (50)
+      // AND we haven't already earned the achievement with this opponent
+      if (gamesInLastYear < 50 && !earnedBestFriendsOpponents.has(opponent)) {
+        maxGamesUnderTarget = Math.max(maxGamesUnderTarget, gamesInLastYear);
+      }
     });
 
-    progression["best-friends"].current = maxGamesInLastYear;
+    // Use maxGamesUnderTarget if it exists, otherwise show maxGamesInLastYear
+    // (which would be 50+ if all opponents are over the threshold)
+    progression["best-friends"].current = maxGamesUnderTarget > 0 ? maxGamesUnderTarget : maxGamesInLastYear;
     progression["best-friends"].perOpponent = opponentGamesInLastYear;
 
     // Add per-opponent streak details
