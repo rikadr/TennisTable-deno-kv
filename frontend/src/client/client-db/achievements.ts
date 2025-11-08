@@ -105,7 +105,7 @@ export class Achievements {
         }
       }
 
-      // Track opponents for variety-player achievement
+      // Track opponents for variety-player and global-player achievements
       const winnerPrevOpponentCount = winner.opponentsPlayed.size;
       const loserPrevOpponentCount = loser.opponentsPlayed.size;
 
@@ -124,6 +124,21 @@ export class Achievements {
         this.#addAchievement(
           game.loser,
           this.#createAchievement("variety-player", game.loser, game.playedAt, undefined),
+        );
+      }
+
+      // Check for global-player achievement (20 different opponents)
+      // Only award when crossing the threshold from 19 to 20
+      if (winnerPrevOpponentCount < 20 && winner.opponentsPlayed.size === 20) {
+        this.#addAchievement(
+          game.winner,
+          this.#createAchievement("global-player", game.winner, game.playedAt, undefined),
+        );
+      }
+      if (loserPrevOpponentCount < 20 && loser.opponentsPlayed.size === 20) {
+        this.#addAchievement(
+          game.loser,
+          this.#createAchievement("global-player", game.loser, game.playedAt, undefined),
         );
       }
 
@@ -699,6 +714,7 @@ export class Achievements {
       "edge-lord": { current: 0, target: 20, earned: 0 },
       "consistency-is-key": { current: 0, target: 5, earned: 0 },
       "variety-player": { current: 0, target: 10, opponents: new Set(), earned: 0 },
+      "global-player": { current: 0, target: 20, opponents: new Set(), earned: 0 },
       "best-friends": { current: 0, target: 50, perOpponent: new Map(), earned: 0 },
       "welcome-committee": { current: 0, target: 3, newPlayers: new Set(), earned: 0 },
     };
@@ -818,6 +834,8 @@ export class Achievements {
     progression["consistency-is-key"].current = consistencyCount;
     progression["variety-player"].current = opponentsPlayed.size;
     progression["variety-player"].opponents = opponentsPlayed;
+    progression["global-player"].current = opponentsPlayed.size;
+    progression["global-player"].opponents = opponentsPlayed;
     progression["punching-bag"].current = currentLoseStreakAll;
     progression["never-give-up"].current = currentLoseStreakAll;
 
@@ -967,6 +985,7 @@ type AchievementDefinitions = {
   "edge-lord": undefined;
   "consistency-is-key": undefined;
   "variety-player": undefined;
+  "global-player": undefined;
   "best-friends": { opponent: string; firstGame: number };
   "welcome-committee": { opponents: string[] };
   "punching-bag": { startedAt: number };
@@ -1039,6 +1058,7 @@ export type AchievementProgression = {
   "edge-lord": ProgressionWithTarget;
   "consistency-is-key": ProgressionWithTarget;
   "variety-player": VarietyPlayerProgression;
+  "global-player": VarietyPlayerProgression;
   "best-friends": BestFriendsProgression;
   "welcome-committee": WelcomeCommitteeProgression;
   "punching-bag": ProgressionWithTarget;

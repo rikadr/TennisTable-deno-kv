@@ -124,47 +124,47 @@ export const AchievementsPage: React.FC = () => {
                       </div>
                       <div>
                         {achievement.data && "opponent" in achievement.data && (
-                          <span className="text-xs/70">vs {context.playerName(achievement.data.opponent)}</span>
+                          <span className="text-xs">vs {context.playerName(achievement.data.opponent)}</span>
                         )}
                         {achievement.data && "tournamentId" in achievement.data && (
-                          <span className="text-xs/70">
+                          <span className="text-xs">
                             Tournament:{" "}
                             {context.tournaments.getTournament(achievement.data.tournamentId)?.tournamentDb.name ||
                               "Unknown"}
                           </span>
                         )}
                         {achievement.data && "opponents" in achievement.data && achievement.data.opponents && (
-                          <div className="mt-2 text-xs/70">
+                          <div className="mt-2 text-xs">
                             Welcomed:{" "}
                             {achievement.data.opponents.map((player: string) => context.playerName(player)).join(", ")}
                           </div>
                         )}
                         {achievement.data && "firstGameInPeriod" in achievement.data && (
-                          <span className="text-xs/70">
+                          <span className="text-xs">
                             From {dateString(achievement.data.firstGameInPeriod)} to {dateString(achievement.earnedAt)}
                           </span>
                         )}
                         {achievement.data && "startedAt" in achievement.data && (
-                          <p className="text-xs/70 mt-2">
+                          <p className="text-xs mt-2">
                             From {dateString(achievement.data.startedAt)} to {dateString(achievement.earnedAt)}
                           </p>
                         )}
                         {achievement.data && "lastGameAt" in achievement.data && (
-                          <p className="text-xs/70 mt-2">
+                          <p className="text-xs mt-2">
                             From {dateString(achievement.data.lastGameAt)} to {dateString(achievement.earnedAt)}
                           </p>
                         )}
-                        <Link to={"/player/" + achievement.earnedBy}>
-                          <div
-                            className="flex gap-3 items-center pr-4 p-1 rounded-full w-fit mt-2"
-                            style={{ background: stringToColor(achievement.earnedBy) }}
-                          >
+                        <div
+                          className="rounded-full w-fit mt-2"
+                          style={{ background: stringToColor(achievement.earnedBy) }}
+                        >
+                          <Link to={"/player/" + achievement.earnedBy} className="flex gap-3 items-center pr-4 p-1 ">
                             <ProfilePicture playerId={achievement.earnedBy} size={20} />
                             <span className="text-sm text-accent font-medium">
                               {context.playerName(achievement.earnedBy)}
                             </span>
-                          </div>
-                        </Link>
+                          </Link>
+                        </div>
                       </div>
                     </div>
                   </div>

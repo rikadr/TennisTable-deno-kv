@@ -120,6 +120,11 @@ export const ACHIEVEMENT_LABELS: Record<string, { title: string; description: st
     description: "Play against 10 different opponents",
     icon: "🎲",
   },
+  "global-player": {
+    title: "Global Player",
+    description: "Play against 20 different opponents",
+    icon: "🌍",
+  },
   "best-friends": {
     title: "Best Friends",
     description: "Play 50 games with a single opponent within 1 year",
