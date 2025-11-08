@@ -91,6 +91,14 @@ export class Achievements {
             }),
           );
         }
+        if (winner.firstOpponentFor.size === 10) {
+          this.#addAchievement(
+            game.winner,
+            this.#createAchievement("community-builder", game.winner, game.playedAt, {
+              opponents: Array.from(winner.firstOpponentFor),
+            }),
+          );
+        }
       }
       // If this is the winner's first game ever, the loser is their first opponent
       if (winner.firstActiveAt === game.playedAt) {
@@ -99,6 +107,14 @@ export class Achievements {
           this.#addAchievement(
             game.loser,
             this.#createAchievement("welcome-committee", game.loser, game.playedAt, {
+              opponents: Array.from(loser.firstOpponentFor),
+            }),
+          );
+        }
+        if (loser.firstOpponentFor.size === 10) {
+          this.#addAchievement(
+            game.loser,
+            this.#createAchievement("community-builder", game.loser, game.playedAt, {
               opponents: Array.from(loser.firstOpponentFor),
             }),
           );
@@ -717,6 +733,7 @@ export class Achievements {
       "global-player": { current: 0, target: 20, opponents: new Set(), earned: 0 },
       "best-friends": { current: 0, target: 50, perOpponent: new Map(), earned: 0 },
       "welcome-committee": { current: 0, target: 3, newPlayers: new Set(), earned: 0 },
+      "community-builder": { current: 0, target: 10, newPlayers: new Set(), earned: 0 },
     };
 
     let firstActiveAt: number | null = null;
@@ -754,6 +771,8 @@ export class Achievements {
 
     progression["welcome-committee"].current = firstOpponentForSet.size;
     progression["welcome-committee"].newPlayers = firstOpponentForSet;
+    progression["community-builder"].current = firstOpponentForSet.size;
+    progression["community-builder"].newPlayers = firstOpponentForSet;
 
     // Calculate current stats by iterating through games
     this.parent.games.forEach((game) => {
@@ -988,6 +1007,7 @@ type AchievementDefinitions = {
   "global-player": undefined;
   "best-friends": { opponent: string; firstGame: number };
   "welcome-committee": { opponents: string[] };
+  "community-builder": { opponents: string[] };
   "punching-bag": { startedAt: number };
   "never-give-up": { startedAt: number };
   "comeback-kid": undefined;
@@ -1061,6 +1081,7 @@ export type AchievementProgression = {
   "global-player": VarietyPlayerProgression;
   "best-friends": BestFriendsProgression;
   "welcome-committee": WelcomeCommitteeProgression;
+  "community-builder": WelcomeCommitteeProgression;
   "punching-bag": ProgressionWithTarget;
   "never-give-up": ProgressionWithTarget;
   "comeback-kid": BaseProgression;

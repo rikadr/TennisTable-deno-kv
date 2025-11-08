@@ -135,6 +135,11 @@ export const ACHIEVEMENT_LABELS: Record<string, { title: string; description: st
     description: "Be the first opponent for 3 different new players",
     icon: "👥",
   },
+  "community-builder": {
+    title: "Community Builder",
+    description: "Be the first opponent for 10 different new players",
+    icon: "🏘️",
+  },
 };
 
 export const PlayerAchievements: React.FC<Props> = ({ playerId }) => {
@@ -458,7 +463,7 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                         )}
 
                       {/* New players list for welcome-committee achievement */}
-                      {type === "welcome-committee" &&
+                      {(type === "welcome-committee" || type === "community-builder") &&
                         "newPlayers" in data &&
                         data.newPlayers &&
                         data.newPlayers.size > 0 && (
