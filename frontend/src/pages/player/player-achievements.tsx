@@ -64,6 +64,16 @@ const ACHIEVEMENT_LABELS: Record<string, { title: string; description: string; i
     description: "Active for 2 years without a 30-day break",
     icon: "🎖️",
   },
+  "tournament-participated": {
+    title: "Competitor",
+    description: "Participated in a tournament",
+    icon: "🤝",
+  },
+  "tournament-winner": {
+    title: "Champion",
+    description: "Won a tournament",
+    icon: "🏆",
+  },
 };
 
 export const PlayerAchievements: React.FC<Props> = ({ playerId }) => {
@@ -159,13 +169,24 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
                 <div className="flex items-center justify-between">
                   <h3 className="font-semibold text-primary-text">{label.title}</h3>
                   <span className="text-xs text-secondary-text">
-                    {relativeTimeString(new Date(achievement.earnedAt))}
+                    {relativeTimeString(new Date(achievement.earnedAt))} - {dateString(achievement.earnedAt)}
                   </span>
                 </div>
                 <p className="text-sm text-secondary-text mt-1">{label.description}</p>
                 {"opponent" in achievement.data && (
                   <p className="text-xs text-secondary-text/70 mt-2">
                     vs {context.playerName(achievement.data.opponent)}
+                  </p>
+                )}
+                {"tournamentId" in achievement.data && (
+                  <p className="text-xs text-secondary-text/70 mt-2">
+                    Tournament:{" "}
+                    {context.tournaments.getTournament(achievement.data.tournamentId)?.tournamentDb.name || "Unknown"}
+                  </p>
+                )}
+                {"firstGameInPeriod" in achievement.data && (
+                  <p className="text-xs text-secondary-text/70 mt-2">
+                    From {dateString(achievement.data.firstGameInPeriod)} to {dateString(achievement.earnedAt)}
                   </p>
                 )}
               </div>
@@ -263,7 +284,7 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression }) => {
                       </div>
                     )}
 
-                    {/* Show last active time for back-after achievements */}
+                    {/* Show start date for active achievements */}
                     {type.startsWith("active-") && "current" in data && data.current && (
                       <div className="mt-2 text-xs text-secondary-text/70">
                         Since: {dateString(Date.now() - data.current)}
@@ -293,11 +314,9 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression }) => {
                       )}
                   </>
                 ) : (
-                  // Fallback for achievements without targets (shouldn't happen anymore)
+                  // Fallback for achievements without targets (like tournament achievements)
                   <div className="mt-2 text-xs text-secondary-text/70">
-                    {data.earned > 0
-                      ? `Earned ${data.earned} time${data.earned > 1 ? "s" : ""}}`
-                      : "Progress not available"}
+                    {data.earned > 0 ? `Earned ${data.earned} time${data.earned > 1 ? "s" : ""}` : "No progress yet"}
                   </div>
                 )}
               </div>

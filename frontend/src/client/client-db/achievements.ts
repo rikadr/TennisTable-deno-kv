@@ -134,6 +134,9 @@ export class Achievements {
         );
       }
     });
+
+    // Check for tournament achievements
+    this.#checkTournamentAchievements();
   }
 
   #checkDonutAchievements(
@@ -311,6 +314,32 @@ export class Achievements {
     };
   }
 
+  #checkTournamentAchievements() {
+    this.parent.tournaments.getTournaments().forEach((t) => {
+      const tournamentId = t.tournamentDb.id;
+
+      // Check participation for all players in the tournament
+      t.tournamentDb.playerOrder?.forEach((playerId) => {
+        this.#addAchievement(
+          playerId,
+          this.#createAchievement("tournament-participated", playerId, t.tournamentDb.startDate, {
+            tournamentId,
+          }),
+        );
+      });
+
+      // Check for tournament winner
+      if (t.winner && t.endDate) {
+        this.#addAchievement(
+          t.winner,
+          this.#createAchievement("tournament-winner", t.winner, t.endDate, {
+            tournamentId,
+          }),
+        );
+      }
+    });
+  }
+
   #addAchievement(playerId: string, achievement: Achievement) {
     if (!this.achievementMap.has(playerId)) {
       this.achievementMap.set(playerId, []);
@@ -365,6 +394,8 @@ export class Achievements {
       "active-6-months": { current: 0, target: SIX_MONTHS, earned: 0 },
       "active-1-year": { current: 0, target: ONE_YEAR, earned: 0 },
       "active-2-years": { current: 0, target: TWO_YEARS, earned: 0 },
+      "tournament-participated": { earned: 0 },
+      "tournament-winner": { earned: 0 },
     };
 
     let firstActiveAt: number | null = null;
@@ -478,6 +509,8 @@ type AchievementDefinitions = {
   "active-6-months": { firstGameInPeriod: number };
   "active-1-year": { firstGameInPeriod: number };
   "active-2-years": { firstGameInPeriod: number };
+  "tournament-participated": { tournamentId: string };
+  "tournament-winner": { tournamentId: string };
 };
 
 type AchievementType = keyof AchievementDefinitions;
@@ -525,4 +558,6 @@ export type AchievementProgression = {
   "active-6-months": ProgressionWithTarget;
   "active-1-year": ProgressionWithTarget;
   "active-2-years": ProgressionWithTarget;
+  "tournament-participated": BaseProgression;
+  "tournament-winner": BaseProgression;
 };
