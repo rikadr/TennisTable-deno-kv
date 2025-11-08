@@ -24,6 +24,7 @@ export class Achievements {
         donutCount: number; // Track total donuts for donut-5 achievement
         closeCallsCount: number; // Track total close calls for close-calls achievement
         edgeLordCount: number; // Track total close calls for edge-lord achievement
+        consistencyCount: number; // Track consistent score games for consistency-is-key achievement
       }
     >();
 
@@ -39,6 +40,7 @@ export class Achievements {
           donutCount: 0,
           closeCallsCount: 0,
           edgeLordCount: 0,
+          consistencyCount: 0,
         });
       }
       if (!playerTracker.has(game.loser)) {
@@ -51,6 +53,7 @@ export class Achievements {
           donutCount: 0,
           closeCallsCount: 0,
           edgeLordCount: 0,
+          consistencyCount: 0,
         });
       }
 
@@ -140,6 +143,28 @@ export class Achievements {
             this.#addAchievement(
               game.loser,
               this.#createAchievement("edge-lord", game.loser, game.playedAt, undefined),
+            );
+          }
+        }
+
+        // Check for "Consistency is Key" achievement (all sets have same score)
+        const isConsistent = this.#checkConsistentGame(game.score.setPoints);
+        if (isConsistent) {
+          winner.consistencyCount++;
+          loser.consistencyCount++;
+
+          // Award achievement when reaching 5 consistent games
+          if (winner.consistencyCount === 5) {
+            this.#addAchievement(
+              game.winner,
+              this.#createAchievement("consistency-is-key", game.winner, game.playedAt, undefined),
+            );
+          }
+
+          if (loser.consistencyCount === 5) {
+            this.#addAchievement(
+              game.loser,
+              this.#createAchievement("consistency-is-key", game.loser, game.playedAt, undefined),
             );
           }
         }
@@ -262,6 +287,17 @@ export class Achievements {
       const difference = Math.abs(set.gameWinner - set.gameLoser);
       return difference <= 2;
     });
+  }
+
+  #checkConsistentGame(setPoints: { gameWinner: number; gameLoser: number }[]): boolean {
+    // Must have at least 2 sets
+    if (setPoints.length < 2) {
+      return false;
+    }
+
+    // All sets must have the same score (same winner points and same loser points)
+    const firstSet = setPoints[0];
+    return setPoints.every((set) => set.gameWinner === firstSet.gameWinner && set.gameLoser === firstSet.gameLoser);
   }
 
   #checkStreakAchievements(
@@ -507,6 +543,7 @@ export class Achievements {
       "nice-game": { earned: 0 },
       "close-calls": { current: 0, target: 5, earned: 0 },
       "edge-lord": { current: 0, target: 20, earned: 0 },
+      "consistency-is-key": { current: 0, target: 5, earned: 0 },
     };
 
     let firstActiveAt: number | null = null;
@@ -515,6 +552,7 @@ export class Achievements {
     let donutCount = 0;
     let closeCallsCount = 0;
     let edgeLordCount = 0;
+    let consistencyCount = 0;
     const streaksPerOpponent = new Map<string, number>();
 
     // Calculate current stats by iterating through games
@@ -562,6 +600,11 @@ export class Achievements {
         closeCallsCount++;
         edgeLordCount++;
       }
+
+      // Count consistent games for both winners and losers
+      if (game.score?.setPoints && this.#checkConsistentGame(game.score.setPoints)) {
+        consistencyCount++;
+      }
     });
 
     // Update progression with current stats
@@ -572,6 +615,7 @@ export class Achievements {
     progression["streak-player-20"].current = Math.max(...Array.from(streaksPerOpponent.values()), 0);
     progression["close-calls"].current = closeCallsCount;
     progression["edge-lord"].current = edgeLordCount;
+    progression["consistency-is-key"].current = consistencyCount;
 
     // Add per-opponent streak details
     streaksPerOpponent.forEach((streak, opponent) => {
@@ -643,6 +687,7 @@ type AchievementDefinitions = {
   "nice-game": { gameId: string; opponent: string };
   "close-calls": undefined;
   "edge-lord": undefined;
+  "consistency-is-key": undefined;
 };
 
 type AchievementType = keyof AchievementDefinitions;
@@ -695,4 +740,5 @@ export type AchievementProgression = {
   "nice-game": BaseProgression;
   "close-calls": ProgressionWithTarget;
   "edge-lord": ProgressionWithTarget;
+  "consistency-is-key": ProgressionWithTarget;
 };

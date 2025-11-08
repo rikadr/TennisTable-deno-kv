@@ -89,6 +89,11 @@ const ACHIEVEMENT_LABELS: Record<string, { title: string; description: string; i
     description: "Play 20 games where all sets are decided by 2 points or less",
     icon: "🔪",
   },
+  "consistency-is-key": {
+    title: "Consistency is Key",
+    description: "Play 5 games where all sets had the same score",
+    icon: "🔑",
+  },
 };
 
 export const PlayerAchievements: React.FC<Props> = ({ playerId }) => {
