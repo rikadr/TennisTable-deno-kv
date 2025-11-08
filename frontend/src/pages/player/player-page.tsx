@@ -82,12 +82,24 @@ export const PlayerPage: React.FC = () => {
       {/* Tabs Navigation */}
       <div className="bg-secondary-background  px-6 md:px-8">
         <div className="flex space-x-2 overflow-auto">
-          {tabs.map((tab) => {
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`
+          {tabs
+            .filter((t) => {
+              switch (t.id) {
+                case "statistics":
+                case "achievements":
+                  return summary.games.length > 0;
+                case "predictions":
+                  return summary.isRanked;
+                default:
+                  return true;
+              }
+            })
+            .map((tab) => {
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`
                     flex items-center py-2 px-4 border-b-4 font-medium text-sm transition-colors
                     ${
                       activeTab === tab.id
@@ -95,11 +107,11 @@ export const PlayerPage: React.FC = () => {
                         : "text-secondary-text/80 border-transparent hover:text-secondary-text hover:border-secondary-text border-dotted"
                     }
                   `}
-              >
-                {tab.label}
-              </button>
-            );
-          })}
+                >
+                  {tab.label}
+                </button>
+              );
+            })}
         </div>
       </div>
 
@@ -280,7 +292,7 @@ export const PlayerPage: React.FC = () => {
                   ))}
               </tbody>
             </table>
-            <h1>{isAdmin ? "" : "Log in as admin to see full list"}</h1>
+            <p className="m-2">{isAdmin ? "" : "Log in as admin to see full list"}</p>
           </div>
         )}
 

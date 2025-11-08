@@ -192,6 +192,17 @@ export class Achievements {
         }),
       );
     }
+
+    // Check for 20-win streak against specific player
+    if (streakPlayer === 20) {
+      this.#addAchievement(
+        winner,
+        this.#createAchievement("streak-player-20", winner, playedAt, {
+          opponent,
+          startedAt: streakPlayerStartedAt,
+        }),
+      );
+    }
   }
 
   #checkBackAfterAchievement(playerId: string, lastActiveAt: number, currentGameAt: number) {
@@ -338,20 +349,26 @@ export class Achievements {
 
   // Get player's progression towards all achievements
   getPlayerProgression(playerId: string): AchievementProgression {
+    const SIX_MONTHS = 6 * 30 * 24 * 60 * 60 * 1000;
+    const ONE_YEAR = 365 * 24 * 60 * 60 * 1000;
+    const TWO_YEARS = 2 * ONE_YEAR;
+
     const progression: AchievementProgression = {
       "donut-1": { current: 0, target: 1, earned: 0 },
       "donut-5": { current: 0, target: 5, earned: 0 },
       "streak-all-10": { current: 0, target: 10, earned: 0 },
       "streak-player-10": { current: 0, target: 10, perOpponent: new Map(), earned: 0 },
-      "back-after-6-months": { earned: 0 },
-      "back-after-1-year": { earned: 0 },
-      "back-after-2-years": { earned: 0 },
-      "active-6-months": { current: 0, target: 6 * 30 * 24 * 60 * 60 * 1000, earned: 0 },
-      "active-1-year": { current: 0, target: 365 * 24 * 60 * 60 * 1000, earned: 0 },
-      "active-2-years": { current: 0, target: 2 * 365 * 24 * 60 * 60 * 1000, earned: 0 },
+      "streak-player-20": { current: 0, target: 20, perOpponent: new Map(), earned: 0 },
+      "back-after-6-months": { earned: 0, target: SIX_MONTHS },
+      "back-after-1-year": { earned: 0, target: ONE_YEAR },
+      "back-after-2-years": { earned: 0, target: TWO_YEARS },
+      "active-6-months": { current: 0, target: SIX_MONTHS, earned: 0 },
+      "active-1-year": { current: 0, target: ONE_YEAR, earned: 0 },
+      "active-2-years": { current: 0, target: TWO_YEARS, earned: 0 },
     };
 
     let firstActiveAt: number | null = null;
+    let lastActiveAt: number | null = null;
     let currentWinStreakAll = 0;
     let donutCount = 0;
     const streaksPerOpponent = new Map<string, number>();
@@ -367,6 +384,9 @@ export class Achievements {
       if (firstActiveAt === null) {
         firstActiveAt = game.playedAt;
       }
+
+      // Track last active time
+      lastActiveAt = game.playedAt;
 
       if (isWinner) {
         // Track win streak against all
@@ -399,11 +419,13 @@ export class Achievements {
     progression["donut-5"].current = donutCount;
     progression["streak-all-10"].current = currentWinStreakAll;
     progression["streak-player-10"].current = Math.max(...Array.from(streaksPerOpponent.values()), 0);
+    progression["streak-player-20"].current = Math.max(...Array.from(streaksPerOpponent.values()), 0);
 
     // Add per-opponent streak details
     streaksPerOpponent.forEach((streak, opponent) => {
       if (streak > 0) {
         progression["streak-player-10"].perOpponent!.set(opponent, streak);
+        progression["streak-player-20"].perOpponent!.set(opponent, streak);
       }
     });
 
@@ -413,6 +435,21 @@ export class Achievements {
       progression["active-6-months"].current = activityPeriod.period;
       progression["active-1-year"].current = activityPeriod.period;
       progression["active-2-years"].current = activityPeriod.period;
+    }
+
+    // Calculate back-after progression (time since last activity)
+    if (lastActiveAt !== null) {
+      const now = Date.now();
+      const timeSinceLastActivity = now - lastActiveAt;
+
+      progression["back-after-6-months"].current = timeSinceLastActivity;
+      progression["back-after-6-months"].lastActiveAt = lastActiveAt;
+
+      progression["back-after-1-year"].current = timeSinceLastActivity;
+      progression["back-after-1-year"].lastActiveAt = lastActiveAt;
+
+      progression["back-after-2-years"].current = timeSinceLastActivity;
+      progression["back-after-2-years"].lastActiveAt = lastActiveAt;
     }
 
     // Count earned achievements
@@ -434,6 +471,7 @@ type AchievementDefinitions = {
   "donut-5": { gameId: string; opponent: string };
   "streak-all-10": { startedAt: number };
   "streak-player-10": { opponent: string; startedAt: number };
+  "streak-player-20": { opponent: string; startedAt: number };
   "back-after-6-months": { lastGameAt: number };
   "back-after-1-year": { lastGameAt: number };
   "back-after-2-years": { lastGameAt: number };
@@ -465,6 +503,12 @@ type ProgressionWithTarget = BaseProgression & {
   target: number; // Target value needed to earn achievement
 };
 
+type BackAfterProgression = BaseProgression & {
+  current?: number; // Time since last activity (milliseconds)
+  target?: number; // Required inactive period (milliseconds)
+  lastActiveAt?: number; // When they were last active
+};
+
 type StreakPlayerProgression = ProgressionWithTarget & {
   perOpponent?: Map<string, number>; // Breakdown of current streaks per opponent
 };
@@ -474,9 +518,10 @@ export type AchievementProgression = {
   "donut-5": ProgressionWithTarget;
   "streak-all-10": ProgressionWithTarget;
   "streak-player-10": StreakPlayerProgression;
-  "back-after-6-months": BaseProgression; // Can't predict when someone will return
-  "back-after-1-year": BaseProgression;
-  "back-after-2-years": BaseProgression;
+  "streak-player-20": StreakPlayerProgression;
+  "back-after-6-months": BackAfterProgression;
+  "back-after-1-year": BackAfterProgression;
+  "back-after-2-years": BackAfterProgression;
   "active-6-months": ProgressionWithTarget;
   "active-1-year": ProgressionWithTarget;
   "active-2-years": ProgressionWithTarget;

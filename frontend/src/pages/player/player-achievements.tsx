@@ -29,20 +29,24 @@ const ACHIEVEMENT_LABELS: Record<string, { title: string; description: string; i
     description: "Won 10 games in a row against the same opponent",
     icon: "🎯",
   },
-  // TODO "streak-player-20" "Humiliation streak"
+  "streak-player-20": {
+    title: "Humiliation Streak",
+    description: "Won 20 games in a row against the same opponent",
+    icon: "👹",
+  },
   "back-after-6-months": {
     title: "Welcome Back",
-    description: "Returned after 6 months",
+    description: "Return after 6 months of inactivity",
     icon: "👋",
   },
   "back-after-1-year": {
     title: "Long Time No See",
-    description: "Returned after 1 year",
+    description: "Return after 1 year of inactivity",
     icon: "🙈",
   },
   "back-after-2-years": {
     title: "Back From The Dead",
-    description: "Returned after 2 years",
+    description: "Return after 2 years of inactivity",
     icon: "💀",
   },
   "active-6-months": {
@@ -111,7 +115,7 @@ export const PlayerAchievements: React.FC<Props> = ({ playerId }) => {
         {activeTab === "achievements" ? (
           <AchievementsTab achievements={sortedAchievements} />
         ) : (
-          <ProgressTab progression={progression} playerId={playerId} context={context} />
+          <ProgressTab progression={progression} playerId={playerId} />
         )}
       </div>
     </div>
@@ -176,7 +180,6 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
 type ProgressTabProps = {
   progression: AchievementProgression;
   playerId: string;
-  context: any;
 };
 
 const ProgressTab: React.FC<ProgressTabProps> = ({ progression }) => {
@@ -198,9 +201,10 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression }) => {
   return (
     <div className="space-y-4">
       {progressItems.map(({ type, label, data }) => {
-        const hasTarget = "target" in data;
-        const isComplete = hasTarget && data.current >= data.target;
-        const percentage = hasTarget ? Math.min((data.current / data.target) * 100, 100) : 0;
+        const hasTarget = "target" in data && !!data.target;
+        const hasCurrent = "current" in data && !!data.current;
+        const isComplete = hasTarget && hasCurrent && data.current! >= data.target!;
+        const percentage = hasTarget && hasCurrent ? Math.min((data.current! / data.target!) * 100, 100) : 0;
 
         return (
           <div
@@ -220,7 +224,7 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression }) => {
                   </div>
                   {data.earned > 0 && (
                     <div className="bg-accent/20 text-accent text-xs font-semibold px-2 py-1 rounded">
-                      ×{data.earned}
+                      Earned {data.earned} time{data.earned > 1 && "s"}
                     </div>
                   )}
                 </div>
@@ -231,7 +235,13 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression }) => {
                     <div className="mt-3">
                       <div className="flex items-center justify-between text-xs text-secondary-text mb-1">
                         <span>
-                          {data.current} / {data.target}
+                          {type.startsWith("active-") || type.startsWith("back-after-")
+                            ? formatTimePeriod(data.current)
+                            : data.current}{" "}
+                          /{" "}
+                          {type.startsWith("active-") || type.startsWith("back-after-")
+                            ? formatTimePeriod(data.target)
+                            : data.target}
                         </span>
                         <span>{percentage.toFixed(0)}%</span>
                       </div>
@@ -246,8 +256,22 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression }) => {
                       </div>
                     </div>
 
-                    {/* Per-opponent breakdown for streak-player-10 */}
-                    {type === "streak-player-10" &&
+                    {/* Show last active time for back-after achievements */}
+                    {type.startsWith("back-after-") && "lastActiveAt" in data && data.lastActiveAt && (
+                      <div className="mt-2 text-xs text-secondary-text/70">
+                        Last active: {dateString(data.lastActiveAt)}
+                      </div>
+                    )}
+
+                    {/* Show last active time for back-after achievements */}
+                    {type.startsWith("active-") && "current" in data && data.current && (
+                      <div className="mt-2 text-xs text-secondary-text/70">
+                        Since: {dateString(Date.now() - data.current)}
+                      </div>
+                    )}
+
+                    {/* Per-opponent breakdown for streak achievements */}
+                    {(type === "streak-player-10" || type === "streak-player-20") &&
                       "perOpponent" in data &&
                       data.perOpponent &&
                       data.perOpponent.size > 0 && (
@@ -259,26 +283,21 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression }) => {
                               .map(([opponent, streak]: [string, number]) => (
                                 <div key={opponent} className="flex items-center justify-between text-xs">
                                   <span className="text-secondary-text">{context.playerName(opponent)}</span>
-                                  <span className="text-primary-text font-medium ml-2">{streak}/10</span>
+                                  <span className="text-primary-text font-medium ml-2">
+                                    {streak}/{data.target}
+                                  </span>
                                 </div>
                               ))}
                           </div>
                         </div>
                       )}
-
-                    {/* Time-based progress display */}
-                    {(type === "active-6-months" || type === "active-1-year" || type === "active-2-years") && (
-                      <div className="mt-2 text-xs text-secondary-text/70">
-                        {formatTimePeriod(data.current)} of {formatTimePeriod(data.target)}
-                      </div>
-                    )}
                   </>
                 ) : (
-                  // "Back after" achievements - no predictable progress
+                  // Fallback for achievements without targets (shouldn't happen anymore)
                   <div className="mt-2 text-xs text-secondary-text/70">
                     {data.earned > 0
-                      ? `Earned ${data.earned} time${data.earned > 1 ? "s" : ""}`
-                      : "Come back after a long break to earn this"}
+                      ? `Earned ${data.earned} time${data.earned > 1 ? "s" : ""}}`
+                      : "Progress not available"}
                   </div>
                 )}
               </div>
@@ -291,18 +310,18 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression }) => {
 };
 
 // Helper function to format milliseconds into readable time periods
-function formatTimePeriod(ms: number): string {
-  const days = Math.floor(ms / (24 * 60 * 60 * 1000));
-  const months = Math.floor(days / 30);
-  const years = Math.floor(days / 365);
-
-  if (years >= 2) {
-    return `${years} years`;
-  } else if (years === 1) {
-    return "1 year";
-  } else if (months >= 1) {
-    return `${months} month${months > 1 ? "s" : ""}`;
-  } else {
-    return `${days} day${days !== 1 ? "s" : ""}`;
+function formatTimePeriod(ms?: number): string {
+  if (ms === undefined) {
+    return "-";
   }
+  const days = Math.floor(ms / (24 * 60 * 60 * 1000));
+  return `${days} day${days !== 1 ? "s" : ""}`;
+}
+
+function dateString(time: number) {
+  return new Date(time).toLocaleDateString("nb-NO", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
 }
