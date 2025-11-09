@@ -44,8 +44,6 @@ export const PlayerPredictions: React.FC<Props> = ({ playerId }) => {
 
   return (
     <div className="space-y-2">
-      <h2>Predicted win chance</h2>
-
       {opponents.map(([oponentId, oponent]) => {
         const isExpanded = expandedPlayers.has(oponentId);
         const fractions = [oponent.directFraction, oponent.oneLayerFraction, oponent.twoLayerFraction];

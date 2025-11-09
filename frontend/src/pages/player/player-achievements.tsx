@@ -142,9 +142,15 @@ export const ACHIEVEMENT_LABELS: Record<string, { title: string; description: st
   },
 };
 
+type TabType = "earned" | "progress";
+const tabs: { id: TabType; label: string }[] = [
+  { id: "earned", label: "Earned" },
+  { id: "progress", label: "Progress" },
+];
+
 export const PlayerAchievements: React.FC<Props> = ({ playerId }) => {
   const context = useEventDbContext();
-  const [activeTab, setActiveTab] = useState<"achievements" | "progress">("achievements");
+  const [activeTab, setActiveTab] = useState<TabType>("earned");
 
   context.achievements.calculateAchievements();
 
@@ -161,34 +167,33 @@ export const PlayerAchievements: React.FC<Props> = ({ playerId }) => {
   return (
     <div className="flex flex-col h-full sm:-mt-4 md:-mt-8">
       {/* Tabs */}
-      <div className="flex border-b border-secondary-text">
-        <button
-          onClick={() => setActiveTab("achievements")}
-          className={classNames(
-            "px-6 py-3 font-medium transition-colors text-secondary-text",
-            activeTab === "achievements" ? "border-b-2 border-secondary-text" : "hover:text-secondary-text/70",
-          )}
-        >
-          Achievements ({achievements.length})
-        </button>
-        <button
-          onClick={() => setActiveTab("progress")}
-          className={classNames(
-            "px-6 py-3 font-medium transition-colors text-secondary-text",
-            activeTab === "progress" ? "border-b-2 border-secondary-text" : "hover:text-secondary-text/70",
-          )}
-        >
-          Progress
-        </button>
+      <div className="bg-secondary-background  px-0">
+        <div className="flex space-x-2 overflow-auto">
+          {tabs.map((tab) => {
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`
+                    flex items-center py-2 px-4 border-b-4 font-medium text-sm transition-colors
+                    ${
+                      activeTab === tab.id
+                        ? "text-secondary-text border-secondary-text"
+                        : "text-secondary-text/80 border-transparent hover:text-secondary-text hover:border-secondary-text border-dotted"
+                    }
+                  `}
+              >
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-6">
-        {activeTab === "achievements" ? (
-          <AchievementsTab achievements={sortedAchievements} />
-        ) : (
-          <ProgressTab progression={progression} playerId={playerId} />
-        )}
+        {activeTab === "earned" && <AchievementsTab achievements={sortedAchievements} />}
+        {activeTab === "progress" && <ProgressTab progression={progression} playerId={playerId} />}
       </div>
     </div>
   );
