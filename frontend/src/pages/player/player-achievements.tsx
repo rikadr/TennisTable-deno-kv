@@ -183,7 +183,7 @@ export const PlayerAchievements: React.FC<Props> = ({ playerId }) => {
                     }
                   `}
               >
-                {tab.label}
+                {tab.label} {tab.id === "earned" && `(${achievements.length})`}
               </button>
             );
           })}
@@ -322,7 +322,7 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
             key={type}
             className={classNames(
               "bg-background-secondary rounded-lg overflow-hidden border border-secondary-text transition-colors relative",
-              hasEarned && "bg-green-500",
+              hasEarned && "bg-gradient-to-b from-green-400 via-green-500 to-green-600",
             )}
           >
             {/* Progress bar background */}
@@ -331,7 +331,9 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                 <div
                   className={classNames(
                     "h-full transition-all duration-300",
-                    isComplete ? "bg-green-500" : "bg-blue-400",
+                    isComplete
+                      ? "bg-gradient-to-b from-green-400 via-green-500 to-green-600"
+                      : "bg-gradient-to-b from-blue-400 via-blue-500 to-blue-600",
                   )}
                   style={{ width: `${percentage}%` }}
                 />

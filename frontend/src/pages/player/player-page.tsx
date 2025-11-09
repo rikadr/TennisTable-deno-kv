@@ -179,7 +179,7 @@ export const PlayerPage: React.FC = () => {
             {playerInLeaderBoard && (
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4 text-primary-text">
                 <div className="bg-primary-background rounded-lg p-4">
-                  <p className="text-sm  mb-1">Win Rate (Ratio)</p>
+                  <p className="text-sm  mb-1">Win Rate</p>
 
                   <p className="text-2xl font-bold">
                     {fmtNum(100 * (playerInLeaderBoard.wins / (playerInLeaderBoard.wins + playerInLeaderBoard.loss)))}%
