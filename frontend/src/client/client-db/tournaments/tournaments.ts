@@ -1,5 +1,6 @@
 import { TennisTable } from "../tennis-table";
 import { TournamentDB } from "../types";
+import { TournamentPrediction } from "./prediction";
 import { Tournament } from "./tournament";
 
 export class Tournaments {
@@ -7,8 +8,11 @@ export class Tournaments {
   private readonly skipIsEnabled: boolean = false; // False for prod
   #tournamentsCache: Tournament[] | undefined;
 
+  tournamentPrediction: TournamentPrediction;
+
   constructor(parent: TennisTable) {
     this.parent = parent;
+    this.tournamentPrediction = new TournamentPrediction(this.parent);
   }
 
   clearTournamentCache() {

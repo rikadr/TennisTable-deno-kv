@@ -89,6 +89,18 @@ export class FutureElo {
     });
   }
 
+  getPredictedFractionForTwoPlayers(p1: string, p2: string) {
+    const directFraction = this.getDirectFraction(p1, p2);
+    const oneLayerFraction = this.getOneLayerFraction(p1, p2);
+    const twoLayerFraction = this.getTwoLayerFraction(p1, p2);
+
+    const combinedFraction = this.combinePrioritizedFractions([directFraction, oneLayerFraction, twoLayerFraction]);
+    if (combinedFraction.confidence === 0) {
+      return;
+    }
+    return combinedFraction;
+  }
+
   private createPredictedGames() {
     for (const { p1, p2 } of this.playerPairings) {
       // Calculate win fraction
@@ -622,8 +634,8 @@ export class FutureElo {
     const combinedFraction = this.combineFractions(fractions);
 
     // Update cache
-    player1!.oponentsMap.get(p2)!.oneLayerFraction = combinedFraction;
-    player2!.oponentsMap.get(p1)!.oneLayerFraction = {
+    player1!.registerOponentIfNotExists(p2).oponentsMap.get(p2)!.oneLayerFraction = combinedFraction;
+    player2!.registerOponentIfNotExists(p1).oponentsMap.get(p1)!.oneLayerFraction = {
       fraction: 1 - combinedFraction.fraction,
       confidence: combinedFraction.confidence,
     }; // Invert fraction for p2
@@ -706,6 +718,7 @@ class PlayerClass {
         loss: [],
       });
     }
+    return this;
   }
 
   registerGame(oponent: string, result: "win" | "loss", game: Game) {

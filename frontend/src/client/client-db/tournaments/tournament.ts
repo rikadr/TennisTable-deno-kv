@@ -213,4 +213,65 @@ export class Tournament {
       games,
     };
   }
+
+  /**
+   * Find all pending games in the tournament
+   * @returns Array of pending games with player IDs and location info (groupIndex or layerIndex)
+   */
+  findAllPendingGames(): {
+    player1: string;
+    player2: string;
+  }[] {
+    if (this.startDate > Date.now()) return []; // Not started
+    if (this.endDate !== undefined) return []; // Has ended
+
+    const games: {
+      player1: string;
+      player2: string;
+    }[] = [];
+
+    // Check group play games
+    if (this.groupPlay && this.groupPlay.groupPlayEnded === undefined) {
+      this.groupPlay.groups.forEach((group) => {
+        group.pending.forEach((game) => {
+          games.push({
+            player1: game.player1!,
+            player2: game.player2!,
+          });
+        });
+      });
+    }
+
+    // Check bracket games
+    this.bracket?.bracketGames.forEach((layer) => {
+      layer.pending.forEach((game) => {
+        games.push({
+          player1: game.player1!,
+          player2: game.player2!,
+        });
+      });
+    });
+
+    return games;
+  }
+
+  findAllCompletedGameTimes(): number[] {
+    const times: number[] = [];
+    if (this.groupPlay) {
+      for (const group of this.groupPlay.groups) {
+        for (const groupGame of group.groupGames) {
+          groupGame.completedAt && times.push(groupGame.completedAt);
+        }
+      }
+    }
+    if (this.bracket) {
+      for (const layer of this.bracket.bracketGames) {
+        for (const game of layer.played) {
+          times.push(game.completedAt);
+        }
+      }
+    }
+    times.sort((a, b) => a - b);
+    return times;
+  }
 }

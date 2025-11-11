@@ -12,6 +12,7 @@ import { relativeTimeString } from "../../common/date-utils";
 import { TournamentSignup } from "./tournament-signup";
 import { TournamentGroupPlayComponent } from "./tournament-group-play";
 import { Tournament, TournamentGame } from "../../client/client-db/tournaments/tournament";
+import { fmtNum } from "../../common/number-utils";
 
 export const TournamentPage: React.FC = () => {
   const { tournament: tournamentId, player1, player2 } = useTennisParams();
@@ -126,6 +127,18 @@ export const TournamentPage: React.FC = () => {
           <TournamentGroupPlayComponent tournament={tournament} rerender={rerender} itemRefs={itemRefs} />
         </>
       )}
+      <button
+        className="text-xs italic text-primary-text/30"
+        onClick={() =>
+          console.log(
+            Array.from(context.tournaments.tournamentPrediction.predictTournament(tournamentId ?? "").players)
+              .sort(([_, a], [__, b]) => b.wins - a.wins)
+              .map(([player, { wins }]) => `${context.playerName(player)}: ${fmtNum(wins)}`),
+          )
+        }
+      >
+        Beta: Simulate tournament prediction in console log
+      </button>
     </div>
   );
 };
