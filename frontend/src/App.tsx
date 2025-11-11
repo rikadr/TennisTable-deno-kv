@@ -36,6 +36,7 @@ import { PlayerNetwork } from "./pages/player-network/player-network";
 import { TrackGamePage } from "./pages/add-game/track-game";
 import { ChooseAddOrTrack } from "./pages/add-game/choose-add-or-track";
 import { AchievementsPage } from "./pages/achievements-page";
+import { TournamentPredictionPage } from "./pages/tournament/tournament-prediction-page";
 
 const RequireAuth: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   if (!session.isAuthenticated) {
@@ -73,6 +74,7 @@ function App() {
                         <Route path="/tournament">
                           <Route index element={<TournamentPage />} />
                           <Route path="list" element={<TournamentsListPage />} />
+                          <Route path="predict" element={<TournamentPredictionPage />} />
                         </Route>
                         <Route path="/achievements" element={<AchievementsPage />} />
                         <Route path="/simulations">
