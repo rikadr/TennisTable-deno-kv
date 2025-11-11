@@ -19,14 +19,14 @@ export class FutureElo {
   predictedGamesTemp: { winner: string; loser: string }[][] = [];
   predictedGames: Game[] = [];
 
-  calculatePlayerFractionsForToday() {
+  calculatePlayerFractionsForToday(overrideTime?: number) {
     this.reset();
     this.setup();
     // Calculate win fraction for all player pairings
     for (const { p1, p2 } of this.playerPairings) {
-      this.getDirectFraction(p1, p2, Date.now());
-      this.getOneLayerFraction(p1, p2, Date.now());
-      this.getTwoLayerFraction(p1, p2, Date.now());
+      this.getDirectFraction(p1, p2, overrideTime || Date.now());
+      this.getOneLayerFraction(p1, p2, overrideTime || Date.now());
+      this.getTwoLayerFraction(p1, p2, overrideTime || Date.now());
     }
   }
 
@@ -67,6 +67,13 @@ export class FutureElo {
       // Register games
       winnerPlayer.registerGame(loser, "win", game);
       loserPlayer.registerGame(winner, "loss", game);
+    }
+
+    // Add players that might not have played games yet
+    for (const player of this.parent.players) {
+      if (this.playersMap.has(player.id) === false) {
+        this.playersMap.set(player.id, new PlayerClass(player.id));
+      }
     }
 
     // Create all ranked players pairings
