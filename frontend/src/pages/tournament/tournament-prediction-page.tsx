@@ -41,6 +41,7 @@ export const TournamentPredictionPage: React.FC = () => {
           hour: "2-digit",
           minute: "2-digit",
         }),
+        confidence: result.confidence * 100, // Convert to percentage
       };
 
       // Convert each player's wins to percentage
@@ -171,6 +172,17 @@ export const TournamentPredictionPage: React.FC = () => {
                   opacity={0.5}
                 />
               ))}
+              <Line
+                key="confidence"
+                type="monotone"
+                dataKey="confidence"
+                stroke="rgb(255, 165, 0)"
+                strokeDasharray="5 5"
+                dot={false}
+                animationDuration={150}
+                strokeWidth={2}
+                opacity={0.7}
+              />
               <ReferenceLine
                 y={50}
                 label={{ value: "50%", position: "insideBottom", fill: "rgb(var(--color-primary-text))" }}
@@ -201,10 +213,11 @@ const CustomTooltip: React.FC = ({ active, payload }: TooltipProps<ValueType, Na
     const entries = Object.entries(record);
 
     // Sort by win percentage (descending)
-    const playerEntries = entries.filter((e) => e[0] !== "time" && e[0] !== "name");
+    const playerEntries = entries.filter((e) => e[0] !== "time" && e[0] !== "name" && e[0] !== "confidence");
     playerEntries.sort((a, b) => (b[1] as number) - (a[1] as number));
 
     const gameTime = entries.find((e) => e[0] === "time");
+    const confidence = entries.find((e) => e[0] === "confidence");
 
     return (
       <div className="p-2 bg-primary-background ring-1 ring-primary-text rounded-lg">
@@ -213,6 +226,9 @@ const CustomTooltip: React.FC = ({ active, payload }: TooltipProps<ValueType, Na
             {`${context.playerName(entry[0])}: ${(entry[1] as number).toFixed(1)}%`}
           </p>
         ))}
+        {confidence && typeof confidence[1] === "number" && (
+          <p className="text-orange-400 mt-3">{`Confidence: ${(confidence[1] as number).toFixed(1)}%`}</p>
+        )}
         {gameTime && typeof gameTime[1] === "number" && gameTime[1] > 0 && (
           <p className="text-primary-text">{relativeTimeString(new Date(gameTime[1]))}</p>
         )}
