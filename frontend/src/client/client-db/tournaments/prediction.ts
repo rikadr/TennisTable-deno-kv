@@ -1,10 +1,10 @@
-import { dateString } from "../../../pages/player/player-achievements";
 import { EventType, EventTypeEnum } from "../event-store/event-types";
 import { TennisTable } from "../tennis-table";
 import { Tournament } from "./tournament";
 
-const NUM_SIMULATIONS = 1; // 10_000 at least. 1_000 for higher performance
+const NUM_SIMULATIONS = 1_000; // 10_000 at least. 1_000 for higher performance
 const PLAYER_TIME_OFFSET = -1; // Players are created before tournament starts
+const SIMULATION_TIME_BUFFER = 10_000; // Buffer added to simulation times (except Date.now())
 
 export class TournamentPrediction {
   private readonly parent: TennisTable;
@@ -19,24 +19,11 @@ export class TournamentPrediction {
       throw new Error(`Tournament not found: ${tournamentId}`);
     }
 
-    // Get all time points to simulate at
     const simulationTimePoints = this.getSimulationTimePoints(tournament);
-    if (tournament.endDate) {
-      console.log(
-        "some is after",
-        simulationTimePoints.some((time) => time > tournament.endDate!),
-      );
-    } else {
-      console.log("Not ended yet");
-    }
-    console.log("simulationTimePoints", simulationTimePoints);
 
     const results: TournamentPredictionResult[] = [];
 
-    // Run simulations for each time point
     for (const timePoint of simulationTimePoints) {
-      console.log("Predicting " + dateString(timePoint));
-
       const result = this.predictTournamentAtTime(tournamentId, timePoint);
       results.push(result);
     }
@@ -45,11 +32,28 @@ export class TournamentPrediction {
   }
 
   private getSimulationTimePoints(tournament: Tournament): number[] {
-    // Get all completed game times
-    const completedGameTimes = tournament.findAllCompletedGameTimes();
+    const timePoints: number[] = [];
+    const now = Date.now();
 
-    // Build time points: startDate, each completed game time, and now
-    const timePoints = [tournament.startDate, ...completedGameTimes, tournament.endDate || Date.now()];
+    // Has not started yet: only simulate at start date
+    if (tournament.startDate > now) {
+      timePoints.push(tournament.startDate + SIMULATION_TIME_BUFFER);
+      return timePoints;
+    }
+
+    // Add start date
+    timePoints.push(tournament.startDate + SIMULATION_TIME_BUFFER);
+
+    // Add each completed game time
+    const completedGameTimes = tournament.findAllCompletedGameTimes();
+    for (const gameTime of completedGameTimes) {
+      timePoints.push(gameTime + SIMULATION_TIME_BUFFER);
+    }
+
+    // Add current time if tournament is ongoing (not ended)
+    if (!tournament.endDate) {
+      timePoints.push(now); // No buffer for Date.now()
+    }
 
     // Remove duplicates and sort
     return [...new Set(timePoints)].sort((a, b) => a - b);
@@ -63,8 +67,6 @@ export class TournamentPrediction {
     const stateAtTime = new TennisTable({ events: eventsUpToTime });
 
     // Calculate Elo predictions for this specific time
-
-    console.log("calculatePlayerFractionsForToday");
     stateAtTime.futureElo.calculatePlayerFractionsForToday(simulationTime);
 
     // Get tournament state at this time
@@ -77,11 +79,12 @@ export class TournamentPrediction {
         confidence: 0,
       };
     }
-    console.log("prepareSimulationData");
+
+    const completedGameTimes = tournamentAtTime.findAllCompletedGameTimes();
     const { playerEvents, existingGameEvents } = this.prepareSimulationData(
       stateAtTime,
       tournamentAtTime,
-      simulationTime,
+      completedGameTimes,
     );
 
     let totalGamesSimulated = 0;
@@ -89,7 +92,6 @@ export class TournamentPrediction {
 
     // Run Monte Carlo simulations from this time point
     for (let i = 0; i < NUM_SIMULATIONS; i++) {
-      console.log("runSingleSimulation", i + 1);
       const result = this.runSingleSimulation(
         tournamentId,
         playerEvents,
@@ -117,7 +119,7 @@ export class TournamentPrediction {
     };
   }
 
-  private prepareSimulationData(stateAtTime: TennisTable, tournamentAtTime: Tournament, simulationTime: number) {
+  private prepareSimulationData(stateAtTime: TennisTable, tournamentAtTime: Tournament, completedGameTimes: number[]) {
     // Create player events (players join before tournament starts)
     const playerEvents: EventType[] =
       tournamentAtTime.tournamentDb.playerOrder?.map(
@@ -130,13 +132,9 @@ export class TournamentPrediction {
           } satisfies EventType),
       ) ?? [];
 
-    // Get all games that have been completed up to this simulation time
-    const completedGameTimes = tournamentAtTime.findAllCompletedGameTimes();
-    const completedUpToNow = completedGameTimes.filter((t: number) => t <= simulationTime);
-
-    // Extract existing game events that have been completed
+    // Filter events to only include game events for completed games
     const existingGameEvents: EventType[] = stateAtTime.events.filter(
-      (e) => e.type === EventTypeEnum.GAME_CREATED && completedUpToNow.includes(e.data.playedAt),
+      (e) => e.type === EventTypeEnum.GAME_CREATED && completedGameTimes.includes(e.data.playedAt),
     );
 
     return { playerEvents, existingGameEvents };
@@ -146,59 +144,73 @@ export class TournamentPrediction {
     tournamentId: string,
     playerEvents: EventType[],
     existingGameEvents: EventType[],
-    currentTime: number,
+    simulationTime: number,
     stateForElo: TennisTable,
   ): SimulationResult {
+    // Create initial simulated state from player events and existing game events
     let simulatedState = new TennisTable({
       events: [...playerEvents, ...existingGameEvents],
     });
     let simTournament = simulatedState.tournaments.getTournament(tournamentId)!;
 
     const simulatedGameEvents: EventType[] = [];
-    let currentGameTime = currentTime;
     let gamesSimulated = 0;
     let confidenceSum = 0;
     let gameIdCounter = 0;
 
-    let pendingGames = simTournament.findAllPendingGames();
-    let iPending = 0;
-    while (!simTournament.winner && pendingGames.length > 0) {
-      currentGameTime++;
-      iPending++;
-      console.log("iPending", iPending);
-      console.log("" + pendingGames.length + " pending games");
-      if (pendingGames.length === 1) {
-        console.log(pendingGames);
-      }
-      if (iPending > 100) {
-        throw new Error("Unexpected unable to fill all tournament games in under 100 loops");
+    let iterationCount = 0;
+    while (!simTournament.winner && simTournament.findAllPendingGames().length > 0) {
+      iterationCount++;
+
+      if (iterationCount > 20) {
+        throw new Error("Simulation exceeded 20 iterations without finding a winner");
       }
 
-      // Simulate all games in the current round
-      for (const { player1, player2 } of pendingGames) {
+      const pendingGames = simTournament.findAllPendingGames();
+
+      // Get the time for the next event (increment from last event in simulated state)
+      const lastEventTime =
+        simulatedState.events.length > 0
+          ? simulatedState.events[simulatedState.events.length - 1].time
+          : existingGameEvents.length > 0
+          ? Math.max(...existingGameEvents.map((e) => e.time))
+          : playerEvents[playerEvents.length - 1].time;
+
+      // Simulate all pending games with incrementing times
+      const newGamesThisIteration: EventType[] = [];
+      for (let i = 0; i < pendingGames.length; i++) {
+        const { player1, player2 } = pendingGames[i];
         const { winner, loser, confidence } = this.simulateGame(player1, player2, stateForElo);
 
-        simulatedGameEvents.push({
+        const gameTime = lastEventTime + 1 + i;
+
+        // Ensure we don't exceed simulation time
+        if (gameTime > simulationTime) {
+          throw new Error(`Simulated game time (${gameTime}) would exceed simulation time (${simulationTime})`);
+        }
+
+        const gameEvent: EventType = {
           type: EventTypeEnum.GAME_CREATED,
           stream: `sim-${gameIdCounter++}`,
-          time: currentGameTime,
+          time: gameTime,
           data: {
-            playedAt: currentGameTime,
+            playedAt: gameTime,
             winner,
             loser,
           },
-        });
+        };
 
+        newGamesThisIteration.push(gameEvent);
+        simulatedGameEvents.push(gameEvent);
         gamesSimulated++;
         confidenceSum += confidence;
       }
 
-      // Update tournament state with new simulated games
+      // Recreate simulated state with all events including new simulated games
       simulatedState = new TennisTable({
         events: [...playerEvents, ...existingGameEvents, ...simulatedGameEvents],
       });
       simTournament = simulatedState.tournaments.getTournament(tournamentId)!;
-      pendingGames = simTournament.findAllPendingGames();
     }
 
     if (!simTournament.winner) {
