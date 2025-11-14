@@ -89,10 +89,10 @@ const the2025YearEndOfficeOpen: TournamentDB = {
   groupPlay: true,
   signedUp: [],
   skippedGames: [
-    { advancing: optioPlayersByName.Marko, eliminated: optioPlayersByName.Oskar, time: 1763116540185 },
-    { advancing: optioPlayersByName.Marko, eliminated: optioPlayersByName.Bendik, time: 1763116540186 },
+    // { advancing: optioPlayersByName.Marko, eliminated: optioPlayersByName.Oskar, time: 1763116540185 }, // Awaiting response if to be played on monday
+    // { advancing: optioPlayersByName.Marko, eliminated: optioPlayersByName.Bendik, time: 1763116540186 }, // Being played on monday
     { advancing: optioPlayersByName.Alexander, eliminated: optioPlayersByName["Alejandro 🌮"], time: 1763116540187 },
-    { advancing: optioPlayersByName.Mads, eliminated: optioPlayersByName["Alejandro 🌮"], time: 1763116540188 },
+    // { advancing: optioPlayersByName.Mads, eliminated: optioPlayersByName["Alejandro 🌮"], time: 1763116540188 }, // Awaiting response if to be played on monday
     { advancing: optioPlayersByName.Erling, eliminated: optioPlayersByName.Francesco, time: 1763116540189 },
     { advancing: optioPlayersByName.Christoffer, eliminated: optioPlayersByName.Francesco, time: 1763116540190 },
     { advancing: optioPlayersByName.Mads, eliminated: optioPlayersByName.Marius, time: 1763116540191 },
