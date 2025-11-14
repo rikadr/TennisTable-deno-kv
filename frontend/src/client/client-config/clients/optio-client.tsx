@@ -88,7 +88,14 @@ const the2025YearEndOfficeOpen: TournamentDB = {
   startDate: 1762333200000,
   groupPlay: true,
   signedUp: [],
-  skippedGames: [],
+  skippedGames: [
+    { advancing: optioPlayersByName.Marko, eliminated: optioPlayersByName.Oskar, time: 1763116540185 },
+    { advancing: optioPlayersByName.Marko, eliminated: optioPlayersByName.Bendik, time: 1763116540186 },
+    { advancing: optioPlayersByName.Alexander, eliminated: optioPlayersByName["Alejandro 🌮"], time: 1763116540187 },
+    { advancing: optioPlayersByName.Mads, eliminated: optioPlayersByName["Alejandro 🌮"], time: 1763116540188 },
+    { advancing: optioPlayersByName.Erling, eliminated: optioPlayersByName.Francesco, time: 1763116540189 },
+    { advancing: optioPlayersByName.Christoffer, eliminated: optioPlayersByName.Francesco, time: 1763116540190 },
+  ],
   playerOrder: [
     optioPlayersByName.Rasmus,
     optioPlayersByName.Alexander,
