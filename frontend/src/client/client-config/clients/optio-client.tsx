@@ -98,6 +98,7 @@ const the2025YearEndOfficeOpen: TournamentDB = {
     { advancing: optioPlayersByName.Mads, eliminated: optioPlayersByName.Marius, time: 1763116540191 },
     { advancing: optioPlayersByName.Ole, eliminated: optioPlayersByName.Michael, time: 1763116540192 },
     { advancing: optioPlayersByName.Axel, eliminated: optioPlayersByName.Michael, time: 1763116540193 },
+    { advancing: optioPlayersByName.Erling, eliminated: optioPlayersByName.Yngve, time: 1763116540194 },
   ],
   playerOrder: [
     optioPlayersByName.Rasmus,
