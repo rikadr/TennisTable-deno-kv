@@ -66,7 +66,7 @@ export const optioPlayersByName = {
   Francesco: "m7FzHJvxnc",
   Magnus: "5MYtada4AW",
   Marko: "lMKPVqZFLO",
-  Mikael: "nbn4DSc5Zj",
+  Michael: "nbn4DSc5Zj",
 } as const;
 export class OptioClient implements ClientConfig {
   id = process.env.REACT_APP_CLIENT;
@@ -96,6 +96,7 @@ const the2025YearEndOfficeOpen: TournamentDB = {
     { advancing: optioPlayersByName.Erling, eliminated: optioPlayersByName.Francesco, time: 1763116540189 },
     { advancing: optioPlayersByName.Christoffer, eliminated: optioPlayersByName.Francesco, time: 1763116540190 },
     { advancing: optioPlayersByName.Mads, eliminated: optioPlayersByName.Marius, time: 1763116540191 },
+    { advancing: optioPlayersByName.Ole, eliminated: optioPlayersByName.Michael, time: 1763116540192 },
   ],
   playerOrder: [
     optioPlayersByName.Rasmus,
@@ -119,7 +120,7 @@ const the2025YearEndOfficeOpen: TournamentDB = {
     optioPlayersByName.Daniel,
     optioPlayersByName.Magnus,
     optioPlayersByName.Marko,
-    optioPlayersByName.Mikael,
+    optioPlayersByName.Michael,
     optioPlayersByName["Alejandro 🌮"],
     optioPlayersByName["Yngve"],
   ],
