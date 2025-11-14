@@ -108,18 +108,6 @@ const PendingGameGroup: React.FC<PendingGameGroupProps> = ({ group, groupIndex, 
     pendingMap.get(p.player2!)?.add(p.player1!);
   });
 
-  // if (group.pending.length <= pendingMap.size) {
-  //   // Fewer entries to just list the pending games
-  //   return group.pending.map((game) => (
-  //     <PendingGame
-  //       key={game.player1! + game.player2!}
-  //       player1={game.player1!}
-  //       player2={game.player2!}
-  //       tournamentId={tournamentId}
-  //     />
-  //   ));
-  // }
-
   // Component for rendering overlapping profile pictures
   const OverlappingProfilePictures: React.FC<{ opponents: Set<string> }> = ({ opponents }) => {
     const opponentsArray = Array.from(opponents);
@@ -131,19 +119,18 @@ const PendingGameGroup: React.FC<PendingGameGroupProps> = ({ group, groupIndex, 
 
     return (
       <div
-        className="relative flex items-center"
+        className="relative"
         style={{
           width: `${totalWidth}px`,
           height: `${PICTURE_SIZE}px`,
         }}
       >
-        {opponentsArray.map((opponent, index) => (
+        {opponentsArray.toReversed().map((opponent, index) => (
           <div
             key={opponent}
             className="absolute"
             style={{
-              left: `${index * OVERLAP_OFFSET}px`,
-              zIndex: opponentsArray.length - index, // First picture has highest z-index
+              left: `${(opponentsArray.length - index - 1) * OVERLAP_OFFSET}px`,
             }}
           >
             <ProfilePicture playerId={opponent} size={PICTURE_SIZE} shape="circle" border={3} />
@@ -154,11 +141,6 @@ const PendingGameGroup: React.FC<PendingGameGroupProps> = ({ group, groupIndex, 
   };
 
   return Array.from(pendingMap).map(([playerId, opponents]) => {
-    // if (opponents.size === 1) {
-    //   return (
-    //     <PendingGame key={playerId} player1={playerId} player2={Array.from(opponents)[0]} tournamentId={tournamentId} />
-    //   );
-    // }
     return (
       <Link
         key={playerId}
