@@ -18,7 +18,7 @@ export type TournamentGame = {
 export class Tournament {
   readonly tournamentDb: TournamentDB;
   readonly #games: Game[];
-  readonly #skippedGames: SkippedGame[];
+  readonly skippedGames: SkippedGame[];
   readonly signedUp: SignUp[];
   groupPlay?: TournamentGroupPlay;
   bracket?: TournamentBracket;
@@ -31,7 +31,7 @@ export class Tournament {
   constructor(tournamentDb: TournamentDB, games: Game[], skippedGames: SkippedGame[], signedUp: SignUp[]) {
     this.tournamentDb = tournamentDb;
     this.#games = games;
-    this.#skippedGames = skippedGames;
+    this.skippedGames = skippedGames;
     this.signedUp = signedUp;
 
     if (this.tournamentDb.startDate > Date.now()) {
@@ -109,7 +109,7 @@ export class Tournament {
         entries.push({ time: game.playedAt, player1: game.winner, player2: game.loser, game, skip: undefined }),
       );
 
-    this.#skippedGames
+    this.skippedGames
       .filter((s) => s.time > startTime)
       .forEach((skip) =>
         entries.push({ time: skip.time, player1: skip.winner, player2: skip.loser, game: undefined, skip }),

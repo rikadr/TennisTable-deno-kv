@@ -88,14 +88,6 @@ const the2025YearEndOfficeOpen: TournamentDB = {
   startDate: 1762333200000,
   groupPlay: true,
   signedUp: [],
-  // skippedGames: [
-  //   { advancing: optioPlayersByName.Alexander, eliminated: optioPlayersByName["Alejandro 🌮"], time: 1763116540187 },
-  //   { advancing: optioPlayersByName.Erling, eliminated: optioPlayersByName.Francesco, time: 1763116540189 },
-  //   { advancing: optioPlayersByName.Christoffer, eliminated: optioPlayersByName.Francesco, time: 1763116540190 },
-  //   { advancing: optioPlayersByName.Ole, eliminated: optioPlayersByName.Michael, time: 1763116540192 },
-  //   { advancing: optioPlayersByName.Axel, eliminated: optioPlayersByName.Michael, time: 1763116540193 },
-  //   { advancing: optioPlayersByName.Erling, eliminated: optioPlayersByName.Yngve, time: 1763116540194 },
-  // ],
   playerOrder: [
     optioPlayersByName.Rasmus,
     optioPlayersByName.Alexander,
@@ -162,7 +154,6 @@ const optioChristmasTournament: TournamentDB = {
   startDate: 1732613408196, // Nov 26 2024 10:30:08 GMT+0100
   groupPlay: false,
   signedUp: [],
-  // skippedGames: [{ advancing: optioPlayersByName.Marius, eliminated: optioPlayersByName.Erling, time: 1732709055829 }],
   playerOrder: [
     optioPlayersByName.Rasmus,
     optioPlayersByName.Simone,

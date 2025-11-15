@@ -12,10 +12,7 @@ export const TournamentPredictionPage: React.FC = () => {
   const [range, setRange] = useState(0);
   const [shouldSimulate, setShouldSimulate] = useState(false);
 
-  const allTournaments = useMemo(
-    () => context.tournaments.getTournaments().filter((t) => t.tournamentDb.skippedGames.length === 0),
-    [context.tournaments],
-  );
+  const allTournaments = useMemo(() => context.tournaments.getTournaments(), [context.tournaments]);
 
   const prediction = useMemo(() => {
     if (!selectedTournamentId || !shouldSimulate) return null;

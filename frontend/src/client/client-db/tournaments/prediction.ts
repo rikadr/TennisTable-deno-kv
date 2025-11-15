@@ -50,6 +50,12 @@ export class TournamentPrediction {
       timePoints.push(gameTime + SIMULATION_TIME_BUFFER);
     }
 
+    // Add each skipped game time
+    const skippedGameTimes = this.findAllSkippedGameTimes(tournament);
+    for (const gameTime of skippedGameTimes) {
+      timePoints.push(gameTime + SIMULATION_TIME_BUFFER);
+    }
+
     // Add current time if tournament is ongoing (not ended)
     if (!tournament.endDate) {
       timePoints.push(now); // No buffer for Date.now()
@@ -57,6 +63,10 @@ export class TournamentPrediction {
 
     // Remove duplicates and sort
     return [...new Set(timePoints)].sort((a, b) => a - b);
+  }
+
+  private findAllSkippedGameTimes(tournament: Tournament): number[] {
+    return tournament.skippedGames.map((s) => s.time);
   }
 
   private predictTournamentAtTime(tournamentId: string, simulationTime: number): TournamentPredictionResult {
@@ -132,9 +142,17 @@ export class TournamentPrediction {
           } satisfies EventType),
       ) ?? [];
 
-    // Filter events to only include game events for completed games
+    const skippedGamesIdsTimesAtTime = tournamentAtTime.skippedGames.map((s) => s.skipId);
+
+    // Filter events to include:
+    // 1. Game events for completed games
+    // 2. Tournament skip game events (up to simulationTime)
     const existingGameEvents: EventType[] = stateAtTime.events.filter(
-      (e) => e.type === EventTypeEnum.GAME_CREATED && completedGameTimes.includes(e.data.playedAt),
+      (e) =>
+        (e.type === EventTypeEnum.GAME_CREATED && completedGameTimes.includes(e.data.playedAt)) ||
+        (e.type === EventTypeEnum.TOURNAMENT_SKIP_GAME &&
+          e.stream === tournamentAtTime.id &&
+          skippedGamesIdsTimesAtTime.includes(e.data.skipId)),
     );
 
     return { playerEvents, existingGameEvents };
