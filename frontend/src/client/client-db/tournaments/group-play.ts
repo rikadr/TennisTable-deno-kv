@@ -264,8 +264,11 @@ export class TournamentGroupPlay {
     let totalConfidenceSum = 0;
 
     // Simulate all pending games in each group
-    for (const group of groupsCopy) {
-      for (const game of group.pending) {
+    for (let groupIdx = 0; groupIdx < groupsCopy.length; groupIdx++) {
+      const group = groupsCopy[groupIdx];
+
+      for (let gameIdx = 0; gameIdx < group.pending.length; gameIdx++) {
+        const game = group.pending[gameIdx];
         if (!game.player1 || !game.player2) {
           throw new Error("Pending game missing players");
         }
@@ -277,6 +280,14 @@ export class TournamentGroupPlay {
         game.completedAt = time;
         gamesSimulatedCount++;
         totalConfidenceSum += result.confidence;
+
+        const correspondingGame = group.groupGames.find(
+          (g) => g.player1 === game.player1 && g.player2 === game.player2 && !g.winner,
+        );
+        if (correspondingGame) {
+          correspondingGame.winner = result.winner;
+          correspondingGame.completedAt = time;
+        }
 
         // Move from pending to played
         group.played.push(game as GroupGame);

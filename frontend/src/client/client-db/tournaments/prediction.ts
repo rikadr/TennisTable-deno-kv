@@ -1,3 +1,4 @@
+import { EventTypeEnum } from "../event-store/event-types";
 import { TennisTable } from "../tennis-table";
 import { Tournament } from "./tournament";
 
@@ -71,16 +72,18 @@ export class TournamentPrediction {
     const winCounts = new Map<string, { wins: number }>();
 
     // Create state at this point in time with only events up to simulationTime
-    const eventsUpToTime = this.parent.events.filter((e) => e.time <= simulationTime);
-    const stateAtTime = new TennisTable({ events: eventsUpToTime });
+    const eventsUpToTime = this.parent.events.filter((e) => {
+      if (e.type === EventTypeEnum.GAME_CREATED && e.data.playedAt) {
+        return e.data.playedAt <= simulationTime;
+      }
+      return e.time <= simulationTime;
+    });
 
-    // Calculate Elo predictions for this specific time
+    const stateAtTime = new TennisTable({ events: eventsUpToTime }); // TODO Performance test impact of this performance.now before and after
     stateAtTime.futureElo.calculatePlayerFractionsForToday(simulationTime); // TODO Performance test impact of this performance.now before and after
 
-    // Get tournament state at this time
     const tournamentAtTime = stateAtTime.tournaments.getTournament(tournamentId);
     if (!tournamentAtTime) {
-      // Tournament doesn't exist at this time, return empty result
       return {
         time: simulationTime,
         players: winCounts,
