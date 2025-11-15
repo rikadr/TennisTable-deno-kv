@@ -48,6 +48,9 @@ export const TournamentsListPage: React.FC = () => {
           <p>No tournaments. Want to set up a tournament? Reach out to Rikard to set up a new tournament 🏆</p>
         )}
       </div>
+      <Link to="/tournament/predict">
+        <p className="text-sm mt-10">Predict tournaments (Beta)</p>
+      </Link>
     </div>
   );
 };
