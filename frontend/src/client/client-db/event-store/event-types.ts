@@ -16,6 +16,8 @@ export enum EventTypeEnum {
   // Tournament events
   TOURNAMENT_SIGNUP = "TOURNAMENT_SIGNUP",
   TOURNAMENT_CANCEL_SIGNUP = "TOURNAMENT_CANCEL_SIGNUP",
+  TOURNAMENT_SKIP_GAME = "TOURNAMENT_SKIP_GAME",
+  TOURNAMENT_UNDO_SKIP_GAME = "TOURNAMENT_UNDO_SKIP_GAME",
 }
 
 type GenericEvent<Type extends EventTypeEnum = EventTypeEnum, Data = unknown> = {
@@ -39,6 +41,11 @@ export type GameScore = GenericEvent<
 
 export type TournamentSignup = GenericEvent<EventTypeEnum.TOURNAMENT_SIGNUP, { player: string }>;
 export type TournamentCancelSignup = GenericEvent<EventTypeEnum.TOURNAMENT_CANCEL_SIGNUP, { player: string }>;
+export type TournamentSkipGame = GenericEvent<
+  EventTypeEnum.TOURNAMENT_SKIP_GAME,
+  { skipId: string; winner: string; loser: string }
+>;
+export type TournamentUndoSkipGame = GenericEvent<EventTypeEnum.TOURNAMENT_UNDO_SKIP_GAME, { skipId: string }>;
 
 export type EventType =
   | PlayerCreated
@@ -49,4 +56,6 @@ export type EventType =
   | GameDeleted
   | GameScore
   | TournamentSignup
-  | TournamentCancelSignup;
+  | TournamentCancelSignup
+  | TournamentSkipGame
+  | TournamentUndoSkipGame;

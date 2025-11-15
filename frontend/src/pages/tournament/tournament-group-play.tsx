@@ -87,27 +87,22 @@ const GroupPlayRules: React.FC = () => (
         When players have equal adjusted scores, ties are resolved using the following criteria in order:
       </p>
 
-      <div className="space-y-2">
-        {[
-          { rank: 1, text: "Most wins" },
-          { rank: 2, text: "Least skips" },
-          { rank: 3, text: "Highest score before group size adjustment" },
-          { rank: 4, text: "Least losses" },
-          { rank: 5, text: "Highest ELO rating" },
-          { rank: 6, text: "First to sign up for the tournament" },
-          { rank: 7, text: "If all the above are equal: Highest bribe 😉" },
-        ].map(({ rank, text }) => (
-          <div
-            key={rank}
-            className="flex items-start gap-3 py-1.5 px-3 rounded hover:bg-secondary-background/20 transition-colors"
-          >
-            <div className="flex-shrink-0 w-6 h-6 rounded-full bg-secondary-background/50 flex items-center justify-center">
-              <span className="text-xs font-bold text-secondary-text">{rank}</span>
-            </div>
-            <p className="text-sm text-secondary-text/90 leading-relaxed pt-0.5">{text}</p>
+      {[
+        { rank: 1, text: "Most wins" },
+        { rank: 2, text: "Least skips" },
+        { rank: 3, text: "Highest score before group size adjustment" },
+        { rank: 4, text: "Least losses" },
+        { rank: 5, text: "Highest ELO rating" },
+        { rank: 6, text: "First to sign up for the tournament" },
+        { rank: 7, text: "If all the above are equal: Highest bribe 😉" },
+      ].map(({ rank, text }) => (
+        <div key={rank} className="flex items-start gap-3 py-1.5 px-3">
+          <div className="flex-shrink-0 w-6 h-6 rounded-full bg-secondary-background/50 flex items-center justify-center">
+            <span className="text-xs font-bold text-secondary-text">{rank}</span>
           </div>
-        ))}
-      </div>
+          <p className="text-sm text-secondary-text/90 leading-relaxed pt-0.5">{text}</p>
+        </div>
+      ))}
     </div>
   </div>
 );
@@ -330,23 +325,6 @@ export const TournamentGroups: React.FC<{
         <p>{group.players.map((p) => context.playerName(p)).join(", ")}</p>
       </div>
       {group.groupGames.map((game, gameIndex) => {
-        const gameIsWon = game.winner !== undefined;
-        const gameIsSkipped = game.skipped !== undefined;
-        function handleSkip(player: string) {
-          if (gameIsWon) return;
-          if (!gameIsSkipped) {
-            context.tournaments.skipGame(
-              {
-                time: new Date().getTime(),
-                advancing: player,
-                eliminated: game.player1 === player ? game.player2! : game.player1!,
-              },
-              tournament.id,
-            );
-          }
-          rerender();
-        }
-
         const gameKey =
           game.player1 && game.player2
             ? getGameKeyFromPlayers(game.player1, game.player2, "group")
@@ -396,21 +374,14 @@ export const TournamentGroups: React.FC<{
                 player2={game.player2}
                 showCompare
                 showRegisterResult={isPending}
-                showSkipGamePlayer1Advance={{
+                showSkipGame={{
                   show: isPending,
-                  onSkip() {
-                    handleSkip(game.player1!);
-                  },
-                }}
-                showSkipGamePlayer2Advance={{
-                  show: isPending,
-                  onSkip() {
-                    handleSkip(game.player2!);
-                  },
+                  tournamentId: tournament.id,
                 }}
                 showUndoSkip={{
                   show: !!game.skipped,
-                  onUndoSkip() {},
+                  skipId: game.skipped?.skipId || "",
+                  tournamentId: tournament.id,
                 }}
               />
             </MenuButton>

@@ -88,18 +88,14 @@ const the2025YearEndOfficeOpen: TournamentDB = {
   startDate: 1762333200000,
   groupPlay: true,
   signedUp: [],
-  skippedGames: [
-    // { advancing: optioPlayersByName.Marko, eliminated: optioPlayersByName.Oskar, time: 1763116540185 }, // Awaiting response if to be played on monday
-    // { advancing: optioPlayersByName.Marko, eliminated: optioPlayersByName.Bendik, time: 1763116540186 }, // Being played on monday
-    { advancing: optioPlayersByName.Alexander, eliminated: optioPlayersByName["Alejandro 🌮"], time: 1763116540187 },
-    // { advancing: optioPlayersByName.Mads, eliminated: optioPlayersByName["Alejandro 🌮"], time: 1763116540188 }, // Awaiting response if to be played on monday
-    { advancing: optioPlayersByName.Erling, eliminated: optioPlayersByName.Francesco, time: 1763116540189 },
-    { advancing: optioPlayersByName.Christoffer, eliminated: optioPlayersByName.Francesco, time: 1763116540190 },
-    { advancing: optioPlayersByName.Mads, eliminated: optioPlayersByName.Marius, time: 1763116540191 },
-    { advancing: optioPlayersByName.Ole, eliminated: optioPlayersByName.Michael, time: 1763116540192 },
-    { advancing: optioPlayersByName.Axel, eliminated: optioPlayersByName.Michael, time: 1763116540193 },
-    { advancing: optioPlayersByName.Erling, eliminated: optioPlayersByName.Yngve, time: 1763116540194 },
-  ],
+  // skippedGames: [
+  //   { advancing: optioPlayersByName.Alexander, eliminated: optioPlayersByName["Alejandro 🌮"], time: 1763116540187 },
+  //   { advancing: optioPlayersByName.Erling, eliminated: optioPlayersByName.Francesco, time: 1763116540189 },
+  //   { advancing: optioPlayersByName.Christoffer, eliminated: optioPlayersByName.Francesco, time: 1763116540190 },
+  //   { advancing: optioPlayersByName.Ole, eliminated: optioPlayersByName.Michael, time: 1763116540192 },
+  //   { advancing: optioPlayersByName.Axel, eliminated: optioPlayersByName.Michael, time: 1763116540193 },
+  //   { advancing: optioPlayersByName.Erling, eliminated: optioPlayersByName.Yngve, time: 1763116540194 },
+  // ],
   playerOrder: [
     optioPlayersByName.Rasmus,
     optioPlayersByName.Alexander,
@@ -137,7 +133,7 @@ const optioEasterTournament: TournamentDB = {
   groupPlay: true,
   overridePreferredGroupSize: 4,
   signedUp: [],
-  skippedGames: [{ advancing: optioPlayersByName.Axel, eliminated: optioPlayersByName.Ole, time: 1745324560434 }],
+  // skippedGames: [{ advancing: optioPlayersByName.Axel, eliminated: optioPlayersByName.Ole, time: 1745324560434 }],
   playerOrder: [
     optioPlayersByName.Rasmus,
     optioPlayersByName.Fooa,
@@ -166,7 +162,7 @@ const optioChristmasTournament: TournamentDB = {
   startDate: 1732613408196, // Nov 26 2024 10:30:08 GMT+0100
   groupPlay: false,
   signedUp: [],
-  skippedGames: [{ advancing: optioPlayersByName.Marius, eliminated: optioPlayersByName.Erling, time: 1732709055829 }],
+  // skippedGames: [{ advancing: optioPlayersByName.Marius, eliminated: optioPlayersByName.Erling, time: 1732709055829 }],
   playerOrder: [
     optioPlayersByName.Rasmus,
     optioPlayersByName.Simone,

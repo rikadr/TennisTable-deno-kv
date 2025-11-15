@@ -37,6 +37,8 @@ import { TrackGamePage } from "./pages/add-game/track-game";
 import { ChooseAddOrTrack } from "./pages/add-game/choose-add-or-track";
 import { AchievementsPage } from "./pages/achievements-page";
 import { TournamentPredictionPage } from "./pages/tournament/tournament-prediction-page";
+import { TournamentSkipGamePage } from "./pages/tournament/tournament-skip-game";
+import { TournamentUndoSkipPage } from "./pages/tournament/tournament-undo-skip";
 
 const RequireAuth: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   if (!session.isAuthenticated) {
@@ -74,6 +76,8 @@ function App() {
                         <Route path="/tournament">
                           <Route index element={<TournamentPage />} />
                           <Route path="list" element={<TournamentsListPage />} />
+                          <Route path="skip-game" element={<TournamentSkipGamePage />} />
+                          <Route path="undo-skip" element={<TournamentUndoSkipPage />} />
                           <Route path="predict" element={<TournamentPredictionPage />} />
                         </Route>
                         <Route path="/achievements" element={<AchievementsPage />} />

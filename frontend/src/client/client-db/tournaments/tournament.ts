@@ -1,6 +1,6 @@
 import { ONE_WEEK } from "../../../common/time-in-ms";
 import { Game } from "../event-store/projectors/games-projector";
-import { SignUp } from "../event-store/projectors/tournaments-projector";
+import { SignUp, SkippedGame } from "../event-store/projectors/tournaments-projector";
 import { TournamentDB } from "../types";
 import { TournamentBracket } from "./bracket";
 import { TournamentGroupPlay } from "./group-play";
@@ -9,7 +9,7 @@ export type TournamentGame = {
   player1: string;
   player2: string;
   winner?: string;
-  skipped?: TournamentDB["skippedGames"][number];
+  skipped?: SkippedGame;
   completedAt: number;
   /** The nex game the winner will advance to */
   advanceTo?: { layerIndex: number; gameIndex: number; role: "player1" | "player2" };
@@ -18,6 +18,7 @@ export type TournamentGame = {
 export class Tournament {
   readonly tournamentDb: TournamentDB;
   readonly #games: Game[];
+  readonly #skippedGames: SkippedGame[];
   readonly signedUp: SignUp[];
   groupPlay?: TournamentGroupPlay;
   bracket?: TournamentBracket;
@@ -27,9 +28,10 @@ export class Tournament {
   private static readonly RECENT_WINNER_THRESHOLD = 2 * ONE_WEEK;
   private static readonly SIGNUP_PERIOD = 2 * ONE_WEEK;
 
-  constructor(tournamentDb: TournamentDB, games: Game[], signedUp: SignUp[]) {
+  constructor(tournamentDb: TournamentDB, games: Game[], skippedGames: SkippedGame[], signedUp: SignUp[]) {
     this.tournamentDb = tournamentDb;
     this.#games = games;
+    this.#skippedGames = skippedGames;
     this.signedUp = signedUp;
 
     if (this.tournamentDb.startDate > Date.now()) {
@@ -98,7 +100,7 @@ export class Tournament {
     type BaseEntry = { time: number; player1: string; player2: string };
     const entries: (
       | (BaseEntry & { game: Game; skip: undefined })
-      | (BaseEntry & { game: undefined; skip: TournamentDB["skippedGames"][number] })
+      | (BaseEntry & { game: undefined; skip: SkippedGame })
     )[] = [];
 
     this.#games
@@ -107,10 +109,10 @@ export class Tournament {
         entries.push({ time: game.playedAt, player1: game.winner, player2: game.loser, game, skip: undefined }),
       );
 
-    this.tournamentDb.skippedGames
+    this.#skippedGames
       .filter((s) => s.time > startTime)
       .forEach((skip) =>
-        entries.push({ time: skip.time, player1: skip.advancing, player2: skip.eliminated, game: undefined, skip }),
+        entries.push({ time: skip.time, player1: skip.winner, player2: skip.loser, game: undefined, skip }),
       );
 
     entries.sort((a, b) => a.time - b.time); // Might be heavy sorting, but we need to be sure the games are in order

@@ -211,33 +211,12 @@ const GamesList: React.FC<GamesListProps> = ({ tournament, rerender, itemRefs })
                       player1={game.player1}
                       player2={game.player2}
                       showCompare={states.showCompareOption}
-                      showRegisterResult={!!states.showRegisterResultOption}
-                      showSkipGamePlayer1Advance={{
-                        show: !!states.showSkipGameOption,
-                        onSkip: () => {
-                          context.tournaments.skipGame(
-                            { advancing: game.player1!, eliminated: game.player2!, time: new Date().getTime() },
-                            tournament.id,
-                          );
-                          rerender();
-                        },
-                      }}
-                      showSkipGamePlayer2Advance={{
-                        show: !!states.showSkipGameOption,
-                        onSkip: () => {
-                          context.tournaments.skipGame(
-                            { advancing: game.player2!, eliminated: game.player1!, time: new Date().getTime() },
-                            tournament.id,
-                          );
-                          rerender();
-                        },
-                      }}
+                      showRegisterResult={states.showRegisterResultOption}
+                      showSkipGame={{ show: states.showSkipGameOption, tournamentId: tournament.id }}
                       showUndoSkip={{
-                        show: !!states.showUndoSkipOption,
-                        onUndoSkip: () => {
-                          context.tournaments.undoSkipGame(game.skipped!, tournament.id);
-                          rerender();
-                        },
+                        show: states.showUndoSkipOption,
+                        skipId: game.skipped?.skipId || "",
+                        tournamentId: tournament.id,
                       }}
                     />
                   </MenuButton>
@@ -422,33 +401,12 @@ const GameTriangle: React.FC<GameTriangleProps> = ({ tournament, layerIndex, gam
             player1={game.player1}
             player2={game.player2}
             showCompare={states.showCompareOption}
-            showRegisterResult={!!states.showRegisterResultOption}
-            showSkipGamePlayer1Advance={{
-              show: !!states.showSkipGameOption,
-              onSkip: () => {
-                context.tournaments.skipGame(
-                  { advancing: game.player1!, eliminated: game.player2!, time: new Date().getTime() },
-                  tournament.id,
-                );
-                rerender();
-              },
-            }}
-            showSkipGamePlayer2Advance={{
-              show: !!states.showSkipGameOption,
-              onSkip: () => {
-                context.tournaments.skipGame(
-                  { advancing: game.player2!, eliminated: game.player1!, time: new Date().getTime() },
-                  tournament.id,
-                );
-                rerender();
-              },
-            }}
+            showRegisterResult={states.showRegisterResultOption}
+            showSkipGame={{ show: states.showSkipGameOption, tournamentId: tournament.id }}
             showUndoSkip={{
-              show: !!states.showUndoSkipOption,
-              onUndoSkip: () => {
-                context.tournaments.undoSkipGame(game.skipped!, tournament.id);
-                rerender();
-              },
+              show: states.showUndoSkipOption,
+              skipId: game.skipped?.skipId || "",
+              tournamentId: tournament.id,
             }}
           />
         </div>
@@ -493,13 +451,14 @@ function getGameStates(tournament: Tournament, game: Partial<TournamentGame>) {
 
   const showCompareOption = !!game.player1 && !!game.player2;
   const showRegisterResultOption =
-    game.player1 && game.player2 && game.winner === undefined && game.skipped === undefined;
-  const showSkipGameOption = game.player1 && game.player2 && game.winner === undefined && game.skipped === undefined;
+    !!game.player1 && !!game.player2 && game.winner === undefined && game.skipped === undefined;
+  const showSkipGameOption =
+    !!game.player1 && !!game.player2 && game.winner === undefined && game.skipped === undefined;
   const advanceToGame = game.advanceTo
     ? tournament.bracket!.bracket[game.advanceTo.layerIndex]?.[game.advanceTo.gameIndex]
     : undefined;
   const showUndoSkipOption =
-    game.skipped && advanceToGame?.winner === undefined && advanceToGame?.skipped === undefined;
+    !!game.skipped && advanceToGame?.winner === undefined && advanceToGame?.skipped === undefined;
 
   const showMenu = showCompareOption || showRegisterResultOption || showSkipGameOption || showUndoSkipOption;
   return {
@@ -521,17 +480,49 @@ type GameMenuItemsProps = {
   player2?: string;
   showCompare: boolean;
   showRegisterResult: boolean;
-  showSkipGamePlayer1Advance: { show: boolean; onSkip: () => void };
-  showSkipGamePlayer2Advance: { show: boolean; onSkip: () => void };
-  showUndoSkip: { show: boolean; onUndoSkip: () => void };
+  showSkipGame: { show: boolean; tournamentId: string };
+  showUndoSkip: { show: boolean; tournamentId: string; skipId: string };
 };
 export const GameMenuItems: React.FC<GameMenuItemsProps> = (props) => {
-  const context = useEventDbContext();
   return (
     <MenuItems
       anchor="bottom"
       className="flex flex-col gap-0 rounded-lg bg-secondary-background ring-2 ring-secondary-text shadow-xl text-secondary-text"
     >
+      {props.showRegisterResult && (
+        <MenuItem>
+          <Link
+            to={`/add-game/?player1=${props.player1 || ""}&player2=${props.player2 || ""}`}
+            className="w-full px-4 py-2 text-left data-[focus]:bg-secondary-text/30"
+          >
+            🏓 Add or track game
+          </Link>
+        </MenuItem>
+      )}
+      {props.showSkipGame.show && (
+        <MenuItem>
+          <Link
+            to={`/tournament/skip-game/?player1=${props.player1 || ""}&player2=${props.player2 || ""}&tournament=${
+              props.showSkipGame.tournamentId || ""
+            }`}
+            className="w-full px-4 py-2 text-left data-[focus]:bg-secondary-text/30"
+          >
+            🆓 Skip game
+          </Link>
+        </MenuItem>
+      )}
+      {props.showUndoSkip.show && (
+        <MenuItem>
+          <Link
+            to={`/tournament/undo-skip/?player1=${props.player1 || ""}&player2=${props.player2 || ""}&skipId=${
+              props.showUndoSkip.skipId || ""
+            }&tournament=${props.showUndoSkip.tournamentId || ""}`}
+            className="w-full px-4 py-2 text-left data-[focus]:bg-secondary-text/30"
+          >
+            ⏮️ Undo skip
+          </Link>
+        </MenuItem>
+      )}
       {props.showCompare && (
         <MenuItem>
           <Link
@@ -540,56 +531,6 @@ export const GameMenuItems: React.FC<GameMenuItemsProps> = (props) => {
           >
             🥊👀 Compare 1v1
           </Link>
-        </MenuItem>
-      )}
-      {props.showRegisterResult && (
-        <MenuItem>
-          <Link
-            to={`/add-game-add/?player1=${props.player1 || ""}&player2=${props.player2 || ""}`}
-            className="w-full px-4 py-2 text-left data-[focus]:bg-secondary-text/30"
-          >
-            🏆🤝 Register completed result
-          </Link>
-        </MenuItem>
-      )}
-      {props.showRegisterResult && (
-        <MenuItem>
-          <Link
-            to={`/add-game-track/?player1=${props.player1 || ""}&player2=${props.player2 || ""}`}
-            className="w-full px-4 py-2 text-left data-[focus]:bg-secondary-text/30"
-          >
-            🏆🔴 Track game live
-          </Link>
-        </MenuItem>
-      )}
-      {props.showSkipGamePlayer1Advance?.show && (
-        <MenuItem>
-          <button
-            className="w-full px-4 py-2 text-left data-[focus]:bg-secondary-text/30"
-            onClick={props.showSkipGamePlayer1Advance.onSkip}
-          >
-            🆓 Skip game ({context.playerName(props.player1)} advances)
-          </button>
-        </MenuItem>
-      )}
-      {props.showSkipGamePlayer2Advance?.show && (
-        <MenuItem>
-          <button
-            className="w-full px-4 py-2 text-left data-[focus]:bg-secondary-text/30"
-            onClick={props.showSkipGamePlayer2Advance.onSkip}
-          >
-            🆓 Skip game ({context.playerName(props.player2)} advances)
-          </button>
-        </MenuItem>
-      )}
-      {props.showUndoSkip?.show && (
-        <MenuItem>
-          <button
-            className="w-full px-4 py-2 text-left data-[focus]:bg-secondary-text/30"
-            onClick={props.showUndoSkip.onUndoSkip}
-          >
-            ⏮️ Undo skip
-          </button>
         </MenuItem>
       )}
     </MenuItems>

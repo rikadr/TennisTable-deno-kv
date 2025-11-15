@@ -110,7 +110,7 @@ export class TournamentBracket {
             return;
           }
 
-          match.winner = entry.game ? entry.game.winner : entry.skip.advancing;
+          match.winner = entry.game ? entry.game.winner : entry.skip.winner;
           match.completedAt = entry.time; // Not sure how that would affect select item options for skipped games.....
           match.skipped = entry.skip;
 

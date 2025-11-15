@@ -165,7 +165,7 @@ export class TournamentGroupPlay {
         groupGames[matchedGroup][matchedGame].completedAt = entry.game.playedAt;
       } else {
         groupGames[matchedGroup][matchedGame].skipped = entry.skip;
-        groupGames[matchedGroup][matchedGame].winner = entry.skip.advancing;
+        groupGames[matchedGroup][matchedGame].winner = entry.skip.winner;
         groupGames[matchedGroup][matchedGame].completedAt = entry.skip.time;
       }
     });

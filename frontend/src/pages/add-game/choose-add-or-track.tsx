@@ -1,6 +1,7 @@
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 
-export const ChooseAddOrTrack: React.FC = () => {
+export const ChooseAddOrTrack = () => {
+  const [searchParams] = useSearchParams();
   return (
     <div className="min-h-screen p-4 flex justify-center">
       <div className="w-full max-w-md space-y-8">
@@ -13,7 +14,7 @@ export const ChooseAddOrTrack: React.FC = () => {
         {/* Options */}
         <div className="space-y-4">
           {/* Add Finished Game Option */}
-          <Link to="/add-game-add" className="block">
+          <Link to={`/add-game-add?${searchParams.toString()}`} className="block">
             <div className="group relative overflow-hidden rounded-2xl bg-white shadow-lg hover:shadow-xl transition-all duration-300 border-2 border-gray-200 hover:border-blue-500">
               <div className="p-6 space-y-3">
                 <div className="flex items-center gap-4">
@@ -47,7 +48,7 @@ export const ChooseAddOrTrack: React.FC = () => {
           </div>
 
           {/* Track Live Game Option */}
-          <Link to="/add-game-track" className="block">
+          <Link to={`/add-game-track?${searchParams.toString()}`} className="block">
             <div className="group relative overflow-hidden rounded-2xl bg-white shadow-lg hover:shadow-xl transition-all duration-300 border-2 border-gray-200 hover:border-purple-500">
               <div className="p-6 space-y-3">
                 <div className="flex items-center gap-4">

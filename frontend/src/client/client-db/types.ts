@@ -35,7 +35,6 @@ export type TournamentDB = {
   overridePreferredGroupSize?: number;
   signedUp: SignUpTournament[];
   playerOrder?: string[]; // To be set when tournament starts
-  skippedGames: { eliminated: string; advancing: string; time: number }[];
 };
 
 export type SignUpTournament = {

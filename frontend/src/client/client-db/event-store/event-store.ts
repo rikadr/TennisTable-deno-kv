@@ -50,6 +50,12 @@ export class EventStore {
         case EventTypeEnum.TOURNAMENT_CANCEL_SIGNUP:
           this.tournamentsProjector.cancelSignup(event);
           break;
+        case EventTypeEnum.TOURNAMENT_SKIP_GAME:
+          this.tournamentsProjector.skipGame(event);
+          break;
+        case EventTypeEnum.TOURNAMENT_UNDO_SKIP_GAME:
+          this.tournamentsProjector.undoSkipGame(event);
+          break;
         default:
           ((_: never) => {})(type); // exhaustive check
           break;

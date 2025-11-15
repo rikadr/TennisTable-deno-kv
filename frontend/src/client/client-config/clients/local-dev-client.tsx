@@ -11,15 +11,7 @@ export class LocalDevClient implements ClientConfig {
   title = new GuestClient().title;
   favicon = new GuestClient().favicon;
   gameLimitForRanked = new GuestClient().gameLimitForRanked;
-  tournaments = [
-    testGroupPlayTournament,
-    {
-      ...testGroupPlayTournament,
-      id: "randomid39",
-      name: "Test group play tournament 2",
-      skippedGames: [{ advancing: "Rasmus", eliminated: "Axel", time: 1742059545417 }],
-    } as TournamentDB,
-  ];
+  tournaments = [testGroupPlayTournament];
 }
 
 export const testGroupPlayTournament: TournamentDB = {
@@ -30,7 +22,6 @@ export const testGroupPlayTournament: TournamentDB = {
   startDate: 0,
   groupPlay: true,
   signedUp: [],
-  skippedGames: [],
   playerOrder: [
     "Rasmus",
     "Fooa",
@@ -67,7 +58,6 @@ export const testLargeTournament: TournamentDB = {
   startDate: 1731524875192, // 13th nov, 20:08
   groupPlay: true,
   signedUp: [],
-  skippedGames: [],
   playerOrder: [
     "Test name 1",
     "Test name 2",
