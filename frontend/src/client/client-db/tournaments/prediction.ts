@@ -12,7 +12,10 @@ export class TournamentPrediction {
     this.parent = parent;
   }
 
-  predictTournament(tournamentId: string): TournamentPredictionResult[] {
+  predictTournament(
+    tournamentId: string,
+    callback: (data: { simulationTimes?: number[]; data?: TournamentPredictionResult; progress: number }) => void,
+  ): void {
     const tournament = this.parent.tournaments.getTournament(tournamentId);
     if (!tournament) {
       throw new Error(`Tournament not found: ${tournamentId}`);
@@ -20,14 +23,19 @@ export class TournamentPrediction {
 
     const simulationTimePoints = this.getSimulationTimePoints(tournament);
 
-    const results: TournamentPredictionResult[] = [];
+    callback({
+      simulationTimes: simulationTimePoints,
+      progress: 0,
+    });
 
-    for (const timePoint of simulationTimePoints) {
+    for (let i = 0; i < simulationTimePoints.length; i++) {
+      const timePoint = simulationTimePoints[i];
       const result = this.predictTournamentAtTime(tournamentId, timePoint);
-      results.push(result);
+      callback({
+        data: result,
+        progress: (i + 1) / simulationTimePoints.length,
+      });
     }
-
-    return results;
   }
 
   private getSimulationTimePoints(tournament: Tournament): number[] {
@@ -86,7 +94,7 @@ export class TournamentPrediction {
     if (!tournamentAtTime) {
       return {
         time: simulationTime,
-        players: winCounts,
+        players: Object.fromEntries(winCounts),
         confidence: 0,
       };
     }
@@ -116,14 +124,14 @@ export class TournamentPrediction {
 
     return {
       time: simulationTime,
-      players: winCounts,
+      players: Object.fromEntries(winCounts),
       confidence: averageConfidence,
     };
   }
 }
 
-type TournamentPredictionResult = {
+export type TournamentPredictionResult = {
   time: number;
-  players: Map<string, { wins: number }>;
+  players: Record<string, { wins: number }>;
   confidence: number;
 };

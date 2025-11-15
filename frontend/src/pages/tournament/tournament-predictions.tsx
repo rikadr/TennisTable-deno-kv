@@ -7,40 +7,41 @@ import { stringToColor } from "../../common/string-to-color";
 import { relativeTimeString } from "../../common/date-utils";
 import { NUM_SIMULATIONS } from "../../client/client-db/tournaments/prediction";
 import { Tournament } from "../../client/client-db/tournaments/tournament";
+import { useTournamentPredictionWorker } from "../../hooks/use-tournament-prediction-worker";
 
 export const TournamentPredictions = ({ tournament }: { tournament: Tournament }) => {
-  const context = useEventDbContext();
   const [range, setRange] = useState(0);
-  const [shouldSimulate, setShouldSimulate] = useState(false);
 
-  const prediction = useMemo(() => {
-    if (!shouldSimulate) return null;
-    setRange(0);
-    return context.tournaments.tournamentPrediction.predictTournament(tournament.id);
-  }, [context, tournament, shouldSimulate]);
+  const { startSimulation, simulationTimes, predictionResults, simulationIsDone, simulationProgress } =
+    useTournamentPredictionWorker();
 
   const graphData = useMemo(() => {
-    if (!prediction) return [];
+    if (simulationTimes.length === 0) return [];
 
-    // First, collect all unique player IDs across all time points
+    // First, collect all unique player IDs across all prediction results
     const allPlayerIds = new Set<string>();
-    prediction.forEach((result) => {
-      result.players.forEach((_, playerId) => {
+    predictionResults.forEach((result) => {
+      Object.keys(result.players).forEach((playerId) => {
         allPlayerIds.add(playerId);
       });
     });
 
+    // Create a map of time -> result for quick lookup
+    const resultsByTime = new Map(predictionResults.map((result) => [result.time, result]));
+
     // Transform prediction results into graph data
-    return prediction.map((result) => {
+    return simulationTimes.map((time) => {
+      const result = resultsByTime.get(time);
+
       const dataPoint: Record<string, number | string> = {
-        time: result.time,
-        name: new Date(result.time).toLocaleDateString("no-NO", {
+        time: time,
+        name: new Date(time).toLocaleDateString("no-NO", {
           month: "short",
           day: "numeric",
           hour: "2-digit",
           minute: "2-digit",
         }),
-        confidence: result.confidence * 100, // Convert to percentage
+        confidence: result ? result.confidence * 100 : 0, // Convert to percentage
       };
 
       // Initialize all players to 0
@@ -48,14 +49,16 @@ export const TournamentPredictions = ({ tournament }: { tournament: Tournament }
         dataPoint[playerId] = 0;
       });
 
-      // Convert each player's wins to percentage (overwriting the 0 if they have data)
-      result.players.forEach((playerData, playerId) => {
-        dataPoint[playerId] = (playerData.wins / NUM_SIMULATIONS) * 100;
-      });
+      // If we have data for this time, fill in the player percentages
+      if (result) {
+        Object.keys(result.players).forEach((playerId) => {
+          dataPoint[playerId] = (result.players[playerId].wins / NUM_SIMULATIONS) * 100;
+        });
+      }
 
       return dataPoint;
     });
-  }, [prediction]);
+  }, [simulationTimes, predictionResults]);
 
   const [graphDataToSee, setGraphDataToSee] = useState<Record<string, number | string>[]>(graphData);
 
@@ -67,25 +70,25 @@ export const TournamentPredictions = ({ tournament }: { tournament: Tournament }
 
   // Get all unique player IDs from the data
   const allPlayers = useMemo(() => {
-    if (!prediction || prediction.length === 0) return [];
+    if (predictionResults.length === 0) return [];
     const playerSet = new Set<string>();
-    prediction.forEach((result) => {
-      result.players.forEach((_, playerId) => {
+    predictionResults.forEach((result) => {
+      Object.keys(result.players).forEach((playerId) => {
         playerSet.add(playerId);
       });
     });
     return Array.from(playerSet);
-  }, [prediction]);
+  }, [predictionResults]);
 
   const handleSimulate = () => {
-    setShouldSimulate(true);
+    startSimulation(tournament.id);
   };
 
   return (
     <div className="flex flex-col items-center">
       <section className="flex flex-col items-center bg-primary-background rounded-lg p-4 w-full max-w-[1050px]">
         {/* Simulate Button */}
-        {!shouldSimulate && (
+        {predictionResults.length === 0 && (
           <>
             <button
               onClick={handleSimulate}
@@ -95,6 +98,22 @@ export const TournamentPredictions = ({ tournament }: { tournament: Tournament }
             </button>
             <p>*May take up to 10 seconds to see result</p>
           </>
+        )}
+
+        {/* Progress Bar */}
+        {simulationTimes.length > 0 && !simulationIsDone && (
+          <div className="w-full max-w-[1000px] mb-4">
+            <div className="flex justify-between mb-1">
+              <span className="text-sm text-primary-text">Simulation Progress</span>
+              <span className="text-sm text-primary-text">{Math.round(simulationProgress * 100)}%</span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-2.5">
+              <div
+                className="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
+                style={{ width: `${simulationProgress * 100}%` }}
+              ></div>
+            </div>
+          </div>
         )}
 
         {/* Graph Controls and Display */}

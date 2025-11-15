@@ -2,7 +2,7 @@ import { useEffect, useRef, useCallback, useState } from "react";
 import { WorkerMessage } from "../client/client-db/web-worker/web-worker";
 import { useEventDbContext } from "../wrappers/event-db-context";
 
-const createModernWorker = () => {
+export const createModernWorker = () => {
   try {
     const worker = new Worker(new URL("../client/client-db/web-worker/web-worker.ts", import.meta.url), {
       type: "module",

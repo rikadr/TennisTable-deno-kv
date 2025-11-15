@@ -377,7 +377,11 @@ export const TournamentGroups: React.FC<{
                   tournamentId: tournament.id,
                 }}
                 showUndoSkip={{
-                  show: !!game.skipped,
+                  show:
+                    !!game.skipped &&
+                    !!tournament.groupPlay &&
+                    (tournament.groupPlay.groupPlayEnded === undefined ||
+                      Date.now() - tournament.groupPlay.groupPlayEnded < 60 * 60 * 1_000), // 1 hour buffer to undo skips
                   skipId: game.skipped?.skipId || "",
                   tournamentId: tournament.id,
                 }}
