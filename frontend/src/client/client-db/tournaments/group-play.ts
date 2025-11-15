@@ -252,7 +252,52 @@ export class TournamentGroupPlay {
     simulateGameFn: SimulateGameFn,
     time: number,
   ): { playerOrder: string[]; gamesSimulatedCount: number; totalConfidenceSum: number } {
-    // TODO
-    return { playerOrder: [], gamesSimulatedCount: 0, totalConfidenceSum: 0 };
+    // Deep copy groups and group games to avoid mutating the original
+    const groupsCopy = this.groups.map((group) => ({
+      ...group,
+      groupGames: group.groupGames.map((game) => ({ ...game })),
+      played: [...group.played],
+      pending: group.pending.map((game) => ({ ...game })),
+    }));
+
+    let gamesSimulatedCount = 0;
+    let totalConfidenceSum = 0;
+
+    // Simulate all pending games in each group
+    for (const group of groupsCopy) {
+      for (const game of group.pending) {
+        if (!game.player1 || !game.player2) {
+          throw new Error("Pending game missing players");
+        }
+
+        // Simulate the game
+        const result = simulateGameFn(game.player1, game.player2);
+
+        game.winner = result.winner;
+        game.completedAt = time;
+        gamesSimulatedCount++;
+        totalConfidenceSum += result.confidence;
+
+        // Move from pending to played
+        group.played.push(game as GroupGame);
+      }
+    }
+
+    // Recalculate group scores with simulated games
+    const groups = groupsCopy.map((g) => g.players);
+    const groupGames = groupsCopy.map((g) => g.groupGames);
+    const simulatedScores = this.#calculateGroupScores(groups, groupGames);
+
+    // Get final player order sorted by scores
+    const playerOrder = Array.from(simulatedScores)
+      .sort(TournamentGroupPlay.sortGroupScores)
+      .map(([playerName]) => playerName)
+      .slice(0, this.getBracketSize());
+
+    return {
+      playerOrder,
+      gamesSimulatedCount,
+      totalConfidenceSum,
+    };
   }
 }
