@@ -2,7 +2,7 @@ import { EventTypeEnum } from "../event-store/event-types";
 import { TennisTable } from "../tennis-table";
 import { Tournament } from "./tournament";
 
-export const NUM_SIMULATIONS = 3_000; // 10_000 at least. 1_000 for higher performance
+export const NUM_SIMULATIONS = 5_000; // 10_000 at least. 1_000 for higher performance
 const SIMULATION_TIME_BUFFER = 10_000; // Buffer added to simulation times (except Date.now())
 
 export class TournamentPrediction {
