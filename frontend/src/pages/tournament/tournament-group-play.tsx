@@ -4,20 +4,19 @@ import { useEventDbContext } from "../../wrappers/event-db-context";
 import { ProfilePicture } from "../player/profile-picture";
 import { Tournament } from "../../client/client-db/tournaments/tournament";
 import { GroupScorePlayer, TournamentGroupPlay } from "../../client/client-db/tournaments/group-play";
-import { GameMenuItems, getGameKeyFromPlayers, QuestionMark, winStateEmoji } from "./tournament-page";
+import { getGameKeyFromPlayers } from "./tournament-page";
 import { Menu, MenuButton } from "@headlessui/react";
 import { useTennisParams } from "../../hooks/use-tennis-params";
-import { optioPlayersById } from "../../client/client-config/clients/optio-client";
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { GameMenuItems, QuestionMark, winStateEmoji } from "./tournament-bracket";
 
 export const TournamentGroupPlayComponent: React.FC<{
   tournament: Tournament;
-  rerender: () => void;
   itemRefs: React.MutableRefObject<{
     [key: string]: HTMLElement | null;
   }>;
-}> = ({ tournament, rerender, itemRefs }) => {
+}> = ({ tournament, itemRefs }) => {
   if (tournament.tournamentDb.groupPlay === false) {
     return null;
   }
@@ -25,20 +24,19 @@ export const TournamentGroupPlayComponent: React.FC<{
   return (
     <div className="text-primary-text">
       {/* <GroupDistribution tournament={tournament} /> */}
-      <h1>Group play</h1>
-      <div className="md:flex">
+      <div className="lg:flex space-y-6 gap-6">
         <TournamentGroupScores tournament={tournament} />
         <GroupPlayRules />
       </div>
-      <div className="flex flex-wrap justify-center gap-x-6 gap-y-10 mx-6 mt-10">
-        <TournamentGroups tournament={tournament} rerender={rerender} itemRefs={itemRefs} />
+      <div className="flex flex-wrap justify-center gap-x-6 gap-y-10 mt-10">
+        <TournamentGroups tournament={tournament} itemRefs={itemRefs} />
       </div>
     </div>
   );
 };
 
 const GroupPlayRules: React.FC = () => (
-  <div className="text-primary-text bg-primary-background rounded-lg p-6 h-fit shadow-sm">
+  <div className="text-primary-text bg-primary-background rounded-lg h-fit shadow-sm">
     <h3 className="text-2xl font-bold mb-6">Rules</h3>
 
     {/* Scoring Section */}
@@ -121,6 +119,7 @@ export const PlacementBox: React.FC<{ on: boolean }> = ({ on }) => {
 };
 /** Used to debug group distribution visually */
 export const GroupDistribution: React.FC<{ tournament: Tournament }> = ({ tournament }) => {
+  const context = useEventDbContext();
   const players = tournament.groupPlay!.playerOrder;
   const groups = tournament.groupPlay!.groups;
   const groupDistribution: { id: string; groupIndex: number }[] = players.map((player) => ({
@@ -142,7 +141,7 @@ export const GroupDistribution: React.FC<{ tournament: Tournament }> = ({ tourna
           key={player.id}
           className="text-primary-text ring-secondary-background ring-[0.5px] hover:bg-secondary-background/30 flex"
         >
-          <p className="w-20 truncate">{optioPlayersById[player.id as keyof typeof optioPlayersById]}</p>
+          <p className="w-20 truncate">{context.playerName(player.id)}</p>
           <p className="w-5 truncate">{playerIndex + 1}</p>
           {groups.map((_, index) => (
             <PlacementBox key={index} on={player.groupIndex === index} />
@@ -207,7 +206,7 @@ export const TournamentGroupScores: React.FC<{ tournament: Tournament }> = ({ to
   );
 
   return (
-    <div className="text-primary-text bg-primary-background rounded-lg p-6 shadow-sm">
+    <div className="text-primary-text bg-primary-background rounded-lg shadow-sm">
       <h1 className="text-2xl font-bold mb-6">Score Board</h1>
 
       <div className="overflow-x-auto rounded-lg border border-secondary-background/30 shadow-sm">
@@ -299,11 +298,10 @@ export const TournamentGroupScores: React.FC<{ tournament: Tournament }> = ({ to
 
 export const TournamentGroups: React.FC<{
   tournament: Tournament;
-  rerender: () => void;
   itemRefs: React.MutableRefObject<{
     [key: string]: HTMLElement | null;
   }>;
-}> = ({ tournament, rerender, itemRefs }) => {
+}> = ({ tournament, itemRefs }) => {
   const { player1: paramPlayer1, player2: paramPlayer2 } = useTennisParams();
   const context = useEventDbContext();
 

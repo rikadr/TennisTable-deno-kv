@@ -1,4 +1,4 @@
-import { Menu, MenuButton, Switch } from "@headlessui/react";
+import { Menu, MenuButton, MenuItem, MenuItems, Switch } from "@headlessui/react";
 import { Tournament, TournamentGame } from "../../client/client-db/tournaments/tournament";
 import { useSessionStorage } from "usehooks-ts";
 import { classNames } from "../../common/class-names";
@@ -6,7 +6,8 @@ import { useTennisParams } from "../../hooks/use-tennis-params";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { layerIndexToTournamentRound } from "../leaderboard/tournament-pending-games";
 import { ProfilePicture } from "../player/profile-picture";
-import { getGameKeyFromPlayers, QuestionMark, winStateEmoji, GameMenuItems } from "./tournament-page";
+import { getGameKeyFromPlayers } from "./tournament-page";
+import { Link } from "react-router-dom";
 
 export const TournamentBracket = ({
   tournament,
@@ -22,8 +23,21 @@ export const TournamentBracket = ({
     window.innerWidth < 1_000,
   );
 
-  if (tournament.tournamentDb.groupPlay && tournament.groupPlay && tournament.groupPlay.groupPlayEnded === undefined) {
-    return <div>Goup play mus be completed before finals</div>;
+  // Check if group play is in progress
+  const isGroupPlayIncomplete =
+    tournament.tournamentDb.groupPlay && tournament.groupPlay && tournament.groupPlay.groupPlayEnded === undefined;
+
+  if (isGroupPlayIncomplete) {
+    return (
+      <div className="mx-4 md:mx-10 mt-6">
+        <div className="max-w-2xl mx-auto bg-secondary-background rounded-lg p-6">
+          <h3 className="text-lg font-semibold text-secondary-text mb-2">Group Play in Progress</h3>
+          <p className="text-sm text-secondary-text">
+            The bracket finals will be available once all group play matches have been completed.
+          </p>
+        </div>
+      </div>
+    );
   }
   return (
     <>
@@ -398,3 +412,83 @@ function getGameStates(tournament: Tournament, game: Partial<TournamentGame>) {
     showUndoSkipOption,
   };
 }
+
+export function winStateEmoji(winner?: boolean, skipped?: any) {
+  if (winner) {
+    return !!skipped ? "🆓" : "🏆";
+  }
+}
+
+type GameMenuItemsProps = {
+  player1?: string;
+  player2?: string;
+  showCompare: boolean;
+  showRegisterResult: boolean;
+  showSkipGame: { show: boolean; tournamentId: string };
+  showUndoSkip: { show: boolean; tournamentId: string; skipId: string };
+};
+export const GameMenuItems: React.FC<GameMenuItemsProps> = (props) => {
+  return (
+    <MenuItems
+      anchor="bottom"
+      className="flex flex-col gap-0 rounded-lg bg-secondary-background ring-2 ring-secondary-text shadow-xl text-secondary-text"
+    >
+      {props.showRegisterResult && (
+        <MenuItem>
+          <Link
+            to={`/add-game/?player1=${props.player1 || ""}&player2=${props.player2 || ""}`}
+            className="w-full px-4 py-2 text-left data-[focus]:bg-secondary-text/30"
+          >
+            🏓 Add or track game
+          </Link>
+        </MenuItem>
+      )}
+      {props.showSkipGame.show && (
+        <MenuItem>
+          <Link
+            to={`/tournament/skip-game/?player1=${props.player1 || ""}&player2=${props.player2 || ""}&tournament=${
+              props.showSkipGame.tournamentId || ""
+            }`}
+            className="w-full px-4 py-2 text-left data-[focus]:bg-secondary-text/30"
+          >
+            🆓 Skip game
+          </Link>
+        </MenuItem>
+      )}
+      {props.showUndoSkip.show && (
+        <MenuItem>
+          <Link
+            to={`/tournament/undo-skip/?player1=${props.player1 || ""}&player2=${props.player2 || ""}&skipId=${
+              props.showUndoSkip.skipId || ""
+            }&tournament=${props.showUndoSkip.tournamentId || ""}`}
+            className="w-full px-4 py-2 text-left data-[focus]:bg-secondary-text/30"
+          >
+            ⏮️ Undo skip
+          </Link>
+        </MenuItem>
+      )}
+      {props.showCompare && (
+        <MenuItem>
+          <Link
+            to={`/1v1/?player1=${props.player1 || ""}&player2=${props.player2 || ""}`}
+            className="w-full px-4 py-2 text-left data-[focus]:bg-secondary-text/30"
+          >
+            🥊👀 Compare 1v1
+          </Link>
+        </MenuItem>
+      )}
+    </MenuItems>
+  );
+};
+
+export const QuestionMark: React.FC<{ size: number }> = ({ size }) => {
+  size = size * 0.95;
+  return (
+    <div
+      className={classNames("overflow-hidden bg-primary-background shrink-0 rounded-full")}
+      style={{ height: size, width: size, fontSize: size * 0.66 + "px" }}
+    >
+      <div className={classNames("w-full h-full text-center")}>?</div>
+    </div>
+  );
+};

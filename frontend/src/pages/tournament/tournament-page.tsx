@@ -1,8 +1,4 @@
-import { classNames } from "../../common/class-names";
 import { useEventDbContext } from "../../wrappers/event-db-context";
-import { MenuItem, MenuItems } from "@headlessui/react";
-import { Link } from "react-router-dom";
-import { useRerender } from "../../hooks/use-rerender";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTennisParams } from "../../hooks/use-tennis-params";
 import { TournamentSignup } from "./tournament-signup";
@@ -22,7 +18,6 @@ const tabs: { id: TabType; label: string }[] = [
 
 export const TournamentPage: React.FC = () => {
   const { tournament: tournamentId, player1, player2 } = useTennisParams();
-  const rerender = useRerender();
   const context = useEventDbContext();
   const tournament = context.tournaments.getTournament(tournamentId);
   const defaultTab = (): TabType => {
@@ -96,94 +91,10 @@ export const TournamentPage: React.FC = () => {
           })}
       </div>
       {activeTab === "finals" && <TournamentBracket tournament={tournament} itemRefs={itemRefs} />}
+      {activeTab === "group-play" && <TournamentGroupPlayComponent tournament={tournament} itemRefs={itemRefs} />}
       {activeTab === "info" && <TournamentInfo tournament={tournament} />}
       {activeTab === "signup" && <TournamentSignup tournament={tournament} />}
       {activeTab === "predictions" && <TournamentPredictions tournament={tournament} />}
-      {tournament.startDate < new Date().getTime() && (
-        <>
-          <TournamentGroupPlayComponent tournament={tournament} rerender={rerender} itemRefs={itemRefs} />
-        </>
-      )}
-    </div>
-  );
-};
-
-export function winStateEmoji(winner?: boolean, skipped?: any) {
-  if (winner) {
-    return !!skipped ? "🆓" : "🏆";
-  }
-}
-
-type GameMenuItemsProps = {
-  player1?: string;
-  player2?: string;
-  showCompare: boolean;
-  showRegisterResult: boolean;
-  showSkipGame: { show: boolean; tournamentId: string };
-  showUndoSkip: { show: boolean; tournamentId: string; skipId: string };
-};
-export const GameMenuItems: React.FC<GameMenuItemsProps> = (props) => {
-  return (
-    <MenuItems
-      anchor="bottom"
-      className="flex flex-col gap-0 rounded-lg bg-secondary-background ring-2 ring-secondary-text shadow-xl text-secondary-text"
-    >
-      {props.showRegisterResult && (
-        <MenuItem>
-          <Link
-            to={`/add-game/?player1=${props.player1 || ""}&player2=${props.player2 || ""}`}
-            className="w-full px-4 py-2 text-left data-[focus]:bg-secondary-text/30"
-          >
-            🏓 Add or track game
-          </Link>
-        </MenuItem>
-      )}
-      {props.showSkipGame.show && (
-        <MenuItem>
-          <Link
-            to={`/tournament/skip-game/?player1=${props.player1 || ""}&player2=${props.player2 || ""}&tournament=${
-              props.showSkipGame.tournamentId || ""
-            }`}
-            className="w-full px-4 py-2 text-left data-[focus]:bg-secondary-text/30"
-          >
-            🆓 Skip game
-          </Link>
-        </MenuItem>
-      )}
-      {props.showUndoSkip.show && (
-        <MenuItem>
-          <Link
-            to={`/tournament/undo-skip/?player1=${props.player1 || ""}&player2=${props.player2 || ""}&skipId=${
-              props.showUndoSkip.skipId || ""
-            }&tournament=${props.showUndoSkip.tournamentId || ""}`}
-            className="w-full px-4 py-2 text-left data-[focus]:bg-secondary-text/30"
-          >
-            ⏮️ Undo skip
-          </Link>
-        </MenuItem>
-      )}
-      {props.showCompare && (
-        <MenuItem>
-          <Link
-            to={`/1v1/?player1=${props.player1 || ""}&player2=${props.player2 || ""}`}
-            className="w-full px-4 py-2 text-left data-[focus]:bg-secondary-text/30"
-          >
-            🥊👀 Compare 1v1
-          </Link>
-        </MenuItem>
-      )}
-    </MenuItems>
-  );
-};
-
-export const QuestionMark: React.FC<{ size: number }> = ({ size }) => {
-  size = size * 0.95;
-  return (
-    <div
-      className={classNames("overflow-hidden bg-primary-background shrink-0 rounded-full")}
-      style={{ height: size, width: size, fontSize: size * 0.66 + "px" }}
-    >
-      <div className={classNames("w-full h-full text-center")}>?</div>
     </div>
   );
 };
