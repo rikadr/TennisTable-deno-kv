@@ -6,20 +6,18 @@ import { useEventDbContext } from "../../wrappers/event-db-context";
 import { stringToColor } from "../../common/string-to-color";
 import { relativeTimeString } from "../../common/date-utils";
 import { NUM_SIMULATIONS } from "../../client/client-db/tournaments/prediction";
+import { Tournament } from "../../client/client-db/tournaments/tournament";
 
-export const TournamentPredictionPage: React.FC = () => {
+export const TournamentPredictions = ({ tournament }: { tournament: Tournament }) => {
   const context = useEventDbContext();
-  const [selectedTournamentId, setSelectedTournamentId] = useState<string>("");
   const [range, setRange] = useState(0);
   const [shouldSimulate, setShouldSimulate] = useState(false);
 
-  const allTournaments = useMemo(() => context.tournaments.getTournaments(), [context.tournaments]);
-
   const prediction = useMemo(() => {
-    if (!selectedTournamentId || !shouldSimulate) return null;
+    if (!shouldSimulate) return null;
     setRange(0);
-    return context.tournaments.tournamentPrediction.predictTournament(selectedTournamentId);
-  }, [context, selectedTournamentId, shouldSimulate]);
+    return context.tournaments.tournamentPrediction.predictTournament(tournament.id);
+  }, [context, tournament, shouldSimulate]);
 
   const graphData = useMemo(() => {
     if (!prediction) return [];
@@ -83,42 +81,20 @@ export const TournamentPredictionPage: React.FC = () => {
     setShouldSimulate(true);
   };
 
-  const handleTournamentChange = (tournamentId: string) => {
-    setSelectedTournamentId(tournamentId);
-    setShouldSimulate(false); // Reset simulation when tournament changes
-  };
-
   return (
     <div className="flex flex-col items-center">
       <section className="flex flex-col items-center bg-primary-background rounded-lg p-4 w-full max-w-[1050px]">
-        {/* Tournament Selector */}
-        <div className="w-full mb-4">
-          <label htmlFor="tournament-select" className="block text-primary-text mb-2 font-medium">
-            Select Tournament:
-          </label>
-          <select
-            id="tournament-select"
-            value={selectedTournamentId}
-            onChange={(e) => handleTournamentChange(e.target.value)}
-            className="w-full h-10 px-4 rounded-lg bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-primary-text"
-          >
-            <option value="">-- Select a tournament --</option>
-            {allTournaments.map((tournament) => (
-              <option key={tournament.id} value={tournament.id}>
-                {tournament.name || tournament.id}
-              </option>
-            ))}
-          </select>
-        </div>
-
         {/* Simulate Button */}
-        {selectedTournamentId && !shouldSimulate && (
-          <button
-            onClick={handleSimulate}
-            className="mb-4 px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
-          >
-            Run Simulation
-          </button>
+        {!shouldSimulate && (
+          <>
+            <button
+              onClick={handleSimulate}
+              className="mb-4 px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
+            >
+              Run Simulation
+            </button>
+            <p>*May take up to 10 seconds to see result</p>
+          </>
         )}
 
         {/* Graph Controls and Display */}
@@ -196,13 +172,9 @@ export const TournamentPredictionPage: React.FC = () => {
                 strokeDasharray="3 3"
               />
             </LineChart>
-          ) : selectedTournamentId && shouldSimulate ? (
-            <div className="w-full h-[428px] rounded-lg bg-gray-300/50 animate-pulse" />
           ) : (
             <div className="w-full h-[428px] rounded-lg bg-gray-300/50 flex items-center justify-center text-primary-text">
-              {selectedTournamentId
-                ? "Click 'Run Simulation' to view predictions"
-                : "Select a tournament to view predictions"}
+              Click 'Run Simulation' to view predictions
             </div>
           )}
         </div>

@@ -1,23 +1,42 @@
 import { classNames } from "../../common/class-names";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { ProfilePicture } from "../player/profile-picture";
-import { layerIndexToTournamentRound, WinnerBox } from "../leaderboard/tournament-pending-games";
+import { layerIndexToTournamentRound } from "../leaderboard/tournament-pending-games";
 import { Menu, MenuButton, MenuItem, MenuItems, Switch } from "@headlessui/react";
 import { Link } from "react-router-dom";
 import { useRerender } from "../../hooks/use-rerender";
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTennisParams } from "../../hooks/use-tennis-params";
 import { useSessionStorage } from "usehooks-ts";
-import { relativeTimeString } from "../../common/date-utils";
 import { TournamentSignup } from "./tournament-signup";
 import { TournamentGroupPlayComponent } from "./tournament-group-play";
 import { Tournament, TournamentGame } from "../../client/client-db/tournaments/tournament";
+import { TournamentInfo } from "./tournament-into";
+import { TournamentPredictions } from "./tournament-predictions";
+
+type TabType = "finals" | "group-play" | "signup" | "info" | "predictions";
+const tabs: { id: TabType; label: string }[] = [
+  { id: "finals", label: "Finals" },
+  { id: "group-play", label: "Group play" },
+  { id: "signup", label: "Signup" },
+  { id: "info", label: "Info" },
+  { id: "predictions", label: "Predictions" },
+];
 
 export const TournamentPage: React.FC = () => {
   const { tournament: tournamentId, player1, player2 } = useTennisParams();
   const rerender = useRerender();
   const context = useEventDbContext();
   const tournament = context.tournaments.getTournament(tournamentId);
+  const defaultTab = (): TabType => {
+    if (!tournament) return "info";
+    if (tournament.inSignupPeriod) return "signup";
+    if (tournament.tournamentDb.groupPlay && tournament.groupPlay && tournament.groupPlay.groupPlayEnded === undefined)
+      return "group-play";
+    return "finals";
+  };
+  const [activeTab, setActiveTab] = useState<TabType>(defaultTab);
+
   const [showAsList, setShowAsList] = useSessionStorage(
     `show-tournament-as-list${tournamentId}`,
     window.innerWidth < 1_000,
@@ -50,34 +69,43 @@ export const TournamentPage: React.FC = () => {
   if (!tournament) return <div>No tournament selected</div>;
 
   return (
-    <div className="space-y-4">
-      <div className="ring-1 ring-secondary-background w-fit mx-4 px-4 md:mx-10 md:px-6 py-4 text-primary-text bg-primary-background rounded-lg">
-        <p className="text-xs italic">Tournament:</p>
-        <h1 className="mb-2">{tournament.name}</h1>
-        <p className="text-xs italic">Description:</p>
-        <p className="text-sm mb-2">{tournament.description || "-"}</p>
-        <p className="text-xs italic">Start date:</p>
-        <p className="text-sm mb-2">
-          {relativeTimeString(new Date(tournament.startDate))} (
-          {new Intl.DateTimeFormat("en-US", {
-            minute: "numeric",
-            hour: "numeric",
-            hour12: false,
-            day: "numeric",
-            month: "long",
-            year: "numeric",
-          }).format(new Date(tournament.startDate))}
-          )
-        </p>
-        {tournament.winner && (
-          <div className="min-w-80 max-w-96 space-y-2">
-            <p className="text-xs italic">Won {relativeTimeString(new Date(tournament.endDate || 0))}</p>
-            <WinnerBox winner={tournament.winner} />
-          </div>
-        )}
+    <div className="space-y-4 mx-1 sm:mx-2 md:mx-6">
+      <div className="flex space-x-2 overflow-auto">
+        {tabs
+          .filter((t) => {
+            switch (t.id) {
+              case "group-play":
+                return tournament.tournamentDb.groupPlay;
+              case "signup":
+                return tournament.inSignupPeriod;
+              case "predictions":
+                return tournament.startDate < Date.now();
+              default:
+                return true;
+            }
+          })
+          .map((tab) => {
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`
+                    flex items-center py-2 px-4 border-b-4 font-medium text-sm transition-colors
+                    ${
+                      activeTab === tab.id
+                        ? "text-secondary-text border-secondary-text"
+                        : "text-secondary-text/80 border-transparent hover:text-secondary-text hover:border-secondary-text border-dotted"
+                    }
+                  `}
+              >
+                {tab.label}
+              </button>
+            );
+          })}
       </div>
-
-      {tournament.startDate > new Date().getTime() && <TournamentSignup tournament={tournament} />}
+      {activeTab === "info" && <TournamentInfo tournament={tournament} />}
+      {activeTab === "signup" && <TournamentSignup tournament={tournament} />}
+      {activeTab === "predictions" && <TournamentPredictions tournament={tournament} />}
       {tournament.startDate < new Date().getTime() && (
         <>
           {tournament.bracket && (
