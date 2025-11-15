@@ -1,4 +1,4 @@
-import { Tournament, TournamentGame } from "./tournament";
+import { SimulateGameFn, Tournament, TournamentGame } from "./tournament";
 
 type Bracket = Partial<TournamentGame>[][];
 
@@ -26,7 +26,7 @@ export class TournamentBracket {
       this.bracketStarted = this.#tournament.tournamentDb.startDate;
     }
 
-    this.bracket = this.#getStartingBracket();
+    this.bracket = TournamentBracket.getStartingBracket(this.#playerOrder);
     this.#fillBracketWithGames();
     this.bracketGames = this.#calculateBracketGames();
     this.bracketEnded = this.bracket[0]?.[0]?.completedAt;
@@ -36,10 +36,10 @@ export class TournamentBracket {
     return this.bracket[0]?.[0]?.winner;
   }
 
-  #getStartingBracket(): Bracket {
+  static getStartingBracket(playerOrder: string[]): Bracket {
     const bracket: Bracket = [];
 
-    this.#playerOrder.forEach((player, playerIndex, players) => {
+    playerOrder.forEach((player, playerIndex, players) => {
       const layerIndex = Math.floor(Math.log2(Math.max(1, playerIndex)));
       const gamesInLayer = Math.pow(2, layerIndex);
 
@@ -152,4 +152,25 @@ export class TournamentBracket {
     }
     return games;
   }
+
+  simulateWinnerFromExisting(simulateGameFn: SimulateGameFn, time: number, playerOrder?: string[]): SimulationResult {
+    // Take a copy of this.bracket and use the same logic as the static function to simulate the remaining games
+    return { winner: "todo", gamesSimulatedCount: 0, totalConfidenceSum: 0 };
+  }
+
+  static simulateWinnerFromStatic(
+    simulateGameFn: SimulateGameFn,
+    time: number,
+    playerOrder: string[],
+  ): SimulationResult {
+    const bracket = TournamentBracket.getStartingBracket(playerOrder);
+    // Iterate over the bracket and use simulateGameFn to determine advancing player, until the final game is determined as the winner
+    return { winner: "todo", gamesSimulatedCount: 0, totalConfidenceSum: 0 };
+  }
 }
+
+type SimulationResult = {
+  winner: string;
+  gamesSimulatedCount: number;
+  totalConfidenceSum: number;
+};

@@ -1,4 +1,4 @@
-import { Tournament, TournamentGame } from "./tournament";
+import { SimulateGameFn, Tournament, TournamentGame } from "./tournament";
 
 type GroupGame = Omit<TournamentGame, "advanceTo">;
 type GroupScore = Map<string, GroupScorePlayer>;
@@ -246,5 +246,13 @@ export class TournamentGroupPlay {
     }
 
     return p1.playerOrderIndex - p2.playerOrderIndex; // Default to player order
+  }
+
+  simulatePlayerOrder(
+    simulateGameFn: SimulateGameFn,
+    time: number,
+  ): { playerOrder: string[]; gamesSimulatedCount: number; totalConfidenceSum: number } {
+    // TODO
+    return { playerOrder: [], gamesSimulatedCount: 0, totalConfidenceSum: 0 };
   }
 }
