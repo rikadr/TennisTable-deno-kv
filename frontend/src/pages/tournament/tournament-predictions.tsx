@@ -8,6 +8,7 @@ import { relativeTimeString } from "../../common/date-utils";
 import { NUM_SIMULATIONS } from "../../client/client-db/tournaments/prediction";
 import { Tournament } from "../../client/client-db/tournaments/tournament";
 import { useTournamentPredictionWorker } from "../../hooks/use-tournament-prediction-worker";
+import { ProgressBar } from "../player/player-elo-graph";
 
 export const TournamentPredictions = ({ tournament }: { tournament: Tournament }) => {
   const [range, setRange] = useState(0);
@@ -86,7 +87,7 @@ export const TournamentPredictions = ({ tournament }: { tournament: Tournament }
 
   return (
     <div className="flex flex-col items-center">
-      <section className="flex flex-col items-center bg-primary-background rounded-lg p-4 w-full max-w-[1050px]">
+      <section className="flex flex-col items-center bg-primary-background rounded-lg w-full max-w-[1050px]">
         {/* Simulate Button */}
         {predictionResults.length === 0 && (
           <>
@@ -96,24 +97,7 @@ export const TournamentPredictions = ({ tournament }: { tournament: Tournament }
             >
               Run Simulation
             </button>
-            <p>*May take up to 10 seconds to see result</p>
           </>
-        )}
-
-        {/* Progress Bar */}
-        {simulationTimes.length > 0 && !simulationIsDone && (
-          <div className="w-full max-w-[1000px] mb-4">
-            <div className="flex justify-between mb-1">
-              <span className="text-sm text-primary-text">Simulation Progress</span>
-              <span className="text-sm text-primary-text">{Math.round(simulationProgress * 100)}%</span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-2.5">
-              <div
-                className="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
-                style={{ width: `${simulationProgress * 100}%` }}
-              ></div>
-            </div>
-          </div>
         )}
 
         {/* Graph Controls and Display */}
@@ -133,7 +117,6 @@ export const TournamentPredictions = ({ tournament }: { tournament: Tournament }
               className="mt-2"
               width={Math.min(1000, width - 50)}
               height={Math.min(500, Math.max(300, height - 200))}
-              margin={{ left: 10, right: 10 }}
               data={graphDataToSee}
             >
               <CartesianGrid strokeDasharray="1 4" vertical={false} stroke="rgb(var(--color-primary-text))" />
@@ -196,6 +179,7 @@ export const TournamentPredictions = ({ tournament }: { tournament: Tournament }
               Click 'Run Simulation' to view predictions
             </div>
           )}
+          {!simulationIsDone && simulationProgress > 0 && <ProgressBar progress={simulationProgress} />}
         </div>
       </section>
     </div>
