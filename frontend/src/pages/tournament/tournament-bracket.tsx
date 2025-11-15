@@ -111,49 +111,55 @@ const GamesList: React.FC<GamesListProps> = ({ tournament, itemRefs }) => {
 
               return (
                 <Menu key={gameKey} ref={(el) => (itemRefs.current[gameKey] = el)}>
-                  <MenuButton
-                    disabled={!showMenu}
-                    className={classNames(
-                      "relative w-full px-4 py-2 rounded-lg flex items-center gap-x-4 h-12 text-secondary-text",
-                      isPending ? "bg-secondary-background ring-2 ring-secondary-text" : "bg-secondary-background/60",
-                      showMenu && "hover:bg-secondary-background/70",
-                      isParamSelectedGame && "animate-wiggle",
-                    )}
-                  >
-                    <h2 className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2">VS</h2>
-                    <div className="flex gap-3 items-center justify-center">
-                      {game.player1 ? (
-                        <ProfilePicture
-                          playerId={game.player1}
-                          size={35}
-                          shape="circle"
-                          clickToEdit={false}
-                          border={3}
-                        />
-                      ) : (
-                        <QuestionMark size={38} />
+                  <div>
+                    <MenuButton
+                      disabled={!showMenu}
+                      className={classNames(
+                        "relative w-full px-4 py-2 rounded-lg flex items-center gap-x-4 h-12 text-secondary-text",
+                        isPending ? "bg-secondary-background ring-2 ring-secondary-text" : "bg-secondary-background/60",
+                        showMenu && "hover:bg-secondary-background/70",
+                        isParamSelectedGame && "animate-wiggle",
                       )}
-                      <h3 className={classNames(p1IsWinner && "font-semibold", p1IsLoser && "line-through font-thin")}>
-                        {game.player1 && context.playerName(game.player1)} {winStateEmoji(p1IsWinner, game.skipped)}
-                      </h3>
-                    </div>
-                    <div className="grow" />
-                    <div className="flex gap-3 items-center justify-center">
-                      <h3 className={classNames(p2IsWinner && "font-semibold", p2IsLoser && "line-through font-thin")}>
-                        {winStateEmoji(p2IsWinner, game.skipped)} {game.player2 && context.playerName(game.player2)}
-                      </h3>
-                      {game.player2 ? (
-                        <ProfilePicture
-                          playerId={game.player2}
-                          size={35}
-                          shape="circle"
-                          clickToEdit={false}
-                          border={3}
-                        />
-                      ) : (
-                        <QuestionMark size={38} />
-                      )}
-                    </div>
+                    >
+                      <h2 className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2">VS</h2>
+                      <div className="flex gap-3 items-center justify-center">
+                        {game.player1 ? (
+                          <ProfilePicture
+                            playerId={game.player1}
+                            size={35}
+                            shape="circle"
+                            clickToEdit={false}
+                            border={3}
+                          />
+                        ) : (
+                          <QuestionMark size={38} />
+                        )}
+                        <h3
+                          className={classNames(p1IsWinner && "font-semibold", p1IsLoser && "line-through font-thin")}
+                        >
+                          {game.player1 && context.playerName(game.player1)} {winStateEmoji(p1IsWinner, game.skipped)}
+                        </h3>
+                      </div>
+                      <div className="grow" />
+                      <div className="flex gap-3 items-center justify-center">
+                        <h3
+                          className={classNames(p2IsWinner && "font-semibold", p2IsLoser && "line-through font-thin")}
+                        >
+                          {winStateEmoji(p2IsWinner, game.skipped)} {game.player2 && context.playerName(game.player2)}
+                        </h3>
+                        {game.player2 ? (
+                          <ProfilePicture
+                            playerId={game.player2}
+                            size={35}
+                            shape="circle"
+                            clickToEdit={false}
+                            border={3}
+                          />
+                        ) : (
+                          <QuestionMark size={38} />
+                        )}
+                      </div>
+                    </MenuButton>
                     <GameMenuItems
                       player1={game.player1}
                       player2={game.player2}
@@ -166,7 +172,7 @@ const GamesList: React.FC<GamesListProps> = ({ tournament, itemRefs }) => {
                         tournamentId: tournament.id,
                       }}
                     />
-                  </MenuButton>
+                  </div>
                 </Menu>
               );
             })}
@@ -438,6 +444,7 @@ export const GameMenuItems: React.FC<GameMenuItemsProps> = (props) => {
           <Link
             to={`/add-game/?player1=${props.player1 || ""}&player2=${props.player2 || ""}`}
             className="w-full px-4 py-2 text-left data-[focus]:bg-secondary-text/30"
+            onClick={() => console.log("Clicked link to add game")}
           >
             🏓 Add or track game
           </Link>
