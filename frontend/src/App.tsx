@@ -36,7 +36,6 @@ import { PlayerNetwork } from "./pages/player-network/player-network";
 import { TrackGamePage } from "./pages/add-game/track-game";
 import { ChooseAddOrTrack } from "./pages/add-game/choose-add-or-track";
 import { AchievementsPage } from "./pages/achievements-page";
-import { TournamentPredictionPage } from "./pages/tournament/tournament-prediction-page";
 import { TournamentSkipGamePage } from "./pages/tournament/tournament-skip-game";
 import { TournamentUndoSkipPage } from "./pages/tournament/tournament-undo-skip";
 
@@ -78,7 +77,6 @@ function App() {
                           <Route path="list" element={<TournamentsListPage />} />
                           <Route path="skip-game" element={<TournamentSkipGamePage />} />
                           <Route path="undo-skip" element={<TournamentUndoSkipPage />} />
-                          <Route path="predict" element={<TournamentPredictionPage />} />
                         </Route>
                         <Route path="/achievements" element={<AchievementsPage />} />
                         <Route path="/simulations">

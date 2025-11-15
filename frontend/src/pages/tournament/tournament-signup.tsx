@@ -13,7 +13,7 @@ import {
   TournamentSignup as TournamentSignupType,
 } from "../../client/client-db/event-store/event-types";
 
-export const TournamentSignup: React.FC<{ tournament: Tournament }> = ({ tournament }) => {
+export const TournamentSignup = ({ tournament }: { tournament: Tournament }) => {
   const context = useEventDbContext();
   const addEventMutation = useEventMutation();
   const [signUpEdit, setSignUpEdit] = useState(false);
