@@ -1,6 +1,7 @@
 import { ONE_WEEK } from "../../../common/time-in-ms";
 import { Game } from "../event-store/projectors/games-projector";
 import { SignUp, SkippedGame } from "../event-store/projectors/tournaments-projector";
+import { TennisTable } from "../tennis-table";
 import { TournamentDB } from "../types";
 import { TournamentBracket } from "./bracket";
 import { TournamentGroupPlay } from "./group-play";
@@ -96,7 +97,7 @@ export class Tournament {
   }
 
   /** Used by bracket and group play to get the relevant games and skips */
-  getRelevantGames(startTime: number) {
+  getRelevantGames(startTime: number, endTime?: number) {
     type BaseEntry = { time: number; player1: string; player2: string };
     const entries: (
       | (BaseEntry & { game: Game; skip: undefined })
@@ -114,6 +115,10 @@ export class Tournament {
       .forEach((skip) =>
         entries.push({ time: skip.time, player1: skip.winner, player2: skip.loser, game: undefined, skip }),
       );
+
+    if (endTime) {
+      return entries.filter((e) => e.time <= endTime).sort((a, b) => a.time - b.time);
+    }
 
     entries.sort((a, b) => a.time - b.time); // Might be heavy sorting, but we need to be sure the games are in order
     return entries;
@@ -276,4 +281,62 @@ export class Tournament {
     times.sort((a, b) => a - b);
     return times;
   }
+
+  predictWinner(
+    state: TennisTable,
+    time: number,
+  ): { winner: string; gamesSimulatedCount: number; totalConfidenceSum: number } {
+    const simulateGameFn = this.simulateGameFn(state);
+    if (this.groupPlay && this.groupPlay.groupPlayEnded === undefined) {
+      const groupPlayResult = this.groupPlay.simulatePlayerOrder(simulateGameFn, time);
+      const bracketResult = TournamentBracket.simulateWinnerFromStatic(
+        simulateGameFn,
+        time,
+        groupPlayResult.playerOrder,
+      );
+      return {
+        winner: bracketResult.winner,
+        gamesSimulatedCount: groupPlayResult.gamesSimulatedCount + bracketResult.gamesSimulatedCount,
+        totalConfidenceSum: groupPlayResult.totalConfidenceSum + bracketResult.totalConfidenceSum,
+      };
+    }
+    if (this.bracket && this.bracket.bracketEnded === undefined) {
+      return this.bracket.simulateWinnerFromExisting(simulateGameFn, time);
+    }
+
+    if (this.winner) {
+      return { winner: this.winner, gamesSimulatedCount: 0, totalConfidenceSum: 0 };
+    }
+    throw new Error("Unexpected no winner of tournament when predicting winner");
+  }
+
+  simulateGameFn(state: TennisTable): SimulateGameFn {
+    return function fn(player1: string, player2: string) {
+      const fraction = state.futureElo.getPredictedFractionForTwoPlayers(player1, player2);
+
+      if (!fraction) {
+        // No prediction available, default to 50/50 with low confidence
+        const player1Wins = Math.random() < 0.5;
+        return {
+          winner: player1Wins ? player1 : player2,
+          loser: player1Wins ? player2 : player1,
+          confidence: 0,
+        };
+      }
+
+      // Player 1 wins if random number is less than their predicted fraction
+      const player1Wins = Math.random() < fraction.fraction;
+
+      return {
+        winner: player1Wins ? player1 : player2,
+        loser: player1Wins ? player2 : player1,
+        confidence: fraction.confidence,
+      };
+    };
+  }
 }
+
+export type SimulateGameFn = (
+  player1: string,
+  player2: string,
+) => { winner: string; loser: string; confidence: number };

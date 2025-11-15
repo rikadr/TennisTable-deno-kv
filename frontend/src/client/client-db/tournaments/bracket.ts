@@ -1,4 +1,4 @@
-import { Tournament, TournamentGame } from "./tournament";
+import { SimulateGameFn, Tournament, TournamentGame } from "./tournament";
 
 type Bracket = Partial<TournamentGame>[][];
 
@@ -26,7 +26,7 @@ export class TournamentBracket {
       this.bracketStarted = this.#tournament.tournamentDb.startDate;
     }
 
-    this.bracket = this.#getStartingBracket();
+    this.bracket = TournamentBracket.getStartingBracket(this.#playerOrder);
     this.#fillBracketWithGames();
     this.bracketGames = this.#calculateBracketGames();
     this.bracketEnded = this.bracket[0]?.[0]?.completedAt;
@@ -36,10 +36,10 @@ export class TournamentBracket {
     return this.bracket[0]?.[0]?.winner;
   }
 
-  #getStartingBracket(): Bracket {
+  static getStartingBracket(playerOrder: string[]): Bracket {
     const bracket: Bracket = [];
 
-    this.#playerOrder.forEach((player, playerIndex, players) => {
+    playerOrder.forEach((player, playerIndex, players) => {
       const layerIndex = Math.floor(Math.log2(Math.max(1, playerIndex)));
       const gamesInLayer = Math.pow(2, layerIndex);
 
@@ -152,4 +152,88 @@ export class TournamentBracket {
     }
     return games;
   }
+
+  simulateWinnerFromExisting(simulateGameFn: SimulateGameFn, time: number): SimulationResult {
+    const bracketCopy = this.#deepCopyBracket(this.bracket);
+    return TournamentBracket.#simulateBracket(bracketCopy, simulateGameFn, time);
+  }
+
+  static simulateWinnerFromStatic(
+    simulateGameFn: SimulateGameFn,
+    time: number,
+    playerOrder: string[],
+  ): SimulationResult {
+    const bracket = TournamentBracket.getStartingBracket(playerOrder);
+    return TournamentBracket.#simulateBracket(bracket, simulateGameFn, time);
+  }
+
+  /**
+   * Core simulation logic that works on any bracket
+   * Simulates all pending games starting from the last layer and working towards the final
+   */
+  static #simulateBracket(bracket: Bracket, simulateGameFn: SimulateGameFn, time: number): SimulationResult {
+    let gamesSimulatedCount = 0;
+    let totalConfidenceSum = 0;
+
+    // Process layers from last to first (bottom-up through the bracket)
+    for (let layerIndex = bracket.length - 1; layerIndex >= 0; layerIndex--) {
+      const layer = bracket[layerIndex];
+
+      for (const game of layer) {
+        // Skip if game is already completed or doesn't have both players yet
+        if (game.winner || !game.player1 || !game.player2) {
+          continue;
+        }
+
+        // Simulate the game
+        const result = simulateGameFn(game.player1, game.player2);
+
+        game.winner = result.winner;
+        game.completedAt = time;
+        gamesSimulatedCount++;
+        totalConfidenceSum += result.confidence;
+
+        // Advance winner to next round (if not the final)
+        if (layerIndex > 0 && game.advanceTo) {
+          const nextMatch = bracket[game.advanceTo.layerIndex][game.advanceTo.gameIndex];
+          if (!nextMatch) {
+            throw new Error(
+              `Next match not found at layer ${game.advanceTo.layerIndex}, game ${game.advanceTo.gameIndex}`,
+            );
+          }
+          nextMatch[game.advanceTo.role] = game.winner;
+        }
+      }
+    }
+
+    // Get the winner from the final game
+    const finalGame = bracket[0]?.[0];
+    if (!finalGame?.winner) {
+      throw new Error("Simulation failed to produce a winner");
+    }
+
+    return {
+      winner: finalGame.winner,
+      gamesSimulatedCount,
+      totalConfidenceSum,
+    };
+  }
+
+  /**
+   * Deep copy a bracket to avoid mutating the original
+   */
+  #deepCopyBracket(bracket: Bracket): Bracket {
+    return bracket.map((layer) =>
+      layer.map((game) => ({
+        ...game,
+        advanceTo: game.advanceTo ? { ...game.advanceTo } : undefined,
+      })),
+    );
+  }
 }
+
+export type SimulationResult = {
+  winner: string;
+  gamesSimulatedCount: number;
+  totalConfidenceSum: number;
+};
