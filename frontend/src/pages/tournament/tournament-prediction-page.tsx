@@ -5,6 +5,7 @@ import { NameType, ValueType } from "recharts/types/component/DefaultTooltipCont
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { stringToColor } from "../../common/string-to-color";
 import { relativeTimeString } from "../../common/date-utils";
+import { NUM_SIMULATIONS } from "../../client/client-db/tournaments/prediction";
 
 export const TournamentPredictionPage: React.FC = () => {
   const context = useEventDbContext();
@@ -23,10 +24,13 @@ export const TournamentPredictionPage: React.FC = () => {
   const graphData = useMemo(() => {
     if (!prediction) return [];
 
-    // Get NUM_SIMULATIONS from the first entry (total wins should sum to this)
-    const numSimulations = prediction[0]?.players
-      ? Array.from(prediction[0].players.values()).reduce((sum, p) => sum + p.wins, 0)
-      : 1000;
+    // First, collect all unique player IDs across all time points
+    const allPlayerIds = new Set<string>();
+    prediction.forEach((result) => {
+      result.players.forEach((_, playerId) => {
+        allPlayerIds.add(playerId);
+      });
+    });
 
     // Transform prediction results into graph data
     return prediction.map((result) => {
@@ -41,9 +45,14 @@ export const TournamentPredictionPage: React.FC = () => {
         confidence: result.confidence * 100, // Convert to percentage
       };
 
-      // Convert each player's wins to percentage
+      // Initialize all players to 0
+      allPlayerIds.forEach((playerId) => {
+        dataPoint[playerId] = 0;
+      });
+
+      // Convert each player's wins to percentage (overwriting the 0 if they have data)
       result.players.forEach((playerData, playerId) => {
-        dataPoint[playerId] = (playerData.wins / numSimulations) * 100;
+        dataPoint[playerId] = (playerData.wins / NUM_SIMULATIONS) * 100;
       });
 
       return dataPoint;
@@ -218,11 +227,13 @@ const CustomTooltip: React.FC = ({ active, payload }: TooltipProps<ValueType, Na
 
     return (
       <div className="p-2 bg-primary-background ring-1 ring-primary-text rounded-lg">
-        {playerEntries.map((entry) => (
-          <p key={entry[0]} style={{ color: stringToColor(entry[0]) }}>
-            {`${context.playerName(entry[0])}: ${(entry[1] as number).toFixed(1)}%`}
-          </p>
-        ))}
+        {playerEntries
+          .filter((e) => (e[1] as number) > 0)
+          .map((entry) => (
+            <p key={entry[0]} style={{ color: stringToColor(entry[0]) }}>
+              {`${context.playerName(entry[0])}: ${(entry[1] as number).toFixed(1)}%`}
+            </p>
+          ))}
         {confidence && typeof confidence[1] === "number" && (
           <p className="text-orange-400 mt-3">{`Confidence: ${(confidence[1] as number).toFixed(1)}%`}</p>
         )}
