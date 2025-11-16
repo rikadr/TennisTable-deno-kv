@@ -44,7 +44,7 @@ export const TournamentBracket = ({
       <Switch
         checked={showAsList}
         onChange={setShowAsList}
-        className="ml-4 md:ml-10 group relative flex h-10 w-36 cursor-pointer rounded-full bg-secondary-background p-1 transition-colors duration-200 ease-in-out focus:outline-none data-[focus]:outline-1 data-[focus]:outline-white"
+        className="group relative flex h-10 w-36 cursor-pointer rounded-full bg-secondary-background p-1 transition-colors duration-200 ease-in-out focus:outline-none data-[focus]:outline-1 data-[focus]:outline-white"
       >
         <div
           className={classNames(

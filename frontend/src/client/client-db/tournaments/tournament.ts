@@ -305,7 +305,7 @@ export class Tournament {
     }
 
     if (this.winner) {
-      return { winner: this.winner, gamesSimulatedCount: 0, totalConfidenceSum: 0 };
+      return { winner: this.winner, gamesSimulatedCount: 1, totalConfidenceSum: 1 };
     }
     throw new Error("Unexpected no winner of tournament when predicting winner");
   }

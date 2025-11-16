@@ -12,13 +12,13 @@ export const PendingTournamentGame: React.FC<{ player1: string; player2: string 
 
   return (
     <>
-      <p className="italic w-full text-center mb-2">This game is pending in a tournament!</p>
+      <p className="italic w-full text-center mb-2 text-primary-text">This game is pending in a tournament!</p>
       {pendingTournamentGames.map((pendingGame) => (
         <Link
           key={pendingGame.tournament.id}
           to={`/tournament?tournament=${pendingGame.tournament.id}&player1=${pendingGame.player1}&player2=${pendingGame.player2}`}
         >
-          <div className="ring-1 ring-secondary-background px-4 py-2 rounded-lg hover:bg-secondary-background/50 mb-2">
+          <div className="ring-1 ring-secondary-background px-4 py-2 rounded-lg hover:bg-secondary-background/50 mb-2 text-primary-text">
             <h1>{pendingGame.tournament.name}</h1>
             {pendingGame.layerIndex !== undefined && (
               <p className="text-center text-lg">{layerIndexToTournamentRound(pendingGame.layerIndex)}</p>

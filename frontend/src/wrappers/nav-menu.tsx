@@ -35,7 +35,7 @@ export const NavMenu: React.FC = () => {
       { name: "🔧 Settings", to: "/settings" },
     ];
     if (session.isAuthenticated && session.sessionData?.role === "admin") {
-      items.push({ name: "Admin Page 🔐", to: "/admin" });
+      items.push({ name: "🔐 Admin Page", to: "/admin" });
     }
     const menuItemWrapperClassNames =
       "flex items-center justify-end md:justify-start h-12 md:h-10 hover:underline px-4 sm:px-12";
