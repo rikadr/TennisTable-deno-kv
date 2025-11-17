@@ -23,6 +23,7 @@ import { LocalAdminControls } from "./local-admin-controls";
 import { Events } from "./events";
 import { classNames } from "../../common/class-names";
 import { PlayersTab } from "./players";
+import { PlayerDiversityChart } from "./player-diversity-chart";
 
 type TabType = "stats" | "games" | "players" | "users" | "events" | "local";
 const tabs: { id: TabType; label: string }[] = [
@@ -178,6 +179,7 @@ export const AdminPage: React.FC = () => {
           <GamesPerWeekdayChart />
           <GamesPerTimeChart />
           <TopGamingDays />
+          <PlayerDiversityChart />
           <h2>Total distribution of games played</h2>
           <AllPlayerGamesDistrubution />
         </>
