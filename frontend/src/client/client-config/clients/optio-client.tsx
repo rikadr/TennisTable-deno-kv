@@ -77,8 +77,33 @@ export class OptioClient implements ClientConfig {
   title = new GuestClient().title;
   favicon = new GuestClient().favicon;
   gameLimitForRanked = 15;
-  tournaments = [optioChristmasTournament, optioEasterTournament, the2025YearEndOfficeOpen];
+  tournaments = [
+    optioChristmasTournament,
+    optioEasterTournament,
+    the2025YearEndOfficeOpen,
+    the2025YearEndOfficeOpenLosersFinals,
+  ];
 }
+
+const the2025YearEndOfficeOpenLosersFinals: TournamentDB = {
+  id: "4BJvUASLqu",
+  name: "2025 Year-End Office Open Losers finals 💔🏓",
+  description:
+    "The eliminated players from the 2025 Year-End Office Open 🏆🏓 are invited to a play-off for the best of the rest 💪",
+  startDate: 1763382644000,
+  groupPlay: false,
+  signedUp: [],
+  playerOrder: [
+    optioPlayersByName.Marko,
+    optioPlayersByName.Daniel,
+    optioPlayersByName["Alejandro 🌮"],
+    optioPlayersByName.Francesco,
+    optioPlayersByName.Mads,
+    optioPlayersByName.Magnus,
+    optioPlayersByName["Yngve"],
+    optioPlayersByName.Michael,
+  ],
+};
 
 const the2025YearEndOfficeOpen: TournamentDB = {
   id: "2XQllk6sPF",
