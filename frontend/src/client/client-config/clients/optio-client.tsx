@@ -87,7 +87,7 @@ export class OptioClient implements ClientConfig {
 
 const the2025YearEndOfficeOpenLosersFinals: TournamentDB = {
   id: "4BJvUASLqu",
-  name: "2025 Year-End Office Open Losers finals 💔🏓",
+  name: "2025 Year-End Office Open Losers Finals 💔🏓",
   description:
     "The eliminated players from the 2025 Year-End Office Open 🏆🏓 are invited to a play-off for the best of the rest 💪",
   startDate: 1763382644000,
