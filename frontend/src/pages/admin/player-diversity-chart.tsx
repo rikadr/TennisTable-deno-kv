@@ -166,7 +166,7 @@ export const PlayerDiversityChart: React.FC = () => {
     <div className="bg-primary-background text-primary-text rounded-lg">
       <h2 className="text-xl font-semibold text-center mb-4">Global Player Diversity Over Time</h2>
 
-      <ResponsiveContainer width="100%" height={400}>
+      <ResponsiveContainer width="100%" height={600}>
         <LineChart data={weeklyData} margin={{ top: 20, right: 60, bottom: 20, left: 20 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="rgb(var(--color-primary-text))" opacity={0.3} />
 
