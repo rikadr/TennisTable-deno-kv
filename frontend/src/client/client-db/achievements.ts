@@ -935,10 +935,9 @@ export class Achievements {
       }
     });
 
-    // Set current to max under target, or the actual max if all are at/over
-    const maxStreak = Math.max(...Array.from(streaksPerOpponent.values()), 0);
-    progression["streak-player-10"].current = maxStreakUnder10 > 0 ? maxStreakUnder10 : maxStreak;
-    progression["streak-player-20"].current = maxStreakUnder20 > 0 ? maxStreakUnder20 : maxStreak;
+    // Set current to max under target, or 0 if all are at/over the target
+    progression["streak-player-10"].current = maxStreakUnder10;
+    progression["streak-player-20"].current = maxStreakUnder20;
 
     // Calculate active period with 30-day reset logic
     const activityPeriod = this.#calculateActivityPeriod(playerId);

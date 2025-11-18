@@ -1,0 +1,49 @@
+// import { EventType, EventTypeEnum } from "../../event-store/event-types";
+// import { TennisTable } from "../../tennis-table";
+// import { getClientConfig } from "../../../client-config/get-client-config.ts";
+
+// jest.mock("../client-config/get-client-config");
+
+// describe("TennisTable", () => {
+//   let tennisTable: TennisTable;
+//   let events: EventType[];
+
+//   beforeEach(() => {
+//     // Default mock
+//     (getClientConfig as jest.Mock).mockReturnValue({});
+//     events = [];
+//   });
+
+//   afterEach(() => {
+//     jest.clearAllMocks();
+//   });
+
+//   describe("Donut", () => {
+//     beforeEach(() => {
+//       // Override mock for this specific test suite
+//       (getClientConfig as jest.Mock).mockReturnValue({
+//         customProperty: "custom",
+//       });
+
+//       events = [
+//         {
+//           type: EventTypeEnum.PLAYER_CREATED,
+//           stream: "alice",
+//           time: 1000,
+//           data: { name: "Alice" },
+//         },
+//         {
+//           type: EventTypeEnum.PLAYER_CREATED,
+//           stream: "bob",
+//           time: 1001,
+//           data: { name: "Bob" },
+//         },
+//       ];
+//       tennisTable = new TennisTable({ events });
+//     });
+
+//     it("should use custom client config", () => {
+//       expect(tennisTable.client).toEqual({ customProperty: "custom" });
+//     });
+//   });
+// });
