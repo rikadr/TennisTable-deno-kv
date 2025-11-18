@@ -70,7 +70,7 @@ export class FutureElo {
     }
 
     // Add players that might not have played games yet
-    for (const player of this.parent.players) {
+    for (const player of [...this.parent.players, ...this.parent.eventStore.playersProjector.inactivePlayers]) {
       if (this.playersMap.has(player.id) === false) {
         this.playersMap.set(player.id, new PlayerClass(player.id));
       }
@@ -612,8 +612,11 @@ export class FutureElo {
   }
 
   private getOneLayerFraction(p1: string, p2: string, ageAdjustFrom?: number): Fraction {
-    const player1 = this.playersMap.get(p1)!;
-    const player2 = this.playersMap.get(p2)!;
+    const player1 = this.playersMap.get(p1);
+    const player2 = this.playersMap.get(p2);
+    if (!player1 || !player2) {
+      return { fraction: 0, confidence: 0 };
+    }
 
     // Check cache
     const alreadyCalculatedOneLayerFraction = player1?.oponentsMap.get(p2)?.oneLayerFraction;
@@ -641,8 +644,8 @@ export class FutureElo {
     const combinedFraction = this.combineFractions(fractions);
 
     // Update cache
-    player1!.registerOponentIfNotExists(p2).oponentsMap.get(p2)!.oneLayerFraction = combinedFraction;
-    player2!.registerOponentIfNotExists(p1).oponentsMap.get(p1)!.oneLayerFraction = {
+    player1.registerOponentIfNotExists(p2).oponentsMap.get(p2)!.oneLayerFraction = combinedFraction;
+    player2.registerOponentIfNotExists(p1).oponentsMap.get(p1)!.oneLayerFraction = {
       fraction: 1 - combinedFraction.fraction,
       confidence: combinedFraction.confidence,
     }; // Invert fraction for p2
@@ -651,8 +654,11 @@ export class FutureElo {
   }
 
   private getTwoLayerFraction(p1: string, p2: string, ageAdjustFrom?: number): Fraction {
-    const player1 = this.playersMap.get(p1)!;
-    const player2 = this.playersMap.get(p2)!;
+    const player1 = this.playersMap.get(p1);
+    const player2 = this.playersMap.get(p2);
+    if (!player1 || !player2) {
+      return { fraction: 0, confidence: 0 };
+    }
 
     // Check cache
     const alreadyCalculatedTwoLayerFraction = player1?.oponentsMap.get(p2)?.twoLayerFraction;
@@ -689,8 +695,8 @@ export class FutureElo {
     const combinedFraction = this.combineFractions(fractions);
 
     // Update cache
-    player1!.oponentsMap.get(p2)!.twoLayerFraction = combinedFraction;
-    player2!.oponentsMap.get(p1)!.twoLayerFraction = {
+    player1.registerOponentIfNotExists(player2.id).oponentsMap.get(p2)!.twoLayerFraction = combinedFraction;
+    player2.registerOponentIfNotExists(player1.id).oponentsMap.get(p1)!.twoLayerFraction = {
       fraction: 1 - combinedFraction.fraction,
       confidence: combinedFraction.confidence,
     }; // Invert fraction for p2
