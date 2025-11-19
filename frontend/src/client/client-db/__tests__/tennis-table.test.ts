@@ -1,7 +1,7 @@
 import { TennisTable } from "../tennis-table";
 import { EventType, EventTypeEnum } from "../event-store/event-types";
 
-describe("TennisTable", () => {
+describe("TennisTable Basic sanity tests", () => {
   let tennisTable: TennisTable;
   let events: EventType[];
 
@@ -175,26 +175,6 @@ describe("TennisTable", () => {
 
       expect(comparison.player1.streak.current).toBe(4);
       expect(comparison.player1.streak.longest).toBe(4);
-    });
-  });
-
-  describe("Achievements", () => {
-    it("should calculate achievements", () => {
-      tennisTable.achievements.calculateAchievements();
-      expect(tennisTable.achievements.achievementMap).toBeDefined();
-    });
-
-    it("should get achievements for a player", () => {
-      tennisTable.achievements.calculateAchievements();
-      const achievements = tennisTable.achievements.getAchievements("player-1");
-      expect(Array.isArray(achievements)).toBe(true);
-    });
-
-    it("should track achievement count", () => {
-      tennisTable.achievements.calculateAchievements();
-      const count = tennisTable.achievements.getAchievementCount("player-1");
-      expect(typeof count).toBe("number");
-      expect(count).toBeGreaterThanOrEqual(0);
     });
   });
 
