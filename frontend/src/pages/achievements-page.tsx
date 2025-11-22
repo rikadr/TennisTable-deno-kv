@@ -118,9 +118,10 @@ export const AchievementsPage: React.FC = () => {
                           <h3 className="font-semibold text-primary-text">{label.title}</h3>
                           <p className="text-sm mt-1">{label.description}</p>
                         </div>
-                        <span className="text-xs whitespace-nowrap ml-4">
-                          {relativeTimeString(new Date(achievement.earnedAt))} - {dateString(achievement.earnedAt)}
-                        </span>
+                        <div className="text-xs whitespace-nowrap ml-4">
+                          <p>{dateString(achievement.earnedAt)}</p>
+                          <p>{relativeTimeString(new Date(achievement.earnedAt))}</p>
+                        </div>
                       </div>
                       <div>
                         {achievement.data && "opponent" in achievement.data && (
