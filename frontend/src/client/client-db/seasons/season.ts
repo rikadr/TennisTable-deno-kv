@@ -81,7 +81,7 @@ export class Season {
   /** Only games with at least 2 sets with full individual set scoring are valid */
   private isValidGame(game: Game): boolean {
     if (!game.score?.setPoints) return false;
-    if (game.score.setPoints.length < 3) return false;
+    if (game.score.setPoints.length < 2) return false;
     return true;
   }
 }
