@@ -40,6 +40,7 @@ import { TournamentSkipGamePage } from "./pages/tournament/tournament-skip-game"
 import { TournamentUndoSkipPage } from "./pages/tournament/tournament-undo-skip";
 import { SeasonsListPage } from "./pages/seasons/seasons-list-page";
 import { SeasonPage } from "./pages/seasons/season-page";
+import { SeasonPlayerPage } from "./pages/seasons/season-player-page";
 
 const RequireAuth: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   if (!session.isAuthenticated) {
@@ -83,6 +84,7 @@ function App() {
                         <Route path="/season">
                           <Route index element={<SeasonPage />} />
                           <Route path="list" element={<SeasonsListPage />} />
+                          <Route path="player" element={<SeasonPlayerPage />} />
                         </Route>
                         <Route path="/achievements" element={<AchievementsPage />} />
                         <Route path="/simulations">

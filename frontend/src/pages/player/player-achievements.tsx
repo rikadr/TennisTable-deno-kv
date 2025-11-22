@@ -96,7 +96,7 @@ export const ACHIEVEMENT_LABELS: Record<string, { title: string; description: st
     icon: "🏆",
   },
   "season-winner": {
-    title: "Seasonal Champion",
+    title: "Season's Champion",
     description: "Finished 1st in a season",
     icon: "🍁",
   },

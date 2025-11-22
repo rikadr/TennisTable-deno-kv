@@ -114,7 +114,7 @@ export function SeasonPage() {
                   <div className="flex items-center gap-3">
                     <ProfilePicture playerId={player.playerId} size={40} />
                     <Link
-                      to={`/player/${player.playerId}`}
+                      to={`/season/player?seasonStart=${seasonStart}&playerId=${player.playerId}`}
                       className="text-primary-text hover:text-treasury-text font-medium"
                     >
                       {context.playerName(player.playerId)}

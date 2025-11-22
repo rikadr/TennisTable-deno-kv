@@ -396,7 +396,6 @@ export class Achievements {
       }
     });
 
-
     this.#checkTournamentAchievements();
     this.#checkSeasonAchievements();
     this.hasCalculated = true;

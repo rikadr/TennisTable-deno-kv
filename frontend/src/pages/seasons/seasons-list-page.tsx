@@ -12,24 +12,29 @@ export function SeasonsListPage() {
     <div className="p-4">
       <h1 className="text-2xl font-bold mb-4">Seasons</h1>
       <div className="flex flex-col space-y-2">
-        {seasons.map(({ start, end }, index) => (
+        {seasons.toReversed().map(({ start, end }, index) => (
           <Link
             key={start}
             to={`/season?seasonStart=${start}`}
             className="p-4 border rounded-lg hover:bg-secondary-background hover:text-secondary-text"
           >
-            <div className="font-semibold">
-              Season {fmtNum(index + 1)} - From {dateString(start)} to {dateString(end)} -{" "}
-              <p>
-                {Date.now() > end && "Ended " + relativeTimeString(new Date(end)).toLowerCase()}
-                {Date.now() > start &&
-                  Date.now() < end &&
-                  "Started " +
-                    relativeTimeString(new Date(start)) +
-                    ", ends " +
-                    relativeTimeString(new Date(end)).toLowerCase()}
-                {Date.now() < start && "Starts " + relativeTimeString(new Date(start)).toLowerCase()}
-              </p>
+            <div className="flex justify-between">
+              <div className="font-semibold">
+                Season {fmtNum(index + 1)} - From {dateString(start)} to {dateString(end)} -{" "}
+                <p>
+                  {Date.now() > end && "Ended " + relativeTimeString(new Date(end)).toLowerCase()}
+                  {Date.now() > start &&
+                    Date.now() < end &&
+                    "Started " +
+                      relativeTimeString(new Date(start)) +
+                      ", ends " +
+                      relativeTimeString(new Date(end)).toLowerCase()}
+                  {Date.now() < start && "Starts " + relativeTimeString(new Date(start)).toLowerCase()}
+                </p>
+              </div>
+              {Date.now() > end && <div>Ended 🏁</div>}
+              {Date.now() < start && <div>Starts ⏳</div>}
+              {Date.now() > start && Date.now() < end && <div>Active ✅</div>}
             </div>
           </Link>
         ))}

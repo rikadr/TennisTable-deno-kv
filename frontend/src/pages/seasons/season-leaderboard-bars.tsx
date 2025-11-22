@@ -144,7 +144,7 @@ export const SeasonLeaderboardBars = ({ season }: Props) => {
 
           return (
             <Link
-              to={`/player/${playerId}`}
+              to={`/season/player?seasonStart=${season.start}&playerId=${playerId}`}
               className="group border-b border-primary-text/20 last:border-b-0 transition-all duration-500"
               key={playerId}
               style={{

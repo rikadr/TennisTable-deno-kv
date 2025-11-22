@@ -30,6 +30,7 @@ export const NavMenu: React.FC = () => {
       { name: "📈 Compare all", to: "/compare-players" },
       { name: "🕸️ Player network", to: "/player-network" },
       { name: "🏆 Tournaments", to: "/tournament/list" },
+      { name: "🍁 Seasons (WIP🛠️)", to: "/season/list" },
       { name: "🎖️ Achievements", to: "/achievements" },
       { name: "🤖 Simulations", to: "/simulations" },
       { name: "🔧 Settings", to: "/settings" },
@@ -47,11 +48,6 @@ export const NavMenu: React.FC = () => {
       </CloseButton>
     ));
     if (session.isAuthenticated) {
-      list.push(
-        <CloseButton key={"seasons"} as={Link} to="/season/list" className={menuItemWrapperClassNames}>
-          <p className={menuItemTextClassNames}>🍁 Seasons (WIP)</p>
-        </CloseButton>,
-      );
       list.push(
         <CloseButton key={list.length} as={Link} to="/me" className={menuItemWrapperClassNames}>
           <p className={menuItemTextClassNames}>My profile</p>
