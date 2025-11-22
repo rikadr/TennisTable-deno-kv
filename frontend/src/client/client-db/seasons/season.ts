@@ -4,6 +4,7 @@ export interface SeasonPlayerScore {
   playerId: string;
   seasonScore: number;
   matchups: Map<string, { bestPerformance: number; playedAt: number }>;
+  totalGames: number;
 }
 
 export class Season {
@@ -12,6 +13,7 @@ export class Season {
   readonly games: Game[] = [];
   private leaderboard: SeasonPlayerScore[] | undefined;
   private playerMatchups = new Map<string, Map<string, { bestPerformance: number; playedAt: number }>>();
+  private playerGameCounts = new Map<string, number>();
 
   constructor(seasonTime: { start: number; end: number }) {
     this.start = seasonTime.start;
@@ -28,18 +30,26 @@ export class Season {
       return this.leaderboard;
     }
 
+    // Reset game counts
+    this.playerGameCounts.clear();
+
     for (const game of this.games) {
       const winnerPerformance = this.calculatePerformance(game, true);
       const loserPerformance = this.calculatePerformance(game, false);
 
       this.updateBestPerformance(game.winner, game.loser, winnerPerformance, game.playedAt);
       this.updateBestPerformance(game.loser, game.winner, loserPerformance, game.playedAt);
+
+      // Count total games per player
+      this.playerGameCounts.set(game.winner, (this.playerGameCounts.get(game.winner) || 0) + 1);
+      this.playerGameCounts.set(game.loser, (this.playerGameCounts.get(game.loser) || 0) + 1);
     }
 
     const seasonScores = new Map<string, SeasonPlayerScore>();
     for (const [playerId, matchups] of this.playerMatchups.entries()) {
       const seasonScore = Array.from(matchups.values()).reduce((sum, { bestPerformance }) => sum + bestPerformance, 0);
-      seasonScores.set(playerId, { playerId, seasonScore, matchups });
+      const totalGames = this.playerGameCounts.get(playerId) || 0;
+      seasonScores.set(playerId, { playerId, seasonScore, matchups, totalGames });
     }
 
     this.leaderboard = Array.from(seasonScores.values()).sort((a, b) => {
@@ -47,8 +57,12 @@ export class Season {
       if (b.seasonScore !== a.seasonScore) {
         return b.seasonScore - a.seasonScore;
       }
-      // Tiebreaker: fewer pairings = higher rank (ascending)
-      return a.matchups.size - b.matchups.size;
+      // First tiebreaker: fewer pairings = higher rank (ascending)
+      if (a.matchups.size !== b.matchups.size) {
+        return a.matchups.size - b.matchups.size;
+      }
+      // Second tiebreaker: more total games = higher rank (descending)
+      return b.totalGames - a.totalGames;
     });
 
     return this.leaderboard;
