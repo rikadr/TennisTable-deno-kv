@@ -141,11 +141,12 @@ export function SeasonPlayerPage() {
   // Check if any best performance games are missing balls score
   const hasMissingBallsScore = matchupData.some((matchup) => matchup.breakdown && !matchup.breakdown.hasBalls);
   const hasMissingSetScore = matchupData.some((matchup) => matchup.breakdown && !matchup.breakdown.hasSets);
+  const hasEnded = Date.now() > season.end;
 
   return (
     <div className="px-6">
       <div className="flex items-center gap-4 mb-6">
-        <ProfilePicture playerId={playerId} size={64} />
+        <ProfilePicture playerId={playerId} size={64} border={3} linkToPlayer />
         <div>
           <h1>{context.playerName(playerId)}'s Season Stats</h1>
           <h2 className="text-secondary-text">
@@ -176,7 +177,7 @@ export function SeasonPlayerPage() {
       </div>
 
       {/* Missing Score Alert */}
-      {hasMissingSetScore && (
+      {hasMissingSetScore && !hasEnded && (
         <div className="mb-6 bg-red-500/10 border border-red-500/30 rounded-lg p-4">
           <div className="flex items-start gap-3">
             <span className="text-2xl">🚨</span>
@@ -190,7 +191,7 @@ export function SeasonPlayerPage() {
           </div>
         </div>
       )}
-      {hasMissingBallsScore && (
+      {hasMissingBallsScore && !hasEnded && (
         <div className="mb-6 bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4">
           <div className="flex items-start gap-3">
             <span className="text-2xl">⚠️</span>
@@ -240,9 +241,9 @@ export function SeasonPlayerPage() {
                 >
                   Best Performance{getSortIndicator("performance")}
                 </th>
-                <th className="text-left px-4 text-treasury-text font-semibold">Game result</th>
                 <th className="text-left px-4 text-treasury-text font-semibold">Performance Breakdown</th>
-                <th className="text-left px-4 text-treasury-text font-semibold">Best performance played at</th>
+                <th className="text-left px-4 text-treasury-text font-semibold">Game result</th>
+                <th className="text-left px-4 text-treasury-text font-semibold">Played at</th>
               </tr>
             </thead>
             <tbody>
@@ -260,6 +261,21 @@ export function SeasonPlayerPage() {
                     </Link>
                   </td>
                   <td className="px-4 text-primary-text font-medium">{fmtNum(bestPerformance)}</td>
+                  <td className="px-4">
+                    {breakdown ? (
+                      <div className="flex gap-2 text-sm">
+                        <span className="text-primary-text">Win: {fmtNum(breakdown.win / 3)}</span>
+                        <span className={breakdown.hasSets ? "text-primary-text" : "text-secondary-text/50"}>
+                          Sets: {breakdown.hasSets ? fmtNum(breakdown.sets / 3) : <>{hasEnded ? "-" : "🚨"}</>}
+                        </span>
+                        <span className={breakdown.hasBalls ? "text-primary-text" : "text-secondary-text/50"}>
+                          Balls: {breakdown.hasBalls ? fmtNum(breakdown.balls / 3) : <>{hasEnded ? "-" : "⚠️"}</>}
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-secondary-text text-sm">—</span>
+                    )}
+                  </td>
                   <td className="p-1 md:flex items-baseline gap-3">
                     {bestGame.score && (
                       <div className="font-medium">
@@ -279,21 +295,6 @@ export function SeasonPlayerPage() {
                       <p>{bestGame.winner === playerId ? "Won - no score" : "Lost - no score"}</p>
                     )}
                   </td>
-                  <td className="px-4">
-                    {breakdown ? (
-                      <div className="flex gap-2 text-sm">
-                        <span className="text-primary-text">Win: {fmtNum(breakdown.win / 3)}</span>
-                        <span className={breakdown.hasSets ? "text-primary-text" : "text-secondary-text/50"}>
-                          Sets: {breakdown.hasSets ? fmtNum(breakdown.sets / 3) : "🚨"}
-                        </span>
-                        <span className={breakdown.hasBalls ? "text-primary-text" : "text-secondary-text/50"}>
-                          Balls: {breakdown.hasBalls ? fmtNum(breakdown.balls / 3) : "⚠️"}
-                        </span>
-                      </div>
-                    ) : (
-                      <span className="text-secondary-text text-sm">—</span>
-                    )}
-                  </td>
                   <td className="px-4 text-secondary-text text-sm min-w-64">
                     {dateString(playedAt)} - {relativeTimeString(new Date(playedAt))}
                   </td>
@@ -305,7 +306,7 @@ export function SeasonPlayerPage() {
       </div>
 
       {/* Unplayed Opponents */}
-      {unplayedOpponents.length > 0 && (
+      {unplayedOpponents.length > 0 && !hasEnded && (
         <div className="bg-secondary-background rounded-lg overflow-hidden mb-6">
           <div className="bg-treasury-background px-4 py-2 border-b border-treasury-text/20">
             <h3 className="text-treasury-text font-semibold">

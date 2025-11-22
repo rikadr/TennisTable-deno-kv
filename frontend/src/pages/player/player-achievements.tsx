@@ -4,6 +4,7 @@ import { classNames } from "../../common/class-names";
 import { useState } from "react";
 import { Achievement, AchievementProgression } from "../../client/client-db/achievements";
 import { Link } from "react-router-dom";
+import { fmtNum } from "../../common/number-utils";
 
 type Props = {
   playerId?: string;
@@ -378,11 +379,16 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                           <span className="font-medium">
                             {type.startsWith("active-") || type.startsWith("back-after-")
                               ? formatTimePeriod(data.current)
-                              : data.current}{" "}
+                              : fmtNum(data.current)}{" "}
                             /{" "}
                             {type.startsWith("active-") || type.startsWith("back-after-")
                               ? formatTimePeriod(data.target)
-                              : data.target}
+                              : fmtNum(data.target)}
+                            {type === "season-winner" && (
+                              <span className="text-xs text-secondary-text/70 font-normal ml-2">
+                                (Current leader's points)
+                              </span>
+                            )}
                           </span>
                         </div>
                       </div>

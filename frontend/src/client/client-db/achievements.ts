@@ -739,7 +739,7 @@ export class Achievements {
       "active-2-years": { current: 0, target: TWO_YEARS, earned: 0 },
       "tournament-participated": { earned: 0 },
       "tournament-winner": { earned: 0 },
-      "season-winner": { earned: 0 },
+      "season-winner": { current: 0, target: 1, earned: 0 },
       "nice-game": { earned: 0 },
       "close-calls": { current: 0, target: 5, earned: 0 },
       "edge-lord": { current: 0, target: 20, earned: 0 },
@@ -985,6 +985,19 @@ export class Achievements {
       progression["back-after-2-years"].lastActiveAt = lastActiveAt;
     }
 
+    // Season progress
+    const seasons = this.parent.seasons.getSeasons();
+    const latestSeason = seasons[seasons.length - 1];
+    if (latestSeason && Date.now() > latestSeason.start && Date.now() < latestSeason.end) {
+      const leaderboard = latestSeason.getLeaderboard();
+      const player = leaderboard.find((p) => p.playerId === playerId);
+      if (player) {
+        const leadersScore = leaderboard[0].seasonScore;
+        progression["season-winner"].current = player.seasonScore;
+        progression["season-winner"].target = leadersScore;
+      }
+    }
+
     // Count earned achievements
     const achievements = this.getAchievements(playerId);
     achievements.forEach((achievement) => {
@@ -1088,7 +1101,7 @@ export type AchievementProgression = {
   "active-2-years": ProgressionWithTarget;
   "tournament-participated": BaseProgression;
   "tournament-winner": BaseProgression;
-  "season-winner": BaseProgression;
+  "season-winner": ProgressionWithTarget;
   "nice-game": BaseProgression;
   "close-calls": ProgressionWithTarget;
   "edge-lord": ProgressionWithTarget;
