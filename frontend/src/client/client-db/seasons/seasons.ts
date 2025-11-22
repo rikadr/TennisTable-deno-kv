@@ -55,7 +55,7 @@ export class Seasons {
  * Seasons end on the Friday at 17:00, 10 days before the next season starts.
  * A provided time within the 10 day period will return the season that just ended.
  */
-function determineSeason(time: number): { start: number; end: number } {
+export function determineSeason(time: number): { start: number; end: number } {
   // Split year into 4 quarters.
   // Round time down to nearest quarter time.
   const date = new Date(time);

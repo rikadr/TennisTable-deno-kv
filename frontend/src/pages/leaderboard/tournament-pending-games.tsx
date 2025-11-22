@@ -64,7 +64,7 @@ export const TournamentHighlightsAndPendingGames: React.FC = () => {
               bracket.bracketGames.map((layer, layerIndex) => (
                 <div key={layerIndex} className="space-y-1">
                   {layerIndexToTournamentRound(layerIndex) && layer.pending.length > 0 && (
-                    <h3 className="text-center text-sm">{layerIndexToTournamentRound(layerIndex)}</h3>
+                    <h3 className="text-center text-sm text-primary-text">{layerIndexToTournamentRound(layerIndex)}</h3>
                   )}
                   {layer.pending.map((game) => (
                     <PendingGame

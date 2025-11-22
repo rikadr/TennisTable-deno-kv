@@ -5,15 +5,11 @@ import { fmtNum } from "../../common/number-utils";
 import { useTennisParams } from "../../hooks/use-tennis-params";
 import { dateString } from "../player/player-achievements";
 import { relativeTimeString } from "../../common/date-utils";
-import { useState } from "react";
-
-type SortKey = "performance";
+import { classNames } from "../../common/class-names";
 
 export function SeasonPlayerPage() {
   const context = useEventDbContext();
   const { seasonStart, playerId } = useTennisParams();
-  const [sortKey, setSortKey] = useState<SortKey>("performance");
-  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 
   if (!seasonStart) {
     return <div className="p-6 text-primary-text">Season start time not provided</div>;
@@ -103,32 +99,7 @@ export function SeasonPlayerPage() {
     };
   });
 
-  const handleSort = (key: SortKey) => {
-    if (key === sortKey) {
-      setSortDir(sortDir === "asc" ? "desc" : "asc");
-    } else {
-      setSortKey(key);
-      setSortDir("desc");
-    }
-  };
-
-  const sortedMatchups = [...matchupData].sort((a, b) => {
-    let aVal: number | string;
-    let bVal: number | string;
-
-    switch (sortKey) {
-      case "performance":
-        aVal = a.bestPerformance;
-        bVal = b.bestPerformance;
-    }
-
-    return sortDir === "asc" ? (aVal as number) - (bVal as number) : (bVal as number) - (aVal as number);
-  });
-
-  const getSortIndicator = (key: SortKey) => {
-    if (sortKey !== key) return "";
-    return sortDir === "asc" ? " ↑" : " ↓";
-  };
+  const sortedMatchups = [...matchupData].sort((a, b) => b.bestPerformance - a.bestPerformance);
 
   const avgPerformance = playerStats.seasonScore / playerStats.matchups.size;
 
@@ -145,40 +116,33 @@ export function SeasonPlayerPage() {
 
   return (
     <div className="px-6">
-      <div className="flex items-center gap-4 mb-6">
+      <div className="flex items-center gap-4 mb-6 text-primary-text bg-primary-background">
         <ProfilePicture playerId={playerId} size={64} border={3} linkToPlayer />
         <div>
           <h1>{context.playerName(playerId)}'s Season Stats</h1>
-          <h2 className="text-secondary-text">
+          <h2>
             {dateString(Number(season.start))} to {dateString(Number(season.end))}
           </h2>
-          {Date.now() > season.end && (
-            <p className="text-sm text-secondary-text">Ended {relativeTimeString(new Date(season.end))}</p>
-          )}
+          {Date.now() > season.end && <p className="text-sm">Ended {relativeTimeString(new Date(season.end))}</p>}
           {Date.now() > season.start && Date.now() < season.end && (
-            <p className="text-sm text-secondary-text">
+            <p className="text-sm">
               Started {relativeTimeString(new Date(season.start))}, ends{" "}
               {relativeTimeString(new Date(season.end)).toLowerCase()}
             </p>
           )}
-          {Date.now() < season.start && (
-            <p className="text-sm text-secondary-text">Starts {relativeTimeString(new Date(season.start))}</p>
-          )}
+          {Date.now() < season.start && <p className="text-sm">Starts {relativeTimeString(new Date(season.start))}</p>}
         </div>
 
         <div className="grow" />
 
-        <Link
-          to={`/season?seasonStart=${seasonStart}`}
-          className="text-treasury-text hover:text-treasury-text/80 underline"
-        >
+        <Link to={`/season?seasonStart=${seasonStart}`} className="hover:text-primary-text/80 underline">
           ← Back to Season Leaderboard
         </Link>
       </div>
 
       {/* Missing Score Alert */}
       {hasMissingSetScore && !hasEnded && (
-        <div className="mb-6 bg-red-500/10 border border-red-500/30 rounded-lg p-4">
+        <div className="mb-6 bg-red-950/80 border border-red-500/30 rounded-lg p-4">
           <div className="flex items-start gap-3">
             <span className="text-2xl">🚨</span>
             <div className="flex-1">
@@ -192,7 +156,7 @@ export function SeasonPlayerPage() {
         </div>
       )}
       {hasMissingBallsScore && !hasEnded && (
-        <div className="mb-6 bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4">
+        <div className="mb-6 bg-yellow-950/80 border border-yellow-500/30 rounded-lg p-4">
           <div className="flex items-start gap-3">
             <span className="text-2xl">⚠️</span>
             <div className="flex-1">
@@ -207,43 +171,39 @@ export function SeasonPlayerPage() {
       )}
 
       {/* Summary Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 text-secondary-text">
         <div className="bg-secondary-background p-4 rounded-lg">
-          <div className="text-sm text-secondary-text">Season Rank</div>
-          <div className="text-2xl font-bold text-primary-text">#{playerRank}</div>
+          <div className="text-sm">Season Rank</div>
+          <div className="text-2xl font-bold">
+            <span className="font-thin italic mr-0.5">#</span>
+            {playerRank}
+          </div>
         </div>
         <div className="bg-secondary-background p-4 rounded-lg">
-          <div className="text-sm text-secondary-text">Season Score</div>
-          <div className="text-2xl font-bold text-primary-text">{fmtNum(playerStats.seasonScore)}</div>
+          <div className="text-sm">Season Score</div>
+          <div className="text-2xl font-bold">{fmtNum(playerStats.seasonScore)}</div>
         </div>
         <div className="bg-secondary-background p-4 rounded-lg">
-          <div className="text-sm text-secondary-text">Unique Opponents</div>
-          <div className="text-2xl font-bold text-primary-text">{playerStats.matchups.size}</div>
+          <div className="text-sm">Unique Opponents</div>
+          <div className="text-2xl font-bold">{playerStats.matchups.size}</div>
         </div>
         <div className="bg-secondary-background p-4 rounded-lg">
-          <div className="text-sm text-secondary-text">Avg. Performance</div>
-          <div className="text-2xl font-bold text-primary-text">{fmtNum(avgPerformance)}</div>
+          <div className="text-sm">Avg. Performance</div>
+          <div className="text-2xl font-bold">{fmtNum(avgPerformance)}</div>
         </div>
       </div>
 
       {/* Matchups Table */}
-      <div className="bg-secondary-background rounded-lg overflow-hidden mb-6">
+      <div className="bg-secondary-background text-secondary-text rounded-lg overflow-hidden mb-6">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="bg-treasury-background border-b border-treasury-text/20">
-                <th className="text-left px-4 text-treasury-text font-semibold cursor-pointer hover:text-treasury-text/80">
-                  Opponent
-                </th>
-                <th
-                  className="text-left px-4 text-treasury-text font-semibold cursor-pointer hover:text-treasury-text/80"
-                  onClick={() => handleSort("performance")}
-                >
-                  Best Performance{getSortIndicator("performance")}
-                </th>
-                <th className="text-left px-4 text-treasury-text font-semibold">Performance Breakdown</th>
-                <th className="text-left px-4 text-treasury-text font-semibold">Game result</th>
-                <th className="text-left px-4 text-treasury-text font-semibold">Played at</th>
+              <tr className="border-b border-secondary-text/20 font-semibold">
+                <th className="text-left px-4 py-2">Opponent</th>
+                <th className="text-left px-4">Best Performance</th>
+                <th className="text-left px-4">Performance Breakdown</th>
+                <th className="text-left px-4">Game result</th>
+                <th className="text-left px-4">Played at</th>
               </tr>
             </thead>
             <tbody>
@@ -252,7 +212,7 @@ export function SeasonPlayerPage() {
                   <td className="px-4">
                     <Link
                       to={`/season/player?seasonStart=${seasonStart}&playerId=${opponentId}`}
-                      className="text-primary-text hover:text-treasury-text font-medium"
+                      className="hover:text-secondary-text font-medium"
                     >
                       <div className="flex items-center gap-3">
                         <ProfilePicture playerId={opponentId} size={35} border={3} shape="rounded" />
@@ -260,20 +220,20 @@ export function SeasonPlayerPage() {
                       </div>
                     </Link>
                   </td>
-                  <td className="px-4 text-primary-text font-medium">{fmtNum(bestPerformance)}</td>
+                  <td className="px-4 font-medium">{fmtNum(bestPerformance)}</td>
                   <td className="px-4">
                     {breakdown ? (
                       <div className="flex gap-2 text-sm">
-                        <span className="text-primary-text">Win: {fmtNum(breakdown.win / 3)}</span>
-                        <span className={breakdown.hasSets ? "text-primary-text" : "text-secondary-text/50"}>
+                        Win: {fmtNum(breakdown.win / 3)}
+                        <span className={classNames(breakdown.hasSets && "opacity-50")}>
                           Sets: {breakdown.hasSets ? fmtNum(breakdown.sets / 3) : <>{hasEnded ? "-" : "🚨"}</>}
                         </span>
-                        <span className={breakdown.hasBalls ? "text-primary-text" : "text-secondary-text/50"}>
+                        <span className={classNames(breakdown.hasBalls && "opacity-50")}>
                           Balls: {breakdown.hasBalls ? fmtNum(breakdown.balls / 3) : <>{hasEnded ? "-" : "⚠️"}</>}
                         </span>
                       </div>
                     ) : (
-                      <span className="text-secondary-text text-sm">—</span>
+                      <span className="text-sm">—</span>
                     )}
                   </td>
                   <td className="p-1 md:flex items-baseline gap-3">
@@ -295,7 +255,7 @@ export function SeasonPlayerPage() {
                       <p>{bestGame.winner === playerId ? "Won - no score" : "Lost - no score"}</p>
                     )}
                   </td>
-                  <td className="px-4 text-secondary-text text-sm min-w-64">
+                  <td className="px-4 text-sm min-w-64">
                     {dateString(playedAt)} - {relativeTimeString(new Date(playedAt))}
                   </td>
                 </tr>
@@ -307,11 +267,9 @@ export function SeasonPlayerPage() {
 
       {/* Unplayed Opponents */}
       {unplayedOpponents.length > 0 && !hasEnded && (
-        <div className="bg-secondary-background rounded-lg overflow-hidden mb-6">
-          <div className="bg-treasury-background px-4 py-2 border-b border-treasury-text/20">
-            <h3 className="text-treasury-text font-semibold">
-              Opponents you have yet to play ({unplayedOpponents.length})
-            </h3>
+        <div className="bg-secondary-background text-secondary-text rounded-lg overflow-hidden mb-6">
+          <div className="px-4 py-2 border-b border-secondary-text/20">
+            <h3 className="font-semibold">Opponents you have yet to play ({unplayedOpponents.length})</h3>
           </div>
           <div className="p-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 md:gap-3">
@@ -322,7 +280,7 @@ export function SeasonPlayerPage() {
                   className="flex items-center gap-3 p-2 rounded hover:bg-primary-background/50 transition-colors"
                 >
                   <ProfilePicture playerId={opponent.id} size={32} border={2} />
-                  <span className="text-primary-text hover:text-treasury-text">{context.playerName(opponent.id)}</span>
+                  <span>{context.playerName(opponent.id)}</span>
                 </Link>
               ))}
             </div>
@@ -333,7 +291,7 @@ export function SeasonPlayerPage() {
       <div className="mt-6">
         <Link
           to={`/season?seasonStart=${seasonStart}`}
-          className="text-treasury-text hover:text-treasury-text/80 underline"
+          className="text-secondary-text hover:text-secondary-text/80 underline"
         >
           ← Back to Season Leaderboard
         </Link>

@@ -64,7 +64,7 @@ export function SeasonPage() {
   };
 
   return (
-    <div className="px-6">
+    <div className="px-6 text-primary-text bg-primary-background">
       <h1>Season Leaderboard</h1>
       <h2>
         {dateString(Number(season.start))} to {dateString(Number(season.end))}
@@ -84,23 +84,23 @@ export function SeasonPage() {
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="bg-treasury-background border-b border-treasury-text/20">
-                <th className="text-left px-4 text-treasury-text font-semibold">#</th>
-                <th className="text-left px-4 text-treasury-text font-semibold">Player</th>
+              <tr className="bg-secondary-background border-b border-secondary-text/20">
+                <th className="text-left px-4 text-secondary-text font-semibold">#</th>
+                <th className="text-left px-4 text-secondary-text font-semibold">Player</th>
                 <th
-                  className="text-left px-4 text-treasury-text font-semibold cursor-pointer hover:text-treasury-text/80"
+                  className="text-left px-4 text-secondary-text font-semibold cursor-pointer hover:text-secondary-text/80"
                   onClick={() => handleSort("score")}
                 >
                   Season Score{getSortIndicator("score")}
                 </th>
                 <th
-                  className="text-left px-4 text-treasury-text font-semibold cursor-pointer hover:text-treasury-text/80"
+                  className="text-left px-4 text-secondary-text font-semibold cursor-pointer hover:text-secondary-text/80"
                   onClick={() => handleSort("playerPairings")}
                 >
                   Player Pairings{getSortIndicator("playerPairings")}
                 </th>
                 <th
-                  className="text-left px-4 text-treasury-text font-semibold cursor-pointer hover:text-treasury-text/80"
+                  className="text-left px-4 text-secondary-text font-semibold cursor-pointer hover:text-secondary-text/80"
                   onClick={() => handleSort("avgPerformance")}
                 >
                   Avg. Performance{getSortIndicator("avgPerformance")}
@@ -109,12 +109,15 @@ export function SeasonPage() {
             </thead>
             <tbody>
               {sortedLeaderboard.map((player, i) => (
-                <tr key={player.playerId} className="border-b border-secondary-text/10 hover:bg-primary-background/50">
-                  <td className="px-4 text-secondary-text">{i + 1}</td>
+                <tr
+                  key={player.playerId}
+                  className="border-b border-secondary-text/10 text-secondary-text hover:bg-primary-background/50"
+                >
+                  <td className="px-4">{i + 1}</td>
                   <td className="px-4">
                     <Link
                       to={`/season/player?seasonStart=${seasonStart}&playerId=${player.playerId}`}
-                      className="text-primary-text hover:text-treasury-text font-medium"
+                      className="font-medium"
                     >
                       <div className="flex items-center gap-3">
                         <ProfilePicture playerId={player.playerId} size={35} border={3} shape="rounded" />
@@ -122,9 +125,9 @@ export function SeasonPage() {
                       </div>
                     </Link>
                   </td>
-                  <td className="px-4 text-primary-text font-medium">{fmtNum(player.seasonScore)}</td>
-                  <td className="px-4 text-secondary-text">{fmtNum(player.matchups.size)}</td>
-                  <td className="px-4 text-secondary-text">{fmtNum(player.seasonScore / player.matchups.size)}</td>
+                  <td className="px-4 font-medium">{fmtNum(player.seasonScore)}</td>
+                  <td className="px-4">{fmtNum(player.matchups.size)}</td>
+                  <td className="px-4">{fmtNum(player.seasonScore / player.matchups.size)}</td>
                 </tr>
               ))}
             </tbody>

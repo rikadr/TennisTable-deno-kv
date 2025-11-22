@@ -9,18 +9,18 @@ export function SeasonsListPage() {
   const seasons = context.seasons.getSeasons();
 
   return (
-    <div className="p-4">
+    <div className="p-4 text-primary-text">
       <h1 className="text-2xl font-bold mb-4">Seasons</h1>
       <div className="flex flex-col space-y-2">
         {seasons.toReversed().map(({ start, end }, index) => (
           <Link
             key={start}
             to={`/season?seasonStart=${start}`}
-            className="p-4 border rounded-lg hover:bg-secondary-background hover:text-secondary-text"
+            className="p-4 ring-1 ring-primary-text rounded-lg hover:bg-secondary-background hover:text-secondary-text transition-colors duration-100"
           >
             <div className="flex justify-between">
               <div className="font-semibold">
-                Season {fmtNum(index + 1)} - From {dateString(start)} to {dateString(end)} -{" "}
+                Season {fmtNum(seasons.length - index)} - From {dateString(start)} to {dateString(end)}
                 <p>
                   {Date.now() > end && "Ended " + relativeTimeString(new Date(end)).toLowerCase()}
                   {Date.now() > start &&

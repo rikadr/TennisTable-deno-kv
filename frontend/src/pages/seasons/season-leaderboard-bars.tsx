@@ -57,8 +57,8 @@ export const SeasonLeaderboardBars = ({ season }: Props) => {
               className={classNames(
                 "px-3 py-1.5 rounded text-sm transition-colors",
                 displayMetric === "seasonScore"
-                  ? "bg-treasury-background text-treasury-text font-medium ring-1 ring-secondary-text"
-                  : "bg-primary-background text-secondary-text hover:text-primary-text",
+                  ? "bg-tertiary-background text-tertiary-text font-medium ring-1 ring-secondary-text"
+                  : "bg-primary-background text-primary-text hover:text-primary-text",
               )}
             >
               Season Score
@@ -69,8 +69,8 @@ export const SeasonLeaderboardBars = ({ season }: Props) => {
               className={classNames(
                 "px-3 py-1.5 rounded text-sm transition-colors",
                 displayMetric === "playerPairings"
-                  ? "bg-treasury-background text-treasury-text font-medium ring-1 ring-secondary-text"
-                  : "bg-primary-background text-secondary-text hover:text-primary-text",
+                  ? "bg-tertiary-background text-tertiary-text font-medium ring-1 ring-secondary-text"
+                  : "bg-primary-background text-primary-text hover:text-primary-text",
               )}
             >
               Pairings
@@ -81,8 +81,8 @@ export const SeasonLeaderboardBars = ({ season }: Props) => {
               className={classNames(
                 "px-3 py-1.5 rounded text-sm transition-colors",
                 displayMetric === "avgPerformance"
-                  ? "bg-treasury-background text-treasury-text font-medium ring-1 ring-secondary-text"
-                  : "bg-primary-background text-secondary-text hover:text-primary-text",
+                  ? "bg-tertiary-background text-tertiary-text font-medium ring-1 ring-secondary-text"
+                  : "bg-primary-background text-primary-text hover:text-primary-text",
               )}
             >
               Avg. %
@@ -100,8 +100,8 @@ export const SeasonLeaderboardBars = ({ season }: Props) => {
               className={classNames(
                 "px-3 py-1.5 rounded text-sm transition-colors",
                 sortMetric === "seasonScore"
-                  ? "bg-treasury-background text-treasury-text font-medium ring-1 ring-secondary-text"
-                  : "bg-primary-background text-secondary-text hover:text-primary-text",
+                  ? "bg-tertiary-background text-tertiary-text font-medium ring-1 ring-secondary-text"
+                  : "bg-primary-background text-primary-text hover:text-primary-text",
               )}
             >
               Season Score
@@ -112,8 +112,8 @@ export const SeasonLeaderboardBars = ({ season }: Props) => {
               className={classNames(
                 "px-3 py-1.5 rounded text-sm transition-colors",
                 sortMetric === "playerPairings"
-                  ? "bg-treasury-background text-treasury-text font-medium ring-1 ring-secondary-text"
-                  : "bg-primary-background text-secondary-text hover:text-primary-text",
+                  ? "bg-tertiary-background text-tertiary-text font-medium ring-1 ring-secondary-text"
+                  : "bg-primary-background text-primary-text hover:text-primary-text",
               )}
             >
               Pairings
@@ -124,8 +124,8 @@ export const SeasonLeaderboardBars = ({ season }: Props) => {
               className={classNames(
                 "px-3 py-1.5 rounded text-sm transition-colors",
                 sortMetric === "avgPerformance"
-                  ? "bg-treasury-background text-treasury-text font-medium ring-1 ring-secondary-text"
-                  : "bg-primary-background text-secondary-text hover:text-primary-text",
+                  ? "bg-tertiary-background text-tertiary-text font-medium ring-1 ring-secondary-text"
+                  : "bg-primary-background text-primary-text hover:text-primary-text",
               )}
             >
               Avg. %
