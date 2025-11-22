@@ -11,7 +11,7 @@ import { useTournamentPredictionWorker } from "../../hooks/use-tournament-predic
 import { ProgressBar } from "../player/player-elo-graph";
 
 export const TournamentPredictions = ({ tournament }: { tournament: Tournament }) => {
-  const [range, setRange] = useState(0);
+  const [range, setRange] = useState(2);
 
   const { startSimulation, simulationTimes, predictionResults, simulationIsDone, simulationProgress } =
     useTournamentPredictionWorker();
@@ -31,7 +31,10 @@ export const TournamentPredictions = ({ tournament }: { tournament: Tournament }
     const resultsByTime = new Map(predictionResults.map((result) => [result.time, result]));
 
     // Transform prediction results into graph data
-    return simulationTimes.map((time) => {
+    // Since results come reversed (most recent first), reverse simulationTimes to get chronological order
+    const chronologicalTimes = [...simulationTimes].reverse();
+
+    return chronologicalTimes.map((time) => {
       const result = resultsByTime.get(time);
 
       const dataPoint: Record<string, number | string> = {
@@ -65,8 +68,16 @@ export const TournamentPredictions = ({ tournament }: { tournament: Tournament }
 
   const { width = 0, height = 0 } = useWindowSize();
 
+  // Auto-update range as new data comes in
   useEffect(() => {
-    setGraphDataToSee(graphData.slice(Math.max(range - 2, 0)) || []);
+    if (graphData.length > 0) {
+      setRange(graphData.length);
+    }
+  }, [graphData.length]);
+
+  useEffect(() => {
+    // Slice from the beginning up to the range value to show data filling from left to right
+    setGraphDataToSee(graphData.slice(0, range) || []);
   }, [graphData, range]);
 
   // Get all unique player IDs from the data

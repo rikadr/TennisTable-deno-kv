@@ -9,7 +9,7 @@ export function SeasonsListPage() {
   const seasons = context.seasons.getSeasons();
 
   return (
-    <div className="p-4 text-primary-text">
+    <div className="p-4 text-primary-text bg-primary-background">
       <h1 className="text-2xl font-bold mb-4">Seasons</h1>
       <div className="flex flex-col space-y-2">
         {seasons.toReversed().map(({ start, end }, index) => (

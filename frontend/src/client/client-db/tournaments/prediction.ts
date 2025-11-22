@@ -21,7 +21,7 @@ export class TournamentPrediction {
       throw new Error(`Tournament not found: ${tournamentId}`);
     }
 
-    const simulationTimePoints = this.getSimulationTimePoints(tournament);
+    const simulationTimePoints = this.getSimulationTimePoints(tournament).toReversed();
 
     callback({
       simulationTimes: simulationTimePoints,
