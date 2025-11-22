@@ -990,11 +990,12 @@ export class Achievements {
     const latestSeason = seasons[seasons.length - 1];
     if (latestSeason && Date.now() > latestSeason.start && Date.now() < latestSeason.end) {
       const leaderboard = latestSeason.getLeaderboard();
+      const leadersScore = leaderboard[0].seasonScore;
+      progression["season-winner"].target = leadersScore;
+
       const player = leaderboard.find((p) => p.playerId === playerId);
       if (player) {
-        const leadersScore = leaderboard[0].seasonScore;
         progression["season-winner"].current = player.seasonScore;
-        progression["season-winner"].target = leadersScore;
       }
     }
 

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { PodiumPlace } from "./podium-place";
 import { useEventDbContext } from "../../wrappers/event-db-context";
@@ -9,10 +9,15 @@ import { getClientConfig, Theme, themeOrOverrideTheme } from "../../client/clien
 import easterBunny from "../../img/easter/easter-bunny-realistic.png";
 import { getEgg, getPumpkin } from "./themed-place-number";
 import { RecentLeaderBoardChanges } from "./recent-leaderboard-changes";
+import { fmtNum } from "../../common/number-utils";
+import { classNames } from "../../common/class-names";
+
+type LeaderboardView = "overall" | "season";
 
 export const LeaderBoard: React.FC = () => {
   const context = useEventDbContext();
   const leaderboard = context.leaderboard.getLeaderboard();
+  const [view, setView] = useState<LeaderboardView>("overall");
 
   const client = getClientConfig();
   const theme = themeOrOverrideTheme(client.theme);
@@ -22,6 +27,15 @@ export const LeaderBoard: React.FC = () => {
       !leaderboard.rankedPlayers.some((r) => r.id === player.id) &&
       !leaderboard.unrankedPlayers.some((u) => u.id === player.id),
   );
+
+  // Get current season
+  const seasons = context.seasons.getSeasons();
+  const currentSeason = seasons.find((s) => Date.now() >= s.start && Date.now() <= s.end);
+  const seasonLeaderboard = currentSeason?.getLeaderboard() || [];
+
+  // Get players who haven't participated in current season
+  const seasonParticipantIds = new Set(seasonLeaderboard.map((p) => p.playerId));
+  const playersNotInSeason = context.players.filter((player) => !seasonParticipantIds.has(player.id));
 
   const nr1 = leaderboard.rankedPlayers[0];
   const nr2 = leaderboard.rankedPlayers[1];
@@ -50,95 +64,179 @@ export const LeaderBoard: React.FC = () => {
           {nr2 && <PodiumPlace size="sm" place={2} playerSummary={nr2} profilePicture />}
           {nr3 && <PodiumPlace size="xs" place={3} playerSummary={nr3} profilePicture />}
         </div>
-        {/* <LeaderboardDistrubution /> */}
         <RecentGames />
         <RecentLeaderBoardChanges />
         {theme === Theme.EASTER && <img src={easterBunny} alt="Easter bunny chick" />}
       </div>
+
       <div className="bg-primary-background rounded-lg">
-        <div className="flex flex-col divide-y divide-primary-text/50">
-          <div className="flex gap-4 text-base text-center mb-2 text-primary-text">
-            <div className="w-5">#</div>
-            <div className="w-40 text-left pl-2">Name</div>
-            <div className="w-12 text-right">Score</div>
-            <div className="w-10 pl-1">Interval</div>
-            <div className="w-14 text-right">🏆:💔</div>
-          </div>
-          {leaderboard.rankedPlayers.map((player, index, list) => (
-            <Link
-              key={index}
-              to={`/player/${player.id}`}
-              className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text py-1 px-2 flex items-center gap-4 text-xl font-light text-primary-text"
-            >
-              <div className="w-5 italic">{themedPlaceNumber(player.rank) ?? player.rank}</div>
-              <ProfilePicture playerId={player.id} size={28} border={2} />
-              <div className="w-28 font-normal whitespace-nowrap">{player.name}</div>
-              <div className="w-12 text-right">
-                {player.elo.toLocaleString("no-NO", {
-                  maximumFractionDigits: 0,
-                })}
+        {/* Toggle */}
+        <div className="flex justify-center gap-2 p-4 border-b border-primary-text/20">
+          <button
+            onClick={() => setView("overall")}
+            className={classNames(
+              "px-4 py-2 rounded text-sm font-medium transition-colors ring-1",
+              view === "overall"
+                ? "bg-secondary-background text-secondary-text ring-secondary-text"
+                : "bg-primary-background text-primary-text ring-secondary-background hover:opacity-80",
+            )}
+          >
+            Overall
+          </button>
+          <button
+            onClick={() => setView("season")}
+            className={classNames(
+              "px-4 py-2 rounded text-sm font-medium transition-colors ring-1",
+              view === "season"
+                ? "bg-secondary-background text-secondary-text ring-secondary-text"
+                : "bg-primary-background text-primary-text ring-secondary-background hover:opacity-80",
+            )}
+          >
+            Season (WIP🛠️)
+          </button>
+        </div>
+
+        {view === "overall" ? (
+          <>
+            {/* Overall Leaderboard */}
+            <div className="flex flex-col divide-y divide-primary-text/50">
+              <div className="flex gap-4 text-base text-center mb-2 text-primary-text">
+                <div className="w-5">#</div>
+                <div className="w-40 text-left pl-2">Name</div>
+                <div className="w-12 text-right">Score</div>
+                <div className="w-10 pl-1">Interval</div>
+                <div className="w-14 text-right">🏆:💔</div>
               </div>
-              <div className="w-10 text-right text-base">
-                {list[index - 1]
-                  ? (player.elo - list[index - 1].elo).toLocaleString("no-NO", {
+              {leaderboard.rankedPlayers.map((player, index, list) => (
+                <Link
+                  key={index}
+                  to={`/player/${player.id}`}
+                  className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text py-1 px-2 flex items-center gap-4 text-xl font-light text-primary-text"
+                >
+                  <div className="w-5 italic">{themedPlaceNumber(player.rank) ?? player.rank}</div>
+                  <ProfilePicture playerId={player.id} size={28} border={2} />
+                  <div className="w-28 font-normal whitespace-nowrap">{player.name}</div>
+                  <div className="w-12 text-right">
+                    {player.elo.toLocaleString("no-NO", {
                       maximumFractionDigits: 0,
-                    })
-                  : "-"}
-              </div>
-              <div className="w-10 text-right text-base">
-                {(player.wins / player.loss).toLocaleString("no-NO", {
-                  maximumFractionDigits: 1,
-                })}
-              </div>
-            </Link>
-          ))}
-        </div>
+                    })}
+                  </div>
+                  <div className="w-10 text-right text-base">
+                    {list[index - 1]
+                      ? (player.elo - list[index - 1].elo).toLocaleString("no-NO", {
+                          maximumFractionDigits: 0,
+                        })
+                      : "-"}
+                  </div>
+                  <div className="w-10 text-right text-base">
+                    {(player.wins / player.loss).toLocaleString("no-NO", {
+                      maximumFractionDigits: 1,
+                    })}
+                  </div>
+                </Link>
+              ))}
+            </div>
 
-        <h1 className="text-2xl text-center text-primary-text mt-10">Unranked players</h1>
-        <p className="w-full text-center text-primary-text mb-4">
-          Play {context.client.gameLimitForRanked} or more games to get ranked
-        </p>
-        <div className="flex flex-col divide-y divide-primary-text/50">
-          <div className="flex gap-4 text-base text-center text-primary-text mb-2">
-            <div className="w-40 text-left pl-2">Name</div>
-            <div className="w-12 text-right">Elo</div>
-            <div className="w-14 pl-8 text-right">Games</div>
-          </div>
-          {leaderboard.unrankedPlayers.map((player, index) => (
-            <Link
-              key={index}
-              to={`/player/${player.id}`}
-              className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text py-1 px-2 flex items-center gap-4 text-xl text-primary-text font-light"
-            >
-              <ProfilePicture playerId={player.id} size={28} border={2} />
-
-              <div className="w-28 font-normal whitespace-nowrap">{player.name}</div>
-              <div className="w-12 text-right">
-                {player.elo.toLocaleString("no-NO", {
-                  maximumFractionDigits: 0,
-                })}
+            <h1 className="text-2xl text-center text-primary-text mt-10">Unranked players</h1>
+            <p className="w-full text-center text-primary-text mb-4">
+              Play {context.client.gameLimitForRanked} or more games to get ranked
+            </p>
+            <div className="flex flex-col divide-y divide-primary-text/50">
+              <div className="flex gap-4 text-base text-center text-primary-text mb-2">
+                <div className="w-40 text-left pl-2">Name</div>
+                <div className="w-12 text-right">Elo</div>
+                <div className="w-14 pl-8 text-right">Games</div>
               </div>
-              <div className="w-14 text-right text-base">
-                {player.games.length.toLocaleString("no-NO", {
-                  maximumFractionDigits: 0,
-                })}
-              </div>
-            </Link>
-          ))}
-          {playersWithNoMatches.map((player, index) => (
-            <Link
-              key={index}
-              to={`/player/${player.id}`}
-              className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text py-1 px-2 flex items-center gap-4 text-xl text-primary-text font-light"
-            >
-              <ProfilePicture playerId={player.id} size={28} border={2} />
+              {leaderboard.unrankedPlayers.map((player, index) => (
+                <Link
+                  key={index}
+                  to={`/player/${player.id}`}
+                  className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text py-1 px-2 flex items-center gap-4 text-xl text-primary-text font-light"
+                >
+                  <ProfilePicture playerId={player.id} size={28} border={2} />
+                  <div className="w-28 font-normal whitespace-nowrap">{player.name}</div>
+                  <div className="w-12 text-right">
+                    {player.elo.toLocaleString("no-NO", {
+                      maximumFractionDigits: 0,
+                    })}
+                  </div>
+                  <div className="w-14 text-right text-base">
+                    {player.games.length.toLocaleString("no-NO", {
+                      maximumFractionDigits: 0,
+                    })}
+                  </div>
+                </Link>
+              ))}
+              {playersWithNoMatches.map((player, index) => (
+                <Link
+                  key={index}
+                  to={`/player/${player.id}`}
+                  className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text py-1 px-2 flex items-center gap-4 text-xl text-primary-text font-light"
+                >
+                  <ProfilePicture playerId={player.id} size={28} border={2} />
+                  <div className="w-28 font-normal whitespace-nowrap">{player.name}</div>
+                  <div className="w-12 text-right">-</div>
+                  <div className="w-14 text-right text-base">0</div>
+                </Link>
+              ))}
+            </div>
+          </>
+        ) : (
+          <>
+            {/* Season Leaderboard */}
+            {currentSeason ? (
+              <>
+                <div className="flex flex-col divide-y divide-primary-text/50">
+                  <div className="flex gap-4 text-base text-center mb-2 text-primary-text">
+                    <div className="w-5">#</div>
+                    <div className="w-40 text-left pl-2">Name</div>
+                    <div className="w-12 text-right">Score</div>
+                    <div className="w-16 pl-1">Interval</div>
+                  </div>
+                  {seasonLeaderboard.map((player, index, list) => (
+                    <Link
+                      key={player.playerId}
+                      to={`/season/player?seasonStart=${currentSeason.start}&playerId=${player.playerId}`}
+                      className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text py-1 px-2 flex items-center gap-4 text-xl font-light text-primary-text"
+                    >
+                      <div className="w-5 italic">{index + 1}</div>
+                      <ProfilePicture playerId={player.playerId} size={28} border={2} />
+                      <div className="w-28 font-normal whitespace-nowrap">{context.playerName(player.playerId)}</div>
+                      <div className="w-12 text-right">{fmtNum(player.seasonScore)}</div>
+                      <div className="w-10 text-right text-base">
+                        {list[index - 1] ? fmtNum(player.seasonScore - list[index - 1].seasonScore) : "-"}
+                      </div>
+                    </Link>
+                  ))}
+                </div>
 
-              <div className="w-28 font-normal whitespace-nowrap">{player.name}</div>
-              <div className="w-12 text-right">-</div>
-              <div className="w-14 text-right text-base">0</div>
-            </Link>
-          ))}
-        </div>
+                <h1 className="text-2xl text-center text-primary-text mt-10">Not yet participated</h1>
+                <p className="w-full text-center text-primary-text mb-4">
+                  Play a game this season to join the leaderboard
+                </p>
+                <div className="flex flex-col divide-y divide-primary-text/50">
+                  <div className="flex gap-4 text-base text-center text-primary-text mb-2">
+                    <div className="w-40 text-left pl-2">Name</div>
+                  </div>
+                  {playersNotInSeason.map((player) => (
+                    <Link
+                      key={player.id}
+                      to={`/player/${player.id}`}
+                      className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text py-1 px-2 flex items-center gap-4 text-xl text-primary-text font-light"
+                    >
+                      <ProfilePicture playerId={player.id} size={28} border={2} />
+                      <div className="w-28 font-normal whitespace-nowrap">{player.name}</div>
+                    </Link>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <div className="p-8 text-center text-secondary-text">
+                <p>No active season at the moment</p>
+              </div>
+            )}
+          </>
+        )}
       </div>
     </div>
   );
