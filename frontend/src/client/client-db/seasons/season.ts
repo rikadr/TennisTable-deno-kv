@@ -32,11 +32,8 @@ export class Season {
     }
 
     for (const game of this.games) {
-      const { winnerPoints, loserPoints } = this.calculateTotalPoints(game.score!.setPoints!);
-      const totalPoints = winnerPoints + loserPoints;
-
-      const winnerPerformance = (winnerPoints / totalPoints) * 100;
-      const loserPerformance = (loserPoints / totalPoints) * 100;
+      const winnerPerformance = this.calculatePerformance(game, true);
+      const loserPerformance = this.calculatePerformance(game, false);
 
       this.updateBestPerformance(game.winner, game.loser, winnerPerformance, game.playedAt);
       this.updateBestPerformance(game.loser, game.winner, loserPerformance, game.playedAt);
@@ -52,17 +49,36 @@ export class Season {
     return this.leaderboard;
   }
 
-  private calculateTotalPoints(setPoints: { gameWinner: number; gameLoser: number }[]): {
-    winnerPoints: number;
-    loserPoints: number;
+  private calculatePerformance(game: Game, isWinner: boolean): number {
+    const setsWon = isWinner ? game.score!.setsWon.gameWinner : game.score!.setsWon.gameLoser;
+    const totalSets = game.score!.setsWon.gameWinner + game.score!.setsWon.gameLoser;
+
+    // 50 points from sets won percentage
+    const setsScore = (setsWon / totalSets) * 50;
+
+    // 50 points from balls won percentage (if available)
+    let ballsScore = 0;
+    if (game.score?.setPoints && game.score.setPoints.length > 0) {
+      const { winnerBalls, loserBalls } = this.calculateTotalBalls(game.score.setPoints);
+      const playerBalls = isWinner ? winnerBalls : loserBalls;
+      const totalBalls = winnerBalls + loserBalls;
+      ballsScore = (playerBalls / totalBalls) * 50;
+    }
+
+    return setsScore + ballsScore;
+  }
+
+  private calculateTotalBalls(setPoints: { gameWinner: number; gameLoser: number }[]): {
+    winnerBalls: number;
+    loserBalls: number;
   } {
     return setPoints.reduce(
       (acc, set) => {
-        acc.winnerPoints += set.gameWinner;
-        acc.loserPoints += set.gameLoser;
+        acc.winnerBalls += set.gameWinner;
+        acc.loserBalls += set.gameLoser;
         return acc;
       },
-      { winnerPoints: 0, loserPoints: 0 },
+      { winnerBalls: 0, loserBalls: 0 },
     );
   }
 
@@ -78,10 +94,8 @@ export class Season {
     }
   }
 
-  /** Only games with at least 2 sets with full individual set scoring are valid */
+  /** Only games with set scores are valid */
   private isValidGame(game: Game): boolean {
-    if (!game.score?.setPoints) return false;
-    if (game.score.setPoints.length < 2) return false;
-    return true;
+    return game.score?.setsWon !== undefined;
   }
 }

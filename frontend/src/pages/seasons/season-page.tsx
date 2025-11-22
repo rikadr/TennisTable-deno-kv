@@ -6,6 +6,7 @@ import { fmtNum } from "../../common/number-utils";
 import { useTennisParams } from "../../hooks/use-tennis-params";
 import { dateString } from "../player/player-achievements";
 import { relativeTimeString } from "../../common/date-utils";
+import { SeasonLeaderboardBars } from "./season-leaderboard-bars";
 
 type SortKey = "score" | "playerPairings" | "avgPerformance";
 
@@ -69,8 +70,15 @@ export function SeasonPage() {
         {dateString(Number(season.start))} to {dateString(Number(season.end))}
       </h2>
       {Date.now() > season.end && "Ended " + relativeTimeString(new Date(season.end))}
-      {Date.now() > season.start && Date.now() < season.end && "Started " + relativeTimeString(new Date(season.start))}
+      {Date.now() > season.start &&
+        Date.now() < season.end &&
+        "Started " +
+          relativeTimeString(new Date(season.start)) +
+          ", ends " +
+          relativeTimeString(new Date(season.end)).toLowerCase()}
       {Date.now() < season.start && "Starts " + relativeTimeString(new Date(season.start))}
+
+      <SeasonLeaderboardBars season={season} />
 
       <div className="bg-secondary-background rounded-lg overflow-hidden">
         <table className="w-full">
