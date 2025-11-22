@@ -91,9 +91,14 @@ export const ACHIEVEMENT_LABELS: Record<string, { title: string; description: st
     icon: "🤝",
   },
   "tournament-winner": {
-    title: "Champion",
+    title: "Tournament Champion",
     description: "Won a tournament",
     icon: "🏆",
+  },
+  "season-winner": {
+    title: "Seasonal Champion",
+    description: "Finished 1st in a season",
+    icon: "🍁",
   },
   "nice-game": {
     title: "Nice Game",
@@ -276,6 +281,12 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
                 {achievement.data && "startedAt" in achievement.data && (
                   <p className="text-xs text-secondary-text/70 mt-2">
                     From {dateString(achievement.data.startedAt)} to {dateString(achievement.earnedAt)}
+                  </p>
+                )}
+
+                {achievement.data && "seasonStart" in achievement.data && (
+                  <p className="text-xs text-secondary-text/70 mt-2">
+                    Season from {dateString(achievement.data.seasonStart)} to {dateString(achievement.earnedAt)}
                   </p>
                 )}
               </div>

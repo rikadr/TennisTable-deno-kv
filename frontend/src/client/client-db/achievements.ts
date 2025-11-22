@@ -396,8 +396,9 @@ export class Achievements {
       }
     });
 
-    // Check for tournament achievements
+
     this.#checkTournamentAchievements();
+    this.#checkSeasonAchievements();
     this.hasCalculated = true;
   }
 
@@ -665,6 +666,20 @@ export class Achievements {
     });
   }
 
+  #checkSeasonAchievements() {
+    this.parent.seasons.getSeasons().forEach((s) => {
+      const leaderboard = s.getLeaderboard();
+
+      // Check participation TODO
+
+      // Check for season winners
+      if (Date.now() > s.end && leaderboard.length > 0) {
+        const winner = leaderboard[0].playerId;
+        this.#addAchievement(winner, this.#createAchievement("season-winner", winner, s.end, { seasonStart: s.start }));
+      }
+    });
+  }
+
   #addAchievement(playerId: string, achievement: Achievement) {
     if (!this.achievementMap.has(playerId)) {
       this.achievementMap.set(playerId, []);
@@ -725,6 +740,7 @@ export class Achievements {
       "active-2-years": { current: 0, target: TWO_YEARS, earned: 0 },
       "tournament-participated": { earned: 0 },
       "tournament-winner": { earned: 0 },
+      "season-winner": { earned: 0 },
       "nice-game": { earned: 0 },
       "close-calls": { current: 0, target: 5, earned: 0 },
       "edge-lord": { current: 0, target: 20, earned: 0 },
@@ -998,6 +1014,7 @@ type AchievementDefinitions = {
   "active-2-years": { firstGameInPeriod: number };
   "tournament-participated": { tournamentId: string };
   "tournament-winner": { tournamentId: string };
+  "season-winner": { seasonStart: number };
   "nice-game": { gameId: string; opponent: string };
   "close-calls": undefined;
   "edge-lord": undefined;
@@ -1072,6 +1089,7 @@ export type AchievementProgression = {
   "active-2-years": ProgressionWithTarget;
   "tournament-participated": BaseProgression;
   "tournament-winner": BaseProgression;
+  "season-winner": BaseProgression;
   "nice-game": BaseProgression;
   "close-calls": ProgressionWithTarget;
   "edge-lord": ProgressionWithTarget;

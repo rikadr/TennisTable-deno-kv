@@ -149,6 +149,11 @@ export const AchievementsPage: React.FC = () => {
                             From {dateString(achievement.data.startedAt)} to {dateString(achievement.earnedAt)}
                           </p>
                         )}
+                        {achievement.data && "seasonStart" in achievement.data && (
+                          <p className="text-xs mt-2">
+                            Season from {dateString(achievement.data.seasonStart)} to {dateString(achievement.earnedAt)}
+                          </p>
+                        )}
                         {achievement.data && "lastGameAt" in achievement.data && (
                           <p className="text-xs mt-2">
                             From {dateString(achievement.data.lastGameAt)} to {dateString(achievement.earnedAt)}
