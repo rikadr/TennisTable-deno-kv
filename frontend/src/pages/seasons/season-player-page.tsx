@@ -99,6 +99,7 @@ export function SeasonPlayerPage() {
       gamesPlayed: gamesWithOpponent.length,
       playedAt: matchupStats.playedAt,
       breakdown,
+      bestGame: bestGame!,
     };
   });
 
@@ -137,6 +138,10 @@ export function SeasonPlayerPage() {
     .filter((player) => player.id !== playerId && !playedOpponentIds.has(player.id))
     .sort((a, b) => context.playerName(a.id).localeCompare(context.playerName(b.id)));
 
+  // Check if any best performance games are missing balls score
+  const hasMissingBallsScore = matchupData.some((matchup) => matchup.breakdown && !matchup.breakdown.hasBalls);
+  const hasMissingSetScore = matchupData.some((matchup) => matchup.breakdown && !matchup.breakdown.hasSets);
+
   return (
     <div className="px-6">
       <div className="flex items-center gap-4 mb-6">
@@ -170,6 +175,36 @@ export function SeasonPlayerPage() {
         </Link>
       </div>
 
+      {/* Missing Score Alert */}
+      {hasMissingSetScore && (
+        <div className="mb-6 bg-red-500/10 border border-red-500/30 rounded-lg p-4">
+          <div className="flex items-start gap-3">
+            <span className="text-2xl">🚨</span>
+            <div className="flex-1">
+              <h3 className="text-red-600 dark:text-red-500 font-semibold mb-1">Missing Important Score Data</h3>
+              <p className="text-red-700 dark:text-red-400 text-sm">
+                Some of your best performance games are missing set scores! Add set score details to earn up to 33% more
+                points per matchup.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+      {hasMissingBallsScore && (
+        <div className="mb-6 bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4">
+          <div className="flex items-start gap-3">
+            <span className="text-2xl">⚠️</span>
+            <div className="flex-1">
+              <h3 className="text-yellow-600 dark:text-yellow-500 font-semibold mb-1">Maximize Your Season Score</h3>
+              <p className="text-yellow-700 dark:text-yellow-400 text-sm">
+                You're missing out on potential points! Some of your best performance games don't have detailed ball
+                scores. Add the full score details to earn up to 33% more points per matchup.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Summary Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <div className="bg-secondary-background p-4 rounded-lg">
@@ -192,59 +227,81 @@ export function SeasonPlayerPage() {
 
       {/* Matchups Table */}
       <div className="bg-secondary-background rounded-lg overflow-hidden mb-6">
-        <table className="w-full">
-          <thead>
-            <tr className="bg-treasury-background border-b border-treasury-text/20">
-              <th className="text-left px-4 text-treasury-text font-semibold cursor-pointer hover:text-treasury-text/80">
-                Opponent
-              </th>
-              <th
-                className="text-left px-4 text-treasury-text font-semibold cursor-pointer hover:text-treasury-text/80"
-                onClick={() => handleSort("performance")}
-              >
-                Best Performance{getSortIndicator("performance")}
-              </th>
-              <th className="text-left px-4 text-treasury-text font-semibold">Performance Breakdown</th>
-              <th className="text-left px-4 text-treasury-text font-semibold">Best performance game was played at</th>
-            </tr>
-          </thead>
-          <tbody>
-            {sortedMatchups.map(({ opponentId, bestPerformance, gamesPlayed, playedAt, breakdown }) => (
-              <tr key={opponentId} className="border-b border-secondary-text/10 hover:bg-primary-background/50">
-                <td className="px-4">
-                  <div className="flex items-center gap-3">
-                    <ProfilePicture playerId={opponentId} size={40} />
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="bg-treasury-background border-b border-treasury-text/20">
+                <th className="text-left px-4 text-treasury-text font-semibold cursor-pointer hover:text-treasury-text/80">
+                  Opponent
+                </th>
+                <th
+                  className="text-left px-4 text-treasury-text font-semibold cursor-pointer hover:text-treasury-text/80"
+                  onClick={() => handleSort("performance")}
+                >
+                  Best Performance{getSortIndicator("performance")}
+                </th>
+                <th className="text-left px-4 text-treasury-text font-semibold">Game result</th>
+                <th className="text-left px-4 text-treasury-text font-semibold">Performance Breakdown</th>
+                <th className="text-left px-4 text-treasury-text font-semibold">Best performance played at</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sortedMatchups.map(({ opponentId, bestPerformance, playedAt, breakdown, bestGame }) => (
+                <tr key={opponentId} className="border-b border-secondary-text/10 hover:bg-primary-background/50">
+                  <td className="px-4">
                     <Link
                       to={`/season/player?seasonStart=${seasonStart}&playerId=${opponentId}`}
                       className="text-primary-text hover:text-treasury-text font-medium"
                     >
-                      {context.playerName(opponentId)}
+                      <div className="flex items-center gap-3">
+                        <ProfilePicture playerId={opponentId} size={35} border={3} shape="rounded" />
+                        {context.playerName(opponentId)}
+                      </div>
                     </Link>
-                  </div>
-                </td>
-                <td className="px-4 text-primary-text font-medium">{fmtNum(bestPerformance)}</td>
-                <td className="px-4">
-                  {breakdown ? (
-                    <div className="flex gap-2 text-sm">
-                      <span className="text-primary-text">Win: {fmtNum(breakdown.win / 3)}</span>
-                      <span className={breakdown.hasSets ? "text-primary-text" : "text-secondary-text/50"}>
-                        Sets: {breakdown.hasSets ? fmtNum(breakdown.sets / 3) : "—"}
-                      </span>
-                      <span className={breakdown.hasBalls ? "text-primary-text" : "text-secondary-text/50"}>
-                        Balls: {breakdown.hasBalls ? fmtNum(breakdown.balls / 3) : "—"}
-                      </span>
-                    </div>
-                  ) : (
-                    <span className="text-secondary-text text-sm">—</span>
-                  )}
-                </td>
-                <td className="px-4 text-secondary-text">
-                  {dateString(playedAt)} - {relativeTimeString(new Date(playedAt))}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                  </td>
+                  <td className="px-4 text-primary-text font-medium">{fmtNum(bestPerformance)}</td>
+                  <td className="p-1 md:flex items-baseline gap-3">
+                    {bestGame.score && (
+                      <div className="font-medium">
+                        {bestGame.winner === playerId
+                          ? `${bestGame.score?.setsWon.gameWinner} - ${bestGame.score?.setsWon.gameLoser}`
+                          : `${bestGame.score?.setsWon.gameLoser} - ${bestGame.score?.setsWon.gameWinner}`}
+                      </div>
+                    )}
+                    {bestGame.score?.setPoints && (
+                      <div className="font-light italic text-xs">
+                        {bestGame.winner === playerId
+                          ? bestGame.score.setPoints.map((set) => `${set.gameWinner}-${set.gameLoser}`).join(", ")
+                          : bestGame.score.setPoints.map((set) => `${set.gameLoser}-${set.gameWinner}`).join(", ")}
+                      </div>
+                    )}
+                    {!bestGame.score?.setsWon && !bestGame.score?.setPoints && (
+                      <p>{bestGame.winner === playerId ? "Won - no score" : "Lost - no score"}</p>
+                    )}
+                  </td>
+                  <td className="px-4">
+                    {breakdown ? (
+                      <div className="flex gap-2 text-sm">
+                        <span className="text-primary-text">Win: {fmtNum(breakdown.win / 3)}</span>
+                        <span className={breakdown.hasSets ? "text-primary-text" : "text-secondary-text/50"}>
+                          Sets: {breakdown.hasSets ? fmtNum(breakdown.sets / 3) : "🚨"}
+                        </span>
+                        <span className={breakdown.hasBalls ? "text-primary-text" : "text-secondary-text/50"}>
+                          Balls: {breakdown.hasBalls ? fmtNum(breakdown.balls / 3) : "⚠️"}
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-secondary-text text-sm">—</span>
+                    )}
+                  </td>
+                  <td className="px-4 text-secondary-text text-sm min-w-64">
+                    {dateString(playedAt)} - {relativeTimeString(new Date(playedAt))}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Unplayed Opponents */}
@@ -256,14 +313,14 @@ export function SeasonPlayerPage() {
             </h3>
           </div>
           <div className="p-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 md:gap-3">
               {unplayedOpponents.map((opponent) => (
                 <Link
                   key={opponent.id}
                   to={`/season/player?seasonStart=${seasonStart}&playerId=${opponent.id}`}
                   className="flex items-center gap-3 p-2 rounded hover:bg-primary-background/50 transition-colors"
                 >
-                  <ProfilePicture playerId={opponent.id} size={32} />
+                  <ProfilePicture playerId={opponent.id} size={32} border={2} />
                   <span className="text-primary-text hover:text-treasury-text">{context.playerName(opponent.id)}</span>
                 </Link>
               ))}
