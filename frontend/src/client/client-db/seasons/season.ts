@@ -19,9 +19,6 @@ export class Season {
   }
 
   addGame(game: Game) {
-    if (this.isValidGame(game) === false) {
-      return;
-    }
     this.games.push(game);
     this.leaderboard = undefined; // Invalidate cache
   }
@@ -45,27 +42,41 @@ export class Season {
       seasonScores.set(playerId, { playerId, seasonScore, matchups });
     }
 
-    this.leaderboard = Array.from(seasonScores.values()).sort((a, b) => b.seasonScore - a.seasonScore);
+    this.leaderboard = Array.from(seasonScores.values()).sort((a, b) => {
+      // Primary sort: by season score (descending)
+      if (b.seasonScore !== a.seasonScore) {
+        return b.seasonScore - a.seasonScore;
+      }
+      // Tiebreaker: fewer pairings = higher rank (ascending)
+      return a.matchups.size - b.matchups.size;
+    });
+
     return this.leaderboard;
   }
 
   private calculatePerformance(game: Game, isWinner: boolean): number {
-    const setsWon = isWinner ? game.score!.setsWon.gameWinner : game.score!.setsWon.gameLoser;
-    const totalSets = game.score!.setsWon.gameWinner + game.score!.setsWon.gameLoser;
+    // Win performance: 100 for winner, 0 for loser
+    const winPerformance = isWinner ? 100 : 0;
 
-    // 50 points from sets won percentage
-    const setsScore = (setsWon / totalSets) * 50;
+    // Sets performance: percentage of sets won (0-100)
+    let setsPerformance = 0;
+    if (game.score?.setsWon) {
+      const setsWon = isWinner ? game.score.setsWon.gameWinner : game.score.setsWon.gameLoser;
+      const totalSets = game.score.setsWon.gameWinner + game.score.setsWon.gameLoser;
+      setsPerformance = (setsWon / totalSets) * 100;
+    }
 
-    // 50 points from balls won percentage (if available)
-    let ballsScore = 0;
+    // Balls performance: percentage of balls won (0-100)
+    let ballsPerformance = 0;
     if (game.score?.setPoints && game.score.setPoints.length > 0) {
       const { winnerBalls, loserBalls } = this.calculateTotalBalls(game.score.setPoints);
       const playerBalls = isWinner ? winnerBalls : loserBalls;
       const totalBalls = winnerBalls + loserBalls;
-      ballsScore = (playerBalls / totalBalls) * 50;
+      ballsPerformance = (playerBalls / totalBalls) * 100;
     }
 
-    return setsScore + ballsScore;
+    // Average the three components
+    return (winPerformance + setsPerformance + ballsPerformance) / 3;
   }
 
   private calculateTotalBalls(setPoints: { gameWinner: number; gameLoser: number }[]): {
@@ -92,10 +103,5 @@ export class Season {
     if (performance > currentBest) {
       matchups.set(opponentId, { bestPerformance: performance, playedAt });
     }
-  }
-
-  /** Only games with set scores are valid */
-  private isValidGame(game: Game): boolean {
-    return game.score?.setsWon !== undefined;
   }
 }
