@@ -48,6 +48,11 @@ export const NavMenu: React.FC = () => {
     ));
     if (session.isAuthenticated) {
       list.push(
+        <CloseButton key={"seasons"} as={Link} to="/season/list" className={menuItemWrapperClassNames}>
+          <p className={menuItemTextClassNames}>🍁 Seasons (WIP)</p>
+        </CloseButton>,
+      );
+      list.push(
         <CloseButton key={list.length} as={Link} to="/me" className={menuItemWrapperClassNames}>
           <p className={menuItemTextClassNames}>My profile</p>
         </CloseButton>,
