@@ -38,6 +38,8 @@ import { ChooseAddOrTrack } from "./pages/add-game/choose-add-or-track";
 import { AchievementsPage } from "./pages/achievements-page";
 import { TournamentSkipGamePage } from "./pages/tournament/tournament-skip-game";
 import { TournamentUndoSkipPage } from "./pages/tournament/tournament-undo-skip";
+import { SeasonsListPage } from "./pages/seasons/seasons-list-page";
+import { SeasonPage } from "./pages/seasons/season-page";
 
 const RequireAuth: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   if (!session.isAuthenticated) {
@@ -77,6 +79,10 @@ function App() {
                           <Route path="list" element={<TournamentsListPage />} />
                           <Route path="skip-game" element={<TournamentSkipGamePage />} />
                           <Route path="undo-skip" element={<TournamentUndoSkipPage />} />
+                        </Route>
+                        <Route path="/season">
+                          <Route index element={<SeasonPage />} />
+                          <Route path="list" element={<SeasonsListPage />} />
                         </Route>
                         <Route path="/achievements" element={<AchievementsPage />} />
                         <Route path="/simulations">

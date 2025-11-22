@@ -64,7 +64,7 @@ export const PlayersTab: React.FC<PlayersTabProps> = ({ onDeactivatePlayer, onRe
   };
 
   function sortedActivePlayers() {
-    return sortPlayers(context.eventStore.playersProjector.players);
+    return sortPlayers(context.eventStore.playersProjector.activePlayers);
   }
 
   function sortedInactivePlayers() {
@@ -108,7 +108,8 @@ export const PlayersTab: React.FC<PlayersTabProps> = ({ onDeactivatePlayer, onRe
       <div className="mb-6 space-y-2">
         <div className="flex gap-6 text-sm">
           <p>
-            <span className="font-semibold">Active players:</span> {context.eventStore.playersProjector.players.length}
+            <span className="font-semibold">Active players:</span>{" "}
+            {context.eventStore.playersProjector.activePlayers.length}
           </p>
           <p>
             <span className="font-semibold">Inactive players:</span>{" "}

@@ -13,7 +13,7 @@ export type Player = {
 export class PlyersProjector {
   #playersMap = new Map<string, Player>();
 
-  get players(): Player[] {
+  get activePlayers(): Player[] {
     return Array.from(this.#playersMap.values()).filter((player) => player.active);
   }
 

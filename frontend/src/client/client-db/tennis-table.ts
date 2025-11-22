@@ -10,12 +10,13 @@ import { IndividualPoints } from "./individual-points";
 import { LeaderboardChanges } from "./leaderboard-changes";
 import { PlayerOponentDistribution } from "./playerOponentDistribution";
 import { Achievements } from "./achievements";
+import { Seasons } from "./seasons/seasons";
 
 export class TennisTable {
   // --------------------------------------------------------------------------
   // Data from db
   // --------------------------------------------------------------------------
-  readonly events: EventType[]; // May need to not be readonly when doing fetching of new events
+  readonly events: EventType[];
 
   // --------------------------------------------------------------------------
   // Client configuration
@@ -40,6 +41,7 @@ export class TennisTable {
   individualPoints: IndividualPoints;
   playerOponentDistribution: PlayerOponentDistribution;
   achievements: Achievements;
+  seasons: Seasons;
 
   constructor(data: { events: EventType[] }) {
     this.events = data.events;
@@ -54,10 +56,12 @@ export class TennisTable {
     this.individualPoints = new IndividualPoints(this);
     this.playerOponentDistribution = new PlayerOponentDistribution(this);
     this.achievements = new Achievements(this);
+    this.seasons = new Seasons(this);
   }
 
+  /** Returns list of active players */
   get players() {
-    return this.eventStore.playersProjector.players;
+    return this.eventStore.playersProjector.activePlayers;
   }
   get games() {
     return this.eventStore.gamesProjector.games;
