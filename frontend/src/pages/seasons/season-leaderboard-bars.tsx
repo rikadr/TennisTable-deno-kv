@@ -159,7 +159,7 @@ export const SeasonLeaderboardBars = ({ season }: Props) => {
                     backgroundColor: stringToColor(playerId),
                   }}
                 />
-                <div className="absolute top-0 left-0 right-0 h-6 flex items-center justify-between px-3 text-primary-text z-10">
+                <div className="absolute top-0 left-0 right-0 h-6 flex items-center justify-between px-3 text-primary-text ">
                   <span>
                     {rank}. {context.playerName(playerId)}
                   </span>
