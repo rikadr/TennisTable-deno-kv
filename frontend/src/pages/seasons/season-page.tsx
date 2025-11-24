@@ -7,13 +7,22 @@ import { useTennisParams } from "../../hooks/use-tennis-params";
 import { dateString } from "../player/player-achievements";
 import { relativeTimeString } from "../../common/date-utils";
 import { SeasonLeaderboardBars } from "./season-leaderboard-bars";
+import { SeasonTimeline } from "./season-timeline";
 
 type SortKey = "score" | "playerPairings" | "avgPerformance";
+
+type TabType = "leaderboard" | "bar_chart" | "timeline";
+const tabs: { id: TabType; label: string }[] = [
+  { id: "leaderboard", label: "Leaderboard" },
+  { id: "timeline", label: "Timeline" },
+  { id: "bar_chart", label: "Charts" },
+];
 
 export function SeasonPage() {
   const context = useEventDbContext();
   const [sortKey, setSortKey] = useState<SortKey>("score");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const [activeTab, setActiveTab] = useState<TabType>("leaderboard");
 
   const { seasonStart } = useTennisParams();
   if (!seasonStart) {
@@ -78,62 +87,87 @@ export function SeasonPage() {
           relativeTimeString(new Date(season.end)).toLowerCase()}
       {Date.now() < season.start && "Starts " + relativeTimeString(new Date(season.start))}
 
-      <SeasonLeaderboardBars season={season} />
-
-      <div className="bg-secondary-background rounded-lg overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="bg-secondary-background border-b border-secondary-text/20">
-                <th className="text-left px-4 text-secondary-text font-semibold">#</th>
-                <th className="text-left px-4 text-secondary-text font-semibold">Player</th>
-                <th
-                  className="text-left px-4 text-secondary-text font-semibold cursor-pointer hover:text-secondary-text/80"
-                  onClick={() => handleSort("score")}
-                >
-                  Season Score{getSortIndicator("score")}
-                </th>
-                <th
-                  className="text-left px-4 text-secondary-text font-semibold cursor-pointer hover:text-secondary-text/80"
-                  onClick={() => handleSort("playerPairings")}
-                >
-                  Player Pairings{getSortIndicator("playerPairings")}
-                </th>
-                <th
-                  className="text-left px-4 text-secondary-text font-semibold cursor-pointer hover:text-secondary-text/80"
-                  onClick={() => handleSort("avgPerformance")}
-                >
-                  Avg. Performance{getSortIndicator("avgPerformance")}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {sortedLeaderboard.map((player, i) => (
-                <tr
-                  key={player.playerId}
-                  className="border-b border-secondary-text/10 text-secondary-text hover:bg-primary-background/50"
-                >
-                  <td className="px-4">{i + 1}</td>
-                  <td className="px-4">
-                    <Link
-                      to={`/season/player?seasonStart=${seasonStart}&playerId=${player.playerId}`}
-                      className="font-medium"
-                    >
-                      <div className="flex items-center gap-3">
-                        <ProfilePicture playerId={player.playerId} size={35} border={3} shape="rounded" />
-                        {context.playerName(player.playerId)}
-                      </div>
-                    </Link>
-                  </td>
-                  <td className="px-4 font-medium">{fmtNum(player.seasonScore)}</td>
-                  <td className="px-4">{fmtNum(player.matchups.size)}</td>
-                  <td className="px-4">{fmtNum(player.seasonScore / player.matchups.size)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      <div className="flex space-x-2 overflow-auto">
+        {tabs.map((tab) => {
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`
+                    flex items-center py-2 px-4 border-b-4 font-medium text-sm transition-colors
+                    ${
+                      activeTab === tab.id
+                        ? "text-secondary-text border-secondary-text"
+                        : "text-secondary-text/80 border-transparent hover:text-secondary-text hover:border-secondary-text border-dotted"
+                    }
+                  `}
+            >
+              {tab.label}
+            </button>
+          );
+        })}
       </div>
+      {activeTab === "bar_chart" && <SeasonLeaderboardBars season={season} />}
+      {activeTab === "timeline" && <SeasonTimeline season={season} />}
+      {activeTab === "leaderboard" && (
+        <div className="bg-secondary-background rounded-lg overflow-hidden mt-4">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-secondary-background border-b border-secondary-text/20">
+                  <th className="text-left px-4 text-secondary-text font-semibold">#</th>
+                  <th className="text-left px-4 text-secondary-text font-semibold">Player</th>
+                  <th
+                    className="text-left px-4 text-secondary-text font-semibold cursor-pointer hover:text-secondary-text/80"
+                    onClick={() => handleSort("score")}
+                  >
+                    Season Score{getSortIndicator("score")}
+                  </th>
+                  <th
+                    className="text-left px-4 text-secondary-text font-semibold cursor-pointer hover:text-secondary-text/80"
+                    onClick={() => handleSort("playerPairings")}
+                  >
+                    Player Pairings{getSortIndicator("playerPairings")}
+                  </th>
+                  <th
+                    className="text-left px-4 text-secondary-text font-semibold cursor-pointer hover:text-secondary-text/80"
+                    onClick={() => handleSort("avgPerformance")}
+                  >
+                    Avg. Performance{getSortIndicator("avgPerformance")}
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {sortedLeaderboard.map((player, i) => (
+                  <tr
+                    key={player.playerId}
+                    className="border-b border-secondary-text/10 text-secondary-text hover:bg-primary-background/50"
+                  >
+                    <td className="px-4">{i + 1}</td>
+                    <td className="px-4">
+                      <Link
+                        to={`/season/player?seasonStart=${seasonStart}&playerId=${player.playerId}`}
+                        className="font-medium"
+                      >
+                        <div className="flex items-center gap-3">
+                          <ProfilePicture playerId={player.playerId} size={35} border={3} shape="rounded" />
+                          {i === 0 && "🥇 "}
+                          {i === 1 && "🥈 "}
+                          {i === 2 && "🥉 "}
+                          {context.playerName(player.playerId)}
+                        </div>
+                      </Link>
+                    </td>
+                    <td className="px-4 font-medium">{fmtNum(player.seasonScore)}</td>
+                    <td className="px-4">{fmtNum(player.matchups.size)}</td>
+                    <td className="px-4">{fmtNum(player.seasonScore / player.matchups.size)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

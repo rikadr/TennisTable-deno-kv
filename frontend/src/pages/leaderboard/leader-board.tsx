@@ -10,14 +10,13 @@ import easterBunny from "../../img/easter/easter-bunny-realistic.png";
 import { getEgg, getPumpkin } from "./themed-place-number";
 import { RecentLeaderBoardChanges } from "./recent-leaderboard-changes";
 import { fmtNum } from "../../common/number-utils";
-import { classNames } from "../../common/class-names";
 
 type LeaderboardView = "overall" | "season";
 
 export const LeaderBoard: React.FC = () => {
   const context = useEventDbContext();
   const leaderboard = context.leaderboard.getLeaderboard();
-  const [view, setView] = useState<LeaderboardView>("overall");
+  const [view] = useState<LeaderboardView>("overall");
 
   const client = getClientConfig();
   const theme = themeOrOverrideTheme(client.theme);
@@ -71,7 +70,7 @@ export const LeaderBoard: React.FC = () => {
 
       <div className="bg-primary-background rounded-lg">
         {/* Toggle */}
-        <div className="flex justify-center gap-2 p-4 border-b border-primary-text/20">
+        {/* <div className="flex justify-center gap-2 p-4 border-b border-primary-text/20">
           <button
             onClick={() => setView("overall")}
             className={classNames(
@@ -94,7 +93,7 @@ export const LeaderBoard: React.FC = () => {
           >
             Season (WIP🛠️)
           </button>
-        </div>
+        </div> */}
 
         {view === "overall" ? (
           <>

@@ -45,9 +45,9 @@ export const SeasonLeaderboardBars = ({ season }: Props) => {
   };
 
   return (
-    <div className="flex flex-col gap-4 w-full my-6">
+    <div className="flex flex-col gap-4 w-full my-4">
       {/* Selectors */}
-      <div className="flex flex-col sm:flex-row gap-4 bg-secondary-background p-4 pb-2 rounded-lg">
+      <div className="flex flex-col sm:flex-row gap-4 bg-secondary-background p-4 pt-2 pb-2 rounded-lg">
         <div className="flex flex-col gap-2">
           <label className="text-sm text-secondary-text font-medium">Display:</label>
           <div className="flex gap-2">

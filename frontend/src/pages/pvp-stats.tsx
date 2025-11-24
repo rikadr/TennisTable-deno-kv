@@ -3,6 +3,7 @@ import { classNames } from "../common/class-names";
 import { Link } from "react-router-dom";
 import { relativeTimeString } from "../common/date-utils";
 import { fmtNum } from "../common/number-utils";
+import { useState } from "react";
 
 type Props = {
   player1?: string;
@@ -47,8 +48,8 @@ export const PvPStats: React.FC<Props> = ({ player1, player2 }) => {
 
       {/* Prediction Section */}
       {combinedPrediction !== undefined && (
-        <div className="bg-secondary-background/20 rounded-lg p-5 border border-secondary-background/30">
-          <h3 className="text-lg font-semibold mb-4 text-center">Win Chanse Prediction</h3>
+        <div className="bg-secondary-background/20 rounded-lg p-4 border border-secondary-background/30">
+          <h3 className="text-lg font-semibold text-center">Win Chanse Prediction</h3>
           {p1IsRanked && p2IsRanked ? (
             <>
               <div className="flex items-center gap-4">
@@ -182,9 +183,26 @@ const CombinedStatCard: React.FC<{
   player1: any;
   player2: any;
 }> = ({ player1, player2 }) => {
+  const [show, setShow] = useState(false);
   const eloDiff = player1.points.currentElo - player2.points.currentElo;
   const pointsNet1 = player1.points.gained - player1.points.lost;
   const pointsNet2 = player2.points.gained - player2.points.lost;
+
+  if (!show) {
+    return (
+      <button
+        onClick={() => setShow(true)}
+        className="w-full bg-secondary-background/20 text-primary-text rounded-lg p-4 border border-secondary-background/30"
+      >
+        <div className="flex gap-6 justify-center">
+          <h4>🔥 Streaks</h4>
+          <h4>⭐ Score Comparison</h4>
+          <h4>📊 Score Exchange</h4>
+        </div>
+        <p className="w-full text-center font-light text-primary-text/50 mt-3">Click to see details</p>
+      </button>
+    );
+  }
 
   return (
     <div className="bg-secondary-background/20 text-primary-text rounded-lg p-4 border border-secondary-background/30">
