@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useState } from "react";
 import { ProfilePicture } from "../player/profile-picture";
 import { useEventDbContext } from "../../wrappers/event-db-context";
@@ -8,12 +8,14 @@ import { dateString } from "../player/player-achievements";
 import { relativeTimeString } from "../../common/date-utils";
 import { SeasonLeaderboardBars } from "./season-leaderboard-bars";
 import { SeasonTimeline } from "./season-timeline";
+import { SeasonScoreLog } from "./season-score-log";
 
 type SortKey = "score" | "playerPairings" | "avgPerformance";
 
-type TabType = "leaderboard" | "bar_chart" | "timeline";
+type TabType = "leaderboard" | "bar_chart" | "timeline" | "score_log";
 const tabs: { id: TabType; label: string }[] = [
   { id: "leaderboard", label: "Leaderboard" },
+  { id: "score_log", label: "Score Log" },
   { id: "timeline", label: "Timeline" },
   { id: "bar_chart", label: "Charts" },
 ];
@@ -22,7 +24,17 @@ export function SeasonPage() {
   const context = useEventDbContext();
   const [sortKey, setSortKey] = useState<SortKey>("score");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
-  const [activeTab, setActiveTab] = useState<TabType>("leaderboard");
+  const [searchParams, setSearchParams] = useSearchParams();
+  
+  const activeTab = (searchParams.get("tab") as TabType) || "leaderboard";
+  
+  const setActiveTab = (tab: TabType) => {
+    setSearchParams((prev) => {
+      const newParams = new URLSearchParams(prev);
+      newParams.set("tab", tab);
+      return newParams;
+    });
+  };
 
   const { seasonStart } = useTennisParams();
   if (!seasonStart) {
@@ -109,6 +121,7 @@ export function SeasonPage() {
       </div>
       {activeTab === "bar_chart" && <SeasonLeaderboardBars season={season} />}
       {activeTab === "timeline" && <SeasonTimeline season={season} />}
+      {activeTab === "score_log" && <SeasonScoreLog season={season} />}
       {activeTab === "leaderboard" && (
         <div className="bg-secondary-background rounded-lg overflow-hidden mt-4">
           <div className="overflow-x-auto">

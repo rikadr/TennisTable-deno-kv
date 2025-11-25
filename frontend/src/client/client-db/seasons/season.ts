@@ -68,6 +68,95 @@ export class Season {
     return this.leaderboard;
   }
 
+  getTimeline(): { timeline: TimelineEntry[]; allPlayerIds: string[] } {
+    const playerMatchups = new Map<string, Map<string, number>>();
+    const playerScores = new Map<string, number>();
+    const timeline: TimelineEntry[] = [];
+    const allPlayerIds = new Set<string>();
+
+    const sortedGames = [...this.games].sort((a, b) => a.playedAt - b.playedAt);
+
+    for (let i = 0; i < sortedGames.length; i++) {
+      const game = sortedGames[i];
+      const improvements: TimelineEntry["improvements"] = [];
+
+      allPlayerIds.add(game.winner);
+      allPlayerIds.add(game.loser);
+
+      const winnerPerformance = this.calculatePerformance(game, true);
+      const loserPerformance = this.calculatePerformance(game, false);
+
+      const winnerImprovement = this.checkAndUpdateBest(
+        playerMatchups,
+        playerScores,
+        game.winner,
+        game.loser,
+        winnerPerformance,
+        game
+      );
+      if (winnerImprovement) {
+        improvements.push(winnerImprovement);
+      }
+
+      const loserImprovement = this.checkAndUpdateBest(
+        playerMatchups,
+        playerScores,
+        game.loser,
+        game.winner,
+        loserPerformance,
+        game
+      );
+      if (loserImprovement) {
+        improvements.push(loserImprovement);
+      }
+
+      if (improvements.length > 0) {
+        timeline.push({
+          time: game.playedAt,
+          gameIndex: i,
+          scores: Object.fromEntries(playerScores),
+          improvements,
+        });
+      }
+    }
+
+    return { timeline, allPlayerIds: Array.from(allPlayerIds) };
+  }
+
+  private checkAndUpdateBest(
+    playerMatchups: Map<string, Map<string, number>>,
+    playerScores: Map<string, number>,
+    playerId: string,
+    opponentId: string,
+    performance: number,
+    game: Game
+  ): TimelineEntry["improvements"][number] | null {
+    if (!playerMatchups.has(playerId)) {
+      playerMatchups.set(playerId, new Map());
+    }
+    const matchups = playerMatchups.get(playerId)!;
+    const previousBest = matchups.get(opponentId) ?? 0;
+
+    if (performance > previousBest) {
+      const improvement = performance - previousBest;
+      matchups.set(opponentId, performance);
+
+      const currentScore = playerScores.get(playerId) ?? 0;
+      playerScores.set(playerId, currentScore + improvement);
+
+      return {
+        playerId,
+        opponentId,
+        previousBest,
+        newBest: performance,
+        improvement,
+        game,
+      };
+    }
+
+    return null;
+  }
+
   private calculatePerformance(game: Game, isWinner: boolean): number {
     // Win performance: 100 for winner, 0 for loser
     const winPerformance = isWinner ? 100 : 0;
@@ -118,4 +207,18 @@ export class Season {
       matchups.set(opponentId, { bestPerformance: performance, playedAt });
     }
   }
+}
+
+export interface TimelineEntry {
+  time: number;
+  gameIndex: number;
+  scores: Record<string, number>;
+  improvements: {
+    playerId: string;
+    opponentId: string;
+    previousBest: number;
+    newBest: number;
+    improvement: number;
+    game: Game;
+  }[];
 }

@@ -4,7 +4,7 @@ import { Shimmer } from "../../common/shimmer";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { ThemedPlaceNumber } from "../leaderboard/themed-place-number";
 import { ProfilePicture } from "./profile-picture";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { PlayerEloGraph } from "./player-elo-graph";
 import { PlayerPointsDistrubution } from "./player-points-distribution";
 import { PlayerGamesDistrubution } from "./player-games-distribution";
@@ -27,13 +27,22 @@ export const PlayerPage: React.FC = () => {
   const { name: playerId } = useParams();
   const context = useEventDbContext();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const summary = context.leaderboard.getPlayerSummary(playerId || "");
   const leaderboard = context.leaderboard.getLeaderboard();
   const playerInLeaderBoard = leaderboard.rankedPlayers.find((p) => p.id === playerId);
   const pendingGames = context.tournaments.findAllPendingGamesByPlayer(playerId);
 
-  const [activeTab, setActiveTab] = useState<TabType>("overview");
+  const activeTab = (searchParams.get("tab") as TabType) || "overview";
+  
+  const setActiveTab = (tab: TabType) => {
+    setSearchParams((prev) => {
+      const newParams = new URLSearchParams(prev);
+      newParams.set("tab", tab);
+      return newParams;
+    });
+  };
 
   const isAdmin = session.isAuthenticated && session.sessionData?.role === "admin";
 
