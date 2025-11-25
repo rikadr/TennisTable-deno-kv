@@ -28,8 +28,8 @@ export const PlayerEloGraph: React.FC<{ playerId: string }> = ({ playerId }) => 
 
   const { width = 0 } = useWindowSize();
 
-  const [startRange, setStartRange] = useState(0);
-  const [endRange, setEndRange] = useState(0);
+  const [zoomLevel, setZoomLevel] = useState(100); // Percentage of data to show
+  const [panPosition, setPanPosition] = useState(100); // Position from 0-100, where 100 is the end (most recent)
   const [showExpectedElo, setShowExpectedElo] = useState(false);
   const { startSimulation, simulatedElos, simulationProgress, simulationIsDone } = useEloSimulationWorker();
 
@@ -83,13 +83,26 @@ export const PlayerEloGraph: React.FC<{ playerId: string }> = ({ playerId }) => 
   const entryBeforeLastGame = graphGames[graphGames.length - (playerPlayedTheLastGame ? 2 : 3)];
   const lastEntry = graphGames[graphGames.length - 1];
 
-  const minimumEntriesOnScreen = Math.min(width, 1250) / 50;
+  // Calculate visible range based on zoom and pan
+  const totalGames = graphGames.length;
+  const visibleCount = Math.max(10, Math.ceil((totalGames * zoomLevel) / 100));
+  const maxStartIndex = Math.max(0, totalGames - visibleCount);
+  const startIndex = Math.floor((panPosition / 100) * maxStartIndex);
+  const endIndex = Math.min(totalGames, startIndex + visibleCount);
+  const visibleGames = graphGames.slice(startIndex, endIndex);
+
+  const zoomPresets = [
+    { label: "All", value: 100 },
+    { label: "50%", value: 50 },
+    { label: "25%", value: 25 },
+    { label: "10%", value: 10 },
+  ];
 
   return (
     <>
       <ResponsiveContainer width="100%" height={width > 768 ? 350 : 300}>
         <LineChart
-          data={graphGames.slice(startRange, graphGames.length - endRange)}
+          data={visibleGames}
           margin={{ top: 5, right: 0, left: -12 }}
         >
           <CartesianGrid strokeDasharray="1 4" vertical={false} stroke="rgb(var(--color-primary-text))" opacity={1} />
@@ -139,55 +152,46 @@ export const PlayerEloGraph: React.FC<{ playerId: string }> = ({ playerId }) => 
       </ResponsiveContainer>
 
       {graphGames.length > 50 && (
-        <div className="flex items-center gap-4">
-          <div className="w-full">
-            <input
-              className="w-full"
-              type="range"
-              min={0}
-              max={graphGames.length || 0}
-              value={startRange}
-              onChange={(e) => {
-                const screenSizeLimited = Math.min(
-                  parseInt(e.target.value),
-                  graphGames.length - minimumEntriesOnScreen,
-                );
-                const rangeLimited = Math.min(screenSizeLimited, graphGames.length - endRange - minimumEntriesOnScreen);
-                setStartRange(rangeLimited);
-              }}
-            />
-            <input
-              className="w-full rotate-180"
-              type="range"
-              min={0}
-              max={graphGames.length || 0}
-              value={endRange}
-              onChange={(e) => {
-                const screenSizeLimited = Math.min(
-                  parseInt(e.target.value),
-                  graphGames.length - minimumEntriesOnScreen,
-                );
-                const rangeLimited = Math.min(
-                  screenSizeLimited,
-                  graphGames.length - startRange - minimumEntriesOnScreen,
-                );
-                setEndRange(rangeLimited);
-              }}
-            />
+        <div className="space-y-3 mb-4">
+          {/* Zoom Controls */}
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-primary-text whitespace-nowrap">Zoom:</span>
+            <div className="flex gap-1">
+              {zoomPresets.map((preset) => (
+                <button
+                  key={preset.value}
+                  onClick={() => {
+                    setZoomLevel(preset.value);
+                    // Reset pan to end when zooming
+                    setPanPosition(100);
+                  }}
+                  className={classNames(
+                    "px-3 py-1 rounded text-sm font-medium transition-colors",
+                    zoomLevel === preset.value
+                      ? "bg-secondary-background text-secondary-text"
+                      : "bg-primary-background text-primary-text border border-primary-text/20 hover:bg-secondary-background/50"
+                  )}
+                >
+                  {preset.label}
+                </button>
+              ))}
+            </div>
           </div>
-          <button
-            className={classNames(
-              "px-2 py-1 whitespace-nowrap bg-secondary-background text-secondary-text hover:bg-secondary-background/50 rounded-lg",
-              startRange === 0 && endRange === 0 && "opacity-0",
-            )}
-            disabled={startRange === 0 && endRange === 0}
-            onClick={() => {
-              setStartRange(0);
-              setEndRange(0);
-            }}
-          >
-            &#8634; Reset
-          </button>
+
+          {/* Pan Slider (only show when zoomed in) */}
+          {zoomLevel < 100 && (
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-medium text-primary-text whitespace-nowrap">Pan:</span>
+              <input
+                className="w-full"
+                type="range"
+                min={0}
+                max={100}
+                value={panPosition}
+                onChange={(e) => setPanPosition(Number(e.target.value))}
+              />
+            </div>
+          )}
         </div>
       )}
       {!showExpectedElo && summary.games.length >= context.client.gameLimitForRanked && (
