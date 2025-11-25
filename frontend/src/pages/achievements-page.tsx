@@ -160,6 +160,12 @@ export const AchievementsPage: React.FC = () => {
                             From {dateString(achievement.data.lastGameAt)} to {dateString(achievement.earnedAt)}
                           </p>
                         )}
+                        {achievement.data && "firstWinAt" in achievement.data && "thirdWinAt" in achievement.data && (
+                          <p className="text-xs mt-2">
+                            From {dateString(achievement.data.firstWinAt)} to {dateString(achievement.data.thirdWinAt)}
+                            {" "}({Math.round((achievement.data.thirdWinAt - achievement.data.firstWinAt) / (60 * 1000))} minutes)
+                          </p>
+                        )}
                         <div
                           className="rounded-full w-fit mt-2"
                           style={{ background: stringToColor(achievement.earnedBy) }}

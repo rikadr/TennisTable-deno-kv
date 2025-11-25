@@ -34,6 +34,7 @@ export class Achievements {
         opponentsPlayed: Set<string>;
         gamesPerOpponent: Map<string, { count: number; firstGame: number }>;
         firstOpponentFor: Set<string>; // Track players this person was first opponent for
+        hatTrickWins: { playedAt: number }[]; // Track recent wins for hat-trick
       }
     >();
 
@@ -55,6 +56,7 @@ export class Achievements {
           opponentsPlayed: new Set(),
           gamesPerOpponent: new Map(),
           firstOpponentFor: new Set(),
+          hatTrickWins: [],
         });
       }
       if (!playerTracker.has(game.loser)) {
@@ -73,6 +75,7 @@ export class Achievements {
           opponentsPlayed: new Set(),
           gamesPerOpponent: new Map(),
           firstOpponentFor: new Set(),
+          hatTrickWins: [],
         });
       }
 
@@ -350,6 +353,9 @@ export class Achievements {
         }
       }
 
+      // Check for Hat-trick achievement (3 wins within 90 minutes)
+      this.#checkHatTrickAchievement(game.winner, winner.hatTrickWins, game.playedAt);
+
       // Check for streak achievements
       this.#checkStreakAchievements(
         game.winner,
@@ -479,6 +485,35 @@ export class Achievements {
     // All sets must have the same score (same winner points and same loser points)
     const firstSet = setPoints[0];
     return setPoints.every((set) => set.gameWinner === firstSet.gameWinner && set.gameLoser === firstSet.gameLoser);
+  }
+
+  #checkHatTrickAchievement(playerId: string, hatTrickWins: { playedAt: number }[], currentGameAt: number) {
+    const NINETY_MINUTES = 90 * 60 * 1000;
+
+    // Add current win to the list
+    hatTrickWins.push({ playedAt: currentGameAt });
+
+    // Remove wins older than 90 minutes from the current game
+    const recentWins = hatTrickWins.filter((win) => currentGameAt - win.playedAt <= NINETY_MINUTES);
+
+    // Update the array to only keep recent wins
+    hatTrickWins.length = 0;
+    hatTrickWins.push(...recentWins);
+
+    // Check if player has 3 wins within 90 minutes
+    if (recentWins.length === 3) {
+      this.#addAchievement(
+        playerId,
+        this.#createAchievement("hat-trick", playerId, currentGameAt, {
+          firstWinAt: recentWins[0].playedAt,
+          thirdWinAt: currentGameAt,
+        }),
+      );
+
+      // Reset the tracking after earning the achievement
+      // This allows earning multiple hat-tricks in a row
+      hatTrickWins.length = 0;
+    }
   }
 
   #checkStreakAchievements(
@@ -749,6 +784,7 @@ export class Achievements {
       "best-friends": { current: 0, target: 50, perOpponent: new Map(), earned: 0 },
       "welcome-committee": { current: 0, target: 3, newPlayers: new Set(), earned: 0 },
       "community-builder": { current: 0, target: 10, newPlayers: new Set(), earned: 0 },
+      "hat-trick": { current: 0, target: 3, earned: 0 },
     };
 
     let firstActiveAt: number | null = null;
@@ -872,6 +908,27 @@ export class Achievements {
     progression["global-player"].opponents = opponentsPlayed;
     progression["punching-bag"].current = currentLoseStreakAll;
     progression["never-give-up"].current = currentLoseStreakAll;
+
+    // Calculate hat-trick progression (wins within last 90 minutes)
+    const NINETY_MINUTES = 90 * 60 * 1000;
+    const currentTime = Date.now();
+    const recentWins: number[] = [];
+    
+    // Iterate through games in reverse to find recent wins
+    for (let i = this.parent.games.length - 1; i >= 0; i--) {
+      const game = this.parent.games[i];
+      if (game.winner === playerId && currentTime - game.playedAt <= NINETY_MINUTES) {
+        recentWins.push(game.playedAt);
+      } else if (game.winner === playerId || game.loser === playerId) {
+        // Stop when we hit a game outside the 90-minute window
+        if (currentTime - game.playedAt > NINETY_MINUTES) {
+          break;
+        }
+      }
+    }
+    
+    progression["hat-trick"].current = recentWins.length;
+
 
     // Get list of opponents we've already earned achievements with
     const earnedBestFriendsOpponents = new Set<string>();
@@ -1041,6 +1098,7 @@ type AchievementDefinitions = {
   "never-give-up": { startedAt: number };
   "comeback-kid": undefined;
   "unbreakable-spirit": undefined;
+  "hat-trick": { firstWinAt: number; thirdWinAt: number };
 };
 
 type AchievementType = keyof AchievementDefinitions;
@@ -1116,4 +1174,5 @@ export type AchievementProgression = {
   "never-give-up": ProgressionWithTarget;
   "comeback-kid": BaseProgression;
   "unbreakable-spirit": BaseProgression;
+  "hat-trick": ProgressionWithTarget;
 };

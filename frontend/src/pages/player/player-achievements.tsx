@@ -146,6 +146,11 @@ export const ACHIEVEMENT_LABELS: Record<string, { title: string; description: st
     description: "Be the first opponent for 10 different new players",
     icon: "🏘️",
   },
+  "hat-trick": {
+    title: "Hat Trick",
+    description: "Win 3 games in under 90 minutes",
+    icon: "🎩",
+  },
 };
 
 type TabType = "earned" | "progress";
@@ -288,6 +293,13 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
                 {achievement.data && "seasonStart" in achievement.data && (
                   <p className="text-xs text-secondary-text/70 mt-2">
                     Season from {dateString(achievement.data.seasonStart)} to {dateString(achievement.earnedAt)}
+                  </p>
+                )}
+
+                {achievement.data && "firstWinAt" in achievement.data && "thirdWinAt" in achievement.data && (
+                  <p className="text-xs text-secondary-text/70 mt-2">
+                    From {dateString(achievement.data.firstWinAt)} to {dateString(achievement.data.thirdWinAt)}
+                    {" "}({Math.round((achievement.data.thirdWinAt - achievement.data.firstWinAt) / (60 * 1000))} minutes)
                   </p>
                 )}
               </div>
