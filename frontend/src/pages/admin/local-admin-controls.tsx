@@ -4,6 +4,7 @@ import { httpClient } from "../../common/http-client";
 import { GenerateMockData } from "./mock-data/generate-mock-data";
 
 const LOCAL_API_BASE = process.env.REACT_APP_API_BASE_URL || "http://localhost:8000";
+const LOCAL_STORAGE_KEY = "tennis-table-events";
 
 const PRODUCTION_ENVIRONMENTS = [
   { name: "Optio", url: "https://tennis-table-optio.deno.dev" },
@@ -21,6 +22,8 @@ export const LocalAdminControls: React.FC = () => {
         headers: { "Content-Type": "application/json" },
       }).then((res) => {
         if (!res.ok) throw new Error(`Delete failed: ${res.statusText}`);
+        // Clear localStorage cache
+        localStorage.removeItem(LOCAL_STORAGE_KEY);
       }),
   });
 
@@ -42,6 +45,9 @@ export const LocalAdminControls: React.FC = () => {
         body: JSON.stringify(events),
       });
       if (!postRes.ok) throw new Error(`Post failed: ${postRes.statusText}`);
+
+      // Clear localStorage cache so it refetches
+      localStorage.removeItem(LOCAL_STORAGE_KEY);
 
       return { count: events.length, env: selectedEnv.name };
     },
