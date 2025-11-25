@@ -43,6 +43,8 @@ export const AdminPage: React.FC = () => {
 
   const [activeTab, setActiveTab] = useState<TabType>("stats");
   const [chartView, setChartView] = useState<"monthly" | "weekly">("monthly");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [gamesPerPage, setGamesPerPage] = useState(50);
 
   function handleDeactivatePlayer(playerId: string) {
     const event: PlayerDeactivated = {
@@ -103,6 +105,14 @@ export const AdminPage: React.FC = () => {
     return <div>Not authorized</div>;
   }
 
+  // Pagination calculations
+  const allGames = context.eventStore.gamesProjector.games.toReversed();
+  const totalGames = allGames.length;
+  const totalPages = Math.ceil(totalGames / gamesPerPage);
+  const startIndex = (currentPage - 1) * gamesPerPage;
+  const endIndex = startIndex + gamesPerPage;
+  const paginatedGames = allGames.slice(startIndex, endIndex);
+
   return (
     <div className="bg-primary-background text-primary-text">
       <h1>ADMIN PAGE</h1>
@@ -130,6 +140,7 @@ export const AdminPage: React.FC = () => {
                       return;
                     }
                     setActiveTab(tab.id);
+                    setCurrentPage(1); // Reset to page 1 when changing tabs
                   }}
                   className={classNames(
                     "flex items-center py-2 px-4 border-b-4 font-medium text-sm transition-colors",
@@ -187,11 +198,70 @@ export const AdminPage: React.FC = () => {
 
       {activeTab === "games" && (
         <>
-          <p>Games: {context.eventStore.gamesProjector.games.length}</p>
+          <p>Games: {totalGames}</p>
           <p>
             Deleting games is not permanent BUT I'd prefer not to restore deleted games, so please try to just delete
             games you want to delete.
           </p>
+
+          {/* Pagination Controls */}
+          <div className="mt-4 mb-4 flex items-center justify-between bg-secondary-background text-secondary-text p-4 rounded-lg">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <label className="text-sm font-medium">Games per page:</label>
+                <select
+                  value={gamesPerPage}
+                  onChange={(e) => {
+                    setGamesPerPage(Number(e.target.value));
+                    setCurrentPage(1);
+                  }}
+                  className="bg-primary-background text-primary-text border border-primary-text/20 rounded px-2 py-1"
+                >
+                  <option value={25}>25</option>
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                  <option value={200}>200</option>
+                </select>
+              </div>
+              <div className="text-sm">
+                Showing {startIndex + 1}-{Math.min(endIndex, totalGames)} of {totalGames}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setCurrentPage(1)}
+                disabled={currentPage === 1}
+                className="px-3 py-1 bg-tertiary-background text-tertiary-text rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-tertiary-background/80"
+              >
+                First
+              </button>
+              <button
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="px-3 py-1 bg-tertiary-background text-tertiary-text rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-tertiary-background/80"
+              >
+                Previous
+              </button>
+              <span className="px-3 py-1">
+                Page {currentPage} of {totalPages}
+              </span>
+              <button
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="px-3 py-1 bg-tertiary-background text-tertiary-text rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-tertiary-background/80"
+              >
+                Next
+              </button>
+              <button
+                onClick={() => setCurrentPage(totalPages)}
+                disabled={currentPage === totalPages}
+                className="px-3 py-1 bg-tertiary-background text-tertiary-text rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-tertiary-background/80"
+              >
+                Last
+              </button>
+            </div>
+          </div>
 
           <div className="mt-2 overflow-x-auto text-sm">
             <table className="border-collapse border border-gray-300">
@@ -205,7 +275,7 @@ export const AdminPage: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {context.eventStore.gamesProjector.games.toReversed().map((game, index, list) => (
+                {paginatedGames.map((game, index) => (
                   <tr key={game.id} className="hover:bg-secondary-background/50">
                     <td className="border border-gray-300 px-4 py-1">
                       {context.playerName(game.winner)} won over {context.playerName(game.loser)}
@@ -267,7 +337,7 @@ export const AdminPage: React.FC = () => {
                         </button>
                       </div>
                     </td>
-                    <td className="border border-gray-300 px-4 py-1">{fmtNum(list.length - index)}</td>
+                    <td className="border border-gray-300 px-4 py-1">{fmtNum(totalGames - (startIndex + index))}</td>
                   </tr>
                 ))}
               </tbody>
