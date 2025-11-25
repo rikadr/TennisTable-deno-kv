@@ -6,6 +6,7 @@ export const SimulationsPage: React.FC = () => {
     { name: "Expected leaderboard 🥇🥈🥉", url: "expected-leaderboard" },
     { name: "Expected win/loss rate 🏆💔", url: "win-loss" },
     { name: "Numbered points 🔢🧮 ", url: "individual-points" },
+    { name: "Player network 🕸️", url: "/player-network" },
   ];
 
   return (

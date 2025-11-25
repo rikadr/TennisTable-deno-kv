@@ -28,7 +28,6 @@ export const NavMenu: React.FC = () => {
       { name: "👤  New player", to: "/add-player" },
       { name: "👥🥊 Compare 1v1", to: "/1v1" },
       { name: "📈 Compare all", to: "/compare-players" },
-      { name: "🕸️ Player network", to: "/player-network" },
       { name: "🏆 Tournaments", to: "/tournament/list" },
       { name: "🍁 Seasons (WIP🛠️)", to: "/season/list" },
       { name: "🎖️ Achievements", to: "/achievements" },
