@@ -9,10 +9,34 @@ export function useEventDb() {
   return useQuery<EventType[]>({
     queryKey: ["event-db"],
     queryFn: async () => {
+      const LOCAL_STORAGE_KEY = "tennis-table-events";
+      let storedEvents: EventType[] = [];
+      try {
+        const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
+        if (stored) {
+          storedEvents = JSON.parse(stored);
+        }
+      } catch (e) {
+        console.error("Failed to parse stored events", e);
+      }
+
+      const lastEventTime = storedEvents.length > 0 ? storedEvents[storedEvents.length - 1].time : 0;
       const url = new URL(`${process.env.REACT_APP_API_BASE_URL}/events`);
-      return httpClient(url, {
+      url.searchParams.append("after", lastEventTime.toString());
+
+      const newEvents = await httpClient(url, {
         method: "GET",
       }).then(async (response) => response.json() as Promise<EventType[]>);
+
+      const allEvents = [...storedEvents, ...newEvents];
+      
+      try {
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(allEvents));
+      } catch (e) {
+        console.error("Failed to save events to local storage", e);
+      }
+
+      return allEvents;
     },
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,

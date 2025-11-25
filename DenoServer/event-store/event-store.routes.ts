@@ -10,7 +10,8 @@ export function registerEventStoreRoutes(api: Router) {
    * Get all events
    */
   api.get("/events", async (context) => {
-    const events = await getEventsAfter(0);
+    const after = context.request.url.searchParams.get("after");
+    const events = await getEventsAfter(after ? Number(after) : 0);
     context.response.body = events;
   });
 
