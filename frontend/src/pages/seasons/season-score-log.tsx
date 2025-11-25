@@ -5,7 +5,7 @@ import { ProfilePicture } from "../player/profile-picture";
 import { fmtNum } from "../../common/number-utils";
 import { dateString } from "../player/player-achievements";
 import { relativeTimeString } from "../../common/date-utils";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 type Props = {
   season: Season;
@@ -13,6 +13,8 @@ type Props = {
 
 export const SeasonScoreLog = ({ season }: Props) => {
   const context = useEventDbContext();
+  const [playerFilter, setPlayerFilter] = useState<string>("");
+  const [opponentFilter, setOpponentFilter] = useState<string>("");
 
   const improvements = useMemo(() => {
     const { timeline } = season.getTimeline();
@@ -26,8 +28,89 @@ export const SeasonScoreLog = ({ season }: Props) => {
     return allImprovements.sort((a, b) => b.time - a.time);
   }, [season]);
 
+  // Get unique players for filters
+  const uniquePlayers = useMemo(() => {
+    const playerIds = new Set<string>();
+    improvements.forEach((imp) => {
+      playerIds.add(imp.playerId);
+      playerIds.add(imp.opponentId);
+    });
+    return Array.from(playerIds).sort((a, b) => 
+      context.playerName(a).localeCompare(context.playerName(b))
+    );
+  }, [improvements, context]);
+
+  // Filter improvements
+  const filteredImprovements = useMemo(() => {
+    return improvements.filter((imp) => {
+      if (playerFilter && imp.playerId !== playerFilter) return false;
+      if (opponentFilter && imp.opponentId !== opponentFilter) return false;
+      return true;
+    });
+  }, [improvements, playerFilter, opponentFilter]);
+
   return (
     <div className="bg-secondary-background rounded-lg overflow-hidden mt-4">
+      {/* Filter Controls */}
+      <div className="p-4 border-b border-secondary-text/20">
+        <div className="flex flex-wrap gap-4">
+          {/* Player Filter */}
+          <div className="flex items-center gap-2">
+            <label className="text-sm font-medium text-secondary-text whitespace-nowrap">Player:</label>
+            <select
+              value={playerFilter}
+              onChange={(e) => setPlayerFilter(e.target.value)}
+              className="bg-primary-background text-primary-text border border-primary-text/20 rounded px-3 py-1 text-sm"
+            >
+              <option value="">All Players</option>
+              {uniquePlayers.map((playerId) => (
+                <option key={playerId} value={playerId}>
+                  {context.playerName(playerId)}
+                </option>
+              ))}
+            </select>
+            {playerFilter && (
+              <button
+                onClick={() => setPlayerFilter("")}
+                className="text-xs bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded"
+              >
+                Clear
+              </button>
+            )}
+          </div>
+
+          {/* Opponent Filter */}
+          <div className="flex items-center gap-2">
+            <label className="text-sm font-medium text-secondary-text whitespace-nowrap">Opponent:</label>
+            <select
+              value={opponentFilter}
+              onChange={(e) => setOpponentFilter(e.target.value)}
+              className="bg-primary-background text-primary-text border border-primary-text/20 rounded px-3 py-1 text-sm"
+            >
+              <option value="">All Opponents</option>
+              {uniquePlayers.map((playerId) => (
+                <option key={playerId} value={playerId}>
+                  {context.playerName(playerId)}
+                </option>
+              ))}
+            </select>
+            {opponentFilter && (
+              <button
+                onClick={() => setOpponentFilter("")}
+                className="text-xs bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded"
+              >
+                Clear
+              </button>
+            )}
+          </div>
+
+          {/* Results Counter */}
+          <div className="ml-auto text-sm text-secondary-text/70 self-center">
+            Showing {filteredImprovements.length} of {improvements.length} improvements
+          </div>
+        </div>
+      </div>
+
       <div className="overflow-x-auto">
         <table className="w-full text-secondary-text">
           <thead>
@@ -40,7 +123,7 @@ export const SeasonScoreLog = ({ season }: Props) => {
             </tr>
           </thead>
           <tbody>
-            {improvements.map((imp, idx) => (
+            {filteredImprovements.map((imp, idx) => (
               <tr key={idx} className="border-b border-secondary-text/10 hover:bg-primary-background/50">
                 <td className="px-4 py-1">
                   <Link

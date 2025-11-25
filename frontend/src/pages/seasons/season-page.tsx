@@ -86,19 +86,24 @@ export function SeasonPage() {
 
   return (
     <div className="px-6 text-primary-text bg-primary-background">
-      <h1>Season Leaderboard</h1>
-      <h2>
-        {dateString(Number(season.start))} to {dateString(Number(season.end))}
-      </h2>
-      {Date.now() > season.end && "Ended " + relativeTimeString(new Date(season.end))}
-      {Date.now() > season.start &&
-        Date.now() < season.end &&
-        "Started " +
-          relativeTimeString(new Date(season.start)) +
-          ", ends " +
-          relativeTimeString(new Date(season.end)).toLowerCase()}
-      {Date.now() < season.start && "Starts " + relativeTimeString(new Date(season.start))}
+      {/* Compact Header */}
+      <div className="bg-secondary-background text-secondary-text rounded-lg p-4 mb-4">
+        <h1 className="text-2xl font-bold mb-2">Season Leaderboard</h1>
+        <div className="flex flex-wrap items-center gap-3 text-sm">
+          <span className="font-medium">
+            {dateString(Number(season.start))} → {dateString(Number(season.end))}
+          </span>
+          <span className="text-xs opacity-70">
+            {Date.now() > season.end && `Ended ${relativeTimeString(new Date(season.end))}`}
+            {Date.now() > season.start &&
+              Date.now() < season.end &&
+              `Started ${relativeTimeString(new Date(season.start))}, ends ${relativeTimeString(new Date(season.end)).toLowerCase()}`}
+            {Date.now() < season.start && `Starts ${relativeTimeString(new Date(season.start))}`}
+          </span>
+        </div>
+      </div>
 
+      {/* Tabs */}
       <div className="flex space-x-2 overflow-auto">
         {tabs.map((tab) => {
           return (

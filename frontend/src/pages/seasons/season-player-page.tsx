@@ -135,8 +135,12 @@ export function SeasonPlayerPage() {
 
         <div className="grow" />
 
-        <Link to={`/season?seasonStart=${seasonStart}`} className="hover:text-primary-text/80 underline">
-          ← Back to Season Leaderboard
+        <Link 
+          to={`/season?seasonStart=${seasonStart}`} 
+          className="inline-flex items-center gap-2 bg-secondary-background text-secondary-text hover:bg-secondary-background/80 px-4 py-2 rounded-lg font-medium transition-colors"
+        >
+          <span>←</span>
+          <span>Back to Season Leaderboard</span>
         </Link>
       </div>
 
@@ -291,9 +295,10 @@ export function SeasonPlayerPage() {
       <div className="mt-6">
         <Link
           to={`/season?seasonStart=${seasonStart}`}
-          className="text-secondary-text hover:text-secondary-text/80 underline"
+          className="inline-flex items-center gap-2 bg-secondary-background text-secondary-text hover:bg-secondary-background/80 px-4 py-2 rounded-lg font-medium transition-colors"
         >
-          ← Back to Season Leaderboard
+          <span>←</span>
+          <span>Back to Season Leaderboard</span>
         </Link>
       </div>
     </div>
