@@ -76,7 +76,7 @@ export class OptioClient implements ClientConfig {
   snow = false;
   title = new GuestClient().title;
   favicon = new GuestClient().favicon;
-  gameLimitForRanked = 20;
+  gameLimitForRanked = 25;
   tournaments = [
     optioChristmasTournament,
     optioEasterTournament,
