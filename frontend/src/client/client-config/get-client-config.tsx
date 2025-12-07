@@ -6,6 +6,7 @@ import { TournamentDB } from "../client-db/types";
 import { LocalDevClient } from "./clients/local-dev-client";
 import { OVERRIDE_THEME_KEY } from "../../wrappers/theme-provider";
 import { AsplanViakClient } from "./clients/asplan-viak-client";
+import { DeepinsightClient } from "./clients/deepinsight";
 
 export abstract class ClientConfig {
   id: string | undefined;
@@ -53,6 +54,8 @@ export function getClientConfig() {
       return new SkimoreClient();
     case "asplanviak":
       return new AsplanViakClient();
+    case "deepinsight":
+      return new DeepinsightClient();
     default:
       return new GuestClient();
   }
@@ -64,6 +67,7 @@ export enum Theme {
   EASTER = "easter",
   CLIENT_SKIMORE = "skimore",
   CLIENT_ASPLAN_VIAK = "asplanviak",
+  CLIENT_DEEPINSIGHT = "deepinsight",
 }
 
 export function themeOrOverrideTheme(theme: Theme): Theme {
