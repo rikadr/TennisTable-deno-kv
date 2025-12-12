@@ -109,16 +109,21 @@ export class PlyersProjector {
     if (player.name === event.data.updatedName) {
       return { valid: false, message: "Player name is already the same" };
     }
-    const nameValidation = this.validatePlayerName(event.data.updatedName);
+    const nameValidation = this.validatePlayerName(event.data.updatedName, event.stream);
     if (nameValidation.valid === false) {
       return { valid: false, message: nameValidation.message };
     }
     return { valid: true };
   }
 
-  validatePlayerName(name: string): ValidatorResponse {
+  validatePlayerName(name: string, ignorePlayerId?: string): ValidatorResponse {
     const players = Array.from(this.#playersMap.values());
-    if (players.some((player) => player.name.trim().toLocaleLowerCase() === name.trim().toLocaleLowerCase())) {
+    if (
+      players.some(
+        (player) =>
+          player.id !== ignorePlayerId &&player.name.trim().toLocaleLowerCase() === name.trim().toLocaleLowerCase() ,
+      )
+    ) {
       return { valid: false, message: "Player name already exists" };
     }
     const firstLetterIsUpperCase = name[0] === name[0]?.toUpperCase();
