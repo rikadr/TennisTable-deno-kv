@@ -10,14 +10,42 @@ export function useEventDb() {
     queryKey: ["event-db"],
     queryFn: async () => {
       const LOCAL_STORAGE_KEY = "tennis-table-events";
+      const CACHE_TIMESTAMP_KEY = "tennis-table-events-cache-time";
+      const TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+      const FORCE_INVALIDATE_BEFORE = new Date("2025-12-13T00:00:00").getTime();
+
       let storedEvents: EventType[] = [];
+      let shouldClearCache = false;
+
       try {
-        const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
-        if (stored) {
-          storedEvents = JSON.parse(stored);
+        const storedTimestamp = localStorage.getItem(CACHE_TIMESTAMP_KEY);
+        const cachedAt = storedTimestamp ? parseInt(storedTimestamp, 10) : undefined;
+        const now = Date.now();
+
+        // 1. Check if cache is missing timestamp or too old (undefined or < FORCE_INVALIDATE_BEFORE)
+        if (cachedAt === undefined || cachedAt < FORCE_INVALIDATE_BEFORE) {
+            shouldClearCache = true;
+        } 
+        // 2. Check TTL (7 days)
+        else if (now - cachedAt > TTL_MS) {
+            shouldClearCache = true;
+        }
+
+        if (shouldClearCache) {
+            localStorage.removeItem(LOCAL_STORAGE_KEY);
+            localStorage.removeItem(CACHE_TIMESTAMP_KEY);
+        } else {
+            const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
+            if (stored) {
+                storedEvents = JSON.parse(stored);
+            }
         }
       } catch (e) {
-        console.error("Failed to parse stored events", e);
+        console.error("Failed to parse stored events or timestamp", e);
+        // If parsing fails, safer to clear
+        localStorage.removeItem(LOCAL_STORAGE_KEY);
+        localStorage.removeItem(CACHE_TIMESTAMP_KEY);
+        storedEvents = [];
       }
 
       const lastEventTime = storedEvents.length > 0 ? storedEvents[storedEvents.length - 1].time : 0;
@@ -32,6 +60,13 @@ export function useEventDb() {
       
       try {
         localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(allEvents));
+        
+        // Only update the cache timestamp if we performed a full fetch (from scratch).
+        // This ensures the TTL counts from when the full dataset was properly established,
+        // not just when we last appended a few events.
+        if (storedEvents.length === 0) {
+            localStorage.setItem(CACHE_TIMESTAMP_KEY, Date.now().toString());
+        }
       } catch (e) {
         console.error("Failed to save events to local storage", e);
       }
