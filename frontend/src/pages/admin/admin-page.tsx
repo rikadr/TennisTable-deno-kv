@@ -121,9 +121,9 @@ export const AdminPage: React.FC = () => {
         <div className="flex space-x-2">
           {tabs
             .filter((t) => {
-              if (t.id === "local" && process.env.REACT_APP_ENV !== "local") {
-                return false;
-              }
+              // if (t.id === "local" && process.env.REACT_APP_ENV !== "local") {
+              //   return false;
+              // }
               return true;
             })
             .map((tab) => {
