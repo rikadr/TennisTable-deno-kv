@@ -1,0 +1,660 @@
+import { DeepInsightData } from "../utils/convert-deepinsight-data";
+
+export const DEEPINSIGHT_DATA: DeepInsightData = {
+    "matches": [
+        {
+            "date": "Aug 7th at 12:49 PM",
+            "winner": "arvind",
+            "loser": "hnustad042",
+            "score": null
+        },
+        {
+            "date": "Aug 8th at 1:23 PM",
+            "winner": "arvind",
+            "loser": "hnustad042",
+            "score": null
+        },
+        {
+            "date": "Aug 8th at 1:25 PM",
+            "winner": "hnustad042",
+            "loser": "arvind",
+            "score": "11:8"
+        },
+        {
+            "date": "Aug 10th at 3:59 PM",
+            "winner": "helen",
+            "loser": "karoline",
+            "score": "11:9 5:11 11:5"
+        },
+        {
+            "date": "Aug 14th at 9:59 AM",
+            "winner": "arvind",
+            "loser": "Haakon",
+            "score": "11:9 12:10 11:6"
+        },
+        {
+            "date": "Aug 14th at 1:45 PM",
+            "winner": "helen",
+            "loser": "andreas",
+            "score": "11:6"
+        },
+        {
+            "date": "Aug 15th at 1:42 PM",
+            "winner": "helen",
+            "loser": "rebekka",
+            "score": "11:8"
+        },
+        {
+            "date": "Aug 19th at 2:52 PM",
+            "winner": "Haakon",
+            "loser": "arvind",
+            "score": "11:8"
+        },
+        {
+            "date": "Aug 21st at 4:40 PM",
+            "winner": "arvind",
+            "loser": "ivar",
+            "score": "11:4 11:7 11:1"
+        },
+        {
+            "date": "Aug 26th at 1:18 PM",
+            "winner": "arvind",
+            "loser": "Haakon",
+            "score": "11:5 11:9 11:2"
+        },
+        {
+            "date": "Aug 27th at 12:50 PM",
+            "winner": "mikal",
+            "loser": "helen",
+            "score": "3:11 12:10 13:11"
+        },
+        {
+            "date": "Aug 29th at 3:05 PM",
+            "winner": "helen",
+            "loser": "taras",
+            "score": "11:5"
+        },
+        {
+            "date": "Sep 1st at 3:43 PM",
+            "winner": "helen",
+            "loser": "birk",
+            "score": "11:8"
+        },
+        {
+            "date": "Sep 2nd at 2:02 PM",
+            "winner": "philip",
+            "loser": "helen",
+            "score": "11:6 11:3"
+        },
+        {
+            "date": "Sep 3rd at 1:27 PM",
+            "winner": "Haakon",
+            "loser": "arvind",
+            "score": "11:6 12:10 11:7"
+        },
+        {
+            "date": "Sep 4th at 3:24 PM",
+            "winner": "arvind",
+            "loser": "jorgen",
+            "score": "11:2 11:9 12:10"
+        },
+        {
+            "date": "Sep 5th at 3:27 PM",
+            "winner": "birk",
+            "loser": "ivar",
+            "score": "7:11 11:7 12:10"
+        },
+        {
+            "date": "Sep 5th at 4:02 PM",
+            "winner": "arvind",
+            "loser": "philip",
+            "score": "11:6 11:9"
+        },
+        {
+            "date": "Sep 5th at 4:10 PM",
+            "winner": "kristoffer",
+            "loser": "jorgen",
+            "score": "11:2 11:3 11:6"
+        },
+        {
+            "date": "Sep 9th at 9:07 AM",
+            "winner": "arvind",
+            "loser": "Haakon",
+            "score": "12:10 8:11 11:6"
+        },
+        {
+            "date": "Sep 9th at 12:35 PM",
+            "winner": "helen",
+            "loser": "jorgen",
+            "score": "11:5 9:11 17:15"
+        },
+        {
+            "date": "Sep 9th at 4:00 PM",
+            "winner": "arvind",
+            "loser": "kristoffer",
+            "score": "11:2 11:3 11:8"
+        },
+        {
+            "date": "Sep 10th at 12:10 PM",
+            "winner": "philip",
+            "loser": "birk",
+            "score": "11:5 11:0"
+        },
+        {
+            "date": "Sep 10th at 2:04 PM",
+            "winner": "Haakon",
+            "loser": "philip",
+            "score": "11:5 11:4 11:5"
+        },
+        {
+            "date": "Sep 10th at 3:29 PM",
+            "winner": "birk",
+            "loser": "karoline",
+            "score": "12:10 11:6"
+        },
+        {
+            "date": "Sep 10th at 3:49 PM",
+            "winner": "arvind",
+            "loser": "jorgen",
+            "score": "11:5 11:6 11:4"
+        },
+        {
+            "date": "Sep 15th at 2:48 PM",
+            "winner": "philip",
+            "loser": "kristoffer",
+            "score": "11:9 11:9 5:11"
+        },
+        {
+            "date": "Sep 15th at 4:03 PM",
+            "winner": "ibrekka",
+            "loser": "jorgen",
+            "score": "11:4 11:8 14:12"
+        },
+        {
+            "date": "Sep 16th at 5:16 PM",
+            "winner": "jorgen",
+            "loser": "kristoffer",
+            "score": "9:11 11:9 11:7"
+        },
+        {
+            "date": "Sep 17th at 11:46 AM",
+            "winner": "arvind",
+            "loser": "Haakon",
+            "score": "11:7 11:7"
+        },
+        {
+            "date": "Sep 17th at 6:07 PM",
+            "winner": "philip",
+            "loser": "ivar",
+            "score": "11:5 11:5 11:5"
+        },
+        {
+            "date": "Sep 18th at 1:31 PM",
+            "winner": "arvind",
+            "loser": "Haakon",
+            "score": "11:9 6:11 11:9"
+        },
+        {
+            "date": "Sep 18th at 1:46 PM",
+            "winner": "birk",
+            "loser": "rebekka",
+            "score": "7:11 11:7 11:7"
+        },
+        {
+            "date": "Sep 18th at 1:46 PM",
+            "winner": "birk",
+            "loser": "rebekka",
+            "score": "8:11 11:7 11:7"
+        },
+        {
+            "date": "Sep 18th at 2:05 PM",
+            "winner": "rebekka",
+            "loser": "ivar",
+            "score": "7:11 11:2 11:0"
+        },
+        {
+            "date": "Sep 18th at 3:17 PM",
+            "winner": "jorgen",
+            "loser": "karoline",
+            "score": "11:8 11:6"
+        },
+        {
+            "date": "Sep 22nd at 1:27 PM",
+            "winner": "Haakon",
+            "loser": "arvind",
+            "score": "11:8 11:9 11:6"
+        },
+        {
+            "date": "Sep 23rd at 12:58 PM",
+            "winner": "ibrekka",
+            "loser": "jorgen",
+            "score": "11:5 11:6"
+        },
+        {
+            "date": "Sep 24th at 12:29 PM",
+            "winner": "Haakon",
+            "loser": "helen",
+            "score": "11:5 11:4"
+        },
+        {
+            "date": "Sep 24th at 1:40 PM",
+            "winner": "philip",
+            "loser": "jorgen",
+            "score": "11:6 11:7 13:11"
+        },
+        {
+            "date": "Sep 24th at 2:13 PM",
+            "winner": "Haakon",
+            "loser": "arvind",
+            "score": "12:10 8:11 11:8"
+        },
+        {
+            "date": "Sep 25th at 1:14 PM",
+            "winner": "Haakon",
+            "loser": "philip",
+            "score": "5:11 11:9 11:7"
+        },
+        {
+            "date": "Sep 25th at 2:52 PM",
+            "winner": "Haakon",
+            "loser": "jorgen",
+            "score": "11:6 11:7 11:4"
+        },
+        {
+            "date": "Sep 26th at 2:53 PM",
+            "winner": "arvind",
+            "loser": "Haakon",
+            "score": "11:6 11:1 8:11"
+        },
+        {
+            "date": "Sep 29th at 12:14 PM",
+            "winner": "arvind",
+            "loser": "philip",
+            "score": "11:9 11:9"
+        },
+        {
+            "date": "Sep 29th at 2:12 PM",
+            "winner": "arvind",
+            "loser": "ibrekka",
+            "score": "11:8 11:3 11:6"
+        },
+        {
+            "date": "Sep 30th at 1:12 PM",
+            "winner": "philip",
+            "loser": "ibrekka",
+            "score": "17:15 11:9"
+        },
+        {
+            "date": "Oct 1st at 2:00 PM",
+            "winner": "rebekka",
+            "loser": "karoline",
+            "score": "11:8 11:7 11:6"
+        },
+        {
+            "date": "Oct 1st at 3:19 PM",
+            "winner": "arvind",
+            "loser": "philip",
+            "score": "11:8 11:7"
+        },
+        {
+            "date": "Oct 2nd at 3:33 PM",
+            "winner": "rebekka",
+            "loser": "jorgen",
+            "score": "11:7 12:10 7:11"
+        },
+        {
+            "date": "Oct 3rd at 2:16 PM",
+            "winner": "philip",
+            "loser": "jorgen",
+            "score": "13:11 11:5 13:11"
+        },
+        {
+            "date": "Oct 3rd at 2:45 PM",
+            "winner": "ibrekka",
+            "loser": "rebekka",
+            "score": "11:6 11:6 13:11"
+        },
+        {
+            "date": "Oct 3rd at 3:10 PM",
+            "winner": "helen",
+            "loser": "jorgen",
+            "score": "11:8 11:4 11:8"
+        },
+        {
+            "date": "Oct 3rd at 3:39 PM",
+            "winner": "rebekka",
+            "loser": "andreas",
+            "score": "10:12 11:9 11:4"
+        },
+        {
+            "date": "Oct 3rd at 3:53 PM",
+            "winner": "helen",
+            "loser": "birk",
+            "score": "11:5 11:6"
+        },
+        {
+            "date": "Oct 6th at 3:50 PM",
+            "winner": "rebekka",
+            "loser": "tidemann",
+            "score": "11:1 11:6 11:5"
+        },
+        {
+            "date": "Oct 7th at 12:30 PM",
+            "winner": "Haakon",
+            "loser": "jorgen",
+            "score": "9:11 11:9 12:10"
+        },
+        {
+            "date": "Oct 7th at 3:51 PM",
+            "winner": "rebekka",
+            "loser": "hamza",
+            "score": "11:2 11:8 11:5"
+        },
+        {
+            "date": "Oct 7th at 5:16 PM",
+            "winner": "arvind",
+            "loser": "jorgen",
+            "score": "11:0 11:3 11:2"
+        },
+        {
+            "date": "Oct 8th at 2:03 PM",
+            "winner": "arvind",
+            "loser": "Haakon",
+            "score": "12:10 7:11 11:5"
+        },
+        {
+            "date": "Oct 9th at 2:46 PM",
+            "winner": "ibrekka",
+            "loser": "helen",
+            "score": "11:9 15:13"
+        },
+        {
+            "date": "Oct 9th at 3:07 PM",
+            "winner": "philip",
+            "loser": "jorgen",
+            "score": "12:14 11:6 11:7"
+        },
+        {
+            "date": "Oct 13th at 3:48 PM",
+            "winner": "mikal",
+            "loser": "jorgen",
+            "score": "11:8 7:11 11:6"
+        },
+        {
+            "date": "Oct 13th at 3:50 PM",
+            "winner": "philip",
+            "loser": "mikal",
+            "score": "11:5 11:6"
+        },
+        {
+            "date": "Oct 15th at 2:38 PM",
+            "winner": "arvind",
+            "loser": "Haakon",
+            "score": "9:11 11:5 11:8"
+        },
+        {
+            "date": "Oct 16th at 2:37 PM",
+            "winner": "rebekka",
+            "loser": "helen",
+            "score": "11:6 11:5"
+        },
+        {
+            "date": "Oct 16th at 2:40 PM",
+            "winner": "arvind",
+            "loser": "Haakon",
+            "score": "11:9 11:9"
+        },
+        {
+            "date": "Oct 16th at 3:15 PM",
+            "winner": "jorgen",
+            "loser": "birk",
+            "score": "11:7 11:9 11:8"
+        },
+        {
+            "date": "Oct 21st at 11:54 AM",
+            "winner": "kristoffer",
+            "loser": "philip",
+            "score": "11:5 11:6 11:8"
+        },
+        {
+            "date": "Oct 22nd at 1:34 PM",
+            "winner": "arvind",
+            "loser": "jorgen",
+            "score": "11:6 11:8 11:5"
+        },
+        {
+            "date": "Oct 22nd at 1:34 PM",
+            "winner": "philip",
+            "loser": "jorgen",
+            "score": "12:10 12:10 11:2"
+        },
+        {
+            "date": "Oct 23rd at 11:06 AM",
+            "winner": "arvind",
+            "loser": "Haakon",
+            "score": "12:10 12:10"
+        },
+        {
+            "date": "Oct 24th at 4:12 PM",
+            "winner": "Haakon",
+            "loser": "jorgen",
+            "score": "11:5 11:4 11:8"
+        },
+        {
+            "date": "Oct 27th at 12:24 PM",
+            "winner": "Haakon",
+            "loser": "philip",
+            "score": "11:6 11:9 9:11"
+        },
+        {
+            "date": "Oct 27th at 12:57 PM",
+            "winner": "arvind",
+            "loser": "Haakon",
+            "score": "11:8 15:13"
+        },
+        {
+            "date": "Oct 27th at 3:26 PM",
+            "winner": "arvind",
+            "loser": "philip",
+            "score": "11:6 11:6 11:9"
+        },
+        {
+            "date": "Oct 28th at 1:46 PM",
+            "winner": "Haakon",
+            "loser": "arvind",
+            "score": "11:13 11:6 15:13"
+        },
+        {
+            "date": "Oct 29th at 4:14 PM",
+            "winner": "philip",
+            "loser": "jorgen",
+            "score": "11:6 11:6 12:14"
+        },
+        {
+            "date": "Oct 29th at 7:45 PM",
+            "winner": "arvind",
+            "loser": "Haakon",
+            "score": "11:9 11:6"
+        },
+        {
+            "date": "Nov 5th at 2:32 PM",
+            "winner": "Haakon",
+            "loser": "jorgen",
+            "score": "11:3 11:4 11:8"
+        },
+        {
+            "date": "Nov 6th at 12:19 PM",
+            "winner": "birk",
+            "loser": "andreas",
+            "score": "13:14 11:10 11:9"
+        },
+        {
+            "date": "Nov 6th at 12:46 PM",
+            "winner": "kristoffer",
+            "loser": "philip",
+            "score": "18:16 11:9 8:11"
+        },
+        {
+            "date": "Nov 7th at 3:30 PM",
+            "winner": "Haakon",
+            "loser": "arvind",
+            "score": "11:5 11:9 4:11"
+        },
+        {
+            "date": "Nov 10th at 2:06 PM",
+            "winner": "arvind",
+            "loser": "Haakon",
+            "score": "8:11 11:7 11:4"
+        },
+        {
+            "date": "Nov 13th at 3:09 PM",
+            "winner": "arvind",
+            "loser": "Haakon",
+            "score": "6:11 11:8 16:14"
+        },
+        {
+            "date": "Nov 13th at 3:28 PM",
+            "winner": "jorgen",
+            "loser": "helen",
+            "score": "11:7 11:8"
+        },
+        {
+            "date": "Nov 14th at 12:16 PM",
+            "winner": "Haakon",
+            "loser": "philip",
+            "score": "11:4 14:12 11:9"
+        },
+        {
+            "date": "Nov 14th at 3:35 PM",
+            "winner": "philip",
+            "loser": "jorgen",
+            "score": "14:12 10:12 11:4"
+        },
+        {
+            "date": "Nov 17th at 5:04 PM",
+            "winner": "Haakon",
+            "loser": "jorgen",
+            "score": "11:4 12:10 11:8"
+        },
+        {
+            "date": "Nov 18th at 3:01 PM",
+            "winner": "Haakon",
+            "loser": "kristoffer",
+            "score": "11:5 11:9 11:8"
+        },
+        {
+            "date": "Nov 18th at 3:53 PM",
+            "winner": "jorgen",
+            "loser": "ibrekka",
+            "score": "8:11 11:9 11:8"
+        },
+        {
+            "date": "Nov 20th at 12:17 PM",
+            "winner": "arvind",
+            "loser": "Haakon",
+            "score": "11:8 9:11 11:4"
+        },
+        {
+            "date": "Nov 24th at 2:33 PM",
+            "winner": "helen",
+            "loser": "birk",
+            "score": "11:7 11:7"
+        },
+        {
+            "date": "Nov 24th at 2:33 PM",
+            "winner": "arvind",
+            "loser": "Haakon",
+            "score": "11:4 13:11 14:12"
+        },
+        {
+            "date": "Nov 25th at 2:12 PM",
+            "winner": "arvind",
+            "loser": "philip",
+            "score": "11:0 11:5 11:9"
+        },
+        {
+            "date": "Nov 26th at 12:34 PM",
+            "winner": "arvind",
+            "loser": "Haakon",
+            "score": "5:11 11:9 11:3"
+        },
+        {
+            "date": "Nov 26th at 2:25 PM",
+            "winner": "kristoffer",
+            "loser": "philip",
+            "score": "6:11 11:5 11:6"
+        },
+        {
+            "date": "Nov 26th at 3:40 PM",
+            "winner": "helen",
+            "loser": "andreas",
+            "score": "6:11 11:8 11:3"
+        },
+        {
+            "date": "Nov 27th at 2:26 PM",
+            "winner": "arvind",
+            "loser": "kristoffer",
+            "score": "11:4 11:9 11:8"
+        },
+        {
+            "date": "Nov 28th at 4:15 PM",
+            "winner": "jorgen",
+            "loser": "rebekka",
+            "score": "12:10 14:12 11:6"
+        },
+        {
+            "date": "Dec 2nd at 3:47 PM",
+            "winner": "philip",
+            "loser": "jorgen",
+            "score": "11:7 11:13 11:9"
+        },
+        {
+            "date": "Dec 3rd at 2:50 PM",
+            "winner": "Haakon",
+            "loser": "arvind",
+            "score": "11:9 11:7 7:11"
+        },
+        {
+            "date": "Dec 5th at 10:07 AM",
+            "winner": "Haakon",
+            "loser": "philip",
+            "score": "11:8 11:6"
+        },
+        {
+            "date": "Dec 5th at 2:41 PM",
+            "winner": "Haakon",
+            "loser": "philip",
+            "score": "11:3 12:10"
+        },
+        {
+            "date": "Dec 5th at 2:50 PM",
+            "winner": "helen",
+            "loser": "jorgen",
+            "score": "7:11 11:9 11:7"
+        },
+        {
+            "date": "Dec 5th at 2:50 PM",
+            "winner": "helen",
+            "loser": "jorgen",
+            "score": "7:11 11:9 11:7"
+        },
+        {
+            "date": "Dec 10th at 3:04 PM",
+            "winner": "kristoffer",
+            "loser": "philip",
+            "score": "11:4 11:5 11:6"
+        },
+        {
+            "date": "Dec 10th at 4:26 PM",
+            "winner": "birk",
+            "loser": "helen",
+            "score": "11:8 13:11"
+        },
+        {
+            "date": "Yesterday at 3:21 PM",
+            "winner": "philip",
+            "loser": "jorgen",
+            "score": "11:7 11:9 11:8"
+        }
+    ]
+}
