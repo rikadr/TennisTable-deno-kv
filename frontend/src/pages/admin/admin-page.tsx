@@ -354,7 +354,8 @@ export const AdminPage: React.FC = () => {
 
       {activeTab === "events" && <Events />}
 
-      {activeTab === "local" && process.env.REACT_APP_ENV === "local" && <LocalAdminControls />}
+      {/* {activeTab === "local" && process.env.REACT_APP_ENV === "local" && <LocalAdminControls />} */}
+      {activeTab === "local" && <LocalAdminControls />}
     </div>
   );
 };
