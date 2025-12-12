@@ -3,9 +3,6 @@ import React, { useState } from "react";
 import { httpClient } from "../../common/http-client";
 import { GenerateMockData } from "./mock-data/generate-mock-data";
 
-import { convertDeepInsightData } from "../../utils/convert-deepinsight-data";
-import { DEEPINSIGHT_DATA } from "../../data/deepinsight-data";
-
 const LOCAL_API_BASE = process.env.REACT_APP_API_BASE_URL || "http://localhost:8000";
 const LOCAL_STORAGE_KEY = "tennis-table-events";
 
@@ -57,25 +54,8 @@ export const LocalAdminControls: React.FC = () => {
     },
   });
 
-  const importDeepInsightMutation = useMutation({
-    mutationFn: async () => {
-        const events = convertDeepInsightData(DEEPINSIGHT_DATA);
-        
-        // Post events
-        const postRes = await httpClient(`${LOCAL_API_BASE}/events`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(events),
-        });
-        if (!postRes.ok) throw new Error(`Post failed: ${postRes.statusText}`);
-
-        localStorage.removeItem(LOCAL_STORAGE_KEY);
-        return { count: events.length };
-    }
-  });
-
-  const loading = syncMutation.isPending || deleteMutation.isPending || importDeepInsightMutation.isPending;
-  const error = syncMutation.error || deleteMutation.error || importDeepInsightMutation.error;
+  const loading = syncMutation.isPending || deleteMutation.isPending;
+  const error = syncMutation.error || deleteMutation.error;
 
   return (
     <div className="p-6 max-w-2xl mx-auto space-y-4">
@@ -113,45 +93,15 @@ export const LocalAdminControls: React.FC = () => {
           </button>
         </div>
 
-        {(syncMutation.isSuccess || deleteMutation.isSuccess || importDeepInsightMutation.isSuccess || error) && (
+        {(syncMutation.isSuccess || deleteMutation.isSuccess || error) && (
           <div className={`mt-4 p-3 rounded-lg ${error ? "bg-red-100 text-red-800" : "bg-green-100 text-green-800"}`}>
             {error
               ? `❌ ${error instanceof Error ? error.message : "Operation failed"}`
               : syncMutation.isSuccess
               ? `✅ Synced ${syncMutation.data?.count || 0} events from ${syncMutation.data?.env}`
-              : deleteMutation.isSuccess 
-              ? "✅ Local events deleted"
-              : `✅ Imported ${importDeepInsightMutation.data?.count} DeepInsight events`}
+            : "✅ Local events deleted"}
           </div>
         )}
-
-        <div className="mt-8 border-t pt-6">
-            <h3 className="font-bold mb-4">DeepInsight Migration</h3>
-            <div className="space-y-3">
-                <button
-                    onClick={() => {
-                        const events = convertDeepInsightData(DEEPINSIGHT_DATA);
-                        console.log("Converted Events:", events);
-                        alert(`Logged ${events.length} events to console.`);
-                    }}
-                    disabled={loading}
-                    className="w-full bg-gray-600 text-white py-3 px-4 rounded-lg hover:bg-gray-700 disabled:bg-gray-400"
-                >
-                    Log DeepInsight Data Result
-                </button>
-                 <button
-                    onClick={() => {
-                        if (window.confirm("This will ADD the DeepInsight events to the current DB. Proceed?")) {
-                            importDeepInsightMutation.mutate();
-                        }
-                    }}
-                    disabled={loading}
-                    className="w-full bg-purple-600 text-white py-3 px-4 rounded-lg hover:bg-purple-700 disabled:bg-gray-400"
-                >
-                    {importDeepInsightMutation.isPending ? "Importing..." : "Post Result to /events"}
-                </button>
-            </div>
-        </div>
       </div>
 
       <GenerateMockData />

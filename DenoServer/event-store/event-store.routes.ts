@@ -92,10 +92,10 @@ export function registerEventStoreRoutes(api: Router) {
    * DEBUG AND DEV ONLY: -----------------------------------------------------------
    * Do not register the following routes in production
    */
-  // const environment = Deno.env.get("ENVIRONMENT");
-  // if (environment !== "local") {
-  //   return;
-  // }
+  const environment = Deno.env.get("ENVIRONMENT");
+  if (environment !== "local") {
+    return;
+  }
 
   console.log("******** Registering debug routes for event store");
 

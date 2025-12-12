@@ -121,9 +121,9 @@ export const AdminPage: React.FC = () => {
         <div className="flex space-x-2">
           {tabs
             .filter((t) => {
-              // if (t.id === "local" && process.env.REACT_APP_ENV !== "local") {
-              //   return false;
-              // }
+              if (t.id === "local" && process.env.REACT_APP_ENV !== "local") {
+                return false;
+              }
               return true;
             })
             .map((tab) => {
@@ -354,8 +354,7 @@ export const AdminPage: React.FC = () => {
 
       {activeTab === "events" && <Events />}
 
-      {/* {activeTab === "local" && process.env.REACT_APP_ENV === "local" && <LocalAdminControls />} */}
-      {activeTab === "local" && <LocalAdminControls />}
+      {activeTab === "local" && process.env.REACT_APP_ENV === "local" && <LocalAdminControls />}
     </div>
   );
 };
