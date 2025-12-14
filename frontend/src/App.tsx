@@ -34,7 +34,7 @@ import { SimulatedLeaderboard } from "./pages/simulations/expected-leaderboard/e
 import { PlayerNetwork } from "./pages/player-network/player-network";
 import { TrackGamePage } from "./pages/add-game/track-game";
 import { ChooseAddOrTrack } from "./pages/add-game/choose-add-or-track";
-import { AchievementsPage } from "./pages/achievements-page";
+import { AchievementsPage } from "./pages/achievements/achievements-page";
 import { TournamentSkipGamePage } from "./pages/tournament/tournament-skip-game";
 import { TournamentUndoSkipPage } from "./pages/tournament/tournament-undo-skip";
 import { SeasonsListPage } from "./pages/seasons/seasons-list-page";
