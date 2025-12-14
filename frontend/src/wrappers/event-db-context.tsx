@@ -12,7 +12,7 @@ export function useEventDb() {
       const LOCAL_STORAGE_KEY = "tennis-table-events";
       const CACHE_TIMESTAMP_KEY = "tennis-table-events-cache-time";
       const TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
-      const FORCE_INVALIDATE_BEFORE = new Date("2025-12-13T00:00:00").getTime();
+      const FORCE_INVALIDATE_BEFORE = new Date("2025-12-15T00:00:00").getTime();
 
       let storedEvents: EventType[] = [];
       let shouldClearCache = false;
