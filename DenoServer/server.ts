@@ -7,6 +7,9 @@ import { registerEventStoreRoutes } from "./event-store/event-store.routes.ts";
 import { registerMigrationsRoutes } from "./migrations/migrations.routes.ts";
 import { registerImageKitRoutes } from "./image-kit/image-kit.routes.ts";
 
+// Start background services
+import "./integrations/gamebot/poller.ts";
+
 const app = new Application();
 const api = new Router();
 

@@ -1,7 +1,7 @@
 {
   "nodeModulesDir": "auto",
   "tasks": {
-    "dev": "deno run --allow-net --allow-env --allow-read --env --watch --unstable-kv server.ts",
+    "dev": "deno run --allow-net --allow-env --allow-read --env --watch --unstable-kv --unstable-cron server.ts",
     "check": "deno check ."
   },
   "compilerOptions": {
