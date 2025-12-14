@@ -16,30 +16,50 @@ export const SimulatedLeaderboard: React.FC = () => {
   const svgRef = useRef<SVGSVGElement>(null);
 
   // Calculate player positions for drawing lines
+  // Calculate player positions for drawing lines
   useEffect(() => {
-    if (currentListRef.current && simulatedListRef.current) {
-      const positions = new Map<string, { current: number; simulated: number }>();
+    const calculatePositions = () => {
+      if (currentListRef.current && simulatedListRef.current) {
+        const positions = new Map<string, { current: number; simulated: number }>();
 
-      leaderboardData.current.forEach((player, index) => {
-        const currentElement = currentListRef.current?.children[index] as HTMLElement;
-        const simulatedPlayer = leaderboardData.expected.find((p) => p.id === player.id);
-        const simulatedIndex = leaderboardData.expected.findIndex((p) => p.id === player.id);
-        const simulatedElement = simulatedListRef.current?.children[simulatedIndex] as HTMLElement;
+        leaderboardData.current.forEach((player, index) => {
+          const currentElement = currentListRef.current?.children[index] as HTMLElement;
+          const simulatedPlayer = leaderboardData.expected.find((p) => p.id === player.id);
+          const simulatedIndex = leaderboardData.expected.findIndex((p) => p.id === player.id);
+          const simulatedElement = simulatedListRef.current?.children[simulatedIndex] as HTMLElement;
 
-        if (currentElement && simulatedElement && simulatedPlayer) {
-          const currentRect = currentElement.getBoundingClientRect();
-          const simulatedRect = simulatedElement.getBoundingClientRect();
-          const containerRect = currentListRef.current!.parentElement!.getBoundingClientRect();
+          if (currentElement && simulatedElement && simulatedPlayer) {
+            const currentRect = currentElement.getBoundingClientRect();
+            const simulatedRect = simulatedElement.getBoundingClientRect();
+            const containerRect = currentListRef.current!.parentElement!.getBoundingClientRect();
 
-          positions.set(player.id, {
-            current: currentRect.top + currentRect.height / 2 - containerRect.top,
-            simulated: simulatedRect.top + simulatedRect.height / 2 - containerRect.top,
-          });
-        }
-      });
+            positions.set(player.id, {
+              current: currentRect.top + currentRect.height / 2 - containerRect.top,
+              simulated: simulatedRect.top + simulatedRect.height / 2 - containerRect.top,
+            });
+          }
+        });
 
-      setPlayerPositions(positions);
-    }
+        setPlayerPositions(positions);
+      }
+    };
+
+    const handleResize = () => {
+      // Small delay to ensure layout has settled (e.g. after orientation change)
+      setTimeout(calculatePositions, 100);
+    };
+
+    calculatePositions();
+    // Re-calculate after a short delay to ensure initial layout is fully stable
+    setTimeout(calculatePositions, 500);
+
+    window.addEventListener("resize", handleResize);
+    window.addEventListener("orientationchange", handleResize);
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      window.removeEventListener("orientationchange", handleResize);
+    };
   }, [leaderboardData]);
 
   const getRankChange = (playerId: string): number => {
@@ -78,38 +98,57 @@ export const SimulatedLeaderboard: React.FC = () => {
 
     return (
       <div
-        className={`p-3 rounded-lg border transition-all duration-300 flex items-center space-x-3 ${
+        className={`h-10 md:h-24 p-1 md:p-3 rounded-lg border transition-all duration-300 flex items-center space-x-1.5 md:space-x-3 ${
           type === "current"
             ? "bg-blue-50 border-blue-200 hover:border-blue-300"
             : "bg-green-50 border-green-200 hover:border-green-300"
         }`}
       >
-        <ProfilePicture playerId={player.id} size={60} border={4} shape="rounded" linkToPlayer />
+        <div className="md:hidden shrink-0">
+          <ProfilePicture playerId={player.id} size={32} border={2} shape="rounded" linkToPlayer />
+        </div>
+        <div className="hidden md:block shrink-0">
+          <ProfilePicture playerId={player.id} size={60} border={4} shape="rounded" linkToPlayer />
+        </div>
 
         {/* Rank */}
-        <div className={`text-lg font-bold min-w-[2rem] ${type === "current" ? "text-blue-700" : "text-green-700"}`}>
+        <div
+          className={`shrink-0 text-xs md:text-lg font-bold min-w-[1.5rem] md:min-w-[2rem] ${
+            type === "current" ? "text-blue-700" : "text-green-700"
+          }`}
+        >
           #{player.rank}
         </div>
 
         {/* Player Info */}
-        <div className="flex-1 min-w-0">
-          <div className="font-medium text-gray-800 truncate">{context.playerName(player.id)}</div>
-          <div className={`text-sm font-bold ${type === "current" ? "text-blue-600" : "text-green-600"}`}>
+        <div className="flex-1 min-w-0 flex flex-col justify-center">
+          <div className="font-medium text-gray-800 truncate text-xs md:text-base leading-tight">
+            {context.playerName(player.id)}
+          </div>
+          <div
+            className={`text-[10px] md:text-sm font-bold ${
+              type === "current" ? "text-blue-600" : "text-green-600"
+            }`}
+          >
             {fmtNum(player.score)}
           </div>
         </div>
 
         {/* Changes */}
         {showChanges && (
-          <div>
+          <div className="flex flex-col -space-y-2 md:space-y-0">
             {rankChange !== 0 && (
-              <p className={`text-xs font-medium ${rankChange > 0 ? "text-green-600" : "text-red-600"}`}>
+              <p
+                className={`text-[10px] md:text-xs font-medium ${
+                  rankChange > 0 ? "text-green-600" : "text-red-600"
+                }`}
+              >
                 {fmtNum(rankChange, { signedPositive: true })} rank{Math.abs(rankChange) !== 1 && "s"}
               </p>
             )}
             {scoreChange !== 0 && (
-              <p className={`text-xs ${scoreChange > 0 ? "text-green-600" : "text-red-600"}`}>
-                ({fmtNum(scoreChange, { signedPositive: true })} score)
+              <p className={`text-[10px] md:text-xs ${scoreChange > 0 ? "text-green-600" : "text-red-600"}`}>
+                ({fmtNum(scoreChange, { signedPositive: true })})
               </p>
             )}
           </div>
@@ -119,13 +158,15 @@ export const SimulatedLeaderboard: React.FC = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto bg-primary-background">
+    <div className="max-w-7xl mx-auto bg-primary-background p-2 md:p-0">
       {/* Comparison Visualization */}
-      <div className="grid grid-cols-5 relative">
+      <div className="grid grid-cols-[1fr_50px_1fr] xs:grid-cols-[1fr_100px_1fr] sm:grid-cols-[1fr_200px_1fr] md:grid-cols-5 relative">
         {/* Current Leaderboard */}
-        <div className="col-span-2">
-          <h2 className="text-xl font-bold text-primary-text mb-4 text-center">Current Leaderboard</h2>
-          <div ref={currentListRef} className="space-y-2">
+        <div className="md:col-span-2">
+          <h2 className="text-sm md:text-xl font-bold text-primary-text mb-2 md:mb-4 text-center h-12 flex items-center justify-center">
+            Current Leaderboard
+          </h2>
+          <div ref={currentListRef} className="space-y-1 md:space-y-2">
             {leaderboardData.current.map((player) => (
               <PlayerCard key={`current-${player.id}`} player={player} type="current" />
             ))}
@@ -133,8 +174,12 @@ export const SimulatedLeaderboard: React.FC = () => {
         </div>
 
         {/* Connection Lines */}
-        <div className="col-span-1 relative flex justify-center">
-          <svg ref={svgRef} className="absolute inset-0 w-full h-full pointer-events-none" style={{ zIndex: 1 }}>
+        <div className="relative flex justify-center">
+          <svg
+            ref={svgRef}
+            className="absolute inset-0 w-full h-full pointer-events-none"
+            style={{ zIndex: 1 }}
+          >
             {Array.from(playerPositions.entries()).map(([playerName, positions]) => {
               const rankChange = getRankChange(playerName);
               return (
@@ -153,11 +198,18 @@ export const SimulatedLeaderboard: React.FC = () => {
         </div>
 
         {/* Expected Leaderboard */}
-        <div className="col-span-2">
-          <h2 className="text-xl font-bold text-primary-text mb-4 text-center">Expected Leaderboard</h2>
-          <div ref={simulatedListRef} className="space-y-2">
+        <div className="md:col-span-2">
+          <h2 className="text-sm md:text-xl font-bold text-primary-text mb-2 md:mb-4 text-center h-12 flex items-center justify-center">
+            Expected Leaderboard
+          </h2>
+          <div ref={simulatedListRef} className="space-y-1 md:space-y-2">
             {leaderboardData.expected.map((player) => (
-              <PlayerCard key={`simulated-${player.id}`} player={player} type="simulated" showChanges={true} />
+              <PlayerCard
+                key={`simulated-${player.id}`}
+                player={player}
+                type="simulated"
+                showChanges={true}
+              />
             ))}
           </div>
         </div>
