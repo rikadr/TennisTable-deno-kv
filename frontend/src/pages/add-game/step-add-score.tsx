@@ -15,7 +15,7 @@ export const StepAddScore: React.FC<{
 }> = ({ player1, player2, setPoints, winner, invalidScore }) => {
   return (
     <div className="space-y-2 max-w-2xl m-auto">
-      <WinnerBox winner={winner} orientation={winner === player1.id ? "left" : "right"} />
+      <WinnerBox player1={player1.id} player2={player2.id} winner={winner} />
       <div className="p-4 bg-secondary-background text-secondary-text rounded-xl">
         <h2 className="text-center text-2xl">Sets won</h2>
         <p className="text-center">(Optional)</p>
@@ -121,21 +121,21 @@ const SetCounter: React.FC<{
   return (
     <div className="flex flex-col items-center">
       <h2>{context.playerName(id)}</h2>
-      <div className="flex items-center gap-1">
+      <div className="grid grid-cols-2 xs:flex xs:items-center gap-2 xs:gap-1 place-items-center">
         <button
-          className="w-12 aspect-square rounded-full bg-primary-background text-primary-text hover:bg-primary-background/75 "
+          className="w-12 aspect-square rounded-full bg-primary-background text-primary-text hover:bg-primary-background/75 order-2 xs:order-none"
           onClick={() => setSets(Math.max(sets - 1, 0))}
         >
           &#8722;
         </button>
         <div
-          className="w-24 aspect-square rounded-full flex items-center justify-center bg-primary-background text-primary-text text-4xl"
+          className="w-24 aspect-square rounded-full flex items-center justify-center bg-primary-background text-primary-text text-4xl col-span-2 order-1 xs:order-none mb-2 xs:mb-0"
           style={{ borderWidth: 12, borderColor: stringToColor(id || "1adagrsss") }}
         >
           {sets}
         </div>
         <button
-          className="w-12 aspect-square rounded-full bg-primary-background text-primary-text hover:bg-primary-background/75 "
+          className="w-12 aspect-square rounded-full bg-primary-background text-primary-text hover:bg-primary-background/75 order-3 xs:order-none"
           onClick={() => setSets(sets + 1)}
         >
           +
@@ -146,24 +146,28 @@ const SetCounter: React.FC<{
 };
 
 const WinnerBox: React.FC<{
+  player1: string;
+  player2: string;
   winner: string;
-  orientation: "left" | "right";
-}> = ({ winner, orientation }) => {
+}> = ({ player1, player2, winner }) => {
   const context = useEventDbContext();
   return (
     <div
       className={classNames(
         "relative py-3 px-6 flex justify-between items-center bg-secondary-background rounded-xl",
-        orientation === "right" && "flex-row-reverse",
       )}
     >
-      <div className={classNames("flex gap-2 items-center", orientation === "right" && "flex-row-reverse")}>
-        <ProfilePicture playerId={winner} border={3} size={60} />
-        <p className="text-4xl text-center w-[60px]">🏆</p>
+      <div className={classNames("flex gap-2 items-center")}>
+        <ProfilePicture playerId={player1} border={3} size={60} />
+        {winner === player1 && <p className="text-4xl text-center w-[60px]">🏆</p>}
       </div>
       <div className="absolute inset-0 m-auto text-secondary-text flex flex-col justify-center">
         <p className="text-center">Winner</p>
         <h2 className="text-center text-2xl">{context.playerName(winner)}</h2>
+      </div>
+      <div className={classNames("flex gap-2 items-center")}>
+        {winner === player2 && <p className="text-4xl text-center w-[60px]">🏆</p>}
+        <ProfilePicture playerId={player2} border={3} size={60} />
       </div>
     </div>
   );

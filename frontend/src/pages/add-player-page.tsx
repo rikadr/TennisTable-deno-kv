@@ -72,9 +72,9 @@ export const AddPlayerPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-primary-background py-8 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-primary-background pb-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md mx-auto">
-        <div className="bg-primary-background text-primary-text rounded-lg shadow-lg p-6 sm:p-8 space-y-6">
+        <div className="bg-primary-background text-primary-text rounded-lg shadow-lg p-4 pt-0 sm:p-8 space-y-6">
           {/* Header */}
           <h1 className="text-2xl sm:text-3xl font-bold text-center">Add Player</h1>
 

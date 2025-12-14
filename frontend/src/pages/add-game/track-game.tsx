@@ -11,6 +11,7 @@ import { PendingTournamentGame } from "./pending-tournament-game";
 import { useTennisParams } from "../../hooks/use-tennis-params";
 import { classNames } from "../../common/class-names";
 import { ProfilePicture } from "../player/profile-picture";
+import { stringToColor } from "../../common/string-to-color";
 
 interface SetPoint {
   player1: number;
@@ -197,7 +198,7 @@ export const TrackGamePage: React.FC = () => {
           {player1 && player2 && (
             <button
               onClick={startMatch}
-              className="w-full py-3 rounded-lg font-semibold transition text-base bg-blue-500 text-white hover:bg-blue-600"
+              className="w-full py-3 rounded-lg font-semibold transition text-base bg-tertiary-background text-tertiary-text hover:bg-tertiary-background/50"
             >
               Start match!
             </button>
@@ -216,33 +217,60 @@ export const TrackGamePage: React.FC = () => {
       (matchData.setPoints?.length || 0) > 0 && isSetEmpty && matchData.setsWon.player1 !== matchData.setsWon.player2;
 
     return (
-      <div className="text-black p-4">
+      <div className="text-black p-4 pt-0">
         <div className="max-w-sm mx-auto">
           <div className="bg-white rounded-xl shadow-lg p-4 mb-4">
             <div className="text-center mb-4">
-              <h2 className="text-xl font-bold text-gray-800 mb-3">Set {(matchData.setPoints?.length || 0) + 1}</h2>
-              <div className="flex justify-center items-center gap-3 text-sm">
-                <span className="bg-blue-100 px-3 py-1 rounded-full font-medium">
-                  {context.playerName(player1)}: {matchData.setsWon.player1}
-                </span>
-                <span className="bg-purple-100 px-3 py-1 rounded-full font-medium">
-                  {context.playerName(player2)}: {matchData.setsWon.player2}
-                </span>
+              <h2 className="text-gray-400 text-xs uppercase tracking-widest font-bold mb-3">Total Score</h2>
+              <div className="flex justify-center items-center gap-6 mb-2">
+                <div className="flex flex-col items-center gap-1">
+                  <ProfilePicture playerId={player1} size={50} border={2} />
+                  <span className="font-bold text-sm" style={{ color: stringToColor(player1 || "") }}>
+                    {context.playerName(player1)}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2 bg-gray-50 px-4 py-1 rounded-xl shadow-inner">
+                  <span className="text-3xl font-black">{matchData.setsWon.player1}</span>
+                  <span className="font-bold text-xl">-</span>
+                  <span className="text-3xl font-black">{matchData.setsWon.player2}</span>
+                </div>
+
+                <div className="flex flex-col items-center gap-1">
+                  <ProfilePicture playerId={player2} size={50} border={2} />
+                  <span className="font-bold text-sm" style={{ color: stringToColor(player2 || "") }}>
+                    {context.playerName(player2)}
+                  </span>
+                </div>
               </div>
+              <h2 className="text-gray-400 text-xs uppercase tracking-widest font-bold mt-4">
+                Set {(matchData.setPoints?.length || 0) + 1}
+              </h2>
             </div>
 
             {/* Score Display */}
-            <div className="space-y-4 mb-4">
+            {/* Score Display */}
+            <div className="grid grid-cols-2 gap-2 mb-4">
               {/* Player 1 */}
-              <div className="bg-blue-50 rounded-lg p-4">
-                <h3 className="text-base font-semibold text-gray-700 mb-3">{context.playerName(player1)}</h3>
-                <div className="flex items-center justify-between">
-                  <div className="text-5xl font-bold text-blue-600">{currentSetScore.player1}</div>
-                  <div className="flex gap-2">
+              <div className="bg-blue-50 rounded-lg p-2">
+                <h3 className="text-sm font-semibold text-gray-700 mb-1 text-center truncate">
+                  {context.playerName(player1)}
+                </h3>
+                <div className="flex flex-col items-center justify-center gap-2">
+                  <div className="text-5xl font-bold text-blue-600 text-center">
+                    {currentSetScore.player1}
+                  </div>
+                  <div className="flex flex-col gap-2 w-full items-center">
+                    <button
+                      onClick={() => addPoint(1)}
+                      className="w-full max-w-28 aspect-square text-center bg-blue-600 text-white text-4xl font-bold rounded-lg hover:bg-blue-700 transition"
+                    >
+                      +
+                    </button>
                     <button
                       onClick={() => removePoint(1)}
                       disabled={currentSetScore.player1 === 0}
-                      className={`w-12 text-center p-3 rounded-lg transition ${
+                      className={`w-full max-w-28 h-12 text-center rounded-lg transition text-2xl font-bold ${
                         currentSetScore.player1 === 0
                           ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                           : "bg-blue-400 text-white hover:bg-blue-500"
@@ -250,38 +278,36 @@ export const TrackGamePage: React.FC = () => {
                     >
                       -
                     </button>
-                    <button
-                      onClick={() => addPoint(1)}
-                      className="w-12 text-center bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700 transition"
-                    >
-                      +
-                    </button>
                   </div>
                 </div>
               </div>
 
               {/* Player 2 */}
-              <div className="bg-purple-50 rounded-lg p-4">
-                <h3 className="text-base font-semibold text-gray-700 mb-3">{context.playerName(player2)}</h3>
-                <div className="flex items-center justify-between">
-                  <div className="text-5xl font-bold text-purple-600">{currentSetScore.player2}</div>
-                  <div className="flex gap-2">
+              <div className="bg-purple-50 rounded-lg p-2">
+                <h3 className="text-sm font-semibold text-gray-700 mb-1 text-center truncate">
+                  {context.playerName(player2)}
+                </h3>
+                <div className="flex flex-col items-center justify-center gap-2">
+                  <div className="text-5xl font-bold text-purple-600 text-center">
+                    {currentSetScore.player2}
+                  </div>
+                  <div className="flex flex-col gap-2 w-full items-center">
+                    <button
+                      onClick={() => addPoint(2)}
+                      className="w-full max-w-28 aspect-square text-center bg-purple-600 text-white text-4xl font-bold rounded-lg hover:bg-purple-700 transition"
+                    >
+                      +
+                    </button>
                     <button
                       onClick={() => removePoint(2)}
                       disabled={currentSetScore.player2 === 0}
-                      className={`w-12 text-center p-3 rounded-lg transition ${
+                      className={`w-full max-w-28 h-12 text-center rounded-lg transition text-2xl font-bold ${
                         currentSetScore.player2 === 0
                           ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                           : "bg-purple-400 text-white hover:bg-purple-500"
                       }`}
                     >
                       -
-                    </button>
-                    <button
-                      onClick={() => addPoint(2)}
-                      className="w-12 text-center bg-purple-600 text-white p-3 rounded-lg hover:bg-purple-700 transition"
-                    >
-                      +
                     </button>
                   </div>
                 </div>
@@ -338,7 +364,7 @@ export const TrackGamePage: React.FC = () => {
           {/* Sets History */}
           {matchData.setPoints && matchData.setPoints.length > 0 && (
             <div className="bg-white rounded-xl shadow-lg p-4">
-              <h3 className="text-base font-bold text-gray-800 mb-3">Completed Sets</h3>
+              <h3 className="text-gray-400 text-xs uppercase tracking-widest font-bold mb-3">Completed Sets</h3>
               <div className="space-y-2">
                 {matchData.setPoints.map((set, index) => {
                   const setWinner = set.player1 > set.player2 ? 1 : 2;

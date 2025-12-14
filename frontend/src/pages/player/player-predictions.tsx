@@ -60,12 +60,14 @@ export const PlayerPredictions: React.FC<Props> = ({ playerId }) => {
             >
               <div className="flex items-center gap-2 w-full">
                 {isExpanded ? "▼" : "▶"}
-                <ProfilePicture playerId={oponentId} border={3} size={50} shape="rounded" linkToPlayer />
-                <span className="text-xl font-semibold w-28 text-left">{context.playerName(oponentId)}</span>
+                <div className="sm:flex items-center gap-2">
+                  <ProfilePicture playerId={oponentId} border={3} size={45} shape="rounded" linkToPlayer />
+                  <span className="text-md sm:text-xl font-semibold w-28 text-left">{context.playerName(oponentId)}</span>
+                </div>
                 {/* Matchup Header */}
-                <div className="flex flex-wrap gap-2 items-baseline">
+                <div className="flex flex-wrap gap-2 items-baseline text-md">
                   <p>
-                    <span className="font-bold text-xl">{fmtNum(winChance * 100)}% </span> win chance
+                    <span className="font-bold text-md sm:text-xl">{fmtNum(winChance * 100)}% </span> win chance
                   </p>
                   <p>@{fmtNum(confidence * 100)}% confidence</p>
                 </div>
@@ -74,7 +76,7 @@ export const PlayerPredictions: React.FC<Props> = ({ playerId }) => {
                   to={`/1v1/?player1=${playerId}&player2=${oponentId}`}
                   className="text-xs text-tertiary-text bg-tertiary-background hover:bg-tertiary-background/50 px-2 py-1 rounded-md"
                 >
-                  👥🥊 Compare 1v1
+                  👥🥊 Compare
                 </Link>
               </div>
             </button>

@@ -193,7 +193,7 @@ export const AddGamePageV2: React.FC = () => {
         </div>
       )}
       <div
-        className="overflow-y-auto py-8 px-2 xs:px-4 h-16"
+        className="overflow-y-auto py-2 px-2 xs:px-4 h-16"
         style={{
           height: `calc(100dvh - 160.1px - 48px)`,
           ...(window.innerWidth <= 768 && {

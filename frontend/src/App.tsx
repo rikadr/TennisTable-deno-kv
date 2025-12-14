@@ -11,7 +11,6 @@ import { session } from "./services/auth";
 import { SignupPage } from "./pages/sign-up";
 import { WebSocketRefetcher } from "./wrappers/web-socket-refetcher";
 import { NavMenu } from "./wrappers/nav-menu";
-import { ZoomWrapper } from "./wrappers/zoom-wrapper";
 import { PvPPage } from "./pages/pvp-page";
 import { CameraPage } from "./pages/camera/camera-page";
 import { LeaderBoard } from "./pages/leaderboard/leader-board";
@@ -62,7 +61,6 @@ function App() {
           {clientConfig.snow && <Snowfall radius={[0.2, 1]} speed={[0.1, 0.3]} wind={[0, 1]} />}
           <div className="min-h-screen w-full overflow-auto">
             <HelmetSetter />
-            <ZoomWrapper>
               <EventDbWrapper>
                 <WebSocketRefetcher>
                   <BrowserRouter>
@@ -124,7 +122,6 @@ function App() {
                   </BrowserRouter>
                 </WebSocketRefetcher>
               </EventDbWrapper>
-            </ZoomWrapper>
           </div>
         </ThemeProvider>
       </ImageKitContext>
