@@ -107,7 +107,7 @@ export const AchievementsPage: React.FC = () => {
                 : "bg-secondary-background text-primary-text border-primary-text hover:border-accent"
             }`}
           >
-            {showProgress ? "Show Recent Awards" : "See Everyone's Progress"}
+            {showProgress ? "Show Recent Achievements" : "Show Everyone's Progress"}
           </button>
         </div>
       </div>
