@@ -4,11 +4,8 @@ import { processMatchesResponse } from "./process-matches.ts";
 const config = getClientConfig();
 
 if (config.enabled && config.gameBotChannelId) {
-  console.log("Registering Gamebot cron job for client:", config.client);
-
   // Poll every minute
   Deno.cron("Gamebot Poller", "* * * * *", async () => {
-    console.log("Running Gamebot Poller CRON job");
     try {
       const headers = new Headers();
       if (config.apiToken) {
@@ -33,6 +30,4 @@ if (config.enabled && config.gameBotChannelId) {
       console.error("Error polling Gamebot:", error);
     }
   });
-} else {
-  console.log("Gamebot poller disabled or missing configuration.");
 }
