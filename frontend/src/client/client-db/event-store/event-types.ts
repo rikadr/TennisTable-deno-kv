@@ -1,5 +1,3 @@
-// Copy pasted from the backend
-
 export enum EventTypeEnum {
   // Player events
   PLAYER_CREATED = "PLAYER_CREATED",

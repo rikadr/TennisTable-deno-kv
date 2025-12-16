@@ -1,4 +1,5 @@
 export interface GamebotConfig {
+  client: string;
   enabled: boolean;
   apiToken?: string;
   gameBotChannelId?: string;
@@ -11,6 +12,7 @@ export function getClientConfig(): GamebotConfig {
   switch (client) {
     case "deepinsight":
       return {
+        client,
         enabled: true,
         apiToken: Deno.env.get("GAMEBOT_TOKEN"),
         gameBotChannelId: Deno.env.get("GAMEBOT_CHANNEL_ID"),
@@ -18,6 +20,7 @@ export function getClientConfig(): GamebotConfig {
       };
     default:
       return {
+        client:"not found",
         enabled: false,
       };
   }
