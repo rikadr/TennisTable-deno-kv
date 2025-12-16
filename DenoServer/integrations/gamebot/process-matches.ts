@@ -39,6 +39,7 @@ export async function processMatchesResponse(response: MatchesApiResponse) {
 
   const matchesToSync = matches
     .filter((match) => new Date(match.created_at).getTime() > syncFrom)
+    .filter((match) => !match.resigned && !match.tied)
     .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
 
   if (matchesToSync.length === 0) {
