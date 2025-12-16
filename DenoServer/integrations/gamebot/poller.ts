@@ -14,6 +14,7 @@ if (config.enabled && config.gameBotChannelId) {
       if (config.apiToken) {
         headers.set("X-Access-Token", config.apiToken);
       }
+      console.log(headers);
       const response = await fetch(
         `https://gamebot2.playplay.io/api/matches?channel_id=${config.gameBotChannelId}&size=10`,
         { method: "GET", headers: headers },
