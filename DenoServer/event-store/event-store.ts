@@ -69,8 +69,6 @@ export async function updateEvent({
 }
 
 export async function getEventsAfter(time: number): Promise<EventType[]> {
-  console.log(`Getting events after ${time}`);
-
   const events: EventType[] = [];
   // +1 to only get events after the given time
   const res = kv.list<EventType>({ prefix: getEventKey(), start: getEventKey(time + 1) });
