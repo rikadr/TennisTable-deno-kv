@@ -5,6 +5,7 @@ export interface SeasonPlayerScore {
   seasonScore: number;
   matchups: Map<string, { bestPerformance: number; playedAt: number }>;
   totalGames: number;
+  firstGamePlayedAt: number;
 }
 
 export class Season {
@@ -14,6 +15,7 @@ export class Season {
   private leaderboard: SeasonPlayerScore[] | undefined;
   private playerMatchups = new Map<string, Map<string, { bestPerformance: number; playedAt: number }>>();
   private playerGameCounts = new Map<string, number>();
+  private playerFirstGames = new Map<string, number>();
 
   constructor(seasonTime: { start: number; end: number }) {
     this.start = seasonTime.start;
@@ -30,8 +32,9 @@ export class Season {
       return this.leaderboard;
     }
 
-    // Reset game counts
+    // Reset
     this.playerGameCounts.clear();
+    this.playerFirstGames.clear();
 
     for (const game of this.games) {
       const winnerPerformance = this.calculatePerformance(game, true);
@@ -43,13 +46,22 @@ export class Season {
       // Count total games per player
       this.playerGameCounts.set(game.winner, (this.playerGameCounts.get(game.winner) || 0) + 1);
       this.playerGameCounts.set(game.loser, (this.playerGameCounts.get(game.loser) || 0) + 1);
+
+      // Set first games played
+      if (!this.playerFirstGames.has(game.winner) || game.playedAt < this.playerFirstGames.get(game.winner)!) {
+        this.playerFirstGames.set(game.winner, game.playedAt);
+      }
+      if (!this.playerFirstGames.has(game.loser) || game.playedAt < this.playerFirstGames.get(game.loser)!) {
+        this.playerFirstGames.set(game.loser, game.playedAt);
+      }
     }
 
     const seasonScores = new Map<string, SeasonPlayerScore>();
     for (const [playerId, matchups] of this.playerMatchups.entries()) {
       const seasonScore = Array.from(matchups.values()).reduce((sum, { bestPerformance }) => sum + bestPerformance, 0);
       const totalGames = this.playerGameCounts.get(playerId) || 0;
-      seasonScores.set(playerId, { playerId, seasonScore, matchups, totalGames });
+      const firstGamePlayedAt = this.playerFirstGames.get(playerId) || Infinity;
+      seasonScores.set(playerId, { playerId, seasonScore, matchups, totalGames, firstGamePlayedAt });
     }
 
     this.leaderboard = Array.from(seasonScores.values()).sort((a, b) => {
@@ -62,7 +74,11 @@ export class Season {
         return a.matchups.size - b.matchups.size;
       }
       // Second tiebreaker: more total games = higher rank (descending)
-      return b.totalGames - a.totalGames;
+      if (b.totalGames !== a.totalGames) {
+        return b.totalGames - a.totalGames;
+      }
+      // Third tiebreaker: earlier first game = higher rank (ascending)
+      return a.firstGamePlayedAt - b.firstGamePlayedAt;
     });
 
     return this.leaderboard;
@@ -92,7 +108,7 @@ export class Season {
         game.winner,
         game.loser,
         winnerPerformance,
-        game
+        game,
       );
       if (winnerImprovement) {
         improvements.push(winnerImprovement);
@@ -104,7 +120,7 @@ export class Season {
         game.loser,
         game.winner,
         loserPerformance,
-        game
+        game,
       );
       if (loserImprovement) {
         improvements.push(loserImprovement);
@@ -129,7 +145,7 @@ export class Season {
     playerId: string,
     opponentId: string,
     performance: number,
-    game: Game
+    game: Game,
   ): TimelineEntry["improvements"][number] | null {
     if (!playerMatchups.has(playerId)) {
       playerMatchups.set(playerId, new Map());
@@ -179,7 +195,7 @@ export class Season {
     }
 
     // Average the three components
-    return (winPerformance + setsPerformance + ballsPerformance) / 3;
+    return winPerformance / 4 + setsPerformance / 4 + ballsPerformance / 2;
   }
 
   private calculateTotalBalls(setPoints: { gameWinner: number; gameLoser: number }[]): {

@@ -119,12 +119,12 @@ export class WebSocketClientManager {
     };
 
     socket.onclose = () => {
-      console.log("Closed connection", connectionId);
+      // console.log("Closed connection", connectionId);
       this.removeClient(connectionId);
     };
 
     socket.onerror = () => {
-      console.log("❌ Error on connection", connectionId);
+      // console.log("❌ Error on connection", connectionId);
       socket.close();
     };
     return socket;

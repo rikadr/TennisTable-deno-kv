@@ -33,27 +33,20 @@ export const GenerateMockData: React.FC = () => {
 };
 
 function generate() {
-  const mockPlayers: MockPlayer[] = [
-    { name: "Alexander", skillLevel: 1.52, gameProbability: 0.3 },
-    { name: "Fooa", skillLevel: 1.35, gameProbability: 0.5 },
-    { name: "Rasmus", skillLevel: 1.34, gameProbability: 0.55 },
-    { name: "Christoffer", skillLevel: 1.29, gameProbability: 0.12 },
-    { name: "Oskar", skillLevel: 1.27, gameProbability: 0.55 },
-    { name: "Erling", skillLevel: 1.13, gameProbability: 0.4 },
-    { name: "Marius", skillLevel: 1.11, gameProbability: 0.2 },
-    { name: "Simone", skillLevel: 1.11, gameProbability: 0.75 },
-    { name: "Peder", skillLevel: 1.03, gameProbability: 0.6 },
-    { name: "Anders", skillLevel: 1.03, gameProbability: 0.18 },
-    { name: "Gustas", skillLevel: 0.98, gameProbability: 0.09 },
-    { name: "Rikard", skillLevel: 0.91, gameProbability: 0.9 },
-    { name: "Ole", skillLevel: 0.89, gameProbability: 0.55 },
-    { name: "Fredrik", skillLevel: 0.88, gameProbability: 0.3 },
-    { name: "Axel", skillLevel: 0.78, gameProbability: 0.16 },
-    { name: "Bendik", skillLevel: 0.71, gameProbability: 0.5 },
-    { name: "Sveinung", skillLevel: 0.68, gameProbability: 0.11 },
-    { name: "Francesco", skillLevel: 0.48, gameProbability: 0.15 },
-    { name: "Daniel", skillLevel: 0.45, gameProbability: 0.5 },
-  ];
-  const events = new CreateMockData(mockPlayers, 365).generate();
+  const mockPlayers: MockPlayer[] = [];
+  let playerIndex = 0;
+
+  for (let skill = 0.1; skill <= 0.5 && playerIndex < 100; skill = Math.round((skill + 0.1) * 10) / 10) {
+    for (let prob = 0.1; prob <= 0.4 && playerIndex < 100; prob = Math.round((prob + 0.1) * 10) / 10) {
+      mockPlayers.push({
+        name: `Player-S${skill}-P${prob}`,
+        skillLevel: skill,
+        gameProbability: prob,
+      });
+      playerIndex++;
+    }
+  }
+
+  const events = new CreateMockData(mockPlayers, 500).generate();
   return events;
 }

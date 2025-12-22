@@ -49,7 +49,7 @@ export class CreateMockData {
     // Use a sigmoid-like function to convert skill difference to win probability
     // This ensures the probability is always between 0 and 1
     // When skills are equal, probability is 0.5
-    // The multiplier (5) controls how quickly probability changes with skill difference
+    // The multiplier controls how quickly probability changes with skill difference
     return 1 / (1 + Math.exp(-0.9 * skillDiff));
   }
 

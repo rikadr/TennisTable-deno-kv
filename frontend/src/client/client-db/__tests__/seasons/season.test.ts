@@ -100,7 +100,7 @@ describe("Season Class Tests", () => {
       // Total games across all seasons should equal total games created
       const totalGamesInSeasons = seasons.reduce((sum, s) => sum + s.games.length, 0);
       expect(totalGamesInSeasons).toBe(2);
-      
+
       // Each season should have at least one game
       seasons.forEach((season) => {
         expect(season.games.length).toBeGreaterThan(0);
@@ -290,8 +290,52 @@ describe("Season Class Tests", () => {
       // Player with fewer matchups should rank higher if scores are similar
       const player1 = leaderboard.find((p) => p.playerId === "player-1")!;
       const player3 = leaderboard.find((p) => p.playerId === "player-3")!;
-      
+
       expect(player1.matchups.size).toBeLessThan(player3.matchups.size);
+    });
+
+    it("should tie break using earliest first game played", () => {
+      const events: EventType[] = [
+        ...baseEvents,
+        // Player 1 first game at 4000
+        {
+          time: 4000,
+          stream: "game-1",
+          type: EventTypeEnum.GAME_CREATED,
+          data: {
+            playedAt: 4000,
+            winner: "player-1",
+            loser: "player-2",
+          },
+        },
+        // Player 3 first game at 3000 (Earlier)
+        {
+          time: 3000,
+          stream: "game-2",
+          type: EventTypeEnum.GAME_CREATED,
+          data: {
+            playedAt: 3000, // Earlier than player-1
+            winner: "player-3",
+            loser: "player-4",
+          },
+        },
+      ];
+
+      tennisTable = new TennisTable({ events });
+      const seasons = tennisTable.seasons.getSeasons();
+      const season = seasons[0];
+      const leaderboard = season.getLeaderboard();
+
+      // Both should have same score (win without details -> 25)
+      // Same matchups (1)
+      // Same total games (1)
+      // Tie breaker: First game played. Player 3 (3000) < Player 1 (4000).
+
+      const p1Index = leaderboard.findIndex((p) => p.playerId === "player-1");
+      const p3Index = leaderboard.findIndex((p) => p.playerId === "player-3");
+
+      expect(p3Index).toBeLessThan(p1Index);
+      expect(leaderboard[0].playerId).toBe("player-3");
     });
   });
 
@@ -317,8 +361,8 @@ describe("Season Class Tests", () => {
       const leaderboard = season.getLeaderboard();
 
       const winner = leaderboard.find((p) => p.playerId === "player-1")!;
-      // Winner without score details should get 100/3 ≈ 33.33
-      expect(winner.seasonScore).toBeCloseTo(33.33, 1);
+      // Winner without score details should get 100/4 = 25
+      expect(winner.seasonScore).toBeCloseTo(25.0, 1);
     });
 
     it("should calculate performance with set scores", () => {
@@ -356,7 +400,7 @@ describe("Season Class Tests", () => {
 
       const winner = leaderboard.find((p) => p.playerId === "player-1")!;
       // With scores, performance should be higher than without
-      expect(winner.seasonScore).toBeGreaterThan(33.33);
+      expect(winner.seasonScore).toBeGreaterThan(25 + 25 * 0.66);
     });
 
     it("should update best performance when player improves", () => {
@@ -481,7 +525,7 @@ describe("Season Class Tests", () => {
 
       // Should have entries for both games
       expect(timeline.length).toBeGreaterThanOrEqual(2);
-      
+
       // Each entry should have improvements
       timeline.forEach((entry) => {
         expect(entry.improvements.length).toBeGreaterThan(0);
@@ -626,7 +670,7 @@ describe("Season Class Tests", () => {
       tennisTable = new TennisTable({ events });
       const seasons = tennisTable.seasons.getSeasons();
       const season = seasons[0];
-      
+
       const leaderboard1 = season.getLeaderboard();
       const leaderboard2 = season.getLeaderboard();
 

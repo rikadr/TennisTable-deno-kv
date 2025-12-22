@@ -135,8 +135,8 @@ export function SeasonPlayerPage() {
 
         <div className="grow" />
 
-        <Link 
-          to={`/season?seasonStart=${seasonStart}`} 
+        <Link
+          to={`/season?seasonStart=${seasonStart}`}
           className="inline-flex items-center gap-2 bg-secondary-background text-secondary-text hover:bg-secondary-background/80 px-4 py-2 rounded-lg font-medium transition-colors"
         >
           <span>←</span>
@@ -228,12 +228,12 @@ export function SeasonPlayerPage() {
                   <td className="px-4">
                     {breakdown ? (
                       <div className="flex gap-2 text-sm">
-                        Win: {fmtNum(breakdown.win / 3)}
+                        Win: {fmtNum(breakdown.win / 4)}
                         <span className={classNames(breakdown.hasSets && "opacity-50")}>
-                          Sets: {breakdown.hasSets ? fmtNum(breakdown.sets / 3) : <>{hasEnded ? "-" : "🚨"}</>}
+                          Sets: {breakdown.hasSets ? fmtNum(breakdown.sets / 4) : <>{hasEnded ? "-" : "🚨"}</>}
                         </span>
                         <span className={classNames(breakdown.hasBalls && "opacity-50")}>
-                          Balls: {breakdown.hasBalls ? fmtNum(breakdown.balls / 3) : <>{hasEnded ? "-" : "⚠️"}</>}
+                          Balls: {breakdown.hasBalls ? fmtNum(breakdown.balls / 2) : <>{hasEnded ? "-" : "⚠️"}</>}
                         </span>
                       </div>
                     ) : (
