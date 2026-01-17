@@ -37,7 +37,7 @@ export const PlayerPredictionsHistory = ({ playerId }: Props) => {
       });
     });
     return Array.from(opponentIds).sort((a, b) => context.playerName(a).localeCompare(context.playerName(b)));
-  }, [history, context]);
+  }, [history, context, leaderboard.rankedPlayers]);
 
   const historicalData = useMemo(() => {
     return history.map((entry) => {

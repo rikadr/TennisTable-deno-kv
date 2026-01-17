@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { ProfilePicture } from "./profile-picture";
 import { fmtNum } from "../../common/number-utils";

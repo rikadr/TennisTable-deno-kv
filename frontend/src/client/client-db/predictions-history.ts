@@ -1,4 +1,3 @@
-import { log } from "console";
 import { TennisTable } from "./tennis-table";
 
 export type Prediction = {
