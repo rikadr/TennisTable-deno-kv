@@ -10,9 +10,9 @@ import { PlayerPointsDistrubution } from "./player-points-distribution";
 import { PlayerGamesDistrubution } from "./player-games-distribution";
 import { relativeTimeString } from "../../common/date-utils";
 import { OponentsScores } from "./oponents-scores";
-import { PlayerPredictions } from "./player-predictions";
 import { session } from "../../services/auth";
 import { PlayerAchievements } from "./player-achievements";
+import { PlayerPredictionsPage } from "./player-predictions-page";
 
 type TabType = "overview" | "games" | "statistics" | "achievements" | "predictions";
 const tabs: { id: TabType; label: string }[] = [
@@ -35,7 +35,7 @@ export const PlayerPage: React.FC = () => {
   const pendingGames = context.tournaments.findAllPendingGamesByPlayer(playerId);
 
   const activeTab = (searchParams.get("tab") as TabType) || "overview";
-  
+
   const setActiveTab = (tab: TabType) => {
     setSearchParams((prev) => {
       const newParams = new URLSearchParams(prev);
@@ -328,7 +328,7 @@ export const PlayerPage: React.FC = () => {
           </div>
         )}
         {activeTab === "achievements" && playerId && <PlayerAchievements playerId={playerId} />}
-        {activeTab === "predictions" && playerId && <PlayerPredictions playerId={playerId} />}
+        {activeTab === "predictions" && playerId && <PlayerPredictionsPage playerId={playerId} />}
       </div>
     </div>
   );

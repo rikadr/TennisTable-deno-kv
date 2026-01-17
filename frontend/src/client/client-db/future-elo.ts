@@ -30,6 +30,17 @@ export class FutureElo {
     }
   }
 
+  calculatePlayerFractionsForGivenGames(games: Game[], time: number) {
+    this.reset();
+    this.setup(games);
+    // Calculate win fraction for all player pairings
+    for (const { p1, p2 } of this.playerPairings) {
+      this.getDirectFraction(p1, p2, time);
+      this.getOneLayerFraction(p1, p2, time);
+      this.getTwoLayerFraction(p1, p2, time);
+    }
+  }
+
   simulatedGamesForAGivenInputOfGames(games: Game[]) {
     this.reset();
     this.setup(games);
@@ -531,7 +542,7 @@ export class FutureElo {
     const age = Math.max(referenceTime - gameTime, 0);
     const ageInDays = age / (24 * 60 * 60 * 1000);
 
-    const halfLife = 60; // Days after which confidence is halved
+    const halfLife = 120; // Days after which confidence is halved
     const ageAdjustmentFactor = Math.pow(2, -ageInDays / halfLife);
 
     return confidence * ageAdjustmentFactor;

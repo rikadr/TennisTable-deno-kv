@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { ProfilePicture } from "./profile-picture";
 import { fmtNum } from "../../common/number-utils";
@@ -10,7 +10,7 @@ type Props = {
   playerId: string;
 };
 
-export const PlayerPredictions: React.FC<Props> = ({ playerId }) => {
+export const PlayerPredictionsList = ({ playerId }: Props) => {
   const [expandedPlayers, setExpandedPlayers] = useState(new Set());
   const togglePlayer = (playerName: string) => {
     setExpandedPlayers((prev) => {
@@ -62,7 +62,9 @@ export const PlayerPredictions: React.FC<Props> = ({ playerId }) => {
                 {isExpanded ? "▼" : "▶"}
                 <div className="sm:flex items-center gap-2">
                   <ProfilePicture playerId={oponentId} border={3} size={45} shape="rounded" linkToPlayer />
-                  <span className="text-md sm:text-xl font-semibold w-28 text-left">{context.playerName(oponentId)}</span>
+                  <span className="text-md sm:text-xl font-semibold w-28 text-left">
+                    {context.playerName(oponentId)}
+                  </span>
                 </div>
                 {/* Matchup Header */}
                 <div className="flex flex-wrap gap-2 items-baseline text-md">

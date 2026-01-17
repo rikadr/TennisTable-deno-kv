@@ -11,6 +11,7 @@ import { LeaderboardChanges } from "./leaderboard-changes";
 import { PlayerOponentDistribution } from "./playerOponentDistribution";
 import { Achievements } from "./achievements";
 import { Seasons } from "./seasons/seasons";
+import { PredictionsHistory } from "./predictions-history";
 
 export class TennisTable {
   // --------------------------------------------------------------------------
@@ -42,6 +43,7 @@ export class TennisTable {
   playerOponentDistribution: PlayerOponentDistribution;
   achievements: Achievements;
   seasons: Seasons;
+  predictionsHistory: PredictionsHistory;
 
   constructor(data: { events: EventType[] }) {
     this.events = data.events;
@@ -57,9 +59,10 @@ export class TennisTable {
     this.playerOponentDistribution = new PlayerOponentDistribution(this);
     this.achievements = new Achievements(this);
     this.seasons = new Seasons(this);
+    this.predictionsHistory = new PredictionsHistory(this);
   }
 
-  /** Returns list of active players */
+  /** Returns list of only active players */
   get players() {
     return this.eventStore.playersProjector.activePlayers;
   }
