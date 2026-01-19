@@ -47,8 +47,9 @@ export class PredictionsHistory {
     let lastTime = 0;
 
     for (const time of times) {
+      const periodStart = lastTime;
       const games = this.parent.games.filter((g) => g.playedAt <= time);
-      const gamesInPeriod = this.parent.games.filter((g) => g.playedAt > lastTime && g.playedAt <= time);
+      const gamesInPeriod = this.parent.games.filter((g) => g.playedAt > periodStart && g.playedAt <= time);
       const gamesPlayed = gamesInPeriod.filter((g) => g.winner === playerId || g.loser === playerId).length;
 
       this.parent.futureElo.calculatePlayerFractionsForGivenGames(games, time);
