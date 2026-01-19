@@ -3,6 +3,7 @@ import { TennisTable } from "./tennis-table";
 export type Prediction = {
   winChance: number;
   confidence: number;
+  gamesPlayedAgainst: number;
 };
 
 export type PredictionHistoryEntry = {
@@ -10,6 +11,7 @@ export type PredictionHistoryEntry = {
   overAllWinChance: number;
   overAllConfidence: number;
   oponents: Record<string, Prediction>;
+  gamesPlayed: number;
 };
 
 export class PredictionsHistory {
@@ -42,9 +44,13 @@ export class PredictionsHistory {
     times.push(endTime);
 
     const output: PredictionHistoryEntry[] = [];
+    let lastTime = 0;
 
     for (const time of times) {
       const games = this.parent.games.filter((g) => g.playedAt <= time);
+      const gamesInPeriod = this.parent.games.filter((g) => g.playedAt > lastTime && g.playedAt <= time);
+      const gamesPlayed = gamesInPeriod.filter((g) => g.winner === playerId || g.loser === playerId).length;
+
       this.parent.futureElo.calculatePlayerFractionsForGivenGames(games, time);
 
       const oponentsOutput: Record<string, Prediction> = {};
@@ -58,9 +64,14 @@ export class PredictionsHistory {
           return;
         }
 
+        const gamesPlayedAgainst = gamesInPeriod.filter(
+          (g) => (g.winner === playerId && g.loser === oponentId) || (g.winner === oponentId && g.loser === playerId),
+        ).length;
+
         oponentsOutput[oponentId] = {
           winChance: fraction.fraction,
           confidence: fraction.confidence,
+          gamesPlayedAgainst,
         };
       });
 
@@ -81,7 +92,10 @@ export class PredictionsHistory {
         overAllWinChance,
         overAllConfidence,
         oponents: oponentsOutput,
+        gamesPlayed,
       });
+
+      lastTime = time;
     }
 
     return output;

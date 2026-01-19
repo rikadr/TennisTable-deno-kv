@@ -43,15 +43,18 @@ export const PlayerPredictionsHistory = ({ playerId }: Props) => {
     return history.map((entry) => {
       let winChance = 0;
       let confidence = 0;
+      let gamesCount = 0;
 
       if (selectedTargetId === "overall") {
         winChance = entry.overAllWinChance;
         confidence = entry.overAllConfidence;
+        gamesCount = entry.gamesPlayed;
       } else {
         const prediction = entry.oponents[selectedTargetId];
         if (prediction) {
           winChance = prediction.winChance;
           confidence = prediction.confidence;
+          gamesCount = prediction.gamesPlayedAgainst;
         }
       }
 
@@ -65,6 +68,7 @@ export const PlayerPredictionsHistory = ({ playerId }: Props) => {
         name: isToday ? `Today ${timeStr}` : `${dateStr} ${timeStr}`,
         winChance: winChance * 100,
         confidence: confidence * 100,
+        gamesCount,
       };
     });
   }, [history, selectedTargetId]);
@@ -145,6 +149,7 @@ export const PlayerPredictionsHistory = ({ playerId }: Props) => {
               opacity={0.6}
             />
             <Tooltip content={<CustomTooltip selectedTargetId={selectedTargetId} />} />
+            <span id="recharts-tooltip-cursor" style={{ visibility: "hidden" }} />
             <ReferenceLine y={50} stroke="rgb(var(--color-primary-text))" strokeDasharray="3 3" opacity={0.2} />
             <Line
               type="monotone"
@@ -152,7 +157,23 @@ export const PlayerPredictionsHistory = ({ playerId }: Props) => {
               stroke="rgb(var(--color-primary-text))"
               strokeWidth={3}
               animationDuration={300}
-              dot={false}
+              dot={(props: any) => {
+                const { cx, cy, payload } = props;
+                if (payload.gamesCount > 0) {
+                  return (
+                    <circle
+                      key={`win-dot-${payload.time}`}
+                      cx={cx}
+                      cy={cy}
+                      r={4}
+                      fill="rgb(var(--color-primary-background))"
+                      stroke="rgb(var(--color-primary-text))"
+                      strokeWidth={2}
+                    />
+                  );
+                }
+                return <></>;
+              }}
             />
             <Line
               type="monotone"
@@ -160,7 +181,23 @@ export const PlayerPredictionsHistory = ({ playerId }: Props) => {
               stroke="#fb8c00"
               strokeWidth={2}
               strokeDasharray="5 5"
-              dot={false}
+              dot={(props: any) => {
+                const { cx, cy, payload } = props;
+                if (payload.gamesCount > 0) {
+                  return (
+                    <circle
+                      key={`conf-dot-${payload.time}`}
+                      cx={cx}
+                      cy={cy}
+                      r={2.5}
+                      fill="rgb(var(--color-primary-background))"
+                      stroke="#fb8c00"
+                      strokeWidth={1.5}
+                    />
+                  );
+                }
+                return <></>;
+              }}
               animationDuration={300}
               opacity={0.6}
             />
@@ -181,6 +218,7 @@ const CustomTooltip = ({
     const data = payload[0].payload;
     const winChance = payload.find((p) => p.dataKey === "winChance")?.value as number;
     const confidence = payload.find((p) => p.dataKey === "confidence")?.value as number;
+    const gamesCount = data.gamesCount as number;
 
     const targetName = selectedTargetId === "overall" ? "Overall" : `vs ${context.playerName(selectedTargetId)}`;
 
@@ -209,6 +247,15 @@ const CustomTooltip = ({
             </div>
             <span className="text-primary-text/80 font-semibold text-[11px]">{confidence.toFixed(1)}%</span>
           </div>
+
+          {gamesCount > 0 && (
+            <div className="flex items-center justify-between gap-3 pt-1 border-t border-primary-text/5 mt-0.5">
+              <span className="text-primary-text/50 text-[10px]">Games played</span>
+              <span className="text-primary-text font-bold text-[10px] bg-white/10 px-1.5 rounded-full">
+                {gamesCount}
+              </span>
+            </div>
+          )}
         </div>
       </div>
     );
