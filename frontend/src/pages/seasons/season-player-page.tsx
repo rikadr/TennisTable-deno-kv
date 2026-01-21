@@ -5,7 +5,6 @@ import { fmtNum } from "../../common/number-utils";
 import { useTennisParams } from "../../hooks/use-tennis-params";
 import { dateString } from "../player/player-achievements";
 import { relativeTimeString } from "../../common/date-utils";
-import { classNames } from "../../common/class-names";
 
 export function SeasonPlayerPage() {
   const context = useEventDbContext();
