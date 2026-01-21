@@ -83,6 +83,12 @@ export const PvPStats: React.FC<Props> = ({ player1, player2 }) => {
               <p className="text-center text-secondary-text/50">
                 At {fmtNum(combinedPrediction.confidence * 100)}% confidence
               </p>
+              <Link
+                to={`/player/${player1}?tab=predictions&predictionTab=history&compareWith=${player2}`}
+                className="block w-fit mx-auto mt-3 text-xs text-tertiary-text bg-tertiary-background hover:bg-tertiary-background/50 px-3 py-1.5 rounded-full transition-colors"
+              >
+                See prediction history
+              </Link>
             </>
           ) : (
             <p className="text-center">Both players must be ranked to generate a predicion</p>

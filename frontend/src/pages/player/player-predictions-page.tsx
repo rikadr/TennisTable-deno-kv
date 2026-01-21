@@ -1,7 +1,7 @@
-import { useState } from "react";
 import { PlayerPredictionsList } from "./player-predictions-list";
 import { PlayerPredictionsHistory } from "./players-predictions-history";
 import { classNames } from "../../common/class-names";
+import { useSearchParams } from "react-router-dom";
 
 type TabType = "details" | "history";
 const tabs: { id: TabType; label: string }[] = [
@@ -14,7 +14,16 @@ type Props = {
 };
 
 export const PlayerPredictionsPage = ({ playerId }: Props) => {
-  const [activeTab, setActiveTab] = useState<TabType>("details");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = (searchParams.get("predictionTab") as TabType) || "details";
+
+  const setActiveTab = (tab: TabType) => {
+    setSearchParams((prev) => {
+      const newParams = new URLSearchParams(prev);
+      newParams.set("predictionTab", tab);
+      return newParams;
+    });
+  };
 
   return (
     <div className="flex flex-col h-full sm:-mt-4 md:-mt-8">

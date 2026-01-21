@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import {
   CartesianGrid,
   Line,
@@ -13,6 +13,9 @@ import {
 import { NameType, ValueType } from "recharts/types/component/DefaultTooltipContent";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { relativeTimeString } from "../../common/date-utils";
+import { useSearchParams } from "react-router-dom";
+
+import { ProfilePicture } from "./profile-picture";
 
 type Props = {
   playerId: string;
@@ -20,7 +23,16 @@ type Props = {
 
 export const PlayerPredictionsHistory = ({ playerId }: Props) => {
   const context = useEventDbContext();
-  const [selectedTargetId, setSelectedTargetId] = useState<string>("overall");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const selectedTargetId = searchParams.get("compareWith") || "overall";
+
+  const setSelectedTargetId = (targetId: string) => {
+    setSearchParams((prev) => {
+      const newParams = new URLSearchParams(prev);
+      newParams.set("compareWith", targetId);
+      return newParams;
+    });
+  };
 
   const history = useMemo(
     () => context.predictionsHistory.getHistoryForPlayer(playerId),
@@ -107,7 +119,14 @@ export const PlayerPredictionsHistory = ({ playerId }: Props) => {
           </div>
         </div>
 
-        <div className="flex gap-4 text-[10px] md:text-[11px] font-semibold self-end md:self-auto border-t border-white/5 pt-2 md:pt-0 md:border-t-0">
+        <div className="flex items-center gap-4 text-[10px] md:text-[11px] font-semibold self-end md:self-auto border-t border-white/5 pt-2 md:pt-0 md:border-t-0">
+          {selectedTargetId !== "overall" && (
+            <div className="flex items-center gap-2 mr-2">
+              <ProfilePicture playerId={playerId} size={26} border={2} />
+              <span className="text-primary-text/50 text-[10px]">VS</span>
+              <ProfilePicture playerId={selectedTargetId} size={26} border={2} linkToPlayer />
+            </div>
+          )}
           <div className="flex items-center gap-1.5 text-blue-400/90 whitespace-nowrap">
             <div className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
             Win Chance
