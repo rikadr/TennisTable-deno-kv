@@ -27,15 +27,10 @@ export function SeasonPlayerPage() {
   const leaderboard = season.getLeaderboard();
   const playerStats = leaderboard.find((p) => p.playerId === playerId);
 
-  if (!playerStats) {
-    return (
-      <div className="p-6 text-primary-text">
-        {context.playerName(playerId)} has not participated in this season yet
-      </div>
-    );
-  }
+  const hasParticipated = !!playerStats;
+  const stats = playerStats || { seasonScore: 0, matchups: new Map<string, any>() };
 
-  const playerRank = leaderboard.findIndex((p) => p.playerId === playerId) + 1;
+  const playerRank = hasParticipated ? leaderboard.findIndex((p) => p.playerId === playerId) + 1 : "-";
 
   // Get all games for this player in this season
   const playerSeasonGames = season.games.filter((game) => game.winner === playerId || game.loser === playerId);
@@ -79,7 +74,7 @@ export function SeasonPlayerPage() {
   };
 
   // Build matchup data with performance breakdown
-  const matchupData = Array.from(playerStats.matchups.entries()).map(([opponentId, matchupStats]) => {
+  const matchupData = Array.from(stats.matchups.entries()).map(([opponentId, matchupStats]: [string, any]) => {
     const gamesWithOpponent = playerSeasonGames.filter(
       (game) => game.winner === opponentId || game.loser === opponentId,
     );
@@ -101,10 +96,10 @@ export function SeasonPlayerPage() {
 
   const sortedMatchups = [...matchupData].sort((a, b) => b.bestPerformance - a.bestPerformance);
 
-  const avgPerformance = playerStats.seasonScore / playerStats.matchups.size;
+  const avgPerformance = stats.matchups.size > 0 ? stats.seasonScore / stats.matchups.size : 0;
 
   // Get opponents not yet played
-  const playedOpponentIds = new Set(playerStats.matchups.keys());
+  const playedOpponentIds = new Set(stats.matchups.keys());
   const unplayedOpponents = context.players
     .filter((player) => player.id !== playerId && !playedOpponentIds.has(player.id))
     .sort((a, b) => context.playerName(a.id).localeCompare(context.playerName(b.id)));
@@ -144,6 +139,36 @@ export function SeasonPlayerPage() {
         </Link>
       </div>
 
+      {!hasParticipated && !hasEnded && (
+        <div className="mb-6 bg-blue-950/80 border border-blue-500/30 rounded-lg p-4">
+          <div className="flex items-start gap-3">
+            <span className="text-2xl">ℹ️</span>
+            <div className="flex-1">
+              <h3 className="text-blue-600 dark:text-blue-500 font-semibold mb-1">How Season Scoring Works</h3>
+              <div className="text-blue-700 dark:text-blue-400 text-sm space-y-2">
+                <span className="block">
+                  You earn up to <strong>100 points</strong> against each unique opponent. Only your{" "}
+                  <strong>best performing game</strong> against an opponent counts, so replaying the same opponent has
+                  diminishing returns unless you improve your score.
+                </span>
+                <span className="block mt-2">
+                  Score breakdown:
+                  <ul className="list-disc list-inside ml-2 mt-1">
+                    <li>Win: 25% (25 points)</li>
+                    <li>Sets won: 25% (up to 25 points)</li>
+                    <li>Points won: 50% (up to 50 points)</li>
+                  </ul>
+                </span>
+                <span className="block mt-2">
+                  Strategy: To get a high total score, play well to maximize points per match, and play against as many
+                  different opponents as possible!
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Missing Score Alert */}
       {hasMissingSetScore && !hasEnded && (
         <div className="mb-6 bg-red-950/80 border border-red-500/30 rounded-lg p-4">
@@ -152,7 +177,7 @@ export function SeasonPlayerPage() {
             <div className="flex-1">
               <h3 className="text-red-600 dark:text-red-500 font-semibold mb-1">Missing Important Score Data</h3>
               <p className="text-red-700 dark:text-red-400 text-sm">
-                Some of your best performance games are missing set scores! Add set score details to earn up to 33% more
+                Some of your best performance games are missing set scores! Add set score details to earn up to 25% more
                 points per matchup.
               </p>
             </div>
@@ -166,8 +191,8 @@ export function SeasonPlayerPage() {
             <div className="flex-1">
               <h3 className="text-yellow-600 dark:text-yellow-500 font-semibold mb-1">Maximize Your Season Score</h3>
               <p className="text-yellow-700 dark:text-yellow-400 text-sm">
-                You're missing out on potential points! Some of your best performance games don't have detailed ball
-                scores. Add the full score details to earn up to 33% more points per matchup.
+                You're missing out on potential points! Some of your best performance games don't have detailed points
+                scores. Add the full score details to earn up to 50% more points per matchup.
               </p>
             </div>
           </div>
@@ -185,11 +210,11 @@ export function SeasonPlayerPage() {
         </div>
         <div className="bg-secondary-background p-4 rounded-lg">
           <div className="text-sm">Season Score</div>
-          <div className="text-2xl font-bold">{fmtNum(playerStats.seasonScore)}</div>
+          <div className="text-2xl font-bold">{fmtNum(stats.seasonScore)}</div>
         </div>
         <div className="bg-secondary-background p-4 rounded-lg">
           <div className="text-sm">Unique Opponents</div>
-          <div className="text-2xl font-bold">{playerStats.matchups.size}</div>
+          <div className="text-2xl font-bold">{stats.matchups.size}</div>
         </div>
         <div className="bg-secondary-background p-4 rounded-lg">
           <div className="text-sm">Avg. Performance</div>
@@ -198,76 +223,101 @@ export function SeasonPlayerPage() {
       </div>
 
       {/* Matchups Table */}
-      <div className="bg-secondary-background text-secondary-text rounded-lg overflow-hidden mb-6">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-secondary-text/20 font-semibold">
-                <th className="text-left px-4 py-2">Opponent</th>
-                <th className="text-left px-4">Best Performance</th>
-                <th className="text-left px-4">Performance Breakdown</th>
-                <th className="text-left px-4">Game result</th>
-                <th className="text-left px-4">Played at</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sortedMatchups.map(({ opponentId, bestPerformance, playedAt, breakdown, bestGame }) => (
-                <tr key={opponentId} className="border-b border-secondary-text/10 hover:bg-primary-background/50">
-                  <td className="px-4">
-                    <Link
-                      to={`/season/player?seasonStart=${seasonStart}&playerId=${opponentId}`}
-                      className="hover:text-secondary-text font-medium"
-                    >
-                      <div className="flex items-center gap-3">
-                        <ProfilePicture playerId={opponentId} size={35} border={3} shape="rounded" />
-                        {context.playerName(opponentId)}
-                      </div>
-                    </Link>
-                  </td>
-                  <td className="px-4 font-medium">{fmtNum(bestPerformance)}</td>
-                  <td className="px-4">
-                    {breakdown ? (
-                      <div className="flex gap-2 text-sm">
-                        Win: {fmtNum(breakdown.win / 4)}
-                        <span className={classNames(breakdown.hasSets && "opacity-50")}>
-                          Sets: {breakdown.hasSets ? fmtNum(breakdown.sets / 4) : <>{hasEnded ? "-" : "🚨"}</>}
-                        </span>
-                        <span className={classNames(breakdown.hasBalls && "opacity-50")}>
-                          Balls: {breakdown.hasBalls ? fmtNum(breakdown.balls / 2) : <>{hasEnded ? "-" : "⚠️"}</>}
-                        </span>
-                      </div>
-                    ) : (
-                      <span className="text-sm">—</span>
-                    )}
-                  </td>
-                  <td className="p-1 md:flex items-baseline gap-3">
-                    {bestGame.score && (
-                      <div className="font-medium">
-                        {bestGame.winner === playerId
-                          ? `${bestGame.score?.setsWon.gameWinner} - ${bestGame.score?.setsWon.gameLoser}`
-                          : `${bestGame.score?.setsWon.gameLoser} - ${bestGame.score?.setsWon.gameWinner}`}
-                      </div>
-                    )}
-                    {bestGame.score?.setPoints && (
-                      <div className="font-light italic text-xs">
-                        {bestGame.winner === playerId
-                          ? bestGame.score.setPoints.map((set) => `${set.gameWinner}-${set.gameLoser}`).join(", ")
-                          : bestGame.score.setPoints.map((set) => `${set.gameLoser}-${set.gameWinner}`).join(", ")}
-                      </div>
-                    )}
-                    {!bestGame.score?.setsWon && !bestGame.score?.setPoints && (
-                      <p>{bestGame.winner === playerId ? "Won - no score" : "Lost - no score"}</p>
-                    )}
-                  </td>
-                  <td className="px-4 text-sm min-w-64">
-                    {dateString(playedAt)} - {relativeTimeString(new Date(playedAt))}
-                  </td>
+      {sortedMatchups.length > 0 && (
+        <div className="bg-secondary-background text-secondary-text rounded-lg overflow-hidden mb-6">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-secondary-text/20 font-semibold">
+                  <th className="text-left px-4 py-2">Opponent</th>
+                  <th className="text-left px-4">Best Performance</th>
+                  <th className="text-left px-4">Performance Breakdown</th>
+                  <th className="text-left px-4">Game result</th>
+                  <th className="text-left px-4">Played at</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {sortedMatchups.map(({ opponentId, bestPerformance, playedAt, breakdown, bestGame }) => (
+                  <tr key={opponentId} className="border-b border-secondary-text/10 hover:bg-primary-background/50">
+                    <td className="px-4">
+                      <Link
+                        to={`/season/player?seasonStart=${seasonStart}&playerId=${opponentId}`}
+                        className="hover:text-secondary-text font-medium"
+                      >
+                        <div className="flex items-center gap-3">
+                          <ProfilePicture playerId={opponentId} size={35} border={3} shape="rounded" />
+                          {context.playerName(opponentId)}
+                        </div>
+                      </Link>
+                    </td>
+                    <td className="px-4 font-medium">{fmtNum(bestPerformance)}</td>
+                    <td className="px-4">
+                      {breakdown ? (
+                        <div className="flex gap-2 text-sm">
+                          <span title="Win gives 25% of points">
+                            Win: {fmtNum(breakdown.win / 4)}
+                            <span className="opacity-50">/25</span>
+                          </span>
+                          <span
+                            title="Set scores give 25% of points"
+                          >
+                            Sets:{" "}
+                            {breakdown.hasSets ? (
+                              <>
+                                {fmtNum(breakdown.sets / 4)}
+                                <span className="opacity-50">/25</span>
+                              </>
+                            ) : (
+                              <>{hasEnded ? "-" : "🚨"}</>
+                            )}
+                          </span>
+                          <span
+                            title="Ball scores give 50% of points"
+                          >
+                            Points:{" "}
+                            {breakdown.hasBalls ? (
+                              <>
+                                {fmtNum(breakdown.balls / 2)}
+                                <span className="opacity-50">/50</span>
+                              </>
+                            ) : (
+                              <>{hasEnded ? "-" : "⚠️"}</>
+                            )}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-sm">—</span>
+                      )}
+                    </td>
+                    <td className="p-1 md:flex items-baseline gap-3">
+                      {bestGame.score && (
+                        <div className="font-medium">
+                          {bestGame.winner === playerId
+                            ? `${bestGame.score?.setsWon.gameWinner} - ${bestGame.score?.setsWon.gameLoser}`
+                            : `${bestGame.score?.setsWon.gameLoser} - ${bestGame.score?.setsWon.gameWinner}`}
+                        </div>
+                      )}
+                      {bestGame.score?.setPoints && (
+                        <div className="font-light italic text-xs">
+                          {bestGame.winner === playerId
+                            ? bestGame.score.setPoints.map((set) => `${set.gameWinner}-${set.gameLoser}`).join(", ")
+                            : bestGame.score.setPoints.map((set) => `${set.gameLoser}-${set.gameWinner}`).join(", ")}
+                        </div>
+                      )}
+                      {!bestGame.score?.setsWon && !bestGame.score?.setPoints && (
+                        <p>{bestGame.winner === playerId ? "Won - no score" : "Lost - no score"}</p>
+                      )}
+                    </td>
+                    <td className="px-4 text-sm min-w-64">
+                      {dateString(playedAt)} - {relativeTimeString(new Date(playedAt))}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Unplayed Opponents */}
       {unplayedOpponents.length > 0 && !hasEnded && (
