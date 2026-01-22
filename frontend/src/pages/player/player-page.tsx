@@ -13,9 +13,10 @@ import { session } from "../../services/auth";
 import { PlayerAchievements } from "./player-achievements";
 import { PlayerPredictionsPage } from "./player-predictions-page";
 
-type TabType = "overview" | "games" | "statistics" | "achievements" | "predictions";
+type TabType = "overview" | "games" | "statistics" | "achievements" | "predictions" | "season";
 const tabs: { id: TabType; label: string }[] = [
   { id: "overview", label: "Overview" },
+  { id: "season", label: "Current Season" },
   { id: "games", label: "Recent Games" },
   { id: "statistics", label: "Statistics" },
   { id: "achievements", label: "Achievements" },
@@ -32,6 +33,14 @@ export const PlayerPage: React.FC = () => {
   const leaderboard = context.leaderboard.getLeaderboard();
   const playerInLeaderBoard = leaderboard.rankedPlayers.find((p) => p.id === playerId);
   const pendingGames = context.tournaments.findAllPendingGamesByPlayer(playerId);
+
+  const seasons = context.seasons.getSeasons();
+  const currentSeason = seasons.find((s) => Date.now() >= s.start && Date.now() <= s.end);
+  const currentSeasonLeaderboard = currentSeason?.getLeaderboard();
+  const playerSeasonStats = currentSeasonLeaderboard?.find((p) => p.playerId === playerId);
+  const playerSeasonRank = playerSeasonStats
+    ? currentSeasonLeaderboard!.findIndex((p) => p.playerId === playerId) + 1
+    : undefined;
 
   const activeTab = (searchParams.get("tab") as TabType) || "overview";
 
@@ -64,21 +73,28 @@ export const PlayerPage: React.FC = () => {
           <div className="flex-1 flex flex-col gap-2 text-secondary-text sm:flex-row sm:justify-between">
             <div>
               <h1 className="text-3xl xs:text-4xl sm:text-5xl font-bold mb-1">{context.playerName(playerId)}</h1>
-              {summary.isRanked ? (
-                <div className="text-base">
-                  🏆 Rank {fmtNum(summary.rank)} of {fmtNum(leaderboard.rankedPlayers.length)}
-                </div>
-              ) : (
-                <div className="text-base">
-                  <p>Not yet ranked.</p>
-                  <p>
-                    <span className="font-bold">
-                      {fmtNum(summary.games.length)} of {fmtNum(context.client.gameLimitForRanked)}
-                    </span>{" "}
-                    required games played.
-                  </p>
-                </div>
-              )}
+              <div className="text-base space-y-1">
+                {summary.isRanked ? (
+                  <div>
+                    🏆 Overall Rank {fmtNum(summary.rank)} of {fmtNum(leaderboard.rankedPlayers.length)}
+                  </div>
+                ) : (
+                  <div>
+                    <p>Not yet ranked overall.</p>
+                    <p>
+                      <span className="font-bold">
+                        {fmtNum(summary.games.length)} of {fmtNum(context.client.gameLimitForRanked)}
+                      </span>{" "}
+                      required games played.
+                    </p>
+                  </div>
+                )}
+                {playerSeasonRank && (
+                  <div className="text-secondary-text">
+                    🍁 Season Rank {fmtNum(playerSeasonRank)} of {fmtNum(currentSeasonLeaderboard!.length)}
+                  </div>
+                )}
+              </div>
             </div>
             <p className="text-2xl md:text-3xl font-bold">
               {fmtNum(summary.elo)} <span className="text-base font-light">points</span>
@@ -88,8 +104,8 @@ export const PlayerPage: React.FC = () => {
       </div>
 
       {/* Tabs Navigation */}
-      <div className="bg-secondary-background  px-6 md:px-8">
-        <div className="flex space-x-2 overflow-auto">
+      <div className="bg-secondary-background px-6 md:px-8">
+        <div className="flex space-x-2 overflow-x-auto flex-nowrap scrollbar-hide">
           {tabs
             .filter((t) => {
               switch (t.id) {
@@ -97,17 +113,30 @@ export const PlayerPage: React.FC = () => {
                   return summary.games.length > 0;
                 case "predictions":
                   return summary.isRanked;
+                case "season":
+                  return !!playerSeasonRank;
                 default:
                   return true;
               }
             })
             .map((tab) => {
+              if (tab.id === "season") {
+                return (
+                  <Link
+                    key={tab.id}
+                    to={`/season/player?seasonStart=${currentSeason?.start}&playerId=${playerId}`}
+                    className="flex items-center py-2 px-4 border-b-4 font-medium text-sm transition-colors shrink-0 whitespace-nowrap text-secondary-text/80 border-transparent hover:text-secondary-text hover:border-secondary-text border-dotted"
+                  >
+                    {tab.label}
+                  </Link>
+                );
+              }
               return (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
                   className={`
-                    flex items-center py-2 px-4 border-b-4 font-medium text-sm transition-colors
+                    flex items-center py-2 px-4 border-b-4 font-medium text-sm transition-colors shrink-0 whitespace-nowrap
                     ${
                       activeTab === tab.id
                         ? "text-secondary-text border-secondary-text"

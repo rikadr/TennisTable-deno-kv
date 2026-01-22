@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { RelativeTime } from "../../common/date-utils";
@@ -6,12 +7,40 @@ import { Game } from "../../client/client-db/event-store/projectors/games-projec
 
 const GAMES_COUNT = 5;
 
-export const RecentGames: React.FC = () => {
+type Props = {
+  view?: "overall" | "season";
+};
+
+export const RecentGames: React.FC<Props> = ({ view = "overall" }) => {
   const context = useEventDbContext();
   const leaderboardMap = context.leaderboard.getCachedLeaderboardMap();
-  const lastGames = context.games.toReversed().slice(0, GAMES_COUNT + 1);
+
+  const seasons = context.seasons.getSeasons();
+  const currentSeason = seasons.find((s) => Date.now() >= s.start && Date.now() <= s.end);
+
+  const seasonTimeline = useMemo(() => {
+    if (view === "season" && currentSeason) {
+      return currentSeason.getTimeline().timeline;
+    }
+    return undefined;
+  }, [view, currentSeason]);
+
+  let displayGames = context.games;
+  if (view === "season" && currentSeason) {
+    displayGames = currentSeason.games;
+  }
+
+  const lastGames = displayGames.toReversed().slice(0, GAMES_COUNT + 1);
 
   function getGame(game: Game) {
+    if (view === "season") {
+      if (!currentSeason) return undefined;
+      const entry = seasonTimeline?.find((e) => e.time === game.playedAt);
+      const imp = entry?.improvements.find((i) => i.playerId === game.winner);
+      const pointsDiff = imp ? imp.improvement : 0;
+      return { ...game, pointsDiff };
+    }
+
     const winner = leaderboardMap.get(game.winner);
     const loser = leaderboardMap.get(game.loser);
     if (!winner || !loser) {
@@ -41,7 +70,7 @@ export const RecentGames: React.FC = () => {
             >
               <div className="w-24 font-normal whitespace-nowrap">🏆 {context.playerName(game?.winner)}</div>
               <div className="w-32 text-right font-normal whitespace-nowrap">{context.playerName(game?.loser)} 💔</div>
-              <div className="w-6 text-right">{fmtNum(game!.pointsDiff, { digits: 0 })}</div>
+              <div className="w-6 text-right">{fmtNum(game!.pointsDiff, { digits: view === 'season' ? 1 : 0 })}</div>
               <div className="w-28 text-right text-base">
                 <RelativeTime date={new Date(game!.playedAt)} />
               </div>
