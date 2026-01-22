@@ -10,13 +10,14 @@ import easterBunny from "../../img/easter/easter-bunny-realistic.png";
 import { getEgg, getPumpkin } from "./themed-place-number";
 import { RecentLeaderBoardChanges } from "./recent-leaderboard-changes";
 import { fmtNum } from "../../common/number-utils";
+import { classNames } from "../../common/class-names";
 
 type LeaderboardView = "overall" | "season";
 
 export const LeaderBoard: React.FC = () => {
   const context = useEventDbContext();
   const leaderboard = context.leaderboard.getLeaderboard();
-  const [view] = useState<LeaderboardView>("overall");
+  const [view, setView] = useState<LeaderboardView>("overall");
 
   const client = getClientConfig();
   const theme = themeOrOverrideTheme(client.theme);
@@ -36,9 +37,16 @@ export const LeaderBoard: React.FC = () => {
   const seasonParticipantIds = new Set(seasonLeaderboard.map((p) => p.playerId));
   const playersNotInSeason = context.players.filter((player) => !seasonParticipantIds.has(player.id));
 
-  const nr1 = leaderboard.rankedPlayers[0];
-  const nr2 = leaderboard.rankedPlayers[1];
-  const nr3 = leaderboard.rankedPlayers[2];
+  // Get top 3 based on current view
+  const nr1 = view === "season" && seasonLeaderboard[0]
+    ? context.leaderboard.getPlayerSummary(seasonLeaderboard[0].playerId)
+    : leaderboard.rankedPlayers[0];
+  const nr2 = view === "season" && seasonLeaderboard[1]
+    ? context.leaderboard.getPlayerSummary(seasonLeaderboard[1].playerId)
+    : leaderboard.rankedPlayers[1];
+  const nr3 = view === "season" && seasonLeaderboard[2]
+    ? context.leaderboard.getPlayerSummary(seasonLeaderboard[2].playerId)
+    : leaderboard.rankedPlayers[2];
 
   const themedPlaceNumber = (place: number) => {
     let themedImage: string | undefined = undefined;
@@ -70,7 +78,7 @@ export const LeaderBoard: React.FC = () => {
 
       <div className="bg-primary-background rounded-lg">
         {/* Toggle */}
-        {/* <div className="flex justify-center gap-2 p-4 border-b border-primary-text/20">
+        <div className="flex justify-center gap-2 p-4 border-b border-primary-text/20">
           <button
             onClick={() => setView("overall")}
             className={classNames(
@@ -91,9 +99,9 @@ export const LeaderBoard: React.FC = () => {
                 : "bg-primary-background text-primary-text ring-secondary-background hover:opacity-80",
             )}
           >
-            Season (WIP🛠️)
+            Current Season
           </button>
-        </div> */}
+        </div>
 
         {view === "overall" ? (
           <>
