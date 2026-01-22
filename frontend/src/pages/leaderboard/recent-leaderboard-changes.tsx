@@ -110,6 +110,12 @@ export const RecentLeaderBoardChanges: React.FC<Props> = ({ view }) => {
     }
   }, [view, context]);
 
+  const currentSeasonStart = useMemo(() => {
+    return view === "season" 
+      ? context.seasons.getSeasons().find(s => Date.now() >= s.start && Date.now() <= s.end)?.start 
+      : undefined;
+  }, [view, context.seasons]);
+
   if (leaderboardChanges.length === 0) {
     return null;
   }
@@ -126,8 +132,8 @@ export const RecentLeaderBoardChanges: React.FC<Props> = ({ view }) => {
         {leaderboardChanges.map((player) => (
           <Link
             key={player.playerId}
-            to={view === "season" 
-              ? `/season/player?seasonStart=${context.seasons.getSeasons().find(s => Date.now() >= s.start && Date.now() <= s.end)?.start}&playerId=${player.playerId}`
+            to={view === "season" && currentSeasonStart
+              ? `/season/player?seasonStart=${currentSeasonStart}&playerId=${player.playerId}`
               : `/player/${player.playerId}`
             }
             className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text py-1 px-2 flex gap-4 text-xl font-light"

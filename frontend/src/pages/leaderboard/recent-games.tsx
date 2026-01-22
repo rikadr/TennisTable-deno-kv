@@ -11,6 +11,10 @@ type Props = {
   view?: "overall" | "season";
 };
 
+type DisplayGame = Game & {
+  pointsDiff: number;
+};
+
 export const RecentGames: React.FC<Props> = ({ view = "overall" }) => {
   const context = useEventDbContext();
   const leaderboardMap = context.leaderboard.getCachedLeaderboardMap();
@@ -32,7 +36,7 @@ export const RecentGames: React.FC<Props> = ({ view = "overall" }) => {
 
   const lastGames = displayGames.toReversed().slice(0, GAMES_COUNT + 1);
 
-  function getGame(game: Game) {
+  function getGame(game: Game): DisplayGame | undefined {
     if (view === "season") {
       if (!currentSeason) return undefined;
       const entry = seasonTimeline?.find((e) => e.time === game.playedAt);
@@ -47,7 +51,7 @@ export const RecentGames: React.FC<Props> = ({ view = "overall" }) => {
       return undefined;
     }
     const foundGame = winner!.games.toReversed().find((g) => g.time === game.playedAt);
-    return { ...game, ...foundGame };
+    return { ...game, ...foundGame, pointsDiff: foundGame?.pointsDiff || 0 } as DisplayGame;
   }
 
   return (
@@ -61,18 +65,18 @@ export const RecentGames: React.FC<Props> = ({ view = "overall" }) => {
         </div>
         {lastGames
           .map(getGame)
-          .filter(Boolean)
+          .filter((g): g is DisplayGame => !!g)
           .map((game, index) => (
             <Link
               key={index}
-              to={`/1v1?player1=${game!.winner}&player2=${game!.loser}`}
+              to={`/1v1?player1=${game.winner}&player2=${game.loser}`}
               className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text py-1 px-2 flex gap-4 text-xl font-light"
             >
-              <div className="w-24 font-normal whitespace-nowrap">🏆 {context.playerName(game?.winner)}</div>
-              <div className="w-32 text-right font-normal whitespace-nowrap">{context.playerName(game?.loser)} 💔</div>
-              <div className="w-6 text-right">{fmtNum(game!.pointsDiff, { digits: view === 'season' ? 1 : 0 })}</div>
+              <div className="w-24 font-normal whitespace-nowrap">🏆 {context.playerName(game.winner)}</div>
+              <div className="w-32 text-right font-normal whitespace-nowrap">{context.playerName(game.loser)} 💔</div>
+              <div className="w-6 text-right">{fmtNum(game.pointsDiff, { digits: view === 'season' ? 1 : 0 })}</div>
               <div className="w-28 text-right text-base">
-                <RelativeTime date={new Date(game!.playedAt)} />
+                <RelativeTime date={new Date(game.playedAt)} />
               </div>
             </Link>
           ))}

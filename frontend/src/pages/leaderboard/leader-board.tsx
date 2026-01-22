@@ -16,11 +16,48 @@ import { useLocalStorage } from "../../hooks/use-local-storage";
 
 type LeaderboardView = "overall" | "season";
 
+const LeaderboardToggle = ({
+  className,
+  view,
+  setView,
+}: {
+  className?: string;
+  view: LeaderboardView;
+  setView: (v: LeaderboardView) => void;
+}) => (
+  <div className={classNames("flex justify-center gap-2 p-4", className)}>
+    <button
+      onClick={() => setView("overall")}
+      className={classNames(
+        "px-4 py-2 rounded text-sm font-medium transition-colors ring-1",
+        view === "overall"
+          ? "bg-secondary-background text-secondary-text ring-secondary-text"
+          : "bg-primary-background text-primary-text ring-secondary-background hover:opacity-80",
+      )}
+    >
+      Overall
+    </button>
+    <button
+      onClick={() => setView("season")}
+      className={classNames(
+        "px-4 py-2 rounded text-sm font-medium transition-colors ring-1",
+        view === "season"
+          ? "bg-secondary-background text-secondary-text ring-secondary-text"
+          : "bg-primary-background text-primary-text ring-secondary-background hover:opacity-80",
+      )}
+    >
+      Current Season
+    </button>
+  </div>
+);
+
 export const LeaderBoard: React.FC = () => {
   const context = useEventDbContext();
   const leaderboard = context.leaderboard.getLeaderboard();
   const [viewString, setViewString] = useLocalStorage("leaderboard_view", "overall");
-  const view = viewString as LeaderboardView;
+  
+  // Validate and cast view
+  const view: LeaderboardView = viewString === "season" ? "season" : "overall";
   const setView = (v: LeaderboardView) => setViewString(v);
 
   const client = getClientConfig();
@@ -58,33 +95,6 @@ export const LeaderBoard: React.FC = () => {
   const nr2Score = view === "season" && seasonLeaderboard[1] ? seasonLeaderboard[1].seasonScore : undefined;
   const nr3Score = view === "season" && seasonLeaderboard[2] ? seasonLeaderboard[2].seasonScore : undefined;
 
-  const LeaderboardToggle = ({ className }: { className?: string }) => (
-    <div className={classNames("flex justify-center gap-2 p-4", className)}>
-      <button
-        onClick={() => setView("overall")}
-        className={classNames(
-          "px-4 py-2 rounded text-sm font-medium transition-colors ring-1",
-          view === "overall"
-            ? "bg-secondary-background text-secondary-text ring-secondary-text"
-            : "bg-primary-background text-primary-text ring-secondary-background hover:opacity-80",
-        )}
-      >
-        Overall
-      </button>
-      <button
-        onClick={() => setView("season")}
-        className={classNames(
-          "px-4 py-2 rounded text-sm font-medium transition-colors ring-1",
-          view === "season"
-            ? "bg-secondary-background text-secondary-text ring-secondary-text"
-            : "bg-primary-background text-primary-text ring-secondary-background hover:opacity-80",
-        )}
-      >
-        Current Season
-      </button>
-    </div>
-  );
-
   const themedPlaceNumber = (place: number) => {
     let themedImage: string | undefined = undefined;
     if (theme === Theme.HALLOWEEN) {
@@ -106,7 +116,11 @@ export const LeaderBoard: React.FC = () => {
           <h1 className="text-2xl text-center text-primary-text my-2">
             {view === "season" ? "Season Leaderboard" : "Overall Leaderboard"}
           </h1>
-          <LeaderboardToggle className="md:hidden border-b border-primary-text/20 mb-2" />
+          <LeaderboardToggle
+            className="md:hidden border-b border-primary-text/20 mb-2"
+            view={view}
+            setView={setView}
+          />
           {nr1 && (
             <PodiumPlace
               size="default"
@@ -158,7 +172,11 @@ export const LeaderBoard: React.FC = () => {
 
       <div className="bg-primary-background rounded-lg">
         {/* Toggle (Desktop) */}
-        <LeaderboardToggle className="hidden md:flex border-b border-primary-text/20" />
+        <LeaderboardToggle
+          className="hidden md:flex border-b border-primary-text/20"
+          view={view}
+          setView={setView}
+        />
 
         {view === "overall" ? (
           <>

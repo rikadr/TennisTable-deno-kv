@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { ProfilePicture } from "../player/profile-picture";
@@ -8,8 +8,10 @@ import { RelativeTime } from "../../common/date-utils";
 export const RecentAchievements: React.FC = () => {
   const context = useEventDbContext();
   
-  // Ensure achievements are calculated
-  context.achievements.calculateAchievements();
+  useEffect(() => {
+    // Ensure achievements are calculated
+    context.achievements.calculateAchievements();
+  }, [context.achievements]);
 
   // Aggregate all achievements
   const allAchievements = Array.from(context.achievements.achievementMap.values())
