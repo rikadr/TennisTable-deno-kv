@@ -34,13 +34,15 @@ type Props = {
   size: "default" | "sm" | "xs";
   place?: number;
   profilePicture?: boolean;
+  score?: number;
+  to?: string;
 };
 
-export const PodiumPlace: React.FC<Props> = ({ playerSummary, place, size, profilePicture = false }) => {
+export const PodiumPlace: React.FC<Props> = ({ playerSummary, place, size, profilePicture = false, score, to }) => {
   const context = useEventDbContext();
   return (
     <Link
-      to={`/player/${playerSummary!.id}`}
+      to={to ?? `/player/${playerSummary!.id}`}
       className={classNames(
         "w-full p-2 rounded-lg flex space-x-4 h-20 bg-secondary-background hover:bg-secondary-background/70",
         cardHeight[size],
@@ -53,7 +55,9 @@ export const PodiumPlace: React.FC<Props> = ({ playerSummary, place, size, profi
         <h2 className={classNames("uppercase", nameTextSize[size])}>{context.playerName(playerSummary?.id)} </h2>
         <section className={classNames("flex space-x-4 font-medium", statsTextSize[size])}>
           <div>
-            {playerSummary
+            {score !== undefined
+              ? score.toLocaleString("no-NO", { maximumFractionDigits: 0 })
+              : playerSummary
               ? playerSummary.elo.toLocaleString("no-NO", {
                   maximumFractionDigits: 0,
                 })

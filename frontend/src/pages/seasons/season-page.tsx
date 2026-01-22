@@ -9,12 +9,14 @@ import { relativeTimeString } from "../../common/date-utils";
 import { SeasonLeaderboardBars } from "./season-leaderboard-bars";
 import { SeasonTimeline } from "./season-timeline";
 import { SeasonScoreLog } from "./season-score-log";
+import { SeasonFAQ } from "./season-faq";
 
 type SortKey = "score" | "playerPairings" | "avgPerformance";
 
-type TabType = "leaderboard" | "bar_chart" | "timeline" | "score_log";
+type TabType = "leaderboard" | "bar_chart" | "timeline" | "score_log" | "faq";
 const tabs: { id: TabType; label: string }[] = [
   { id: "leaderboard", label: "Leaderboard" },
+  { id: "faq", label: "How it works" },
   { id: "score_log", label: "Score Log" },
   { id: "timeline", label: "Timeline" },
   { id: "bar_chart", label: "Charts" },
@@ -46,6 +48,7 @@ export function SeasonPage() {
     return <div className="p-6 text-primary-text">Season not found for season start time: {seasonStart}</div>;
   }
 
+  const seasonNumber = context.seasons.getSeasons().indexOf(season) + 1;
   const leaderboard = season.getLeaderboard();
 
   const handleSort = (key: SortKey) => {
@@ -87,9 +90,9 @@ export function SeasonPage() {
   return (
     <div className="px-6 text-primary-text bg-primary-background">
       {/* Compact Header */}
-      <div className="bg-secondary-background text-secondary-text rounded-lg p-4 mb-4">
-        <h1 className="text-2xl font-bold mb-2">Season Leaderboard</h1>
-        <div className="flex flex-wrap items-center gap-3 text-sm">
+      <div className="bg-secondary-background text-secondary-text rounded-lg px-4 py-2 mb-2 flex justify-between items-center">
+        <h1 className="text-2xl font-bold">Season {seasonNumber}</h1>
+        <div className="flex flex-col items-end text-sm">
           <span className="font-medium">
             {dateString(Number(season.start))} → {dateString(Number(season.end))}
           </span>
@@ -104,14 +107,14 @@ export function SeasonPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex space-x-2 overflow-auto">
+      <div className="flex space-x-2 overflow-x-auto flex-nowrap scrollbar-hide">
         {tabs.map((tab) => {
           return (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={`
-                    flex items-center py-2 px-4 border-b-4 font-medium text-sm transition-colors
+                    flex items-center py-2 px-4 border-b-4 font-medium text-sm transition-colors shrink-0 whitespace-nowrap
                     ${
                       activeTab === tab.id
                         ? "text-secondary-text border-secondary-text"
@@ -127,6 +130,7 @@ export function SeasonPage() {
       {activeTab === "bar_chart" && <SeasonLeaderboardBars season={season} />}
       {activeTab === "timeline" && <SeasonTimeline season={season} />}
       {activeTab === "score_log" && <SeasonScoreLog season={season} />}
+      {activeTab === "faq" && <SeasonFAQ />}
       {activeTab === "leaderboard" && (
         <div className="bg-secondary-background rounded-lg overflow-hidden mt-4">
           <div className="overflow-x-auto">
@@ -156,31 +160,34 @@ export function SeasonPage() {
                 </tr>
               </thead>
               <tbody>
-                {sortedLeaderboard.map((player, i) => (
-                  <tr
-                    key={player.playerId}
-                    className="border-b border-secondary-text/10 text-secondary-text hover:bg-primary-background/50"
-                  >
-                    <td className="px-4">{i + 1}</td>
-                    <td className="px-4">
-                      <Link
-                        to={`/season/player?seasonStart=${seasonStart}&playerId=${player.playerId}`}
-                        className="font-medium"
-                      >
-                        <div className="flex items-center gap-3">
-                          <ProfilePicture playerId={player.playerId} size={35} border={3} shape="rounded" />
-                          {i === 0 && "🥇 "}
-                          {i === 1 && "🥈 "}
-                          {i === 2 && "🥉 "}
-                          {context.playerName(player.playerId)}
-                        </div>
-                      </Link>
-                    </td>
-                    <td className="px-4 font-medium">{fmtNum(player.seasonScore)}</td>
-                    <td className="px-4">{fmtNum(player.matchups.size)}</td>
-                    <td className="px-4">{fmtNum(player.seasonScore / player.matchups.size)}</td>
-                  </tr>
-                ))}
+                {sortedLeaderboard.map((player, i) => {
+                  const rank = leaderboard.findIndex((p) => p.playerId === player.playerId);
+                  return (
+                    <tr
+                      key={player.playerId}
+                      className="border-b border-secondary-text/10 text-secondary-text hover:bg-primary-background/50"
+                    >
+                      <td className="px-4">{rank + 1}</td>
+                      <td className="px-4">
+                        <Link
+                          to={`/season/player?seasonStart=${seasonStart}&playerId=${player.playerId}`}
+                          className="font-medium"
+                        >
+                          <div className="flex items-center gap-3">
+                            <ProfilePicture playerId={player.playerId} size={35} border={3} shape="rounded" />
+                            {rank === 0 && "🥇 "}
+                            {rank === 1 && "🥈 "}
+                            {rank === 2 && "🥉 "}
+                            {context.playerName(player.playerId)}
+                          </div>
+                        </Link>
+                      </td>
+                      <td className="px-4 font-medium">{fmtNum(player.seasonScore)}</td>
+                      <td className="px-4">{fmtNum(player.matchups.size)}</td>
+                      <td className="px-4">{fmtNum(player.seasonScore / player.matchups.size)}</td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

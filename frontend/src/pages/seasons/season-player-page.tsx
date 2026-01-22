@@ -138,36 +138,6 @@ export function SeasonPlayerPage() {
         </Link>
       </div>
 
-      {!hasParticipated && !hasEnded && (
-        <div className="mb-6 bg-blue-950/80 border border-blue-500/30 rounded-lg p-4">
-          <div className="flex items-start gap-3">
-            <span className="text-2xl">ℹ️</span>
-            <div className="flex-1">
-              <h3 className="text-blue-600 dark:text-blue-500 font-semibold mb-1">How Season Scoring Works</h3>
-              <div className="text-blue-700 dark:text-blue-400 text-sm space-y-2">
-                <span className="block">
-                  You earn up to <strong>100 points</strong> against each unique opponent. Only your{" "}
-                  <strong>best performing game</strong> against an opponent counts, so replaying the same opponent has
-                  diminishing returns unless you improve your score.
-                </span>
-                <span className="block mt-2">
-                  Score breakdown:
-                  <ul className="list-disc list-inside ml-2 mt-1">
-                    <li>Win: 25% (25 points)</li>
-                    <li>Sets won: 25% (up to 25 points)</li>
-                    <li>Points won: 50% (up to 50 points)</li>
-                  </ul>
-                </span>
-                <span className="block mt-2">
-                  Strategy: To get a high total score, play well to maximize points per match, and play against as many
-                  different opponents as possible!
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Missing Score Alert */}
       {hasMissingSetScore && !hasEnded && (
         <div className="mb-6 bg-red-950/80 border border-red-500/30 rounded-lg p-4">
@@ -324,16 +294,16 @@ export function SeasonPlayerPage() {
           <div className="px-4 py-2 border-b border-secondary-text/20">
             <h3 className="font-semibold">Opponents you have yet to play ({unplayedOpponents.length})</h3>
           </div>
-          <div className="p-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 md:gap-3">
+          <div className="p-2">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
               {unplayedOpponents.map((opponent) => (
                 <Link
                   key={opponent.id}
                   to={`/season/player?seasonStart=${seasonStart}&playerId=${opponent.id}`}
-                  className="flex items-center gap-3 p-2 rounded hover:bg-primary-background/50 transition-colors"
+                  className="flex items-center gap-2 p-1 rounded hover:bg-primary-background/50 transition-colors text-sm"
                 >
-                  <ProfilePicture playerId={opponent.id} size={32} border={2} />
-                  <span>{context.playerName(opponent.id)}</span>
+                  <ProfilePicture playerId={opponent.id} size={24} border={1} />
+                  <span className="truncate">{context.playerName(opponent.id)}</span>
                 </Link>
               ))}
             </div>

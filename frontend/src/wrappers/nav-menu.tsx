@@ -24,12 +24,12 @@ export const NavMenu: React.FC = () => {
   const renderMenuitems = () => {
     const items: { name: string; to: string }[] = [
       { name: "🥇 Leaderboard", to: "/leader-board" },
+      { name: "🍁 Seasons", to: "/season/list" },
       { name: "🏓  Add game", to: "/add-game" },
       { name: "👤  New player", to: "/add-player" },
       { name: "👥🥊 Compare 1v1", to: "/1v1" },
       { name: "📈 Compare all", to: "/compare-players" },
       { name: "🏆 Tournaments", to: "/tournament/list" },
-      // { name: "🍁 Seasons (WIP🛠️)", to: "/season/list" },
       { name: "🎖️ Achievements", to: "/achievements" },
       { name: "🤖 Simulations", to: "/simulations" },
       { name: "🔧 Settings", to: "/settings" },
@@ -47,11 +47,6 @@ export const NavMenu: React.FC = () => {
       </CloseButton>
     ));
     if (session.isAuthenticated) {
-      list.push(
-        <CloseButton key={list.length} as={Link} to="/season/list" className={menuItemWrapperClassNames}>
-          <p className={menuItemTextClassNames}>🍁 Seasons (WIP🛠️)</p>
-        </CloseButton>,
-      );
       list.push(
         <CloseButton key={list.length} as={Link} to="/me" className={menuItemWrapperClassNames}>
           <p className={menuItemTextClassNames}>My profile</p>
@@ -115,8 +110,8 @@ export const NavMenu: React.FC = () => {
         <Link to="/leader-board" className={classNames("whitespace-nowrap rounded-full select-none text-primary-text")}>
           {themedLogo()}
         </Link>
-        {renderMenuitems().slice(1, 2)}
-        <div className="md:flex hidden">{renderMenuitems().slice(2, 3)}</div>
+        {renderMenuitems().slice(2, 3)}
+        <div className="md:flex hidden">{renderMenuitems().slice(3, 4)}</div>
 
         <div className="grow md:block" />
 

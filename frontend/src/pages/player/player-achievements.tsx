@@ -178,15 +178,15 @@ export const PlayerAchievements: React.FC<Props> = ({ playerId }) => {
   return (
     <div className="flex flex-col h-full sm:-mt-4 md:-mt-8">
       {/* Tabs */}
-      <div className="bg-secondary-background  px-0">
-        <div className="flex space-x-2 overflow-auto">
+      <div className="bg-secondary-background px-0">
+        <div className="flex space-x-2 overflow-x-auto flex-nowrap scrollbar-hide">
           {tabs.map((tab) => {
             return (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={`
-                    flex items-center py-2 px-4 border-b-4 font-medium text-sm transition-colors
+                    flex items-center py-2 px-4 border-b-4 font-medium text-sm transition-colors shrink-0 whitespace-nowrap
                     ${
                       activeTab === tab.id
                         ? "text-secondary-text border-secondary-text"
