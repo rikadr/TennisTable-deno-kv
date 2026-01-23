@@ -7,6 +7,7 @@ export type Player = {
   active: boolean;
   createdAt: number;
   updatedAt: number;
+  deactivatedAt: number | null;
   updateAction?: string;
 };
 
@@ -36,6 +37,7 @@ export class PlyersProjector {
       active: true,
       createdAt: event.time,
       updatedAt: event.time,
+      deactivatedAt: null,
     };
     this.#playersMap.set(event.stream, player);
   }
@@ -60,6 +62,7 @@ export class PlyersProjector {
     if (player) {
       player.active = false;
       player.updatedAt = event.time;
+      player.deactivatedAt = event.time;
       player.updateAction = "Deactivated";
     }
   }
@@ -80,6 +83,7 @@ export class PlyersProjector {
     if (player) {
       player.active = true;
       player.updatedAt = event.time;
+      player.deactivatedAt = null;
       player.updateAction = "Re-activated";
     }
   }

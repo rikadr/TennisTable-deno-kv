@@ -1,25 +1,27 @@
 ---
 active: true
 iteration: 1
-max_iterations: 10
-started_at: "2026-01-23T18:15:25Z"
-completion_promise: "PARTICIPATION HONORED"
+max_iterations: 15
+started_at: "2026-01-24T00:25:25Z"
+completion_promise: "PEAK_RANK_1_INCREASED_TO_300"
 ---
 
-# Tournament Participation Honored - Completed
+# #1 Peak Rank Points Increase - Completed
 
-## Major Enhancements
-- **Participation-First Scoring:** Refined the Legacy Score to heavily value tournament participation as a foundational element of a player's legacy.
-    - Base participation reward increased from 5 to **50 points** per tournament.
-    - Added progression bonuses for deep runs (e.g., 300 total for Finals, 500 total for Wins).
-- **Tournament Regular Title:**
-    - New title "🏟️ Tournament Regular" automatically awarded to players with 5+ tournament participations.
-- **Improved Transparency:**
-    - Updated the "Legacy Breakdown" tab to explicitly highlight that participation itself contributes significantly to the score.
+## Improvements
+- **Increased #1 Reward:** Adjusted the top-tier point value for historical peak leaderboard position.
+- **Updated Scoring Tiers:**
+    - **#1 Rank:** 300 points (up from 200)
+    - **Top 3:** 100 points (unchanged)
+    - **Top 5:** 50 points (unchanged)
+    - **Top 10:** 25 points (unchanged)
+- **Updated Logic:**
+    - Modified `HallOfFame.ts` to apply the new 300-point reward for players who reached the absolute summit of the league.
+- **Updated UI:**
+    - Updated `HoFLegacyBreakdown.tsx` description to accurately state the new point value: `#1 (300)`.
 
-## Technical Details
-- Updated `HallOfFame.ts` scoring logic to use a base-participation model with round-specific increments.
-- Integrated the new title into the `getHallOfFame()` mapping logic.
-- Verified visual updates in the "Legacy Breakdown" tab.
+## Verification
+- **Code Review:** Confirmed the conditional point assignment in `HallOfFame.ts`.
+- **Build:** Verified successful compilation.
 
-<promise>PARTICIPATION HONORED</promise>
+<promise>PEAK_RANK_1_INCREASED_TO_300</promise>
