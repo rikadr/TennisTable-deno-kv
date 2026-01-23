@@ -29,13 +29,13 @@ const SeasonRow = ({
 }) => {
   let medal = null;
   let containerClassName =
-    "flex items-center justify-between p-4 bg-primary-background rounded-lg hover:bg-secondary-background/10 transition-colors cursor-pointer border border-transparent ring-1 ring-primary-text/10";
+    "flex flex-col sm:flex-row gap-4 sm:gap-0 sm:items-center sm:justify-between p-4 bg-primary-background rounded-lg hover:bg-secondary-background/10 transition-colors cursor-pointer border border-transparent ring-1 ring-primary-text/10";
 
   if (!isCurrent) {
     if (stats.rank === 1) {
       medal = "🥇";
       containerClassName =
-        "flex items-center justify-between p-4 bg-gradient-to-r from-yellow-500/20 to-primary-background rounded-lg hover:bg-secondary-background/10 transition-colors cursor-pointer border border-yellow-500/50 shadow-sm ring-1 ring-primary-text/10";
+        "flex flex-col sm:flex-row gap-4 sm:gap-0 sm:items-center sm:justify-between p-4 bg-gradient-to-r from-yellow-500/20 to-primary-background rounded-lg hover:bg-secondary-background/10 transition-colors cursor-pointer border border-yellow-500/50 shadow-sm ring-1 ring-primary-text/10";
     } else if (stats.rank === 2) {
       medal = "🥈";
     } else if (stats.rank === 3) {
@@ -52,8 +52,8 @@ const SeasonRow = ({
         </span>
       </div>
 
-      <div className="flex gap-4 md:gap-8 text-right">
-        <div className="flex flex-col items-end">
+      <div className="flex w-full sm:w-auto justify-between sm:justify-end gap-4 md:gap-8 text-right">
+        <div className="flex flex-col items-start sm:items-end">
           <span className="text-xs uppercase opacity-70">Rank</span>
           <span className="font-bold text-xl flex items-center">
             {medal && <span className="mr-2 text-2xl">{medal}</span>} #{stats.rank}{" "}

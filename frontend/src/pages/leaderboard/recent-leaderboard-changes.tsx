@@ -110,12 +110,6 @@ export const RecentLeaderBoardChanges: React.FC<Props> = ({ view }) => {
     }
   }, [view, context]);
 
-  const currentSeasonStart = useMemo(() => {
-    return view === "season" 
-      ? context.seasons.getSeasons().find(s => Date.now() >= s.start && Date.now() <= s.end)?.start 
-      : undefined;
-  }, [view, context.seasons]);
-
   if (leaderboardChanges.length === 0) {
     return null;
   }
@@ -152,7 +146,7 @@ export const RecentLeaderBoardChanges: React.FC<Props> = ({ view }) => {
           </Link>
         ))}
       </div>
-      {}
+      { }
     </div>
   );
 };
