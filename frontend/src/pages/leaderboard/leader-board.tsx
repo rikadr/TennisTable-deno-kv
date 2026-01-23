@@ -130,7 +130,7 @@ export const LeaderBoard: React.FC = () => {
               score={nr1Score}
               to={
                 view === "season" && currentSeason
-                  ? `/season/player?seasonStart=${currentSeason.start}&playerId=${nr1.id}`
+                  ? `/player/${nr1.id}?tab=season`
                   : undefined
               }
             />
@@ -144,7 +144,7 @@ export const LeaderBoard: React.FC = () => {
               score={nr2Score}
               to={
                 view === "season" && currentSeason
-                  ? `/season/player?seasonStart=${currentSeason.start}&playerId=${nr2.id}`
+                  ? `/player/${nr2.id}?tab=season`
                   : undefined
               }
             />
@@ -158,7 +158,7 @@ export const LeaderBoard: React.FC = () => {
               score={nr3Score}
               to={
                 view === "season" && currentSeason
-                  ? `/season/player?seasonStart=${currentSeason.start}&playerId=${nr3.id}`
+                  ? `/player/${nr3.id}?tab=season`
                   : undefined
               }
             />
@@ -271,7 +271,7 @@ export const LeaderBoard: React.FC = () => {
                   {seasonLeaderboard.map((player, index, list) => (
                     <Link
                       key={player.playerId}
-                      to={`/season/player?seasonStart=${currentSeason.start}&playerId=${player.playerId}`}
+                      to={`/player/${player.playerId}?tab=season`}
                       className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text py-1 px-2 flex items-center gap-4 text-xl font-light text-primary-text"
                     >
                       <div className="w-5 italic">{index + 1}</div>
@@ -296,7 +296,7 @@ export const LeaderBoard: React.FC = () => {
                   {playersNotInSeason.map((player) => (
                     <Link
                       key={player.id}
-                      to={`/season/player?seasonStart=${currentSeason.start}&playerId=${player.id}`}
+                      to={`/player/${player.id}?tab=season`}
                       className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text py-1 px-2 flex items-center gap-4 text-xl text-primary-text font-light"
                     >
                       <ProfilePicture playerId={player.id} size={28} border={2} />

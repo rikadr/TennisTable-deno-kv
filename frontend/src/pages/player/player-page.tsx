@@ -12,11 +12,12 @@ import { OponentsScores } from "./oponents-scores";
 import { session } from "../../services/auth";
 import { PlayerAchievements } from "./player-achievements";
 import { PlayerPredictionsPage } from "./player-predictions-page";
+import { PlayerSeasonStats } from "./player-season-stats";
 
 type TabType = "overview" | "games" | "statistics" | "achievements" | "predictions" | "season";
 const tabs: { id: TabType; label: string }[] = [
   { id: "overview", label: "Overview" },
-  { id: "season", label: "Current Season" },
+  { id: "season", label: "Seasons" },
   { id: "games", label: "Recent Games" },
   { id: "statistics", label: "Statistics" },
   { id: "achievements", label: "Achievements" },
@@ -41,6 +42,8 @@ export const PlayerPage: React.FC = () => {
   const playerSeasonRank = playerSeasonStats
     ? currentSeasonLeaderboard!.findIndex((p) => p.playerId === playerId) + 1
     : undefined;
+
+  const hasParticipatedInAnySeason = seasons.some((s) => s.getLeaderboard().some((p) => p.playerId === playerId));
 
   const activeTab = (searchParams.get("tab") as TabType) || "overview";
 
@@ -114,23 +117,13 @@ export const PlayerPage: React.FC = () => {
                 case "predictions":
                   return summary.isRanked;
                 case "season":
-                  return !!playerSeasonRank;
+                  // Show tab if player has participated in any season
+                  return hasParticipatedInAnySeason;
                 default:
                   return true;
               }
             })
             .map((tab) => {
-              if (tab.id === "season") {
-                return (
-                  <Link
-                    key={tab.id}
-                    to={`/season/player?seasonStart=${currentSeason?.start}&playerId=${playerId}`}
-                    className="flex items-center py-2 px-4 border-b-4 font-medium text-sm transition-colors shrink-0 whitespace-nowrap text-secondary-text/80 border-transparent hover:text-secondary-text hover:border-secondary-text border-dotted"
-                  >
-                    {tab.label}
-                  </Link>
-                );
-              }
               return (
                 <button
                   key={tab.id}
@@ -357,6 +350,7 @@ export const PlayerPage: React.FC = () => {
         )}
         {activeTab === "achievements" && playerId && <PlayerAchievements playerId={playerId} />}
         {activeTab === "predictions" && playerId && <PlayerPredictionsPage playerId={playerId} />}
+        {activeTab === "season" && playerId && <PlayerSeasonStats playerId={playerId} />}
       </div>
     </div>
   );

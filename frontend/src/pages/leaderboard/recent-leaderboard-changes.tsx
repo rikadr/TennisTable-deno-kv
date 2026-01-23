@@ -132,8 +132,8 @@ export const RecentLeaderBoardChanges: React.FC<Props> = ({ view }) => {
         {leaderboardChanges.map((player) => (
           <Link
             key={player.playerId}
-            to={view === "season" && currentSeasonStart
-              ? `/season/player?seasonStart=${currentSeasonStart}&playerId=${player.playerId}`
+            to={view === "season"
+              ? `/player/${player.playerId}?tab=season`
               : `/player/${player.playerId}`
             }
             className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text py-1 px-2 flex gap-4 text-xl font-light"

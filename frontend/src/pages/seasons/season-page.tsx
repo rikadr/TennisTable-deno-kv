@@ -117,8 +117,8 @@ export function SeasonPage() {
                     flex items-center py-2 px-4 border-b-4 font-medium text-sm transition-colors shrink-0 whitespace-nowrap
                     ${
                       activeTab === tab.id
-                        ? "text-secondary-text border-secondary-text"
-                        : "text-secondary-text/80 border-transparent hover:text-secondary-text hover:border-secondary-text border-dotted"
+                        ? "text-primary-text border-primary-text"
+                        : "text-primary-text/80 border-transparent hover:text-primary-text hover:border-primary-text border-dotted"
                     }
                   `}
             >

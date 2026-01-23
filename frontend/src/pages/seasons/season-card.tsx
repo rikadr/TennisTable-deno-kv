@@ -36,7 +36,7 @@ export const SeasonCard: React.FC<SeasonCardProps> = ({ season, index, totalSeas
       to={`/season?seasonStart=${start}`}
       className="block group"
     >
-      <div className="bg-secondary-background rounded-xl p-5 border border-primary-text/10 shadow-sm hover:shadow-md hover:border-primary-text/30 transition-all duration-200">
+      <div className="bg-secondary-background rounded-xl p-5 border border-primary-text/10 ring-1 ring-primary-text/20 shadow-sm hover:shadow-md hover:border-primary-text/30 transition-all duration-200">
         <div className="flex flex-col md:flex-row justify-between gap-4">
 
           {/* Left Side: Info */}
