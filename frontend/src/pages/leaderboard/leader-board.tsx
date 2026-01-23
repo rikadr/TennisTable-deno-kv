@@ -110,7 +110,7 @@ export const LeaderBoard: React.FC = () => {
 
   return (
     <div className="w-full px-4 flex flex-col justify-center items-center md:items-start gap-6 md:flex-row ">
-      <div className="w-full max-w-96 sm:w-96 flex flex-col gap-2 items-center">
+      <div className="w-full max-w-md md:w-[450px] flex flex-col gap-2 items-center">
         <TournamentHighlightsAndPendingGames />
         <div className="bg-primary-background rounded-lg w-full space-y-2">
           <h1 className="text-2xl text-center text-primary-text my-2">
@@ -165,7 +165,7 @@ export const LeaderBoard: React.FC = () => {
           )}
         </div>
         <RecentGames view={view} />
-        <RecentAchievements />
+        <RecentAchievements view={view} />
         <RecentLeaderBoardChanges view={view} />
         {theme === Theme.EASTER && <img src={easterBunny} alt="Easter bunny chick" />}
       </div>
@@ -274,7 +274,7 @@ export const LeaderBoard: React.FC = () => {
                       to={`/player/${player.playerId}?tab=season`}
                       className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text py-1 px-2 flex items-center gap-4 text-xl font-light text-primary-text"
                     >
-                      <div className="w-5 italic">{index + 1}</div>
+                      <div className="w-5 italic">{themedPlaceNumber(index + 1) ?? index + 1}</div>
                       <ProfilePicture playerId={player.playerId} size={28} border={2} />
                       <div className="w-28 font-normal whitespace-nowrap">{context.playerName(player.playerId)}</div>
                       <div className="w-12 text-right">{fmtNum(player.seasonScore)}</div>

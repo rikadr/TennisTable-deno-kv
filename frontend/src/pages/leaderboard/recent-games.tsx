@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { RelativeTime } from "../../common/date-utils";
 import { fmtNum } from "../../common/number-utils";
@@ -13,10 +13,12 @@ type Props = {
 
 type DisplayGame = Game & {
   pointsDiff: number;
+  loserPointsDiff?: number;
 };
 
 export const RecentGames: React.FC<Props> = ({ view = "overall" }) => {
   const context = useEventDbContext();
+  const navigate = useNavigate();
   const leaderboardMap = context.leaderboard.getCachedLeaderboardMap();
 
   const seasons = context.seasons.getSeasons();
@@ -40,9 +42,14 @@ export const RecentGames: React.FC<Props> = ({ view = "overall" }) => {
     if (view === "season") {
       if (!currentSeason) return undefined;
       const entry = seasonTimeline?.find((e) => e.time === game.playedAt);
-      const imp = entry?.improvements.find((i) => i.playerId === game.winner);
-      const pointsDiff = imp ? imp.improvement : 0;
-      return { ...game, pointsDiff };
+      
+      const winnerImp = entry?.improvements.find((i) => i.playerId === game.winner);
+      const loserImp = entry?.improvements.find((i) => i.playerId === game.loser);
+      
+      const pointsDiff = winnerImp ? winnerImp.improvement : 0;
+      const loserPointsDiff = loserImp ? loserImp.improvement : 0;
+      
+      return { ...game, pointsDiff, loserPointsDiff };
     }
 
     const winner = leaderboardMap.get(game.winner);
@@ -54,34 +61,67 @@ export const RecentGames: React.FC<Props> = ({ view = "overall" }) => {
     return { ...game, ...foundGame, pointsDiff: foundGame?.pointsDiff || 0 } as DisplayGame;
   }
 
+  const processedGames = lastGames
+    .map(getGame)
+    .filter((g): g is DisplayGame => !!g);
+
   return (
-    <div className="bg-primary-background rounded-lg ">
+    <div className="bg-primary-background rounded-lg w-full overflow-hidden">
       <h1 className="text-2xl text-center mb-4 mt-[27.5px] text-primary-text">Recent games</h1>
-      <div className="flex flex-col divide-y divide-primary-text/50 text-primary-text">
-        <div className="flex gap-4 text-base text-center mb-2">
-          <div className="w-24 pl-5">Winner</div>
-          <div className="w-32">Loser</div>
-          <div className="w-12 whitespace-nowrap -ml-2">Points won</div>
-        </div>
-        {lastGames
-          .map(getGame)
-          .filter((g): g is DisplayGame => !!g)
-          .map((game, index) => (
-            <Link
-              key={index}
-              to={`/1v1?player1=${game.winner}&player2=${game.loser}`}
-              className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text py-1 px-2 flex gap-4 text-xl font-light"
-            >
-              <div className="w-24 font-normal whitespace-nowrap">🏆 {context.playerName(game.winner)}</div>
-              <div className="w-32 text-right font-normal whitespace-nowrap">{context.playerName(game.loser)} 💔</div>
-              <div className="w-6 text-right">{fmtNum(game.pointsDiff, { digits: view === 'season' ? 1 : 0 })}</div>
-              <div className="w-28 text-right text-base">
-                <RelativeTime date={new Date(game.playedAt)} />
-              </div>
-            </Link>
-          ))}
-      </div>
-      {}
+      <table className="w-full text-primary-text border-collapse">
+        <tbody className="divide-y divide-primary-text/20">
+          {processedGames.map((game, index) => {
+            const rowClick = () => navigate(`/1v1?player1=${game.winner}&player2=${game.loser}`);
+            
+            if (view === "season") {
+              return (
+                <tr 
+                  key={index} 
+                  onClick={rowClick}
+                  className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text cursor-pointer transition-colors text-[10px] xs:text-lg md:text-xl font-light"
+                >
+                  <td className="py-1 px-2 whitespace-nowrap">
+                    <span className="font-normal">🏆 {context.playerName(game.winner)}</span>
+                  </td>
+                  <td className="py-1 px-1 text-right font-medium">
+                    {fmtNum(game.pointsDiff, { digits: 1 })}
+                  </td>
+                  <td className="py-1 px-2 text-right whitespace-nowrap">
+                    <span className="font-normal">{context.playerName(game.loser)} 💔</span>
+                  </td>
+                  <td className="py-1 px-1 text-right">
+                    {game.loserPointsDiff !== undefined ? fmtNum(game.loserPointsDiff, { digits: 1 }) : ""}
+                  </td>
+                  <td className="py-1 px-2 text-right text-[9px] xs:text-sm md:text-base whitespace-nowrap">
+                    <RelativeTime date={new Date(game.playedAt)} />
+                  </td>
+                </tr>
+              );
+            }
+
+            return (
+              <tr 
+                key={index} 
+                onClick={rowClick}
+                className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text cursor-pointer transition-colors text-[10px] xs:text-lg md:text-xl font-light"
+              >
+                <td className="py-1 px-2 whitespace-nowrap">
+                  <span className="font-normal">🏆 {context.playerName(game.winner)}</span>
+                </td>
+                <td className="py-1 px-2 text-right whitespace-nowrap">
+                  <span className="font-normal">{context.playerName(game.loser)} 💔</span>
+                </td>
+                <td className="py-1 px-2 text-right font-medium">
+                  +{fmtNum(game.pointsDiff, { digits: 0 })}
+                </td>
+                <td className="py-1 px-2 text-right text-[9px] xs:text-sm md:text-base whitespace-nowrap">
+                  <RelativeTime date={new Date(game.playedAt)} />
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
     </div>
   );
 };

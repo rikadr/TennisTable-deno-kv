@@ -4,14 +4,21 @@ import { useEventDbContext } from "../../wrappers/event-db-context";
 import { ProfilePicture } from "../player/profile-picture";
 import { ACHIEVEMENT_LABELS } from "../player/player-achievements";
 import { RelativeTime } from "../../common/date-utils";
+import { useRerender } from "../../hooks/use-rerender";
 
-export const RecentAchievements: React.FC = () => {
+type Props = {
+  view?: "overall" | "season";
+};
+
+export const RecentAchievements: React.FC<Props> = ({ view = "overall" }) => {
   const context = useEventDbContext();
-  
+  const rerender = useRerender();
+
   useEffect(() => {
     // Ensure achievements are calculated
     context.achievements.calculateAchievements();
-  }, [context.achievements]);
+    rerender();
+  }, [context.achievements, rerender]);
 
   // Aggregate all achievements
   const allAchievements = Array.from(context.achievements.achievementMap.values())
