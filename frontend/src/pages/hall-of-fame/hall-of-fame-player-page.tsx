@@ -282,35 +282,26 @@ export const HallOfFamePlayerPage: React.FC = () => {
                  </p>
                  
                  <div className="space-y-6">
-                    <BreakdownBar 
-                       label="Peak Elo" 
-                       value={playerEntry.honors.legacyBreakdown.eloScore} 
-                       total={playerEntry.honors.legacyScore} 
-                       description={`+${Math.round(playerEntry.honors.legacyBreakdown.eloScore)} points based on Peak Elo`}
-                       icon="⚡"
-                    />
-                    <BreakdownBar 
-                       label="Tournament Wins" 
-                       value={playerEntry.honors.legacyBreakdown.tournamentScore} 
-                       total={playerEntry.honors.legacyScore} 
-                       description={`+${Math.round(playerEntry.honors.legacyBreakdown.tournamentScore)} points from Tournaments`}
-                       icon="🏆"
-                    />
-                    <BreakdownBar 
-                       label="Finals Appearances" 
-                       value={playerEntry.honors.legacyBreakdown.finalsScore} 
-                       total={playerEntry.honors.legacyScore} 
-                       description={`+${Math.round(playerEntry.honors.legacyBreakdown.finalsScore)} points from Finals`}
-                       icon="🥈"
-                    />
-                    <BreakdownBar 
-                       label="Win Rate Bonus" 
-                       value={playerEntry.honors.legacyBreakdown.winRateScore} 
-                       total={playerEntry.honors.legacyScore} 
-                       description={`+${Math.round(playerEntry.honors.legacyBreakdown.winRateScore)} points for >50% Win Rate`}
-                       icon="📈"
-                    />
-                    <BreakdownBar 
+                                        <BreakdownBar 
+                                           label="Peak Elo" 
+                                           value={playerEntry.honors.legacyBreakdown.eloScore} 
+                                           total={playerEntry.honors.legacyScore} 
+                                           description={`+${Math.round(playerEntry.honors.legacyBreakdown.eloScore)} points based on Peak Elo`}
+                                           icon="⚡"
+                                        />
+                                                            <BreakdownBar 
+                                                               label="Tournament Progression" 
+                                                               value={playerEntry.honors.legacyBreakdown.tournamentScore} 
+                                                               total={playerEntry.honors.legacyScore} 
+                                                               description={`+${Math.round(playerEntry.honors.legacyBreakdown.tournamentScore)} points for participation, wins, finals, and deep runs`}
+                                                               icon="🏆"
+                                                            />                                        <BreakdownBar 
+                                           label="Win Rate Bonus" 
+                                           value={playerEntry.honors.legacyBreakdown.winRateScore} 
+                                           total={playerEntry.honors.legacyScore} 
+                                           description={`+${Math.round(playerEntry.honors.legacyBreakdown.winRateScore)} points for >50% Win Rate`}
+                                           icon="📈"
+                                        />                    <BreakdownBar 
                        label="Longevity" 
                        value={playerEntry.honors.legacyBreakdown.longevityScore} 
                        total={playerEntry.honors.legacyScore} 

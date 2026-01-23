@@ -247,21 +247,46 @@ export class HallOfFame {
       // Calculate Tournament Stats
       let tournamentWins = 0;
       let tournamentFinals = 0;
+      let tournamentScore = 0;
       let tournamentParticipations = 0;
 
       tournaments.forEach(tournament => {
         const hasParticipated = tournament.signedUp.some(s => s.player === player.id);
         if (hasParticipated) {
           tournamentParticipations++;
+          
+          let roundReached = -1; // -1: signed up, 0: final, 1: semis, 2: quarters, etc.
+          
+          if (tournament.bracket) {
+             // Find the furthest round reached
+             // bracket[0] is final, bracket[1] is semis...
+             for (let layerIndex = 0; layerIndex < tournament.bracket.bracket.length; layerIndex++) {
+                const layer = tournament.bracket.bracket[layerIndex];
+                const playedInRound = layer.some(game => game.player1 === player.id || game.player2 === player.id);
+                if (playedInRound) {
+                   roundReached = layerIndex;
+                   break; // Found the highest layer they appeared in
+                }
+             }
+          }
+
           if (tournament.winner === player.id) {
             tournamentWins++;
+            tournamentScore += 500;
             milestones.push({ type: 'tournament-win', label: `Champion: ${tournament.name}`, date: tournament.endDate ?? tournament.startDate, icon: '🏆' });
-          }
-          if (tournament.bracket) {
-             const finalGame = tournament.bracket.bracketGames[tournament.bracket.bracketGames.length - 1]?.played[0];
-             if (finalGame && (finalGame.winner === player.id || finalGame.loser === player.id)) {
-               tournamentFinals++;
-             }
+          } else if (roundReached === 0) {
+            tournamentFinals++;
+            tournamentScore += 300;
+          } else if (roundReached === 1) {
+            tournamentScore += 200;
+          } else if (roundReached === 2) {
+            tournamentScore += 125;
+          } else if (roundReached === 3) {
+            tournamentScore += 75;
+          } else if (roundReached !== -1) {
+            tournamentScore += 60;
+          } else {
+            tournamentScore += 50; // Participation base
           }
         }
       });
@@ -275,16 +300,14 @@ export class HallOfFame {
       const eloScore = Math.max(0, peakElo - 1000);
       // 2. Win Rate bonus (if > 50%)
       const winRateScore = Math.max(0, (winRate - 50) * 10);
-      // 3. Tournament Wins (heavy weight)
-      const tournamentScore = tournamentWins * 500;
-      // 4. Finals bonus
-      const finalsScore = tournamentFinals * 100;
-      // 5. Longevity (1 point per active day)
+      // 3. Tournament Score (calculated above based on progression)
+      // tournamentScore is already weighted
+      // 4. Longevity (1 point per active day)
       const longevityScore = daysActive;
-      // 6. Experience (1 point per game)
+      // 5. Experience (1 point per game)
       const experienceScore = totalGames;
 
-      const legacyScore = Math.round(eloScore + winRateScore + tournamentScore + finalsScore + longevityScore + experienceScore);
+      const legacyScore = Math.round(eloScore + winRateScore + tournamentScore + longevityScore + experienceScore);
 
       // Final Titles
       const achievements = this.parent.achievements.getAchievements(player.id);
@@ -297,6 +320,7 @@ export class HallOfFame {
       if (winRate >= 80 && totalGames >= 50) titles.push("⚡ Dominant Force");
       if (longestStreak >= 10) titles.push("🚀 Unstoppable");
       if (pioneers.has(player.id)) titles.push("🌱 League Pioneer");
+      if (tournamentParticipations >= 5) titles.push("🏟️ Tournament Regular");
 
       return {
         id: player.id,
@@ -324,7 +348,9 @@ export class HallOfFame {
             eloScore,
             winRateScore,
             tournamentScore,
-            finalsScore,
+            finalsScore: tournamentFinals * 100, // Keep this for breakdown display? Or merge into tournamentScore.
+            // Actually, let's keep the breakdown properties consistent with the UI.
+            // I'll update breakdown to just show 'Tournament Progression' instead of separate Wins/Finals.
             longevityScore,
             experienceScore
           },
