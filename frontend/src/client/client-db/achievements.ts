@@ -10,6 +10,11 @@ export class Achievements {
     this.parent = parent;
   }
 
+  forceRecalculate() {
+    this.hasCalculated = false;
+    this.calculateAchievements();
+  }
+
   calculateAchievements() {
     if (this.hasCalculated === true) {
       return;

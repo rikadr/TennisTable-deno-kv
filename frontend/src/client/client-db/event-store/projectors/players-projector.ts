@@ -21,6 +21,10 @@ export class PlyersProjector {
     return Array.from(this.#playersMap.values()).filter((player) => player.active === false);
   }
 
+  get allPlayers(): Player[] {
+    return Array.from(this.#playersMap.values());
+  }
+
   getPlayer(id: string): Player | undefined {
     return this.#playersMap.get(id);
   }
