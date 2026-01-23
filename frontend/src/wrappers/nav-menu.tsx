@@ -25,6 +25,7 @@ export const NavMenu: React.FC = () => {
     const items: { name: string; to: string }[] = [
       { name: "🥇 Leaderboard", to: "/leader-board" },
       { name: "🍁 Seasons", to: "/season/list" },
+      { name: "🏆 Hall of Fame", to: "/hall-of-fame" },
       { name: "🏓  Add game", to: "/add-game" },
       { name: "👤  New player", to: "/add-player" },
       { name: "👥🥊 Compare 1v1", to: "/1v1" },

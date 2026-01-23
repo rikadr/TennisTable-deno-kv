@@ -8,6 +8,7 @@ import { fmtNum } from "../../common/number-utils";
 
 type Props = {
   playerId?: string;
+  isReadOnly?: boolean;
 };
 
 export const ACHIEVEMENT_LABELS: Record<string, { title: string; description: string; icon: string }> = {
@@ -159,7 +160,7 @@ const tabs: { id: TabType; label: string }[] = [
   { id: "progress", label: "Progress" },
 ];
 
-export const PlayerAchievements: React.FC<Props> = ({ playerId }) => {
+export const PlayerAchievements: React.FC<Props> = ({ playerId, isReadOnly = false }) => {
   const context = useEventDbContext();
   const [activeTab, setActiveTab] = useState<TabType>("earned");
 
@@ -177,34 +178,36 @@ export const PlayerAchievements: React.FC<Props> = ({ playerId }) => {
 
   return (
     <div className="flex flex-col h-full sm:-mt-4 md:-mt-8">
-      {/* Tabs */}
-      <div className="bg-secondary-background px-0">
-        <div className="flex space-x-2 overflow-x-auto flex-nowrap scrollbar-hide">
-          {tabs.map((tab) => {
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`
-                    flex items-center py-2 px-4 border-b-4 font-medium text-sm transition-colors shrink-0 whitespace-nowrap
-                    ${
-                      activeTab === tab.id
-                        ? "text-secondary-text border-secondary-text"
-                        : "text-secondary-text/80 border-transparent hover:text-secondary-text hover:border-secondary-text border-dotted"
-                    }
-                  `}
-              >
-                {tab.label} {tab.id === "earned" && `(${achievements.length})`}
-              </button>
-            );
-          })}
+      {/* Tabs - Hide if ReadOnly */}
+      {!isReadOnly && (
+        <div className="bg-secondary-background px-0">
+          <div className="flex space-x-2 overflow-x-auto flex-nowrap scrollbar-hide">
+            {tabs.map((tab) => {
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`
+                      flex items-center py-2 px-4 border-b-4 font-medium text-sm transition-colors shrink-0 whitespace-nowrap
+                      ${
+                        activeTab === tab.id
+                          ? "text-secondary-text border-secondary-text"
+                          : "text-secondary-text/80 border-transparent hover:text-secondary-text hover:border-secondary-text border-dotted"
+                      }
+                    `}
+                >
+                  {tab.label} {tab.id === "earned" && `(${achievements.length})`}
+                </button>
+              );
+            })}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-6">
-        {activeTab === "earned" && <AchievementsTab achievements={sortedAchievements} />}
-        {activeTab === "progress" && <ProgressTab progression={progression} playerId={playerId} />}
+        {(activeTab === "earned" || isReadOnly) && <AchievementsTab achievements={sortedAchievements} isReadOnly={isReadOnly} />}
+        {!isReadOnly && activeTab === "progress" && <ProgressTab progression={progression} playerId={playerId} />}
       </div>
     </div>
   );
@@ -212,9 +215,10 @@ export const PlayerAchievements: React.FC<Props> = ({ playerId }) => {
 
 type AchievementsTabProps = {
   achievements: Achievement[];
+  isReadOnly?: boolean;
 };
 
-const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
+const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements, isReadOnly }) => {
   const context = useEventDbContext();
 
   if (achievements.length === 0) {
@@ -222,7 +226,9 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
       <div className="text-center py-12">
         <div className="text-6xl mb-4">🏆</div>
         <p className="text-secondary-text">No achievements yet</p>
-        <p className="text-sm text-secondary-text/70 mt-2">Keep playing to unlock achievements!</p>
+        {!isReadOnly && (
+          <p className="text-sm text-secondary-text/70 mt-2">Keep playing to unlock achievements!</p>
+        )}
       </div>
     );
   }

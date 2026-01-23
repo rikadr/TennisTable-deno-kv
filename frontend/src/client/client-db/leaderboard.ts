@@ -30,8 +30,11 @@ export class Leaderboard {
 
   private _getLeaderboard(): LeaderboardDTO {
     const leaderboardMap = this.getCachedLeaderboardMap();
+    const activePlayerIds = new Set(this.parent.players.map((p) => p.id));
 
-    const rankedPlayers: LeaderboardDTO["rankedPlayers"] = Array.from(leaderboardMap.values())
+    const activePlayers = Array.from(leaderboardMap.values()).filter((player) => activePlayerIds.has(player.id));
+
+    const rankedPlayers: LeaderboardDTO["rankedPlayers"] = activePlayers
       .filter((player) => player.games.length >= this.parent.client.gameLimitForRanked)
       .sort((a, b) => b.elo - a.elo)
       .map((player, index) => ({
@@ -39,7 +42,7 @@ export class Leaderboard {
         rank: index + 1,
       }));
 
-    const unrankedPlayers: LeaderboardDTO["unrankedPlayers"] = Array.from(leaderboardMap.values())
+    const unrankedPlayers: LeaderboardDTO["unrankedPlayers"] = activePlayers
       .filter((player) => player.games.length < this.parent.client.gameLimitForRanked)
       .sort((a, b) => b.elo - a.elo);
 
@@ -156,7 +159,7 @@ export class Leaderboard {
     const graphData: PlayerComparison["graphData"] = [];
     if (players.length === 0) {
       return {
-        allPlayers: this.parent.players.map((player) => player.name),
+        allPlayers: this.parent.allPlayers.map((player) => player.name),
         graphData: [],
       };
     }
@@ -165,7 +168,7 @@ export class Leaderboard {
     players.forEach((player) => (graphEntry[player] = Elo.INITIAL_ELO));
     graphData.push({ ...graphEntry });
 
-    Elo.eloCalculator(this.parent.games, this.parent.players, (map, game) => {
+    Elo.eloCalculator(this.parent.games, this.parent.allPlayers, (map, game) => {
       if (players.includes(game.winner) || players.includes(game.loser)) {
         if (players.includes(game.winner)) {
           const newElo = map.get(game.winner);
@@ -212,7 +215,7 @@ export class Leaderboard {
       return leaderboardMap.get(id)!;
     };
 
-    Elo.eloCalculator(this.parent.games, this.parent.players, (map, game, pointsWon) => {
+    Elo.eloCalculator(this.parent.games, this.parent.allPlayers, (map, game, pointsWon) => {
       const winner = getPlayer(game.winner);
       const loser = getPlayer(game.loser);
       const winnersNewElo = map.get(game.winner)!.elo;
