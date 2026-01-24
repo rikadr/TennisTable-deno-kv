@@ -118,11 +118,12 @@ describe("TennisTable Basic sanity tests", () => {
     });
 
     it("should rank players based on ELO", () => {
-      // Add more games to make players ranked
-      const manyGamesEvents: EventType[] = [...events];
+      const tt = new TennisTable({ events });
+      const gameLimitForRanked = tt.client.gameLimitForRanked;
 
-      // Add games to reach ranked status (default is 15 games)
-      for (let i = 0; i < 15; i++) {
+      // Add enough games to reach ranked status based on the actual client config
+      const manyGamesEvents: EventType[] = [...events];
+      for (let i = 0; i < gameLimitForRanked; i++) {
         manyGamesEvents.push({
           time: 4000 + i,
           stream: `game-${i + 2}`,
@@ -135,8 +136,8 @@ describe("TennisTable Basic sanity tests", () => {
         });
       }
 
-      const tt = new TennisTable({ events: manyGamesEvents });
-      const leaderboard = tt.leaderboard.getLeaderboard();
+      const ttWithGames = new TennisTable({ events: manyGamesEvents });
+      const leaderboard = ttWithGames.leaderboard.getLeaderboard();
 
       expect(leaderboard.rankedPlayers.length).toBeGreaterThan(0);
     });

@@ -32,7 +32,7 @@ export class PlayerOponentDistribution {
           playerDiffs.push(winnerElo - loserElo);
         }
       },
-      this.parent.getHistoricalPlayerFilter(),
+      this.parent.getHistoricalPlayerFilter(Date.now()),
     );
 
     const avgDiff = average(playerDiffs);

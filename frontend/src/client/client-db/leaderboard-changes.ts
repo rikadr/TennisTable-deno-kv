@@ -29,7 +29,7 @@ export class LeaderboardChanges {
           lastGamesMap = { time: game.playedAt, map: structuredClone(map) };
         }
       },
-      this.parent.getHistoricalPlayerFilter(),
+      this.parent.getHistoricalPlayerFilter(Date.now()),
     );
 
     const leaderboardChangesMap = new Map<

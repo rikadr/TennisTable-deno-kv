@@ -90,11 +90,13 @@ export class TennisTable {
 
   /**
    * Returns a function that checks if a player was active at a given timestamp.
-   * Used for historical ELO calculations.
+   * Used for ELO calculations - only games where both players are active at the
+   * calculation timestamp will be included.
+   * @param calculationTimestamp The timestamp to check player activity against (e.g., Date.now() for current leaderboard)
    */
-  getHistoricalPlayerFilter() {
-    return (playerId: string, timestamp: number) => {
-      return this.eventStore.playersProjector.wasPlayerActiveAt(playerId, timestamp);
+  getHistoricalPlayerFilter(calculationTimestamp: number) {
+    return (playerId: string) => {
+      return this.eventStore.playersProjector.wasPlayerActiveAt(playerId, calculationTimestamp);
     };
   }
 }

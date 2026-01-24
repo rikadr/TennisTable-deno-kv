@@ -43,11 +43,12 @@ describe("Leaderboard with Deactivated Players", () => {
     tennisTable = new TennisTable({ events });
   });
 
-  it("should return summary for deactivated player", () => {
+  it("should return summary for deactivated player with no games (filtered out)", () => {
+    // Games involving deactivated players are filtered out from current leaderboard calculations
     const summary = tennisTable.leaderboard.getPlayerSummary("player-2");
     expect(summary).toBeDefined();
     expect(summary.name).toBe("Bob");
-    expect(summary.games.length).toBe(1);
+    expect(summary.games.length).toBe(0); // Bob's games are filtered because he's inactive at calculation time
   });
 
   it("should not include deactivated player in main leaderboard", () => {
@@ -60,10 +61,12 @@ describe("Leaderboard with Deactivated Players", () => {
     expect(inUnranked).toBeUndefined();
   });
 
-  it("should include deactivated player in comparison", () => {
+  it("should only show initial ELO for comparison with deactivated player (games filtered)", () => {
+    // Games involving deactivated players are filtered out from calculations
     const comparison = tennisTable.leaderboard.comparePlayers(["player-1", "player-2"]);
-    expect(comparison.graphData.length).toBeGreaterThan(1); // Initial + 1 game
-    const lastPoint = comparison.graphData[comparison.graphData.length - 1];
-    expect(lastPoint["player-2"]).toBeDefined();
+    expect(comparison.graphData.length).toBe(1); // Only initial state, no games included
+    const initialPoint = comparison.graphData[0];
+    expect(initialPoint["player-1"]).toBe(1000); // Initial ELO
+    expect(initialPoint["player-2"]).toBe(1000); // Initial ELO
   });
 });

@@ -12,16 +12,16 @@ export abstract class Elo {
     games: Game[],
     players: Player[],
     onGameResult?: (map: Map<string, PlayerWithElo>, game: Game, pointsWon: number) => void,
-    shouldIncludePlayer?: (playerId: string, gameTimestamp: number) => boolean,
+    shouldIncludePlayer?: (playerId: string) => boolean,
   ): Map<string, PlayerWithElo> {
     const playerMap = new Map<string, PlayerWithElo>(
       players.map((player) => [player.id, { ...player, elo: this.INITIAL_ELO, totalGames: 0 }]),
     );
 
     games.forEach((game) => {
-      // Check if both players should be included at this game's timestamp
+      // Check if both players should be included at the calculation timestamp
       if (shouldIncludePlayer) {
-        if (!shouldIncludePlayer(game.winner, game.playedAt) || !shouldIncludePlayer(game.loser, game.playedAt)) {
+        if (!shouldIncludePlayer(game.winner) || !shouldIncludePlayer(game.loser)) {
           return; // Skip this game if either player shouldn't be included
         }
       }
