@@ -24,8 +24,6 @@ export type HallOfFameEntry = {
       participated: number;
     };
     activityHeatmap?: { [date: string]: number };
-    playStyle?: string[];
-    cleanSweeps?: number;
     legacyScore: number;
     milestones: { type: string; label: string; date: number; icon: string }[];
     rawStats?: {
@@ -154,8 +152,6 @@ export class HallOfFame {
         let peakEloDate = player.createdAt;
         let currentStreak = 0;
         let longestStreak = 0;
-        let cleanSweeps = 0;
-        const activityHeatmap: { [date: string]: number } = {};
 
         let setsWon = 0;
         let setsLost = 0;
@@ -163,9 +159,6 @@ export class HallOfFame {
         let pointsConceded = 0;
         let gamesWithSets = 0;
         let gamesWithPoints = 0;
-
-        let closeWins = 0;
-        let dominantWins = 0;
 
         const sortedGames = [...(summary?.games ?? [])].sort((a, b) => a.time - b.time);
 
@@ -202,19 +195,20 @@ export class HallOfFame {
 
             if (game.result === "win") {
               currentStreak++;
-              if (game.score?.setsWon && game.score.setsWon.gameWinner === 3 && game.score.setsWon.gameLoser === 0) {
-                cleanSweeps++;
-              }
-              if (game.pointsDiff <= 5) closeWins++;
-              if (game.pointsDiff >= 15) dominantWins++;
             } else {
               currentStreak = 0;
             }
             if (currentStreak > longestStreak) {
               longestStreak = currentStreak;
             }
+          }
+        }
 
-            const dateKey = new Date(game.time).toISOString().split("T")[0];
+        // Calculate activity heatmap by processing all games directly
+        const activityHeatmap: { [date: string]: number } = {};
+        for (const game of this.parent.games) {
+          if (game.winner === player.id || game.loser === player.id) {
+            const dateKey = new Date(game.playedAt).toISOString().split("T")[0];
             activityHeatmap[dateKey] = (activityHeatmap[dateKey] || 0) + 1;
           }
         }
@@ -223,12 +217,6 @@ export class HallOfFame {
         const avgPointsPerGame = gamesWithPoints > 0 ? (pointsScored + pointsConceded) / gamesWithPoints : 0;
         const estimatedTotalSets = Math.round(avgSetsPerGame * totalGames);
         const estimatedTotalPoints = Math.round(avgPointsPerGame * totalGames);
-
-        const playStyle: string[] = [];
-        if (cleanSweeps >= 5 && cleanSweeps / wins > 0.3) playStyle.push("🧹 Sweeper");
-        if (closeWins >= 5 && closeWins / wins > 0.2) playStyle.push("🤏 Clincher");
-        if (dominantWins >= 5 && dominantWins / wins > 0.2) playStyle.push("💪 Dominator");
-        if (playStyle.length === 0 && totalGames > 50) playStyle.push("🛡️ Grinder");
 
               if (peakElo > Elo.INITIAL_ELO && sortedGames.length > 5) {
                 milestones.push({ type: "peak-elo", label: "Reached Career Peak Elo", date: peakEloDate, icon: "⚡" });
@@ -543,8 +531,6 @@ export class HallOfFame {
                       averageSeasonRank,
                       tournamentStats,
                       activityHeatmap,
-                      playStyle,
-                      cleanSweeps,
                       legacyScore,
                       legacyBreakdown: {
                         eloScore,
