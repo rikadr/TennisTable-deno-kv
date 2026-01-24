@@ -11,8 +11,14 @@ export type Player = {
   updateAction?: string;
 };
 
+type ActivationEvent = {
+  time: number;
+  active: boolean;
+};
+
 export class PlyersProjector {
   #playersMap = new Map<string, Player>();
+  #activationHistory = new Map<string, ActivationEvent[]>();
 
   get activePlayers(): Player[] {
     return Array.from(this.#playersMap.values()).filter((player) => player.active);
@@ -30,6 +36,32 @@ export class PlyersProjector {
     return this.#playersMap.get(id);
   }
 
+  /**
+   * Checks if a player was active at a specific point in time
+   * @param id Player ID
+   * @param timestamp The timestamp to check
+   * @returns true if the player was active at that time, false otherwise
+   */
+  wasPlayerActiveAt(id: string, timestamp: number): boolean {
+    const player = this.#playersMap.get(id);
+    if (!player) return false;
+
+    const history = this.#activationHistory.get(id);
+    if (!history || history.length === 0) return false;
+
+    // Find the most recent activation event before or at the timestamp
+    let activeStatus = false;
+    for (const event of history) {
+      if (event.time <= timestamp) {
+        activeStatus = event.active;
+      } else {
+        break; // Events are in chronological order, so we can stop here
+      }
+    }
+
+    return activeStatus;
+  }
+
   createPlayer(event: PlayerCreated) {
     const player: Player = {
       id: event.stream,
@@ -40,6 +72,9 @@ export class PlyersProjector {
       deactivatedAt: null,
     };
     this.#playersMap.set(event.stream, player);
+
+    // Track activation history
+    this.#activationHistory.set(event.stream, [{ time: event.time, active: true }]);
   }
 
   validateCreatePlayer(event: PlayerCreated): ValidatorResponse {
@@ -64,6 +99,12 @@ export class PlyersProjector {
       player.updatedAt = event.time;
       player.deactivatedAt = event.time;
       player.updateAction = "Deactivated";
+
+      // Track activation history
+      const history = this.#activationHistory.get(event.stream);
+      if (history) {
+        history.push({ time: event.time, active: false });
+      }
     }
   }
 
@@ -85,6 +126,12 @@ export class PlyersProjector {
       player.updatedAt = event.time;
       player.deactivatedAt = null;
       player.updateAction = "Re-activated";
+
+      // Track activation history
+      const history = this.#activationHistory.get(event.stream);
+      if (history) {
+        history.push({ time: event.time, active: true });
+      }
     }
   }
 

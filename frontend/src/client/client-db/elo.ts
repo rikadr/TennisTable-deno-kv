@@ -12,12 +12,20 @@ export abstract class Elo {
     games: Game[],
     players: Player[],
     onGameResult?: (map: Map<string, PlayerWithElo>, game: Game, pointsWon: number) => void,
+    shouldIncludePlayer?: (playerId: string, gameTimestamp: number) => boolean,
   ): Map<string, PlayerWithElo> {
     const playerMap = new Map<string, PlayerWithElo>(
       players.map((player) => [player.id, { ...player, elo: this.INITIAL_ELO, totalGames: 0 }]),
     );
 
     games.forEach((game) => {
+      // Check if both players should be included at this game's timestamp
+      if (shouldIncludePlayer) {
+        if (!shouldIncludePlayer(game.winner, game.playedAt) || !shouldIncludePlayer(game.loser, game.playedAt)) {
+          return; // Skip this game if either player shouldn't be included
+        }
+      }
+
       const winner = playerMap.get(game.winner);
       const loser = playerMap.get(game.loser);
       if (!winner || !loser) {

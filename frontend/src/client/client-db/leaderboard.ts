@@ -168,23 +168,28 @@ export class Leaderboard {
     players.forEach((player) => (graphEntry[player] = Elo.INITIAL_ELO));
     graphData.push({ ...graphEntry });
 
-    Elo.eloCalculator(this.parent.games, this.parent.allPlayers, (map, game) => {
-      if (players.includes(game.winner) || players.includes(game.loser)) {
-        if (players.includes(game.winner)) {
-          const newElo = map.get(game.winner);
-          if (newElo) {
-            graphEntry[game.winner] = newElo.elo;
+    Elo.eloCalculator(
+      this.parent.games,
+      this.parent.allPlayers,
+      (map, game) => {
+        if (players.includes(game.winner) || players.includes(game.loser)) {
+          if (players.includes(game.winner)) {
+            const newElo = map.get(game.winner);
+            if (newElo) {
+              graphEntry[game.winner] = newElo.elo;
+            }
           }
-        }
-        if (players.includes(game.loser)) {
-          const newElo = map.get(game.loser);
-          if (newElo) {
-            graphEntry[game.loser] = newElo.elo;
+          if (players.includes(game.loser)) {
+            const newElo = map.get(game.loser);
+            if (newElo) {
+              graphEntry[game.loser] = newElo.elo;
+            }
           }
+          graphData.push({ ...graphEntry, time: game.playedAt });
         }
-        graphData.push({ ...graphEntry, time: game.playedAt });
-      }
-    });
+      },
+      this.parent.getHistoricalPlayerFilter(),
+    );
 
     return {
       graphData,
@@ -215,35 +220,40 @@ export class Leaderboard {
       return leaderboardMap.get(id)!;
     };
 
-    Elo.eloCalculator(this.parent.games, this.parent.allPlayers, (map, game, pointsWon) => {
-      const winner = getPlayer(game.winner);
-      const loser = getPlayer(game.loser);
-      const winnersNewElo = map.get(game.winner)!.elo;
-      const losersNewElo = map.get(game.loser)!.elo;
+    Elo.eloCalculator(
+      this.parent.games,
+      this.parent.allPlayers,
+      (map, game, pointsWon) => {
+        const winner = getPlayer(game.winner);
+        const loser = getPlayer(game.loser);
+        const winnersNewElo = map.get(game.winner)!.elo;
+        const losersNewElo = map.get(game.loser)!.elo;
 
-      winner.games.push({
-        time: game.playedAt,
-        result: "win",
-        oponent: loser.id,
-        eloAfterGame: winnersNewElo,
-        pointsDiff: pointsWon,
-        score: game.score,
-      });
-      loser.games.push({
-        time: game.playedAt,
-        result: "loss",
-        oponent: winner.id,
-        eloAfterGame: losersNewElo,
-        pointsDiff: -pointsWon,
-        score: game.score,
-      });
+        winner.games.push({
+          time: game.playedAt,
+          result: "win",
+          oponent: loser.id,
+          eloAfterGame: winnersNewElo,
+          pointsDiff: pointsWon,
+          score: game.score,
+        });
+        loser.games.push({
+          time: game.playedAt,
+          result: "loss",
+          oponent: winner.id,
+          eloAfterGame: losersNewElo,
+          pointsDiff: -pointsWon,
+          score: game.score,
+        });
 
-      winner.wins++;
-      loser.loss++;
+        winner.wins++;
+        loser.loss++;
 
-      winner.elo = winnersNewElo;
-      loser.elo = losersNewElo;
-    });
+        winner.elo = winnersNewElo;
+        loser.elo = losersNewElo;
+      },
+      this.parent.getHistoricalPlayerFilter(),
+    );
 
     return leaderboardMap;
   }
