@@ -32,7 +32,7 @@ export const HoFHeader: React.FC<HoFHeaderProps> = ({ playerId, playerEntry, isG
                <div className="relative">
                   <ProfilePicture playerId={playerId} size={160} border={isGoat ? 4 : 2} />
                   {isGoat && (
-                     <div className="absolute -top-4 -left-4 text-5xl rotate-[-20deg] drop-shadow-lg filter z-20">👑</div>
+                     <div className="absolute top-[4%] left-[4%] -translate-x-1/2 -translate-y-1/2 text-5xl rotate-[-20deg] drop-shadow-lg filter z-20">👑</div>
                   )}
                </div>
             </div>
