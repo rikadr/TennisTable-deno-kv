@@ -43,12 +43,14 @@ describe("Leaderboard with Deactivated Players", () => {
     tennisTable = new TennisTable({ events });
   });
 
-  it("should return summary for deactivated player with no games (filtered out)", () => {
-    // Games involving deactivated players are filtered out from current leaderboard calculations
+  it("should return summary for deactivated player WITH games preserved", () => {
+    // Games involving deactivated players should be included in their summary
     const summary = tennisTable.leaderboard.getPlayerSummary("player-2");
     expect(summary).toBeDefined();
     expect(summary.name).toBe("Bob");
-    expect(summary.games.length).toBe(0); // Bob's games are filtered because he's inactive at calculation time
+    expect(summary.games.length).toBe(1); // Bob's games should be preserved
+    expect(summary.wins).toBe(0);
+    expect(summary.loss).toBe(1);
   });
 
   it("should not include deactivated player in main leaderboard", () => {
@@ -61,12 +63,13 @@ describe("Leaderboard with Deactivated Players", () => {
     expect(inUnranked).toBeUndefined();
   });
 
-  it("should only show initial ELO for comparison with deactivated player (games filtered)", () => {
-    // Games involving deactivated players are filtered out from calculations
+  it("should show game history for comparison with deactivated player", () => {
+    // Games involving deactivated players should be included in comparison
     const comparison = tennisTable.leaderboard.comparePlayers(["player-1", "player-2"]);
-    expect(comparison.graphData.length).toBe(1); // Only initial state, no games included
-    const initialPoint = comparison.graphData[0];
-    expect(initialPoint["player-1"]).toBe(1000); // Initial ELO
-    expect(initialPoint["player-2"]).toBe(1000); // Initial ELO
+    expect(comparison.graphData.length).toBeGreaterThan(1); // Initial state + 1 game
+    
+    const finalPoint = comparison.graphData[comparison.graphData.length - 1];
+    expect(finalPoint["player-2"]).toBeLessThan(1000); // Bob lost, so Elo should decrease
+    expect(finalPoint["player-1"]).toBeGreaterThan(1000); // Alice won
   });
 });

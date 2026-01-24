@@ -188,7 +188,6 @@ export class Leaderboard {
           graphData.push({ ...graphEntry, time: game.playedAt });
         }
       },
-      this.parent.getHistoricalPlayerFilter(Date.now()),
     );
 
     return {
@@ -252,7 +251,6 @@ export class Leaderboard {
         winner.elo = winnersNewElo;
         loser.elo = losersNewElo;
       },
-      this.parent.getHistoricalPlayerFilter(Date.now()),
     );
 
     return leaderboardMap;

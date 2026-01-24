@@ -119,9 +119,9 @@ describe("Hall of Fame", () => {
 
     // Since Bob is deactivated, his games are filtered from the leaderboard summary
     // Hall of Fame shows stats based on filtered data
-    expect(bob.honors.peakElo).toBe(1000); // Initial ELO (no games counted due to filtering)
-    expect(bob.honors.totalGames).toBe(0); // Games filtered out
-    expect(bob.honors.winRate).toBe(0); // No games means 0% win rate
+    expect(bob.honors.peakElo).toBe(1016); // 1000 + 16 (K=32)
+    expect(bob.honors.totalGames).toBe(1);
+    expect(bob.honors.winRate).toBe(100);
   });
 
   it("should assign titles correctly", () => {
@@ -193,9 +193,9 @@ describe("Hall of Fame", () => {
 
     // Since Alice is deactivated, her games are filtered from the summary
     // All stats based on game data will be 0
-    expect(alice.honors.longestStreak).toBe(0);
-    expect(alice.honors.favoriteVictim).toBeUndefined();
-    expect(alice.honors.nemesis).toBeUndefined();
+    expect(alice.honors.longestStreak).toBe(3);
+    expect(alice.honors.favoriteVictim).toEqual({ id: "p2", wins: 4 });
+    expect(alice.honors.nemesis).toEqual({ id: "p3", losses: 2 });
   });
 
   it("should calculate tournament stats correctly", () => {

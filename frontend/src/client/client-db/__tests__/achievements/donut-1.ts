@@ -51,9 +51,10 @@ describe("TennisTable", () => {
       tennisTable.achievements.calculateAchievements();
 
       const achievements = tennisTable.achievements.getAchievements("alice");
+      const donuts = achievements.filter((a) => a.type === "donut-1");
 
-      expect(achievements).toHaveLength(1);
-      expect(achievements[0]).toStrictEqual({
+      expect(donuts).toHaveLength(1);
+      expect(donuts[0]).toStrictEqual({
         type: "donut-1",
         earnedBy: "alice",
         earnedAt: 1003,
@@ -90,9 +91,10 @@ describe("TennisTable", () => {
       tennisTable.achievements.calculateAchievements();
 
       const achievements = tennisTable.achievements.getAchievements("alice");
+      const donuts = achievements.filter((a) => a.type === "donut-1");
 
-      expect(achievements).toHaveLength(2);
-      expect(achievements[0]).toStrictEqual({
+      expect(donuts).toHaveLength(2);
+      expect(donuts[0]).toStrictEqual({
         type: "donut-1",
         earnedBy: "alice",
         earnedAt: 1003,
@@ -101,7 +103,7 @@ describe("TennisTable", () => {
           opponent: "bob",
         },
       });
-      expect(achievements[1]).toStrictEqual({
+      expect(donuts[1]).toStrictEqual({
         type: "donut-1",
         earnedBy: "alice",
         earnedAt: 1003,
