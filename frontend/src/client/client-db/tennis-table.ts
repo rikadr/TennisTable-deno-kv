@@ -69,12 +69,16 @@ export class TennisTable {
   get players() {
     return this.eventStore.playersProjector.activePlayers;
   }
+
   get deactivatedPlayers() {
     return this.eventStore.playersProjector.inactivePlayers;
   }
+
+  /** Returns list of all players (active and inactive) */
   get allPlayers() {
     return this.eventStore.playersProjector.allPlayers;
   }
+
   get games() {
     return this.eventStore.gamesProjector.games;
   }
@@ -82,5 +86,15 @@ export class TennisTable {
   playerName(id: string | undefined | null) {
     if (!id) return "⛔️No id⛔️";
     return this.eventStore.playersProjector.getPlayer(id)?.name ?? `⛔️${id}⛔️`;
+  }
+
+  /**
+   * Returns a function that checks if a player was active at a given timestamp.
+   * Used for historical ELO calculations.
+   */
+  getHistoricalPlayerFilter() {
+    return (playerId: string, timestamp: number) => {
+      return this.eventStore.playersProjector.wasPlayerActiveAt(playerId, timestamp);
+    };
   }
 }
