@@ -136,6 +136,33 @@ export class HallOfFame {
         .map((p) => p.id),
     );
 
+    // Calculate global averages from all games for fallback when players have no data
+    let globalSetsTotal = 0;
+    let globalPointsTotal = 0;
+    let globalGamesWithSets = 0;
+    let globalGamesWithPoints = 0;
+
+    for (const game of this.parent.games) {
+      if (game.score?.setsWon) {
+        globalSetsTotal += game.score.setsWon.gameWinner + game.score.setsWon.gameLoser;
+        globalGamesWithSets++;
+      }
+      if (game.score?.setPoints) {
+        let hasPoints = false;
+        for (const set of game.score.setPoints) {
+          const totalPoints = set.gameWinner + set.gameLoser;
+          if (totalPoints > 0) {
+            globalPointsTotal += totalPoints;
+            hasPoints = true;
+          }
+        }
+        if (hasPoints) globalGamesWithPoints++;
+      }
+    }
+
+    const globalAvgSetsPerGame = globalGamesWithSets > 0 ? globalSetsTotal / globalGamesWithSets : 0;
+    const globalAvgPointsPerGame = globalGamesWithPoints > 0 ? globalPointsTotal / globalGamesWithPoints : 0;
+
     return deactivatedPlayers
       .map((player) => {
         const summary = this.parent.leaderboard.getPlayerSummary(player.id);
@@ -213,8 +240,13 @@ export class HallOfFame {
           }
         }
 
-        const avgSetsPerGame = gamesWithSets > 0 ? (setsWon + setsLost) / gamesWithSets : 0;
-        const avgPointsPerGame = gamesWithPoints > 0 ? (pointsScored + pointsConceded) / gamesWithPoints : 0;
+        // Use player's own average if they have data, otherwise use global average
+        const avgSetsPerGame = gamesWithSets > 0
+          ? (setsWon + setsLost) / gamesWithSets
+          : globalAvgSetsPerGame;
+        const avgPointsPerGame = gamesWithPoints > 0
+          ? (pointsScored + pointsConceded) / gamesWithPoints
+          : globalAvgPointsPerGame;
         const estimatedTotalSets = Math.round(avgSetsPerGame * totalGames);
         const estimatedTotalPoints = Math.round(avgPointsPerGame * totalGames);
 
