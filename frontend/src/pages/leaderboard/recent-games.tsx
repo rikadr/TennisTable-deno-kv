@@ -69,6 +69,24 @@ export const RecentGames: React.FC<Props> = ({ view = "overall" }) => {
     <div className="bg-primary-background rounded-lg w-full overflow-hidden">
       <h1 className="text-2xl text-center mb-4 mt-[27.5px] text-primary-text">Recent games</h1>
       <table className="w-full text-primary-text border-collapse">
+        <thead>
+          {view === "season" ? (
+            <tr className="text-[9px] xs:text-sm md:text-base font-medium text-primary-text/70">
+              <th className="py-1 px-2 text-left font-medium">Winner</th>
+              <th className="py-1 px-1 text-right font-medium">Winner's points</th>
+              <th className="py-1 px-2 text-right font-medium">Loser</th>
+              <th className="py-1 px-1 text-right font-medium">Loser's points</th>
+              <th className="py-1 px-2"></th>
+            </tr>
+          ) : (
+            <tr className="text-[9px] xs:text-sm md:text-base font-medium text-primary-text/70">
+              <th className="py-1 px-2 text-left font-medium">Winner</th>
+              <th className="py-1 px-2 text-right font-medium">Loser</th>
+              <th className="py-1 px-2 text-right font-medium">Points won</th>
+              <th className="py-1 px-2"></th>
+            </tr>
+          )}
+        </thead>
         <tbody className="divide-y divide-primary-text/20">
           {processedGames.map((game, index) => {
             const rowClick = () => navigate(`/1v1?player1=${game.winner}&player2=${game.loser}`);
