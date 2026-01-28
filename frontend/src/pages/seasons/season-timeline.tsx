@@ -208,14 +208,13 @@ const SeasonTooltip: React.FC<SeasonTooltipProps> = ({ active, payload, context 
   if (!entry) return null;
 
   return (
-    <div className="p-3 bg-primary-background ring-1 ring-primary-text rounded-lg text-primary-text max-w-xs">
-      <p className="text-sm text-primary-text/70 mb-2">{entry.label}</p>
+    <div className="p-2 bg-primary-background ring-1 ring-primary-text rounded-lg text-primary-text max-w-xs text-xs">
+      <p className="text-primary-text/70 mb-1">{entry.label}</p>
 
       {entry.improvements.length > 0 && (
-        <div className="space-y-2">
-          <p className="text-xs uppercase tracking-wide text-primary-text/50">Score Improvements</p>
+        <div className="space-y-0.5">
           {entry.improvements.map((imp, idx) => (
-            <div key={idx} className="flex items-center gap-2 text-sm" style={{ color: stringToColor(imp.playerId) }}>
+            <div key={idx} className="flex items-center gap-1" style={{ color: stringToColor(imp.playerId) }}>
               <span className="font-medium">{context.playerName(imp.playerId)}</span>
               <span className="text-primary-text/70">vs</span>
               <span>{context.playerName(imp.opponentId)}</span>
@@ -225,9 +224,8 @@ const SeasonTooltip: React.FC<SeasonTooltipProps> = ({ active, payload, context 
         </div>
       )}
 
-      <div className="mt-3 pt-2 border-t border-primary-text/20">
-        <p className="text-xs uppercase tracking-wide text-primary-text/50 mb-1">Current Scores</p>
-        <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+      <div className="mt-1.5 pt-1 border-t border-primary-text/20">
+        <div className="grid grid-cols-2 gap-x-3 gap-y-0">
           {Object.entries(entry.scores)
             .sort(([, a], [, b]) => b - a)
             .slice(0, 6)

@@ -18,11 +18,13 @@ export function SeasonPlayerPage() {
     return <div className="p-6 text-primary-text">Player ID not provided</div>;
   }
 
-  const season = context.seasons.getSeasons().find((s) => s.start === Number(seasonStart));
+  const seasons = context.seasons.getSeasons();
+  const season = seasons.find((s) => s.start === Number(seasonStart));
   if (!season) {
     return <div className="p-6 text-primary-text">Season not found for season start time: {seasonStart}</div>;
   }
 
+  const seasonNumber = seasons.indexOf(season) + 1;
   const leaderboard = season.getLeaderboard();
   const playerStats = leaderboard.find((p) => p.playerId === playerId);
 
@@ -110,31 +112,21 @@ export function SeasonPlayerPage() {
 
   return (
     <div className="px-6">
-      <div className="flex items-center gap-4 mb-6 text-primary-text bg-primary-background">
-        <ProfilePicture playerId={playerId} size={64} border={3} linkToPlayer />
-        <div>
-          <h1>{context.playerName(playerId)}'s Season Stats</h1>
-          <h2>
-            {dateString(Number(season.start))} to {dateString(Number(season.end))}
-          </h2>
-          {Date.now() > season.end && <p className="text-sm">Ended {relativeTimeString(new Date(season.end))}</p>}
-          {Date.now() > season.start && Date.now() < season.end && (
-            <p className="text-sm">
-              Started {relativeTimeString(new Date(season.start))}, ends{" "}
-              {relativeTimeString(new Date(season.end)).toLowerCase()}
-            </p>
-          )}
-          {Date.now() < season.start && <p className="text-sm">Starts {relativeTimeString(new Date(season.start))}</p>}
+      <div className="flex items-center gap-3 mb-4 text-primary-text">
+        <ProfilePicture playerId={playerId} size={40} border={2} linkToPlayer />
+        <div className="flex-1 min-w-0">
+          <h1 className="text-lg font-bold truncate">{context.playerName(playerId)}</h1>
+          <p className="text-xs text-primary-text/60">
+            {dateString(Number(season.start))} – {dateString(Number(season.end))}
+            {Date.now() > season.end && ` · Ended ${relativeTimeString(new Date(season.end))}`}
+            {Date.now() > season.start && Date.now() < season.end && ` · Ends ${relativeTimeString(new Date(season.end)).toLowerCase()}`}
+          </p>
         </div>
-
-        <div className="grow" />
-
         <Link
           to={`/season?seasonStart=${seasonStart}`}
-          className="inline-flex items-center gap-2 bg-secondary-background text-secondary-text hover:bg-secondary-background/80 px-4 py-2 rounded-lg font-medium transition-colors"
+          className="text-sm text-primary-text hover:text-primary-text/80 whitespace-nowrap"
         >
-          <span>←</span>
-          <span>Back to Season Leaderboard</span>
+          ← Season {seasonNumber}
         </Link>
       </div>
 
@@ -169,25 +161,25 @@ export function SeasonPlayerPage() {
       )}
 
       {/* Summary Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 text-secondary-text">
-        <div className="bg-secondary-background p-4 rounded-lg">
-          <div className="text-sm">Season Rank</div>
-          <div className="text-2xl font-bold">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4 text-secondary-text">
+        <div className="bg-secondary-background px-3 py-1.5 rounded-lg">
+          <div className="text-xs">Season Rank</div>
+          <div className="text-lg font-bold">
             <span className="font-thin italic mr-0.5">#</span>
             {playerRank}
           </div>
         </div>
-        <div className="bg-secondary-background p-4 rounded-lg">
-          <div className="text-sm">Season Score</div>
-          <div className="text-2xl font-bold">{fmtNum(stats.seasonScore)}</div>
+        <div className="bg-secondary-background px-3 py-1.5 rounded-lg">
+          <div className="text-xs">Season Score</div>
+          <div className="text-lg font-bold">{fmtNum(stats.seasonScore)}</div>
         </div>
-        <div className="bg-secondary-background p-4 rounded-lg">
-          <div className="text-sm">Unique Opponents</div>
-          <div className="text-2xl font-bold">{stats.matchups.size}</div>
+        <div className="bg-secondary-background px-3 py-1.5 rounded-lg">
+          <div className="text-xs">Unique Opponents</div>
+          <div className="text-lg font-bold">{stats.matchups.size}</div>
         </div>
-        <div className="bg-secondary-background p-4 rounded-lg">
-          <div className="text-sm">Avg. Performance</div>
-          <div className="text-2xl font-bold">{fmtNum(avgPerformance)}</div>
+        <div className="bg-secondary-background px-3 py-1.5 rounded-lg">
+          <div className="text-xs">Avg. Performance</div>
+          <div className="text-lg font-bold">{fmtNum(avgPerformance)}</div>
         </div>
       </div>
 
@@ -197,39 +189,47 @@ export function SeasonPlayerPage() {
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-secondary-text/20 font-semibold">
-                  <th className="text-left px-4 py-2">Opponent</th>
-                  <th className="text-left px-4">Best Performance</th>
-                  <th className="text-left px-4">Performance Breakdown</th>
-                  <th className="text-left px-4">Game result</th>
-                  <th className="text-left px-4">Played at</th>
+                <tr className="border-b border-secondary-text/20 font-semibold text-xs md:text-base">
+                  <th className="text-left px-1 md:px-4 py-2">Opponent</th>
+                  <th className="text-left px-1 md:px-4">
+                    <span className="md:hidden">Best</span>
+                    <span className="hidden md:inline">Best Performance</span>
+                  </th>
+                  <th className="text-left px-1 md:px-4">Breakdown</th>
+                  <th className="text-left px-1 md:px-4 whitespace-nowrap">
+                    <span className="md:hidden">Result</span>
+                    <span className="hidden md:inline">Game result</span>
+                  </th>
+                  <th className="text-left px-1 md:px-4">
+                    <span className="md:hidden">When</span>
+                    <span className="hidden md:inline">Played at</span>
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {sortedMatchups.map(({ opponentId, bestPerformance, playedAt, breakdown, bestGame }) => (
-                  <tr key={opponentId} className="border-b border-secondary-text/10 hover:bg-primary-background/50">
-                    <td className="px-4">
+                  <tr key={opponentId} className="border-b border-secondary-text/10 hover:bg-primary-background/50 text-xs md:text-base">
+                    <td className="px-1 md:px-4 py-1">
                       <Link
                         to={`/season/player?seasonStart=${seasonStart}&playerId=${opponentId}`}
                         className="hover:text-secondary-text font-medium"
                       >
-                        <div className="flex items-center gap-3">
-                          <ProfilePicture playerId={opponentId} size={35} border={3} shape="rounded" />
-                          {context.playerName(opponentId)}
+                        <div className="flex items-center gap-1 md:gap-3">
+                          <div className="md:hidden shrink-0"><ProfilePicture playerId={opponentId} size={18} border={1} shape="rounded" /></div>
+                          <div className="hidden md:block shrink-0"><ProfilePicture playerId={opponentId} size={35} border={3} shape="rounded" /></div>
+                          <span className="truncate max-w-[70px] md:max-w-none">{context.playerName(opponentId)}</span>
                         </div>
                       </Link>
                     </td>
-                    <td className="px-4 font-medium">{fmtNum(bestPerformance)}</td>
-                    <td className="px-4">
+                    <td className="px-1 md:px-4 font-medium">{fmtNum(bestPerformance)}</td>
+                    <td className="px-1 md:px-4 py-1">
                       {breakdown ? (
-                        <div className="flex gap-2 text-sm">
+                        <div className="flex gap-2 text-xs md:text-sm">
                           <span title="Win gives 25% of points">
                             Win: {fmtNum(breakdown.win / 4)}
                             <span className="opacity-50">/25</span>
                           </span>
-                          <span
-                            title="Set scores give 25% of points"
-                          >
+                          <span title="Set scores give 25% of points">
                             Sets:{" "}
                             {breakdown.hasSets ? (
                               <>
@@ -240,9 +240,7 @@ export function SeasonPlayerPage() {
                               <>{hasEnded ? "-" : "🚨"}</>
                             )}
                           </span>
-                          <span
-                            title="Ball scores give 50% of points"
-                          >
+                          <span title="Ball scores give 50% of points">
                             Points:{" "}
                             {breakdown.hasBalls ? (
                               <>
@@ -255,10 +253,10 @@ export function SeasonPlayerPage() {
                           </span>
                         </div>
                       ) : (
-                        <span className="text-sm">—</span>
+                        <span className="text-xs md:text-sm">—</span>
                       )}
                     </td>
-                    <td className="p-1 md:flex items-baseline gap-3">
+                    <td className="px-1 md:px-4 py-1">
                       {bestGame.score && (
                         <div className="font-medium">
                           {bestGame.winner === playerId
@@ -267,18 +265,21 @@ export function SeasonPlayerPage() {
                         </div>
                       )}
                       {bestGame.score?.setPoints && (
-                        <div className="font-light italic text-xs">
+                        <div className="font-light italic text-xs whitespace-nowrap">
                           {bestGame.winner === playerId
                             ? bestGame.score.setPoints.map((set) => `${set.gameWinner}-${set.gameLoser}`).join(", ")
                             : bestGame.score.setPoints.map((set) => `${set.gameLoser}-${set.gameWinner}`).join(", ")}
                         </div>
                       )}
                       {!bestGame.score?.setsWon && !bestGame.score?.setPoints && (
-                        <p>{bestGame.winner === playerId ? "Won - no score" : "Lost - no score"}</p>
+                        <p>{bestGame.winner === playerId ? "Won" : "Lost"}</p>
                       )}
                     </td>
-                    <td className="px-4 text-sm min-w-64">
-                      {dateString(playedAt)} - {relativeTimeString(new Date(playedAt))}
+                    <td className="px-1 md:px-4 py-1 text-xs md:text-sm opacity-70">
+                      <div className="flex flex-col md:flex-row md:gap-1">
+                        <span className="whitespace-nowrap">{dateString(playedAt)}</span>
+                        <span className="opacity-50 whitespace-nowrap">{relativeTimeString(new Date(playedAt))}</span>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -295,7 +296,7 @@ export function SeasonPlayerPage() {
             <h3 className="font-semibold">Opponents you have yet to play ({unplayedOpponents.length})</h3>
           </div>
           <div className="p-2">
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
+            <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
               {unplayedOpponents.map((opponent) => (
                 <Link
                   key={opponent.id}
@@ -311,15 +312,6 @@ export function SeasonPlayerPage() {
         </div>
       )}
 
-      <div className="mt-6">
-        <Link
-          to={`/season?seasonStart=${seasonStart}`}
-          className="inline-flex items-center gap-2 bg-secondary-background text-secondary-text hover:bg-secondary-background/80 px-4 py-2 rounded-lg font-medium transition-colors"
-        >
-          <span>←</span>
-          <span>Back to Season Leaderboard</span>
-        </Link>
-      </div>
     </div>
   );
 }

@@ -51,6 +51,7 @@ export function SeasonPage() {
 
   const seasonNumber = context.seasons.getSeasons().indexOf(season) + 1;
   const leaderboard = season.getLeaderboard();
+  const isOngoing = Date.now() > season.start && Date.now() < season.end;
 
   const handleSort = (key: SortKey) => {
     if (key === sortKey) {
@@ -91,31 +92,33 @@ export function SeasonPage() {
   return (
     <div className="px-6 text-primary-text bg-primary-background">
       {/* Compact Header */}
-      <div className="bg-secondary-background text-secondary-text rounded-lg px-4 py-2 mb-2 flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Season {seasonNumber}</h1>
-        <div className="flex flex-col items-end text-sm">
-          <span className="font-medium">
-            {dateString(Number(season.start))} → {dateString(Number(season.end))}
-          </span>
-          <span className="text-xs opacity-70">
-            {Date.now() > season.end && `Ended ${relativeTimeString(new Date(season.end))}`}
-            {Date.now() > season.start &&
-              Date.now() < season.end &&
-              `Started ${relativeTimeString(new Date(season.start))}, ends ${relativeTimeString(new Date(season.end)).toLowerCase()}`}
-            {Date.now() < season.start && `Starts ${relativeTimeString(new Date(season.start))}`}
-          </span>
+      <div className="flex items-center gap-3 mb-3 py-2">
+        <div className="flex-1 min-w-0">
+          <h1 className="text-lg font-bold">Season {seasonNumber}</h1>
+          <p className="text-xs text-primary-text/60">
+            {dateString(Number(season.start))} – {dateString(Number(season.end))}
+            {Date.now() > season.end && ` · Ended ${relativeTimeString(new Date(season.end))}`}
+            {Date.now() > season.start && Date.now() < season.end && ` · Ends ${relativeTimeString(new Date(season.end)).toLowerCase()}`}
+            {Date.now() < season.start && ` · Starts ${relativeTimeString(new Date(season.start))}`}
+          </p>
         </div>
+        <Link
+          to="/season/list"
+          className="text-sm text-primary-text hover:text-primary-text/80 whitespace-nowrap"
+        >
+          ← All Seasons
+        </Link>
       </div>
 
       {/* Tabs */}
-      <div className="flex space-x-2 overflow-x-auto flex-nowrap scrollbar-hide">
+      <div className="flex space-x-1 md:space-x-2 overflow-x-auto flex-nowrap scrollbar-hide">
         {tabs.map((tab) => {
           return (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={`
-                    flex items-center py-2 px-4 border-b-4 font-medium text-sm transition-colors shrink-0 whitespace-nowrap
+                    flex items-center py-2 px-2 md:px-4 border-b-4 font-medium text-xs md:text-sm transition-colors shrink-0 whitespace-nowrap
                     ${
                       activeTab === tab.id
                         ? "text-primary-text border-primary-text"
@@ -134,31 +137,37 @@ export function SeasonPage() {
       {activeTab === "faq" && <SeasonFAQ />}
       {activeTab === "leaderboard" && (
         <div className="mt-4">
-          <SeasonPodium leaderboard={leaderboard} seasonStart={Number(seasonStart)} />
+          <SeasonPodium leaderboard={leaderboard} seasonStart={Number(seasonStart)} isOngoing={isOngoing} />
           <div className="bg-secondary-background rounded-lg overflow-hidden">
             <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="bg-secondary-background border-b border-secondary-text/20">
-                  <th className="text-left px-4 text-secondary-text font-semibold">#</th>
-                  <th className="text-left px-4 text-secondary-text font-semibold">Player</th>
+                <tr className="bg-secondary-background border-b border-secondary-text/20 text-xs md:text-base">
+                  <th className="text-left px-1 md:px-4 text-secondary-text font-semibold">#</th>
+                  <th className="text-left px-1 md:px-4 text-secondary-text font-semibold">Player</th>
                   <th
-                    className="text-left px-4 text-secondary-text font-semibold cursor-pointer hover:text-secondary-text/80"
+                    className="text-left px-1 md:px-4 text-secondary-text font-semibold cursor-pointer hover:text-secondary-text/80 whitespace-nowrap"
                     onClick={() => handleSort("score")}
                   >
-                    Season Score{getSortIndicator("score")}
+                    <span className="md:hidden">Score</span>
+                    <span className="hidden md:inline">Season Score</span>
+                    {getSortIndicator("score")}
                   </th>
                   <th
-                    className="text-left px-4 text-secondary-text font-semibold cursor-pointer hover:text-secondary-text/80"
+                    className="text-left px-1 md:px-4 text-secondary-text font-semibold cursor-pointer hover:text-secondary-text/80 whitespace-nowrap"
                     onClick={() => handleSort("playerPairings")}
                   >
-                    Player Pairings{getSortIndicator("playerPairings")}
+                    <span className="md:hidden">Pairs</span>
+                    <span className="hidden md:inline">Player Pairings</span>
+                    {getSortIndicator("playerPairings")}
                   </th>
                   <th
-                    className="text-left px-4 text-secondary-text font-semibold cursor-pointer hover:text-secondary-text/80"
+                    className="text-left px-1 md:px-4 text-secondary-text font-semibold cursor-pointer hover:text-secondary-text/80 whitespace-nowrap"
                     onClick={() => handleSort("avgPerformance")}
                   >
-                    Avg. Performance{getSortIndicator("avgPerformance")}
+                    <span className="md:hidden">Avg</span>
+                    <span className="hidden md:inline">Avg. Performance</span>
+                    {getSortIndicator("avgPerformance")}
                   </th>
                 </tr>
               </thead>
@@ -168,26 +177,27 @@ export function SeasonPage() {
                   return (
                     <tr
                       key={player.playerId}
-                      className="border-b border-secondary-text/10 text-secondary-text hover:bg-primary-background/50"
+                      className="border-b border-secondary-text/10 text-secondary-text hover:bg-primary-background/50 text-xs md:text-base"
                     >
-                      <td className="px-4">{rank + 1}</td>
-                      <td className="px-4">
+                      <td className="px-1 md:px-4">{rank + 1}</td>
+                      <td className="px-1 md:px-4">
                         <Link
                           to={`/season/player?seasonStart=${seasonStart}&playerId=${player.playerId}`}
                           className="font-medium"
                         >
-                          <div className="flex items-center gap-3">
-                            <ProfilePicture playerId={player.playerId} size={35} border={3} shape="rounded" />
-                            {rank === 0 && "🥇 "}
-                            {rank === 1 && "🥈 "}
-                            {rank === 2 && "🥉 "}
-                            {context.playerName(player.playerId)}
+                          <div className="flex items-center gap-1 md:gap-3">
+                            <div className="md:hidden shrink-0"><ProfilePicture playerId={player.playerId} size={22} border={2} shape="rounded" /></div>
+                            <div className="hidden md:block shrink-0"><ProfilePicture playerId={player.playerId} size={35} border={3} shape="rounded" /></div>
+                            {!isOngoing && rank === 0 && "🥇 "}
+                            {!isOngoing && rank === 1 && "🥈 "}
+                            {!isOngoing && rank === 2 && "🥉 "}
+                            <span className="truncate max-w-[80px] md:max-w-none">{context.playerName(player.playerId)}</span>
                           </div>
                         </Link>
                       </td>
-                      <td className="px-4 font-medium">{fmtNum(player.seasonScore)}</td>
-                      <td className="px-4">{fmtNum(player.matchups.size)}</td>
-                      <td className="px-4">{fmtNum(player.seasonScore / player.matchups.size)}</td>
+                      <td className="px-1 md:px-4 font-medium">{fmtNum(player.seasonScore)}</td>
+                      <td className="px-1 md:px-4">{fmtNum(player.matchups.size)}</td>
+                      <td className="px-1 md:px-4">{fmtNum(player.seasonScore / player.matchups.size)}</td>
                     </tr>
                   );
                 })}
