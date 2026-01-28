@@ -17,7 +17,33 @@ export const HoFLegacyBreakdown: React.FC<HoFLegacyBreakdownProps> = ({ playerEn
    const contributors = [
       { label: "Peak Elo", value: b.eloScore, icon: "⚡", desc: `+1 point for every Elo point above 1000 reached` },
       { label: "Season Performance", value: b.seasonsScore, icon: "🍂", desc: `Per season: +10 participation, bonus for Top 10 (10), Top 5 (25), Top 3 (50), Win (100)` },
-      { label: "Peak Ranking", value: b.peakRankScore, icon: "📈", desc: `Peak Historical Rank: #1 (300), Top 3 (100), Top 5 (50), Top 10 (25)` },
+      {
+         label: "Peak Ranking",
+         value: b.peakRankScore,
+         icon: "📈",
+         desc: (
+            <div className="flex flex-wrap gap-x-1">
+               <span className="opacity-90">Peak Historical Rank:</span>
+               {[
+                  { label: "#1 (300)", score: 300 },
+                  { label: "Top 3 (100)", score: 100 },
+                  { label: "Top 5 (50)", score: 50 },
+                  { label: "Top 10 (25)", score: 25 },
+               ].map((item, i, arr) => (
+                  <span
+                     key={i}
+                     className={classNames(
+                        "transition-opacity",
+                        b.peakRankScore === item.score ? "opacity-100 text-primary-text font-medium" : "opacity-90"
+                     )}
+                  >
+                     {item.label}
+                     {i < arr.length - 1 ? "," : ""}
+                  </span>
+               ))}
+            </div>
+         ),
+      },
       { label: "Achievements Earned", value: b.achievementsScore, icon: "🎖️", desc: `+20 points for every achievement earned` },
       { label: "Social Diversity", value: b.opponentsScore, icon: "👥", desc: `+20 points for every unique opponent played against` },
       {

@@ -51,7 +51,7 @@ export const HallOfFamePage: React.FC = () => {
                     <div className="relative">
                       <ProfilePicture playerId={player.id} size={isGoat ? 64 : 56} border={isGoat ? 3 : 1} />
                       {isGoat && (
-                        <div className="absolute top-0 left-0 -translate-x-1/2 -translate-y-1/2 text-3xl rotate-[-20deg] drop-shadow-md z-10">👑</div>
+                        <div className="absolute top-[-3%] left-[-3%] -translate-x-1/2 -translate-y-1/2 text-3xl rotate-[-20deg] drop-shadow-md z-10">👑</div>
                       )}
                     </div>
                   </div>
