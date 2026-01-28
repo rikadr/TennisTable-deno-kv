@@ -103,20 +103,20 @@ export const PlayersTab: React.FC<PlayersTabProps> = ({ onDeactivatePlayer, onRe
   };
 
   return (
-    <div className="p-6">
+    <div className="p-2 md:p-6">
       {/* Header Section */}
-      <div className="mb-6 space-y-2">
-        <div className="flex gap-6 text-sm">
+      <div className="mb-3 md:mb-6 space-y-1 md:space-y-2">
+        <div className="flex gap-3 md:gap-6 text-xs md:text-sm">
           <p>
-            <span className="font-semibold">Active players:</span>{" "}
+            <span className="font-semibold">Active:</span>{" "}
             {context.eventStore.playersProjector.activePlayers.length}
           </p>
           <p>
-            <span className="font-semibold">Inactive players:</span>{" "}
+            <span className="font-semibold">Inactive:</span>{" "}
             {context.eventStore.playersProjector.inactivePlayers.length}
           </p>
         </div>
-        <p className="text-sm text-primary-text/60 max-w-3xl">
+        <p className="text-xs md:text-sm text-primary-text/60 max-w-3xl hidden md:block">
           Deactivating players is reversible. No games will be deleted. It will only result in games with this player
           not counting towards anyone's ELO rating.
         </p>
@@ -124,79 +124,85 @@ export const PlayersTab: React.FC<PlayersTabProps> = ({ onDeactivatePlayer, onRe
 
       {/* Table */}
       <div className="overflow-x-auto shadow-sm rounded-lg border border-primary-text">
-        <table className="min-w-full border-collapse">
+        <table className="min-w-full border-collapse text-xs md:text-sm">
           <thead className="bg-secondary-background text-secondary-text">
             <tr>
               <th
-                className="border border-primary-text px-4 py-3 text-left cursor-pointer hover:bg-secondary-text/50 transition-colors"
+                className="border border-primary-text px-1 md:px-3 py-1 md:py-2 text-left cursor-pointer hover:bg-secondary-text/50 transition-colors"
                 onClick={() => handleSort("name")}
               >
                 <div className="flex items-center font-semibold">
-                  Player Name
+                  <span className="md:hidden">Player</span>
+                  <span className="hidden md:inline">Player Name</span>
                   <SortIcon field="name" />
                 </div>
               </th>
-              <th className="border border-primary-text px-4 py-3 text-left font-semibold">Status</th>
+              <th className="border border-primary-text px-1 md:px-3 py-1 md:py-2 text-left font-semibold hidden md:table-cell">Status</th>
               <th
-                className="border border-primary-text px-4 py-3 text-left cursor-pointer hover:bg-secondary-text/50 transition-colors"
+                className="border border-primary-text px-1 md:px-3 py-1 md:py-2 text-left cursor-pointer hover:bg-secondary-text/50 transition-colors"
                 onClick={() => handleSort("createdAt")}
               >
                 <div className="flex items-center font-semibold">
-                  Created At
+                  Created
                   <SortIcon field="createdAt" />
                 </div>
               </th>
               <th
-                className="border border-primary-text px-4 py-3 text-left cursor-pointer hover:bg-secondary-text/50 transition-colors"
+                className="border border-primary-text px-1 md:px-3 py-1 md:py-2 text-left cursor-pointer hover:bg-secondary-text/50 transition-colors"
                 onClick={() => handleSort("updatedAt")}
               >
                 <div className="flex items-center font-semibold">
-                  Updated At
+                  Updated
                   <SortIcon field="updatedAt" />
                 </div>
               </th>
-              <th className="border border-primary-text px-4 py-3 text-center font-semibold">Actions</th>
+              <th className="border border-primary-text px-1 md:px-3 py-1 md:py-2 text-center font-semibold">Actions</th>
             </tr>
           </thead>
           <tbody>
             {/* Active Players */}
             {sortedActivePlayers().map((player) => (
               <tr key={player.id} className="hover:bg-primary-text/10 transition-colors">
-                <td className="border border-primary-text px-4 py-1">
-                  <div className="flex items-center gap-3">
-                    <ProfilePicture playerId={player.id} border={4} linkToPlayer size={70} shape="rounded" />
-                    <section>
-                      <h3 className="text-lg">{player.name}</h3>
-                      <p className="text-secondary-text/30">{player.id}</p>
+                <td className="border border-primary-text px-1 md:px-3 py-0.5 md:py-1">
+                  <div className="flex items-center gap-1 md:gap-2">
+                    <div className="md:hidden shrink-0">
+                      <ProfilePicture playerId={player.id} border={2} linkToPlayer size={32} shape="rounded" />
+                    </div>
+                    <div className="hidden md:block shrink-0">
+                      <ProfilePicture playerId={player.id} border={3} linkToPlayer size={50} shape="rounded" />
+                    </div>
+                    <section className="min-w-0">
+                      <h3 className="text-xs md:text-base truncate">{player.name}</h3>
+                      <p className="text-secondary-text/30 text-[10px] md:text-xs truncate hidden md:block">{player.id}</p>
                     </section>
                   </div>
                 </td>
-                <td className="border border-primary-text px-4 py-3">
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                <td className="border border-primary-text px-1 md:px-3 py-1 md:py-2 hidden md:table-cell">
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                     Active
                   </span>
                 </td>
-                <td className="border border-primary-text px-4 py-3">
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium">{relativeTimeString(new Date(player.createdAt))}</p>
-                    <p className="text-xs">{formatDateTime(player.createdAt)}</p>
+                <td className="border border-primary-text px-1 md:px-3 py-1 md:py-2">
+                  <div className="space-y-0">
+                    <p className="text-[10px] md:text-xs font-medium">{relativeTimeString(new Date(player.createdAt))}</p>
+                    <p className="text-[10px] md:text-[11px] hidden md:block">{formatDateTime(player.createdAt)}</p>
                   </div>
                 </td>
-                <td className="border border-primary-text px-4 py-3">
+                <td className="border border-primary-text px-1 md:px-3 py-1 md:py-2">
                   {player.createdAt !== player.updatedAt ? (
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium">{relativeTimeString(new Date(player.updatedAt))}</p>
-                      <p className="text-xs">{formatDateTime(player.updatedAt)}</p>
-                      {player.updateAction && <p className="text-xs italic">{player.updateAction}</p>}
+                    <div className="space-y-0">
+                      <p className="text-[10px] md:text-xs font-medium">{relativeTimeString(new Date(player.updatedAt))}</p>
+                      <p className="text-[10px] md:text-[11px] hidden md:block">{formatDateTime(player.updatedAt)}</p>
+                      {player.updateAction && <p className="text-[10px] md:text-[11px] italic hidden md:block">{player.updateAction}</p>}
                     </div>
                   ) : (
                     <span className="text-gray-400">—</span>
                   )}
                 </td>
-                <td className="border border-primary-text px-4 py-3">
-                  <div className="flex gap-2 justify-center">
+                <td className="border border-primary-text px-1 md:px-3 py-1 md:py-2">
+                  <div className="flex gap-1 justify-center flex-col md:flex-row">
                     <button
-                      className="text-xs bg-red-500 hover:bg-red-700 text-white px-3 py-1.5 rounded-md transition-colors"
+                      className="text-[10px] md:text-xs bg-red-500 hover:bg-red-700 text-white px-1 md:px-2 py-0.5 md:py-1 rounded-md transition-colors whitespace-nowrap"
                       onClick={() => handleDeactivate(player.id)}
                     >
                       Deactivate
@@ -209,42 +215,47 @@ export const PlayersTab: React.FC<PlayersTabProps> = ({ onDeactivatePlayer, onRe
 
             {/* Inactive Players */}
             {sortedInactivePlayers().map((player) => (
-              <tr key={player.id} className="bg-gray-700 text-gray-300  transition-colors">
-                <td className="border border-primary-text px-4 py-1">
-                  <div className="flex items-center gap-3">
-                    <ProfilePicture playerId={player.id} border={4} linkToPlayer size={70} shape="rounded" />
-                    <section>
-                      <h3 className="text-lg">{player.name}</h3>
-                      <p className="text-secondary-text/30">{player.id}</p>
+              <tr key={player.id} className="bg-gray-700 text-gray-300 transition-colors">
+                <td className="border border-primary-text px-1 md:px-3 py-0.5 md:py-1">
+                  <div className="flex items-center gap-1 md:gap-2">
+                    <div className="md:hidden shrink-0">
+                      <ProfilePicture playerId={player.id} border={2} linkToPlayer size={32} shape="rounded" />
+                    </div>
+                    <div className="hidden md:block shrink-0">
+                      <ProfilePicture playerId={player.id} border={3} linkToPlayer size={50} shape="rounded" />
+                    </div>
+                    <section className="min-w-0">
+                      <h3 className="text-xs md:text-base truncate">{player.name}</h3>
+                      <p className="text-secondary-text/30 text-[10px] md:text-xs truncate hidden md:block">{player.id}</p>
                     </section>
                   </div>
                 </td>
-                <td className="border border-primary-text px-4 py-3">
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-300 text-gray-700">
+                <td className="border border-primary-text px-1 md:px-3 py-1 md:py-2 hidden md:table-cell">
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-300 text-gray-700">
                     Inactive
                   </span>
                 </td>
-                <td className="border border-primary-text px-4 py-3">
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium">{relativeTimeString(new Date(player.createdAt))}</p>
-                    <p className="text-xs">{formatDateTime(player.createdAt)}</p>
+                <td className="border border-primary-text px-1 md:px-3 py-1 md:py-2">
+                  <div className="space-y-0">
+                    <p className="text-[10px] md:text-xs font-medium">{relativeTimeString(new Date(player.createdAt))}</p>
+                    <p className="text-[10px] md:text-[11px] hidden md:block">{formatDateTime(player.createdAt)}</p>
                   </div>
                 </td>
-                <td className="border border-primary-text px-4 py-3">
+                <td className="border border-primary-text px-1 md:px-3 py-1 md:py-2">
                   {player.createdAt !== player.updatedAt ? (
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium">{relativeTimeString(new Date(player.updatedAt))}</p>
-                      <p className="text-xs">{formatDateTime(player.updatedAt)}</p>
-                      {player.updateAction && <p className="text-xs italic">{player.updateAction}</p>}
+                    <div className="space-y-0">
+                      <p className="text-[10px] md:text-xs font-medium">{relativeTimeString(new Date(player.updatedAt))}</p>
+                      <p className="text-[10px] md:text-[11px] hidden md:block">{formatDateTime(player.updatedAt)}</p>
+                      {player.updateAction && <p className="text-[10px] md:text-[11px] italic hidden md:block">{player.updateAction}</p>}
                     </div>
                   ) : (
                     <span className="text-gray-400">—</span>
                   )}
                 </td>
-                <td className="border border-primary-text px-4 py-3">
+                <td className="border border-primary-text px-1 md:px-3 py-1 md:py-2">
                   <div className="flex justify-center">
                     <button
-                      className="text-xs bg-green-500 hover:bg-green-600 text-white px-3 py-1.5 rounded-md transition-colors"
+                      className="text-[10px] md:text-xs bg-green-500 hover:bg-green-600 text-white px-1 md:px-2 py-0.5 md:py-1 rounded-md transition-colors whitespace-nowrap"
                       onClick={() => handleReactivate(player.id)}
                     >
                       Re-activate

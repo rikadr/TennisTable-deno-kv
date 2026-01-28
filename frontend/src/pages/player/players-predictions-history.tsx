@@ -13,7 +13,7 @@ import {
 import { NameType, ValueType } from "recharts/types/component/DefaultTooltipContent";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { relativeTimeString } from "../../common/date-utils";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 
 import { ProfilePicture } from "./profile-picture";
 
@@ -122,13 +122,17 @@ export const PlayerPredictionsHistory = ({ playerId }: Props) => {
         <div className="flex items-center gap-4 text-[10px] md:text-[11px] font-semibold self-end md:self-auto border-t border-white/5 pt-2 md:pt-0 md:border-t-0">
           {selectedTargetId !== "overall" && (
             <div className="flex items-center gap-2 mr-2">
-              <ProfilePicture playerId={playerId} size={26} border={2} />
+              <Link to={"/player/" + playerId + "?tab=predictions&predictionTab=history"} >
+                <ProfilePicture playerId={playerId} size={26} border={2} />
+              </Link>
               <span className="text-primary-text/50 text-[10px]">VS</span>
-              <ProfilePicture playerId={selectedTargetId} size={26} border={2} linkToPlayer />
+              <Link to={"/player/" + selectedTargetId + "?tab=predictions&predictionTab=history&compareWith=" + playerId} >
+                <ProfilePicture playerId={selectedTargetId} size={26} border={2} />
+              </Link>
             </div>
           )}
-          <div className="flex items-center gap-1.5 text-blue-400/90 whitespace-nowrap">
-            <div className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
+          <div className="flex items-center gap-1.5 text-primary-text whitespace-nowrap">
+            <div className="w-2 h-2 rounded-full bg-primary-text" />
             Win Chance
           </div>
           <div className="flex items-center gap-1.5 text-orange-400/90 whitespace-nowrap">
@@ -177,11 +181,11 @@ export const PlayerPredictionsHistory = ({ playerId }: Props) => {
               strokeWidth={3}
               animationDuration={300}
               dot={(props: any) => {
-                const { cx, cy, payload } = props;
+                const { cx, cy, payload, index } = props;
                 if (payload.gamesCount > 0) {
                   return (
                     <circle
-                      key={`win-dot-${payload.time}`}
+                      key={`win-dot-${index}`}
                       cx={cx}
                       cy={cy}
                       r={4}
@@ -191,7 +195,7 @@ export const PlayerPredictionsHistory = ({ playerId }: Props) => {
                     />
                   );
                 }
-                return <></>;
+                return <g key={`win-dot-empty-${index}`} />;
               }}
             />
             <Line
@@ -201,11 +205,11 @@ export const PlayerPredictionsHistory = ({ playerId }: Props) => {
               strokeWidth={2}
               strokeDasharray="5 5"
               dot={(props: any) => {
-                const { cx, cy, payload } = props;
+                const { cx, cy, payload, index } = props;
                 if (payload.gamesCount > 0) {
                   return (
                     <circle
-                      key={`conf-dot-${payload.time}`}
+                      key={`conf-dot-${index}`}
                       cx={cx}
                       cy={cy}
                       r={2.5}
@@ -215,7 +219,7 @@ export const PlayerPredictionsHistory = ({ playerId }: Props) => {
                     />
                   );
                 }
-                return <></>;
+                return <g key={`conf-dot-empty-${index}`} />;
               }}
               animationDuration={300}
               opacity={0.6}

@@ -247,38 +247,38 @@ export const PlayerPage: React.FC = () => {
         {/* Recent Games Tab */}
         {activeTab === "games" && (
           <div className="overflow-x-auto bg-primary-background text-primary-text rounded-xl px-1">
-            <table className="w-full min-w-[550px]">
+            <table className="w-full min-w-[450px]">
               <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="text-left py-3 px-4 font-medium  text-sm">Opponent</th>
-                  <th className="text-left py-3 px-1 font-medium  text-sm">Result</th>
-                  <th className="text-left py-3 px-1 font-medium  text-sm">Points</th>
-                  <th className="text-left py-3 px-4 font-medium  text-sm">Score</th>
-                  <th className="text-left py-3 px-4 font-medium  text-sm">Time</th>
-                  <th className="text-left py-3 px-4 font-medium  text-sm">Actions</th>
+                <tr className="border-b border-gray-200 text-xs md:text-sm">
+                  <th className="text-left py-2 md:py-3 px-1 md:px-4 font-medium">Opponent</th>
+                  <th className="text-left py-2 md:py-3 px-1 font-medium"></th>
+                  <th className="text-left py-2 md:py-3 px-1 font-medium">Pts</th>
+                  <th className="text-left py-2 md:py-3 px-1 md:px-4 font-medium">Score</th>
+                  <th className="text-left py-2 md:py-3 px-1 md:px-4 font-medium">Time</th>
+                  <th className="text-left py-2 md:py-3 px-1 md:px-4 font-medium">Actions</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="text-xs md:text-sm">
                 {summary.games
                   .toReversed()
                   .slice(0, isAdmin ? undefined : 10)
                   .map((game) => (
                     <tr key={game.time} className="border-b border-primary-text hover:brightness-110 transition-colors">
-                      <td className="p-1">
+                      <td className="py-1 px-1 md:px-4">
                         <Link to={"/player/" + game.oponent}>
-                          <span className="font-medium">{context.playerName(game.oponent)}</span>
+                          <span className="font-medium truncate max-w-[70px] md:max-w-none inline-block">{context.playerName(game.oponent)}</span>
                         </Link>
                       </td>
-                      <td className="p-1">
-                        <span className="text-2xl">{game.result === "win" ? "🏆" : "💔"}</span>
+                      <td className="py-1 px-1">
+                        <span className="text-base md:text-2xl">{game.result === "win" ? "🏆" : "💔"}</span>
                       </td>
-                      <td className="p-1">
-                        <span className="font-medium flex items-center gap-1">
+                      <td className="py-1 px-1">
+                        <span className="font-medium">
                           {game.result === "win" ? "+" : ""}
                           {fmtNum(game.pointsDiff)}
                         </span>
                       </td>
-                      <td className="p-1 md:flex items-baseline gap-3">
+                      <td className="py-1 px-1 md:px-4">
                         {game.score && (
                           <div className="font-medium">
                             {game.result === "win"
@@ -287,35 +287,38 @@ export const PlayerPage: React.FC = () => {
                           </div>
                         )}
                         {game.score?.setPoints && (
-                          <div className="font-light italic text-xs">
+                          <div className="font-light italic text-xs whitespace-nowrap">
                             {game.result === "win"
                               ? game.score.setPoints.map((set) => `${set.gameWinner}-${set.gameLoser}`).join(", ")
                               : game.score.setPoints.map((set) => `${set.gameLoser}-${set.gameWinner}`).join(", ")}
                           </div>
                         )}
                       </td>
-                      <td className="p-1">
-                        <span className="text-primary-text text-sm">{relativeTimeString(new Date(game.time))}</span>
+                      <td className="py-1 px-1 md:px-4 whitespace-nowrap">
+                        <span className="text-primary-text">{relativeTimeString(new Date(game.time))}</span>
                       </td>
-                      <td className="p-1 flex gap-2">
-                        <button
-                          className="text-xs text-tertiary-text bg-tertiary-background hover:bg-tertiary-background/50 px-2 py-1 rounded-md"
-                          onClick={() => navigate(`/1v1?player1=${playerId}&player2=${game.oponent}`)}
-                        >
-                          👥🥊 Compare 1v1
-                        </button>
-                        {Date.now() - game.time < 7 * 24 * 60 * 60 * 1000 && (
+                      <td className="py-1 px-1 md:px-4">
+                        <div className="flex gap-1 md:gap-2">
                           <button
-                            className="text-xs text-tertiary-text bg-tertiary-background hover:bg-tertiary-background/50 px-2 py-1 rounded-md"
-                            onClick={() =>
-                              navigate(
-                                `/game/edit/score?gameId=${context.games.find((g) => g.playedAt === game.time)?.id}`,
-                              )
-                            }
+                            className="text-xs text-tertiary-text bg-tertiary-background hover:bg-tertiary-background/50 px-1.5 md:px-2 py-0.5 md:py-1 rounded-md whitespace-nowrap"
+                            onClick={() => navigate(`/1v1?player1=${playerId}&player2=${game.oponent}`)}
                           >
-                            Edit Score
+                            <span className="md:hidden">1v1</span>
+                            <span className="hidden md:inline">👥🥊 Compare 1v1</span>
                           </button>
-                        )}
+                          {Date.now() - game.time < 7 * 24 * 60 * 60 * 1000 && (
+                            <button
+                              className="text-xs text-tertiary-text bg-tertiary-background hover:bg-tertiary-background/50 px-1.5 md:px-2 py-0.5 md:py-1 rounded-md whitespace-nowrap"
+                              onClick={() =>
+                                navigate(
+                                  `/game/edit/score?gameId=${context.games.find((g) => g.playedAt === game.time)?.id}`,
+                                )
+                              }
+                            >
+                              Edit
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -362,10 +365,10 @@ export const ContentCard: React.FC<{ title: string; description?: string; childr
   children,
 }) => {
   return (
-    <div className="bg-primary-background text-primary-text rounded-xl p-6 pt-3">
-      <section className="flex flex-col gap-x-6 md:flex-row items-baseline mb-4">
-        <h3 className="text-lg font-semibold">{title}</h3>
-        <p className="">{description}</p>
+    <div className="bg-primary-background text-primary-text rounded-xl p-3 md:p-6 pt-2 md:pt-3">
+      <section className="flex flex-col gap-x-6 md:flex-row items-baseline mb-2 md:mb-4">
+        <h3 className="text-base md:text-lg font-semibold">{title}</h3>
+        <p className="text-sm md:text-base">{description}</p>
       </section>
       {children}
     </div>

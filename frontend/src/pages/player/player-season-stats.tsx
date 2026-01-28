@@ -29,13 +29,13 @@ const SeasonRow = ({
 }) => {
   let medal = null;
   let containerClassName =
-    "flex flex-col sm:flex-row gap-4 sm:gap-0 sm:items-center sm:justify-between p-4 bg-primary-background rounded-lg hover:bg-secondary-background/10 transition-colors cursor-pointer border border-transparent ring-1 ring-primary-text/10";
+    "flex flex-row items-center justify-between p-2 md:p-4 bg-primary-background rounded-lg hover:bg-secondary-background/10 transition-colors cursor-pointer border border-transparent ring-1 ring-primary-text/10";
 
   if (!isCurrent) {
     if (stats.rank === 1) {
       medal = "🥇";
       containerClassName =
-        "flex flex-col sm:flex-row gap-4 sm:gap-0 sm:items-center sm:justify-between p-4 bg-gradient-to-r from-yellow-500/20 to-primary-background rounded-lg hover:bg-secondary-background/10 transition-colors cursor-pointer border border-yellow-500/50 shadow-sm ring-1 ring-primary-text/10";
+        "flex flex-row items-center justify-between p-2 md:p-4 bg-gradient-to-r from-yellow-500/20 to-primary-background rounded-lg hover:bg-secondary-background/10 transition-colors cursor-pointer border border-yellow-500/50 shadow-sm ring-1 ring-primary-text/10";
     } else if (stats.rank === 2) {
       medal = "🥈";
     } else if (stats.rank === 3) {
@@ -45,26 +45,26 @@ const SeasonRow = ({
 
   return (
     <div className={containerClassName}>
-      <div className="flex flex-col">
-        <span className="font-bold text-lg">{seasonName}</span>
-        <span className="text-sm font-light opacity-80">
+      <div className="flex flex-col min-w-0">
+        <span className="font-bold text-sm md:text-lg truncate">{seasonName}</span>
+        <span className="text-xs md:text-sm font-light opacity-80">
           {dateString(season.start)} - {dateString(season.end)}
         </span>
       </div>
 
-      <div className="flex w-full sm:w-auto justify-between sm:justify-end gap-4 md:gap-8 text-right">
-        <div className="flex flex-col items-start sm:items-end">
+      <div className="flex gap-3 md:gap-8 text-right shrink-0">
+        <div className="flex flex-col items-end">
           <span className="text-xs uppercase opacity-70">Rank</span>
-          <span className="font-bold text-xl flex items-center">
-            {medal && <span className="mr-2 text-2xl">{medal}</span>} #{stats.rank}{" "}
-            <span className="text-sm font-normal text-gray-400">
-              / {stats.totalPlayers}
+          <span className="font-bold text-base md:text-xl flex items-center">
+            {medal && <span className="mr-1 md:mr-2 text-lg md:text-2xl">{medal}</span>} #{stats.rank}
+            <span className="text-xs md:text-sm font-normal text-gray-400">
+              /{stats.totalPlayers}
             </span>
           </span>
         </div>
-        <div className="flex flex-col items-end w-20">
+        <div className="flex flex-col items-end">
           <span className="text-xs uppercase opacity-70">Points</span>
-          <span className="font-bold text-xl">{fmtNum(stats.seasonScore)}</span>
+          <span className="font-bold text-base md:text-xl">{fmtNum(stats.seasonScore)}</span>
         </div>
       </div>
     </div>
@@ -105,18 +105,18 @@ export const PlayerSeasonStats: React.FC<PlayerSeasonStatsProps> = ({ playerId }
     .reverse(); // Most recent first
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       {/* Current Season Section */}
       {currentSeason && (
         <ContentCard title="Current Season">
           {currentSeasonStats ? (
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-2 md:gap-4">
               <Link to={`/season?seasonStart=${currentSeason.start}`} className="block group">
-                <SeasonRow 
-                    season={currentSeason} 
-                    stats={currentSeasonStats} 
-                    isCurrent 
-                    seasonName={`Season ${seasons.indexOf(currentSeason) + 1}`} 
+                <SeasonRow
+                    season={currentSeason}
+                    stats={currentSeasonStats}
+                    isCurrent
+                    seasonName={`Season ${seasons.indexOf(currentSeason) + 1}`}
                 />
               </Link>
               <div className="bg-primary-background rounded-lg -mx-2">
@@ -125,14 +125,14 @@ export const PlayerSeasonStats: React.FC<PlayerSeasonStatsProps> = ({ playerId }
               <div className="text-right">
                 <Link
                   to={`/season/player?seasonStart=${currentSeason.start}&playerId=${playerId}`}
-                  className="inline-block px-4 py-2 bg-secondary-background text-secondary-text rounded hover:bg-secondary-background/80 transition"
+                  className="inline-block px-3 py-1.5 md:px-4 md:py-2 text-xs md:text-base bg-secondary-background text-secondary-text rounded hover:bg-secondary-background/80 transition"
                 >
                   View Full Stats →
                 </Link>
               </div>
             </div>
           ) : (
-            <div className="text-center py-4 opacity-70">Player has not participated in the current season yet.</div>
+            <div className="text-center py-4 opacity-70 text-sm md:text-base">Player has not participated in the current season yet.</div>
           )}
         </ContentCard>
       )}
@@ -140,7 +140,7 @@ export const PlayerSeasonStats: React.FC<PlayerSeasonStatsProps> = ({ playerId }
       {/* Past Seasons List */}
       {pastSeasons.length > 0 && (
         <ContentCard title="Past Seasons">
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-1.5 md:gap-2">
             {pastSeasons.map(({ season, stats, seasonNumber }) => (
               <Link key={season.start} to={`/season?seasonStart=${season.start}`} className="block group">
                 <SeasonRow season={season} stats={stats} seasonName={`Season ${seasonNumber}`} />
@@ -151,7 +151,7 @@ export const PlayerSeasonStats: React.FC<PlayerSeasonStatsProps> = ({ playerId }
       )}
 
       {pastSeasons.length === 0 && !currentSeasonStats && (
-        <div className="text-center py-8 text-lg opacity-60">No season history found for this player.</div>
+        <div className="text-center py-6 md:py-8 text-base md:text-lg opacity-60">No season history found for this player.</div>
       )}
     </div>
   );
