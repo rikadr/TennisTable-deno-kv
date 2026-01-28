@@ -86,10 +86,10 @@ export const SeasonCard: React.FC<SeasonCardProps> = ({ season, index, totalSeas
             </div>
 
             {winnerId && (
-              <div className="flex items-center gap-3 bg-primary-text/5 px-4 py-2 rounded-lg border border-primary-text/20 w-full md:w-auto">
+              <div className="flex items-center gap-3 bg-primary-background px-4 py-2 rounded-lg w-full md:w-auto">
                 <div className="text-2xl">🏆</div>
                 <div>
-                  <div className="text-xs text-primary-text/80 font-medium uppercase tracking-wider">Winner</div>
+                  <div className="text-xs text-primary-text/50 font-medium uppercase tracking-wider">Winner</div>
                   <div className="flex items-center gap-2">
                     <ProfilePicture playerId={winnerId} size={24} border={1} />
                     <span className="font-bold text-secondary-text">{context.playerName(winnerId)}</span>

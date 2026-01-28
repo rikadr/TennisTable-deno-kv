@@ -10,6 +10,7 @@ import { SeasonLeaderboardBars } from "./season-leaderboard-bars";
 import { SeasonTimeline } from "./season-timeline";
 import { SeasonScoreLog } from "./season-score-log";
 import { SeasonFAQ } from "./season-faq";
+import { SeasonPodium } from "./season-podium";
 
 type SortKey = "score" | "playerPairings" | "avgPerformance";
 
@@ -132,8 +133,10 @@ export function SeasonPage() {
       {activeTab === "score_log" && <SeasonScoreLog season={season} />}
       {activeTab === "faq" && <SeasonFAQ />}
       {activeTab === "leaderboard" && (
-        <div className="bg-secondary-background rounded-lg overflow-hidden mt-4">
-          <div className="overflow-x-auto">
+        <div className="mt-4">
+          <SeasonPodium leaderboard={leaderboard} seasonStart={Number(seasonStart)} />
+          <div className="bg-secondary-background rounded-lg overflow-hidden">
+            <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="bg-secondary-background border-b border-secondary-text/20">
@@ -190,6 +193,7 @@ export function SeasonPage() {
                 })}
               </tbody>
             </table>
+            </div>
           </div>
         </div>
       )}
