@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import {
   CartesianGrid,
   Line,
@@ -12,6 +12,8 @@ import {
 } from "recharts";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 
+type DiversityMode = "global" | "ranked";
+
 interface WeeklyData {
   week: string;
   actualDiversity: number;
@@ -22,11 +24,14 @@ interface WeeklyData {
 
 export const PlayerDiversityChart: React.FC = () => {
   const context = useEventDbContext();
+  const [mode, setMode] = useState<DiversityMode>("global");
 
   const { weeklyData, tournamentsInRange } = useMemo(() => {
     if (context.games.length === 0) {
       return { weeklyData: [], tournamentsInRange: [] };
     }
+
+    const gameLimitForRanked = context.client.gameLimitForRanked;
 
     // Build player activation timeline
     const playerEvents = context.events
@@ -75,6 +80,8 @@ export const PlayerDiversityChart: React.FC = () => {
 
     // Track all pairings (we'll filter by active players per week)
     const allPairings = new Set<string>();
+    // Track per-player game counts against each opponent (for ranked mode)
+    const playerGameCounts = new Map<string, Map<string, number>>();
     let gameIndex = 0;
 
     while (currentDate <= endDate) {
@@ -89,39 +96,94 @@ export const PlayerDiversityChart: React.FC = () => {
         const pairing = [game.winner, game.loser].sort().join("-");
         allPairings.add(pairing);
 
+        // Track game counts per player per opponent
+        if (mode === "ranked") {
+          if (!playerGameCounts.has(game.winner)) playerGameCounts.set(game.winner, new Map());
+          if (!playerGameCounts.has(game.loser)) playerGameCounts.set(game.loser, new Map());
+          const winnerCounts = playerGameCounts.get(game.winner)!;
+          const loserCounts = playerGameCounts.get(game.loser)!;
+          winnerCounts.set(game.loser, (winnerCounts.get(game.loser) || 0) + 1);
+          loserCounts.set(game.winner, (loserCounts.get(game.winner) || 0) + 1);
+        }
+
         gameIndex++;
       }
 
       // Get active players at the end of this week
       const activePlayers = getActivePlayersAtTime(weekEnd - 1);
 
-      // Filter pairings to only include those where both players are active
-      const activePairings = Array.from(allPairings).filter((pairing) => {
-        const [player1, player2] = pairing.split("-");
-        return activePlayers.has(player1) && activePlayers.has(player2);
-      });
+      if (mode === "ranked") {
+        // For ranked mode: determine which active players are ranked
+        // A player is ranked if they have played >= gameLimitForRanked games
+        // against other currently-active players
+        const rankedPlayers = new Set<string>();
+        for (const playerId of activePlayers) {
+          const opponents = playerGameCounts.get(playerId);
+          if (!opponents) continue;
+          let gamesAgainstActive = 0;
+          for (const [opponentId, count] of opponents) {
+            if (activePlayers.has(opponentId)) {
+              gamesAgainstActive += count;
+            }
+          }
+          if (gamesAgainstActive >= gameLimitForRanked) {
+            rankedPlayers.add(playerId);
+          }
+        }
 
-      // Calculate possible diversity: N * (N - 1) / 2 for active players only
-      const playerCount = activePlayers.size;
-      const possibleDiversity = playerCount > 1 ? (playerCount * (playerCount - 1)) / 2 : 0;
+        // Filter pairings to only include those where both players are ranked
+        const rankedPairings = Array.from(allPairings).filter((pairing) => {
+          const [player1, player2] = pairing.split("-");
+          return rankedPlayers.has(player1) && rankedPlayers.has(player2);
+        });
 
-      // Calculate coverage percentage
-      const actualDiversity = activePairings.length;
-      const coveragePercentage = possibleDiversity > 0 ? (actualDiversity / possibleDiversity) * 100 : 0;
+        const playerCount = rankedPlayers.size;
+        const possibleDiversity = playerCount > 1 ? (playerCount * (playerCount - 1)) / 2 : 0;
+        const actualDiversity = rankedPairings.length;
+        const coveragePercentage = possibleDiversity > 0 ? (actualDiversity / possibleDiversity) * 100 : 0;
 
-      // Create week key for display
-      const weekDate = new Date(weekStart);
-      const year = weekDate.getFullYear();
-      const weekNumber = getWeekNumber(weekDate);
-      const weekKey = `${year}-W${String(weekNumber).padStart(2, "0")}`;
+        const weekDate = new Date(weekStart);
+        const year = weekDate.getFullYear();
+        const weekNumber = getWeekNumber(weekDate);
+        const weekKey = `${year}-W${String(weekNumber).padStart(2, "0")}`;
 
-      allWeeksData.push({
-        week: weekKey,
-        actualDiversity,
-        possibleDiversity,
-        coveragePercentage,
-        timestamp: weekStart,
-      });
+        allWeeksData.push({
+          week: weekKey,
+          actualDiversity,
+          possibleDiversity,
+          coveragePercentage,
+          timestamp: weekStart,
+        });
+      } else {
+        // Global mode (existing behavior)
+        // Filter pairings to only include those where both players are active
+        const activePairings = Array.from(allPairings).filter((pairing) => {
+          const [player1, player2] = pairing.split("-");
+          return activePlayers.has(player1) && activePlayers.has(player2);
+        });
+
+        // Calculate possible diversity: N * (N - 1) / 2 for active players only
+        const playerCount = activePlayers.size;
+        const possibleDiversity = playerCount > 1 ? (playerCount * (playerCount - 1)) / 2 : 0;
+
+        // Calculate coverage percentage
+        const actualDiversity = activePairings.length;
+        const coveragePercentage = possibleDiversity > 0 ? (actualDiversity / possibleDiversity) * 100 : 0;
+
+        // Create week key for display
+        const weekDate = new Date(weekStart);
+        const year = weekDate.getFullYear();
+        const weekNumber = getWeekNumber(weekDate);
+        const weekKey = `${year}-W${String(weekNumber).padStart(2, "0")}`;
+
+        allWeeksData.push({
+          week: weekKey,
+          actualDiversity,
+          possibleDiversity,
+          coveragePercentage,
+          timestamp: weekStart,
+        });
+      }
 
       // Move to next week
       currentDate.setDate(currentDate.getDate() + 7);
@@ -134,7 +196,7 @@ export const PlayerDiversityChart: React.FC = () => {
     });
 
     return { weeklyData: allWeeksData, tournamentsInRange };
-  }, [context.games, context.events, context.client?.tournaments]);
+  }, [context.games, context.events, context.client?.tournaments, mode]);
 
   // Format week for display
   const formatWeek = (weekString: string): string => {
@@ -164,7 +226,32 @@ export const PlayerDiversityChart: React.FC = () => {
 
   return (
     <div className="bg-primary-background text-primary-text rounded-lg">
-      <h2 className="text-xl font-semibold text-center mb-4">Global Player Diversity Over Time</h2>
+      <h2 className="text-xl font-semibold text-center mb-4">
+        {mode === "global" ? "Global" : "Ranked"} Player Diversity Over Time
+      </h2>
+
+      <div className="flex gap-2 justify-center mb-4">
+        <button
+          onClick={() => setMode("global")}
+          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+            mode === "global"
+              ? "bg-secondary-background text-secondary-text"
+              : "bg-primary-background text-primary-text/75 border border-primary-text hover:bg-secondary-background hover:text-secondary-text"
+          }`}
+        >
+          Global
+        </button>
+        <button
+          onClick={() => setMode("ranked")}
+          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+            mode === "ranked"
+              ? "bg-secondary-background text-secondary-text"
+              : "bg-primary-background text-primary-text/75 border border-primary-text hover:bg-secondary-background hover:text-secondary-text"
+          }`}
+        >
+          Ranked Only
+        </button>
+      </div>
 
       <ResponsiveContainer width="100%" height={600}>
         <LineChart data={weeklyData} margin={{ top: 20, right: 60, bottom: 20, left: 20 }}>
@@ -273,6 +360,7 @@ export const PlayerDiversityChart: React.FC = () => {
       </ResponsiveContainer>
 
       <div className="mt-4 text-sm text-center opacity-75">
+        {mode === "ranked" && <>Mode: Ranked (min {context.client.gameLimitForRanked} games) | </>}
         Total games: {context.games.length} | Weeks displayed: {weeklyData.length} | Current unique pairings:{" "}
         {weeklyData[weeklyData.length - 1]?.actualDiversity || 0} /{" "}
         {weeklyData[weeklyData.length - 1]?.possibleDiversity || 0} | Coverage:{" "}
