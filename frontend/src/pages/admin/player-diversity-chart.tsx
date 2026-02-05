@@ -196,7 +196,7 @@ export const PlayerDiversityChart: React.FC = () => {
     });
 
     return { weeklyData: allWeeksData, tournamentsInRange };
-  }, [context.games, context.events, context.client?.tournaments, mode]);
+  }, [context.games, context.events, context.client?.tournaments, context.client.gameLimitForRanked, mode]);
 
   // Format week for display
   const formatWeek = (weekString: string): string => {
