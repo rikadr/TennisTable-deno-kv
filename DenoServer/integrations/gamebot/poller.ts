@@ -5,7 +5,7 @@ const config = getClientConfig();
 
 if (config.enabled && config.gameBotChannelId) {
   // Poll every minute
-  Deno.cron("Gamebot Poller", "* * * * *", async () => {
+  Deno.cron("Gamebot Poller", "*/10 * * * *", async () => {
     try {
       const headers = new Headers();
       if (config.apiToken) {
