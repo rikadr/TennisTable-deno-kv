@@ -227,6 +227,7 @@ export const LeaderBoard: React.FC = () => {
               <div className="flex gap-4 text-base text-center text-primary-text mb-2">
                 <div className="w-40 text-left pl-2">Name</div>
                 <div className="w-12 text-right">Elo</div>
+                <div className="w-12 text-right">Games</div>
               </div>
               {leaderboard.unrankedPlayers.map((player, index) => (
                 <Link
@@ -241,6 +242,7 @@ export const LeaderBoard: React.FC = () => {
                       maximumFractionDigits: 0,
                     })}
                   </div>
+                  <div className="w-12 text-right">{player.games.length}</div>
                 </Link>
               ))}
               {playersWithNoMatches.map((player, index) => (
@@ -252,6 +254,7 @@ export const LeaderBoard: React.FC = () => {
                   <ProfilePicture playerId={player.id} size={28} border={2} />
                   <div className="w-28 font-normal whitespace-nowrap">{player.name}</div>
                   <div className="w-12 text-right">-</div>
+                  <div className="w-12 text-right">0</div>
                 </Link>
               ))}
             </div>
