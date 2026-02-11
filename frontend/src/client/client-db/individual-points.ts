@@ -33,11 +33,12 @@ export class IndividualPoints {
   #generatePlayerMap(transactionOrder: "FIFO" | "LIFO") {
     const map = new Map<string, PlayerWithIndividualPoints>();
     for (const game of this.parent.games) {
+      // Check if both players were active at the time the game was played
       if (
-        !this.parent.eventStore.playersProjector.getPlayer(game.winner)?.active ||
-        !this.parent.eventStore.playersProjector.getPlayer(game.loser)?.active
+        !this.parent.eventStore.playersProjector.wasPlayerActiveAt(game.winner, game.playedAt) ||
+        !this.parent.eventStore.playersProjector.wasPlayerActiveAt(game.loser, game.playedAt)
       ) {
-        continue; // Skip games with inactive players
+        continue; // Skip games where either player was inactive at game time
       }
       const winner = this.#getOrCreatePlayer(game.winner, map, game.playedAt);
       const loser = this.#getOrCreatePlayer(game.loser, map, game.playedAt);

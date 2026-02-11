@@ -25,12 +25,13 @@ export const NavMenu: React.FC = () => {
     const items: { name: string; to: string }[] = [
       { name: "🥇 Leaderboard", to: "/leader-board" },
       { name: "🍁 Seasons", to: "/season/list" },
-      { name: "🏓  Add game", to: "/add-game" },
-      { name: "👤  New player", to: "/add-player" },
+      { name: "🏓 Add game", to: "/add-game" },
+      { name: "👤 New player", to: "/add-player" },
       { name: "👥🥊 Compare 1v1", to: "/1v1" },
       { name: "📈 Compare all", to: "/compare-players" },
       { name: "🏆 Tournaments", to: "/tournament/list" },
       { name: "🎖️ Achievements", to: "/achievements" },
+      { name: "🌠 Hall of fame", to: "/hall-of-fame" },
       { name: "🤖 Simulations", to: "/simulations" },
       { name: "🔧 Settings", to: "/settings" },
     ];

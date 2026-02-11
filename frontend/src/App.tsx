@@ -40,6 +40,8 @@ import { TournamentUndoSkipPage } from "./pages/tournament/tournament-undo-skip"
 import { SeasonsListPage } from "./pages/seasons/seasons-list-page";
 import { SeasonPage } from "./pages/seasons/season-page";
 import { SeasonPlayerPage } from "./pages/seasons/season-player-page";
+import { HallOfFamePage } from "./pages/hall-of-fame/hall-of-fame-page";
+import { HallOfFamePlayerPage } from "./pages/hall-of-fame/hall-of-fame-player-page";
 
 const RequireAuth: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   if (!session.isAuthenticated) {
@@ -70,6 +72,8 @@ function App() {
                         <Route path="/tennis-table" element={<Navigate to="/leader-board" />} />
                         <Route path="/leader-board" element={<LeaderBoard />} />
                         <Route path="/player/:name" element={<PlayerPage />} />
+                        <Route path="/hall-of-fame" element={<HallOfFamePage />} />
+                        <Route path="/hall-of-fame/:playerId" element={<HallOfFamePlayerPage />} />
                         <Route path="/1v1" element={<PvPPage />} />
                         <Route path="/compare-players" element={<ComparePlayersPage />} />
                         <Route path="/player-network" element={<PlayerNetwork />} />

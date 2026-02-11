@@ -19,13 +19,18 @@ export class LeaderboardChanges {
     const scoreMaps: { time: number; map: Map<string, PlayerWithElo> }[] = [];
     let lastGamesMap: { time: number; map: Map<string, PlayerWithElo> } = { time: 0, map: new Map() };
 
-    Elo.eloCalculator(this.parent.games, this.parent.players, (map, game) => {
-      if (game.playedAt > oneWeekAgo) {
-        scoreMaps.push({ time: game.playedAt, map: structuredClone(map) });
-      } else {
-        lastGamesMap = { time: game.playedAt, map: structuredClone(map) };
-      }
-    });
+    Elo.eloCalculator(
+      this.parent.games,
+      this.parent.allPlayers,
+      (map, game) => {
+        if (game.playedAt > oneWeekAgo) {
+          scoreMaps.push({ time: game.playedAt, map: structuredClone(map) });
+        } else {
+          lastGamesMap = { time: game.playedAt, map: structuredClone(map) };
+        }
+      },
+      this.parent.getHistoricalPlayerFilter(Date.now()),
+    );
 
     const leaderboardChangesMap = new Map<
       string,

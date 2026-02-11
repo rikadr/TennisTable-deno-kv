@@ -17,18 +17,23 @@ export class PlayerOponentDistribution {
     const playerDiffs: number[] = [];
     const allDiffs: number[] = [];
 
-    Elo.eloCalculator(this.parent.games, this.parent.players, (map, game) => {
-      const winnerElo = map.get(game.winner)!.elo;
-      const loserElo = map.get(game.loser)!.elo;
-      allDiffs.push(winnerElo - loserElo);
-      allDiffs.push(loserElo - winnerElo);
-      if (game.winner === playerId) {
-        playerDiffs.push(loserElo - winnerElo);
-      }
-      if (game.loser === playerId) {
-        playerDiffs.push(winnerElo - loserElo);
-      }
-    });
+    Elo.eloCalculator(
+      this.parent.games,
+      this.parent.allPlayers,
+      (map, game) => {
+        const winnerElo = map.get(game.winner)!.elo;
+        const loserElo = map.get(game.loser)!.elo;
+        allDiffs.push(winnerElo - loserElo);
+        allDiffs.push(loserElo - winnerElo);
+        if (game.winner === playerId) {
+          playerDiffs.push(loserElo - winnerElo);
+        }
+        if (game.loser === playerId) {
+          playerDiffs.push(winnerElo - loserElo);
+        }
+      },
+      this.parent.getHistoricalPlayerFilter(Date.now()),
+    );
 
     const avgDiff = average(playerDiffs);
 

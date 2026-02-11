@@ -22,7 +22,7 @@ import { useEloSimulationWorker } from "../../hooks/use-elo-simulation-worker";
 import { Shimmer } from "../../common/shimmer";
 import { classNames } from "../../common/class-names";
 
-export const PlayerEloGraph: React.FC<{ playerId: string }> = ({ playerId }) => {
+export const PlayerEloGraph: React.FC<{ playerId: string; isReadOnly?: boolean }> = ({ playerId, isReadOnly = false }) => {
   const context = useEventDbContext();
   const summary = context.leaderboard.getPlayerSummary(playerId || "");
 
@@ -194,7 +194,7 @@ export const PlayerEloGraph: React.FC<{ playerId: string }> = ({ playerId }) => 
           )}
         </div>
       )}
-      {!showExpectedElo && summary.games.length >= context.client.gameLimitForRanked && (
+      {!isReadOnly && !showExpectedElo && summary.games.length >= context.client.gameLimitForRanked && (
         <button
           className="mb-4 px-2 py-1 bg-secondary-background text-secondary-text hover:bg-secondary-background/50 rounded-lg"
           onClick={() =>
