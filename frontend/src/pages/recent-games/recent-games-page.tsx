@@ -27,7 +27,7 @@ export const RecentGamesPage: React.FC = () => {
   const isAdmin = session.isAuthenticated && session.sessionData?.role === "admin";
   const minGames = isAdmin ? MIN_GAMES_ADMIN : MIN_GAMES_DEFAULT;
 
-  const [viewString, setViewString] = useLocalStorage("recent_games_view", "overall");
+  const [viewString, setViewString] = useLocalStorage("leaderboard_view", "overall");
   const view: View = viewString === "season" ? "season" : "overall";
   const setView = (v: View) => setViewString(v);
 
