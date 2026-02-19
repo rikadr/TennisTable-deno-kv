@@ -85,31 +85,47 @@ export const TopGamingDays: React.FC = () => {
     );
   }
 
-  const TopDaysTable = ({ title, data }: { title: string; data: DayData[] }) => (
-    <div className="flex-1 min-w-0">
-      <h3 className="text-sm font-semibold mb-2">{title}</h3>
-      <table className="w-full text-xs border-collapse">
-        <thead>
-          <tr className="bg-secondary-background text-secondary-text">
-            <th className="px-2 py-1 text-left border border-primary-text/20">#</th>
-            <th className="px-2 py-1 text-left border border-primary-text/20">Date</th>
-            <th className="px-2 py-1 text-left border border-primary-text/20">When</th>
-            <th className="px-2 py-1 text-right border border-primary-text/20">Games</th>
-          </tr>
-        </thead>
-        <tbody>
-          {data.map((day, index) => (
-            <tr key={day.date} className="hover:bg-secondary-background/50">
-              <td className="px-2 py-1 border border-primary-text/20 font-medium">{index + 1}</td>
-              <td className="px-2 py-1 border border-primary-text/20 whitespace-nowrap">{formatDate(day.date)}</td>
-              <td className="px-2 py-1 border border-primary-text/20 whitespace-nowrap">{relativeTimeString(new Date(day.timestamp))}</td>
-              <td className="px-2 py-1 border border-primary-text/20 text-right font-bold">{day.count}</td>
+  const TopDaysTable = ({ title, data }: { title: string; data: DayData[] }) => {
+    const now = Date.now();
+    const sixMonthsMs = 6 * 30 * 24 * 60 * 60 * 1000;
+
+    return (
+      <div className="flex-1 min-w-0">
+        <h3 className="text-sm font-semibold mb-2">{title}</h3>
+        <table className="w-full text-xs border-collapse">
+          <thead>
+            <tr className="bg-secondary-background text-secondary-text">
+              <th className="px-2 py-1 text-left border border-primary-text/20">#</th>
+              <th className="px-2 py-1 text-left border border-primary-text/20">Date</th>
+              <th className="px-2 py-1 text-left border border-primary-text/20">When</th>
+              <th className="px-2 py-1 text-right border border-primary-text/20">Games</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
+          </thead>
+          <tbody>
+            {data.map((day, index) => {
+              const ageMs = now - day.timestamp;
+              const recencyPercent = Math.max(0, Math.min(100, (1 - ageMs / sixMonthsMs) * 100));
+
+              return (
+                <tr key={day.date} className="hover:bg-secondary-background/50">
+                  <td className="px-2 py-1 border border-primary-text/20 font-medium">{index + 1}</td>
+                  <td className="px-2 py-1 border border-primary-text/20 whitespace-nowrap">{formatDate(day.date)}</td>
+                  <td className="px-2 py-1 border border-primary-text/20 whitespace-nowrap relative overflow-hidden">
+                    {relativeTimeString(new Date(day.timestamp))}
+                    <div
+                      className="absolute bottom-0 left-0 h-[2px] bg-current"
+                      style={{ width: `${recencyPercent}%` }}
+                    />
+                  </td>
+                  <td className="px-2 py-1 border border-primary-text/20 text-right font-bold">{day.count}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    );
+  };
 
   return (
     <div className="bg-primary-background text-primary-text rounded-lg p-4">
