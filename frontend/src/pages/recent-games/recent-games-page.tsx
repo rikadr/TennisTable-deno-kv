@@ -99,13 +99,13 @@ export const RecentGamesPage: React.FC = () => {
     <div className="w-full px-4 flex flex-col items-center">
       <div className="w-full max-w-2xl">
         <div className="bg-primary-background rounded-lg w-full overflow-hidden">
-          <h1 className="text-2xl text-center mb-2 mt-6 text-primary-text">Recent games</h1>
-          <p className="text-center text-sm text-primary-text/60 mb-4">
+          <h1 className="text-2xl text-center mt-2 text-primary-text">Recent games</h1>
+          <p className="text-center text-sm text-primary-text/60 mb-1">
             Last {processedGames.length} matches{isAdmin ? " (admin view)" : ""}
           </p>
 
           {/* View toggle */}
-          <div className="flex justify-center gap-2 p-4 border-b border-primary-text/20 mb-2">
+          <div className="flex justify-center gap-2 px-4 py-2 border-b border-primary-text/20">
             <button
               onClick={() => setView("overall")}
               className={classNames(
