@@ -87,7 +87,7 @@ export const RecentGamesPage: React.FC = () => {
           {game.score.setsWon.gameWinner} - {game.score.setsWon.gameLoser}
         </div>
         {game.score.setPoints && (
-          <div className="font-light italic text-[8px] xs:text-xs whitespace-nowrap">
+          <div className="font-light italic text-[10px] whitespace-nowrap">
             {game.score.setPoints.map((set) => `${set.gameWinner}-${set.gameLoser}`).join(", ")}
           </div>
         )}
@@ -138,25 +138,25 @@ export const RecentGamesPage: React.FC = () => {
             <table className="w-full text-primary-text border-collapse">
               <thead>
                 {view === "season" ? (
-                  <tr className="text-[9px] xs:text-sm md:text-base font-medium text-primary-text/70">
-                    <th className="py-1 px-2 text-left font-medium">Winner</th>
+                  <tr className="text-xs md:text-sm font-medium text-primary-text/70">
+                    <th className="py-1 px-1 md:px-2 text-left font-medium">Winner</th>
                     <th className="py-1 px-1 text-center font-medium">Score</th>
                     <th className="py-1 px-1 text-right font-medium">W pts</th>
-                    <th className="py-1 px-2 text-right font-medium">Loser</th>
+                    <th className="py-1 px-1 md:px-2 text-right font-medium">Loser</th>
                     <th className="py-1 px-1 text-right font-medium">L pts</th>
-                    <th className="py-1 px-2"></th>
+                    <th className="py-1 px-1 md:px-2"></th>
                   </tr>
                 ) : (
-                  <tr className="text-[9px] xs:text-sm md:text-base font-medium text-primary-text/70">
-                    <th className="py-1 px-2 text-left font-medium">Winner</th>
+                  <tr className="text-xs md:text-sm font-medium text-primary-text/70">
+                    <th className="py-1 px-1 md:px-2 text-left font-medium">Winner</th>
                     <th className="py-1 px-1 text-center font-medium">Score</th>
-                    <th className="py-1 px-2 text-right font-medium">Loser</th>
-                    <th className="py-1 px-2 text-right font-medium">Elo won</th>
-                    <th className="py-1 px-2"></th>
+                    <th className="py-1 px-1 md:px-2 text-right font-medium">Loser</th>
+                    <th className="py-1 px-1 md:px-2 text-right font-medium">Elo won</th>
+                    <th className="py-1 px-1 md:px-2"></th>
                   </tr>
                 )}
               </thead>
-              <tbody className="divide-y divide-primary-text/20">
+              <tbody className="divide-y divide-primary-text/20 text-xs md:text-sm">
                 {processedGames.map((game, index) => {
                   const rowClick = () => navigate(`/1v1?player1=${game.winner}&player2=${game.loser}`);
 
@@ -165,24 +165,24 @@ export const RecentGamesPage: React.FC = () => {
                       <tr
                         key={index}
                         onClick={rowClick}
-                        className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text cursor-pointer transition-colors text-[10px] xs:text-lg md:text-xl font-light"
+                        className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text cursor-pointer transition-colors"
                       >
-                        <td className="py-1 px-2 whitespace-nowrap">
-                          <span className="font-normal">{context.playerName(game.winner)}</span>
+                        <td className="py-1 px-1 md:px-2 whitespace-nowrap">
+                          <span className="font-medium">{context.playerName(game.winner)}</span>
                         </td>
-                        <td className="py-1 px-1 text-center whitespace-nowrap font-medium text-[9px] xs:text-base md:text-lg">
+                        <td className="py-1 px-1 text-center whitespace-nowrap">
                           {renderScore(game)}
                         </td>
                         <td className="py-1 px-1 text-right font-medium">
                           {fmtNum(game.pointsDiff, { digits: 1 })}
                         </td>
-                        <td className="py-1 px-2 text-right whitespace-nowrap">
-                          <span className="font-normal">{context.playerName(game.loser)}</span>
+                        <td className="py-1 px-1 md:px-2 text-right whitespace-nowrap">
+                          <span className="font-medium">{context.playerName(game.loser)}</span>
                         </td>
                         <td className="py-1 px-1 text-right">
                           {game.loserPointsDiff !== undefined ? fmtNum(game.loserPointsDiff, { digits: 1 }) : ""}
                         </td>
-                        <td className="py-1 px-2 text-right text-[9px] xs:text-sm md:text-base whitespace-nowrap">
+                        <td className="py-1 px-1 md:px-2 text-right whitespace-nowrap">
                           <RelativeTime date={new Date(game.playedAt)} />
                         </td>
                       </tr>
@@ -193,21 +193,21 @@ export const RecentGamesPage: React.FC = () => {
                     <tr
                       key={index}
                       onClick={rowClick}
-                      className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text cursor-pointer transition-colors text-[10px] xs:text-lg md:text-xl font-light"
+                      className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text cursor-pointer transition-colors"
                     >
-                      <td className="py-1 px-2 whitespace-nowrap">
-                        <span className="font-normal">{context.playerName(game.winner)}</span>
+                      <td className="py-1 px-1 md:px-2 whitespace-nowrap">
+                        <span className="font-medium">{context.playerName(game.winner)}</span>
                       </td>
-                      <td className="py-1 px-1 text-center whitespace-nowrap font-medium text-[9px] xs:text-base md:text-lg">
+                      <td className="py-1 px-1 text-center whitespace-nowrap">
                         {renderScore(game)}
                       </td>
-                      <td className="py-1 px-2 text-right whitespace-nowrap">
-                        <span className="font-normal">{context.playerName(game.loser)}</span>
+                      <td className="py-1 px-1 md:px-2 text-right whitespace-nowrap">
+                        <span className="font-medium">{context.playerName(game.loser)}</span>
                       </td>
-                      <td className="py-1 px-2 text-right font-medium">
+                      <td className="py-1 px-1 md:px-2 text-right font-medium">
                         +{fmtNum(game.pointsDiff, { digits: 0 })}
                       </td>
-                      <td className="py-1 px-2 text-right text-[9px] xs:text-sm md:text-base whitespace-nowrap">
+                      <td className="py-1 px-1 md:px-2 text-right whitespace-nowrap">
                         <RelativeTime date={new Date(game.playedAt)} />
                       </td>
                     </tr>
