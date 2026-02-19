@@ -82,12 +82,12 @@ export const RecentGamesPage: React.FC = () => {
   function renderScore(game: DisplayGame) {
     if (!game.score) return <span>-</span>;
     return (
-      <div>
+      <div className="leading-tight -my-1">
         <div className="font-medium">
           {game.score.setsWon.gameWinner} - {game.score.setsWon.gameLoser}
         </div>
         {game.score.setPoints && (
-          <div className="font-light italic text-[10px] whitespace-nowrap">
+          <div className="font-light italic text-[10px] whitespace-nowrap leading-none">
             {game.score.setPoints.map((set) => `${set.gameWinner}-${set.gameLoser}`).join(", ")}
           </div>
         )}
