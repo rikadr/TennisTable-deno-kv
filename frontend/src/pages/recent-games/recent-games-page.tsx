@@ -10,8 +10,9 @@ import { session } from "../../services/auth";
 
 type View = "overall" | "season";
 
-const GAMES_COUNT_DEFAULT = 20;
-const GAMES_COUNT_ADMIN = 100;
+const MIN_GAMES_DEFAULT = 20;
+const MIN_GAMES_ADMIN = 100;
+const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
 
 type DisplayGame = Game & {
   pointsDiff: number;
@@ -24,7 +25,7 @@ export const RecentGamesPage: React.FC = () => {
   const leaderboardMap = context.leaderboard.getCachedLeaderboardMap();
 
   const isAdmin = session.isAuthenticated && session.sessionData?.role === "admin";
-  const gamesCount = isAdmin ? GAMES_COUNT_ADMIN : GAMES_COUNT_DEFAULT;
+  const minGames = isAdmin ? MIN_GAMES_ADMIN : MIN_GAMES_DEFAULT;
 
   const [viewString, setViewString] = useLocalStorage("recent_games_view", "overall");
   const view: View = viewString === "season" ? "season" : "overall";
@@ -45,7 +46,11 @@ export const RecentGamesPage: React.FC = () => {
     displayGames = currentSeason.games;
   }
 
-  const lastGames = displayGames.toReversed().slice(0, gamesCount);
+  const reversedGames = displayGames.toReversed();
+  const cutoff = Date.now() - TWENTY_FOUR_HOURS;
+  const gamesInLast24h = reversedGames.filter((g) => g.playedAt >= cutoff).length;
+  const gamesCount = Math.max(minGames, gamesInLast24h);
+  const lastGames = reversedGames.slice(0, gamesCount);
 
   function getGame(game: Game): DisplayGame | undefined {
     if (view === "season") {
@@ -74,11 +79,20 @@ export const RecentGamesPage: React.FC = () => {
     .map(getGame)
     .filter((g): g is DisplayGame => !!g);
 
-  function formatScore(game: DisplayGame): string {
-    if (!game.score) return "-";
-    const w = game.score.setsWon.gameWinner;
-    const l = game.score.setsWon.gameLoser;
-    return `${w} - ${l}`;
+  function renderScore(game: DisplayGame) {
+    if (!game.score) return <span>-</span>;
+    return (
+      <div>
+        <div className="font-medium">
+          {game.score.setsWon.gameWinner} - {game.score.setsWon.gameLoser}
+        </div>
+        {game.score.setPoints && (
+          <div className="font-light italic text-[8px] xs:text-xs whitespace-nowrap">
+            {game.score.setPoints.map((set) => `${set.gameWinner}-${set.gameLoser}`).join(", ")}
+          </div>
+        )}
+      </div>
+    );
   }
 
   return (
@@ -87,7 +101,7 @@ export const RecentGamesPage: React.FC = () => {
         <div className="bg-primary-background rounded-lg w-full overflow-hidden">
           <h1 className="text-2xl text-center mb-2 mt-6 text-primary-text">Recent games</h1>
           <p className="text-center text-sm text-primary-text/60 mb-4">
-            Last {gamesCount} matches{isAdmin ? " (admin view)" : ""}
+            Last {processedGames.length} matches{isAdmin ? " (admin view)" : ""}
           </p>
 
           {/* View toggle */}
@@ -157,7 +171,7 @@ export const RecentGamesPage: React.FC = () => {
                           <span className="font-normal">{context.playerName(game.winner)}</span>
                         </td>
                         <td className="py-1 px-1 text-center whitespace-nowrap font-medium text-[9px] xs:text-base md:text-lg">
-                          {formatScore(game)}
+                          {renderScore(game)}
                         </td>
                         <td className="py-1 px-1 text-right font-medium">
                           {fmtNum(game.pointsDiff, { digits: 1 })}
@@ -185,7 +199,7 @@ export const RecentGamesPage: React.FC = () => {
                         <span className="font-normal">{context.playerName(game.winner)}</span>
                       </td>
                       <td className="py-1 px-1 text-center whitespace-nowrap font-medium text-[9px] xs:text-base md:text-lg">
-                        {formatScore(game)}
+                        {renderScore(game)}
                       </td>
                       <td className="py-1 px-2 text-right whitespace-nowrap">
                         <span className="font-normal">{context.playerName(game.loser)}</span>

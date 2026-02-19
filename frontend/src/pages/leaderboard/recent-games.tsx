@@ -67,9 +67,12 @@ export const RecentGames: React.FC<Props> = ({ view = "overall" }) => {
 
   return (
     <div className="bg-primary-background rounded-lg w-full overflow-hidden">
-      <Link to="/recent-games" className="block hover:underline">
-        <h1 className="text-2xl text-center mb-4 mt-[27.5px] text-primary-text">Recent games &rarr;</h1>
-      </Link>
+      <div className="text-center mb-4 mt-[27.5px]">
+        <h1 className="text-2xl text-primary-text">Recent games</h1>
+        <Link to="/recent-games" className="text-xs text-primary-text/50 hover:underline">
+          see more
+        </Link>
+      </div>
       <table className="w-full text-primary-text border-collapse">
         <thead>
           {view === "season" ? (
