@@ -141,8 +141,8 @@ export const RecentGamesPage: React.FC = () => {
                   <tr className="text-xs md:text-sm font-medium text-primary-text/70">
                     <th className="py-1 px-1 md:px-2 text-left font-medium">Winner</th>
                     <th className="py-1 px-1 text-center font-medium">Score</th>
-                    <th className="py-1 px-1 text-right font-medium">W pts</th>
                     <th className="py-1 px-1 md:px-2 text-right font-medium">Loser</th>
+                    <th className="py-1 px-1 text-right font-medium">W pts</th>
                     <th className="py-1 px-1 text-right font-medium">L pts</th>
                     <th className="py-1 px-1 md:px-2"></th>
                   </tr>
@@ -173,11 +173,11 @@ export const RecentGamesPage: React.FC = () => {
                         <td className="py-1 px-1 text-center whitespace-nowrap">
                           {renderScore(game)}
                         </td>
-                        <td className="py-1 px-1 text-right font-medium">
-                          {fmtNum(game.pointsDiff, { digits: 1 })}
-                        </td>
                         <td className="py-1 px-1 md:px-2 text-right whitespace-nowrap">
                           <span className="font-medium">{context.playerName(game.loser)}</span>
+                        </td>
+                        <td className="py-1 px-1 text-right font-medium">
+                          {fmtNum(game.pointsDiff, { digits: 1 })}
                         </td>
                         <td className="py-1 px-1 text-right">
                           {game.loserPointsDiff !== undefined ? fmtNum(game.loserPointsDiff, { digits: 1 }) : ""}
