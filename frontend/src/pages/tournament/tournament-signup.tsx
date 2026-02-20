@@ -114,7 +114,7 @@ export const TournamentSignup = ({ tournament }: { tournament: Tournament }) => 
           {showConfetti && <ConfettiExplosion particleCount={250} force={0.8} width={2_000} duration={10_000} />}
         </button>
       )}
-      <div className="ring-1 ring-secondary-background w-full px-4 md:px-6 py-2 rounded-lg divide-y divide-primary-text/50">
+      <div className="ring-1 ring-secondary-background w-full px-4 md:px-6 py-2 rounded-lg divide-y divide-primary-text/50 text-primary-text bg-primary-background">
         <h1 className="mb-4">
           Signed up players{" "}
           <span className="pl-1 font-thin italic text-base text-primary-text">({tournament.signedUp.length})</span>
