@@ -7,6 +7,7 @@ import { LocalDevClient } from "./clients/local-dev-client";
 import { OVERRIDE_THEME_KEY } from "../../wrappers/theme-provider";
 import { AsplanViakClient } from "./clients/asplan-viak-client";
 import { DeepinsightClient } from "./clients/deepinsight";
+import { TryvannClient } from "./clients/tryvann-client";
 
 export abstract class ClientConfig {
   id: string | undefined;
@@ -56,6 +57,8 @@ export function getClientConfig() {
       return new AsplanViakClient();
     case "deepinsight":
       return new DeepinsightClient();
+    case "tryvann":
+      return new TryvannClient();
     default:
       return new GuestClient();
   }
