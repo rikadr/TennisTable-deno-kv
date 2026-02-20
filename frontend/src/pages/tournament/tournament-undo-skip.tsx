@@ -24,7 +24,7 @@ export const TournamentUndoSkipPage = () => {
     return (
       <div className="p-4">
         <p className="text-tertiary-text">Missing tournament, player, or skip information.</p>
-        <Link to="/tournament/list" className="text-secondary-text">
+        <Link to="/tournament/list" className="text-primary-text">
           Back to Tournaments
         </Link>
       </div>
@@ -69,7 +69,7 @@ export const TournamentUndoSkipPage = () => {
       )}
 
       <h1 className="text-2xl font-bold text-primary-text mb-2">Undo Skip Game</h1>
-      <p className="text-secondary-text mb-6">Confirm that you want to undo this walkover</p>
+      <p className="text-primary-text/80 mb-6">Confirm that you want to undo this walkover</p>
 
       <div className="bg-secondary-background rounded-lg p-4 mb-6">
         <h2 className="font-semibold text-secondary-text">{tournament.name}</h2>
