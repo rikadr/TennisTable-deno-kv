@@ -15,7 +15,7 @@ const formatDate = (date: Date) => {
 
 const InfoRow = ({ label, children }: { label: string; children: React.ReactNode }) => (
   <div className="mb-4">
-    <p className="text-xs font-medium text-secondary-text uppercase tracking-wide mb-1">{label}</p>
+    <p className="text-xs font-medium text-primary-text/70 uppercase tracking-wide mb-1">{label}</p>
     <div className="text-sm">{children}</div>
   </div>
 );
@@ -30,22 +30,22 @@ export const TournamentInfo = ({ tournament }: { tournament: Tournament }) => {
       <div className="mb-6">
         <h1 className="text-2xl md:text-3xl font-bold mb-2">{tournament.name}</h1>
         {tournament.description && (
-          <p className="text-sm text-secondary-text leading-relaxed">{tournament.description}</p>
+          <p className="text-sm text-primary-text/80 leading-relaxed">{tournament.description}</p>
         )}
       </div>
 
       <div className="space-y-4">
         <InfoRow label="Start Date">
           <p className="font-medium">{relativeTimeString(startDate)}</p>
-          <p className="text-xs text-secondary-text mt-1">{formatDate(startDate)}</p>
+          <p className="text-xs text-primary-text/70 mt-1">{formatDate(startDate)}</p>
         </InfoRow>
 
         {tournament.winner && endDate && (
           <InfoRow label="Tournament Ended">
             <p className="font-medium mb-3">{relativeTimeString(endDate)}</p>
-            <p className="text-xs text-secondary-text mb-3">{formatDate(endDate)}</p>
+            <p className="text-xs text-primary-text/70 mb-3">{formatDate(endDate)}</p>
             <div className="pt-2 border-t border-secondary-background">
-              <p className="text-xs font-medium text-secondary-text uppercase tracking-wide mb-2">Winner</p>
+              <p className="text-xs font-medium text-primary-text/70 uppercase tracking-wide mb-2">Winner</p>
               <WinnerBox winner={tournament.winner} />
             </div>
           </InfoRow>

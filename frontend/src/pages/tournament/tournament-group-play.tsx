@@ -40,36 +40,36 @@ const GroupPlayRules: React.FC = () => (
     <h3 className="text-2xl font-bold mb-6">Rules</h3>
 
     {/* Scoring Section */}
-    <div className="bg-secondary-background/30 text-secondary-text rounded-lg p-5 mb-4 border border-secondary-background/40">
-      <h4 className="font-semibold text-lg mb-4 text-secondary-text">Point System</h4>
+    <div className="bg-secondary-background/30 text-primary-text rounded-lg p-5 mb-4 border border-secondary-background/40">
+      <h4 className="font-semibold text-lg mb-4 text-primary-text">Point System</h4>
 
       <div className="flex gap-6 mb-4 text-lg">
         <div className="flex items-center gap-2">
           <span className="font-semibold">Win:</span>
-          <span className="font-bold text-secondary-text">{fmtNum(Tournament.GROUP_POINTS.WIN)}</span>
+          <span className="font-bold text-primary-text">{fmtNum(Tournament.GROUP_POINTS.WIN)}</span>
         </div>
         <div className="flex items-center gap-2">
           <span className="font-semibold">Loss:</span>
-          <span className="font-bold text-secondary-text">{fmtNum(Tournament.GROUP_POINTS.LOSS)}</span>
+          <span className="font-bold text-primary-text">{fmtNum(Tournament.GROUP_POINTS.LOSS)}</span>
         </div>
         <div className="flex items-center gap-2">
           <span className="font-semibold">Skip:</span>
-          <span className="font-bold text-secondary-text">{fmtNum(Tournament.GROUP_POINTS.SKIP)}</span>
+          <span className="font-bold text-primary-text">{fmtNum(Tournament.GROUP_POINTS.SKIP)}</span>
         </div>
       </div>
 
       <div className="space-y-3 text-sm">
-        <p className="text-secondary-text/80 leading-relaxed">
+        <p className="text-primary-text/80 leading-relaxed">
           Scores are multiplied by the{" "}
-          <span className="font-semibold text-secondary-text underline decoration-secondary-text/50">
+          <span className="font-semibold text-primary-text underline decoration-primary-text/50">
             group size adjustment factor
           </span>{" "}
           to account for smaller groups having fewer games to score points in.
         </p>
 
         <div className="bg-secondary-background/20 rounded p-3 border-l-4 border-secondary-background/60">
-          <p className="text-xs text-secondary-text/70 italic">
-            <span className="font-semibold not-italic text-secondary-text">Note:</span> If a game is skipped, the
+          <p className="text-xs text-primary-text/70 italic">
+            <span className="font-semibold not-italic text-primary-text">Note:</span> If a game is skipped, the
             advancing player scores as a <span className="font-semibold">winner</span> and the other player scores as a{" "}
             <span className="font-semibold">skip</span>.
           </p>
@@ -78,10 +78,10 @@ const GroupPlayRules: React.FC = () => (
     </div>
 
     {/* Tie-breaker Section */}
-    <div className="bg-secondary-background/30 text-secondary-text rounded-lg p-5 border border-secondary-background/40">
-      <h4 className="font-semibold text-lg mb-4 text-secondary-text">Tie-breaker Priority</h4>
+    <div className="bg-secondary-background/30 text-primary-text rounded-lg p-5 border border-secondary-background/40">
+      <h4 className="font-semibold text-lg mb-4 text-primary-text">Tie-breaker Priority</h4>
 
-      <p className="text-sm mb-4 text-secondary-text/80">
+      <p className="text-sm mb-4 text-primary-text/80">
         When players have equal adjusted scores, ties are resolved using the following criteria in order:
       </p>
 
@@ -96,9 +96,9 @@ const GroupPlayRules: React.FC = () => (
       ].map(({ rank, text }) => (
         <div key={rank} className="flex items-start gap-3 py-1.5 px-3">
           <div className="flex-shrink-0 w-6 h-6 rounded-full bg-secondary-background/50 flex items-center justify-center">
-            <span className="text-xs font-bold text-secondary-text">{rank}</span>
+            <span className="text-xs font-bold text-primary-text">{rank}</span>
           </div>
-          <p className="text-sm text-secondary-text/90 leading-relaxed pt-0.5">{text}</p>
+          <p className="text-sm text-primary-text/90 leading-relaxed pt-0.5">{text}</p>
         </div>
       ))}
     </div>
@@ -179,7 +179,7 @@ export const TournamentGroupScores: React.FC<{ tournament: Tournament }> = ({ to
       <td className="px-4 py-1 font-medium">
         <Link
           to={`/player/${player.name}`}
-          className="text-secondary-text hover:text-secondary-text/80 hover:underline"
+          className="text-primary-text hover:text-primary-text/80 hover:underline"
         >
           {context.playerName(player.name)}
         </Link>
@@ -189,19 +189,19 @@ export const TournamentGroupScores: React.FC<{ tournament: Tournament }> = ({ to
       </td>
       {hasGroupSizeAdjustment && (
         <>
-          <td className="px-4 py-1 text-center text-secondary-text/70">{fmtNum(player.score, { digits: 1 })}</td>
-          <td className="px-4 py-1 text-center text-secondary-text/70">
+          <td className="px-4 py-1 text-center text-primary-text/70">{fmtNum(player.score, { digits: 1 })}</td>
+          <td className="px-4 py-1 text-center text-primary-text/70">
             {player.groupSizeAdjustmentFactor === 1 ? (
-              <span className="text-secondary-text/40">—</span>
+              <span className="text-primary-text/40">—</span>
             ) : (
               fmtNum(player.groupSizeAdjustmentFactor, { digits: 2 })
             )}
           </td>
         </>
       )}
-      <td className="px-4 py-1 text-center text-secondary-text font-medium">{fmtNum(player.wins)}</td>
-      <td className="px-4 py-1 text-center text-secondary-text font-medium">{fmtNum(player.loss)}</td>
-      <td className="px-4 py-1 text-center text-secondary-text/60">{fmtNum(player.skips)}</td>
+      <td className="px-4 py-1 text-center text-primary-text font-medium">{fmtNum(player.wins)}</td>
+      <td className="px-4 py-1 text-center text-primary-text font-medium">{fmtNum(player.loss)}</td>
+      <td className="px-4 py-1 text-center text-primary-text/60">{fmtNum(player.skips)}</td>
     </tr>
   );
 
@@ -213,33 +213,33 @@ export const TournamentGroupScores: React.FC<{ tournament: Tournament }> = ({ to
         <table className="min-w-full border-collapse bg-primary-background">
           <thead className="bg-secondary-background/20">
             <tr className="border-b-2 border-secondary-background/40">
-              <th className="px-4 py-3 text-center font-semibold text-secondary-text">#</th>
-              <th className="px-4 py-3 text-left font-semibold text-secondary-text">Player</th>
+              <th className="px-4 py-3 text-center font-semibold text-primary-text">#</th>
+              <th className="px-4 py-3 text-left font-semibold text-primary-text">Player</th>
               {hasGroupSizeAdjustment ? (
-                <th className="px-4 py-3 text-center font-semibold text-secondary-text">
+                <th className="px-4 py-3 text-center font-semibold text-primary-text">
                   <div>Adjusted</div>
-                  <div className="text-xs font-normal text-secondary-text/60">Score</div>
+                  <div className="text-xs font-normal text-primary-text/60">Score</div>
                 </th>
               ) : (
-                <th className="px-4 py-3 text-center font-semibold text-secondary-text">
+                <th className="px-4 py-3 text-center font-semibold text-primary-text">
                   <div>Score</div>
                 </th>
               )}
               {hasGroupSizeAdjustment && (
                 <>
-                  <th className="px-4 py-3 text-center font-semibold text-secondary-text">
+                  <th className="px-4 py-3 text-center font-semibold text-primary-text">
                     <div>Score</div>
-                    <div className="text-xs font-normal text-secondary-text/60">Before Adjustment</div>
+                    <div className="text-xs font-normal text-primary-text/60">Before Adjustment</div>
                   </th>
-                  <th className="px-4 py-3 text-center font-semibold text-secondary-text">
+                  <th className="px-4 py-3 text-center font-semibold text-primary-text">
                     <div>Group Size</div>
-                    <div className="text-xs font-normal text-secondary-text/60">Adjustment Factor</div>
+                    <div className="text-xs font-normal text-primary-text/60">Adjustment Factor</div>
                   </th>
                 </>
               )}
-              <th className="px-4 py-3 text-center font-semibold text-secondary-text">Wins</th>
-              <th className="px-4 py-3 text-center font-semibold text-secondary-text">Loss</th>
-              <th className="px-4 py-3 text-center font-semibold text-secondary-text">Skips</th>
+              <th className="px-4 py-3 text-center font-semibold text-primary-text">Wins</th>
+              <th className="px-4 py-3 text-center font-semibold text-primary-text">Loss</th>
+              <th className="px-4 py-3 text-center font-semibold text-primary-text">Skips</th>
             </tr>
           </thead>
           <tbody>
@@ -249,43 +249,43 @@ export const TournamentGroupScores: React.FC<{ tournament: Tournament }> = ({ to
             {/* Elimination Zone Divider */}
             <tr className="bg-secondary-background/50 border-y-2 border-secondary-background/60">
               <td className="px-4 py-2 text-center">
-                <span className="text-secondary-text">⚠️</span>
+                <span className="text-primary-text">⚠️</span>
               </td>
-              <td colSpan={2} className="px-4 py-2 font-bold text-secondary-text">
+              <td colSpan={2} className="px-4 py-2 font-bold text-primary-text">
                 Elimination Zone
               </td>
-              <td colSpan={5} className="px-4 py-2 text-center text-secondary-text/80 text-sm">
+              <td colSpan={5} className="px-4 py-2 text-center text-primary-text/80 text-sm">
                 Players below this line are eliminated from advancing
               </td>
             </tr>
             <tr className="border-b-2 border-secondary-background/40">
-              <th className="px-4 py-1 text-sm text-center font-semibold text-secondary-text">#</th>
-              <th className="px-4 py-1 text-sm text-left font-semibold text-secondary-text">Player</th>
+              <th className="px-4 py-1 text-sm text-center font-semibold text-primary-text">#</th>
+              <th className="px-4 py-1 text-sm text-left font-semibold text-primary-text">Player</th>
               {hasGroupSizeAdjustment ? (
-                <th className="px-4 py-1 text-sm text-center font-semibold text-secondary-text">
+                <th className="px-4 py-1 text-sm text-center font-semibold text-primary-text">
                   <div>Adjusted</div>
-                  <div className="text-xs font-normal text-secondary-text/60">Score</div>
+                  <div className="text-xs font-normal text-primary-text/60">Score</div>
                 </th>
               ) : (
-                <th className="px-4 py-1 text-sm text-center font-semibold text-secondary-text">
+                <th className="px-4 py-1 text-sm text-center font-semibold text-primary-text">
                   <div>Score</div>
                 </th>
               )}
               {hasGroupSizeAdjustment && (
                 <>
-                  <th className="px-4 py-1 text-sm text-center font-semibold text-secondary-text">
+                  <th className="px-4 py-1 text-sm text-center font-semibold text-primary-text">
                     <div>Score</div>
-                    <div className="text-xs font-normal text-secondary-text/60">Before Adjustment</div>
+                    <div className="text-xs font-normal text-primary-text/60">Before Adjustment</div>
                   </th>
-                  <th className="px-4 py-1 text-sm text-center font-semibold text-secondary-text">
+                  <th className="px-4 py-1 text-sm text-center font-semibold text-primary-text">
                     <div>Group Size</div>
-                    <div className="text-xs font-normal text-secondary-text/60">Adjustment Factor</div>
+                    <div className="text-xs font-normal text-primary-text/60">Adjustment Factor</div>
                   </th>
                 </>
               )}
-              <th className="px-4 py-1 text-sm text-center font-semibold text-secondary-text">Wins</th>
-              <th className="px-4 py-1 text-sm text-center font-semibold text-secondary-text">Loss</th>
-              <th className="px-4 py-1 text-sm text-center font-semibold text-secondary-text">Skips</th>
+              <th className="px-4 py-1 text-sm text-center font-semibold text-primary-text">Wins</th>
+              <th className="px-4 py-1 text-sm text-center font-semibold text-primary-text">Loss</th>
+              <th className="px-4 py-1 text-sm text-center font-semibold text-primary-text">Skips</th>
             </tr>
             {/* Eliminated Players */}
             {scores.slice(cutOffIndex).map(([_name, player], index) => row(player, index + cutOffIndex + 1, true))}
