@@ -26,6 +26,12 @@ const vinterferie2026: TournamentDB = {
   startDate: 1771660800000, // Feb 21 2026 09:00:00 GMT+0100 (Norwegian time)
   groupPlay: true,
   signedUp: [],
+  playerOrder: [
+    "PC6lk9OwY0", // Martin
+    "51uSqCbvh8", // Einar
+    "ZYzCThVurE", // Christopher
+    "JI2IoMDt6V", // Lukas
+  ]
 };
 
 const theFirstOfficeChampion: TournamentDB = {
@@ -36,4 +42,14 @@ const theFirstOfficeChampion: TournamentDB = {
   startDate: 1771833600000, // Feb 23 2026 09:00:00 GMT+0100 (Norwegian time)
   groupPlay: true,
   signedUp: [],
+  playerOrder: [
+    "rYRcEvYNP9", // Dominic
+    "l5waHORhj1", // Theo
+    "PC6lk9OwY0", // Martin
+    "4xh06LGHkK", // Espen
+    "51uSqCbvh8", // Einar
+    "f1EUKKCOzb", // Dennis
+    "ZYzCThVurE", // Christopher
+    "OBMctO3w51", // Sante
+  ]
 };
