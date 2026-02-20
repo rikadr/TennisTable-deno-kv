@@ -23,9 +23,10 @@ export const TournamentPage: React.FC = () => {
   const defaultTab = (): TabType => {
     if (!tournament) return "info";
     if (tournament.inSignupPeriod) return "signup";
-    if (tournament.tournamentDb.groupPlay && tournament.groupPlay && tournament.groupPlay.groupPlayEnded === undefined)
+    if (tournament.groupPlay && tournament.groupPlay.groupPlayEnded === undefined)
       return "group-play";
-    return "finals";
+    if (tournament.bracket !== undefined) return "finals";
+    return "info";
   };
   const [activeTab, setActiveTab] = useState<TabType>(defaultTab);
 
@@ -61,8 +62,10 @@ export const TournamentPage: React.FC = () => {
         {tabs
           .filter((t) => {
             switch (t.id) {
+              case "finals":
+                return tournament.bracket !== undefined;
               case "group-play":
-                return tournament.tournamentDb.groupPlay;
+                return tournament.groupPlay !== undefined;
               case "signup":
                 return tournament.inSignupPeriod;
               case "predictions":
