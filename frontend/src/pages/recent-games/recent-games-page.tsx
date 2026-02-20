@@ -7,6 +7,7 @@ import { Game } from "../../client/client-db/event-store/projectors/games-projec
 import { classNames } from "../../common/class-names";
 import { useLocalStorage } from "../../hooks/use-local-storage";
 import { session } from "../../services/auth";
+import { ProfilePicture } from "../player/profile-picture";
 
 type View = "overall" | "season";
 
@@ -139,18 +140,18 @@ export const RecentGamesPage: React.FC = () => {
               <thead>
                 {view === "season" ? (
                   <tr className="text-xs md:text-sm font-medium text-primary-text/70">
-                    <th className="py-1 px-1 md:px-2 text-left font-medium">Winner</th>
+                    <th className="py-1 px-1 md:px-2 text-left font-medium">🏆 Winner</th>
                     <th className="py-1 px-1 text-center font-medium">Score</th>
-                    <th className="py-1 px-1 md:px-2 text-right font-medium">Loser</th>
+                    <th className="py-1 px-1 md:px-2 text-right font-medium">Loser 💔</th>
                     <th className="py-1 px-1 text-right font-medium">W pts</th>
                     <th className="py-1 px-1 text-right font-medium">L pts</th>
                     <th className="py-1 px-1 md:px-2"></th>
                   </tr>
                 ) : (
                   <tr className="text-xs md:text-sm font-medium text-primary-text/70">
-                    <th className="py-1 px-1 md:px-2 text-left font-medium">Winner</th>
+                    <th className="py-1 px-1 md:px-2 text-left font-medium">🏆 Winner</th>
                     <th className="py-1 px-1 text-center font-medium">Score</th>
-                    <th className="py-1 px-1 md:px-2 text-right font-medium">Loser</th>
+                    <th className="py-1 px-1 md:px-2 text-right font-medium">Loser 💔</th>
                     <th className="py-1 px-1 md:px-2 text-right font-medium">Elo won</th>
                     <th className="py-1 px-1 md:px-2"></th>
                   </tr>
@@ -168,13 +169,19 @@ export const RecentGamesPage: React.FC = () => {
                         className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text cursor-pointer transition-colors"
                       >
                         <td className="py-1 px-1 md:px-2 whitespace-nowrap">
-                          <span className="font-medium">{context.playerName(game.winner)}</span>
+                          <div className="flex items-center gap-1">
+                            <ProfilePicture playerId={game.winner} size={20} border={2} />
+                            <span className="font-medium">{context.playerName(game.winner)}</span>
+                          </div>
                         </td>
                         <td className="py-1 px-1 text-center whitespace-nowrap">
                           {renderScore(game)}
                         </td>
                         <td className="py-1 px-1 md:px-2 text-right whitespace-nowrap">
-                          <span className="font-medium">{context.playerName(game.loser)}</span>
+                          <div className="flex items-center justify-end gap-1">
+                            <span className="font-medium">{context.playerName(game.loser)}</span>
+                            <ProfilePicture playerId={game.loser} size={20} border={2} />
+                          </div>
                         </td>
                         <td className="py-1 px-1 text-right font-medium">
                           {fmtNum(game.pointsDiff, { digits: 1 })}
@@ -196,13 +203,19 @@ export const RecentGamesPage: React.FC = () => {
                       className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text cursor-pointer transition-colors"
                     >
                       <td className="py-1 px-1 md:px-2 whitespace-nowrap">
-                        <span className="font-medium">{context.playerName(game.winner)}</span>
+                        <div className="flex items-center gap-1">
+                          <ProfilePicture playerId={game.winner} size={20} border={2} />
+                          <span className="font-medium">{context.playerName(game.winner)}</span>
+                        </div>
                       </td>
                       <td className="py-1 px-1 text-center whitespace-nowrap">
                         {renderScore(game)}
                       </td>
                       <td className="py-1 px-1 md:px-2 text-right whitespace-nowrap">
-                        <span className="font-medium">{context.playerName(game.loser)}</span>
+                        <div className="flex items-center justify-end gap-1">
+                          <span className="font-medium">{context.playerName(game.loser)}</span>
+                          <ProfilePicture playerId={game.loser} size={20} border={2} />
+                        </div>
                       </td>
                       <td className="py-1 px-1 md:px-2 text-right font-medium">
                         +{fmtNum(game.pointsDiff, { digits: 0 })}
