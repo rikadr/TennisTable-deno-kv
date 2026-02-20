@@ -48,7 +48,7 @@ export const RecentGamesPage: React.FC = () => {
   }
 
   const [extraGames, setExtraGames] = useState(0);
-  const LOAD_MORE_COUNT = 50;
+  const LOAD_MORE_COUNT = 100;
 
   const reversedGames = displayGames.toReversed();
   const cutoff = Date.now() - TWENTY_FOUR_HOURS;
