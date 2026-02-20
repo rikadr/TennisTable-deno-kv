@@ -137,9 +137,9 @@ export const RecentGamesPage: React.FC = () => {
             </div>
           ) : (
             <table className="w-full text-primary-text border-collapse">
-              <thead>
+              <thead className="border-b border-primary-text/20">
                 {view === "season" ? (
-                  <tr className="text-xs md:text-sm font-medium text-primary-text/70">
+                  <tr className="text-xs md:text-sm font-medium text-primary-text">
                     <th className="py-1 px-1 md:px-2 text-left font-medium">🏆 Winner</th>
                     <th className="py-1 px-1 text-center font-medium">Score</th>
                     <th className="py-1 px-1 md:px-2 text-right font-medium">Loser 💔</th>
@@ -148,7 +148,7 @@ export const RecentGamesPage: React.FC = () => {
                     <th className="py-1 px-1 md:px-2"></th>
                   </tr>
                 ) : (
-                  <tr className="text-xs md:text-sm font-medium text-primary-text/70">
+                  <tr className="text-xs md:text-sm font-medium text-primary-text">
                     <th className="py-1 px-1 md:px-2 text-left font-medium">🏆 Winner</th>
                     <th className="py-1 px-1 text-center font-medium">Score</th>
                     <th className="py-1 px-1 md:px-2 text-right font-medium">Loser 💔</th>
