@@ -10,7 +10,15 @@ export const TournamentsListPage: React.FC = () => {
 
   return (
     <div className="max-w-96 mx-4 md:mx-10 space-y-4 text-primary-text">
-      <h1>Tournaments list</h1>
+      <div className="flex items-center justify-between gap-4">
+        <h1>Tournaments list</h1>
+        <Link
+          to="/tournament/new"
+          className="whitespace-nowrap rounded-lg bg-secondary-background px-4 py-2 text-sm font-semibold text-secondary-text hover:opacity-80"
+        >
+          + New tournament
+        </Link>
+      </div>
       <div className="max-w-96 flex flex-col gap-2">
         {sortedTournaments.map((t) => (
           <Link key={t.id} to={`/tournament?tournament=${t.id}`} className="group">
@@ -45,7 +53,7 @@ export const TournamentsListPage: React.FC = () => {
           </Link>
         ))}
         {sortedTournaments.length === 0 && (
-          <p>No tournaments. Want to set up a tournament? Reach out to Rikard to set up a new tournament 🏆</p>
+          <p>No tournaments had been played yet</p>
         )}
       </div>
     </div>
