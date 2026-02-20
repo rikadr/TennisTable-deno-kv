@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { RelativeTime } from "../../common/date-utils";
@@ -47,11 +47,16 @@ export const RecentGamesPage: React.FC = () => {
     displayGames = currentSeason.games;
   }
 
+  const [extraGames, setExtraGames] = useState(0);
+  const LOAD_MORE_COUNT = 50;
+
   const reversedGames = displayGames.toReversed();
   const cutoff = Date.now() - TWENTY_FOUR_HOURS;
   const gamesInLast24h = reversedGames.filter((g) => g.playedAt >= cutoff).length;
   const gamesCount = Math.max(minGames, gamesInLast24h);
-  const lastGames = reversedGames.slice(0, gamesCount);
+  const visibleCount = gamesCount + extraGames;
+  const lastGames = reversedGames.slice(0, visibleCount);
+  const hasMoreGames = isAdmin && visibleCount < reversedGames.length;
 
   function getGame(game: Game): DisplayGame | undefined {
     if (view === "season") {
@@ -228,6 +233,17 @@ export const RecentGamesPage: React.FC = () => {
                 })}
               </tbody>
             </table>
+          )}
+
+          {hasMoreGames && (
+            <div className="flex justify-center py-4 border-t border-primary-text/20">
+              <button
+                onClick={() => setExtraGames((prev) => prev + LOAD_MORE_COUNT)}
+                className="px-6 py-2 rounded text-sm font-medium transition-colors ring-1 bg-secondary-background text-secondary-text ring-secondary-text hover:opacity-80"
+              >
+                Load {Math.min(LOAD_MORE_COUNT, reversedGames.length - visibleCount)} more games
+              </button>
+            </div>
           )}
         </div>
       </div>
