@@ -678,6 +678,9 @@ export class Achievements {
     this.parent.tournaments.getTournaments().forEach((t) => {
       const tournamentId = t.tournamentDb.id;
 
+      // Only award participation if the tournament has started
+      if (t.tournamentDb.startDate > Date.now()) return;
+
       // Check participation for all players in the tournament
       t.tournamentDb.playerOrder?.forEach((playerId) => {
         this.#addAchievement(
