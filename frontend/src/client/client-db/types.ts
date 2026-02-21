@@ -42,3 +42,13 @@ export type SignUpTournament = {
   player: string;
   time: number;
 };
+
+/** Tournament config sourced from events via the TournamentsProjector */
+export type EventSourcedTournamentDB = {
+  id: string;
+  name: string;
+  description?: string;
+  startDate: number;
+  groupPlay: boolean;
+  playerOrder?: string[];
+};

@@ -1,3 +1,4 @@
+import { TournamentConfig } from "../event-store/projectors/tournaments-projector";
 import { TennisTable } from "../tennis-table";
 import { TournamentDB } from "../types";
 import { TournamentPrediction } from "./prediction";
@@ -27,13 +28,38 @@ export class Tournaments {
 
   getTournament(id: string | null): Tournament | undefined {
     if (!id) return;
-    const tournamentDb = this.parent.client.tournaments.find((t) => t.id === id);
-    if (!tournamentDb) return;
-    return this.#initTournament(tournamentDb);
+    return this.getTournaments().find((t) => t.id === id);
   }
 
   #getTournaments(): Tournament[] {
-    return this.parent.client.tournaments.map(this.#initTournament.bind(this));
+    const allTournamentDbs = this.#getAllTournamentDbs();
+    return allTournamentDbs.map(this.#initTournament.bind(this));
+  }
+
+  /** Merges event-sourced tournaments with legacy config-based tournaments (config tournaments are overridden by event-sourced ones with the same ID) */
+  #getAllTournamentDbs(): TournamentDB[] {
+    const eventSourcedConfigs = this.parent.eventStore.tournamentsProjector.getTournamentConfigs();
+    const eventSourcedIds = new Set(eventSourcedConfigs.map((t) => t.id));
+
+    // Legacy config tournaments that are NOT overridden by event-sourced ones
+    const legacyTournaments = this.parent.client.tournaments.filter((t) => !eventSourcedIds.has(t.id));
+
+    // Convert event-sourced configs to TournamentDB shape
+    const eventSourcedTournaments: TournamentDB[] = eventSourcedConfigs.map(this.#configToTournamentDb);
+
+    return [...legacyTournaments, ...eventSourcedTournaments];
+  }
+
+  #configToTournamentDb(config: TournamentConfig): TournamentDB {
+    return {
+      id: config.id,
+      name: config.name,
+      description: config.description,
+      startDate: config.startDate,
+      groupPlay: config.groupPlay,
+      signedUp: [],
+      playerOrder: config.playerOrder,
+    };
   }
 
   #initTournament(tournament: TournamentDB): Tournament {

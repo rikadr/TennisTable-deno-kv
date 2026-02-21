@@ -1,5 +1,7 @@
+import { Link } from "react-router-dom";
 import { Tournament } from "../../client/client-db/tournaments/tournament";
 import { relativeTimeString } from "../../common/date-utils";
+import { session } from "../../services/auth";
 import { WinnerBox } from "../leaderboard/tournament-pending-games";
 
 const formatDate = (date: Date) => {
@@ -24,13 +26,24 @@ export const TournamentInfo = ({ tournament }: { tournament: Tournament }) => {
   const startDate = new Date(tournament.startDate);
   const endDate = tournament.endDate ? new Date(tournament.endDate) : null;
   const hasGroupPlay = tournament.tournamentDb.groupPlay;
+  const isAdmin = session.sessionData?.role === "admin";
 
   return (
     <div className="ring-1 ring-secondary-background w-full max-w-2xl mx-auto px-4 md:px-6 py-6 text-primary-text bg-primary-background rounded-lg shadow-sm">
-      <div className="mb-6">
-        <h1 className="text-2xl md:text-3xl font-bold mb-2">{tournament.name}</h1>
-        {tournament.description && (
-          <p className="text-sm text-primary-text/80 leading-relaxed">{tournament.description}</p>
+      <div className="mb-6 flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold mb-2">{tournament.name}</h1>
+          {tournament.description && (
+            <p className="text-sm text-primary-text/80 leading-relaxed">{tournament.description}</p>
+          )}
+        </div>
+        {isAdmin && (
+          <Link
+            to={`/tournament/edit?tournament=${tournament.id}`}
+            className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium bg-secondary-background text-secondary-text hover:opacity-80"
+          >
+            Edit
+          </Link>
         )}
       </div>
 
