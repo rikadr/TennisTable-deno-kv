@@ -44,6 +44,18 @@ export class EventStore {
         case EventTypeEnum.GAME_SCORE:
           this.gamesProjector.setScore(event);
           break;
+        case EventTypeEnum.TOURNAMENT_CREATED:
+          this.tournamentsProjector.createTournament(event);
+          break;
+        case EventTypeEnum.TOURNAMENT_UPDATED:
+          this.tournamentsProjector.updateTournament(event);
+          break;
+        case EventTypeEnum.TOURNAMENT_DELETED:
+          this.tournamentsProjector.deleteTournament(event);
+          break;
+        case EventTypeEnum.TOURNAMENT_SET_PLAYER_ORDER:
+          this.tournamentsProjector.setPlayerOrder(event);
+          break;
         case EventTypeEnum.TOURNAMENT_SIGNUP:
           this.tournamentsProjector.signup(event);
           break;

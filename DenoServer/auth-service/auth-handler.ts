@@ -10,6 +10,7 @@ const resources = {
   user: ["read", "delete"],
   roles: ["write"],
   event: ["manage"],
+  tournament: ["create", "update", "delete"],
 } as const;
 
 const roles: Record<string, { resource: string; actions: "*" | string[] }[]> = {
@@ -19,6 +20,7 @@ const roles: Record<string, { resource: string; actions: "*" | string[] }[]> = {
     { resource: "roles", actions: "*" },
     { resource: "user", actions: "*" },
     { resource: "event", actions: "*" },
+    { resource: "tournament", actions: "*" },
   ],
 };
 

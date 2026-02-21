@@ -48,6 +48,30 @@ export function registerEventStoreRoutes(api: Router) {
         return;
       }
     }
+    if (eventPayload.type === EventTypeEnum.TOURNAMENT_CREATED) {
+      if ((await hasAccess(context, "tournament", "create")) === false) {
+        context.response.status = 403;
+        return;
+      }
+    }
+    if (eventPayload.type === EventTypeEnum.TOURNAMENT_UPDATED) {
+      if ((await hasAccess(context, "tournament", "update")) === false) {
+        context.response.status = 403;
+        return;
+      }
+    }
+    if (eventPayload.type === EventTypeEnum.TOURNAMENT_DELETED) {
+      if ((await hasAccess(context, "tournament", "delete")) === false) {
+        context.response.status = 403;
+        return;
+      }
+    }
+    if (eventPayload.type === EventTypeEnum.TOURNAMENT_SET_PLAYER_ORDER) {
+      if ((await hasAccess(context, "tournament", "update")) === false) {
+        context.response.status = 403;
+        return;
+      }
+    }
 
     await storeEvent(eventPayload);
     webSocketClientManager.broadcastLatestEvent();
