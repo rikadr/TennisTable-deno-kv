@@ -1,9 +1,10 @@
 import { useState, useMemo, useEffect } from "react";
 import { useEventDbContext } from "../../wrappers/event-db-context";
-import { EventType } from "../../client/client-db/event-store/event-types";
+import { EventType, EventTypeEnum } from "../../client/client-db/event-store/event-types";
 import { relativeTimeString } from "../../common/date-utils";
 import { session } from "../../services/auth";
-import { useDeleteEventMutation, useUpdateEventMutation } from "../../hooks/use-event-mutation";
+import { newId } from "../../common/nani-id";
+import { useDeleteEventMutation, useEventMutation, useUpdateEventMutation } from "../../hooks/use-event-mutation";
 
 export const Events = () => {
   const context = useEventDbContext();
@@ -16,6 +17,14 @@ export const Events = () => {
 
   const updateEvent = useUpdateEventMutation();
   const deleteEvent = useDeleteEventMutation();
+  const createEvent = useEventMutation();
+  const [showNewEventForm, setShowNewEventForm] = useState(false);
+  const [newEventForm, setNewEventForm] = useState({
+    time: Date.now(),
+    type: "",
+    stream: "",
+    data: "{}",
+  });
 
   // Filter and search
   const filteredEvents = useMemo(() => {
@@ -87,6 +96,27 @@ export const Events = () => {
 
   const handleFieldChange = (field: string, value: any) => {
     setEditForm((prev: any) => ({ ...prev, [field]: value }));
+  };
+
+  const eventDataTemplate = (type: string): unknown => {
+    switch (type) {
+      case EventTypeEnum.PLAYER_CREATED: return { name: "TODO" };
+      case EventTypeEnum.PLAYER_DEACTIVATED: return null;
+      case EventTypeEnum.PLAYER_REACTIVATED: return null;
+      case EventTypeEnum.PLAYER_NAME_UPDATED: return { updatedName: "TODO" };
+      case EventTypeEnum.GAME_CREATED: return { playedAt: "TODO", winner: "TODO", loser: "TODO" };
+      case EventTypeEnum.GAME_DELETED: return null;
+      case EventTypeEnum.GAME_SCORE: return { setsWon: { gameWinner: "TODO", gameLoser: "TODO" }, setPoints: [{ gameWinner: "TODO", gameLoser: "TODO" }] };
+      case EventTypeEnum.TOURNAMENT_CREATED: return { name: "TODO", description: "TODO", startDate: "TODO", groupPlay: "TODO" };
+      case EventTypeEnum.TOURNAMENT_UPDATED: return { name: "TODO", description: "TODO", startDate: "TODO", groupPlay: "TODO" };
+      case EventTypeEnum.TOURNAMENT_DELETED: return null;
+      case EventTypeEnum.TOURNAMENT_SET_PLAYER_ORDER: return { playerOrder: ["TODO"] };
+      case EventTypeEnum.TOURNAMENT_SIGNUP: return { player: "TODO" };
+      case EventTypeEnum.TOURNAMENT_CANCEL_SIGNUP: return { player: "TODO" };
+      case EventTypeEnum.TOURNAMENT_SKIP_GAME: return { skipId: "TODO", winner: "TODO", loser: "TODO" };
+      case EventTypeEnum.TOURNAMENT_UNDO_SKIP_GAME: return { skipId: "TODO" };
+      default: return {};
+    }
   };
 
   if (session.sessionData?.role !== "admin") {
@@ -163,7 +193,115 @@ export const Events = () => {
           {" of "}
           <span className="text-2xl font-semibold">{context.events.length}</span> total events
         </h1>
+        <button
+          onClick={() => {
+            setShowNewEventForm((v) => !v);
+            setNewEventForm({ time: Date.now(), type: "", stream: "", data: "{}" });
+          }}
+          className="px-3 py-1 border rounded hover:bg-primary-text/20 text-lg font-bold"
+        >
+          {showNewEventForm ? "−" : "+"}
+        </button>
       </div>
+
+      {/* New Event Form */}
+      {showNewEventForm && (
+        <div className="mb-4 border rounded p-4 bg-primary-background">
+          <h2 className="text-lg font-semibold mb-3">New Event</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+            <div>
+              <label className="block text-sm font-medium mb-1">Time</label>
+              <div className="flex gap-1">
+                <input
+                  type="number"
+                  value={newEventForm.time}
+                  onChange={(e) => setNewEventForm((f) => ({ ...f, time: Number(e.target.value) }))}
+                  className="flex-1 border rounded px-3 py-2 bg-primary-background"
+                />
+                <input
+                  type="datetime-local"
+                  onChange={(e) => {
+                    const ms = new Date(e.target.value).getTime();
+                    if (!isNaN(ms)) setNewEventForm((f) => ({ ...f, time: ms }));
+                  }}
+                  className="border rounded px-2 py-2 bg-primary-background text-sm w-[2.5rem] cursor-pointer"
+                  title="Pick a date/time to fill the timestamp"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Type</label>
+              <select
+                value={newEventForm.type}
+                onChange={(e) => {
+                  const type = e.target.value;
+                  const template = eventDataTemplate(type);
+                  const data = JSON.stringify(template, null, 2)?.replace(/"TODO"/g, "TODO") ?? "null";
+                  setNewEventForm((f) => ({ ...f, type, data }));
+                }}
+                className="w-full border rounded px-3 py-2 bg-primary-background"
+              >
+                <option value="">-- Select type --</option>
+                {Object.values(EventTypeEnum).map((t) => (
+                  <option key={t} value={t}>{t}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Stream</label>
+              <div className="flex gap-1">
+                <input
+                  type="text"
+                  value={newEventForm.stream}
+                  onChange={(e) => setNewEventForm((f) => ({ ...f, stream: e.target.value }))}
+                  placeholder="Stream ID"
+                  className="flex-1 border rounded px-3 py-2 bg-primary-background"
+                />
+                <button
+                  type="button"
+                  onClick={() => setNewEventForm((f) => ({ ...f, stream: newId() }))}
+                  className="border rounded px-2 py-2 hover:bg-primary-text/20 text-sm"
+                  title="Generate random ID"
+                >
+                  ID
+                </button>
+              </div>
+            </div>
+          </div>
+          <div className="mb-3">
+            <label className="block text-sm font-medium mb-1">Data (JSON)</label>
+            <textarea
+              value={newEventForm.data}
+              onChange={(e) => setNewEventForm((f) => ({ ...f, data: e.target.value }))}
+              className="w-full border rounded px-3 py-2 font-mono text-sm bg-primary-background"
+              rows={5}
+            />
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                const parsed = JSON.parse(newEventForm.data);
+                createEvent.mutate({
+                  time: newEventForm.time,
+                  type: newEventForm.type as EventType["type"],
+                  stream: newEventForm.stream,
+                  data: parsed,
+                });
+                setShowNewEventForm(false);
+              }}
+              className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+            >
+              Submit
+            </button>
+            <button
+              onClick={() => setShowNewEventForm(false)}
+              className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Table */}
       <div className="overflow-x-auto">

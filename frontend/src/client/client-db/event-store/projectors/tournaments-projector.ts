@@ -88,7 +88,7 @@ export class TournamentsProjector {
   }
   validateCreateTournament(event: TournamentCreated): ValidatorResponse {
     const existing = this.#tournamentsMap.get(event.stream);
-    if (existing && !existing.config.deleted) {
+    if (existing) {
       return { valid: false, message: "Tournament with this ID already exists" };
     }
     if (!event.data.name.trim()) {
@@ -111,6 +111,9 @@ export class TournamentsProjector {
     const existing = this.#tournamentsMap.get(event.stream);
     if (!existing || existing.config.deleted) {
       return { valid: false, message: "Tournament does not exist" };
+    }
+    if (existing.config.deleted) {
+      return { valid: false, message: "Tournament is deleted" };
     }
     const hasStarted = existing.config.startDate <= Date.now();
     if (hasStarted && event.data.startDate !== undefined) {
@@ -165,6 +168,9 @@ export class TournamentsProjector {
     if (this.#tournamentsMap.get(event.stream)?.signups.has(event.data.player)) {
       return { valid: false, message: "Player already signed up" };
     }
+    if ((this.#tournamentsMap.get(event.stream)?.config.startDate || 0) < Date.now()) {
+      return { valid: false, message: "Cannot sign up after tournament has started" };
+    }
     return { valid: true };
   }
 
@@ -191,6 +197,9 @@ export class TournamentsProjector {
   validateSkipGame(event: TournamentSkipGame): ValidatorResponse {
     if (this.#tournamentsMap.get(event.stream)?.skippedGames.has(event.data.skipId)) {
       return { valid: false, message: "Game already skipped" };
+    }
+    if ((this.#tournamentsMap.get(event.stream)?.config.startDate || Infinity) > Date.now()) {
+      return { valid: false, message: "Cannot skip games before tournament has started" };
     }
     return { valid: true };
   }
