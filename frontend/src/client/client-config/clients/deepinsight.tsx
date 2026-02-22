@@ -17,5 +17,4 @@ export class DeepinsightClient implements ClientConfig {
   title = "Deepinsight - bordtennis";
   favicon = "🔮";
   gameLimitForRanked = 5;
-  tournaments = [];
 }

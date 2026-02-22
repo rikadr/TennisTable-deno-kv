@@ -2,7 +2,6 @@ import React from "react";
 import { SkimoreClient } from "./clients/skimore-client";
 import { GuestClient } from "./clients/guest-client";
 import { OptioClient } from "./clients/optio-client";
-import { TournamentDB } from "../client-db/types";
 import { LocalDevClient } from "./clients/local-dev-client";
 import { OVERRIDE_THEME_KEY } from "../../wrappers/theme-provider";
 import { AsplanViakClient } from "./clients/asplan-viak-client";
@@ -17,7 +16,6 @@ export abstract class ClientConfig {
   title: string;
   favicon: string;
   gameLimitForRanked: number;
-  tournaments: TournamentDB[];
 
   protected constructor(data: {
     id?: string;
@@ -28,7 +26,6 @@ export abstract class ClientConfig {
     title: string;
     favicon: string;
     gameLimitForRanked: number;
-    tournaments: TournamentDB[];
   }) {
     this.id = data.id;
     this.name = data.name;
@@ -38,7 +35,6 @@ export abstract class ClientConfig {
     this.title = data.title;
     this.favicon = data.favicon;
     this.gameLimitForRanked = data.gameLimitForRanked;
-    this.tournaments = data.tournaments;
   }
 }
 

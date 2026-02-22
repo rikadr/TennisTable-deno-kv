@@ -25,7 +25,7 @@ export const TournamentBracket = ({
 
   // Check if group play is in progress
   const isGroupPlayIncomplete =
-    tournament.tournamentDb.groupPlay && tournament.groupPlay && tournament.groupPlay.groupPlayEnded === undefined;
+    tournament.tournamentConfig.groupPlay && tournament.groupPlay && tournament.groupPlay.groupPlayEnded === undefined;
 
   if (isGroupPlayIncomplete) {
     return (
@@ -453,9 +453,8 @@ export const GameMenuItems: React.FC<GameMenuItemsProps> = (props) => {
       {props.showSkipGame.show && (
         <MenuItem>
           <Link
-            to={`/tournament/skip-game/?player1=${props.player1 || ""}&player2=${props.player2 || ""}&tournament=${
-              props.showSkipGame.tournamentId || ""
-            }`}
+            to={`/tournament/skip-game/?player1=${props.player1 || ""}&player2=${props.player2 || ""}&tournament=${props.showSkipGame.tournamentId || ""
+              }`}
             className="w-full px-4 py-2 text-left data-[focus]:bg-secondary-text/30"
           >
             🆓 Skip game
@@ -465,9 +464,8 @@ export const GameMenuItems: React.FC<GameMenuItemsProps> = (props) => {
       {props.showUndoSkip.show && (
         <MenuItem>
           <Link
-            to={`/tournament/undo-skip/?player1=${props.player1 || ""}&player2=${props.player2 || ""}&skipId=${
-              props.showUndoSkip.skipId || ""
-            }&tournament=${props.showUndoSkip.tournamentId || ""}`}
+            to={`/tournament/undo-skip/?player1=${props.player1 || ""}&player2=${props.player2 || ""}&skipId=${props.showUndoSkip.skipId || ""
+              }&tournament=${props.showUndoSkip.tournamentId || ""}`}
             className="w-full px-4 py-2 text-left data-[focus]:bg-secondary-text/30"
           >
             ⏮️ Undo skip

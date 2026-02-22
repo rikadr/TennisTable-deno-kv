@@ -22,8 +22,8 @@ export class TournamentBracket {
       this.#playerOrder = this.#tournament.groupPlay.getBracketPlayerOrder() ?? [];
       this.bracketStarted = this.#tournament.groupPlay.groupPlayEnded;
     } else {
-      this.#playerOrder = this.#tournament.tournamentDb.playerOrder ?? tournament.signedUp.map((s) => s.player);
-      this.bracketStarted = this.#tournament.tournamentDb.startDate;
+      this.#playerOrder = this.#tournament.tournamentConfig.playerOrder ?? tournament.signedUp.map((s) => s.player);
+      this.bracketStarted = this.#tournament.tournamentConfig.startDate;
     }
 
     this.bracket = TournamentBracket.getStartingBracket(this.#playerOrder);

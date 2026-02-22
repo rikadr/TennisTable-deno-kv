@@ -115,9 +115,10 @@ export const PlayerPredictionsList = ({ playerId }: Props) => {
                       return (
                         <li
                           key={playerId + oponentId + index}
-                          className={`text-sm flex items-center gap-2 whitespace-nowrap text-right ${
-                            hasNoConfidence ? "line-through opacity-30" : ""
-                          }`}
+                          className={classNames(
+                            "text-sm flex items-center gap-2 whitespace-nowrap text-right",
+                            hasNoConfidence && "line-through opacity-30",
+                          )}
                         >
                           <span className="opacity-70 font-light italic text-primary-text w-28">{lable}:</span>
                           <span>

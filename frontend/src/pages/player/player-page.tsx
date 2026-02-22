@@ -1,3 +1,4 @@
+import { classNames } from "../../common/class-names";
 import { fmtNum } from "../../common/number-utils";
 import { Shimmer } from "../../common/shimmer";
 import { useEventDbContext } from "../../wrappers/event-db-context";
@@ -128,14 +129,12 @@ export const PlayerPage: React.FC = () => {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`
-                    flex items-center py-2 px-4 border-b-4 font-medium text-sm transition-colors shrink-0 whitespace-nowrap
-                    ${
-                      activeTab === tab.id
-                        ? "text-secondary-text border-secondary-text"
-                        : "text-secondary-text/80 border-transparent hover:text-secondary-text hover:border-secondary-text border-dotted"
-                    }
-                  `}
+                  className={classNames(
+                    "flex items-center py-2 px-4 border-b-4 font-medium text-sm transition-colors shrink-0 whitespace-nowrap",
+                    activeTab === tab.id
+                      ? "text-secondary-text border-secondary-text"
+                      : "text-secondary-text/80 border-transparent hover:text-secondary-text hover:border-secondary-text border-dotted",
+                  )}
                 >
                   {tab.label}
                 </button>

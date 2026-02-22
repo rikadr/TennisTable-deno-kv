@@ -14,5 +14,4 @@ export class AsplanViakClient implements ClientConfig {
   title = "Asplan Viak - bordtennis";
   favicon = "🏙️";
   gameLimitForRanked = 5;
-  tournaments = [];
 }

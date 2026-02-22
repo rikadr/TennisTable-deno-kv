@@ -38,6 +38,7 @@ import { AchievementsPage } from "./pages/achievements/achievements-page";
 import { TournamentSkipGamePage } from "./pages/tournament/tournament-skip-game";
 import { TournamentUndoSkipPage } from "./pages/tournament/tournament-undo-skip";
 import { NewTournamentPage } from "./pages/tournament/new-tournament-page";
+import { EditTournamentPage } from "./pages/tournament/edit-tournament-page";
 import { SeasonsListPage } from "./pages/seasons/seasons-list-page";
 import { SeasonPage } from "./pages/seasons/season-page";
 import { SeasonPlayerPage } from "./pages/seasons/season-player-page";
@@ -79,6 +80,7 @@ function App() {
                           <Route index element={<TournamentPage />} />
                           <Route path="list" element={<TournamentsListPage />} />
                           <Route path="new" element={<NewTournamentPage />} />
+                          <Route path="edit" element={<EditTournamentPage />} />
                           <Route path="skip-game" element={<TournamentSkipGamePage />} />
                           <Route path="undo-skip" element={<TournamentUndoSkipPage />} />
                         </Route>

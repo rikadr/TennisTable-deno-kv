@@ -185,14 +185,12 @@ export const PlayerAchievements: React.FC<Props> = ({ playerId }) => {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`
-                    flex items-center py-2 px-4 border-b-4 font-medium text-sm transition-colors shrink-0 whitespace-nowrap
-                    ${
-                      activeTab === tab.id
-                        ? "text-secondary-text border-secondary-text"
-                        : "text-secondary-text/80 border-transparent hover:text-secondary-text hover:border-secondary-text border-dotted"
-                    }
-                  `}
+                className={classNames(
+                  "flex items-center py-2 px-4 border-b-4 font-medium text-sm transition-colors shrink-0 whitespace-nowrap",
+                  activeTab === tab.id
+                    ? "text-secondary-text border-secondary-text"
+                    : "text-secondary-text/80 border-transparent hover:text-secondary-text hover:border-secondary-text border-dotted",
+                )}
               >
                 {tab.label} {tab.id === "earned" && `(${achievements.length})`}
               </button>
@@ -261,7 +259,7 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
                 {achievement.data && "tournamentId" in achievement.data && (
                   <p className="text-xs text-secondary-text/70 mt-2">
                     Tournament:{" "}
-                    {context.tournaments.getTournament(achievement.data.tournamentId)?.tournamentDb.name || "Unknown"}
+                    {context.tournaments.getTournament(achievement.data.tournamentId)?.tournamentConfig.name || "Unknown"}
                   </p>
                 )}
 

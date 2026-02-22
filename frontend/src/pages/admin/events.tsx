@@ -4,6 +4,7 @@ import { EventType } from "../../client/client-db/event-store/event-types";
 import { relativeTimeString } from "../../common/date-utils";
 import { session } from "../../services/auth";
 import { useDeleteEventMutation, useUpdateEventMutation } from "../../hooks/use-event-mutation";
+import { CreateEventForm } from "./create-event-form";
 
 export const Events = () => {
   const context = useEventDbContext();
@@ -16,6 +17,7 @@ export const Events = () => {
 
   const updateEvent = useUpdateEventMutation();
   const deleteEvent = useDeleteEventMutation();
+  const [showNewEventForm, setShowNewEventForm] = useState(false);
 
   // Filter and search
   const filteredEvents = useMemo(() => {
@@ -163,7 +165,15 @@ export const Events = () => {
           {" of "}
           <span className="text-2xl font-semibold">{context.events.length}</span> total events
         </h1>
+        <button
+          onClick={() => setShowNewEventForm((v) => !v)}
+          className="px-3 py-1 border rounded hover:bg-primary-text/20 text-lg font-bold"
+        >
+          {showNewEventForm ? "−" : "+"}
+        </button>
       </div>
+
+      {showNewEventForm && <CreateEventForm onClose={() => setShowNewEventForm(false)} />}
 
       {/* Table */}
       <div className="overflow-x-auto">
@@ -300,6 +310,12 @@ export const Events = () => {
                           className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 w-full"
                         >
                           Delete
+                        </button>
+                        <button
+                          onClick={() => navigator.clipboard.writeText(JSON.stringify(event, null, 2))}
+                          className="bg-gray-500 text-white px-3 py-1 rounded hover:bg-gray-600 w-full"
+                        >
+                          Copy
                         </button>
                       </div>
                     </td>

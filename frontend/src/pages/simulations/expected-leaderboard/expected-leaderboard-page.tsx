@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { classNames } from "../../../common/class-names";
 import { useEventDbContext } from "../../../wrappers/event-db-context";
 import { ProfilePicture } from "../../player/profile-picture";
 import { fmtNum } from "../../../common/number-utils";
@@ -98,11 +99,12 @@ export const SimulatedLeaderboard: React.FC = () => {
 
     return (
       <div
-        className={`h-10 md:h-24 p-1 md:p-3 rounded-lg border transition-all duration-300 flex items-center space-x-1.5 md:space-x-3 ${
+        className={classNames(
+          "h-10 md:h-24 p-1 md:p-3 rounded-lg border transition-all duration-300 flex items-center space-x-1.5 md:space-x-3",
           type === "current"
             ? "bg-blue-50 border-blue-200 hover:border-blue-300"
-            : "bg-green-50 border-green-200 hover:border-green-300"
-        }`}
+            : "bg-green-50 border-green-200 hover:border-green-300",
+        )}
       >
         <div className="md:hidden shrink-0">
           <ProfilePicture playerId={player.id} size={32} border={2} shape="rounded" linkToPlayer />
@@ -113,9 +115,10 @@ export const SimulatedLeaderboard: React.FC = () => {
 
         {/* Rank */}
         <div
-          className={`shrink-0 text-xs md:text-lg font-bold min-w-[1.5rem] md:min-w-[2rem] ${
-            type === "current" ? "text-blue-700" : "text-green-700"
-          }`}
+          className={classNames(
+            "shrink-0 text-xs md:text-lg font-bold min-w-[1.5rem] md:min-w-[2rem]",
+            type === "current" ? "text-blue-700" : "text-green-700",
+          )}
         >
           #{player.rank}
         </div>
@@ -126,9 +129,10 @@ export const SimulatedLeaderboard: React.FC = () => {
             {context.playerName(player.id)}
           </div>
           <div
-            className={`text-[10px] md:text-sm font-bold ${
-              type === "current" ? "text-blue-600" : "text-green-600"
-            }`}
+            className={classNames(
+              "text-[10px] md:text-sm font-bold",
+              type === "current" ? "text-blue-600" : "text-green-600",
+            )}
           >
             {fmtNum(player.score)}
           </div>
@@ -139,15 +143,16 @@ export const SimulatedLeaderboard: React.FC = () => {
           <div className="flex flex-col -space-y-2 md:space-y-0">
             {rankChange !== 0 && (
               <p
-                className={`text-[10px] md:text-xs font-medium ${
-                  rankChange > 0 ? "text-green-600" : "text-red-600"
-                }`}
+                className={classNames(
+                  "text-[10px] md:text-xs font-medium",
+                  rankChange > 0 ? "text-green-600" : "text-red-600",
+                )}
               >
                 {fmtNum(rankChange, { signedPositive: true })} rank{Math.abs(rankChange) !== 1 && "s"}
               </p>
             )}
             {scoreChange !== 0 && (
-              <p className={`text-[10px] md:text-xs ${scoreChange > 0 ? "text-green-600" : "text-red-600"}`}>
+              <p className={classNames("text-[10px] md:text-xs", scoreChange > 0 ? "text-green-600" : "text-red-600")}>
                 ({fmtNum(scoreChange, { signedPositive: true })})
               </p>
             )}

@@ -173,21 +173,23 @@ export const AdminPage: React.FC = () => {
             <div className="flex gap-2 justify-center">
               <button
                 onClick={() => setChartView("monthly")}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                className={classNames(
+                  "px-4 py-2 rounded-lg font-medium transition-colors",
                   chartView === "monthly"
                     ? "bg-secondary-background text-secondary-text"
-                    : "bg-primary-background text-primary-text/75 border border-primary-text hover:bg-secondary-background hover:text-secondary-text"
-                }`}
+                    : "bg-primary-background text-primary-text/75 border border-primary-text hover:bg-secondary-background hover:text-secondary-text",
+                )}
               >
                 Monthly View
               </button>
               <button
                 onClick={() => setChartView("weekly")}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                className={classNames(
+                  "px-4 py-2 rounded-lg font-medium transition-colors",
                   chartView === "weekly"
                     ? "bg-secondary-background text-secondary-text"
-                    : "bg-primary-background text-primary-text/75 border border-primary-text hover:bg-secondary-background hover:text-secondary-text"
-                }`}
+                    : "bg-primary-background text-primary-text/75 border border-primary-text hover:bg-secondary-background hover:text-secondary-text",
+                )}
               >
                 Weekly View
               </button>

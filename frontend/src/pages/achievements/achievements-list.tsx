@@ -50,7 +50,7 @@ export const AchievementsList: React.FC<AchievementsListProps> = ({ achievements
                     <p>{relativeTimeString(new Date(achievement.earnedAt))}</p>
                   </div>
                 </div>
-                
+
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1">
                   <div
                     className="rounded-full w-fit flex items-center bg-primary-background/50 ring-1 ring-primary-text/10"
@@ -75,7 +75,7 @@ export const AchievementsList: React.FC<AchievementsListProps> = ({ achievements
                     <span className="text-[11px] opacity-80">
                       🏆 {context.tournaments.getTournament(
                         achievement.data.tournamentId
-                      )?.tournamentDb.name || "Tournament"}
+                      )?.tournamentConfig.name || "Tournament"}
                     </span>
                   )}
                   {achievement.data &&

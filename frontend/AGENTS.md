@@ -91,6 +91,23 @@ offloaded to Web Workers to keep the UI responsive.
 - **Command:** `npm run lint`.
 - Ensure code style matches the existing codebase (Prettier/ESLint).
 
+### Conditional CSS Classes
+
+Use the `classNames()` utility from `src/common/class-names.ts` for conditional
+class composition. **Do not** use template literal interpolation for conditional
+classes.
+
+```tsx
+// Good
+className={classNames(
+  "px-4 py-2 rounded-lg",
+  isActive ? "bg-primary-background" : "bg-secondary-background",
+)}
+
+// Bad
+className={`px-4 py-2 rounded-lg ${isActive ? "bg-primary-background" : "bg-secondary-background"}`}
+```
+
 ## Tech Stack
 
 - **Framework:** React (CRA based).

@@ -1,9 +1,10 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { httpClient } from "../common/http-client";
-import { createContext, useContext } from "react";
+import { createContext, useContext, useMemo } from "react";
 import { TennisTable } from "../client/client-db/tennis-table";
 import { EventType } from "../client/client-db/event-store/event-types";
 import { PingPongLoader } from "../common/ping-loader";
+import { useAutoSeedTournaments } from "../hooks/use-auto-seed-tournaments";
 
 export function useEventDb() {
   return useQuery<EventType[]>({
@@ -24,21 +25,21 @@ export function useEventDb() {
 
         // 1. Check if cache is missing timestamp or too old (undefined or < FORCE_INVALIDATE_BEFORE)
         if (cachedAt === undefined || cachedAt < FORCE_INVALIDATE_BEFORE) {
-            shouldClearCache = true;
-        } 
+          shouldClearCache = true;
+        }
         // 2. Check TTL (7 days)
         else if (now - cachedAt > TTL_MS) {
-            shouldClearCache = true;
+          shouldClearCache = true;
         }
 
         if (shouldClearCache) {
-            localStorage.removeItem(LOCAL_STORAGE_KEY);
-            localStorage.removeItem(CACHE_TIMESTAMP_KEY);
+          localStorage.removeItem(LOCAL_STORAGE_KEY);
+          localStorage.removeItem(CACHE_TIMESTAMP_KEY);
         } else {
-            const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
-            if (stored) {
-                storedEvents = JSON.parse(stored);
-            }
+          const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
+          if (stored) {
+            storedEvents = JSON.parse(stored);
+          }
         }
       } catch (e) {
         console.error("Failed to parse stored events or timestamp", e);
@@ -57,15 +58,15 @@ export function useEventDb() {
       }).then(async (response) => response.json() as Promise<EventType[]>);
 
       const allEvents = [...storedEvents, ...newEvents];
-      
+
       try {
         localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(allEvents));
-        
+
         // Only update the cache timestamp if we performed a full fetch (from scratch).
         // This ensures the TTL counts from when the full dataset was properly established,
         // not just when we last appended a few events.
         if (storedEvents.length === 0) {
-            localStorage.setItem(CACHE_TIMESTAMP_KEY, Date.now().toString());
+          localStorage.setItem(CACHE_TIMESTAMP_KEY, Date.now().toString());
         }
       } catch (e) {
         console.error("Failed to save events to local storage", e);
@@ -118,6 +119,17 @@ export const EventDbWrapper: React.FC<{
     );
   }
 
-  const tennistableClass = (window.tennisTable = new TennisTable({ events: eventsQuery.data }));
-  return <EventDbContext.Provider value={tennistableClass}>{children}</EventDbContext.Provider>;
+  return <EventDbInner events={eventsQuery.data}>{children}</EventDbInner>;
+};
+
+const EventDbInner: React.FC<{ events: EventType[]; children: React.ReactNode }> = ({ events, children }) => {
+  const tennisTable = useMemo(() => {
+    const tennisTableClass = new TennisTable({ events });
+    window.tennisTable = tennisTableClass;
+    return tennisTableClass;
+  }, [events]);
+
+  useAutoSeedTournaments(tennisTable);
+
+  return <EventDbContext.Provider value={tennisTable}>{children}</EventDbContext.Provider>;
 };

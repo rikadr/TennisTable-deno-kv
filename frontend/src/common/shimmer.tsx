@@ -1,3 +1,5 @@
+import { classNames } from "./class-names";
+
 interface ShimmerProps {
   children: React.ReactNode;
   duration?: number;
@@ -29,11 +31,11 @@ export const Shimmer: React.FC<ShimmerProps> = ({
   };
 
   return (
-    <div className={`relative overflow-hidden ${className}`} style={style}>
+    <div className={classNames("relative overflow-hidden", className)} style={style}>
       {children}
       <div className="absolute inset-0 pointer-events-none">
         <div
-          className={`absolute inset-0 bg-gradient-to-r ${enabled ? intensityClasses[intensity] : ""} animate-shimmer`}
+          className={classNames("absolute inset-0 bg-gradient-to-r animate-shimmer", enabled && intensityClasses[intensity])}
           style={enabled ? shimmerStyle : undefined}
         />
       </div>

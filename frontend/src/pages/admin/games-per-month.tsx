@@ -71,13 +71,13 @@ export const GamesPerMonthChart: React.FC = () => {
     const sortedMonthlyData = allMonthsData.sort((a, b) => a.timestamp - b.timestamp);
 
     // Filter tournaments that fall within the data range
-    const tournaments = context.client.tournaments;
+    const tournaments = context.eventStore.tournamentsProjector.getTournamentConfigs();
     const tournamentsInRange = tournaments.filter((tournament) => {
       return tournament.startDate >= minTimestamp && tournament.startDate <= Date.now();
     });
 
     return { monthlyData: sortedMonthlyData, tournamentsInRange };
-  }, [context.games, context.client?.tournaments]);
+  }, [context.games, context.eventStore.tournamentsProjector]);
 
   // Format month for display
   const formatMonth = (monthString: string): string => {

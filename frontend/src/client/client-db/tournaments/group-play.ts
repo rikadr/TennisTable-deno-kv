@@ -28,7 +28,7 @@ export class TournamentGroupPlay {
 
   constructor(tournament: Tournament) {
     this.#tournament = tournament;
-    this.playerOrder = this.#tournament.tournamentDb.playerOrder ?? tournament.signedUp.map((s) => s.player);
+    this.playerOrder = this.#tournament.tournamentConfig.playerOrder ?? tournament.signedUp.map((s) => s.player);
 
     const groups = this.#divideInGroups(this.playerOrder);
     const groupGames = this.#generateGroupGames(groups);
@@ -103,8 +103,8 @@ export class TournamentGroupPlay {
   }
 
   #getPreferredGroupSize(players: number): number {
-    if (this.#tournament.tournamentDb.overridePreferredGroupSize) {
-      return this.#tournament.tournamentDb.overridePreferredGroupSize;
+    if (this.#tournament.tournamentConfig.overridePreferredGroupSize) {
+      return this.#tournament.tournamentConfig.overridePreferredGroupSize;
     }
     if (players <= 8) return 3;
     if (players === 12) return 5; // 6, 6 instead of 4, 4, 4
@@ -147,7 +147,7 @@ export class TournamentGroupPlay {
   }
 
   #fillGroupsWithGames(groupGames: Partial<GroupGame>[][]): void {
-    const entries = this.#tournament.getRelevantGames(this.#tournament.tournamentDb.startDate);
+    const entries = this.#tournament.getRelevantGames(this.#tournament.tournamentConfig.startDate);
     entries.forEach((entry) => {
       const entryPlayers = [entry.player1, entry.player2];
       const matchedGroup = groupGames.findIndex((group) =>

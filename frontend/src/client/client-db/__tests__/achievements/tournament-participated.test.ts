@@ -1,6 +1,5 @@
 import { TennisTable } from "../../tennis-table";
 import { EventType, EventTypeEnum } from "../../event-store/event-types";
-import { TournamentDB } from "../../types";
 
 describe("Tournament Participated (Competitor) Achievement", () => {
   let baseEvents: EventType[];
@@ -37,16 +36,22 @@ describe("Tournament Participated (Competitor) Achievement", () => {
   it("should NOT award competitor achievement for a tournament that has not started yet", () => {
     const futureStartDate = Date.now() + 7 * 24 * 60 * 60 * 1000; // 1 week in the future
 
-    const tournament: TournamentDB = {
-      id: "tournament-1",
-      name: "Future Tournament",
-      startDate: futureStartDate,
-      groupPlay: false,
-      playerOrder: ["player-1", "player-2", "player-3", "player-4"],
-    };
+    const tournamentEvents: EventType[] = [
+      {
+        time: 5000,
+        stream: "tournament-1",
+        type: EventTypeEnum.TOURNAMENT_CREATED,
+        data: { name: "Future Tournament", startDate: futureStartDate, groupPlay: false },
+      },
+      {
+        time: 5001,
+        stream: "tournament-1",
+        type: EventTypeEnum.TOURNAMENT_SET_PLAYER_ORDER,
+        data: { playerOrder: ["player-1", "player-2", "player-3", "player-4"] },
+      },
+    ];
 
-    const tennisTable = new TennisTable({ events: baseEvents });
-    tennisTable.client.tournaments = [tournament];
+    const tennisTable = new TennisTable({ events: [...baseEvents, ...tournamentEvents] });
 
     tennisTable.achievements.calculateAchievements();
 
@@ -59,16 +64,22 @@ describe("Tournament Participated (Competitor) Achievement", () => {
   it("should award competitor achievement for a tournament that has already started", () => {
     const pastStartDate = Date.now() - 7 * 24 * 60 * 60 * 1000; // 1 week in the past
 
-    const tournament: TournamentDB = {
-      id: "tournament-1",
-      name: "Past Tournament",
-      startDate: pastStartDate,
-      groupPlay: false,
-      playerOrder: ["player-1", "player-2", "player-3", "player-4"],
-    };
+    const tournamentEvents: EventType[] = [
+      {
+        time: 5000,
+        stream: "tournament-1",
+        type: EventTypeEnum.TOURNAMENT_CREATED,
+        data: { name: "Past Tournament", startDate: pastStartDate, groupPlay: false },
+      },
+      {
+        time: 5001,
+        stream: "tournament-1",
+        type: EventTypeEnum.TOURNAMENT_SET_PLAYER_ORDER,
+        data: { playerOrder: ["player-1", "player-2", "player-3", "player-4"] },
+      },
+    ];
 
-    const tennisTable = new TennisTable({ events: baseEvents });
-    tennisTable.client.tournaments = [tournament];
+    const tennisTable = new TennisTable({ events: [...baseEvents, ...tournamentEvents] });
 
     tennisTable.achievements.calculateAchievements();
 
@@ -83,16 +94,22 @@ describe("Tournament Participated (Competitor) Achievement", () => {
   it("should not produce a future earnedAt timestamp", () => {
     const futureStartDate = Date.now() + 30 * 24 * 60 * 60 * 1000; // 30 days in the future
 
-    const tournament: TournamentDB = {
-      id: "tournament-future",
-      name: "Far Future Tournament",
-      startDate: futureStartDate,
-      groupPlay: false,
-      playerOrder: ["player-1", "player-2"],
-    };
+    const tournamentEvents: EventType[] = [
+      {
+        time: 5000,
+        stream: "tournament-future",
+        type: EventTypeEnum.TOURNAMENT_CREATED,
+        data: { name: "Far Future Tournament", startDate: futureStartDate, groupPlay: false },
+      },
+      {
+        time: 5001,
+        stream: "tournament-future",
+        type: EventTypeEnum.TOURNAMENT_SET_PLAYER_ORDER,
+        data: { playerOrder: ["player-1", "player-2"] },
+      },
+    ];
 
-    const tennisTable = new TennisTable({ events: baseEvents });
-    tennisTable.client.tournaments = [tournament];
+    const tennisTable = new TennisTable({ events: [...baseEvents, ...tournamentEvents] });
 
     tennisTable.achievements.calculateAchievements();
 
@@ -107,24 +124,34 @@ describe("Tournament Participated (Competitor) Achievement", () => {
     const pastStartDate = Date.now() - 14 * 24 * 60 * 60 * 1000; // 2 weeks ago
     const futureStartDate = Date.now() + 14 * 24 * 60 * 60 * 1000; // 2 weeks from now
 
-    const pastTournament: TournamentDB = {
-      id: "tournament-past",
-      name: "Past Tournament",
-      startDate: pastStartDate,
-      groupPlay: false,
-      playerOrder: ["player-1", "player-2", "player-3", "player-4"],
-    };
+    const tournamentEvents: EventType[] = [
+      {
+        time: 5000,
+        stream: "tournament-past",
+        type: EventTypeEnum.TOURNAMENT_CREATED,
+        data: { name: "Past Tournament", startDate: pastStartDate, groupPlay: false },
+      },
+      {
+        time: 5001,
+        stream: "tournament-past",
+        type: EventTypeEnum.TOURNAMENT_SET_PLAYER_ORDER,
+        data: { playerOrder: ["player-1", "player-2", "player-3", "player-4"] },
+      },
+      {
+        time: 5002,
+        stream: "tournament-future",
+        type: EventTypeEnum.TOURNAMENT_CREATED,
+        data: { name: "Future Tournament", startDate: futureStartDate, groupPlay: false },
+      },
+      {
+        time: 5003,
+        stream: "tournament-future",
+        type: EventTypeEnum.TOURNAMENT_SET_PLAYER_ORDER,
+        data: { playerOrder: ["player-1", "player-2", "player-3", "player-4"] },
+      },
+    ];
 
-    const futureTournament: TournamentDB = {
-      id: "tournament-future",
-      name: "Future Tournament",
-      startDate: futureStartDate,
-      groupPlay: false,
-      playerOrder: ["player-1", "player-2", "player-3", "player-4"],
-    };
-
-    const tennisTable = new TennisTable({ events: baseEvents });
-    tennisTable.client.tournaments = [pastTournament, futureTournament];
+    const tennisTable = new TennisTable({ events: [...baseEvents, ...tournamentEvents] });
 
     tennisTable.achievements.calculateAchievements();
 
