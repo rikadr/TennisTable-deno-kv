@@ -12,14 +12,12 @@ export const StepIndicator: React.FC<{ currentStep: number }> = ({ currentStep }
       component: (
         <div key={step} className="flex items-center">
           <div
-            className={`
-              relative flex items-center justify-center w-12 h-12 rounded-full text-xl
-              ${
-                isActive || isCompleted
-                  ? "bg-tertiary-background text-tertiary-text"
-                  : "bg-primary-background text-primary-text border-2 border-secondary-background"
-              }
-            `}
+            className={classNames(
+              "relative flex items-center justify-center w-12 h-12 rounded-full text-xl",
+              isActive || isCompleted
+                ? "bg-tertiary-background text-tertiary-text"
+                : "bg-primary-background text-primary-text border-2 border-secondary-background",
+            )}
           >
             {isCompleted ? "✓" : icon}
           </div>

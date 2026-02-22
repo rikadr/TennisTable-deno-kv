@@ -1,3 +1,5 @@
+import { classNames } from "../../common/class-names";
+
 export const StepNavigator: React.FC<{
   currentStep: number;
   canProceed: boolean;
@@ -24,14 +26,12 @@ export const StepNavigator: React.FC<{
         <button
           onClick={isLastStep ? (!isSubmitting ? handleSubmit : undefined) : handleNext}
           disabled={!canProceed || isSubmitting || hasSubmitted}
-          className={`
-                  flex-1 py-3 px-4 rounded-xl font-semibold flex items-center justify-center space-x-2 transition-colors ring-1 ring-primary-background
-                  ${
-                    canProceed && !isSubmitting && !hasSubmitted
-                      ? "bg-tertiary-background text-tertiary-text hover:bg-tertiary-background/75"
-                      : "bg-tertiary-background/50 text-tertiary-text/50 cursor-not-allowed"
-                  }
-                `}
+          className={classNames(
+            "flex-1 py-3 px-4 rounded-xl font-semibold flex items-center justify-center space-x-2 transition-colors ring-1 ring-primary-background",
+            canProceed && !isSubmitting && !hasSubmitted
+              ? "bg-tertiary-background text-tertiary-text hover:bg-tertiary-background/75"
+              : "bg-tertiary-background/50 text-tertiary-text/50 cursor-not-allowed",
+          )}
         >
           {!isLastStep && <span>Next →</span>}
           {isLastStep && (

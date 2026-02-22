@@ -185,13 +185,12 @@ export const PlayerAchievements: React.FC<Props> = ({ playerId }) => {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`
-                    flex items-center py-2 px-4 border-b-4 font-medium text-sm transition-colors shrink-0 whitespace-nowrap
-                    ${activeTab === tab.id
+                className={classNames(
+                  "flex items-center py-2 px-4 border-b-4 font-medium text-sm transition-colors shrink-0 whitespace-nowrap",
+                  activeTab === tab.id
                     ? "text-secondary-text border-secondary-text"
-                    : "text-secondary-text/80 border-transparent hover:text-secondary-text hover:border-secondary-text border-dotted"
-                  }
-                  `}
+                    : "text-secondary-text/80 border-transparent hover:text-secondary-text hover:border-secondary-text border-dotted",
+                )}
               >
                 {tab.label} {tab.id === "earned" && `(${achievements.length})`}
               </button>

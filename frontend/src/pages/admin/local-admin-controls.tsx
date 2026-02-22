@@ -1,5 +1,6 @@
 import { useMutation } from "@tanstack/react-query";
 import React, { useState } from "react";
+import { classNames } from "../../common/class-names";
 import { httpClient } from "../../common/http-client";
 import { GenerateMockData } from "./mock-data/generate-mock-data";
 
@@ -94,7 +95,7 @@ export const LocalAdminControls: React.FC = () => {
         </div>
 
         {(syncMutation.isSuccess || deleteMutation.isSuccess || error) && (
-          <div className={`mt-4 p-3 rounded-lg ${error ? "bg-red-100 text-red-800" : "bg-green-100 text-green-800"}`}>
+          <div className={classNames("mt-4 p-3 rounded-lg", error ? "bg-red-100 text-red-800" : "bg-green-100 text-green-800")}>
             {error
               ? `❌ ${error instanceof Error ? error.message : "Operation failed"}`
               : syncMutation.isSuccess

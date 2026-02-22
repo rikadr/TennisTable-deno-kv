@@ -10,6 +10,7 @@ import {
   Legend,
   ReferenceLine,
 } from "recharts";
+import { classNames } from "../../common/class-names";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 
 type DiversityMode = "global" | "ranked";
@@ -233,19 +234,23 @@ export const PlayerDiversityChart: React.FC = () => {
       <div className="flex gap-2 justify-center mb-4">
         <button
           onClick={() => setMode("global")}
-          className={`px-4 py-2 rounded-lg font-medium transition-colors ${mode === "global"
+          className={classNames(
+            "px-4 py-2 rounded-lg font-medium transition-colors",
+            mode === "global"
               ? "bg-secondary-background text-secondary-text"
-              : "bg-primary-background text-primary-text/75 border border-primary-text hover:bg-secondary-background hover:text-secondary-text"
-            }`}
+              : "bg-primary-background text-primary-text/75 border border-primary-text hover:bg-secondary-background hover:text-secondary-text",
+          )}
         >
           Global
         </button>
         <button
           onClick={() => setMode("ranked")}
-          className={`px-4 py-2 rounded-lg font-medium transition-colors ${mode === "ranked"
+          className={classNames(
+            "px-4 py-2 rounded-lg font-medium transition-colors",
+            mode === "ranked"
               ? "bg-secondary-background text-secondary-text"
-              : "bg-primary-background text-primary-text/75 border border-primary-text hover:bg-secondary-background hover:text-secondary-text"
-            }`}
+              : "bg-primary-background text-primary-text/75 border border-primary-text hover:bg-secondary-background hover:text-secondary-text",
+          )}
         >
           Ranked Only
         </button>

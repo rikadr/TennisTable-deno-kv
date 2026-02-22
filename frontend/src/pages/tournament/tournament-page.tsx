@@ -1,4 +1,5 @@
 import { useEventDbContext } from "../../wrappers/event-db-context";
+import { classNames } from "../../common/class-names";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTennisParams } from "../../hooks/use-tennis-params";
 import { TournamentSignup } from "./tournament-signup";
@@ -79,14 +80,12 @@ export const TournamentPage: React.FC = () => {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`
-                    flex items-center py-2 px-4 border-b-4 font-medium text-sm transition-colors
-                    ${
-                      activeTab === tab.id
-                        ? "text-primary-text border-primary-text"
-                        : "text-primary-text/80 border-transparent hover:text-primary-text hover:border-primary-text border-dotted"
-                    }
-                  `}
+                className={classNames(
+                  "flex items-center py-2 px-4 border-b-4 font-medium text-sm transition-colors",
+                  activeTab === tab.id
+                    ? "text-primary-text border-primary-text"
+                    : "text-primary-text/80 border-transparent hover:text-primary-text hover:border-primary-text border-dotted",
+                )}
               >
                 {tab.label}
               </button>

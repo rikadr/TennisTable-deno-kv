@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { classNames } from "../common/class-names";
 import { useTennisParams } from "../hooks/use-tennis-params";
 import { useEventDbContext } from "../wrappers/event-db-context";
 import { StepAddScore } from "./add-game/step-add-score";
@@ -140,14 +141,12 @@ export const EditGameSore: React.FC = () => {
           <button
             onClick={!addEventMutation.isPending ? submitScore : undefined}
             disabled={unchangedScore || invalidScore || addEventMutation.isPending || addEventMutation.isSuccess}
-            className={`
-                  flex-1 py-3 px-4 rounded-xl font-semibold flex items-center justify-center space-x-2 transition-colors
-                  ${
-                    !unchangedScore && !invalidScore && !addEventMutation.isPending && !addEventMutation.isSuccess
-                      ? "bg-tertiary-background text-tertiary-text hover:bg-tertiary-background/75"
-                      : "bg-tertiary-background/30 text-tertiary-text/50 cursor-not-allowed"
-                  }
-                `}
+            className={classNames(
+              "flex-1 py-3 px-4 rounded-xl font-semibold flex items-center justify-center space-x-2 transition-colors",
+              !unchangedScore && !invalidScore && !addEventMutation.isPending && !addEventMutation.isSuccess
+                ? "bg-tertiary-background text-tertiary-text hover:bg-tertiary-background/75"
+                : "bg-tertiary-background/30 text-tertiary-text/50 cursor-not-allowed",
+            )}
           >
             {addEventMutation.isPending ? (
               <>

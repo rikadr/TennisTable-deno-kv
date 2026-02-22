@@ -2,6 +2,7 @@ import React, { useMemo, useState } from "react";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, TooltipProps, XAxis, YAxis } from "recharts";
 import { NameType, ValueType } from "recharts/types/component/DefaultTooltipContent";
 import { useWindowSize } from "usehooks-ts";
+import { classNames } from "../../common/class-names";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { Season, TimelineEntry } from "../../client/client-db/seasons/season";
 import { stringToColor } from "../../common/string-to-color";
@@ -79,9 +80,10 @@ export const SeasonTimeline = ({ season }: Props) => {
           <button
             key={id}
             onClick={() => togglePlayer(id)}
-            className={`px-2 py-1 text-sm rounded-lg transition-opacity ${
-              visiblePlayers.has(id) ? "opacity-100" : "opacity-40"
-            }`}
+            className={classNames(
+              "px-2 py-1 text-sm rounded-lg transition-opacity",
+              visiblePlayers.has(id) ? "opacity-100" : "opacity-40",
+            )}
             style={{
               backgroundColor: stringToColor(id),
               color: "white",
@@ -162,9 +164,10 @@ export const SeasonTimeline = ({ season }: Props) => {
             />
           </div>
           <button
-            className={`px-2 py-1 whitespace-nowrap bg-secondary-background text-secondary-text hover:bg-secondary-background/50 rounded-lg ${
-              startRange === 0 && endRange === 0 ? "opacity-0" : ""
-            }`}
+            className={classNames(
+              "px-2 py-1 whitespace-nowrap bg-secondary-background text-secondary-text hover:bg-secondary-background/50 rounded-lg",
+              startRange === 0 && endRange === 0 && "opacity-0",
+            )}
             disabled={startRange === 0 && endRange === 0}
             onClick={() => {
               setStartRange(0);

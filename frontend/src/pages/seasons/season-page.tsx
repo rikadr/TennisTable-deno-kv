@@ -1,5 +1,6 @@
 import { Link, useSearchParams } from "react-router-dom";
 import { useState } from "react";
+import { classNames } from "../../common/class-names";
 import { ProfilePicture } from "../player/profile-picture";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { fmtNum } from "../../common/number-utils";
@@ -117,14 +118,12 @@ export function SeasonPage() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`
-                    flex items-center py-2 px-2 md:px-4 border-b-4 font-medium text-xs md:text-sm transition-colors shrink-0 whitespace-nowrap
-                    ${
-                      activeTab === tab.id
-                        ? "text-primary-text border-primary-text"
-                        : "text-primary-text/80 border-transparent hover:text-primary-text hover:border-primary-text border-dotted"
-                    }
-                  `}
+              className={classNames(
+                "flex items-center py-2 px-2 md:px-4 border-b-4 font-medium text-xs md:text-sm transition-colors shrink-0 whitespace-nowrap",
+                activeTab === tab.id
+                  ? "text-primary-text border-primary-text"
+                  : "text-primary-text/80 border-transparent hover:text-primary-text hover:border-primary-text border-dotted",
+              )}
             >
               {tab.label}
             </button>

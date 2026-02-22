@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Tournament } from "../../client/client-db/tournaments/tournament";
 import { TournamentGroupPlay } from "../../client/client-db/tournaments/group-play";
+import { classNames } from "../../common/class-names";
 import { relativeTimeString } from "../../common/date-utils";
 import { session } from "../../services/auth";
 import { useEventDbContext } from "../../wrappers/event-db-context";
@@ -121,10 +122,10 @@ const SeedingCard = ({
       {players.map((playerId, index) => (
         <li
           key={playerId}
-          className={`flex items-center gap-2 text-sm px-2 rounded ${eliminationZone !== undefined && index >= eliminationZone
-            ? "text-primary-text/40 line-through"
-            : ""
-            }`}
+          className={classNames(
+            "flex items-center gap-2 text-sm px-2 rounded",
+            eliminationZone !== undefined && index >= eliminationZone && "text-primary-text/40 line-through",
+          )}
         >
           <span className="text-xs text-primary-text/50 w-5 text-right">{index + 1}.</span>
           <span>{playerName(playerId)}</span>

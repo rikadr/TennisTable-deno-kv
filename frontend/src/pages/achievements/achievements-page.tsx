@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { classNames } from "../../common/class-names";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { Achievement } from "../../client/client-db/achievements";
 import { ACHIEVEMENT_LABELS } from "../player/player-achievements";
@@ -101,11 +102,12 @@ export const AchievementsPage: React.FC = () => {
 
           <button
             onClick={() => setShowProgress(!showProgress)}
-            className={`px-4 py-2 rounded text-sm font-medium border transition-colors ${
+            className={classNames(
+              "px-4 py-2 rounded text-sm font-medium border transition-colors",
               showProgress
                 ? "bg-accent text-white border-accent"
-                : "bg-secondary-background text-primary-text border-primary-text hover:border-accent"
-            }`}
+                : "bg-secondary-background text-primary-text border-primary-text hover:border-accent",
+            )}
           >
             {showProgress ? "Show Recent Achievements" : "Show Everyone's Progress"}
           </button>

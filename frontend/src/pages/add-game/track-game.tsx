@@ -270,11 +270,12 @@ export const TrackGamePage: React.FC = () => {
                     <button
                       onClick={() => removePoint(1)}
                       disabled={currentSetScore.player1 === 0}
-                      className={`w-full max-w-28 h-12 text-center rounded-lg transition text-2xl font-bold ${
+                      className={classNames(
+                        "w-full max-w-28 h-12 text-center rounded-lg transition text-2xl font-bold",
                         currentSetScore.player1 === 0
                           ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                          : "bg-blue-400 text-white hover:bg-blue-500"
-                      }`}
+                          : "bg-blue-400 text-white hover:bg-blue-500",
+                      )}
                     >
                       -
                     </button>
@@ -301,11 +302,12 @@ export const TrackGamePage: React.FC = () => {
                     <button
                       onClick={() => removePoint(2)}
                       disabled={currentSetScore.player2 === 0}
-                      className={`w-full max-w-28 h-12 text-center rounded-lg transition text-2xl font-bold ${
+                      className={classNames(
+                        "w-full max-w-28 h-12 text-center rounded-lg transition text-2xl font-bold",
                         currentSetScore.player2 === 0
                           ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                          : "bg-purple-400 text-white hover:bg-purple-500"
-                      }`}
+                          : "bg-purple-400 text-white hover:bg-purple-500",
+                      )}
                     >
                       -
                     </button>
@@ -319,22 +321,24 @@ export const TrackGamePage: React.FC = () => {
               <button
                 onClick={() => setWon(1)}
                 disabled={!player1Leading}
-                className={`w-full py-3 rounded-lg font-semibold transition text-base ${
+                className={classNames(
+                  "w-full py-3 rounded-lg font-semibold transition text-base",
                   player1Leading
                     ? "bg-blue-500 text-white hover:bg-blue-600"
-                    : "bg-gray-300 text-gray-500 cursor-not-allowed"
-                }`}
+                    : "bg-gray-300 text-gray-500 cursor-not-allowed",
+                )}
               >
                 Set Won by {context.playerName(player1)}
               </button>
               <button
                 onClick={() => setWon(2)}
                 disabled={!player2Leading}
-                className={`w-full py-3 rounded-lg font-semibold transition text-base ${
+                className={classNames(
+                  "w-full py-3 rounded-lg font-semibold transition text-base",
                   player2Leading
                     ? "bg-purple-500 text-white hover:bg-purple-600"
-                    : "bg-gray-300 text-gray-500 cursor-not-allowed"
-                }`}
+                    : "bg-gray-300 text-gray-500 cursor-not-allowed",
+                )}
               >
                 Set Won by {context.playerName(player2)}
               </button>
@@ -344,11 +348,12 @@ export const TrackGamePage: React.FC = () => {
             <button
               onClick={endMatch}
               disabled={!canEndMatch}
-              className={`w-full py-3 rounded-lg font-semibold transition text-base ${
+              className={classNames(
+                "w-full py-3 rounded-lg font-semibold transition text-base",
                 canEndMatch
                   ? "bg-green-600 text-white hover:bg-green-700"
-                  : "bg-gray-300 text-gray-500 cursor-not-allowed"
-              }`}
+                  : "bg-gray-300 text-gray-500 cursor-not-allowed",
+              )}
             >
               <div>End Match & Review</div>
               {!canEndMatch && (
@@ -484,11 +489,12 @@ export const TrackGamePage: React.FC = () => {
               <button
                 onClick={() => !gameSuccessfullyAdded && confirmMatch()}
                 disabled={addEventMutation.isPending}
-                className={`w-full py-4 rounded-lg font-semibold transition flex items-center justify-center gap-2 text-base ${
+                className={classNames(
+                  "w-full py-4 rounded-lg font-semibold transition flex items-center justify-center gap-2 text-base",
                   addEventMutation.isPending
                     ? "bg-gray-400 text-white cursor-not-allowed"
-                    : "bg-green-600 text-white hover:bg-green-700"
-                }`}
+                    : "bg-green-600 text-white hover:bg-green-700",
+                )}
               >
                 {addEventMutation.isPending ? "Submitting..." : "✅ Confirm & Save"}
               </button>
