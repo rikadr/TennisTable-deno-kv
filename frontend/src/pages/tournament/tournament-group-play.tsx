@@ -26,7 +26,7 @@ export const TournamentGroupPlayComponent: React.FC<{
       {/* <GroupDistribution tournament={tournament} /> */}
       <div className="lg:flex space-y-6 gap-6">
         <TournamentGroupScores tournament={tournament} />
-        <GroupPlayRules />
+        <GroupPlayRules tournament={tournament} />
       </div>
       <div className="flex flex-wrap justify-center gap-x-6 gap-y-10 mt-10">
         <TournamentGroups tournament={tournament} itemRefs={itemRefs} />
@@ -35,75 +35,79 @@ export const TournamentGroupPlayComponent: React.FC<{
   );
 };
 
-const GroupPlayRules: React.FC = () => (
-  <div className="text-primary-text bg-primary-background rounded-lg h-fit shadow-sm">
-    <h3 className="text-2xl font-bold mb-6">Rules</h3>
+const GroupPlayRules: React.FC<{ tournament: Tournament }> = ({ tournament }) => {
+  const hasUnequalGroups = tournament.groupPlay
+    ? new Set(tournament.groupPlay.groups.map((g) => g.players.length)).size > 1
+    : false;
 
-    {/* Scoring Section */}
-    <div className="bg-secondary-background/30 text-primary-text rounded-lg p-5 mb-4 border border-secondary-background/40">
-      <h4 className="font-semibold text-lg mb-4 text-primary-text">Point System</h4>
+  return (
+    <div className="text-primary-text bg-primary-background rounded-lg h-fit shadow-sm">
+      <h3 className="text-2xl font-bold mb-6">Rules</h3>
 
-      <div className="flex gap-6 mb-4 text-lg">
-        <div className="flex items-center gap-2">
-          <span className="font-semibold">Win:</span>
-          <span className="font-bold text-primary-text">{fmtNum(Tournament.GROUP_POINTS.WIN)}</span>
+      {/* Scoring Section */}
+      <div className="bg-secondary-background/30 text-primary-text rounded-lg p-5 mb-4 border border-secondary-background/40">
+        <h4 className="font-semibold text-lg mb-4 text-primary-text">Point System</h4>
+
+        <div className="flex gap-6 mb-4 text-lg">
+          <div className="flex items-center gap-2">
+            <span className="font-semibold">Win:</span>
+            <span className="font-bold text-primary-text">{fmtNum(Tournament.GROUP_POINTS.WIN)}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="font-semibold">Loss:</span>
+            <span className="font-bold text-primary-text">{fmtNum(Tournament.GROUP_POINTS.LOSS)}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="font-semibold">Skip:</span>
+            <span className="font-bold text-primary-text">{fmtNum(Tournament.GROUP_POINTS.SKIP)}</span>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="font-semibold">Loss:</span>
-          <span className="font-bold text-primary-text">{fmtNum(Tournament.GROUP_POINTS.LOSS)}</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="font-semibold">Skip:</span>
-          <span className="font-bold text-primary-text">{fmtNum(Tournament.GROUP_POINTS.SKIP)}</span>
+
+        <div className="space-y-3 text-sm">
+          <p className="text-primary-text/80 leading-relaxed">
+            Scores are multiplied by the{" "}
+            <span className="font-semibold text-primary-text underline decoration-primary-text/50">
+              group size adjustment factor
+            </span>{" "}
+            to account for smaller groups having fewer games to score points in.
+          </p>
+
+          <div className="bg-secondary-background/20 rounded p-3 border-l-4 border-secondary-background/60">
+            <p className="text-xs text-primary-text/70 italic">
+              <span className="font-semibold not-italic text-primary-text">Note:</span> If a game is skipped, the
+              advancing player scores as a <span className="font-semibold">winner</span> and the other player scores as a{" "}
+              <span className="font-semibold">skip</span>.
+            </p>
+          </div>
         </div>
       </div>
 
-      <div className="space-y-3 text-sm">
-        <p className="text-primary-text/80 leading-relaxed">
-          Scores are multiplied by the{" "}
-          <span className="font-semibold text-primary-text underline decoration-primary-text/50">
-            group size adjustment factor
-          </span>{" "}
-          to account for smaller groups having fewer games to score points in.
+      {/* Tie-breaker Section */}
+      <div className="bg-secondary-background/30 text-primary-text rounded-lg p-5 border border-secondary-background/40">
+        <h4 className="font-semibold text-lg mb-4 text-primary-text">Tie-breaker Priority</h4>
+
+        <p className="text-sm mb-4 text-primary-text/80">
+          When players have equal adjusted scores, ties are resolved using the following criteria in order:
         </p>
 
-        <div className="bg-secondary-background/20 rounded p-3 border-l-4 border-secondary-background/60">
-          <p className="text-xs text-primary-text/70 italic">
-            <span className="font-semibold not-italic text-primary-text">Note:</span> If a game is skipped, the
-            advancing player scores as a <span className="font-semibold">winner</span> and the other player scores as a{" "}
-            <span className="font-semibold">skip</span>.
-          </p>
-        </div>
+        {[
+          "Most wins",
+          "Least skips",
+          ...(hasUnequalGroups ? ["Highest score before group size adjustment"] : []),
+          "Least losses",
+          "Group seeding order. Found in the info tab",
+        ].map((text, i) => (
+          <div key={i} className="flex items-start gap-3 py-1.5 px-3">
+            <div className="flex-shrink-0 w-6 h-6 rounded-full bg-secondary-background/50 flex items-center justify-center">
+              <span className="text-xs font-bold text-primary-text">{i + 1}</span>
+            </div>
+            <p className="text-sm text-primary-text/90 leading-relaxed pt-0.5">{text}</p>
+          </div>
+        ))}
       </div>
     </div>
-
-    {/* Tie-breaker Section */}
-    <div className="bg-secondary-background/30 text-primary-text rounded-lg p-5 border border-secondary-background/40">
-      <h4 className="font-semibold text-lg mb-4 text-primary-text">Tie-breaker Priority</h4>
-
-      <p className="text-sm mb-4 text-primary-text/80">
-        When players have equal adjusted scores, ties are resolved using the following criteria in order:
-      </p>
-
-      {[
-        { rank: 1, text: "Most wins" },
-        { rank: 2, text: "Least skips" },
-        { rank: 3, text: "Highest score before group size adjustment" },
-        { rank: 4, text: "Least losses" },
-        { rank: 5, text: "Highest ELO rating" },
-        { rank: 6, text: "First to sign up for the tournament" },
-        { rank: 7, text: "If all the above are equal: Highest bribe 😉" },
-      ].map(({ rank, text }) => (
-        <div key={rank} className="flex items-start gap-3 py-1.5 px-3">
-          <div className="flex-shrink-0 w-6 h-6 rounded-full bg-secondary-background/50 flex items-center justify-center">
-            <span className="text-xs font-bold text-primary-text">{rank}</span>
-          </div>
-          <p className="text-sm text-primary-text/90 leading-relaxed pt-0.5">{text}</p>
-        </div>
-      ))}
-    </div>
-  </div>
-);
+  );
+};
 
 export const PlacementBox: React.FC<{ on: boolean }> = ({ on }) => {
   const [override, setOverride] = useState<boolean | null>(null);
