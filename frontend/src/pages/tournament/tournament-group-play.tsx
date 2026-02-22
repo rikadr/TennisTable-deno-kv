@@ -166,6 +166,7 @@ export const TournamentGroupScores: React.FC<{ tournament: Tournament }> = ({ to
   const cutOffIndex = tournament.groupPlay.getBracketSize();
 
   const hasGroupSizeAdjustment = scores.some(([_, s]) => s.groupSizeAdjustmentFactor !== 1);
+  const hasEliminationZone = cutOffIndex < scores.length;
 
   const row = (player: GroupScorePlayer, place: number, isEliminated: boolean = false) => (
     <tr
@@ -247,49 +248,53 @@ export const TournamentGroupScores: React.FC<{ tournament: Tournament }> = ({ to
             {/* Qualified Players */}
             {scores.slice(0, cutOffIndex).map(([_name, player], index) => row(player, index + 1, false))}
 
-            {/* Elimination Zone Divider */}
-            <tr className="bg-secondary-background/50 border-y-2 border-secondary-background/60">
-              <td className="px-4 py-2 text-center">
-                <span className="text-primary-text">⚠️</span>
-              </td>
-              <td colSpan={2} className="px-4 py-2 font-bold text-primary-text">
-                Elimination Zone
-              </td>
-              <td colSpan={5} className="px-4 py-2 text-center text-primary-text/80 text-sm">
-                Players below this line are eliminated from advancing
-              </td>
-            </tr>
-            <tr className="border-b-2 border-secondary-background/40">
-              <th className="px-4 py-1 text-sm text-center font-semibold text-primary-text">#</th>
-              <th className="px-4 py-1 text-sm text-left font-semibold text-primary-text">Player</th>
-              {hasGroupSizeAdjustment ? (
-                <th className="px-4 py-1 text-sm text-center font-semibold text-primary-text">
-                  <div>Adjusted</div>
-                  <div className="text-xs font-normal text-primary-text/60">Score</div>
-                </th>
-              ) : (
-                <th className="px-4 py-1 text-sm text-center font-semibold text-primary-text">
-                  <div>Score</div>
-                </th>
-              )}
-              {hasGroupSizeAdjustment && (
-                <>
-                  <th className="px-4 py-1 text-sm text-center font-semibold text-primary-text">
-                    <div>Score</div>
-                    <div className="text-xs font-normal text-primary-text/60">Before Adjustment</div>
-                  </th>
-                  <th className="px-4 py-1 text-sm text-center font-semibold text-primary-text">
-                    <div>Group Size</div>
-                    <div className="text-xs font-normal text-primary-text/60">Adjustment Factor</div>
-                  </th>
-                </>
-              )}
-              <th className="px-4 py-1 text-sm text-center font-semibold text-primary-text">Wins</th>
-              <th className="px-4 py-1 text-sm text-center font-semibold text-primary-text">Loss</th>
-              <th className="px-4 py-1 text-sm text-center font-semibold text-primary-text">Skips</th>
-            </tr>
-            {/* Eliminated Players */}
-            {scores.slice(cutOffIndex).map(([_name, player], index) => row(player, index + cutOffIndex + 1, true))}
+            {hasEliminationZone && (
+              <>
+                {/* Elimination Zone Divider */}
+                <tr className="bg-secondary-background/50 border-y-2 border-secondary-background/60">
+                  <td className="px-4 py-2 text-center">
+                    <span className="text-primary-text">⚠️</span>
+                  </td>
+                  <td colSpan={2} className="px-4 py-2 font-bold text-primary-text">
+                    Elimination Zone
+                  </td>
+                  <td colSpan={5} className="px-4 py-2 text-center text-primary-text/80 text-sm">
+                    Players below this line are eliminated from advancing
+                  </td>
+                </tr>
+                <tr className="border-b-2 border-secondary-background/40">
+                  <th className="px-4 py-1 text-sm text-center font-semibold text-primary-text">#</th>
+                  <th className="px-4 py-1 text-sm text-left font-semibold text-primary-text">Player</th>
+                  {hasGroupSizeAdjustment ? (
+                    <th className="px-4 py-1 text-sm text-center font-semibold text-primary-text">
+                      <div>Adjusted</div>
+                      <div className="text-xs font-normal text-primary-text/60">Score</div>
+                    </th>
+                  ) : (
+                    <th className="px-4 py-1 text-sm text-center font-semibold text-primary-text">
+                      <div>Score</div>
+                    </th>
+                  )}
+                  {hasGroupSizeAdjustment && (
+                    <>
+                      <th className="px-4 py-1 text-sm text-center font-semibold text-primary-text">
+                        <div>Score</div>
+                        <div className="text-xs font-normal text-primary-text/60">Before Adjustment</div>
+                      </th>
+                      <th className="px-4 py-1 text-sm text-center font-semibold text-primary-text">
+                        <div>Group Size</div>
+                        <div className="text-xs font-normal text-primary-text/60">Adjustment Factor</div>
+                      </th>
+                    </>
+                  )}
+                  <th className="px-4 py-1 text-sm text-center font-semibold text-primary-text">Wins</th>
+                  <th className="px-4 py-1 text-sm text-center font-semibold text-primary-text">Loss</th>
+                  <th className="px-4 py-1 text-sm text-center font-semibold text-primary-text">Skips</th>
+                </tr>
+                {/* Eliminated Players */}
+                {scores.slice(cutOffIndex).map(([_name, player], index) => row(player, index + cutOffIndex + 1, true))}
+              </>
+            )}
           </tbody>
         </table>
       </div>
