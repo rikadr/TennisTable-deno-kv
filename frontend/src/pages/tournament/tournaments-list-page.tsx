@@ -14,14 +14,12 @@ export const TournamentsListPage: React.FC = () => {
     <div className="mx-4 md:mx-10 space-y-4 text-primary-text">
       <div className="flex items-center justify-between gap-4">
         <h1>Tournaments list</h1>
-        {isAdmin && (
-          <Link
-            to="/tournament/new"
-            className="whitespace-nowrap rounded-lg bg-secondary-background px-4 py-2 text-sm font-semibold text-secondary-text hover:opacity-80"
-          >
-            + New tournament
-          </Link>
-        )}
+        <Link
+          to="/tournament/new"
+          className="whitespace-nowrap rounded-lg bg-secondary-background px-4 py-2 text-sm font-semibold text-secondary-text hover:opacity-80"
+        >
+          + New tournament
+        </Link>
       </div>
       <div className="max-w-xl flex flex-col gap-2">
         {sortedTournaments.map((t) => (
