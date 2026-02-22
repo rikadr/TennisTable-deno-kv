@@ -11,7 +11,7 @@ export const TournamentsListPage: React.FC = () => {
   const sortedTournaments = tournaments.getTournaments().sort((a, b) => b.startDate - a.startDate);
 
   return (
-    <div className="max-w-96 mx-4 md:mx-10 space-y-4 text-primary-text">
+    <div className="mx-4 md:mx-10 space-y-4 text-primary-text">
       <div className="flex items-center justify-between gap-4">
         <h1>Tournaments list</h1>
         {isAdmin && (
@@ -23,7 +23,7 @@ export const TournamentsListPage: React.FC = () => {
           </Link>
         )}
       </div>
-      <div className="max-w-96 flex flex-col gap-2">
+      <div className="max-w-xl flex flex-col gap-2">
         {sortedTournaments.map((t) => (
           <div key={t.id} className="relative">
             <Link to={`/tournament?tournament=${t.id}`} className="group">

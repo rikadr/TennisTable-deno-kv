@@ -26,29 +26,3 @@ export type PlayerComparison = {
   graphData: Record<string, number>[];
 };
 
-export type TournamentDB = {
-  id: string;
-  name: string;
-  description?: string;
-  startDate: number;
-  groupPlay: boolean;
-  overridePreferredGroupSize?: number;
-  signedUp: SignUpTournament[];
-  playerOrder?: string[]; // To be set when tournament starts
-};
-
-export type SignUpTournament = {
-  tournamentId: string;
-  player: string;
-  time: number;
-};
-
-/** Tournament config sourced from events via the TournamentsProjector */
-export type EventSourcedTournamentDB = {
-  id: string;
-  name: string;
-  description?: string;
-  startDate: number;
-  groupPlay: boolean;
-  playerOrder?: string[];
-};

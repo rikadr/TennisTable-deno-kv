@@ -73,13 +73,13 @@ export const GamesPerWeekChart: React.FC = () => {
     const sortedWeeklyData = allWeeksData.sort((a, b) => a.timestamp - b.timestamp);
 
     // Filter tournaments that fall within the data range
-    const tournaments = context.client?.tournaments;
+    const tournaments = context.eventStore.tournamentsProjector.getTournamentConfigs();
     const tournamentsInRange = tournaments.filter((tournament) => {
       return tournament.startDate >= minTimestamp && tournament.startDate <= Date.now();
     });
 
     return { weeklyData: sortedWeeklyData, tournamentsInRange };
-  }, [context.games, context.client?.tournaments]);
+  }, [context.games, context.eventStore.tournamentsProjector]);
 
   // Format week for display
   const formatWeek = (weekString: string): string => {

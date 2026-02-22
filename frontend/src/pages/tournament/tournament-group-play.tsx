@@ -17,7 +17,7 @@ export const TournamentGroupPlayComponent: React.FC<{
     [key: string]: HTMLElement | null;
   }>;
 }> = ({ tournament, itemRefs }) => {
-  if (tournament.tournamentDb.groupPlay === false) {
+  if (tournament.tournamentConfig.groupPlay === false) {
     return null;
   }
 
@@ -166,14 +166,11 @@ export const TournamentGroupScores: React.FC<{ tournament: Tournament }> = ({ to
   const row = (player: GroupScorePlayer, place: number, isEliminated: boolean = false) => (
     <tr
       key={player.name}
-      className={`
-        transition-colors border-b border-secondary-background/20
-        ${
-          isEliminated
-            ? "hover:bg-secondary-background/40 bg-secondary-background/20"
-            : "hover:bg-secondary-background/30"
-        }
-      `}
+      className={classNames("transition-colors border-b border-secondary-background/20",
+        isEliminated
+          ? "hover:bg-secondary-background/40 bg-secondary-background/20"
+          : "hover:bg-secondary-background/30")
+      }
     >
       <td className="px-4 py-1 text-center font-semibold">{place}</td>
       <td className="px-4 py-1 font-medium">

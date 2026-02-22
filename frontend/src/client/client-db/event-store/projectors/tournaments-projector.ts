@@ -18,6 +18,7 @@ export type TournamentConfig = {
   groupPlay: boolean;
   deleted: boolean;
   playerOrder?: string[];
+  overridePreferredGroupSize?: number;
 };
 
 type Tournament = {
@@ -83,6 +84,7 @@ export class TournamentsProjector {
       description: event.data.description,
       startDate: event.data.startDate,
       groupPlay: event.data.groupPlay,
+      overridePreferredGroupSize: event.data.overridePreferredGroupSize,
       deleted: false,
     };
   }
@@ -97,6 +99,9 @@ export class TournamentsProjector {
     if (!event.data.startDate) {
       return { valid: false, message: "Start date is required" };
     }
+    if (event.data.overridePreferredGroupSize !== undefined && event.data.overridePreferredGroupSize < 2) {
+      return { valid: false, message: "Group size must be 2 or higher" };
+    }
     return { valid: true };
   }
 
@@ -106,6 +111,8 @@ export class TournamentsProjector {
     if (event.data.description !== undefined) tournament.config.description = event.data.description;
     if (event.data.startDate !== undefined) tournament.config.startDate = event.data.startDate;
     if (event.data.groupPlay !== undefined) tournament.config.groupPlay = event.data.groupPlay;
+    if (event.data.overridePreferredGroupSize !== undefined)
+      tournament.config.overridePreferredGroupSize = event.data.overridePreferredGroupSize;
   }
   validateUpdateTournament(event: TournamentUpdated): ValidatorResponse {
     const existing = this.#tournamentsMap.get(event.stream);
@@ -124,6 +131,9 @@ export class TournamentsProjector {
     }
     if (event.data.name !== undefined && !event.data.name.trim()) {
       return { valid: false, message: "Tournament name cannot be empty" };
+    }
+    if (event.data.overridePreferredGroupSize !== undefined && event.data.overridePreferredGroupSize < 2) {
+      return { valid: false, message: "Group size must be 2 or higher" };
     }
     return { valid: true };
   }

@@ -1,8 +1,7 @@
 import { ONE_WEEK } from "../../../common/time-in-ms";
 import { Game } from "../event-store/projectors/games-projector";
-import { SignUp, SkippedGame } from "../event-store/projectors/tournaments-projector";
+import { SignUp, SkippedGame, TournamentConfig } from "../event-store/projectors/tournaments-projector";
 import { TennisTable } from "../tennis-table";
-import { TournamentDB } from "../types";
 import { TournamentBracket } from "./bracket";
 import { TournamentGroupPlay } from "./group-play";
 
@@ -17,7 +16,7 @@ export type TournamentGame = {
 };
 
 export class Tournament {
-  readonly tournamentDb: TournamentDB;
+  readonly tournamentConfig: TournamentConfig;
   readonly #games: Game[];
   readonly skippedGames: SkippedGame[];
   readonly signedUp: SignUp[];
@@ -29,20 +28,20 @@ export class Tournament {
   private static readonly RECENT_WINNER_THRESHOLD = 2 * ONE_WEEK;
   private static readonly SIGNUP_PERIOD = 2 * ONE_WEEK;
 
-  constructor(tournamentDb: TournamentDB, games: Game[], skippedGames: SkippedGame[], signedUp: SignUp[]) {
-    this.tournamentDb = tournamentDb;
+  constructor(tournamentConfig: TournamentConfig, games: Game[], skippedGames: SkippedGame[], signedUp: SignUp[]) {
+    this.tournamentConfig = tournamentConfig;
     this.#games = games;
     this.skippedGames = skippedGames;
     this.signedUp = signedUp;
 
-    if (this.tournamentDb.startDate > Date.now()) {
+    if (this.tournamentConfig.startDate > Date.now()) {
       return; // Not started. No need to calculate bracket or group play
     }
-    if (this.tournamentDb.groupPlay) {
+    if (this.tournamentConfig.groupPlay) {
       this.groupPlay = new TournamentGroupPlay(this);
     }
     if (
-      this.tournamentDb.groupPlay === false || // No group play
+      this.tournamentConfig.groupPlay === false || // No group play
       this.groupPlay === undefined || // Group play is not calculated
       this.groupPlay.groupPlayEnded !== undefined // Group play has ended
     ) {
@@ -51,16 +50,16 @@ export class Tournament {
   }
 
   get id() {
-    return this.tournamentDb.id;
+    return this.tournamentConfig.id;
   }
   get name() {
-    return this.tournamentDb.name;
+    return this.tournamentConfig.name;
   }
   get description() {
-    return this.tournamentDb.description;
+    return this.tournamentConfig.description;
   }
   get startDate() {
-    return this.tournamentDb.startDate;
+    return this.tournamentConfig.startDate;
   }
   get endDate() {
     return this.bracket?.bracketEnded;
@@ -129,12 +128,12 @@ export class Tournament {
     player2: string,
   ):
     | {
-        tournament: { name: string; id: string };
-        player1: string;
-        player2: string;
-        groupIndex?: number;
-        layerIndex?: number;
-      }
+      tournament: { name: string; id: string };
+      player1: string;
+      player2: string;
+      groupIndex?: number;
+      layerIndex?: number;
+    }
     | undefined {
     if (this.startDate > Date.now()) return; // Not started
     if (this.endDate !== undefined) return; // Has ended
@@ -179,9 +178,9 @@ export class Tournament {
 
   findPendingGamesByPlayer(player: string):
     | {
-        tournament: { name: string; id: string };
-        games: { oponent: string; player1: string; player2: string }[];
-      }
+      tournament: { name: string; id: string };
+      games: { oponent: string; player1: string; player2: string }[];
+    }
     | undefined {
     if (this.startDate > Date.now()) return; // Not started
     if (this.endDate !== undefined) return; // Has ended

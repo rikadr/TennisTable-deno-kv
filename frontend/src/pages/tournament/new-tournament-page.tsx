@@ -37,6 +37,7 @@ export const NewTournamentPage: React.FC = () => {
         description: data.description || undefined,
         startDate: datetimeLocalToTimestamp(data.startDate),
         groupPlay: data.groupPlay,
+        overridePreferredGroupSize: data.overridePreferredGroupSize,
       },
     };
 

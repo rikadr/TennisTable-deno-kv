@@ -6,6 +6,7 @@ export type TournamentFormData = {
   description: string;
   startDate: string; // datetime-local string
   groupPlay: boolean;
+  overridePreferredGroupSize?: number;
 };
 
 type TournamentFormProps = {
@@ -22,6 +23,9 @@ export const TournamentForm = ({ initialData, onSubmit, submitLabel, isPending, 
   const [description, setDescription] = useState(initialData?.description ?? "");
   const [startDate, setStartDate] = useState(initialData?.startDate ?? "");
   const [groupPlay, setGroupPlay] = useState(initialData?.groupPlay ?? false);
+  const [overrideGroupSize, setOverrideGroupSize] = useState<string>(
+    initialData?.overridePreferredGroupSize?.toString() ?? "",
+  );
   const [error, setError] = useState<string>();
 
   function handleSubmit(e: React.FormEvent) {
@@ -37,7 +41,19 @@ export const TournamentForm = ({ initialData, onSubmit, submitLabel, isPending, 
       return;
     }
 
-    onSubmit({ name: name.trim(), description: description.trim(), startDate, groupPlay });
+    const parsedGroupSize = overrideGroupSize ? parseInt(overrideGroupSize, 10) : undefined;
+    if (groupPlay && parsedGroupSize !== undefined && parsedGroupSize < 2) {
+      setError("Group size must be 2 or higher");
+      return;
+    }
+
+    onSubmit({
+      name: name.trim(),
+      description: description.trim(),
+      startDate,
+      groupPlay,
+      overridePreferredGroupSize: groupPlay ? parsedGroupSize : undefined,
+    });
   }
 
   return (
@@ -117,6 +133,27 @@ export const TournamentForm = ({ initialData, onSubmit, submitLabel, isPending, 
             </p>
           </div>
         </label>
+      </div>
+
+      <div>
+        <label className="block text-xs font-medium text-primary-text/70 uppercase tracking-wide mb-1">
+          Group size override
+        </label>
+        <input
+          type="number"
+          min={2}
+          value={overrideGroupSize}
+          onChange={(e) => setOverrideGroupSize(e.target.value)}
+          disabled={!groupPlay}
+          placeholder="Default (auto)"
+          className={classNames(
+            "w-full px-3 py-2 rounded-lg bg-primary-background text-primary-text ring-1 ring-secondary-background focus:ring-2 focus:ring-secondary-text focus:outline-none",
+            !groupPlay && "opacity-50 cursor-not-allowed",
+          )}
+        />
+        <p className="text-xs text-primary-text/60 mt-1">
+          Override the preferred number of players per group. Leave empty for automatic sizing.
+        </p>
       </div>
 
       <button

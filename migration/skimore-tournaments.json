@@ -1,0 +1,54 @@
+[
+  {
+    "type": "TOURNAMENT_CREATED",
+    "time": 1771056000000,
+    "stream": "skimore_vf2026",
+    "data": {
+      "name": "Vinterferie 2026",
+      "description": "Vinterferieturnering med gruppespill! Alle deltakere deles inn i grupper der alle spiller mot alle. Meld deg pa og bli med!",
+      "startDate": 1771660800000,
+      "groupPlay": true
+    }
+  },
+  {
+    "type": "TOURNAMENT_SET_PLAYER_ORDER",
+    "time": 1771660799999,
+    "stream": "skimore_vf2026",
+    "data": {
+      "playerOrder": [
+        "PC6lk9OwY0",
+        "51uSqCbvh8",
+        "ZYzCThVurE",
+        "JI2IoMDt6V"
+      ]
+    }
+  },
+  {
+    "type": "TOURNAMENT_CREATED",
+    "time": 1771228800000,
+    "stream": "skimore_foc2026",
+    "data": {
+      "name": "The first office Champion",
+      "description": "The first ever office champion tournament! Group play followed by knockout finals. Sign up and claim your title!",
+      "startDate": 1771833600000,
+      "groupPlay": true
+    }
+  },
+  {
+    "type": "TOURNAMENT_SET_PLAYER_ORDER",
+    "time": 1771833599999,
+    "stream": "skimore_foc2026",
+    "data": {
+      "playerOrder": [
+        "rYRcEvYNP9",
+        "l5waHORhj1",
+        "PC6lk9OwY0",
+        "4xh06LGHkK",
+        "51uSqCbvh8",
+        "f1EUKKCOzb",
+        "ZYzCThVurE",
+        "OBMctO3w51"
+      ]
+    }
+  }
+]

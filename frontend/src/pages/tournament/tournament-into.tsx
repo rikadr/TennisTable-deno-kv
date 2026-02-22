@@ -25,7 +25,7 @@ const InfoRow = ({ label, children }: { label: string; children: React.ReactNode
 export const TournamentInfo = ({ tournament }: { tournament: Tournament }) => {
   const startDate = new Date(tournament.startDate);
   const endDate = tournament.endDate ? new Date(tournament.endDate) : null;
-  const hasGroupPlay = tournament.tournamentDb.groupPlay;
+  const hasGroupPlay = tournament.tournamentConfig.groupPlay;
   const isAdmin = session.sessionData?.role === "admin";
 
   return (

@@ -55,7 +55,9 @@ export const EditTournamentPage: React.FC = () => {
     if (!hasStarted) {
       const newStartDate = datetimeLocalToTimestamp(data.startDate);
       if (newStartDate !== tournament.startDate) updateData.startDate = newStartDate;
-      if (data.groupPlay !== tournament.tournamentDb.groupPlay) updateData.groupPlay = data.groupPlay;
+      if (data.groupPlay !== tournament.tournamentConfig.groupPlay) updateData.groupPlay = data.groupPlay;
+      if (data.overridePreferredGroupSize !== tournament.tournamentConfig.overridePreferredGroupSize)
+        updateData.overridePreferredGroupSize = data.overridePreferredGroupSize;
     }
 
     if (Object.keys(updateData).length === 0) {
@@ -127,7 +129,8 @@ export const EditTournamentPage: React.FC = () => {
             name: tournament.name,
             description: tournament.description ?? "",
             startDate: timestampToDatetimeLocal(tournament.startDate),
-            groupPlay: tournament.tournamentDb.groupPlay,
+            groupPlay: tournament.tournamentConfig.groupPlay,
+            overridePreferredGroupSize: tournament.tournamentConfig.overridePreferredGroupSize,
           }}
           onSubmit={handleSubmit}
           submitLabel="Save changes"

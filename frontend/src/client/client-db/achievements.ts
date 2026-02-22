@@ -676,16 +676,16 @@ export class Achievements {
 
   #checkTournamentAchievements() {
     this.parent.tournaments.getTournaments().forEach((t) => {
-      const tournamentId = t.tournamentDb.id;
+      const tournamentId = t.tournamentConfig.id;
 
       // Only award participation if the tournament has started
-      if (t.tournamentDb.startDate > Date.now()) return;
+      if (t.tournamentConfig.startDate > Date.now()) return;
 
       // Check participation for all players in the tournament
-      t.tournamentDb.playerOrder?.forEach((playerId) => {
+      t.tournamentConfig.playerOrder?.forEach((playerId) => {
         this.#addAchievement(
           playerId,
-          this.#createAchievement("tournament-participated", playerId, t.tournamentDb.startDate, {
+          this.#createAchievement("tournament-participated", playerId, t.tournamentConfig.startDate, {
             tournamentId,
           }),
         );
@@ -916,7 +916,7 @@ export class Achievements {
     const NINETY_MINUTES = 90 * 60 * 1000;
     const currentTime = Date.now();
     const recentWins: number[] = [];
-    
+
     // Iterate through games in reverse to find recent wins
     for (let i = this.parent.games.length - 1; i >= 0; i--) {
       const game = this.parent.games[i];
@@ -929,7 +929,7 @@ export class Achievements {
         }
       }
     }
-    
+
     progression["hat-trick"].current = recentWins.length;
 
 

@@ -11,5 +11,4 @@ export class GuestClient implements ClientConfig {
   title = "Tennis🏆💔Table";
   favicon = "🏓";
   gameLimitForRanked = 5;
-  tournaments = [];
 }
