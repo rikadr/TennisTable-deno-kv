@@ -114,7 +114,10 @@ export function registerEventStoreRoutes(api: Router) {
    * Do not register the following routes in production
    */
 
-
+  const environment = Deno.env.get("ENVIRONMENT");
+  if (environment !== "local") {
+    return;
+  }
   console.log("******** Registering debug routes for event store");
 
   /**
@@ -132,11 +135,6 @@ export function registerEventStoreRoutes(api: Router) {
     context.response.status = 201;
   });
 
-  // TODO move this blocker back up to cover the post events endpoint
-  const environment = Deno.env.get("ENVIRONMENT");
-  if (environment !== "local") {
-    return;
-  }
 
   /**
    * Delete all events
