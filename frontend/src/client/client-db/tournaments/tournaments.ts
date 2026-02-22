@@ -44,6 +44,39 @@ export class Tournaments {
     );
   }
 
+  getTournamentsNeedingPlayerOrder() {
+    return this.parent.eventStore.tournamentsProjector
+      .getTournamentConfigs()
+      .filter(
+        (config) =>
+          config.playerOrder === undefined &&
+          config.startDate !== 0 && // Is the case when config is missing
+          config.startDate <= Date.now() &&
+          this.parent.eventStore.tournamentsProjector.getTournamentSignups(config.id).length > 0,
+      );
+  }
+
+  buildPlayerOrder(tournamentId: string): string[] {
+    const signups = this.parent.eventStore.tournamentsProjector.getTournamentSignups(tournamentId);
+    const leaderboard = this.parent.leaderboard.getLeaderboard();
+
+    const rankMap = new Map<string, number>();
+    leaderboard.rankedPlayers.forEach((p) => rankMap.set(p.id, p.rank));
+
+    return signups
+      .map((s) => s.player)
+      .sort((a, b) => {
+        const rankA = rankMap.get(a);
+        const rankB = rankMap.get(b);
+        if (rankA !== undefined && rankB !== undefined) return rankA - rankB;
+        if (rankA !== undefined) return -1;
+        if (rankB !== undefined) return 1;
+        const signupA = signups.find((s) => s.player === a)!.time;
+        const signupB = signups.find((s) => s.player === b)!.time;
+        return signupA - signupB;
+      });
+  }
+
   findAllPendingGames(player1: string | null | undefined, player2: string | null | undefined) {
     if (!player1 || !player2) return [];
     return this.getTournaments()

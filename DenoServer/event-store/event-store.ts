@@ -13,7 +13,7 @@ export async function storeEvent(event: EventType) {
   const key = getEventKey(event.time);
   const result = await kv.atomic().check({ key, versionstamp: null }).set(key, event).commit();
   if (!result.ok) {
-    console.error(`Failed to store event ${event}`);
+    console.error("Failed to store event", event);
     throw new Error();
   }
 }

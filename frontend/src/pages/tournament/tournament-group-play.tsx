@@ -95,6 +95,8 @@ const GroupPlayRules: React.FC<{ tournament: Tournament }> = ({ tournament }) =>
           "Least skips",
           ...(hasUnequalGroups ? ["Highest score before group size adjustment"] : []),
           "Least losses",
+          "Highest overall leaderboard rank at tournament start",
+          "First to sign up to the tournament",
           "Group seeding order. Found in the info tab",
         ].map((text, i) => (
           <div key={i} className="flex items-start gap-3 py-1.5 px-3">

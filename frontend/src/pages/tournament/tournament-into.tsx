@@ -121,7 +121,7 @@ const SeedingCard = ({
       {players.map((playerId, index) => (
         <li
           key={playerId}
-          className={`flex items-center gap-2 text-sm px-2 py-1 rounded ${eliminationZone !== undefined && index >= eliminationZone
+          className={`flex items-center gap-2 text-sm px-2 rounded ${eliminationZone !== undefined && index >= eliminationZone
             ? "text-primary-text/40 line-through"
             : ""
             }`}
