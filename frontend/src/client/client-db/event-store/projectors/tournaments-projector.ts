@@ -119,9 +119,6 @@ export class TournamentsProjector {
     if (!existing || existing.config.deleted) {
       return { valid: false, message: "Tournament does not exist" };
     }
-    if (existing.config.deleted) {
-      return { valid: false, message: "Tournament is deleted" };
-    }
     const hasStarted = existing.config.startDate <= Date.now();
     if (hasStarted && event.data.startDate !== undefined) {
       return { valid: false, message: "Cannot change start date after tournament has started" };

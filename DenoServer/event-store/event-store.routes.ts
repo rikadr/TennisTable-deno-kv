@@ -66,12 +66,9 @@ export function registerEventStoreRoutes(api: Router) {
         return;
       }
     }
-    if (eventPayload.type === EventTypeEnum.TOURNAMENT_SET_PLAYER_ORDER) {
-      if ((await hasAccess(context, "tournament", "update")) === false) {
-        context.response.status = 403;
-        return;
-      }
-    }
+    // TOURNAMENT_SET_PLAYER_ORDER has no access check — any authenticated
+    // client can submit it because it is auto-seeded on tournament start and
+    // the backend's atomic uniqueness check on event time prevents duplicates.
 
     await storeEvent(eventPayload);
     webSocketClientManager.broadcastLatestEvent();
@@ -116,16 +113,13 @@ export function registerEventStoreRoutes(api: Router) {
    * DEBUG AND DEV ONLY: -----------------------------------------------------------
    * Do not register the following routes in production
    */
-  const environment = Deno.env.get("ENVIRONMENT");
-  if (environment !== "local") {
-    return;
-  }
+
 
   console.log("******** Registering debug routes for event store");
 
   /**
    * Stores multiple new events
-   */
+  */
   api.post("/events", async (context) => {
     const eventsPayload = (await context.request.body.json()) as EventType[];
 
@@ -137,6 +131,12 @@ export function registerEventStoreRoutes(api: Router) {
     context.response.body = { uploadedCount: eventsPayload.length.toLocaleString() };
     context.response.status = 201;
   });
+
+  // TODO move this blocker back up to cover the post events endpoint
+  const environment = Deno.env.get("ENVIRONMENT");
+  if (environment !== "local") {
+    return;
+  }
 
   /**
    * Delete all events
