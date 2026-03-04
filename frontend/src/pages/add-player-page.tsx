@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { queryClient } from "../common/query-client";
-import { useNavigate } from "react-router-dom";
+import { useTransitionNavigate } from "../hooks/use-view-transition";
 import { classNames } from "../common/class-names";
 import ConfettiExplosion from "react-confetti-explosion";
 import { useEventDbContext } from "../wrappers/event-db-context";
@@ -10,7 +10,7 @@ import { newId } from "../common/nani-id";
 import { stringToColor } from "../common/string-to-color";
 
 export const AddPlayerPage: React.FC = () => {
-  const navigate = useNavigate();
+  const navigate = useTransitionNavigate();
   const context = useEventDbContext();
   const addEventMutation = useEventMutation();
   const [playerName, setPlayerName] = useState("");

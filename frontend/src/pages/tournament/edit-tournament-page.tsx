@@ -1,4 +1,5 @@
-import { Link, useNavigate } from "react-router-dom";
+import { TransitionLink } from "../../components/transition-link";
+import { useTransitionNavigate } from "../../hooks/use-view-transition";
 import { session } from "../../services/auth";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { useEventMutation } from "../../hooks/use-event-mutation";
@@ -14,7 +15,7 @@ import { useTennisParams } from "../../hooks/use-tennis-params";
 export const EditTournamentPage: React.FC = () => {
   const { tournament: tournamentId } = useTennisParams();
   const context = useEventDbContext();
-  const navigate = useNavigate();
+  const navigate = useTransitionNavigate();
   const addEventMutation = useEventMutation();
 
   const isAdmin = session.sessionData?.role === "admin";
@@ -25,9 +26,9 @@ export const EditTournamentPage: React.FC = () => {
       <div className="max-w-96 mx-4 md:mx-10 space-y-4 text-primary-text">
         <h1>Edit tournament</h1>
         <p>Only admins can edit tournaments. Log in as an admin to continue.</p>
-        <Link to="/tournament/list" className="inline-block mt-4 text-sm text-primary-text hover:underline">
+        <TransitionLink to="/tournament/list" className="inline-block mt-4 text-sm text-primary-text hover:underline">
           &larr; Back to tournaments
-        </Link>
+        </TransitionLink>
       </div>
     );
   }
@@ -37,9 +38,9 @@ export const EditTournamentPage: React.FC = () => {
       <div className="max-w-96 mx-4 md:mx-10 space-y-4 text-primary-text">
         <h1>Edit tournament</h1>
         <p>Tournament not found.</p>
-        <Link to="/tournament/list" className="inline-block mt-4 text-sm text-primary-text hover:underline">
+        <TransitionLink to="/tournament/list" className="inline-block mt-4 text-sm text-primary-text hover:underline">
           &larr; Back to tournaments
-        </Link>
+        </TransitionLink>
       </div>
     );
   }
@@ -115,12 +116,12 @@ export const EditTournamentPage: React.FC = () => {
     <div className="max-w-lg mx-4 md:mx-10 space-y-4 text-primary-text">
       <div className="flex items-center justify-between gap-4">
         <h1>Edit tournament</h1>
-        <Link
+        <TransitionLink
           to={`/tournament?tournament=${tournament.id}`}
           className="text-sm text-primary-text/70 hover:underline"
         >
           &larr; Back
-        </Link>
+        </TransitionLink>
       </div>
 
       <div className="ring-1 ring-secondary-background rounded-lg p-4 md:p-6 bg-primary-background">

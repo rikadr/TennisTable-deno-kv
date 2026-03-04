@@ -1,5 +1,5 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { TransitionLink } from "../../components/transition-link";
 import { Season } from "../../client/client-db/seasons/season";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { dateString } from "../player/player-achievements";
@@ -33,7 +33,7 @@ export const SeasonCard: React.FC<SeasonCardProps> = ({ season, index, totalSeas
   }
 
   return (
-    <Link
+    <TransitionLink
       to={`/season?seasonStart=${start}`}
       className="block group"
     >
@@ -96,6 +96,6 @@ export const SeasonCard: React.FC<SeasonCardProps> = ({ season, index, totalSeas
           </div>
         </div>
       </div>
-    </Link>
+    </TransitionLink>
   );
 };

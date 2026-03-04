@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { TransitionLink } from "../../components/transition-link";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { classNames } from "../../common/class-names";
 import { stringToColor } from "../../common/string-to-color";
@@ -15,7 +15,7 @@ export const LeaderboardDistrubution: React.FC = () => {
       {leaderboard?.rankedPlayers.map(({ id, elo }, index) => {
         const fraction = (elo - lowestElo) / range;
         return (
-          <Link to={`/player/${id}`} className="group" key={index}>
+          <TransitionLink to={`/player/${id}`} className="group" key={index}>
             <div className="relative w-full h-6 group-hover:bg-primary-text/5">
               <div
                 className={classNames(
@@ -25,7 +25,7 @@ export const LeaderboardDistrubution: React.FC = () => {
               />
               <div className="absolute top-0 left-2 text-primary-text">{context.playerName(id)}</div>
             </div>
-          </Link>
+          </TransitionLink>
         );
       })}
     </div>

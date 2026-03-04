@@ -1,16 +1,19 @@
 import { CloseButton, Popover, PopoverButton, PopoverPanel } from "@headlessui/react";
-import React, { useEffect } from "react";
+// @ts-expect-error -- ViewTransition is exported from React experimental
+import React, { useEffect, ViewTransition } from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
 import { classNames } from "../common/class-names";
 import { session } from "../services/auth";
 import pumpkinLogo from "../img/halloween/tennis-table.png";
 import easterLogo from "../img/easter/easter-tennis-table.png";
 import { getClientConfig, Theme, themeOrOverrideTheme } from "../client/client-config/get-client-config";
+import { useTransitionNavigate } from "../hooks/use-view-transition";
 
 const MENU_HEIGHT = "h-16 md:h-12";
 
 export const NavMenu: React.FC = () => {
   const { pathname } = useLocation();
+  const transitionNavigate = useTransitionNavigate();
 
   useEffect(() => {
     // Scroll to top whenever the path changes
@@ -43,13 +46,31 @@ export const NavMenu: React.FC = () => {
     const menuItemTextClassNames = "text-lg md:text-xl font-semibold text-secondary-text";
 
     const list = items.map((item, index) => (
-      <CloseButton key={index} as={Link} to={item.to} className={menuItemWrapperClassNames}>
+      <CloseButton
+        key={index}
+        as={Link}
+        to={item.to}
+        className={menuItemWrapperClassNames}
+        onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
+          e.preventDefault();
+          transitionNavigate(item.to);
+        }}
+      >
         <p className={menuItemTextClassNames}>{item.name}</p>
       </CloseButton>
     ));
     if (session.isAuthenticated) {
       list.push(
-        <CloseButton key={list.length} as={Link} to="/me" className={menuItemWrapperClassNames}>
+        <CloseButton
+          key={list.length}
+          as={Link}
+          to="/me"
+          className={menuItemWrapperClassNames}
+          onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
+            e.preventDefault();
+            transitionNavigate("/me");
+          }}
+        >
           <p className={menuItemTextClassNames}>My profile</p>
         </CloseButton>,
       );
@@ -67,7 +88,16 @@ export const NavMenu: React.FC = () => {
       );
     } else {
       list.push(
-        <CloseButton key={list.length} as={Link} to="/log-in" className={menuItemWrapperClassNames}>
+        <CloseButton
+          key={list.length}
+          as={Link}
+          to="/log-in"
+          className={menuItemWrapperClassNames}
+          onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
+            e.preventDefault();
+            transitionNavigate("/log-in");
+          }}
+        >
           <p className={menuItemTextClassNames}>Log In</p>
         </CloseButton>,
       );
@@ -108,7 +138,14 @@ export const NavMenu: React.FC = () => {
           MENU_HEIGHT,
         )}
       >
-        <Link to="/leader-board" className={classNames("whitespace-nowrap rounded-full select-none text-primary-text")}>
+        <Link
+          to="/leader-board"
+          className={classNames("whitespace-nowrap rounded-full select-none text-primary-text")}
+          onClick={(e) => {
+            e.preventDefault();
+            transitionNavigate("/leader-board", { transition: "fade" });
+          }}
+        >
           {themedLogo()}
         </Link>
         {renderMenuitems().slice(2, 3)}
@@ -153,7 +190,9 @@ export const NavMenu: React.FC = () => {
         </Popover>
       </div>
       <div className="mt-4 mb-24">
-        <Outlet />
+        <ViewTransition>
+          <Outlet />
+        </ViewTransition>
       </div>
     </div>
   );

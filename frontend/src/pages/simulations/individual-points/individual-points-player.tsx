@@ -5,7 +5,8 @@ import { PointsBar } from "./points-bar";
 import { PlayerWithIndividualPoints, PointsRange } from "../../../client/client-db/individual-points";
 import { ProfilePicture } from "../../player/profile-picture";
 import { fmtNum } from "../../../common/number-utils";
-import { Link, useNavigate } from "react-router-dom";
+import { TransitionLink } from "../../../components/transition-link";
+import { useTransitionNavigate } from "../../../hooks/use-view-transition";
 import { classNames } from "../../../common/class-names";
 
 export const IndividualPointsPlayer: React.FC = () => {
@@ -29,7 +30,7 @@ const PlayerOverview: React.FC<{ player: PlayerWithIndividualPoints }> = ({ play
   const context = useEventDbContext();
   const map = context.individualPoints.playerMap();
 
-  const navigate = useNavigate();
+  const navigate = useTransitionNavigate();
 
   const groupedRanges = useMemo(() => {
     const grouped = new Map<string, { ranges: PointsRange[]; total: number }>();
@@ -87,7 +88,7 @@ const PlayerOverview: React.FC<{ player: PlayerWithIndividualPoints }> = ({ play
       {oponentsWithYourPointsRanges.map((oponent) => {
         //
         return (
-          <Link
+          <TransitionLink
             key={oponent.id}
             to={`/simulations/individual-points/player?playerId=${oponent.id}`}
             className={classNames(
@@ -101,7 +102,7 @@ const PlayerOverview: React.FC<{ player: PlayerWithIndividualPoints }> = ({ play
               <p>{fmtNum(oponent.total)}</p>
             </div>
             <PointsBar highestElo={player.totalPoints} pointsRanges={oponent.ranges} totalPoints={oponent.total} />
-          </Link>
+          </TransitionLink>
         );
       })}
     </div>

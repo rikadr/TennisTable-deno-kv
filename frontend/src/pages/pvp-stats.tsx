@@ -1,6 +1,6 @@
 import { useEventDbContext } from "../wrappers/event-db-context";
 import { classNames } from "../common/class-names";
-import { Link } from "react-router-dom";
+import { TransitionLink } from "../components/transition-link";
 import { relativeTimeString } from "../common/date-utils";
 import { fmtNum } from "../common/number-utils";
 import { useState } from "react";
@@ -83,12 +83,12 @@ export const PvPStats: React.FC<Props> = ({ player1, player2 }) => {
               <p className="text-center text-secondary-text/50">
                 At {fmtNum(combinedPrediction.confidence * 100)}% confidence
               </p>
-              <Link
+              <TransitionLink
                 to={`/player/${player1}?tab=predictions&predictionTab=history&compareWith=${player2}`}
                 className="block w-fit mx-auto mt-3 text-xs text-tertiary-text bg-tertiary-background hover:bg-tertiary-background/50 px-3 py-1.5 rounded-full transition-colors"
               >
                 See prediction history
-              </Link>
+              </TransitionLink>
             </>
           ) : (
             <p className="text-center">Both players must be ranked to generate a predicion</p>
@@ -123,7 +123,7 @@ export const PvPStats: React.FC<Props> = ({ player1, player2 }) => {
                   const winner = isPlayer1Win ? p1 : p2;
 
                   return (
-                    <Link
+                    <TransitionLink
                       key={`${p1.playerId}-${p2.playerId}-${index}`}
                       to={`/player/${winner.playerId}`}
                       className="flex gap-4 px-2 rounded-lg border-t-[0.5px] border-primary-text/50 bg-primary-background hover:bg-primary-text/10 transition-colors group"
@@ -173,7 +173,7 @@ export const PvPStats: React.FC<Props> = ({ player1, player2 }) => {
                       <div className="flex-1 text-right text-sm text-primary-text/70 flex items-center justify-end pr-2 whitespace-nowrap">
                         {relativeTimeString(new Date(game.time))}
                       </div>
-                    </Link>
+                    </TransitionLink>
                   );
                 })
               )}

@@ -1,5 +1,5 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { TransitionLink } from "../../components/transition-link";
 import { PodiumPlace } from "./podium-place";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { ProfilePicture } from "../player/profile-picture";
@@ -190,7 +190,7 @@ export const LeaderBoard: React.FC = () => {
                 <div className="w-14 text-right">🏆:💔</div>
               </div>
               {leaderboard.rankedPlayers.map((player, index, list) => (
-                <Link
+                <TransitionLink
                   key={index}
                   to={`/player/${player.id}`}
                   className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text py-1 px-2 flex items-center gap-4 text-xl font-light text-primary-text"
@@ -215,7 +215,7 @@ export const LeaderBoard: React.FC = () => {
                       maximumFractionDigits: 1,
                     })}
                   </div>
-                </Link>
+                </TransitionLink>
               ))}
             </div>
 
@@ -230,7 +230,7 @@ export const LeaderBoard: React.FC = () => {
                 <div className="w-12 text-right">Games</div>
               </div>
               {leaderboard.unrankedPlayers.map((player, index) => (
-                <Link
+                <TransitionLink
                   key={index}
                   to={`/player/${player.id}`}
                   className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text py-1 px-2 flex items-center gap-4 text-xl text-primary-text font-light"
@@ -243,10 +243,10 @@ export const LeaderBoard: React.FC = () => {
                     })}
                   </div>
                   <div className="w-12 text-right">{player.games.length}</div>
-                </Link>
+                </TransitionLink>
               ))}
               {playersWithNoMatches.map((player, index) => (
-                <Link
+                <TransitionLink
                   key={index}
                   to={`/player/${player.id}`}
                   className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text py-1 px-2 flex items-center gap-4 text-xl text-primary-text font-light"
@@ -255,7 +255,7 @@ export const LeaderBoard: React.FC = () => {
                   <div className="w-28 font-normal whitespace-nowrap">{player.name}</div>
                   <div className="w-12 text-right">-</div>
                   <div className="w-12 text-right">0</div>
-                </Link>
+                </TransitionLink>
               ))}
             </div>
           </>
@@ -272,7 +272,7 @@ export const LeaderBoard: React.FC = () => {
                     <div className="w-16 pl-1">Interval</div>
                   </div>
                   {seasonLeaderboard.map((player, index, list) => (
-                    <Link
+                    <TransitionLink
                       key={player.playerId}
                       to={`/player/${player.playerId}?tab=season`}
                       className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text py-1 px-2 flex items-center gap-4 text-xl font-light text-primary-text"
@@ -284,7 +284,7 @@ export const LeaderBoard: React.FC = () => {
                       <div className="w-10 text-right text-base">
                         {list[index - 1] ? fmtNum(player.seasonScore - list[index - 1].seasonScore) : "-"}
                       </div>
-                    </Link>
+                    </TransitionLink>
                   ))}
                 </div>
 
@@ -297,14 +297,14 @@ export const LeaderBoard: React.FC = () => {
                     <div className="w-40 text-left pl-2">Name</div>
                   </div>
                   {playersNotInSeason.map((player) => (
-                    <Link
+                    <TransitionLink
                       key={player.id}
                       to={`/player/${player.id}?tab=season`}
                       className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text py-1 px-2 flex items-center gap-4 text-xl text-primary-text font-light"
                     >
                       <ProfilePicture playerId={player.id} size={28} border={2} />
                       <div className="w-28 font-normal whitespace-nowrap">{player.name}</div>
-                    </Link>
+                    </TransitionLink>
                   ))}
                 </div>
               </>

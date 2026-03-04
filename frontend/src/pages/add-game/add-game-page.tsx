@@ -10,7 +10,7 @@ import { EventTypeEnum, GameCreated, GameScore } from "../../client/client-db/ev
 import { newId } from "../../common/nani-id";
 import { useEventMutation } from "../../hooks/use-event-mutation";
 import { queryClient } from "../../common/query-client";
-import { useNavigate } from "react-router-dom";
+import { useTransitionNavigate } from "../../hooks/use-view-transition";
 import ConfettiExplosion from "react-confetti-explosion";
 
 export const ADD_GAME_STEPS = [
@@ -22,7 +22,7 @@ export const ADD_GAME_STEPS = [
 export const AddGamePageV2: React.FC = () => {
   const context = useEventDbContext();
   const addEventMutation = useEventMutation();
-  const navigate = useNavigate();
+  const navigate = useTransitionNavigate();
 
   const params = useTennisParams();
   const [player1, setPlayer1] = useState(params.player1);

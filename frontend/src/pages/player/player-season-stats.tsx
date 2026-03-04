@@ -1,5 +1,5 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { TransitionLink } from "../../components/transition-link";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { fmtNum } from "../../common/number-utils";
 import { ContentCard } from "./player-page";
@@ -111,24 +111,24 @@ export const PlayerSeasonStats: React.FC<PlayerSeasonStatsProps> = ({ playerId }
         <ContentCard title="Current Season">
           {currentSeasonStats ? (
             <div className="flex flex-col gap-2 md:gap-4">
-              <Link to={`/season?seasonStart=${currentSeason.start}`} className="block group">
+              <TransitionLink to={`/season?seasonStart=${currentSeason.start}`} className="block group">
                 <SeasonRow
                     season={currentSeason}
                     stats={currentSeasonStats}
                     isCurrent
                     seasonName={`Season ${seasons.indexOf(currentSeason) + 1}`}
                 />
-              </Link>
+              </TransitionLink>
               <div className="bg-primary-background rounded-lg -mx-2">
                  <SeasonPlayerScoreGraph season={currentSeason} playerId={playerId} />
               </div>
               <div className="text-right">
-                <Link
+                <TransitionLink
                   to={`/season/player?seasonStart=${currentSeason.start}&playerId=${playerId}`}
                   className="inline-block px-3 py-1.5 md:px-4 md:py-2 text-xs md:text-base bg-secondary-background text-secondary-text rounded hover:bg-secondary-background/80 transition"
                 >
                   View Full Stats →
-                </Link>
+                </TransitionLink>
               </div>
             </div>
           ) : (
@@ -142,9 +142,9 @@ export const PlayerSeasonStats: React.FC<PlayerSeasonStatsProps> = ({ playerId }
         <ContentCard title="Past Seasons">
           <div className="flex flex-col gap-1.5 md:gap-2">
             {pastSeasons.map(({ season, stats, seasonNumber }) => (
-              <Link key={season.start} to={`/season?seasonStart=${season.start}`} className="block group">
+              <TransitionLink key={season.start} to={`/season?seasonStart=${season.start}`} className="block group">
                 <SeasonRow season={season} stats={stats} seasonName={`Season ${seasonNumber}`} />
-              </Link>
+              </TransitionLink>
             ))}
           </div>
         </ContentCard>

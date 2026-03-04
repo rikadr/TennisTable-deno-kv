@@ -1,5 +1,5 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { TransitionLink } from "../../components/transition-link";
 import { Achievement } from "../../client/client-db/achievements";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { ACHIEVEMENT_LABELS, dateString } from "../player/player-achievements";
@@ -55,7 +55,7 @@ export const AchievementsList: React.FC<AchievementsListProps> = ({ achievements
                   <div
                     className="rounded-full w-fit flex items-center bg-primary-background/50 ring-1 ring-primary-text/10"
                   >
-                    <Link
+                    <TransitionLink
                       to={"/player/" + achievement.earnedBy}
                       className="flex gap-2 items-center pr-3 p-0.5 "
                     >
@@ -63,7 +63,7 @@ export const AchievementsList: React.FC<AchievementsListProps> = ({ achievements
                       <span className="text-xs font-medium">
                         {context.playerName(achievement.earnedBy)}
                       </span>
-                    </Link>
+                    </TransitionLink>
                   </div>
 
                   {achievement.data && "opponent" in achievement.data && (

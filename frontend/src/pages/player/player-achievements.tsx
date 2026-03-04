@@ -3,7 +3,7 @@ import { relativeTimeString } from "../../common/date-utils";
 import { classNames } from "../../common/class-names";
 import { useState } from "react";
 import { Achievement, AchievementProgression } from "../../client/client-db/achievements";
-import { Link } from "react-router-dom";
+import { TransitionLink } from "../../components/transition-link";
 import { fmtNum } from "../../common/number-utils";
 
 type Props = {
@@ -436,9 +436,9 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                                       streak >= data.target && "line-through",
                                     )}
                                   >
-                                    <Link to={"/player/" + opponent}>
+                                    <TransitionLink to={"/player/" + opponent}>
                                       <span className="text-secondary-text">{context.playerName(opponent)}</span>
-                                    </Link>
+                                    </TransitionLink>
                                     <span className="font-medium ml-2">
                                       {streak}/{data.target}
                                     </span>
@@ -483,9 +483,9 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                                         alreadyEarned && "line-through",
                                       )}
                                     >
-                                      <Link to={"/player/" + opponent}>
+                                      <TransitionLink to={"/player/" + opponent}>
                                         <span className="text-secondary-text">{context.playerName(opponent)}</span>
-                                      </Link>
+                                      </TransitionLink>
                                       <span className="font-medium">
                                         {info.count} games in last {days} days
                                       </span>
@@ -505,11 +505,11 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                             <p className="text-xs text-secondary-text/70 mb-2">First opponent for:</p>
                             <div className="flex flex-wrap gap-1">
                               {Array.from(data.newPlayers).map((player: string) => (
-                                <Link to={"/player/" + player} key={player}>
+                                <TransitionLink to={"/player/" + player} key={player}>
                                   <span className="text-xs bg-background px-2 py-1 rounded text-secondary-text">
                                     {context.playerName(player)}
                                   </span>
-                                </Link>
+                                </TransitionLink>
                               ))}
                             </div>
                           </div>

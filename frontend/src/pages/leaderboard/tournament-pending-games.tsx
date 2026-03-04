@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { TransitionLink } from "../../components/transition-link";
 import { ProfilePicture } from "../player/profile-picture";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { relativeTimeString } from "../../common/date-utils";
@@ -22,13 +22,13 @@ export const TournamentHighlightsAndPendingGames: React.FC = () => {
         if (!hasPendingGames && !recentWinner && !inSignupPeriod) return null;
         return (
           <div key={id} className="space-y-1 p-2 ring-1 ring-secondary-background rounded-lg">
-            <Link to={`/tournament?tournament=${id}`}>
+            <TransitionLink to={`/tournament?tournament=${id}`}>
               <button className="text-lg text-secondary-text w-full py-1 px-2 rounded-md font-bold bg-secondary-background hover:bg-secondary-background/70 ">
                 {name}
               </button>
-            </Link>
+            </TransitionLink>
             {inSignupPeriod && (
-              <Link to={`/tournament?tournament=${id}`} className="text-primary-text">
+              <TransitionLink to={`/tournament?tournament=${id}`} className="text-primary-text">
                 <p className="text-xs text-center italic mt-2">Start date:</p>
                 <p className="text-sm text-center mb-2">
                   {relativeTimeString(new Date(startDate))} (
@@ -43,7 +43,7 @@ export const TournamentHighlightsAndPendingGames: React.FC = () => {
                   )
                 </p>
                 <div className="w-full text-center py-1">Sign up now! ✍️🏆</div>
-              </Link>
+              </TransitionLink>
             )}
             {recentWinner && <WinnerBox winner={recentWinner} />}
             {hasPendingGames &&
@@ -142,7 +142,7 @@ const PendingGameGroup: React.FC<PendingGameGroupProps> = ({ group, groupIndex, 
 
   return Array.from(pendingMap).map(([playerId, opponents]) => {
     return (
-      <Link
+      <TransitionLink
         key={playerId}
         to={`/player/${playerId}`}
         className="relative w-full px-4 py-2 rounded-lg flex items-center gap-x-4 h-12 bg-secondary-background hover:bg-secondary-background/70 text-secondary-text"
@@ -154,7 +154,7 @@ const PendingGameGroup: React.FC<PendingGameGroupProps> = ({ group, groupIndex, 
         </div>
         <div className="grow" />
         <OverlappingProfilePictures opponents={opponents} />
-      </Link>
+      </TransitionLink>
     );
   });
 };
@@ -167,7 +167,7 @@ type PendingGameProps = {
 const PendingGame: React.FC<PendingGameProps> = ({ player1, player2, tournamentId }) => {
   const context = useEventDbContext();
   return (
-    <Link
+    <TransitionLink
       to={`/tournament?tournament=${tournamentId}&player1=${player1}&player2=${player2}`}
       className="relative w-full px-4 py-2 rounded-lg flex items-center gap-x-4 h-12 bg-secondary-background hover:bg-secondary-background/70 text-secondary-text"
     >
@@ -181,7 +181,7 @@ const PendingGame: React.FC<PendingGameProps> = ({ player1, player2, tournamentI
         <h3 className="truncate">{context.playerName(player2)}</h3>
         <ProfilePicture playerId={player2} size={35} shape="circle" border={3} />
       </div>
-    </Link>
+    </TransitionLink>
   );
 };
 
@@ -191,7 +191,7 @@ type WinnerBoxProps = {
 export const WinnerBox: React.FC<WinnerBoxProps> = ({ winner }) => {
   const context = useEventDbContext();
   return (
-    <Link
+    <TransitionLink
       to={`/player/${winner}`}
       className="w-full px-4 py-2 rounded-lg flex items-center gap-x-4 h-16 bg-secondary-background text-secondary-text hover:bg-secondary-background/70"
     >
@@ -204,7 +204,7 @@ export const WinnerBox: React.FC<WinnerBoxProps> = ({ winner }) => {
       </div>
       <div className="grow" />
       <div className="text-4xl">🏆🥇</div>
-    </Link>
+    </TransitionLink>
   );
 };
 

@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { TransitionLink } from "../../components/transition-link";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { classNames } from "../../common/class-names";
 import { stringToColor } from "../../common/string-to-color";
@@ -17,7 +17,7 @@ export const PlayerGamesDistrubution: React.FC<Props> = ({ playerId }) => {
       {summary?.gamesDistribution.map(({ oponentId, games }, index) => {
         const fraction = games / mostGames;
         return (
-          <Link to={`/player/${oponentId}`} className="group" key={index}>
+          <TransitionLink to={`/player/${oponentId}`} className="group" key={index}>
             <div className="relative w-full h-6 group-hover:bg-primary-text/5">
               <div
                 className={classNames(
@@ -27,7 +27,7 @@ export const PlayerGamesDistrubution: React.FC<Props> = ({ playerId }) => {
               />
               <div className="absolute top-0 left-2 text-primary-text">{context.playerName(oponentId)}</div>
             </div>
-          </Link>
+          </TransitionLink>
         );
       })}
     </div>

@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { TransitionLink } from "../../components/transition-link";
 import { PlayerSummary } from "../../client/client-db/types";
 import { classNames } from "../../common/class-names";
 import { ProfilePicture } from "../player/profile-picture";
@@ -41,7 +41,7 @@ type Props = {
 export const PodiumPlace: React.FC<Props> = ({ playerSummary, place, size, profilePicture = false, score, to }) => {
   const context = useEventDbContext();
   return (
-    <Link
+    <TransitionLink
       to={to ?? `/player/${playerSummary!.id}`}
       className={classNames(
         "w-full p-2 rounded-lg flex space-x-4 h-20 bg-secondary-background hover:bg-secondary-background/70",
@@ -84,6 +84,6 @@ export const PodiumPlace: React.FC<Props> = ({ playerSummary, place, size, profi
           />
         </div>
       )}
-    </Link>
+    </TransitionLink>
   );
 };

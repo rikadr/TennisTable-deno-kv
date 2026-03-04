@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { TransitionLink } from "../../components/transition-link";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { classNames } from "../../common/class-names";
 import { stringToColor } from "../../common/string-to-color";
@@ -19,7 +19,7 @@ export const PlayerPointsDistrubution: React.FC<Props> = ({ playerId }) => {
       {summary?.pointsDistrubution.map(({ oponentId, points }, index) => {
         const fraction = points / range;
         return (
-          <Link to={`/player/${oponentId}`} className="group" key={index}>
+          <TransitionLink to={`/player/${oponentId}`} className="group" key={index}>
             <div className="relative w-full h-6 group-hover:bg-primary-text/5">
               <div
                 className={classNames(
@@ -38,7 +38,7 @@ export const PlayerPointsDistrubution: React.FC<Props> = ({ playerId }) => {
                 {points?.toLocaleString("no-NO", { maximumFractionDigits: 0 })}
               </div>
             </div>
-          </Link>
+          </TransitionLink>
         );
       })}
     </div>

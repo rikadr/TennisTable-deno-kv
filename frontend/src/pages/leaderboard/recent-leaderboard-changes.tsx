@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Link } from "react-router-dom";
+import { TransitionLink } from "../../components/transition-link";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { ProfilePicture } from "../player/profile-picture";
 import { fmtNum } from "../../common/number-utils";
@@ -124,7 +124,7 @@ export const RecentLeaderBoardChanges: React.FC<Props> = ({ view }) => {
           <div className="w-32 text-center pl-5">Changes</div>
         </div>
         {leaderboardChanges.map((player) => (
-          <Link
+          <TransitionLink
             key={player.playerId}
             to={view === "season"
               ? `/player/${player.playerId}?tab=season`
@@ -143,7 +143,7 @@ export const RecentLeaderBoardChanges: React.FC<Props> = ({ view }) => {
                 {player.allChanges.map((c) => fmtNum(c.change, { signedPositive: true })).join(", ")}
               </div>
             )}
-          </Link>
+          </TransitionLink>
         ))}
       </div>
       { }

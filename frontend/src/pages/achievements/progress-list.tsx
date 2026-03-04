@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { Link } from "react-router-dom";
+import { TransitionLink } from "../../components/transition-link";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { ACHIEVEMENT_LABELS } from "../player/player-achievements";
 import { ProfilePicture } from "../player/profile-picture";
@@ -118,18 +118,18 @@ export const ProgressList: React.FC<ProgressListProps> = ({ selectedType }) => {
                       #{index + 1}
                     </div>
 
-                    <Link to={`/player/${player.id}`} className="shrink-0">
+                    <TransitionLink to={`/player/${player.id}`} className="shrink-0">
                       <ProfilePicture playerId={player.id} size={45} border={3} />
-                    </Link>
+                    </TransitionLink>
 
                     <div className="flex-1">
                       <div className="flex justify-between items-center mb-1">
-                        <Link
+                        <TransitionLink
                           to={`/player/${player.id}`}
                           className="font-semibold hover:text-accent transition-colors"
                         >
                           {player.name}
-                        </Link>
+                        </TransitionLink>
                         <span className="text-sm font-mono">
                            {fmtNum(current)} {target > 1 ? `/ ${fmtNum(target)}` : ""}
                         </span>

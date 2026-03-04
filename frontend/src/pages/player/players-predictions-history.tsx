@@ -13,7 +13,8 @@ import {
 import { NameType, ValueType } from "recharts/types/component/DefaultTooltipContent";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { relativeTimeString } from "../../common/date-utils";
-import { Link, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
+import { TransitionLink } from "../../components/transition-link";
 
 import { ProfilePicture } from "./profile-picture";
 
@@ -122,13 +123,13 @@ export const PlayerPredictionsHistory = ({ playerId }: Props) => {
         <div className="flex items-center gap-4 text-[10px] md:text-[11px] font-semibold self-end md:self-auto border-t border-white/5 pt-2 md:pt-0 md:border-t-0">
           {selectedTargetId !== "overall" && (
             <div className="flex items-center gap-2 mr-2">
-              <Link to={"/player/" + playerId + "?tab=predictions&predictionTab=history"} >
+              <TransitionLink to={"/player/" + playerId + "?tab=predictions&predictionTab=history"} >
                 <ProfilePicture playerId={playerId} size={26} border={2} />
-              </Link>
+              </TransitionLink>
               <span className="text-primary-text/50 text-[10px]">VS</span>
-              <Link to={"/player/" + selectedTargetId + "?tab=predictions&predictionTab=history&compareWith=" + playerId} >
+              <TransitionLink to={"/player/" + selectedTargetId + "?tab=predictions&predictionTab=history&compareWith=" + playerId} >
                 <ProfilePicture playerId={selectedTargetId} size={26} border={2} />
-              </Link>
+              </TransitionLink>
             </div>
           )}
           <div className="flex items-center gap-1.5 text-primary-text whitespace-nowrap">

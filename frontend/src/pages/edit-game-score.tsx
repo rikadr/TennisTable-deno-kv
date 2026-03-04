@@ -6,13 +6,13 @@ import { StepAddScore } from "./add-game/step-add-score";
 import { EventTypeEnum, GameScore } from "../client/client-db/event-store/event-types";
 import { useEventMutation } from "../hooks/use-event-mutation";
 import { queryClient } from "../common/query-client";
-import { useNavigate } from "react-router-dom";
+import { useTransitionNavigate } from "../hooks/use-view-transition";
 import ConfettiExplosion from "react-confetti-explosion";
 
 export const EditGameSore: React.FC = () => {
   const context = useEventDbContext();
   const addEventMutation = useEventMutation();
-  const navigate = useNavigate();
+  const navigate = useTransitionNavigate();
   const { gameId } = useTennisParams();
   const game = context.eventStore.gamesProjector.getGameById(gameId);
 

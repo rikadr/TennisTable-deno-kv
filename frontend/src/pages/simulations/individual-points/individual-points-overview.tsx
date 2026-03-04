@@ -4,7 +4,7 @@ import { ProfilePicture } from "../../player/profile-picture";
 import { fmtNum } from "../../../common/number-utils";
 import { PointsBar } from "./points-bar";
 import { Elo } from "../../../client/client-db/elo";
-import { Link } from "react-router-dom";
+import { TransitionLink } from "../../../components/transition-link";
 import { Switch } from "@headlessui/react";
 import { classNames } from "../../../common/class-names";
 import { Shimmer } from "../../../common/shimmer";
@@ -59,7 +59,7 @@ export const IndividualPointsOverview: React.FC = () => {
         />
       </Switch>
       {players.map((player) => (
-        <Link
+        <TransitionLink
           key={player.id}
           to={`/simulations/individual-points/player?playerId=${player.id}`}
           className="flex flex-col md:flex-row items-start md:items-center hover:bg-primary-text/10 w-full md:w-[calc(100%-200px)] xl:md:w-[calc(100%-300px)]"
@@ -72,7 +72,7 @@ export const IndividualPointsOverview: React.FC = () => {
             </div>
           </div>
           <PointsBar highestElo={highestElo} totalPoints={player.totalPoints} pointsRanges={player.pointsRanges} />
-        </Link>
+        </TransitionLink>
       ))}
     </div>
   );

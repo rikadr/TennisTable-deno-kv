@@ -8,7 +8,7 @@ import { getGameKeyFromPlayers } from "./tournament-page";
 import { Menu, MenuButton } from "@headlessui/react";
 import { useTennisParams } from "../../hooks/use-tennis-params";
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { TransitionLink } from "../../components/transition-link";
 import { GameMenuItems, QuestionMark, winStateEmoji } from "./tournament-bracket";
 
 export const TournamentGroupPlayComponent: React.FC<{
@@ -181,12 +181,12 @@ export const TournamentGroupScores: React.FC<{ tournament: Tournament }> = ({ to
     >
       <td className="px-4 py-1 text-center font-semibold">{place}</td>
       <td className="px-4 py-1 font-medium">
-        <Link
+        <TransitionLink
           to={`/player/${player.name}`}
           className="text-primary-text hover:text-primary-text/80 hover:underline"
         >
           {context.playerName(player.name)}
-        </Link>
+        </TransitionLink>
       </td>
       <td className="px-4 py-1 text-center bg-secondary-background/30 font-bold text-lg">
         {fmtNum(player.adjustedScore, { digits: 1 })}

@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useTransitionNavigate } from "../../hooks/use-view-transition";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { RelativeTime } from "../../common/date-utils";
 import { fmtNum } from "../../common/number-utils";
@@ -22,7 +22,7 @@ type DisplayGame = Game & {
 
 export const RecentGamesPage: React.FC = () => {
   const context = useEventDbContext();
-  const navigate = useNavigate();
+  const navigate = useTransitionNavigate();
   const leaderboardMap = context.leaderboard.getCachedLeaderboardMap();
 
   const isAdmin = session.isAuthenticated && session.sessionData?.role === "admin";

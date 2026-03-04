@@ -4,7 +4,9 @@ import { Shimmer } from "../../common/shimmer";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { ThemedPlaceNumber } from "../leaderboard/themed-place-number";
 import { ProfilePicture } from "./profile-picture";
-import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
+import { TransitionLink } from "../../components/transition-link";
+import { useTransitionNavigate } from "../../hooks/use-view-transition";
 import { PlayerEloGraph } from "./player-elo-graph";
 import { PlayerPointsDistrubution } from "./player-points-distribution";
 import { PlayerGamesDistrubution } from "./player-games-distribution";
@@ -28,7 +30,7 @@ const tabs: { id: TabType; label: string }[] = [
 export const PlayerPage: React.FC = () => {
   const { name: playerId } = useParams();
   const context = useEventDbContext();
-  const navigate = useNavigate();
+  const navigate = useTransitionNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const summary = context.leaderboard.getPlayerSummary(playerId || "");
@@ -154,11 +156,11 @@ export const PlayerPage: React.FC = () => {
                 <h3 className="text-lg font-semibold mb-4">Pending tournament games</h3>
                 {pendingGames.map((tournament) => (
                   <div key={tournament.tournament.id} className="space-y-2 p-2">
-                    <Link to={`/tournament?tournament=${tournament.tournament.id}`}>
+                    <TransitionLink to={`/tournament?tournament=${tournament.tournament.id}`}>
                       <h3>{tournament.tournament.name}</h3>
-                    </Link>
+                    </TransitionLink>
                     {tournament.games.map((game) => (
-                      <Link
+                      <TransitionLink
                         key={tournament.tournament.id + playerId + game.oponent}
                         to={`/tournament?tournament=${tournament.tournament.id}&player1=${game.player1}&player2=${game.player2}`}
                       >
@@ -187,7 +189,7 @@ export const PlayerPage: React.FC = () => {
                             />
                           </div>
                         </div>
-                      </Link>
+                      </TransitionLink>
                     ))}
                   </div>
                 ))}
@@ -264,9 +266,9 @@ export const PlayerPage: React.FC = () => {
                   .map((game) => (
                     <tr key={game.time} className="border-b border-primary-text hover:brightness-110 transition-colors">
                       <td className="py-1 px-1 md:px-4">
-                        <Link to={"/player/" + game.oponent}>
+                        <TransitionLink to={"/player/" + game.oponent}>
                           <span className="font-medium truncate max-w-[70px] md:max-w-none inline-block">{context.playerName(game.oponent)}</span>
-                        </Link>
+                        </TransitionLink>
                       </td>
                       <td className="py-1 px-1">
                         <span className="text-base md:text-2xl">{game.result === "win" ? "🏆" : "💔"}</span>

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { TransitionLink } from "../../components/transition-link";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { classNames } from "../../common/class-names";
 import { stringToColor } from "../../common/string-to-color";
@@ -143,7 +143,7 @@ export const SeasonLeaderboardBars = ({ season }: Props) => {
           const rank = order + 1;
 
           return (
-            <Link
+            <TransitionLink
               to={`/season/player?seasonStart=${season.start}&playerId=${playerId}`}
               className="group border-b border-primary-text/20 last:border-b-0 transition-all duration-500"
               key={playerId}
@@ -166,7 +166,7 @@ export const SeasonLeaderboardBars = ({ season }: Props) => {
                   <span>{fmtNum(value)}</span>
                 </div>
               </div>
-            </Link>
+            </TransitionLink>
           );
         })}
       </div>

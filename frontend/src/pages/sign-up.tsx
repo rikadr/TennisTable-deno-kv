@@ -1,9 +1,9 @@
 import { useMutation } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
+import { useTransitionNavigate } from "../hooks/use-view-transition";
 import { auth } from "../services/auth/auth";
 
 export const SignupPage: React.FC = () => {
-  const navigate = useNavigate();
+  const navigate = useTransitionNavigate();
 
   const signupMutation = useMutation<
     void,

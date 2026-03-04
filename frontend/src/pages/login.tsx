@@ -1,9 +1,9 @@
-import { useNavigate } from "react-router-dom";
+import { useTransitionNavigate } from "../hooks/use-view-transition";
 import { useAuth } from "../services/auth/auth";
 
 export const LoginPage: React.FC = () => {
   const auth = useAuth();
-  const navigate = useNavigate();
+  const navigate = useTransitionNavigate();
 
   return (
     <div className="h-screen w-screen flex items-center justify-center">

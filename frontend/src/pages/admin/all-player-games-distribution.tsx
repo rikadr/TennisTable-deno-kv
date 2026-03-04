@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { TransitionLink } from "../../components/transition-link";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { classNames } from "../../common/class-names";
 import { fmtNum } from "../../common/number-utils";
@@ -21,7 +21,7 @@ export const AllPlayerGamesDistrubution: React.FC = () => {
       {summary.map(({ playerId, games }, index) => {
         const fraction = games / mostGames;
         return (
-          <Link to={`/player/${playerId}`} className="group" key={index}>
+          <TransitionLink to={`/player/${playerId}`} className="group" key={index}>
             <div className="relative w-full h-6 group-hover:bg-primary-text/5">
               <div
                 className={classNames(
@@ -33,7 +33,7 @@ export const AllPlayerGamesDistrubution: React.FC = () => {
                 {context.playerName(playerId)} ({fmtNum(games)})
               </div>
             </div>
-          </Link>
+          </TransitionLink>
         );
       })}
     </div>

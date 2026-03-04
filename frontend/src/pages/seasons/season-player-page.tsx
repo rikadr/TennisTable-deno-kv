@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { TransitionLink } from "../../components/transition-link";
 import { ProfilePicture } from "../player/profile-picture";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { fmtNum } from "../../common/number-utils";
@@ -122,12 +122,12 @@ export function SeasonPlayerPage() {
             {Date.now() > season.start && Date.now() < season.end && ` · Ends ${relativeTimeString(new Date(season.end)).toLowerCase()}`}
           </p>
         </div>
-        <Link
+        <TransitionLink
           to={`/season?seasonStart=${seasonStart}`}
           className="text-sm text-primary-text hover:text-primary-text/80 whitespace-nowrap"
         >
           ← Season {seasonNumber}
-        </Link>
+        </TransitionLink>
       </div>
 
       {/* Missing Score Alert */}
@@ -210,7 +210,7 @@ export function SeasonPlayerPage() {
                 {sortedMatchups.map(({ opponentId, bestPerformance, playedAt, breakdown, bestGame }) => (
                   <tr key={opponentId} className="border-b border-secondary-text/10 hover:bg-primary-background/50 text-xs md:text-base">
                     <td className="px-1 md:px-4 py-1">
-                      <Link
+                      <TransitionLink
                         to={`/season/player?seasonStart=${seasonStart}&playerId=${opponentId}`}
                         className="hover:text-secondary-text font-medium"
                       >
@@ -219,7 +219,7 @@ export function SeasonPlayerPage() {
                           <div className="hidden md:block shrink-0"><ProfilePicture playerId={opponentId} size={35} border={3} shape="rounded" /></div>
                           <span className="truncate max-w-[70px] md:max-w-none">{context.playerName(opponentId)}</span>
                         </div>
-                      </Link>
+                      </TransitionLink>
                     </td>
                     <td className="px-1 md:px-4 font-medium">{fmtNum(bestPerformance)}</td>
                     <td className="px-1 md:px-4 py-1">
@@ -298,14 +298,14 @@ export function SeasonPlayerPage() {
           <div className="p-2">
             <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
               {unplayedOpponents.map((opponent) => (
-                <Link
+                <TransitionLink
                   key={opponent.id}
                   to={`/season/player?seasonStart=${seasonStart}&playerId=${opponent.id}`}
                   className="flex items-center gap-2 p-1 rounded hover:bg-primary-background/50 transition-colors text-sm"
                 >
                   <ProfilePicture playerId={opponent.id} size={24} border={1} />
                   <span className="truncate">{context.playerName(opponent.id)}</span>
-                </Link>
+                </TransitionLink>
               ))}
             </div>
           </div>

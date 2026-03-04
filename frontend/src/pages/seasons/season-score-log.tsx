@@ -1,4 +1,5 @@
-import { Link, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
+import { TransitionLink } from "../../components/transition-link";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { Season } from "../../client/client-db/seasons/season";
 import { ProfilePicture } from "../player/profile-picture";
@@ -158,27 +159,27 @@ export const SeasonScoreLog = ({ season }: Props) => {
             {filteredImprovements.map((imp, idx) => (
               <tr key={idx} className="border-b border-secondary-text/10 hover:bg-primary-background/50 text-xs md:text-base">
                 <td className="px-1 md:px-4 py-1">
-                  <Link
+                  <TransitionLink
                     to={`/season/player?seasonStart=${season.start}&playerId=${imp.playerId}`}
                     className="flex items-center gap-1 md:gap-2 font-medium hover:underline text-xs md:text-base"
                   >
                     <div className="md:hidden shrink-0"><ProfilePicture playerId={imp.playerId} size={18} border={1} shape="rounded" /></div>
                     <div className="hidden md:block shrink-0"><ProfilePicture playerId={imp.playerId} size={30} border={2} shape="rounded" /></div>
                     <span className="truncate max-w-[70px] md:max-w-none">{context.playerName(imp.playerId)}</span>
-                  </Link>
+                  </TransitionLink>
                 </td>
                 <td className="px-1 md:px-4 py-1 font-bold text-secondary-text max-w-16 text-xs md:text-base">
                   +{fmtNum(imp.improvement)}
                 </td>
                 <td className="px-1 md:px-4 py-1">
-                  <Link
+                  <TransitionLink
                     to={`/season/player?seasonStart=${season.start}&playerId=${imp.opponentId}`}
                     className="flex items-center gap-1 md:gap-2 hover:underline text-xs md:text-base"
                   >
                     <div className="md:hidden shrink-0"><ProfilePicture playerId={imp.opponentId} size={18} border={1} shape="rounded" /></div>
                     <div className="hidden md:block shrink-0"><ProfilePicture playerId={imp.opponentId} size={30} border={2} shape="rounded" /></div>
                     <span className="truncate max-w-[70px] md:max-w-none">{context.playerName(imp.opponentId)}</span>
-                  </Link>
+                  </TransitionLink>
                 </td>
                 <td className="px-1 md:px-4 py-1 text-xs md:text-base">
                    <div className="flex flex-wrap items-baseline gap-x-1 md:gap-x-2">

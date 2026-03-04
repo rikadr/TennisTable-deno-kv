@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { TransitionLink } from "../../../components/transition-link";
 import { PointsRange } from "../../../client/client-db/individual-points";
 import { fmtNum } from "../../../common/number-utils";
 import { stringToColor } from "../../../common/string-to-color";
@@ -77,7 +77,7 @@ export const PointsBar: React.FC<PointsBarProps> = ({ pointsRanges, totalPoints,
               }}
               enabled={(range.from === 0 || range.to === Elo.INITIAL_ELO) && range.transactions.length > 1}
             >
-              <Link
+              <TransitionLink
                 to={`/simulations/individual-points/player?playerId=${range.originPlayerId}`}
                 className={classNames(
                   "block w-full h-full transition-all duration-300 hover:brightness-125 cursor-pointer",

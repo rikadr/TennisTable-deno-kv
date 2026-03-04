@@ -3,7 +3,7 @@ import { StepSelectPlayers } from "./step-select-players";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { useEventMutation } from "../../hooks/use-event-mutation";
 import { queryClient } from "../../common/query-client";
-import { useNavigate } from "react-router-dom";
+import { useTransitionNavigate } from "../../hooks/use-view-transition";
 import { EventTypeEnum, GameCreated, GameScore } from "../../client/client-db/event-store/event-types";
 import { newId } from "../../common/nani-id";
 import ConfettiExplosion from "react-confetti-explosion";
@@ -31,7 +31,7 @@ type Stage = "player-selection" | "scoring" | "summary";
 export const TrackGamePage: React.FC = () => {
   const context = useEventDbContext();
   const addEventMutation = useEventMutation();
-  const navigate = useNavigate();
+  const navigate = useTransitionNavigate();
   const params = useTennisParams();
 
   const [stage, setStage] = useState<Stage>("player-selection");

@@ -6,7 +6,9 @@ import { classNames } from "../../common/class-names";
 import { EventTypeEnum, TournamentSkipGame } from "../../client/client-db/event-store/event-types";
 import { newId } from "../../common/nani-id";
 import { useEventMutation } from "../../hooks/use-event-mutation";
-import { useNavigate, useLocation, Link } from "react-router-dom";
+import { useLocation } from "react-router-dom";
+import { TransitionLink } from "../../components/transition-link";
+import { useTransitionNavigate } from "../../hooks/use-view-transition";
 import { queryClient } from "../../common/query-client";
 import ConfettiExplosion from "react-confetti-explosion";
 
@@ -15,7 +17,7 @@ export const TournamentSkipGamePage = () => {
   const context = useEventDbContext();
   const tournament = context.tournaments.getTournament(tournamentId);
   const addEventMutation = useEventMutation();
-  const navigate = useNavigate();
+  const navigate = useTransitionNavigate();
   const location = useLocation();
   const [skipSuccessfullyAdded, setSkipSuccessfullyAdded] = useState(false);
   const [winner, setWinner] = useState<string | undefined>();
@@ -24,9 +26,9 @@ export const TournamentSkipGamePage = () => {
     return (
       <div className="p-4">
         <p className="text-tertiary-text">Missing tournament or player information.</p>
-        <Link to="/tournament/list" className="text-primary-text">
+        <TransitionLink to="/tournament/list" className="text-primary-text">
           Back to Tournaments
-        </Link>
+        </TransitionLink>
       </div>
     );
   }
@@ -126,12 +128,12 @@ export const TournamentSkipGamePage = () => {
             : `${winner ? "Confirm: " + context.playerName(winner) + " wins on walkover" : "Select Winner"}`}
         </button>
 
-        <Link
+        <TransitionLink
           to={`/tournament${location.search}`}
           className="px-6 py-3 rounded-lg font-semibold text-primary-text bg-primary-background hover:bg-secondary-background/50"
         >
           Cancel
-        </Link>
+        </TransitionLink>
       </div>
     </div>
   );

@@ -2,14 +2,15 @@ import React, { useRef, useState } from "react";
 import Webcam from "react-webcam";
 import Avatar from "react-avatar-edit";
 import { classNames } from "../../common/class-names";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
+import { useTransitionNavigate } from "../../hooks/use-view-transition";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { IKUpload } from "imagekitio-react";
 import { useImageKitTimestamp } from "../../wrappers/image-kit-context";
 
 export const CameraPage: React.FC = () => {
   const context = useEventDbContext();
-  const navigate = useNavigate();
+  const navigate = useTransitionNavigate();
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
   const playerId = queryParams.get("player");

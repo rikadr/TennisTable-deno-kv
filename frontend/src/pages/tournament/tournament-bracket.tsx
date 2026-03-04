@@ -7,7 +7,7 @@ import { useEventDbContext } from "../../wrappers/event-db-context";
 import { layerIndexToTournamentRound } from "../leaderboard/tournament-pending-games";
 import { ProfilePicture } from "../player/profile-picture";
 import { getGameKeyFromPlayers } from "./tournament-page";
-import { Link } from "react-router-dom";
+import { TransitionLink } from "../../components/transition-link";
 
 export const TournamentBracket = ({
   tournament,
@@ -441,45 +441,45 @@ export const GameMenuItems: React.FC<GameMenuItemsProps> = (props) => {
     >
       {props.showRegisterResult && (
         <MenuItem>
-          <Link
+          <TransitionLink
             to={`/add-game/?player1=${props.player1 || ""}&player2=${props.player2 || ""}`}
             className="w-full px-4 py-2 text-left data-[focus]:bg-secondary-text/30"
             onClick={() => console.log("Clicked link to add game")}
           >
             🏓 Add or track game
-          </Link>
+          </TransitionLink>
         </MenuItem>
       )}
       {props.showSkipGame.show && (
         <MenuItem>
-          <Link
+          <TransitionLink
             to={`/tournament/skip-game/?player1=${props.player1 || ""}&player2=${props.player2 || ""}&tournament=${props.showSkipGame.tournamentId || ""
               }`}
             className="w-full px-4 py-2 text-left data-[focus]:bg-secondary-text/30"
           >
             🆓 Skip game
-          </Link>
+          </TransitionLink>
         </MenuItem>
       )}
       {props.showUndoSkip.show && (
         <MenuItem>
-          <Link
+          <TransitionLink
             to={`/tournament/undo-skip/?player1=${props.player1 || ""}&player2=${props.player2 || ""}&skipId=${props.showUndoSkip.skipId || ""
               }&tournament=${props.showUndoSkip.tournamentId || ""}`}
             className="w-full px-4 py-2 text-left data-[focus]:bg-secondary-text/30"
           >
             ⏮️ Undo skip
-          </Link>
+          </TransitionLink>
         </MenuItem>
       )}
       {props.showCompare && (
         <MenuItem>
-          <Link
+          <TransitionLink
             to={`/1v1/?player1=${props.player1 || ""}&player2=${props.player2 || ""}`}
             className="w-full px-4 py-2 text-left data-[focus]:bg-secondary-text/30"
           >
             🥊👀 Compare 1v1
-          </Link>
+          </TransitionLink>
         </MenuItem>
       )}
     </MenuItems>

@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { Link } from "react-router-dom";
+import { TransitionLink } from "../../components/transition-link";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { ProfilePicture } from "../player/profile-picture";
 import { ACHIEVEMENT_LABELS } from "../player/player-achievements";
@@ -47,7 +47,7 @@ export const RecentAchievements: React.FC<Props> = ({ view = "overall" }) => {
           };
 
           return (
-            <Link
+            <TransitionLink
               key={`${achievement.earnedBy}-${achievement.earnedAt}-${index}`}
               to={`/player/${achievement.earnedBy}?tab=achievements`}
               className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text py-1 px-2 flex gap-4 text-xl font-light items-center"
@@ -65,7 +65,7 @@ export const RecentAchievements: React.FC<Props> = ({ view = "overall" }) => {
               <div className="w-28 shrink-0 text-right text-base">
                 <RelativeTime date={new Date(achievement.earnedAt)} />
               </div>
-            </Link>
+            </TransitionLink>
           );
         })}
       </div>

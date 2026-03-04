@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { TransitionLink } from "../../components/transition-link";
 import { Tournament } from "../../client/client-db/tournaments/tournament";
 import { TournamentGroupPlay } from "../../client/client-db/tournaments/group-play";
 import { classNames } from "../../common/class-names";
@@ -43,12 +43,12 @@ export const TournamentInfo = ({ tournament }: { tournament: Tournament }) => {
           )}
         </div>
         {isAdmin && (
-          <Link
+          <TransitionLink
             to={`/tournament/edit?tournament=${tournament.id}`}
             className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium bg-secondary-background text-secondary-text hover:opacity-80"
           >
             Edit
-          </Link>
+          </TransitionLink>
         )}
       </div>
 

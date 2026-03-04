@@ -1,5 +1,5 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { TransitionLink } from "../../components/transition-link";
 
 export const SimulationsPage: React.FC = () => {
   const simulations: { name: string; url: string }[] = [
@@ -14,13 +14,13 @@ export const SimulationsPage: React.FC = () => {
       <h1 className="mb-6 text-2xl text-primary-text">Simulations</h1>
       <div className="flex flex-col gap-4 w-96">
         {simulations.map(({ name, url }) => (
-          <Link
+          <TransitionLink
             key={url}
             className="bg-secondary-background hover:bg-secondary-background/50 rounded-md py-4 text-center text-lg text-secondary-text"
             to={url}
           >
             {name}
-          </Link>
+          </TransitionLink>
         ))}
       </div>
     </div>

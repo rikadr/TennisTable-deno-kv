@@ -4,7 +4,9 @@ import { useEventDbContext } from "../../wrappers/event-db-context";
 import { ProfilePicture } from "../player/profile-picture";
 import { EventTypeEnum, TournamentUndoSkipGame } from "../../client/client-db/event-store/event-types";
 import { useEventMutation } from "../../hooks/use-event-mutation";
-import { useNavigate, useLocation, Link, useSearchParams } from "react-router-dom";
+import { useLocation, useSearchParams } from "react-router-dom";
+import { TransitionLink } from "../../components/transition-link";
+import { useTransitionNavigate } from "../../hooks/use-view-transition";
 import { queryClient } from "../../common/query-client";
 import ConfettiExplosion from "react-confetti-explosion";
 import { classNames } from "../../common/class-names";
@@ -16,7 +18,7 @@ export const TournamentUndoSkipPage = () => {
   const context = useEventDbContext();
   const tournament = context.tournaments.getTournament(tournamentId);
   const addEventMutation = useEventMutation();
-  const navigate = useNavigate();
+  const navigate = useTransitionNavigate();
   const location = useLocation();
   const [undoSuccessfullyAdded, setUndoSuccessfullyAdded] = useState(false);
 
@@ -24,9 +26,9 @@ export const TournamentUndoSkipPage = () => {
     return (
       <div className="p-4">
         <p className="text-tertiary-text">Missing tournament, player, or skip information.</p>
-        <Link to="/tournament/list" className="text-primary-text">
+        <TransitionLink to="/tournament/list" className="text-primary-text">
           Back to Tournaments
-        </Link>
+        </TransitionLink>
       </div>
     );
   }
@@ -108,12 +110,12 @@ export const TournamentUndoSkipPage = () => {
           {isSubmitting ? "Undoing..." : "⏮️ Confirm Undo Skip"}
         </button>
 
-        <Link
+        <TransitionLink
           to={`/tournament${location.search}`}
           className="px-6 py-3 rounded-lg font-semibold text-primary-text bg-primary-background hover:bg-secondary-background/50"
         >
           Cancel
-        </Link>
+        </TransitionLink>
       </div>
     </div>
   );

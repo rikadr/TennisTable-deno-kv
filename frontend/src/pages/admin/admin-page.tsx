@@ -13,7 +13,8 @@ import {
   PlayerReactivated,
 } from "../../client/client-db/event-store/event-types";
 import { fmtNum } from "../../common/number-utils";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
+import { useTransitionNavigate } from "../../hooks/use-view-transition";
 import { GamesPerMonthChart } from "./games-per-month";
 import { GamesPerWeekChart } from "./games-per-week";
 import { TopGamingDays } from "./top-days";
@@ -37,7 +38,7 @@ const tabs: { id: TabType; label: string }[] = [
 
 export const AdminPage: React.FC = () => {
   const context = useEventDbContext();
-  const navigate = useNavigate();
+  const navigate = useTransitionNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const addEventMutation = useEventMutation();

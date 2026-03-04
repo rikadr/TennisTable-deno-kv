@@ -4,7 +4,7 @@ import { ProfilePicture } from "./profile-picture";
 import { fmtNum } from "../../common/number-utils";
 import { Fraction } from "../../client/client-db/future-elo";
 import { classNames } from "../../common/class-names";
-import { Link } from "react-router-dom";
+import { TransitionLink } from "../../components/transition-link";
 
 type Props = {
   playerId: string;
@@ -74,12 +74,12 @@ export const PlayerPredictionsList = ({ playerId }: Props) => {
                   <p>@{fmtNum(confidence * 100)}% confidence</p>
                 </div>
                 <div className="grow" />
-                <Link
+                <TransitionLink
                   to={`/1v1/?player1=${playerId}&player2=${oponentId}`}
                   className="text-xs text-tertiary-text bg-tertiary-background hover:bg-tertiary-background/50 px-2 py-1 rounded-md"
                 >
                   👥🥊 Compare
-                </Link>
+                </TransitionLink>
               </div>
             </button>
 

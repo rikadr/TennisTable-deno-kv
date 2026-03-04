@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { TransitionLink } from "../../components/transition-link";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { layerIndexToTournamentRound } from "../leaderboard/tournament-pending-games";
 
@@ -14,7 +14,7 @@ export const PendingTournamentGame: React.FC<{ player1: string; player2: string 
     <>
       <p className="italic w-full text-center mb-2 text-primary-text">This game is pending in a tournament!</p>
       {pendingTournamentGames.map((pendingGame) => (
-        <Link
+        <TransitionLink
           key={pendingGame.tournament.id}
           to={`/tournament?tournament=${pendingGame.tournament.id}&player1=${pendingGame.player1}&player2=${pendingGame.player2}`}
         >
@@ -27,7 +27,7 @@ export const PendingTournamentGame: React.FC<{ player1: string; player2: string 
               <p className="text-center text-lg">Group {pendingGame.groupIndex + 1}</p>
             )}
           </div>
-        </Link>
+        </TransitionLink>
       ))}
     </>
   );

@@ -1,4 +1,5 @@
-import { Link, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
+import { TransitionLink } from "../../components/transition-link";
 import { useState } from "react";
 import { classNames } from "../../common/class-names";
 import { ProfilePicture } from "../player/profile-picture";
@@ -103,12 +104,12 @@ export function SeasonPage() {
             {Date.now() < season.start && ` · Starts ${relativeTimeString(new Date(season.start))}`}
           </p>
         </div>
-        <Link
+        <TransitionLink
           to="/season/list"
           className="text-sm text-primary-text hover:text-primary-text/80 whitespace-nowrap"
         >
           ← All Seasons
-        </Link>
+        </TransitionLink>
       </div>
 
       {/* Tabs */}
@@ -180,7 +181,7 @@ export function SeasonPage() {
                     >
                       <td className="px-1 md:px-4">{rank + 1}</td>
                       <td className="px-1 md:px-4">
-                        <Link
+                        <TransitionLink
                           to={`/season/player?seasonStart=${seasonStart}&playerId=${player.playerId}`}
                           className="font-medium"
                         >
@@ -192,7 +193,7 @@ export function SeasonPage() {
                             {!isOngoing && rank === 2 && "🥉 "}
                             <span className="truncate max-w-[80px] md:max-w-none">{context.playerName(player.playerId)}</span>
                           </div>
-                        </Link>
+                        </TransitionLink>
                       </td>
                       <td className="px-1 md:px-4 font-medium">{fmtNum(player.seasonScore)}</td>
                       <td className="px-1 md:px-4">{fmtNum(player.matchups.size)}</td>

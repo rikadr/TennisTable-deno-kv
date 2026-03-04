@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { TransitionLink } from "../../components/transition-link";
 import { SeasonPlayerScore } from "../../client/client-db/seasons/season";
 import { ProfilePicture } from "../player/profile-picture";
 import { useEventDbContext } from "../../wrappers/event-db-context";
@@ -43,7 +43,7 @@ export const SeasonPodium = ({ leaderboard, seasonStart, isOngoing = false }: Pr
     }
 
     return (
-      <Link
+      <TransitionLink
         to={`/season/player?seasonStart=${seasonStart}&playerId=${player.playerId}`}
         className={classNames(
           "flex flex-row xs:flex-col items-center w-full xs:w-1/3 p-2 transition-all duration-300 gap-3 xs:gap-0 hover:scale-105",
@@ -100,7 +100,7 @@ export const SeasonPodium = ({ leaderboard, seasonStart, isOngoing = false }: Pr
             </div>
           </div>
         </div>
-      </Link>
+      </TransitionLink>
     );
   };
 

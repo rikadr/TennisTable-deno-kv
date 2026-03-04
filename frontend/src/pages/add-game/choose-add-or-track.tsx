@@ -1,4 +1,5 @@
-import { Link, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
+import { TransitionLink } from "../../components/transition-link";
 
 export const ChooseAddOrTrack = () => {
   const [searchParams] = useSearchParams();
@@ -14,7 +15,7 @@ export const ChooseAddOrTrack = () => {
         {/* Options */}
         <div className="space-y-4">
           {/* Add Finished Game Option */}
-          <Link to={`/add-game-add?${searchParams.toString()}`} className="block">
+          <TransitionLink to={`/add-game-add?${searchParams.toString()}`} className="block">
             <div className="group relative overflow-hidden rounded-2xl bg-white shadow-lg hover:shadow-xl transition-all duration-300 border-2 border-gray-200 hover:border-blue-500">
               <div className="p-6 space-y-3">
                 <div className="flex items-center gap-4">
@@ -35,7 +36,7 @@ export const ChooseAddOrTrack = () => {
                 </div>
               </div>
             </div>
-          </Link>
+          </TransitionLink>
 
           {/* Divider */}
           <div className="relative py-4">
@@ -48,7 +49,7 @@ export const ChooseAddOrTrack = () => {
           </div>
 
           {/* Track Live Game Option */}
-          <Link to={`/add-game-track?${searchParams.toString()}`} className="block">
+          <TransitionLink to={`/add-game-track?${searchParams.toString()}`} className="block">
             <div className="group relative overflow-hidden rounded-2xl bg-white shadow-lg hover:shadow-xl transition-all duration-300 border-2 border-gray-200 hover:border-purple-500">
               <div className="p-6 space-y-3">
                 <div className="flex items-center gap-4">
@@ -69,7 +70,7 @@ export const ChooseAddOrTrack = () => {
                 </div>
               </div>
             </div>
-          </Link>
+          </TransitionLink>
         </div>
       </div>
     </div>

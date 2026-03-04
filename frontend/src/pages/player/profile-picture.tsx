@@ -1,4 +1,5 @@
-import { Link, useNavigate } from "react-router-dom";
+import { TransitionLink } from "../../components/transition-link";
+import { useTransitionNavigate } from "../../hooks/use-view-transition";
 import { classNames } from "../../common/class-names";
 import { stringToColor } from "../../common/string-to-color";
 import { IKImage } from "imagekitio-react";
@@ -24,7 +25,7 @@ export const ProfilePicture: React.FC<Props> = ({
   linkToPlayer = false,
 }) => {
   const context = useEventDbContext();
-  const navigate = useNavigate();
+  const navigate = useTransitionNavigate();
   const [imageError, setImageError] = useState(false);
 
   const { timestamp } = useImageKitTimestamp();
@@ -73,9 +74,9 @@ export const ProfilePicture: React.FC<Props> = ({
         </div>
       )}
       {linkToPlayer && playerId !== "default" ? (
-        <Link aria-disabled to={`/player/${playerId}`} onClick={(e) => e.stopPropagation()}>
+        <TransitionLink aria-disabled to={`/player/${playerId}`} onClick={(e) => e.stopPropagation()}>
           {content()}
-        </Link>
+        </TransitionLink>
       ) : (
         content()
       )}

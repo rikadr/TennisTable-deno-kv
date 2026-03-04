@@ -1,5 +1,6 @@
 import { useMemo } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { TransitionLink } from "../../components/transition-link";
+import { useTransitionNavigate } from "../../hooks/use-view-transition";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { RelativeTime } from "../../common/date-utils";
 import { fmtNum } from "../../common/number-utils";
@@ -18,7 +19,7 @@ type DisplayGame = Game & {
 
 export const RecentGames: React.FC<Props> = ({ view = "overall" }) => {
   const context = useEventDbContext();
-  const navigate = useNavigate();
+  const navigate = useTransitionNavigate();
   const leaderboardMap = context.leaderboard.getCachedLeaderboardMap();
 
   const seasons = context.seasons.getSeasons();
@@ -67,10 +68,10 @@ export const RecentGames: React.FC<Props> = ({ view = "overall" }) => {
 
   return (
     <div className="bg-primary-background rounded-lg w-full overflow-hidden">
-      <Link to="/recent-games" className="block text-center mb-4 mt-[27.5px] hover:opacity-80">
+      <TransitionLink to="/recent-games" className="block text-center mb-4 mt-[27.5px] hover:opacity-80">
         <h1 className="text-2xl text-primary-text">Recent games</h1>
         <span className="text-xs text-primary-text/50 hover:underline">see more</span>
-      </Link>
+      </TransitionLink>
       <table className="w-full text-primary-text border-collapse">
         <thead>
           {view === "season" ? (
