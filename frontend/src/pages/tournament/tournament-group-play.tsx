@@ -344,7 +344,7 @@ export const TournamentGroups: React.FC<{
         const isPending = group.pending.includes(game);
 
         return (
-          <Menu key={gameKey} ref={(el) => (itemRefs.current[gameKey] = el)}>
+          <Menu key={gameKey} ref={(el) => { itemRefs.current[gameKey] = el; }}>
             <div>
               <MenuButton
                 className={classNames(

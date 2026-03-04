@@ -3,7 +3,7 @@ import { joinJSX } from "../../common/join-JSX";
 import { ADD_GAME_STEPS } from "./add-game-page";
 
 export const StepIndicator: React.FC<{ currentStep: number }> = ({ currentStep }) => {
-  const steps: { component: JSX.Element; isCompleted: boolean }[] = ADD_GAME_STEPS.map(({ step, icon }, index) => {
+  const steps: { component: React.JSX.Element; isCompleted: boolean }[] = ADD_GAME_STEPS.map(({ step, icon }, index) => {
     const isActive = currentStep === step;
     const isCompleted = currentStep > step;
 

@@ -110,7 +110,7 @@ const GamesList: React.FC<GamesListProps> = ({ tournament, itemRefs }) => {
               const isParamSelectedGame = gameKey === getGameKeyFromPlayers(player1, player2, "bracket");
 
               return (
-                <Menu key={gameKey} ref={(el) => (itemRefs.current[gameKey] = el)}>
+                <Menu key={gameKey} ref={(el) => { itemRefs.current[gameKey] = el; }}>
                   <div>
                     <MenuButton
                       disabled={!showMenu}
@@ -285,7 +285,7 @@ const GameTriangle: React.FC<GameTriangleProps> = ({ tournament, layerIndex, gam
       ) : (
         <div className="h-0" />
       )}
-      <Menu key={gameKey} ref={(el) => (itemRefs.current[gameKey] = el)}>
+      <Menu key={gameKey} ref={(el) => { itemRefs.current[gameKey] = el; }}>
         <div className="w-full flex">
           <MenuButton
             disabled={!showMenu}

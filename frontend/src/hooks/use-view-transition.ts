@@ -1,15 +1,47 @@
-import { useCallback, useRef, startTransition } from "react";
+import { startTransition, addTransitionType, useCallback, useRef } from "react";
 import { useNavigate, NavigateOptions } from "react-router-dom";
-import { transitionForRoute } from "../components/transition-link";
 
-export type TransitionType = "slide-left" | "slide-right" | "slide-up" | "slide-down" | "fade" | "scale-up";
+function setTransitionOrigin(el: HTMLElement) {
+  const rect = el.getBoundingClientRect();
+  const root = document.documentElement;
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+
+  root.style.setProperty("--vt-top", `${rect.top}px`);
+  root.style.setProperty("--vt-right", `${vw - rect.right}px`);
+  root.style.setProperty("--vt-bottom", `${vh - rect.bottom}px`);
+  root.style.setProperty("--vt-left", `${rect.left}px`);
+  root.style.setProperty("--vt-radius", `${Math.min(rect.width, rect.height) * 0.15}px`);
+}
+
+function setCenterOrigin() {
+  const root = document.documentElement;
+  root.style.setProperty("--vt-top", "50%");
+  root.style.setProperty("--vt-right", "50%");
+  root.style.setProperty("--vt-bottom", "50%");
+  root.style.setProperty("--vt-left", "50%");
+  root.style.setProperty("--vt-radius", "0px");
+}
+
+export function triggerViewTransition(el: HTMLElement | null, updateDOM: () => void, back?: boolean) {
+  if (el) {
+    setTransitionOrigin(el);
+  } else {
+    setCenterOrigin();
+  }
+
+  startTransition(() => {
+    if (back) {
+      addTransitionType("navigate-back");
+    }
+    updateDOM();
+  });
+}
 
 /**
- * Returns a navigate function that triggers a View Transition via React's
- * startTransition. The transition type controls which CSS animation plays.
- *
- * When no `transition` option is provided, the animation is inferred from the route.
- * Wrap the page content in React's <ViewTransition> for this to work.
+ * Returns a navigate function that triggers a View Transition.
+ * Forward navigations expand from the clicked element.
+ * Back navigations (numeric `to`, e.g. -1) collapse in reverse.
  */
 export function useTransitionNavigate() {
   const navigate = useNavigate();
@@ -17,22 +49,16 @@ export function useTransitionNavigate() {
   navigateRef.current = navigate;
 
   return useCallback(
-    (to: string | number, options?: NavigateOptions & { transition?: TransitionType }) => {
-      if (typeof to === "number") {
-        // Browser back/forward — use slide-right for back, slide-left for forward
-        const type = to < 0 ? "slide-right" : "slide-left";
-        document.documentElement.dataset.viewTransition = type;
-        startTransition(() => {
-          navigateRef.current(to);
-        });
-        return;
-      }
-      const { transition, ...navOptions } = options ?? {};
-      const type = transition ?? transitionForRoute(to);
-      document.documentElement.dataset.viewTransition = type;
-      startTransition(() => {
-        navigateRef.current(to, navOptions);
-      });
+    (to: string | number, e?: React.MouseEvent | { currentTarget: HTMLElement }, options?: NavigateOptions) => {
+      const el = (e?.currentTarget as HTMLElement) ?? null;
+      const isBack = typeof to === "number";
+
+      const updateDOM =
+        typeof to === "number"
+          ? () => navigateRef.current(to)
+          : () => navigateRef.current(to, options);
+
+      triggerViewTransition(el, updateDOM, isBack);
     },
     [],
   );

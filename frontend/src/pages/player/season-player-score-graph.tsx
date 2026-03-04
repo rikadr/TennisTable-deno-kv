@@ -33,7 +33,7 @@ export const SeasonPlayerScoreGraph: React.FC<{ playerId: string; season: Season
         score: 0,
         improvement: 0,
         opponentId: undefined as string | undefined,
-        game: undefined,
+        game: undefined as any,
       },
     ];
 

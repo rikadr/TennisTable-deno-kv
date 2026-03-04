@@ -1,5 +1,4 @@
 import { CloseButton, Popover, PopoverButton, PopoverPanel } from "@headlessui/react";
-// @ts-expect-error -- ViewTransition is exported from React experimental
 import React, { useEffect, ViewTransition } from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
 import { classNames } from "../common/class-names";
@@ -53,7 +52,7 @@ export const NavMenu: React.FC = () => {
         className={menuItemWrapperClassNames}
         onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
           e.preventDefault();
-          transitionNavigate(item.to);
+          transitionNavigate(item.to, e);
         }}
       >
         <p className={menuItemTextClassNames}>{item.name}</p>
@@ -68,7 +67,7 @@ export const NavMenu: React.FC = () => {
           className={menuItemWrapperClassNames}
           onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
             e.preventDefault();
-            transitionNavigate("/me");
+            transitionNavigate("/me", e);
           }}
         >
           <p className={menuItemTextClassNames}>My profile</p>
@@ -95,7 +94,7 @@ export const NavMenu: React.FC = () => {
           className={menuItemWrapperClassNames}
           onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
             e.preventDefault();
-            transitionNavigate("/log-in");
+            transitionNavigate("/log-in", e);
           }}
         >
           <p className={menuItemTextClassNames}>Log In</p>
@@ -143,7 +142,7 @@ export const NavMenu: React.FC = () => {
           className={classNames("whitespace-nowrap rounded-full select-none text-primary-text")}
           onClick={(e) => {
             e.preventDefault();
-            transitionNavigate("/leader-board", { transition: "fade" });
+            transitionNavigate("/leader-board", e);
           }}
         >
           {themedLogo()}
@@ -190,7 +189,7 @@ export const NavMenu: React.FC = () => {
         </Popover>
       </div>
       <div className="mt-4 mb-24">
-        <ViewTransition>
+        <ViewTransition default="page-expand">
           <Outlet />
         </ViewTransition>
       </div>
