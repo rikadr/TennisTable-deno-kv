@@ -12,6 +12,7 @@ import { PlayerOponentDistribution } from "./playerOponentDistribution";
 import { Achievements } from "./achievements";
 import { Seasons } from "./seasons/seasons";
 import { PredictionsHistory } from "./predictions-history";
+import { HallOfFame } from "./hall-of-fame";
 
 export class TennisTable {
   // --------------------------------------------------------------------------
@@ -44,6 +45,7 @@ export class TennisTable {
   achievements: Achievements;
   seasons: Seasons;
   predictionsHistory: PredictionsHistory;
+  hallOfFame: HallOfFame;
 
   constructor(data: { events: EventType[] }) {
     this.events = data.events;
@@ -60,6 +62,7 @@ export class TennisTable {
     this.achievements = new Achievements(this);
     this.seasons = new Seasons(this);
     this.predictionsHistory = new PredictionsHistory(this);
+    this.hallOfFame = new HallOfFame(this);
   }
 
   /** Returns list of only active players */

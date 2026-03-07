@@ -43,6 +43,8 @@ import { SeasonsListPage } from "./pages/seasons/seasons-list-page";
 import { SeasonPage } from "./pages/seasons/season-page";
 import { SeasonPlayerPage } from "./pages/seasons/season-player-page";
 import { RecentGamesPage } from "./pages/recent-games/recent-games-page";
+import { HallOfFamePage } from "./pages/hall-of-fame/hall-of-fame-page";
+import { HallOfFamePlayerPage } from "./pages/hall-of-fame/hall-of-fame-player-page";
 
 const RequireAuth: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   if (!session.isAuthenticated) {
@@ -91,6 +93,10 @@ function App() {
                         </Route>
                         <Route path="/recent-games" element={<RecentGamesPage />} />
                         <Route path="/achievements" element={<AchievementsPage />} />
+                        <Route path="/hall-of-fame">
+                          <Route index element={<HallOfFamePage />} />
+                          <Route path=":playerId" element={<HallOfFamePlayerPage />} />
+                        </Route>
                         <Route path="/simulations">
                           <Route index element={<SimulationsPage />} />
                           <Route path="win-loss" element={<WinLoss />} />

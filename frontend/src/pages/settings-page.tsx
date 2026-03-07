@@ -86,12 +86,7 @@ export const SettingsPage: React.FC = () => {
                 <p className="text-sm opacity-70 mb-4">Customize the visual appearance of the application</p>
                 
                 <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Current Theme</label>
-                    <div className="bg-secondary-background text-secondary-text rounded-lg p-3">
-                      <span className="font-medium">{theme}</span>
-                    </div>
-                  </div>
+                  <p className="text-sm mb-4">Current theme: <span className="font-semibold">{theme}</span></p>
 
                   <div>
                     <label className="block text-sm font-medium mb-2">Override Theme</label>
