@@ -131,6 +131,7 @@ const gameBotToPlayerMap: Record<string, string> = {
   "68a72fb94a3a2b962399bc7b": "7sF8MAk3Ov", // ivar
   "6895d58f4a3a2b962399bc0b": "YTDLgL1q3z", // karoline
   "68b9931c4a3a2b962399bcb4": "jqYmcqdmqL", // jorgen
+  "698b44b5fe1b2b1cff87ecc1": "6twfh0iuwd", // raaisa
   // "68c82dc84a3a2b962399bcee": "___", // jnyborg ??? dont know who this is
   // "68c805544a3a2b962399bce6": "___", // anyone *
 };
