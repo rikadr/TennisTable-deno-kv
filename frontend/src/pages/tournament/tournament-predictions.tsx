@@ -130,19 +130,19 @@ export const TournamentPredictions = ({ tournament }: { tournament: Tournament }
           )}
           {graphData.length > 0 ? (
             <>
-            <div className="flex items-center gap-2 mb-2 justify-end pr-4">
-              <span className="text-primary-text text-sm">Y-axis max: {yMax}%</span>
+            <div className="flex items-center gap-2 mb-2 justify-end pr-2 md:pr-4">
+              <span className="text-primary-text/70 text-xs md:text-sm">Y-axis: {yMax}%</span>
               <button
                 onClick={() => setYMax((prev) => Math.min(DEFAULT_Y_MAX, prev + ZOOM_STEP))}
                 disabled={yMax >= DEFAULT_Y_MAX}
-                className="px-3 py-1 bg-gray-600 hover:bg-gray-500 disabled:opacity-30 disabled:cursor-not-allowed text-white font-bold rounded transition-colors text-lg leading-none"
+                className="px-2 md:px-3 py-1 bg-secondary-background/60 hover:bg-secondary-background/80 disabled:opacity-30 disabled:cursor-not-allowed text-secondary-text font-bold rounded transition-colors text-base md:text-lg leading-none"
               >
                 &minus;
               </button>
               <button
                 onClick={() => setYMax((prev) => Math.max(MIN_Y_MAX, prev - ZOOM_STEP))}
                 disabled={yMax <= MIN_Y_MAX}
-                className="px-3 py-1 bg-gray-600 hover:bg-gray-500 disabled:opacity-30 disabled:cursor-not-allowed text-white font-bold rounded transition-colors text-lg leading-none"
+                className="px-2 md:px-3 py-1 bg-secondary-background/60 hover:bg-secondary-background/80 disabled:opacity-30 disabled:cursor-not-allowed text-secondary-text font-bold rounded transition-colors text-base md:text-lg leading-none"
               >
                 +
               </button>
@@ -244,8 +244,8 @@ const LatestPredictionTable = ({
     .sort((a, b) => b.winPct - a.winPct);
 
   return (
-    <section className="w-full max-w-[1050px] mt-4 bg-primary-background rounded-lg p-4">
-      <h3 className="text-primary-text font-semibold mb-2">
+    <section className="w-full max-w-[1050px] mt-4 bg-primary-background rounded-lg p-2 md:p-4">
+      <h3 className="text-primary-text font-semibold mb-2 text-sm md:text-base">
         Latest Prediction ({new Date(latest.time).toLocaleDateString("no-NO", {
           month: "short",
           day: "numeric",
@@ -253,39 +253,41 @@ const LatestPredictionTable = ({
           minute: "2-digit",
         })})
       </h3>
-      <table className="w-full text-primary-text">
-        <thead>
-          <tr className="border-b border-gray-600">
-            <th className="text-left py-1 px-2">#</th>
-            <th className="text-left py-1 px-2">Player</th>
-            <th className="text-right py-1 px-2">Win %</th>
-            <th className="text-left py-1 px-2 w-1/2"></th>
-          </tr>
-        </thead>
-        <tbody>
-          {entries.map((entry, i) => (
-            <tr key={entry.playerId} className="border-b border-gray-700/50">
-              <td className="py-1 px-2 text-sm">{i + 1}</td>
-              <td className="py-1 px-2 whitespace-nowrap" style={{ color: stringToColor(entry.playerId) }}>
-                {entry.name}
-              </td>
-              <td className="py-1 px-2 text-right font-mono text-sm">{entry.winPct.toFixed(1)}%</td>
-              <td className="py-1 px-2">
-                <div className="w-full bg-gray-700/50 rounded-full h-3">
-                  <div
-                    className="h-3 rounded-full transition-all"
-                    style={{
-                      width: `${entry.winPct}%`,
-                      backgroundColor: stringToColor(entry.playerId),
-                    }}
-                  />
-                </div>
-              </td>
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-0 text-primary-text">
+          <thead>
+            <tr className="border-b border-secondary-background/50">
+              <th className="text-left py-1 px-1 md:px-2 text-xs md:text-sm">#</th>
+              <th className="text-left py-1 px-1 md:px-2 text-xs md:text-sm">Player</th>
+              <th className="text-right py-1 px-1 md:px-2 text-xs md:text-sm">Win %</th>
+              <th className="text-left py-1 px-1 md:px-2 w-1/3 md:w-1/2"></th>
             </tr>
-          ))}
-        </tbody>
-      </table>
-      <p className="text-sm text-gray-400 mt-2">
+          </thead>
+          <tbody>
+            {entries.map((entry, i) => (
+              <tr key={entry.playerId} className="border-b border-secondary-background/20">
+                <td className="py-1 px-1 md:px-2 text-xs md:text-sm text-primary-text/70">{i + 1}</td>
+                <td className="py-1 px-1 md:px-2 whitespace-nowrap text-xs md:text-sm truncate max-w-[120px] md:max-w-none" style={{ color: stringToColor(entry.playerId) }}>
+                  {entry.name}
+                </td>
+                <td className="py-1 px-1 md:px-2 text-right font-mono text-xs md:text-sm">{entry.winPct.toFixed(1)}%</td>
+                <td className="py-1 px-1 md:px-2">
+                  <div className="w-full bg-secondary-background/30 rounded-full h-2 md:h-3">
+                    <div
+                      className="h-2 md:h-3 rounded-full transition-all"
+                      style={{
+                        width: `${entry.winPct}%`,
+                        backgroundColor: stringToColor(entry.playerId),
+                      }}
+                    />
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="text-xs md:text-sm text-primary-text/50 mt-2">
         Confidence: {(latest.confidence * 100).toFixed(1)}% &middot; {NUM_SIMULATIONS.toLocaleString()} simulations
       </p>
     </section>
