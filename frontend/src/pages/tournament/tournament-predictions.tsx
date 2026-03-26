@@ -10,8 +10,13 @@ import { Tournament } from "../../client/client-db/tournaments/tournament";
 import { useTournamentPredictionWorker } from "../../hooks/use-tournament-prediction-worker";
 import { ProgressBar } from "../player/player-elo-graph";
 
+const ZOOM_STEP = 20; // 20% per click
+const MIN_Y_MAX = 20; // Don't zoom in past 20%
+const DEFAULT_Y_MAX = 100;
+
 export const TournamentPredictions = ({ tournament }: { tournament: Tournament }) => {
   const [range, setRange] = useState(2);
+  const [yMax, setYMax] = useState(DEFAULT_Y_MAX);
 
   const { startSimulation, simulationTimes, predictionResults, simulationIsDone, simulationProgress } =
     useTournamentPredictionWorker();
@@ -124,6 +129,24 @@ export const TournamentPredictions = ({ tournament }: { tournament: Tournament }
             />
           )}
           {graphData.length > 0 ? (
+            <>
+            <div className="flex items-center gap-2 mb-2 justify-end pr-4">
+              <span className="text-primary-text text-sm">Y-axis max: {yMax}%</span>
+              <button
+                onClick={() => setYMax((prev) => Math.min(DEFAULT_Y_MAX, prev + ZOOM_STEP))}
+                disabled={yMax >= DEFAULT_Y_MAX}
+                className="px-3 py-1 bg-gray-600 hover:bg-gray-500 disabled:opacity-30 disabled:cursor-not-allowed text-white font-bold rounded transition-colors text-lg leading-none"
+              >
+                &minus;
+              </button>
+              <button
+                onClick={() => setYMax((prev) => Math.max(MIN_Y_MAX, prev - ZOOM_STEP))}
+                disabled={yMax <= MIN_Y_MAX}
+                className="px-3 py-1 bg-gray-600 hover:bg-gray-500 disabled:opacity-30 disabled:cursor-not-allowed text-white font-bold rounded transition-colors text-lg leading-none"
+              >
+                +
+              </button>
+            </div>
             <LineChart
               className="mt-2"
               width={Math.min(1000, width - 50)}
@@ -134,7 +157,7 @@ export const TournamentPredictions = ({ tournament }: { tournament: Tournament }
               <XAxis dataKey="name" stroke="rgb(var(--color-primary-text))" />
               <YAxis
                 type="number"
-                domain={[0, 100]}
+                domain={[0, yMax]}
                 tickFormatter={(value) => `${value}%`}
                 stroke="rgb(var(--color-primary-text))"
               />
@@ -185,6 +208,7 @@ export const TournamentPredictions = ({ tournament }: { tournament: Tournament }
                 strokeDasharray="3 3"
               />
             </LineChart>
+            </>
           ) : (
             <div className="w-full h-[428px] rounded-lg bg-gray-300/50 flex items-center justify-center text-primary-text">
               Click 'Run Simulation' to view predictions
@@ -193,7 +217,78 @@ export const TournamentPredictions = ({ tournament }: { tournament: Tournament }
           {!simulationIsDone && simulationProgress > 0 && <ProgressBar progress={simulationProgress} />}
         </div>
       </section>
+      {predictionResults.length > 0 && (
+        <LatestPredictionTable predictionResults={predictionResults} />
+      )}
     </div>
+  );
+};
+
+const LatestPredictionTable = ({
+  predictionResults,
+}: {
+  predictionResults: { time: number; players: Record<string, { wins: number }>; confidence: number }[];
+}) => {
+  const context = useEventDbContext();
+
+  // The latest prediction is the first result (results come reversed, most recent first)
+  const latest = predictionResults[predictionResults.length - 1];
+  if (!latest) return null;
+
+  const entries = Object.entries(latest.players)
+    .map(([playerId, { wins }]) => ({
+      playerId,
+      name: context.playerName(playerId),
+      winPct: (wins / NUM_SIMULATIONS) * 100,
+    }))
+    .sort((a, b) => b.winPct - a.winPct);
+
+  return (
+    <section className="w-full max-w-[1050px] mt-4 bg-primary-background rounded-lg p-4">
+      <h3 className="text-primary-text font-semibold mb-2">
+        Latest Prediction ({new Date(latest.time).toLocaleDateString("no-NO", {
+          month: "short",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        })})
+      </h3>
+      <table className="w-full text-primary-text">
+        <thead>
+          <tr className="border-b border-gray-600">
+            <th className="text-left py-1 px-2">#</th>
+            <th className="text-left py-1 px-2">Player</th>
+            <th className="text-right py-1 px-2">Win %</th>
+            <th className="text-left py-1 px-2 w-1/2"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {entries.map((entry, i) => (
+            <tr key={entry.playerId} className="border-b border-gray-700/50">
+              <td className="py-1 px-2 text-sm">{i + 1}</td>
+              <td className="py-1 px-2 whitespace-nowrap" style={{ color: stringToColor(entry.playerId) }}>
+                {entry.name}
+              </td>
+              <td className="py-1 px-2 text-right font-mono text-sm">{entry.winPct.toFixed(1)}%</td>
+              <td className="py-1 px-2">
+                <div className="w-full bg-gray-700/50 rounded-full h-3">
+                  <div
+                    className="h-3 rounded-full transition-all"
+                    style={{
+                      width: `${entry.winPct}%`,
+                      backgroundColor: stringToColor(entry.playerId),
+                    }}
+                  />
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <p className="text-sm text-gray-400 mt-2">
+        Confidence: {(latest.confidence * 100).toFixed(1)}% &middot; {NUM_SIMULATIONS.toLocaleString()} simulations
+      </p>
+    </section>
   );
 };
 
