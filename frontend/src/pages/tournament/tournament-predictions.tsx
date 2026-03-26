@@ -235,8 +235,8 @@ const LatestPredictionTable = ({
 }) => {
   const context = useEventDbContext();
 
-  // The latest prediction is the first result (results come reversed, most recent first)
-  const latest = predictionResults[predictionResults.length - 1];
+  // The first received result is the most recent timestamp (simulation runs newest first)
+  const latest = predictionResults[0];
   if (!latest) return null;
 
   const entries = Object.entries(latest.players)
