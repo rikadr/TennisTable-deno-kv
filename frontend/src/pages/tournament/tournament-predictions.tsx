@@ -9,6 +9,7 @@ import { NUM_SIMULATIONS } from "../../client/client-db/tournaments/prediction";
 import { Tournament } from "../../client/client-db/tournaments/tournament";
 import { useTournamentPredictionWorker } from "../../hooks/use-tournament-prediction-worker";
 import { ProgressBar } from "../player/player-elo-graph";
+import { ProfilePicture } from "../player/profile-picture";
 
 const ZOOM_FACTOR = 0.7; // Each click multiplies/divides by this (30% relative change)
 const MIN_Y_MAX = 1; // Allow zooming down to 1%
@@ -242,9 +243,12 @@ const LatestPredictionTable = ({
     .map(([playerId, { wins }]) => ({
       playerId,
       name: context.playerName(playerId),
+      wins,
       winPct: (wins / NUM_SIMULATIONS) * 100,
     }))
     .sort((a, b) => b.winPct - a.winPct);
+
+  const maxPct = entries.length > 0 ? entries[0].winPct : 100;
 
   return (
     <section className="w-full max-w-[1050px] mt-4 bg-primary-background rounded-lg p-2 md:p-4">
@@ -262,6 +266,7 @@ const LatestPredictionTable = ({
             <tr className="border-b border-secondary-background/50">
               <th className="text-left py-1 px-1 md:px-2 text-xs md:text-sm">#</th>
               <th className="text-left py-1 px-1 md:px-2 text-xs md:text-sm">Player</th>
+              <th className="text-right py-1 px-1 md:px-2 text-xs md:text-sm">Wins</th>
               <th className="text-right py-1 px-1 md:px-2 text-xs md:text-sm">Win %</th>
               <th className="text-left py-1 px-1 md:px-2 w-1/3 md:w-1/2"></th>
             </tr>
@@ -270,16 +275,24 @@ const LatestPredictionTable = ({
             {entries.map((entry, i) => (
               <tr key={entry.playerId} className="border-b border-secondary-background/20">
                 <td className="py-1 px-1 md:px-2 text-xs md:text-sm text-primary-text/70">{i + 1}</td>
-                <td className="py-1 px-1 md:px-2 whitespace-nowrap text-xs md:text-sm truncate max-w-[120px] md:max-w-none" style={{ color: stringToColor(entry.playerId) }}>
-                  {entry.name}
+                <td className="py-1 px-1 md:px-2 whitespace-nowrap text-xs md:text-sm">
+                  <div className="flex items-center gap-1 md:gap-2">
+                    <div className="shrink-0">
+                      <ProfilePicture playerId={entry.playerId} size={20} border={2} />
+                    </div>
+                    <span className="truncate max-w-[100px] md:max-w-none" style={{ color: stringToColor(entry.playerId) }}>
+                      {entry.name}
+                    </span>
+                  </div>
                 </td>
+                <td className="py-1 px-1 md:px-2 text-right font-mono text-xs md:text-sm text-primary-text/70">{entry.wins.toLocaleString()}</td>
                 <td className="py-1 px-1 md:px-2 text-right font-mono text-xs md:text-sm">{entry.winPct.toFixed(1)}%</td>
                 <td className="py-1 px-1 md:px-2">
                   <div className="w-full bg-secondary-background/30 rounded-full h-2 md:h-3">
                     <div
                       className="h-2 md:h-3 rounded-full transition-all"
                       style={{
-                        width: `${entry.winPct}%`,
+                        width: `${maxPct > 0 ? (entry.winPct / maxPct) * 100 : 0}%`,
                         backgroundColor: stringToColor(entry.playerId),
                       }}
                     />
