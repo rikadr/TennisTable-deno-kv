@@ -10,8 +10,8 @@ import { Tournament } from "../../client/client-db/tournaments/tournament";
 import { useTournamentPredictionWorker } from "../../hooks/use-tournament-prediction-worker";
 import { ProgressBar } from "../player/player-elo-graph";
 
-const ZOOM_STEP = 20; // 20% per click
-const MIN_Y_MAX = 20; // Don't zoom in past 20%
+const ZOOM_FACTOR = 0.7; // Each click multiplies/divides by this (30% relative change)
+const MIN_Y_MAX = 1; // Allow zooming down to 1%
 const DEFAULT_Y_MAX = 100;
 
 export const TournamentPredictions = ({ tournament }: { tournament: Tournament }) => {
@@ -73,7 +73,7 @@ export const TournamentPredictions = ({ tournament }: { tournament: Tournament }
 
   const { width = 0, height = 0 } = useWindowSize();
 
-  // Auto-update range as new data comes in
+  // Auto-update range as new data comes in (start fully zoomed out)
   useEffect(() => {
     if (graphData.length > 0) {
       setRange(graphData.length);
@@ -81,8 +81,9 @@ export const TournamentPredictions = ({ tournament }: { tournament: Tournament }
   }, [graphData.length]);
 
   useEffect(() => {
-    // Slice from the beginning up to the range value to show data filling from left to right
-    setGraphDataToSee(graphData.slice(0, range) || []);
+    // Slice from the end so the most recent data is always visible
+    // range = how many data points to show (high = zoomed out, low = zoomed in)
+    setGraphDataToSee(graphData.slice(-range) || []);
   }, [graphData, range]);
 
   // Get all unique player IDs from the data
@@ -131,16 +132,16 @@ export const TournamentPredictions = ({ tournament }: { tournament: Tournament }
           {graphData.length > 0 ? (
             <>
             <div className="flex items-center gap-2 mb-2 justify-end pr-2 md:pr-4">
-              <span className="text-primary-text/70 text-xs md:text-sm">Y-axis: {yMax}%</span>
+              <span className="text-primary-text/70 text-xs md:text-sm">Y-axis: {yMax < 10 ? yMax.toFixed(1) : Math.round(yMax)}%</span>
               <button
-                onClick={() => setYMax((prev) => Math.min(DEFAULT_Y_MAX, prev + ZOOM_STEP))}
+                onClick={() => setYMax((prev) => Math.min(DEFAULT_Y_MAX, prev / ZOOM_FACTOR))}
                 disabled={yMax >= DEFAULT_Y_MAX}
                 className="px-2 md:px-3 py-1 bg-secondary-background/60 hover:bg-secondary-background/80 disabled:opacity-30 disabled:cursor-not-allowed text-secondary-text font-bold rounded transition-colors text-base md:text-lg leading-none"
               >
                 &minus;
               </button>
               <button
-                onClick={() => setYMax((prev) => Math.max(MIN_Y_MAX, prev - ZOOM_STEP))}
+                onClick={() => setYMax((prev) => Math.max(MIN_Y_MAX, prev * ZOOM_FACTOR))}
                 disabled={yMax <= MIN_Y_MAX}
                 className="px-2 md:px-3 py-1 bg-secondary-background/60 hover:bg-secondary-background/80 disabled:opacity-30 disabled:cursor-not-allowed text-secondary-text font-bold rounded transition-colors text-base md:text-lg leading-none"
               >
@@ -158,7 +159,7 @@ export const TournamentPredictions = ({ tournament }: { tournament: Tournament }
               <YAxis
                 type="number"
                 domain={[0, yMax]}
-                tickFormatter={(value) => `${value}%`}
+                tickFormatter={(value) => `${yMax < 10 ? value.toFixed(1) : Math.round(value)}%`}
                 stroke="rgb(var(--color-primary-text))"
               />
               <Tooltip
@@ -201,12 +202,14 @@ export const TournamentPredictions = ({ tournament }: { tournament: Tournament }
                 strokeWidth={2}
                 opacity={0.7}
               />
-              <ReferenceLine
-                y={50}
-                label={{ value: "50%", position: "insideBottom", fill: "rgb(var(--color-primary-text))" }}
-                stroke="rgb(var(--color-primary-text))"
-                strokeDasharray="3 3"
-              />
+              {yMax >= 50 && (
+                <ReferenceLine
+                  y={50}
+                  label={{ value: "50%", position: "insideBottom", fill: "rgb(var(--color-primary-text))" }}
+                  stroke="rgb(var(--color-primary-text))"
+                  strokeDasharray="3 3"
+                />
+              )}
             </LineChart>
             </>
           ) : (
