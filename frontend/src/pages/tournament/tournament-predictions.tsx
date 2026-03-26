@@ -160,6 +160,7 @@ export const TournamentPredictions = ({ tournament }: { tournament: Tournament }
               <YAxis
                 type="number"
                 domain={[0, yMax]}
+                allowDataOverflow={true}
                 tickFormatter={(value) => `${yMax < 10 ? value.toFixed(1) : Math.round(value)}%`}
                 stroke="rgb(var(--color-primary-text))"
               />
