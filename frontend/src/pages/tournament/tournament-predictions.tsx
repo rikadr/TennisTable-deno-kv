@@ -9,9 +9,15 @@ import { NUM_SIMULATIONS } from "../../client/client-db/tournaments/prediction";
 import { Tournament } from "../../client/client-db/tournaments/tournament";
 import { useTournamentPredictionWorker } from "../../hooks/use-tournament-prediction-worker";
 import { ProgressBar } from "../player/player-elo-graph";
+import { ProfilePicture } from "../player/profile-picture";
+
+const ZOOM_FACTOR = 0.7; // Each click multiplies/divides by this (30% relative change)
+const MIN_Y_MAX = 1; // Allow zooming down to 1%
+const DEFAULT_Y_MAX = 100;
 
 export const TournamentPredictions = ({ tournament }: { tournament: Tournament }) => {
   const [range, setRange] = useState(2);
+  const [yMax, setYMax] = useState(DEFAULT_Y_MAX);
 
   const { startSimulation, simulationTimes, predictionResults, simulationIsDone, simulationProgress } =
     useTournamentPredictionWorker();
@@ -68,7 +74,7 @@ export const TournamentPredictions = ({ tournament }: { tournament: Tournament }
 
   const { width = 0, height = 0 } = useWindowSize();
 
-  // Auto-update range as new data comes in
+  // Auto-update range as new data comes in (start fully zoomed out)
   useEffect(() => {
     if (graphData.length > 0) {
       setRange(graphData.length);
@@ -76,8 +82,9 @@ export const TournamentPredictions = ({ tournament }: { tournament: Tournament }
   }, [graphData.length]);
 
   useEffect(() => {
-    // Slice from the beginning up to the range value to show data filling from left to right
-    setGraphDataToSee(graphData.slice(0, range) || []);
+    // Slice from the end so the most recent data is always visible
+    // range = how many data points to show (high = zoomed out, low = zoomed in)
+    setGraphDataToSee(graphData.slice(-range) || []);
   }, [graphData, range]);
 
   // Get all unique player IDs from the data
@@ -124,6 +131,31 @@ export const TournamentPredictions = ({ tournament }: { tournament: Tournament }
             />
           )}
           {graphData.length > 0 ? (
+            <>
+            <div className="flex items-center gap-2 mb-2 justify-end pr-2 md:pr-4">
+              <span className="text-primary-text/70 text-xs md:text-sm">Y-axis: {yMax < 10 ? yMax.toFixed(1) : Math.round(yMax)}%</span>
+              <button
+                onClick={() => setYMax((prev) => Math.min(DEFAULT_Y_MAX, prev / ZOOM_FACTOR))}
+                disabled={yMax >= DEFAULT_Y_MAX}
+                className="px-2 md:px-3 py-1 bg-secondary-background/60 hover:bg-secondary-background/80 disabled:opacity-30 disabled:cursor-not-allowed text-secondary-text font-bold rounded transition-colors text-base md:text-lg leading-none"
+              >
+                &minus;
+              </button>
+              <button
+                onClick={() => setYMax((prev) => Math.max(MIN_Y_MAX, prev * ZOOM_FACTOR))}
+                disabled={yMax <= MIN_Y_MAX}
+                className="px-2 md:px-3 py-1 bg-secondary-background/60 hover:bg-secondary-background/80 disabled:opacity-30 disabled:cursor-not-allowed text-secondary-text font-bold rounded transition-colors text-base md:text-lg leading-none"
+              >
+                +
+              </button>
+              <button
+                onClick={() => setYMax(DEFAULT_Y_MAX)}
+                disabled={yMax >= DEFAULT_Y_MAX}
+                className="px-2 md:px-3 py-1 bg-secondary-background/60 hover:bg-secondary-background/80 disabled:opacity-30 disabled:cursor-not-allowed text-secondary-text rounded transition-colors text-xs md:text-sm leading-none"
+              >
+                Reset
+              </button>
+            </div>
             <LineChart
               className="mt-2"
               width={Math.min(1000, width - 50)}
@@ -134,8 +166,9 @@ export const TournamentPredictions = ({ tournament }: { tournament: Tournament }
               <XAxis dataKey="name" stroke="rgb(var(--color-primary-text))" />
               <YAxis
                 type="number"
-                domain={[0, 100]}
-                tickFormatter={(value) => `${value}%`}
+                domain={[0, yMax]}
+                allowDataOverflow={true}
+                tickFormatter={(value) => `${yMax < 10 ? value.toFixed(1) : Math.round(value)}%`}
                 stroke="rgb(var(--color-primary-text))"
               />
               <Tooltip
@@ -178,13 +211,16 @@ export const TournamentPredictions = ({ tournament }: { tournament: Tournament }
                 strokeWidth={2}
                 opacity={0.7}
               />
-              <ReferenceLine
-                y={50}
-                label={{ value: "50%", position: "insideBottom", fill: "rgb(var(--color-primary-text))" }}
-                stroke="rgb(var(--color-primary-text))"
-                strokeDasharray="3 3"
-              />
+              {yMax >= 50 && (
+                <ReferenceLine
+                  y={50}
+                  label={{ value: "50%", position: "insideBottom", fill: "rgb(var(--color-primary-text))" }}
+                  stroke="rgb(var(--color-primary-text))"
+                  strokeDasharray="3 3"
+                />
+              )}
             </LineChart>
+            </>
           ) : (
             <div className="w-full h-[428px] rounded-lg bg-gray-300/50 flex items-center justify-center text-primary-text">
               Click 'Run Simulation' to view predictions
@@ -193,7 +229,92 @@ export const TournamentPredictions = ({ tournament }: { tournament: Tournament }
           {!simulationIsDone && simulationProgress > 0 && <ProgressBar progress={simulationProgress} />}
         </div>
       </section>
+      {predictionResults.length > 0 && (
+        <LatestPredictionTable predictionResults={predictionResults} />
+      )}
     </div>
+  );
+};
+
+const LatestPredictionTable = ({
+  predictionResults,
+}: {
+  predictionResults: { time: number; players: Record<string, { wins: number }>; confidence: number }[];
+}) => {
+  const context = useEventDbContext();
+
+  // The first received result is the most recent timestamp (simulation runs newest first)
+  const latest = predictionResults[0];
+  if (!latest) return null;
+
+  const entries = Object.entries(latest.players)
+    .map(([playerId, { wins }]) => ({
+      playerId,
+      name: context.playerName(playerId),
+      wins,
+      winPct: (wins / NUM_SIMULATIONS) * 100,
+    }))
+    .sort((a, b) => b.winPct - a.winPct);
+
+  const maxPct = entries.length > 0 ? entries[0].winPct : 100;
+
+  return (
+    <section className="w-full max-w-[1050px] mt-4 bg-primary-background rounded-lg p-2 md:p-4">
+      <h3 className="text-primary-text font-semibold mb-2 text-sm md:text-base">
+        Latest Prediction ({new Date(latest.time).toLocaleDateString("no-NO", {
+          month: "short",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        })})
+      </h3>
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-0 text-primary-text">
+          <thead>
+            <tr className="border-b border-secondary-background/50">
+              <th className="text-left py-1 px-1 md:px-2 text-xs md:text-sm">#</th>
+              <th className="text-left py-1 px-1 md:px-2 text-xs md:text-sm">Player</th>
+              <th className="text-right py-1 px-1 md:px-2 text-xs md:text-sm">Wins</th>
+              <th className="text-right py-1 px-1 md:px-2 text-xs md:text-sm">Win %</th>
+              <th className="text-left py-1 px-1 md:px-2 w-1/3 md:w-1/2"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {entries.map((entry, i) => (
+              <tr key={entry.playerId} className="border-b border-secondary-background/20">
+                <td className="py-1 px-1 md:px-2 text-xs md:text-sm text-primary-text/70">{i + 1}</td>
+                <td className="py-1 px-1 md:px-2 whitespace-nowrap text-xs md:text-sm">
+                  <div className="flex items-center gap-1 md:gap-2">
+                    <div className="shrink-0">
+                      <ProfilePicture playerId={entry.playerId} size={20} border={2} />
+                    </div>
+                    <span className="truncate max-w-[100px] md:max-w-none text-primary-text">
+                      {entry.name}
+                    </span>
+                  </div>
+                </td>
+                <td className="py-1 px-1 md:px-2 text-right font-mono text-xs md:text-sm text-primary-text/70">{entry.wins.toLocaleString()}</td>
+                <td className="py-1 px-1 md:px-2 text-right font-mono text-xs md:text-sm">{entry.winPct.toFixed(1)}%</td>
+                <td className="py-1 px-1 md:px-2">
+                  <div className="w-full bg-secondary-background/30 rounded-full h-2 md:h-3">
+                    <div
+                      className="h-2 md:h-3 rounded-full transition-all"
+                      style={{
+                        width: `${maxPct > 0 ? (entry.winPct / maxPct) * 100 : 0}%`,
+                        backgroundColor: stringToColor(entry.playerId),
+                      }}
+                    />
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="text-xs md:text-sm text-primary-text/50 mt-2">
+        Confidence: {(latest.confidence * 100).toFixed(1)}% &middot; {NUM_SIMULATIONS.toLocaleString()} simulations
+      </p>
+    </section>
   );
 };
 
