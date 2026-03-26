@@ -148,6 +148,14 @@ export const TournamentPredictions = ({ tournament }: { tournament: Tournament }
               >
                 +
               </button>
+              {yMax < DEFAULT_Y_MAX && (
+                <button
+                  onClick={() => setYMax(DEFAULT_Y_MAX)}
+                  className="px-2 md:px-3 py-1 bg-secondary-background/60 hover:bg-secondary-background/80 text-secondary-text rounded transition-colors text-xs md:text-sm leading-none"
+                >
+                  Reset
+                </button>
+              )}
             </div>
             <LineChart
               className="mt-2"
@@ -281,7 +289,7 @@ const LatestPredictionTable = ({
                     <div className="shrink-0">
                       <ProfilePicture playerId={entry.playerId} size={20} border={2} />
                     </div>
-                    <span className="truncate max-w-[100px] md:max-w-none" style={{ color: stringToColor(entry.playerId) }}>
+                    <span className="truncate max-w-[100px] md:max-w-none text-primary-text">
                       {entry.name}
                     </span>
                   </div>
