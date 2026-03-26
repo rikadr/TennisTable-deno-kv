@@ -5,6 +5,7 @@ import { relativeTimeString } from "../../common/date-utils";
 import { session } from "../../services/auth";
 import { useDeleteEventMutation, useUpdateEventMutation } from "../../hooks/use-event-mutation";
 import { CreateEventForm } from "./create-event-form";
+import { httpClient } from "../../common/http-client";
 
 export const Events = () => {
   const context = useEventDbContext();
@@ -18,6 +19,26 @@ export const Events = () => {
   const updateEvent = useUpdateEventMutation();
   const deleteEvent = useDeleteEventMutation();
   const [showNewEventForm, setShowNewEventForm] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
+
+  const handleDownloadBackup = async () => {
+    setIsDownloading(true);
+    try {
+      const response = await httpClient(`${process.env.REACT_APP_API_BASE_URL}/events`);
+      const text = await response.text();
+      const blob = new Blob([text], { type: "text/plain" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `events-backup-${new Date().toISOString().slice(0, 19).replace(/:/g, "-")}.txt`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      alert("Failed to download backup: " + (err instanceof Error ? err.message : String(err)));
+    } finally {
+      setIsDownloading(false);
+    }
+  };
 
   // Filter and search
   const filteredEvents = useMemo(() => {
@@ -170,6 +191,13 @@ export const Events = () => {
           className="px-3 py-1 border rounded hover:bg-primary-text/20 text-lg font-bold"
         >
           {showNewEventForm ? "−" : "+"}
+        </button>
+        <button
+          onClick={handleDownloadBackup}
+          disabled={isDownloading}
+          className="px-3 py-1 border rounded hover:bg-primary-text/20 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {isDownloading ? "Downloading..." : "Download Backup"}
         </button>
       </div>
 
