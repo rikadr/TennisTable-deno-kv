@@ -313,6 +313,12 @@ export const LeaderBoard: React.FC = () => {
             ) : (
               <div className="p-8 text-center text-secondary-text">
                 <p>No active season at the moment</p>
+                <button
+                  onClick={() => setView("overall")}
+                  className="mt-4 px-4 py-2 rounded text-sm font-medium transition-colors ring-1 bg-secondary-background text-secondary-text ring-secondary-text hover:opacity-80"
+                >
+                  View Overall Leaderboard
+                </button>
               </div>
             )}
           </>

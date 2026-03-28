@@ -139,6 +139,12 @@ export const RecentGamesPage: React.FC = () => {
           {view === "season" && !currentSeason ? (
             <div className="p-8 text-center text-primary-text/60">
               <p>No active season at the moment</p>
+              <button
+                onClick={() => setView("overall")}
+                className="mt-4 px-4 py-2 rounded text-sm font-medium transition-colors ring-1 bg-secondary-background text-secondary-text ring-secondary-text hover:opacity-80"
+              >
+                View Overall Elo
+              </button>
             </div>
           ) : (
             <table className="w-full text-primary-text border-collapse">
