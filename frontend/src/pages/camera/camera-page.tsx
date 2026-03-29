@@ -4,8 +4,9 @@ import Avatar from "react-avatar-edit";
 import { classNames } from "../../common/class-names";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useEventDbContext } from "../../wrappers/event-db-context";
-import { IKUpload } from "imagekitio-react";
+import { upload } from "@imagekit/react";
 import { useImageKitTimestamp } from "../../wrappers/image-kit-context";
+import { httpClient } from "../../common/http-client";
 
 export const CameraPage: React.FC = () => {
   const context = useEventDbContext();
@@ -19,7 +20,6 @@ export const CameraPage: React.FC = () => {
   const [happy, setHappy] = useState(false);
   const webCamRef = useRef<Webcam>(null);
   const [hasMediaStream, setHasMediaStream] = useState(false);
-  const uploadRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const { setTimestamp } = useImageKitTimestamp();
 
@@ -47,27 +47,27 @@ export const CameraPage: React.FC = () => {
     setIsUploading(true);
 
     try {
-      // Convert the base64 string to a File object
       const file = dataURLtoFile(await compressImage(avatarUrl), playerId);
 
-      // Set the file to the IKUpload input element
-      const uploadElement = uploadRef.current;
-      if (uploadElement) {
-        // Create a DataTransfer object
-        const dataTransfer = new DataTransfer();
-        dataTransfer.items.add(file);
+      const url = new URL(`${process.env.REACT_APP_API_BASE_URL}/image-kit-auth`);
+      const authParams = await httpClient(url, { method: "GET" }).then((response) => response.json());
 
-        // Set the files property
-        uploadElement.files = dataTransfer.files;
+      await upload({
+        file,
+        fileName: playerId,
+        token: authParams.token,
+        signature: authParams.signature,
+        expire: authParams.expire,
+        publicKey: process.env.REACT_APP_IMAGE_KIT_PUBLIC_KEY || "",
+        overwriteFile: true,
+        useUniqueFileName: false,
+      });
 
-        // Trigger the upload programmatically by dispatching a change event
-        const changeEvent = new Event("change", { bubbles: true });
-        uploadElement.dispatchEvent(changeEvent);
-      } else {
-        throw new Error("Upload reference is not available");
-      }
+      setIsUploading(false);
+      setTimestamp(Date.now());
+      navigate(`/player/${playerId}`);
     } catch (error) {
-      console.error("Error triggering upload:", error);
+      console.error("Error uploading:", error);
       setIsUploading(false);
     }
   };
@@ -137,20 +137,6 @@ export const CameraPage: React.FC = () => {
           {context.playerName(playerId)}, you look great 😘 Submit photo!
         </button>
       )}
-      <IKUpload
-        className="hidden"
-        ref={uploadRef}
-        fileName={playerId}
-        onSuccess={() => {
-          setIsUploading(false);
-          // Clear cache for imagekit
-          setTimestamp(Date.now());
-          navigate(`/player/${playerId}`);
-        }}
-        onError={() => setIsUploading(false)}
-        useUniqueFileName={false}
-        overwriteFile={true}
-      />
     </div>
   );
 };

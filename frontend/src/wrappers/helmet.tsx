@@ -1,5 +1,5 @@
 import React from "react";
-import { Helmet } from "react-helmet";
+import { Helmet } from "react-helmet-async";
 import { getClientConfig } from "../client/client-config/get-client-config";
 
 export const HelmetSetter: React.FC = () => {

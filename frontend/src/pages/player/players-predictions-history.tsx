@@ -5,7 +5,7 @@ import {
   LineChart,
   ReferenceLine,
   Tooltip,
-  TooltipProps,
+  TooltipContentProps,
   XAxis,
   YAxis,
   ResponsiveContainer,
@@ -235,7 +235,7 @@ const CustomTooltip = ({
   active,
   payload,
   selectedTargetId,
-}: TooltipProps<ValueType, NameType> & { selectedTargetId: string }) => {
+}: Partial<TooltipContentProps<ValueType, NameType>> & { selectedTargetId: string }) => {
   const context = useEventDbContext();
   if (active && payload && payload.length) {
     const data = payload[0].payload;

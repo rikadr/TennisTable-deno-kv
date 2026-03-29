@@ -21,6 +21,7 @@ import { TournamentPage } from "./pages/tournament/tournament-page";
 import { getClientConfig } from "./client/client-config/get-client-config";
 import Snowfall from "react-snowfall";
 import { HelmetSetter } from "./wrappers/helmet";
+import { HelmetProvider } from "react-helmet-async";
 import { ThemeProvider } from "./wrappers/theme-provider";
 import { SettingsPage } from "./pages/settings-page";
 import { EventDbWrapper } from "./wrappers/event-db-context";
@@ -59,6 +60,7 @@ function App() {
   const clientConfig = getClientConfig();
   const client = queryClient;
   return (
+    <HelmetProvider>
     <QueryClientProvider client={client}>
       <Analytics />
       <ImageKitContext>
@@ -138,6 +140,7 @@ function App() {
         </ThemeProvider>
       </ImageKitContext>
     </QueryClientProvider>
+    </HelmetProvider>
   );
 }
 

@@ -1,7 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { classNames } from "../../common/class-names";
 import { stringToColor } from "../../common/string-to-color";
-import { IKImage } from "imagekitio-react";
+import { Image as IKImage } from "@imagekit/react";
 import { useImageKitTimestamp } from "../../wrappers/image-kit-context";
 import { useState } from "react";
 import { useEventDbContext } from "../../wrappers/event-db-context";
@@ -36,7 +36,7 @@ export const ProfilePicture: React.FC<Props> = ({
         "w-full h-full object-cover",
         clickToEdit && " group-hover:opacity-50 transition-opacity duration-150",
       )}
-      path={playerId ?? ""}
+      src={playerId ?? ""}
       transformation={[{ height: size * HighDefinitionScaleFactor, width: size * HighDefinitionScaleFactor }]}
       queryParameters={{ v: timestamp }}
       onError={() => setImageError(true)}
