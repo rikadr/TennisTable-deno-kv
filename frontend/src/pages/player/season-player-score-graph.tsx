@@ -16,6 +16,7 @@ import { Season } from "../../client/client-db/seasons/season";
 import { stringToColor } from "../../common/string-to-color";
 import { relativeTimeString } from "../../common/date-utils";
 import { fmtNum } from "../../common/number-utils";
+import { Game } from "../../client/client-db/event-store/projectors/games-projector";
 
 export const SeasonPlayerScoreGraph: React.FC<{ playerId: string; season: Season }> = ({
   playerId,
@@ -33,7 +34,7 @@ export const SeasonPlayerScoreGraph: React.FC<{ playerId: string; season: Season
         score: 0,
         improvement: 0,
         opponentId: undefined as string | undefined,
-        game: undefined as any,
+        game: undefined as Game | undefined,
       },
     ];
 
