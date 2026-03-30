@@ -23,6 +23,9 @@ This repository contains the **Tennis Table** application.
 - **Backend:** Stateless event store + Auth.
 - **Do not** add business logic to the backend.
 
+## Code Style
+- **Never use `any` type** in application code. Always use proper types. In test files, `any` is acceptable in rare cases where typing is impractical.
+
 ## Context Files
 - Root Instructions: `./GEMINI.md`
 - Frontend Details: `./frontend/AGENTS.md`
