@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { CartesianGrid, Line, LineChart, ReferenceLine, Tooltip, TooltipContentProps, XAxis, YAxis } from "recharts";
+import { CartesianGrid, Line, LineChart, ReferenceLine, Tooltip, TooltipProps, XAxis, YAxis } from "recharts";
 import { useWindowSize } from "usehooks-ts";
 import { NameType, ValueType } from "recharts/types/component/DefaultTooltipContent";
 import { useEventDbContext } from "../../wrappers/event-db-context";
@@ -318,7 +318,7 @@ const LatestPredictionTable = ({
   );
 };
 
-const CustomTooltip: React.FC<Partial<TooltipContentProps<ValueType, NameType>>> = ({ active, payload }) => {
+const CustomTooltip: React.FC = ({ active, payload }: TooltipProps<ValueType, NameType>) => {
   const context = useEventDbContext();
 
   if (active && payload && payload.length) {

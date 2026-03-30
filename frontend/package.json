@@ -25,7 +25,7 @@
     "react-scripts": "5.0.1",
     "react-snowfall": "^2.4.0",
     "react-webcam": "^7.2.0",
-    "recharts": "^3.8.1",
+    "recharts": "^2.13.0",
     "typescript": "^5.9.3",
     "usehooks-ts": "^3.1.1",
     "web-vitals": "^5.2.0",

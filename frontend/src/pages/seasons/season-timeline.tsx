@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, TooltipContentProps, XAxis, YAxis } from "recharts";
+import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, TooltipProps, XAxis, YAxis } from "recharts";
 import { NameType, ValueType } from "recharts/types/component/DefaultTooltipContent";
 import { useWindowSize } from "usehooks-ts";
 import { classNames } from "../../common/class-names";
@@ -198,7 +198,7 @@ export const SeasonTimeline = ({ season }: Props) => {
   );
 };
 
-interface SeasonTooltipProps extends Partial<TooltipContentProps<ValueType, NameType>> {
+interface SeasonTooltipProps extends TooltipProps<ValueType, NameType> {
   context: ReturnType<typeof useEventDbContext>;
 }
 

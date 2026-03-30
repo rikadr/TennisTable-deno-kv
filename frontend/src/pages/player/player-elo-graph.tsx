@@ -6,7 +6,7 @@ import {
   ReferenceLine,
   ResponsiveContainer,
   Tooltip,
-  TooltipContentProps,
+  TooltipProps,
   XAxis,
   YAxis,
 } from "recharts";
@@ -114,7 +114,7 @@ export const PlayerEloGraph: React.FC<{ playerId: string }> = ({ playerId }) => 
           />
           <XAxis dataKey="name" stroke="rgb(var(--color-primary-text))" />
           <Tooltip
-            formatter={(value) => [value?.toLocaleString("no-NO", { maximumFractionDigits: 0 }) ?? "", "Elo"]}
+            formatter={(value) => [value.toLocaleString("no-NO", { maximumFractionDigits: 0 }), "Elo"]}
             wrapperClassName="rounded-lg"
             animationDuration={0}
             content={<CustomTooltip />}
@@ -265,7 +265,7 @@ export const PlayerEloGraph: React.FC<{ playerId: string }> = ({ playerId }) => 
   );
 };
 
-const CustomTooltip: React.FC<Partial<TooltipContentProps<ValueType, NameType>>> = ({ active, payload, label }) => {
+const CustomTooltip: React.FC = ({ active, payload, label }: TooltipProps<ValueType, NameType>) => {
   const constext = useEventDbContext();
   if (active && payload && payload.length) {
     const game = payload[0].payload;

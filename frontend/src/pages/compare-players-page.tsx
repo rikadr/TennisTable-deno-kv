@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { classNames } from "../common/class-names";
-import { CartesianGrid, Line, LineChart, ReferenceLine, Tooltip, TooltipContentProps, XAxis, YAxis } from "recharts";
+import { CartesianGrid, Line, LineChart, ReferenceLine, Tooltip, TooltipProps, XAxis, YAxis } from "recharts";
 import { useWindowSize } from "usehooks-ts";
 import { NameType, ValueType } from "recharts/types/component/DefaultTooltipContent";
 import { useEventDbContext } from "../wrappers/event-db-context";
@@ -54,7 +54,7 @@ export const ComparePlayersPage: React.FC = () => {
                 stroke="rgb(var(--color-primary-text))"
               />
               <Tooltip
-                formatter={(value) => [value?.toLocaleString("no-NO", { maximumFractionDigits: 0 }) ?? "", "Elo"]}
+                formatter={(value) => [value.toLocaleString("no-NO", { maximumFractionDigits: 0 }), "Elo"]}
                 wrapperClassName="rounded-lg"
                 animationDuration={0}
                 content={<CustomTooltip />}
@@ -153,7 +153,7 @@ const PlayerSelector: React.FC<{
   );
 };
 
-const CustomTooltip: React.FC<Partial<TooltipContentProps<ValueType, NameType>>> = ({ active, payload, label }) => {
+const CustomTooltip: React.FC = ({ active, payload, label }: TooltipProps<ValueType, NameType>) => {
   const context = useEventDbContext();
 
   if (active && payload && payload.length) {
