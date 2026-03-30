@@ -5,7 +5,7 @@ import {
   LineChart,
   ResponsiveContainer,
   Tooltip,
-  TooltipContentProps,
+  TooltipProps,
   XAxis,
   YAxis,
 } from "recharts";
@@ -121,7 +121,7 @@ export const SeasonPlayerScoreGraph: React.FC<{ playerId: string; season: Season
   );
 };
 
-const CustomTooltip: React.FC<Partial<TooltipContentProps<ValueType, NameType>>> = ({ active, payload, label }) => {
+const CustomTooltip: React.FC = ({ active, payload, label }: TooltipProps<ValueType, NameType>) => {
   const context = useEventDbContext();
   
   if (active && payload && payload.length) {
