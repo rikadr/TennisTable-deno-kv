@@ -20,7 +20,7 @@ export const StepSelectWinner: React.FC<{
 
   return (
     <div className="space-y-6 max-w-2xl mx-auto">
-      <PendingTournamentGame player1={player1} player2={player2} />
+      <PendingTournamentGame key={`${player1}-${player2}`} player1={player1} player2={player2} />
       <h2 className="text-xl font-bold text-primary-text text-center mb-6">Who won?</h2>
       <div className="space-y-4">
         <PlayerBox
