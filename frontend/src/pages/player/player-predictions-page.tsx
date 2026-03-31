@@ -5,8 +5,8 @@ import { useSearchParams } from "react-router-dom";
 
 type TabType = "details" | "history";
 const tabs: { id: TabType; label: string }[] = [
-  { id: "details", label: "Details" },
   { id: "history", label: "History" },
+  { id: "details", label: "Details" },
 ];
 
 type Props = {
@@ -15,7 +15,7 @@ type Props = {
 
 export const PlayerPredictionsPage = ({ playerId }: Props) => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const activeTab = (searchParams.get("predictionTab") as TabType) || "details";
+  const activeTab = (searchParams.get("predictionTab") as TabType) || "history";
 
   const setActiveTab = (tab: TabType) => {
     setSearchParams((prev) => {

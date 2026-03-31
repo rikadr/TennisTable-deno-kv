@@ -116,6 +116,14 @@ export const PlayerPredictionsHistory = ({ playerId }: Props) => {
                 ))}
               </optgroup>
             </select>
+            {selectedTargetId !== "overall" && (
+              <Link
+                to={`/1v1?player1=${playerId}&player2=${selectedTargetId}`}
+                className="bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 text-xs font-semibold rounded-lg px-3 py-1.5 transition-all whitespace-nowrap border border-blue-500/30"
+              >
+                Compare 1v1
+              </Link>
+            )}
           </div>
         </div>
 
@@ -227,6 +235,25 @@ export const PlayerPredictionsHistory = ({ playerId }: Props) => {
           </LineChart>
         </ResponsiveContainer>
       </div>
+
+      {historicalData.length > 0 && (() => {
+        const latest = historicalData[historicalData.length - 1];
+        return (
+          <div className="mt-4 flex items-center gap-4 px-2 py-3 rounded-xl bg-white/5 border border-white/10">
+            <span className="text-primary-text/50 text-xs font-medium">Current</span>
+            <div className="flex items-center gap-1.5">
+              <div className="w-2 h-2 rounded-full bg-primary-text" />
+              <span className="text-primary-text text-sm font-bold">{latest.winChance.toFixed(1)}%</span>
+              <span className="text-primary-text/50 text-xs">Win</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-2 h-2 rounded-full border border-orange-500 border-dashed" />
+              <span className="text-orange-400 text-sm font-bold">{latest.confidence.toFixed(1)}%</span>
+              <span className="text-primary-text/50 text-xs">Confidence</span>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 };

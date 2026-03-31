@@ -11,7 +11,7 @@ export const PendingTournamentGame: React.FC<{ player1: string; player2: string 
   }
 
   return (
-    <>
+    <div className="animate-wiggle">
       <p className="italic w-full text-center mb-2 text-primary-text">This game is pending in a tournament!</p>
       {pendingTournamentGames.map((pendingGame) => (
         <Link
@@ -29,6 +29,6 @@ export const PendingTournamentGame: React.FC<{ player1: string; player2: string 
           </div>
         </Link>
       ))}
-    </>
+    </div>
   );
 };

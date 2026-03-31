@@ -191,7 +191,7 @@ export const TrackGamePage: React.FC = () => {
   if (stage === "player-selection") {
     return (
       <div className="p-4 max-w-xl m-auto">
-        {player1 && player2 && <PendingTournamentGame player1={player1} player2={player2} />}
+        {player1 && player2 && <PendingTournamentGame key={`${player1}-${player2}`} player1={player1} player2={player2} />}
 
         <div className="max-w-sm mx-auto pt-8 space-y-4">
           <StepSelectPlayers player1={{ id: player1, set: setPlayer1 }} player2={{ id: player2, set: setPlayer2 }} />
