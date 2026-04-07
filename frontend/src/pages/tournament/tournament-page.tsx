@@ -7,20 +7,24 @@ import { TournamentGroupPlayComponent } from "./tournament-group-play";
 import { TournamentInfo } from "./tournament-into";
 import { TournamentPredictions } from "./tournament-predictions";
 import { TournamentBracket } from "./tournament-bracket";
+import { TournamentAvailablePlayers } from "./tournament-available-players";
+import { session } from "../../services/auth/session";
 
-type TabType = "finals" | "group-play" | "signup" | "info" | "predictions";
+type TabType = "finals" | "group-play" | "signup" | "info" | "predictions" | "available";
 const tabs: { id: TabType; label: string }[] = [
   { id: "finals", label: "Finals" },
   { id: "group-play", label: "Group play" },
   { id: "signup", label: "Signup" },
   { id: "info", label: "Info" },
   { id: "predictions", label: "Predictions" },
+  { id: "available", label: "Available today" },
 ];
 
 export const TournamentPage: React.FC = () => {
   const { tournament: tournamentId, player1, player2 } = useTennisParams();
   const context = useEventDbContext();
   const tournament = context.tournaments.getTournament(tournamentId);
+  const isAdmin = session.sessionData?.role === "admin";
   const defaultTab = (): TabType => {
     if (!tournament) return "info";
     if (tournament.inSignupPeriod) return "signup";
@@ -71,6 +75,8 @@ export const TournamentPage: React.FC = () => {
                 return tournament.inSignupPeriod;
               case "predictions":
                 return tournament.startDate < Date.now();
+              case "available":
+                return isAdmin && tournament.hasPendingGames;
               default:
                 return true;
             }
@@ -97,6 +103,7 @@ export const TournamentPage: React.FC = () => {
       {activeTab === "info" && <TournamentInfo tournament={tournament} />}
       {activeTab === "signup" && <TournamentSignup tournament={tournament} />}
       {activeTab === "predictions" && <TournamentPredictions tournament={tournament} />}
+      {activeTab === "available" && <TournamentAvailablePlayers tournament={tournament} />}
     </div>
   );
 };
