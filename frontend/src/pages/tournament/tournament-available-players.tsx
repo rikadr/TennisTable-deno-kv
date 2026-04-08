@@ -14,8 +14,10 @@ export const TournamentAvailablePlayers = ({ tournament }: { tournament: Tournam
     try {
       const raw = localStorage.getItem(storageKey);
       if (!raw) return new Set();
-      const parsed: { players: string[]; date: string } = JSON.parse(raw);
-      if (parsed.date !== new Date().toDateString()) {
+      const parsed: { players: string[]; storedAt: number } = JSON.parse(raw);
+      const midnight = new Date();
+      midnight.setHours(0, 0, 0, 0);
+      if (parsed.storedAt < midnight.getTime()) {
         localStorage.removeItem(storageKey);
         return new Set();
       }
@@ -27,7 +29,7 @@ export const TournamentAvailablePlayers = ({ tournament }: { tournament: Tournam
 
   useEffect(() => {
     try {
-      const data = JSON.stringify({ players: Array.from(checkedPlayers), date: new Date().toDateString() });
+      const data = JSON.stringify({ players: Array.from(checkedPlayers), storedAt: Date.now() });
       localStorage.setItem(storageKey, data);
     } catch {
       // ignore storage errors
