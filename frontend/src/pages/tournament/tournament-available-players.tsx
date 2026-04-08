@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { classNames } from "../../common/class-names";
 import { ProfilePicture } from "../player/profile-picture";
 import { useEventDbContext } from "../../wrappers/event-db-context";
@@ -7,7 +7,32 @@ import { Link } from "react-router-dom";
 
 export const TournamentAvailablePlayers = ({ tournament }: { tournament: Tournament }) => {
   const context = useEventDbContext();
-  const [checkedPlayers, setCheckedPlayers] = useState<Set<string>>(new Set());
+
+  const storageKey = `tournament-available-${tournament.id}`;
+
+  const [checkedPlayers, setCheckedPlayers] = useState<Set<string>>(() => {
+    try {
+      const raw = localStorage.getItem(storageKey);
+      if (!raw) return new Set();
+      const parsed: { players: string[]; date: string } = JSON.parse(raw);
+      if (parsed.date !== new Date().toDateString()) {
+        localStorage.removeItem(storageKey);
+        return new Set();
+      }
+      return new Set(parsed.players);
+    } catch {
+      return new Set();
+    }
+  });
+
+  useEffect(() => {
+    try {
+      const data = JSON.stringify({ players: Array.from(checkedPlayers), date: new Date().toDateString() });
+      localStorage.setItem(storageKey, data);
+    } catch {
+      // ignore storage errors
+    }
+  }, [checkedPlayers, storageKey]);
 
   const allPendingGames = tournament.findAllPendingGames();
 
