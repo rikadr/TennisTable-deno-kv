@@ -47,7 +47,7 @@ export function useTournamentPredictionWorker() {
 
   // Function to start simulation
   const startSimulation = useCallback(
-    (tournamentId: string) => {
+    (tournamentId: string, numSimulations?: number) => {
       // Reset state when starting new simulation
       setSimulationIsDone(false);
       setSimulationTimes([]);
@@ -57,7 +57,7 @@ export function useTournamentPredictionWorker() {
       if (workerRef.current) {
         const message: WorkerMessage = {
           type: "start-tournament-prediction",
-          data: { tournamentId, events: context.events },
+          data: { tournamentId, events: context.events, numSimulations },
         };
         workerRef.current.postMessage(message);
       } else {

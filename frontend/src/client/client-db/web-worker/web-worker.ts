@@ -6,7 +6,10 @@ export type WorkerMessage =
   | { type: "start-simulating-elo-over-time"; data: { playerId: string; events: EventType[] } }
   | { type: "simulated-elo-delivery"; data: { elements: { elo: number; time: number }[]; progress: number } }
   | { type: "done-with-simulation" }
-  | { type: "start-tournament-prediction"; data: { tournamentId: string; events: EventType[] } }
+  | {
+      type: "start-tournament-prediction";
+      data: { tournamentId: string; events: EventType[]; numSimulations?: number };
+    }
   | { type: "tournament-prediction-times"; data: { times: number[]; progress: number } }
   | { type: "tournament-prediction-data"; data: { result: TournamentPredictionResult; progress: number } }
   | { type: "tournament-prediction-complete" };
@@ -29,19 +32,23 @@ function handleWorkerMessage(message: WorkerMessage) {
 
     case "start-tournament-prediction":
       const tennisTableForTournament = new TennisTable({ events: message.data.events });
-      tennisTableForTournament.tournaments.tournamentPrediction.predictTournament(message.data.tournamentId, (data) => {
-        if (data.simulationTimes) {
-          postWorkerMessage({
-            type: "tournament-prediction-times",
-            data: { times: data.simulationTimes, progress: data.progress },
-          });
-        } else if (data.data) {
-          postWorkerMessage({
-            type: "tournament-prediction-data",
-            data: { result: data.data, progress: data.progress },
-          });
-        }
-      });
+      tennisTableForTournament.tournaments.tournamentPrediction.predictTournament(
+        message.data.tournamentId,
+        (data) => {
+          if (data.simulationTimes) {
+            postWorkerMessage({
+              type: "tournament-prediction-times",
+              data: { times: data.simulationTimes, progress: data.progress },
+            });
+          } else if (data.data) {
+            postWorkerMessage({
+              type: "tournament-prediction-data",
+              data: { result: data.data, progress: data.progress },
+            });
+          }
+        },
+        message.data.numSimulations,
+      );
       setTimeout(() => postWorkerMessage({ type: "tournament-prediction-complete" }), 1000);
       break;
   }

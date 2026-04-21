@@ -15,6 +15,7 @@ export class TournamentPrediction {
   predictTournament(
     tournamentId: string,
     callback: (data: { simulationTimes?: number[]; data?: TournamentPredictionResult; progress: number }) => void,
+    numSimulations: number = NUM_SIMULATIONS,
   ): void {
     const tournament = this.parent.tournaments.getTournament(tournamentId);
     if (!tournament) {
@@ -30,7 +31,7 @@ export class TournamentPrediction {
 
     for (let i = 0; i < simulationTimePoints.length; i++) {
       const timePoint = simulationTimePoints[i];
-      const result = this.predictTournamentAtTime(tournamentId, timePoint);
+      const result = this.predictTournamentAtTime(tournamentId, timePoint, numSimulations);
       callback({
         data: result,
         progress: (i + 1) / simulationTimePoints.length,
@@ -76,7 +77,11 @@ export class TournamentPrediction {
     return tournament.skippedGames.map((s) => s.time);
   }
 
-  private predictTournamentAtTime(tournamentId: string, simulationTime: number): TournamentPredictionResult {
+  private predictTournamentAtTime(
+    tournamentId: string,
+    simulationTime: number,
+    numSimulations: number = NUM_SIMULATIONS,
+  ): TournamentPredictionResult {
     const winCounts = new Map<string, { wins: number }>();
 
     // Create state at this point in time with only events up to simulationTime
@@ -103,7 +108,7 @@ export class TournamentPrediction {
     let totalConfidenceSum = 0;
 
     // Run Monte Carlo simulations from this time point
-    for (let i = 0; i < NUM_SIMULATIONS; i++) {
+    for (let i = 0; i < numSimulations; i++) {
       const {
         winner,
         gamesSimulatedCount: gsc,
