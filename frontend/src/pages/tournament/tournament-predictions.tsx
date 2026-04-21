@@ -15,9 +15,17 @@ const ZOOM_FACTOR = 0.7; // Each click multiplies/divides by this (30% relative 
 const MIN_Y_MAX = 1; // Allow zooming down to 1%
 const DEFAULT_Y_MAX = 100;
 
+const SIMULATION_OPTIONS: { label: string; value: number }[] = [
+  { label: "Normal (5,000)", value: NUM_SIMULATIONS },
+  { label: "Heavy (15,000)", value: 15_000 },
+  { label: "Extreme (50,000)", value: 50_000 },
+];
+
 export const TournamentPredictions = ({ tournament }: { tournament: Tournament }) => {
   const [range, setRange] = useState(2);
   const [yMax, setYMax] = useState(DEFAULT_Y_MAX);
+  const [selectedNumSimulations, setSelectedNumSimulations] = useState<number>(NUM_SIMULATIONS);
+  const [runNumSimulations, setRunNumSimulations] = useState<number>(NUM_SIMULATIONS);
 
   const { startSimulation, simulationTimes, predictionResults, simulationIsDone, simulationProgress } =
     useTournamentPredictionWorker();
@@ -62,13 +70,13 @@ export const TournamentPredictions = ({ tournament }: { tournament: Tournament }
       // If we have data for this time, fill in the player percentages
       if (result) {
         Object.keys(result.players).forEach((playerId) => {
-          dataPoint[playerId] = (result.players[playerId].wins / NUM_SIMULATIONS) * 100;
+          dataPoint[playerId] = (result.players[playerId].wins / runNumSimulations) * 100;
         });
       }
 
       return dataPoint;
     });
-  }, [simulationTimes, predictionResults]);
+  }, [simulationTimes, predictionResults, runNumSimulations]);
 
   const [graphDataToSee, setGraphDataToSee] = useState<Record<string, number | string>[]>(graphData);
 
@@ -100,7 +108,8 @@ export const TournamentPredictions = ({ tournament }: { tournament: Tournament }
   }, [predictionResults]);
 
   const handleSimulate = () => {
-    startSimulation(tournament.id);
+    setRunNumSimulations(selectedNumSimulations);
+    startSimulation(tournament.id, selectedNumSimulations);
   };
 
   return (
@@ -108,14 +117,25 @@ export const TournamentPredictions = ({ tournament }: { tournament: Tournament }
       <section className="flex flex-col items-center bg-primary-background rounded-lg w-full max-w-[1050px]">
         {/* Simulate Button */}
         {predictionResults.length === 0 && (
-          <>
+          <div className="mb-4 flex items-center gap-2">
+            <select
+              value={selectedNumSimulations}
+              onChange={(e) => setSelectedNumSimulations(parseInt(e.target.value, 10))}
+              className="px-3 py-2 bg-secondary-background text-secondary-text font-medium rounded-lg"
+            >
+              {SIMULATION_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
             <button
               onClick={handleSimulate}
-              className="mb-4 px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
+              className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
             >
               Run Simulation
             </button>
-          </>
+          </div>
         )}
 
         {/* Graph Controls and Display */}
@@ -230,7 +250,7 @@ export const TournamentPredictions = ({ tournament }: { tournament: Tournament }
         </div>
       </section>
       {predictionResults.length > 0 && (
-        <LatestPredictionTable predictionResults={predictionResults} />
+        <LatestPredictionTable predictionResults={predictionResults} numSimulations={runNumSimulations} />
       )}
     </div>
   );
@@ -238,8 +258,10 @@ export const TournamentPredictions = ({ tournament }: { tournament: Tournament }
 
 const LatestPredictionTable = ({
   predictionResults,
+  numSimulations,
 }: {
   predictionResults: { time: number; players: Record<string, { wins: number }>; confidence: number }[];
+  numSimulations: number;
 }) => {
   const context = useEventDbContext();
 
@@ -252,7 +274,7 @@ const LatestPredictionTable = ({
       playerId,
       name: context.playerName(playerId),
       wins,
-      winPct: (wins / NUM_SIMULATIONS) * 100,
+      winPct: (wins / numSimulations) * 100,
     }))
     .sort((a, b) => b.winPct - a.winPct);
 
@@ -312,7 +334,7 @@ const LatestPredictionTable = ({
         </table>
       </div>
       <p className="text-xs md:text-sm text-primary-text/50 mt-2">
-        Confidence: {(latest.confidence * 100).toFixed(1)}% &middot; {NUM_SIMULATIONS.toLocaleString()} simulations
+        Confidence: {(latest.confidence * 100).toFixed(1)}% &middot; {numSimulations.toLocaleString()} simulations
       </p>
     </section>
   );
