@@ -19,6 +19,7 @@ const SIMULATION_OPTIONS: { label: string; value: number }[] = [
   { label: "Normal (5,000)", value: NUM_SIMULATIONS },
   { label: "Heavy (15,000)", value: 15_000 },
   { label: "Extreme (50,000)", value: 50_000 },
+  { label: "Melt your pc (1,000,000)", value: 1_000_000 },
 ];
 
 export const TournamentPredictions = ({ tournament }: { tournament: Tournament }) => {
