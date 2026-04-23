@@ -25,12 +25,12 @@ export const LiveGameOverlay: React.FC = () => {
 
   return (
     <div
-      className="min-h-screen flex items-start justify-center p-6"
+      className="min-h-screen flex items-center justify-center"
       style={{ backgroundColor: CHROMA_GREEN, fontFamily: "'Inter', 'Segoe UI', sans-serif" }}
     >
       <div className="relative flex flex-col items-center gap-0">
         {/* Sets bar */}
-        <div className="flex rounded-lg overflow-hidden shadow-lg">
+        <div className="flex rounded-lg overflow-hidden ">
           <div className="bg-white text-gray-800 px-4 py-2 flex items-center min-w-[90px]">
             <span className="text-sm font-semibold truncate">{p1Name}</span>
           </div>
@@ -48,7 +48,7 @@ export const LiveGameOverlay: React.FC = () => {
         </div>
 
         {/* Points bar — "Set N" label balanced by matching spacer on right */}
-        <div className="flex rounded-b-lg overflow-hidden shadow-lg mr-[64px]">
+        <div className="flex rounded-b-lg overflow-hidden  mr-[64px]">
           <div className="bg-gray-200 text-gray-500 px-2 py-1 flex items-center w-16">
             <span className="text-[10px] font-bold uppercase tracking-wider whitespace-nowrap">
               Set {state.completedSets.length + 1}
