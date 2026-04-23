@@ -47,6 +47,10 @@ export const WebSocketRefetcher: React.FC<Props> = ({ children }) => {
       }
       return;
     }
+    if (message.startsWith(WS_MESSAGE.LIVE_GAME)) {
+      queryClient.invalidateQueries({ queryKey: ["live-game"] });
+      return;
+    }
   }
 
   const { webSocket } = useWebSocket(process.env.REACT_APP_API_BASE_URL + "/ws-updates", {
