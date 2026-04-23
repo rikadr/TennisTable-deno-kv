@@ -21,6 +21,9 @@ import {
 } from "./use-live-game";
 import { emptyLiveGame, LiveGameSetPoint, LiveGameState } from "./live-game-types";
 import { CompletedSetsList } from "./completed-sets-list";
+import ConfettiExplosion from "react-confetti-explosion";
+
+type Stage = "scoring" | "confirm";
 
 export const LiveGameAdminPage: React.FC = () => {
   const context = useEventDbContext();
@@ -34,6 +37,8 @@ export const LiveGameAdminPage: React.FC = () => {
 
   const [localState, setLocalState] = useState<LiveGameState | null>(null);
   const [validationError, setValidationError] = useState<string>("");
+  const [stage, setStage] = useState<Stage>("scoring");
+  const [gameSuccessfullyAdded, setGameSuccessfullyAdded] = useState(false);
 
   useEffect(() => {
     if (localState === null && liveGameQuery.isSuccess) {
@@ -50,7 +55,7 @@ export const LiveGameAdminPage: React.FC = () => {
   }
 
   const isSubmitting = addEventMutation.isPending || clearLiveGame.isPending;
-  const isActive = localState.startedAt !== null;
+  const isActive = localState.startedAt !== null && !localState.finishedAt;
   const hasPlayers = !!localState.player1Id && !!localState.player2Id;
 
   function pushState(next: LiveGameState) {
@@ -67,12 +72,14 @@ export const LiveGameAdminPage: React.FC = () => {
 
   function startMatch() {
     if (!hasPlayers) return;
+    setStage("scoring");
     pushState({
       ...localState!,
       setsWon: { player1: 0, player2: 0 },
       currentSet: { player1: 0, player2: 0 },
       completedSets: [],
       startedAt: Date.now(),
+      finishedAt: null,
       updatedAt: Date.now(),
     });
   }
@@ -128,7 +135,7 @@ export const LiveGameAdminPage: React.FC = () => {
     setLocalState(emptyLiveGame);
   }
 
-  async function saveAsGame() {
+  function reviewMatch() {
     setValidationError("");
     if (!localState!.player1Id || !localState!.player2Id) {
       setValidationError("Both players must be selected");
@@ -138,10 +145,14 @@ export const LiveGameAdminPage: React.FC = () => {
       setValidationError("Match is tied — complete another set before saving.");
       return;
     }
+    setStage("confirm");
+  }
 
+  async function saveAsGame() {
+    setValidationError("");
     const player1Won = localState!.setsWon.player1 > localState!.setsWon.player2;
-    const winner = player1Won ? localState!.player1Id : localState!.player2Id;
-    const loser = player1Won ? localState!.player2Id : localState!.player1Id;
+    const winner = player1Won ? localState!.player1Id! : localState!.player2Id!;
+    const loser = player1Won ? localState!.player2Id! : localState!.player1Id!;
     const winnerSets = player1Won ? localState!.setsWon.player1 : localState!.setsWon.player2;
     const loserSets = player1Won ? localState!.setsWon.player2 : localState!.setsWon.player1;
 
@@ -181,12 +192,20 @@ export const LiveGameAdminPage: React.FC = () => {
       return;
     }
 
+    const isPendingTournamentGame = context.tournaments.findAllPendingGames(winner, loser);
+
     await addEventMutation.mutateAsync(gameCreatedEvent);
     await addEventMutation.mutateAsync(gameScoreEvent);
-    await clearLiveGame.mutateAsync();
-    setLocalState(emptyLiveGame);
+    updateLiveGame.mutate({ ...localState!, finishedAt: Date.now() });
+    setGameSuccessfullyAdded(true);
     queryClient.invalidateQueries();
-    navigate(`/1v1/?player1=${winner}&player2=${loser}`);
+    setTimeout(() => {
+      navigate(
+        isPendingTournamentGame.length > 0
+          ? `/tournament?tournament=${isPendingTournamentGame[0].tournament.id}&player1=${isPendingTournamentGame[0].player1}&player2=${isPendingTournamentGame[0].player2}`
+          : `/1v1/?player1=${winner}&player2=${loser}`,
+      );
+    }, 2_000);
   }
 
   return (
@@ -222,7 +241,7 @@ export const LiveGameAdminPage: React.FC = () => {
         </div>
       )}
 
-      {isActive && hasPlayers && (
+      {isActive && hasPlayers && stage === "scoring" && (
         <div className="space-y-4">
           <div className="bg-white rounded-xl shadow-lg p-4 text-black">
             <h2 className="text-gray-400 text-xs uppercase tracking-widest font-bold mb-3 text-center">
@@ -314,7 +333,7 @@ export const LiveGameAdminPage: React.FC = () => {
 
           <div className="space-y-2">
             <button
-              onClick={saveAsGame}
+              onClick={reviewMatch}
               disabled={isSubmitting}
               className={classNames(
                 "w-full py-3 rounded-lg font-semibold text-base",
@@ -323,7 +342,7 @@ export const LiveGameAdminPage: React.FC = () => {
                   : "bg-green-600 text-white hover:bg-green-700",
               )}
             >
-              {isSubmitting ? "Saving…" : "✅ Save match & end live game"}
+              End Match & Review
             </button>
             <button
               onClick={resetMatch}
@@ -341,6 +360,18 @@ export const LiveGameAdminPage: React.FC = () => {
             </button>
           </div>
         </div>
+      )}
+
+      {isActive && hasPlayers && stage === "confirm" && (
+        <ConfirmView
+          localState={localState}
+          context={context}
+          validationError={validationError}
+          isSubmitting={isSubmitting}
+          gameSuccessfullyAdded={gameSuccessfullyAdded}
+          onConfirm={saveAsGame}
+          onBack={() => { setStage("scoring"); setValidationError(""); }}
+        />
       )}
     </div>
   );
@@ -395,6 +426,112 @@ const PlayerScoreControls: React.FC<{
             )}
           >
             -
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const ConfirmView: React.FC<{
+  localState: LiveGameState;
+  context: { playerName: (id: string | null) => string };
+  validationError: string;
+  isSubmitting: boolean;
+  gameSuccessfullyAdded: boolean;
+  onConfirm: () => void;
+  onBack: () => void;
+}> = ({ localState, context, validationError, isSubmitting, gameSuccessfullyAdded, onConfirm, onBack }) => {
+  const player1Won = localState.setsWon.player1 > localState.setsWon.player2;
+  const winnerId = player1Won ? localState.player1Id : localState.player2Id;
+
+  return (
+    <div className="space-y-4">
+      {gameSuccessfullyAdded && (
+        <div className="flex justify-center">
+          <ConfettiExplosion particleCount={250} force={0.8} width={2_000} duration={10_000} />
+        </div>
+      )}
+      <div className="bg-white rounded-xl shadow-lg p-6 text-black">
+        <div className="text-center mb-6">
+          🏆
+          <h1 className="text-2xl font-bold text-gray-800 mb-2">Match Complete!</h1>
+          <p className="text-lg text-gray-600">
+            Winner: <span className="font-bold text-indigo-600">{context.playerName(winnerId)}</span>
+          </p>
+          <div className="m-auto w-fit mt-2">
+            <ProfilePicture playerId={winnerId} border={12} shape="rounded" />
+          </div>
+        </div>
+
+        <div className="bg-gray-50 rounded-lg p-4 mb-6">
+          <div className="grid grid-cols-3 items-center text-center">
+            <div>
+              <h3 className="font-semibold text-gray-700 mb-2 text-sm">{context.playerName(localState.player1Id)}</h3>
+              <div className="text-4xl font-bold text-blue-600">{localState.setsWon.player1}</div>
+            </div>
+            <div className="text-2xl font-bold text-gray-400">-</div>
+            <div>
+              <h3 className="font-semibold text-gray-700 mb-2 text-sm">{context.playerName(localState.player2Id)}</h3>
+              <div className="text-4xl font-bold text-purple-600">{localState.setsWon.player2}</div>
+            </div>
+          </div>
+        </div>
+
+        {localState.completedSets.length > 0 && (
+          <div className="mb-6">
+            <h3 className="text-base font-bold text-gray-800 mb-3">Set Details</h3>
+            <div className="space-y-2">
+              {localState.completedSets.map((set, index) => {
+                const setWinner = set.player1 > set.player2 ? 1 : 2;
+                return (
+                  <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg text-sm">
+                    <span className="font-semibold text-gray-700">Set {index + 1}</span>
+                    <div className="flex items-center gap-3">
+                      <div className="w-5">{setWinner === 1 && "🏆"}</div>
+                      <div className="w-16 flex items-center justify-between text-lg">
+                        <span className={classNames("font-bold", setWinner === 1 ? "text-blue-600" : "text-gray-400")}>
+                          {set.player1}
+                        </span>
+                        <span className="text-gray-400">-</span>
+                        <span className={classNames("font-bold", setWinner === 2 ? "text-purple-600" : "text-gray-400")}>
+                          {set.player2}
+                        </span>
+                      </div>
+                      <div className="w-5">{setWinner === 2 && "🏆"}</div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {validationError && (
+          <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg text-sm">
+            {validationError}
+          </div>
+        )}
+
+        <div className="space-y-3">
+          <button
+            onClick={() => !gameSuccessfullyAdded && onConfirm()}
+            disabled={isSubmitting || gameSuccessfullyAdded}
+            className={classNames(
+              "w-full py-4 rounded-lg font-semibold transition text-base",
+              isSubmitting || gameSuccessfullyAdded
+                ? "bg-gray-400 text-white cursor-not-allowed"
+                : "bg-green-600 text-white hover:bg-green-700",
+            )}
+          >
+            {isSubmitting ? "Saving…" : "✅ Confirm & Save"}
+          </button>
+          <button
+            onClick={onBack}
+            disabled={isSubmitting || gameSuccessfullyAdded}
+            className="w-full py-4 rounded-lg font-semibold bg-gray-200 text-gray-700 hover:bg-gray-300 transition text-base disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {"<-"} Back
           </button>
         </div>
       </div>

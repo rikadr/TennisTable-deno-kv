@@ -48,6 +48,7 @@ import { HallOfFamePage } from "./pages/hall-of-fame/hall-of-fame-page";
 import { HallOfFamePlayerPage } from "./pages/hall-of-fame/hall-of-fame-player-page";
 import { LiveGamePage } from "./pages/live-game/live-game-page";
 import { LiveGameAdminPage } from "./pages/live-game/live-game-admin-page";
+import { LiveGameOverlay } from "./pages/live-game/live-game-overlay";
 
 const RequireAuth: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   if (!session.isAuthenticated) {
@@ -74,6 +75,7 @@ function App() {
                 <WebSocketRefetcher>
                   <BrowserRouter>
                     <Routes>
+                      <Route path="/live-game/overlay" element={<LiveGameOverlay />} />
                       <Route path="/" element={<NavMenu />}>
                         <Route index element={<Navigate to="/leader-board" />} />
                         <Route path="/tennis-table" element={<Navigate to="/leader-board" />} />

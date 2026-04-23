@@ -13,6 +13,7 @@ export type LiveGameState = {
   currentSet: LiveGameSetPoint;
   completedSets: LiveGameSetPoint[];
   startedAt: number | null;
+  finishedAt: number | null;
   updatedAt: number;
 };
 
@@ -23,5 +24,6 @@ export const emptyLiveGame: LiveGameState = {
   currentSet: { player1: 0, player2: 0 },
   completedSets: [],
   startedAt: null,
+  finishedAt: null,
   updatedAt: 0,
 };

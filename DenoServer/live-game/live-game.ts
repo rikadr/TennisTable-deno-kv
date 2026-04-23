@@ -15,6 +15,7 @@ export type LiveGameState = {
   currentSet: SetPoint;
   completedSets: SetPoint[];
   startedAt: number | null;
+  finishedAt: number | null;
   updatedAt: number;
 };
 
