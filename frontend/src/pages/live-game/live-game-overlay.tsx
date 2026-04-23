@@ -3,7 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { useLiveGameQuery } from "./use-live-game";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 
-const POLL_FALLBACK_MS = 3_000;
+const POLL_FALLBACK_MS = 1_000;
 const CHROMA_GREEN = "#00b140";
 
 const SCORE_WIDTH = 90;
