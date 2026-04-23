@@ -1,4 +1,5 @@
 import React from "react";
+import { useSearchParams } from "react-router-dom";
 import { useLiveGameQuery } from "./use-live-game";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 
@@ -10,6 +11,8 @@ const DIGIT_W = "w-[28px]";
 const DASH_W = "w-[14px]";
 
 export const LiveGameOverlay: React.FC = () => {
+  const [searchParams] = useSearchParams();
+  const zoom = parseFloat(searchParams.get("zoom") || "1") || 1;
   const context = useEventDbContext();
   const liveGameQuery = useLiveGameQuery({ refetchIntervalMs: POLL_FALLBACK_MS });
 
@@ -28,7 +31,7 @@ export const LiveGameOverlay: React.FC = () => {
       className="min-h-screen flex items-center justify-center"
       style={{ backgroundColor: CHROMA_GREEN, fontFamily: "'Inter', 'Segoe UI', sans-serif" }}
     >
-      <div className="relative flex flex-col items-center gap-0">
+      <div className="relative flex flex-col items-center gap-0" style={{ zoom }}>
         {/* Sets bar */}
         <div className="flex rounded-lg overflow-hidden ">
           <div className="bg-white text-gray-800 px-4 py-2 flex items-center min-w-[90px]">
