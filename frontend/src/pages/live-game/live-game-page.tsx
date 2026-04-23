@@ -3,13 +3,18 @@ import { useLiveGameQuery } from "./use-live-game";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { ProfilePicture } from "../player/profile-picture";
 import { stringToColor } from "../../common/string-to-color";
-import { classNames } from "../../common/class-names";
 import { Link } from "react-router-dom";
 import { session } from "../../services/auth";
+import { CompletedSetsList } from "./completed-sets-list";
+import { LiveGameSetPoint } from "./live-game-types";
+
+// Fallback poll in case the WebSocket drops — primary updates come from
+// the LIVE_GAME broadcast handled in WebSocketRefetcher.
+const POLL_FALLBACK_MS = 30_000;
 
 export const LiveGamePage: React.FC = () => {
   const context = useEventDbContext();
-  const liveGameQuery = useLiveGameQuery({ refetchIntervalMs: 2_000 });
+  const liveGameQuery = useLiveGameQuery({ refetchIntervalMs: POLL_FALLBACK_MS });
 
   const isAdmin = session.sessionData?.role === "admin";
   const state = liveGameQuery.data;
@@ -59,8 +64,8 @@ type ScoreboardProps = {
   player1Id: string;
   player2Id: string;
   setsWon: { player1: number; player2: number };
-  currentSet: { player1: number; player2: number };
-  completedSets: { player1: number; player2: number }[];
+  currentSet: LiveGameSetPoint;
+  completedSets: LiveGameSetPoint[];
   player1Name: string;
   player2Name: string;
 };
@@ -123,49 +128,7 @@ const LiveScoreboard: React.FC<ScoreboardProps> = ({
         </div>
       </div>
 
-      {completedSets.length > 0 && (
-        <div className="bg-white rounded-xl shadow-lg p-4 text-black">
-          <h3 className="text-gray-400 text-xs uppercase tracking-widest font-bold mb-3">
-            Completed Sets
-          </h3>
-          <div className="space-y-2">
-            {completedSets.map((set, index) => {
-              const setWinner = set.player1 > set.player2 ? 1 : 2;
-              return (
-                <div
-                  key={index}
-                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg text-sm"
-                >
-                  <span className="font-semibold text-gray-700">Set {index + 1}</span>
-                  <div className="flex items-center gap-3">
-                    <div className="w-5 text-right">{setWinner === 1 && "🏆"}</div>
-                    <div className="w-16 flex items-center justify-between text-lg">
-                      <span
-                        className={classNames(
-                          "font-bold",
-                          setWinner === 1 ? "text-blue-600" : "text-gray-400",
-                        )}
-                      >
-                        {set.player1}
-                      </span>
-                      <span className="text-gray-400">-</span>
-                      <span
-                        className={classNames(
-                          "font-bold",
-                          setWinner === 2 ? "text-purple-600" : "text-gray-400",
-                        )}
-                      >
-                        {set.player2}
-                      </span>
-                    </div>
-                    <div className="w-5">{setWinner === 2 && "🏆"}</div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
+      <CompletedSetsList sets={completedSets} />
     </div>
   );
 };

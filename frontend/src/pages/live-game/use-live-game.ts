@@ -5,7 +5,7 @@ import { queryClient } from "../../common/query-client";
 
 const LIVE_GAME_QUERY_KEY = ["live-game"];
 
-export function useLiveGameQuery(options?: { refetchIntervalMs?: number }) {
+export function useLiveGameQuery(options?: { refetchIntervalMs?: number | false }) {
   return useQuery<LiveGameState | null>({
     queryKey: LIVE_GAME_QUERY_KEY,
     queryFn: async () => {
@@ -17,7 +17,7 @@ export function useLiveGameQuery(options?: { refetchIntervalMs?: number }) {
       if (!text) return null;
       return JSON.parse(text) as LiveGameState;
     },
-    refetchInterval: options?.refetchIntervalMs ?? 2_000,
+    refetchInterval: options?.refetchIntervalMs ?? false,
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
   });

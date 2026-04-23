@@ -153,7 +153,7 @@ export class WebSocketClientManager {
    * Clients should refetch `/live-game` to get the new state.
    */
   broadcastLiveGame() {
-    this.broadcastMessage(WS_MESSAGE.LIVE_GAME + ":" + Date.now());
+    this.broadcastMessage(WS_MESSAGE.LIVE_GAME);
   }
 
   /**

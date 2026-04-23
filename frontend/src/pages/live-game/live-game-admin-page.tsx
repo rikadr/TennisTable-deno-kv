@@ -20,32 +20,36 @@ import {
   useUpdateLiveGameMutation,
 } from "./use-live-game";
 import { emptyLiveGame, LiveGameSetPoint, LiveGameState } from "./live-game-types";
+import { CompletedSetsList } from "./completed-sets-list";
 
 export const LiveGameAdminPage: React.FC = () => {
   const context = useEventDbContext();
   const navigate = useNavigate();
   const addEventMutation = useEventMutation();
 
-  const liveGameQuery = useLiveGameQuery({ refetchIntervalMs: 5_000 });
+  // Admin is the source of truth for writes — fetch once on mount, no polling.
+  const liveGameQuery = useLiveGameQuery({ refetchIntervalMs: false });
   const updateLiveGame = useUpdateLiveGameMutation();
   const clearLiveGame = useClearLiveGameMutation();
 
-  const [localState, setLocalState] = useState<LiveGameState>(emptyLiveGame);
-  const [syncedFromServer, setSyncedFromServer] = useState(false);
+  const [localState, setLocalState] = useState<LiveGameState | null>(null);
   const [validationError, setValidationError] = useState<string>("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    if (!syncedFromServer && liveGameQuery.data !== undefined) {
+    if (localState === null && liveGameQuery.isSuccess) {
       setLocalState(liveGameQuery.data ?? emptyLiveGame);
-      setSyncedFromServer(true);
     }
-  }, [liveGameQuery.data, syncedFromServer]);
+  }, [localState, liveGameQuery.isSuccess, liveGameQuery.data]);
 
   if (session.sessionData?.role !== "admin") {
     return <div className="p-4">Not authorized</div>;
   }
 
+  if (localState === null) {
+    return <div className="p-4">Loading…</div>;
+  }
+
+  const isSubmitting = addEventMutation.isPending || clearLiveGame.isPending;
   const isActive = localState.startedAt !== null;
   const hasPlayers = !!localState.player1Id && !!localState.player2Id;
 
@@ -55,103 +59,91 @@ export const LiveGameAdminPage: React.FC = () => {
   }
 
   function setPlayer(slot: 1 | 2, playerId: string | null) {
-    const next: LiveGameState = {
-      ...localState,
+    setLocalState({
+      ...localState!,
       [slot === 1 ? "player1Id" : "player2Id"]: playerId,
-    };
-    setLocalState(next);
+    });
   }
 
   function startMatch() {
     if (!hasPlayers) return;
-    const next: LiveGameState = {
-      ...localState,
+    pushState({
+      ...localState!,
       setsWon: { player1: 0, player2: 0 },
       currentSet: { player1: 0, player2: 0 },
       completedSets: [],
       startedAt: Date.now(),
       updatedAt: Date.now(),
-    };
-    pushState(next);
+    });
   }
 
   function addPoint(player: 1 | 2) {
     const key: keyof LiveGameSetPoint = player === 1 ? "player1" : "player2";
-    const next: LiveGameState = {
-      ...localState,
+    pushState({
+      ...localState!,
       currentSet: {
-        ...localState.currentSet,
-        [key]: localState.currentSet[key] + 1,
-      },
-    };
-    pushState(next);
-  }
-
-  function removePoint(player: 1 | 2) {
-    const key: keyof LiveGameSetPoint = player === 1 ? "player1" : "player2";
-    const next: LiveGameState = {
-      ...localState,
-      currentSet: {
-        ...localState.currentSet,
-        [key]: Math.max(0, localState.currentSet[key] - 1),
-      },
-    };
-    pushState(next);
-  }
-
-  function setWon(player: 1 | 2) {
-    const completed: LiveGameSetPoint = {
-      player1: localState.currentSet.player1,
-      player2: localState.currentSet.player2,
-    };
-    const next: LiveGameState = {
-      ...localState,
-      setsWon: {
-        player1: localState.setsWon.player1 + (player === 1 ? 1 : 0),
-        player2: localState.setsWon.player2 + (player === 2 ? 1 : 0),
-      },
-      completedSets: [...localState.completedSets, completed],
-      currentSet: { player1: 0, player2: 0 },
-    };
-    pushState(next);
-  }
-
-  function resetMatch() {
-    if (!window.confirm("Reset current match score? Players stay selected.")) return;
-    const next: LiveGameState = {
-      ...localState,
-      setsWon: { player1: 0, player2: 0 },
-      currentSet: { player1: 0, player2: 0 },
-      completedSets: [],
-      startedAt: localState.startedAt,
-      updatedAt: Date.now(),
-    };
-    pushState(next);
-  }
-
-  function endLiveGame() {
-    if (!window.confirm("End this live game? This clears the public scoreboard.")) return;
-    clearLiveGame.mutate(undefined, {
-      onSuccess: () => {
-        setLocalState(emptyLiveGame);
+        ...localState!.currentSet,
+        [key]: localState!.currentSet[key] + 1,
       },
     });
   }
 
+  function removePoint(player: 1 | 2) {
+    const key: keyof LiveGameSetPoint = player === 1 ? "player1" : "player2";
+    pushState({
+      ...localState!,
+      currentSet: {
+        ...localState!.currentSet,
+        [key]: Math.max(0, localState!.currentSet[key] - 1),
+      },
+    });
+  }
+
+  function setWon(player: 1 | 2) {
+    pushState({
+      ...localState!,
+      setsWon: {
+        player1: localState!.setsWon.player1 + (player === 1 ? 1 : 0),
+        player2: localState!.setsWon.player2 + (player === 2 ? 1 : 0),
+      },
+      completedSets: [...localState!.completedSets, { ...localState!.currentSet }],
+      currentSet: { player1: 0, player2: 0 },
+    });
+  }
+
+  function resetMatch() {
+    if (!window.confirm("Reset current match score? Players stay selected.")) return;
+    pushState({
+      ...localState!,
+      setsWon: { player1: 0, player2: 0 },
+      currentSet: { player1: 0, player2: 0 },
+      completedSets: [],
+      updatedAt: Date.now(),
+    });
+  }
+
+  async function endLiveGame() {
+    if (!window.confirm("End this live game? This clears the public scoreboard.")) return;
+    await clearLiveGame.mutateAsync();
+    setLocalState(emptyLiveGame);
+  }
+
   async function saveAsGame() {
     setValidationError("");
-    if (!localState.player1Id || !localState.player2Id) {
+    if (!localState!.player1Id || !localState!.player2Id) {
       setValidationError("Both players must be selected");
       return;
     }
-    if (localState.setsWon.player1 === localState.setsWon.player2) {
+    if (localState!.setsWon.player1 === localState!.setsWon.player2) {
       setValidationError("Match is tied — complete another set before saving.");
       return;
     }
 
-    const player1WinnerSide = localState.setsWon.player1 > localState.setsWon.player2;
-    const winner = player1WinnerSide ? localState.player1Id : localState.player2Id;
-    const loser = player1WinnerSide ? localState.player2Id : localState.player1Id;
+    const player1Won = localState!.setsWon.player1 > localState!.setsWon.player2;
+    const winner = player1Won ? localState!.player1Id : localState!.player2Id;
+    const loser = player1Won ? localState!.player2Id : localState!.player1Id;
+    const winnerSets = player1Won ? localState!.setsWon.player1 : localState!.setsWon.player2;
+    const loserSets = player1Won ? localState!.setsWon.player2 : localState!.setsWon.player1;
 
     const now = Date.now();
     const gameCreatedEvent: GameCreated = {
@@ -172,15 +164,12 @@ export const LiveGameAdminPage: React.FC = () => {
       time: gameCreatedEvent.time + 1,
       stream: gameCreatedEvent.stream,
       data: {
-        setsWon: {
-          gameWinner: player1WinnerSide ? localState.setsWon.player1 : localState.setsWon.player2,
-          gameLoser: player1WinnerSide ? localState.setsWon.player2 : localState.setsWon.player1,
-        },
+        setsWon: { gameWinner: winnerSets, gameLoser: loserSets },
         setPoints:
-          localState.completedSets.length > 0
-            ? localState.completedSets.map((set) => ({
-                gameWinner: player1WinnerSide ? set.player1 : set.player2,
-                gameLoser: player1WinnerSide ? set.player2 : set.player1,
+          localState!.completedSets.length > 0
+            ? localState!.completedSets.map((set) => ({
+                gameWinner: player1Won ? set.player1 : set.player2,
+                gameLoser: player1Won ? set.player2 : set.player1,
               }))
             : undefined,
       },
@@ -192,22 +181,12 @@ export const LiveGameAdminPage: React.FC = () => {
       return;
     }
 
-    setIsSubmitting(true);
-    try {
-      await addEventMutation.mutateAsync(gameCreatedEvent);
-      await addEventMutation.mutateAsync(gameScoreEvent);
-      await new Promise<void>((resolve) => {
-        clearLiveGame.mutate(undefined, {
-          onSuccess: () => resolve(),
-          onError: () => resolve(),
-        });
-      });
-      setLocalState(emptyLiveGame);
-      queryClient.invalidateQueries();
-      navigate(`/1v1/?player1=${winner}&player2=${loser}`);
-    } finally {
-      setIsSubmitting(false);
-    }
+    await addEventMutation.mutateAsync(gameCreatedEvent);
+    await addEventMutation.mutateAsync(gameScoreEvent);
+    await clearLiveGame.mutateAsync();
+    setLocalState(emptyLiveGame);
+    queryClient.invalidateQueries();
+    navigate(`/1v1/?player1=${winner}&player2=${loser}`);
   }
 
   return (
@@ -286,24 +265,14 @@ export const LiveGameAdminPage: React.FC = () => {
                 score={localState.currentSet.player1}
                 onAdd={() => addPoint(1)}
                 onRemove={() => removePoint(1)}
-                colorClasses={{
-                  bg: "bg-blue-50",
-                  score: "text-blue-600",
-                  addBtn: "bg-blue-600 hover:bg-blue-700",
-                  removeBtn: "bg-blue-400 hover:bg-blue-500",
-                }}
+                variant="player1"
               />
               <PlayerScoreControls
                 name={context.playerName(localState.player2Id)}
                 score={localState.currentSet.player2}
                 onAdd={() => addPoint(2)}
                 onRemove={() => removePoint(2)}
-                colorClasses={{
-                  bg: "bg-purple-50",
-                  score: "text-purple-600",
-                  addBtn: "bg-purple-600 hover:bg-purple-700",
-                  removeBtn: "bg-purple-400 hover:bg-purple-500",
-                }}
+                variant="player2"
               />
             </div>
 
@@ -335,49 +304,7 @@ export const LiveGameAdminPage: React.FC = () => {
             </div>
           </div>
 
-          {localState.completedSets.length > 0 && (
-            <div className="bg-white rounded-xl shadow-lg p-4 text-black">
-              <h3 className="text-gray-400 text-xs uppercase tracking-widest font-bold mb-3">
-                Completed Sets
-              </h3>
-              <div className="space-y-2">
-                {localState.completedSets.map((set, index) => {
-                  const setWinner = set.player1 > set.player2 ? 1 : 2;
-                  return (
-                    <div
-                      key={index}
-                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg text-sm"
-                    >
-                      <span className="font-semibold text-gray-700">Set {index + 1}</span>
-                      <div className="flex items-center gap-3">
-                        <div className="w-5">{setWinner === 1 && "🏆"}</div>
-                        <div className="w-16 flex items-center justify-between text-lg">
-                          <span
-                            className={classNames(
-                              "font-bold",
-                              setWinner === 1 ? "text-blue-600" : "text-gray-400",
-                            )}
-                          >
-                            {set.player1}
-                          </span>
-                          <span className="text-gray-400">-</span>
-                          <span
-                            className={classNames(
-                              "font-bold",
-                              setWinner === 2 ? "text-purple-600" : "text-gray-400",
-                            )}
-                          >
-                            {set.player2}
-                          </span>
-                        </div>
-                        <div className="w-5">{setWinner === 2 && "🏆"}</div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
+          <CompletedSetsList sets={localState.completedSets} />
 
           {validationError && (
             <div className="p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg text-sm">
@@ -419,39 +346,40 @@ export const LiveGameAdminPage: React.FC = () => {
   );
 };
 
-type ScoreControlsProps = {
+const VARIANT_STYLES = {
+  player1: {
+    bg: "bg-blue-50",
+    score: "text-blue-600",
+    addBtn: "bg-blue-600 hover:bg-blue-700",
+    removeBtn: "bg-blue-400 hover:bg-blue-500",
+  },
+  player2: {
+    bg: "bg-purple-50",
+    score: "text-purple-600",
+    addBtn: "bg-purple-600 hover:bg-purple-700",
+    removeBtn: "bg-purple-400 hover:bg-purple-500",
+  },
+} as const;
+
+const PlayerScoreControls: React.FC<{
   name: string;
   score: number;
   onAdd: () => void;
   onRemove: () => void;
-  colorClasses: {
-    bg: string;
-    score: string;
-    addBtn: string;
-    removeBtn: string;
-  };
-};
-
-const PlayerScoreControls: React.FC<ScoreControlsProps> = ({
-  name,
-  score,
-  onAdd,
-  onRemove,
-  colorClasses,
-}) => {
+  variant: "player1" | "player2";
+}> = ({ name, score, onAdd, onRemove, variant }) => {
+  const styles = VARIANT_STYLES[variant];
   return (
-    <div className={classNames("rounded-lg p-2", colorClasses.bg)}>
+    <div className={classNames("rounded-lg p-2", styles.bg)}>
       <h3 className="text-sm font-semibold text-gray-700 mb-1 text-center truncate">{name}</h3>
       <div className="flex flex-col items-center justify-center gap-2">
-        <div className={classNames("text-5xl font-bold text-center", colorClasses.score)}>
-          {score}
-        </div>
+        <div className={classNames("text-5xl font-bold text-center", styles.score)}>{score}</div>
         <div className="flex flex-col gap-2 w-full items-center">
           <button
             onClick={onAdd}
             className={classNames(
               "w-full max-w-28 aspect-square text-center text-white text-4xl font-bold rounded-lg transition",
-              colorClasses.addBtn,
+              styles.addBtn,
             )}
           >
             +
@@ -463,7 +391,7 @@ const PlayerScoreControls: React.FC<ScoreControlsProps> = ({
               "w-full max-w-28 h-12 text-center rounded-lg transition text-2xl font-bold",
               score === 0
                 ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                : classNames("text-white", colorClasses.removeBtn),
+                : classNames("text-white", styles.removeBtn),
             )}
           >
             -

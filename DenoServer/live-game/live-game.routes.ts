@@ -4,17 +4,11 @@ import { clearLiveGame, getLiveGame, LiveGameState, setLiveGame } from "./live-g
 import { webSocketClientManager } from "../server.ts";
 
 export function registerLiveGameRoutes(api: Router) {
-  /**
-   * Get the current live game state. Public.
-   */
   api.get("/live-game", async (context) => {
     const state = await getLiveGame();
     context.response.body = state;
   });
 
-  /**
-   * Update the live game state. Admin only.
-   */
   api.put("/live-game", async (context) => {
     if ((await hasAccess(context, "live-game", "update")) === false) {
       context.response.status = 403;
@@ -29,9 +23,6 @@ export function registerLiveGameRoutes(api: Router) {
     context.response.body = updated;
   });
 
-  /**
-   * Clear the current live game. Admin only.
-   */
   api.delete("/live-game", async (context) => {
     if ((await hasAccess(context, "live-game", "update")) === false) {
       context.response.status = 403;
