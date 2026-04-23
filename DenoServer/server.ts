@@ -6,6 +6,7 @@ import { WebSocketClientManager } from "./web-socket/web-socket-client-manager.t
 import { registerEventStoreRoutes } from "./event-store/event-store.routes.ts";
 import { registerMigrationsRoutes } from "./migrations/migrations.routes.ts";
 import { registerImageKitRoutes } from "./image-kit/image-kit.routes.ts";
+import { registerLiveGameRoutes } from "./live-game/live-game.routes.ts";
 
 // Start background services
 import "./integrations/gamebot/poller.ts";
@@ -37,6 +38,7 @@ registerWebSocketRoutes(api);
 registerUserRoutes(api);
 
 registerEventStoreRoutes(api);
+registerLiveGameRoutes(api);
 
 app.use(api.routes());
 app.use(api.allowedMethods());

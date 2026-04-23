@@ -8,6 +8,7 @@ enum WS_MESSAGE {
   CONNECTION_ID = "connection-id",
   HEART_BEAT = "heart-beat",
   LATEST_EVENT = "latest-event",
+  LIVE_GAME = "live-game",
 }
 
 export class WebSocketClientManager {
@@ -145,6 +146,14 @@ export class WebSocketClientManager {
    */
   broadcastRefetch() {
     this.broadcastMessage(WS_MESSAGE.LATEST_EVENT + ":999999999999999");
+  }
+
+  /**
+   * Notify all clients that the live game state has changed.
+   * Clients should refetch `/live-game` to get the new state.
+   */
+  broadcastLiveGame() {
+    this.broadcastMessage(WS_MESSAGE.LIVE_GAME + ":" + Date.now());
   }
 
   /**
