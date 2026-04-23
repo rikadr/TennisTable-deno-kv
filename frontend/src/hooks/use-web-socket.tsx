@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 /**
  * Defined messages that can be broadcast to connected clients
  */
@@ -14,6 +14,12 @@ export const useWebSocket = (
   { onMessage, onClose }: { onMessage?: (message: string) => void; onClose?: () => void },
 ) => {
   const [webSocket, setWebSocket] = useState<WebSocket>();
+  const onMessageRef = useRef(onMessage);
+  const onCloseRef = useRef(onClose);
+
+  // Keep refs up to date so reconnections use the latest callbacks
+  useEffect(() => { onMessageRef.current = onMessage; }, [onMessage]);
+  useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
 
   function send(message: string) {
     webSocket?.send(message);
@@ -22,11 +28,11 @@ export const useWebSocket = (
   function openWebSocket() {
     const socket = new WebSocket(url);
     socket.onmessage = (messageEvent) => {
-      onMessage && typeof messageEvent.data === "string" && onMessage(messageEvent.data);
+      onMessageRef.current && typeof messageEvent.data === "string" && onMessageRef.current(messageEvent.data);
     };
     socket.onclose = () => {
       // Retry connection every 5 seconds
-      onClose && onClose();
+      onCloseRef.current && onCloseRef.current();
       setTimeout(() => {
         openWebSocket();
       }, 5_000);

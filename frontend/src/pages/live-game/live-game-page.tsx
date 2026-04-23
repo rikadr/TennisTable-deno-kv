@@ -10,7 +10,7 @@ import { LiveGameSetPoint } from "./live-game-types";
 
 // Fallback poll in case the WebSocket drops — primary updates come from
 // the LIVE_GAME broadcast handled in WebSocketRefetcher.
-const POLL_FALLBACK_MS = 30_000;
+const POLL_FALLBACK_MS = 3_000;
 
 const ONE_HOUR_MS = 60 * 60 * 1000;
 

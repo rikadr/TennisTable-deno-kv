@@ -2,7 +2,7 @@ import React from "react";
 import { useLiveGameQuery } from "./use-live-game";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 
-const POLL_FALLBACK_MS = 30_000;
+const POLL_FALLBACK_MS = 3_000;
 const CHROMA_GREEN = "#00b140";
 
 const SCORE_WIDTH = 90;

@@ -37,6 +37,7 @@ export const NavMenu: React.FC = () => {
       { name: "🔧 Settings", to: "/settings" },
     ];
     if (session.isAuthenticated && session.sessionData?.role === "admin") {
+      items.push({ name: "📺 Live Game", to: "/live-game" });
       items.push({ name: "🔐 Admin Page", to: "/admin" });
     }
     const menuItemWrapperClassNames =
