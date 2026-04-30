@@ -1,10 +1,17 @@
 import React from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { ProfilePicture } from "../player/profile-picture";
 import { HallOfFameScoreBreakdown } from "../../client/client-db/hall-of-fame";
 import { fmtNum } from "../../common/number-utils";
 import { classNames } from "../../common/class-names";
+import { HallOfFameScoreHistory } from "./hall-of-fame-score-history";
+
+type TabType = "details" | "history";
+const TABS: { id: TabType; label: string }[] = [
+  { id: "details", label: "Details" },
+  { id: "history", label: "History" },
+];
 
 type FactorKey = keyof Omit<HallOfFameScoreBreakdown, "total">;
 
@@ -179,6 +186,16 @@ const FACTORS: { key: FactorKey; emoji: string; name: string }[] = [
 export const HallOfFamePlayerPage: React.FC = () => {
   const { playerId } = useParams<{ playerId: string }>();
   const context = useEventDbContext();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = (searchParams.get("hofTab") as TabType) || "details";
+
+  const setActiveTab = (tab: TabType) => {
+    setSearchParams((prev) => {
+      const newParams = new URLSearchParams(prev);
+      newParams.set("hofTab", tab);
+      return newParams;
+    });
+  };
 
   if (!playerId) {
     return <div className="text-primary-text text-center p-8">Player not found</div>;
@@ -225,58 +242,81 @@ export const HallOfFamePlayerPage: React.FC = () => {
           <h1 className="text-2xl text-primary-text font-semibold">{entry.playerName}</h1>
         </div>
 
-        {/* Score breakdown */}
-        <div className="bg-primary-background rounded-lg p-4">
-          {isActive && (
-            <div className="bg-secondary-background text-secondary-text rounded-lg px-3 py-2 mb-4 text-sm">
-              This is a hypothetical score — {entry.playerName} is still an active player.
-            </div>
-          )}
-          <div className="flex justify-between items-center mb-1">
-            <h2 className="text-xl text-primary-text font-semibold">Hall of Fame Score Breakdown</h2>
-            <span className="text-primary-text font-bold text-2xl">{fmtNum(entry.score.total)} pts</span>
-          </div>
-          <p className="text-primary-text text-sm mb-4">
-            A combined score of everything you accomplished during your career.
-          </p>
-
-          <div className="space-y-6">
-            {segments.map((segment) => (
-              <div key={segment.key} className="ring-1 ring-secondary-background rounded-xl p-3">
-                <div className="flex justify-between items-center mb-1">
-                  <span className="text-primary-text text-sm">
-                    {segment.emoji} {segment.name}
-                  </span>
-                  <span className="text-primary-text font-medium text-sm">
-                    {fmtNum(segment.value)} pts
-                  </span>
-                </div>
-                <div className="w-full bg-secondary-background rounded-full h-6 overflow-hidden">
-                  <div
-                    className="bg-tertiary-background h-6 rounded-full transition-all shadow-md"
-                    style={{
-                      marginLeft: `${segment.startPct}%`,
-                      width: `${segment.widthPct}%`,
-                    }}
-                  />
-                </div>
-                <div className="mt-2">
-                  {renderDetails(entry.score, segment.key)}
-                </div>
-              </div>
+        {/* Tabs */}
+        <div className="bg-secondary-background rounded-lg px-0">
+          <div className="flex space-x-2 overflow-auto">
+            {TABS.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={classNames(
+                  "flex items-center py-2 px-4 border-b-4 font-medium text-sm transition-colors",
+                  activeTab === tab.id
+                    ? "text-secondary-text border-secondary-text"
+                    : "text-secondary-text/80 border-transparent hover:text-secondary-text hover:border-secondary-text border-dotted",
+                )}
+              >
+                {tab.label}
+              </button>
             ))}
           </div>
-
-          {/* Total */}
-          <div className="mt-6 pt-4 border-t border-secondary-background flex justify-between items-center">
-            <span className="text-primary-text font-bold text-sm uppercase tracking-wide">
-              Final Hall of Fame Score
-            </span>
-            <span className="text-primary-text font-bold text-2xl">
-              {fmtNum(entry.score.total)} pts
-            </span>
-          </div>
         </div>
+
+        {activeTab === "details" && (
+          <div className="bg-primary-background rounded-lg p-4">
+            {isActive && (
+              <div className="bg-secondary-background text-secondary-text rounded-lg px-3 py-2 mb-4 text-sm">
+                This is a hypothetical score — {entry.playerName} is still an active player.
+              </div>
+            )}
+            <div className="flex justify-between items-center mb-1">
+              <h2 className="text-xl text-primary-text font-semibold">Hall of Fame Score Breakdown</h2>
+              <span className="text-primary-text font-bold text-2xl">{fmtNum(entry.score.total)} pts</span>
+            </div>
+            <p className="text-primary-text text-sm mb-4">
+              A combined score of everything you accomplished during your career.
+            </p>
+
+            <div className="space-y-6">
+              {segments.map((segment) => (
+                <div key={segment.key} className="ring-1 ring-secondary-background rounded-xl p-3">
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-primary-text text-sm">
+                      {segment.emoji} {segment.name}
+                    </span>
+                    <span className="text-primary-text font-medium text-sm">
+                      {fmtNum(segment.value)} pts
+                    </span>
+                  </div>
+                  <div className="w-full bg-secondary-background rounded-full h-6 overflow-hidden">
+                    <div
+                      className="bg-tertiary-background h-6 rounded-full transition-all shadow-md"
+                      style={{
+                        marginLeft: `${segment.startPct}%`,
+                        width: `${segment.widthPct}%`,
+                      }}
+                    />
+                  </div>
+                  <div className="mt-2">
+                    {renderDetails(entry.score, segment.key)}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Total */}
+            <div className="mt-6 pt-4 border-t border-secondary-background flex justify-between items-center">
+              <span className="text-primary-text font-bold text-sm uppercase tracking-wide">
+                Final Hall of Fame Score
+              </span>
+              <span className="text-primary-text font-bold text-2xl">
+                {fmtNum(entry.score.total)} pts
+              </span>
+            </div>
+          </div>
+        )}
+
+        {activeTab === "history" && <HallOfFameScoreHistory playerId={playerId} />}
       </div>
     </div>
   );

@@ -1,3 +1,4 @@
+import { EventTypeEnum } from "./event-store/event-types";
 import { TennisTable } from "./tennis-table";
 
 export type SeasonDetail = { rank: number; points: number };
@@ -20,10 +21,16 @@ export type HallOfFameEntry = {
   score: HallOfFameScoreBreakdown;
 };
 
+export type HallOfFameScoreHistoryEntry = {
+  time: number;
+  score: number;
+};
+
 export class HallOfFame {
   private parent: TennisTable;
   private cache: HallOfFameEntry[] | undefined;
   private playerCache = new Map<string, HallOfFameEntry>();
+  private historyCache = new Map<string, HallOfFameScoreHistoryEntry[]>();
 
   constructor(parent: TennisTable) {
     this.parent = parent;
@@ -54,6 +61,49 @@ export class HallOfFame {
   clearCache() {
     this.cache = undefined;
     this.playerCache.clear();
+    this.historyCache.clear();
+  }
+
+  getScoreHistoryForPlayer(playerId: string): HallOfFameScoreHistoryEntry[] {
+    const cached = this.historyCache.get(playerId);
+    if (cached) return cached;
+
+    const player = this.parent.eventStore.playersProjector.getPlayer(playerId);
+    if (!player) return [];
+
+    const playerCreatedEvent = this.parent.events.find(
+      (e) => e.type === EventTypeEnum.PLAYER_CREATED && e.stream === playerId,
+    );
+    if (!playerCreatedEvent) return [];
+
+    const startTime = playerCreatedEvent.time;
+    let endTime: number;
+    if (player.active) {
+      endTime = Date.now();
+    } else {
+      const deactivationEvents = this.parent.events.filter(
+        (e) => e.type === EventTypeEnum.PLAYER_DEACTIVATED && e.stream === playerId,
+      );
+      if (deactivationEvents.length === 0) return [];
+      endTime = deactivationEvents[deactivationEvents.length - 1].time;
+    }
+
+    if (endTime <= startTime) return [];
+
+    const SAMPLES = 50;
+    const step = (endTime - startTime) / (SAMPLES - 1);
+    const history: HallOfFameScoreHistoryEntry[] = [];
+
+    for (let i = 0; i < SAMPLES; i++) {
+      const time = i === SAMPLES - 1 ? endTime : Math.floor(startTime + step * i);
+      const eventsAtTime = this.parent.events.filter((e) => e.time <= time);
+      const snapshotTable = new TennisTable({ events: eventsAtTime });
+      const entry = snapshotTable.hallOfFame.getScoreForAnyPlayer(playerId);
+      history.push({ time, score: entry?.score.total ?? 0 });
+    }
+
+    this.historyCache.set(playerId, history);
+    return history;
   }
 
   #calculateAll(): HallOfFameEntry[] {
