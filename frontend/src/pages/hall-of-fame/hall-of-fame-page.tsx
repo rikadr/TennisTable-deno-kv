@@ -16,7 +16,7 @@ export const HallOfFamePage: React.FC = () => {
       <div className="bg-primary-background rounded-lg w-full max-w-xl">
         <h1 className="text-2xl text-center text-primary-text mt-4 mb-1">Hall of Fame</h1>
         <p className="text-primary-text text-sm text-center mb-4">
-          Honoring the players who shaped our community through their dedication, competitive spirit, and lasting contributions to the table tennis community.
+          Honoring the retired players who shaped our community through their dedication, competitive spirit, and lasting contributions to the table tennis community.
         </p>
         {entries.length === 0 ? (
           <p className="text-secondary-background text-sm text-center pb-4">No retired players yet.</p>
