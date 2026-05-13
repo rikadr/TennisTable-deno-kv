@@ -43,20 +43,15 @@ export class PlayerOponentDistribution {
       ([diffGroup, count]) => ({ diffGroup, count }),
     );
 
-    // Find the min and max groups
-    let minGroup = 0;
-    let maxGroup = 0;
+    // Find the min and max groups from the actual data
+    let minGroup = Infinity;
+    let maxGroup = -Infinity;
     for (const { diffGroup } of diffGraphData) {
       minGroup = Math.min(minGroup, diffGroup);
       maxGroup = Math.max(maxGroup, diffGroup);
     }
 
-    // Make symmetric: ensure the range covers both positive and negative equally
-    const absMax = Math.max(Math.abs(minGroup), Math.abs(maxGroup));
-    minGroup = -absMax;
-    maxGroup = absMax;
-
-    // Create a complete map with all groups filled in
+    // Create a complete map with all groups filled in between min and max
     const completeGroupMap = new Map<number, number>();
     for (let group = minGroup; group <= maxGroup; group += DIFF_GROUP_SIZE) {
       completeGroupMap.set(group, 0);
