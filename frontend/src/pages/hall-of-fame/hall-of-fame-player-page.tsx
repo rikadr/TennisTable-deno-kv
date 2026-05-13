@@ -312,7 +312,7 @@ export const HallOfFamePlayerPage: React.FC = () => {
                     )}
                     {fmtNum(segment.value)} pts
                     {viewMode === "compared" && (
-                      <span className="text-primary-text/70 ml-1.5">/ {fmtNum(segment.max)} max</span>
+                      <span className="text-primary-text/70 ml-1.5">/ {fmtNum(segment.max)}</span>
                     )}
                   </span>
                 </div>
