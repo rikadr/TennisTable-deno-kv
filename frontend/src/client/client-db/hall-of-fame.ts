@@ -20,10 +20,33 @@ export type HallOfFameEntry = {
   score: HallOfFameScoreBreakdown;
 };
 
+export type HallOfFameFactorKey =
+  | "seasonPerformance"
+  | "achievementsEarned"
+  | "socialDiversity"
+  | "tournamentProgression"
+  | "longevity"
+  | "experience"
+  | "dataVolume";
+
+export type HallOfFameSectionStats = Record<HallOfFameFactorKey, { max: number; rank: number }>;
+
+const FACTOR_KEYS: HallOfFameFactorKey[] = [
+  "seasonPerformance",
+  "achievementsEarned",
+  "socialDiversity",
+  "tournamentProgression",
+  "longevity",
+  "experience",
+  "dataVolume",
+];
+
 export class HallOfFame {
   private parent: TennisTable;
   private cache: HallOfFameEntry[] | undefined;
   private playerCache = new Map<string, HallOfFameEntry>();
+  private sectionMaxes: Record<HallOfFameFactorKey, number> | undefined;
+  private sectionRanks: Record<HallOfFameFactorKey, Map<string, number>> | undefined;
 
   constructor(parent: TennisTable) {
     this.parent = parent;
@@ -51,9 +74,73 @@ export class HallOfFame {
     return entry;
   }
 
+  getSectionStats(playerId: string): HallOfFameSectionStats | undefined {
+    this.#ensureCrossPlayerStats();
+    if (!this.sectionMaxes || !this.sectionRanks) return undefined;
+    const stats = {} as HallOfFameSectionStats;
+    for (const key of FACTOR_KEYS) {
+      stats[key] = {
+        max: this.sectionMaxes[key],
+        rank: this.sectionRanks[key].get(playerId) ?? 0,
+      };
+    }
+    return stats;
+  }
+
   clearCache() {
     this.cache = undefined;
     this.playerCache.clear();
+    this.sectionMaxes = undefined;
+    this.sectionRanks = undefined;
+  }
+
+  #ensureCrossPlayerStats() {
+    if (this.sectionMaxes && this.sectionRanks) return;
+
+    const allPlayers = [
+      ...this.parent.eventStore.playersProjector.activePlayers,
+      ...this.parent.eventStore.playersProjector.inactivePlayers,
+    ];
+
+    const scoresByFactor: Record<HallOfFameFactorKey, { playerId: string; score: number }[]> = {
+      seasonPerformance: [],
+      achievementsEarned: [],
+      socialDiversity: [],
+      tournamentProgression: [],
+      longevity: [],
+      experience: [],
+      dataVolume: [],
+    };
+
+    for (const player of allPlayers) {
+      const breakdown = this.#calculatePlayerScore(player.id);
+      for (const key of FACTOR_KEYS) {
+        scoresByFactor[key].push({ playerId: player.id, score: breakdown[key].score });
+      }
+    }
+
+    const maxes = {} as Record<HallOfFameFactorKey, number>;
+    const ranks = {} as Record<HallOfFameFactorKey, Map<string, number>>;
+
+    for (const key of FACTOR_KEYS) {
+      const sorted = scoresByFactor[key].sort((a, b) => b.score - a.score);
+      maxes[key] = sorted[0]?.score ?? 0;
+
+      const rankMap = new Map<string, number>();
+      let currentRank = 0;
+      let lastScore = Number.POSITIVE_INFINITY;
+      for (let i = 0; i < sorted.length; i++) {
+        if (sorted[i].score !== lastScore) {
+          currentRank = i + 1;
+          lastScore = sorted[i].score;
+        }
+        rankMap.set(sorted[i].playerId, currentRank);
+      }
+      ranks[key] = rankMap;
+    }
+
+    this.sectionMaxes = maxes;
+    this.sectionRanks = ranks;
   }
 
   #calculateAll(): HallOfFameEntry[] {

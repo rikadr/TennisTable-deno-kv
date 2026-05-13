@@ -5,6 +5,10 @@ import { ProfilePicture } from "../player/profile-picture";
 import { HallOfFameScoreBreakdown } from "../../client/client-db/hall-of-fame";
 import { fmtNum } from "../../common/number-utils";
 import { classNames } from "../../common/class-names";
+import { useLocalStorage } from "../../hooks/use-local-storage";
+
+type ViewMode = "total" | "compared";
+const VIEW_MODE_STORAGE_KEY = "hall-of-fame-player-view-mode";
 
 type FactorKey = keyof Omit<HallOfFameScoreBreakdown, "total">;
 
@@ -179,6 +183,8 @@ const FACTORS: { key: FactorKey; emoji: string; name: string }[] = [
 export const HallOfFamePlayerPage: React.FC = () => {
   const { playerId } = useParams<{ playerId: string }>();
   const context = useEventDbContext();
+  const [storedViewMode, setStoredViewMode] = useLocalStorage(VIEW_MODE_STORAGE_KEY, "total");
+  const viewMode: ViewMode = storedViewMode === "compared" ? "compared" : "total";
 
   if (!playerId) {
     return <div className="text-primary-text text-center p-8">Player not found</div>;
@@ -203,6 +209,10 @@ export const HallOfFamePlayerPage: React.FC = () => {
     );
   }
 
+  const sectionStats = viewMode === "compared"
+    ? context.hallOfFame.getSectionStats(playerId)
+    : undefined;
+
   const total = entry.score.total || 1;
 
   let cumulative = 0;
@@ -210,7 +220,24 @@ export const HallOfFamePlayerPage: React.FC = () => {
     const value = getFactorScore(entry.score, factor.key);
     const start = cumulative;
     cumulative += value;
-    return { ...factor, value, startPct: (start / total) * 100, widthPct: (value / total) * 100 };
+    const totalStartPct = (start / total) * 100;
+    const totalWidthPct = (value / total) * 100;
+
+    const stat = sectionStats?.[factor.key];
+    const max = stat?.max ?? 0;
+    const comparedWidthPct = max > 0 ? (value / max) * 100 : 0;
+
+    const startPct = viewMode === "compared" ? 0 : totalStartPct;
+    const widthPct = viewMode === "compared" ? comparedWidthPct : totalWidthPct;
+
+    return {
+      ...factor,
+      value,
+      startPct,
+      widthPct,
+      max,
+      rank: stat?.rank ?? 0,
+    };
   });
 
   return (
@@ -240,6 +267,38 @@ export const HallOfFamePlayerPage: React.FC = () => {
             A combined score of everything you accomplished during your career.
           </p>
 
+          <div
+            role="tablist"
+            aria-label="Score view mode"
+            className="inline-flex bg-secondary-background rounded-full p-1 mb-4"
+          >
+            {(
+              [
+                { value: "total" as const, label: "Section of total" },
+                { value: "compared" as const, label: "Compared to all" },
+              ]
+            ).map((option) => {
+              const isActiveOption = viewMode === option.value;
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  role="tab"
+                  aria-selected={isActiveOption}
+                  onClick={() => setStoredViewMode(option.value)}
+                  className={classNames(
+                    "px-3 py-1 rounded-full text-xs font-medium transition-colors",
+                    isActiveOption
+                      ? "bg-tertiary-background text-tertiary-text shadow-sm"
+                      : "text-secondary-text hover:text-primary-text",
+                  )}
+                >
+                  {option.label}
+                </button>
+              );
+            })}
+          </div>
+
           <div className="space-y-6">
             {segments.map((segment) => (
               <div key={segment.key} className="ring-1 ring-secondary-background rounded-xl p-3">
@@ -248,7 +307,13 @@ export const HallOfFamePlayerPage: React.FC = () => {
                     {segment.emoji} {segment.name}
                   </span>
                   <span className="text-primary-text font-medium text-sm">
+                    {viewMode === "compared" && segment.rank > 0 && (
+                      <span className="text-primary-text/70 mr-1.5">#{segment.rank} ·</span>
+                    )}
                     {fmtNum(segment.value)} pts
+                    {viewMode === "compared" && (
+                      <span className="text-primary-text/70 ml-1.5">/ {fmtNum(segment.max)} max</span>
+                    )}
                   </span>
                 </div>
                 <div className="w-full bg-secondary-background rounded-full h-6 overflow-hidden">
