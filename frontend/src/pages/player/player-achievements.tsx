@@ -383,16 +383,17 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
             )}
           >
             {/* Progress bar background.
-                When the achievement has been earned, keep the bar blue
-                so the green container backdrop shows through as the
-                "earned" indicator. The bar still tracks current
-                progress on top. */}
+                The row's container has a green gradient when the
+                achievement has been earned — this shows through behind
+                the blue progressing bar so an earned-but-currently-
+                progressing achievement reads as "blue bar over green
+                bg". When progress hits 100%, the bar fills with green. */}
             {hasTarget && (
               <div className="absolute inset-0 pointer-events-none">
                 <div
                   className={classNames(
                     "h-full transition-all duration-300",
-                    isComplete && !hasEarned
+                    isComplete
                       ? "bg-gradient-to-b from-green-400 via-green-500 to-green-600"
                       : "bg-gradient-to-b from-blue-400 via-blue-500 to-blue-600",
                   )}
