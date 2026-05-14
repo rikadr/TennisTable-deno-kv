@@ -131,6 +131,22 @@ describe("David Achievement", () => {
     expect(tt.achievements.getPlayerProgression("alice").david.earned).toBe(0);
   });
 
+  it("progression only counts wins where both players were ranked at the time", () => {
+    // Goliath has 200 wins and is ranked. Alice plays Goliath in her
+    // very first game and wins — Alice is unranked entering the match,
+    // so the gain does not count toward Alice's David progression.
+    const events: EventType[] = [
+      ...buildGoliath(200),
+      createPlayer("alice", 5000),
+      game("upset", 10000, "alice", "goliath"),
+    ];
+
+    const tt = new TennisTable({ events });
+    tt.achievements.calculateAchievements();
+
+    expect(tt.achievements.getPlayerProgression("alice").david.current).toBe(0);
+  });
+
   it("does NOT fire when the winner is unranked", () => {
     // Goliath is ranked at very high Elo. Alice plays her first ever
     // game and beats Goliath. Even though Alice's Elo gain crosses 30,

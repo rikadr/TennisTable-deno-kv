@@ -8,6 +8,9 @@ export class Achievements {
   private hasCalculated = false;
 
   achievementMap: Map<string, Achievement[]> = new Map();
+  // Highest Elo gain each player has achieved from a win where BOTH
+  // players were ranked at the time. Used for David progression.
+  bestDavidGain: Map<string, number> = new Map();
 
   constructor(parent: TennisTable) {
     this.parent = parent;
@@ -19,6 +22,7 @@ export class Achievements {
     }
     // Clear existing achievements
     this.achievementMap.clear();
+    this.bestDavidGain.clear();
 
     const playerTracker = new Map<
       string,
@@ -677,16 +681,23 @@ export class Achievements {
       }
 
       // David: ≥ 30 Elo gain from beating a much higher rated opponent.
-      // Both players must be ranked (post-match) for this to count.
-      if (eloGain >= 30 && winnerRankAfter !== null && loserRankAfter !== null) {
-        this.#addAchievement(
-          game.winner,
-          this.#createAchievement("david", game.winner, game.playedAt, {
-            opponent: game.loser,
-            gameId: game.id,
-            eloGain,
-          }),
-        );
+      // Both players must have been ranked at the time of playing the
+      // match (pre-match ranks non-null) for this to count.
+      if (winnerRankBefore !== null && loserRankBefore !== null) {
+        const prevBest = this.bestDavidGain.get(game.winner) ?? 0;
+        if (eloGain > prevBest) {
+          this.bestDavidGain.set(game.winner, eloGain);
+        }
+        if (eloGain >= 30) {
+          this.#addAchievement(
+            game.winner,
+            this.#createAchievement("david", game.winner, game.playedAt, {
+              opponent: game.loser,
+              gameId: game.id,
+              eloGain,
+            }),
+          );
+        }
       }
 
       // Photo Finish: post-match Elos within 1 point. Both players must be
@@ -1372,15 +1383,9 @@ export class Achievements {
       }
     }
 
-    // David progression: highest Elo gained from any single win.
-    const playerSummary = this.parent.leaderboard.getPlayerSummary(playerId);
-    let maxEloGain = 0;
-    for (const g of playerSummary.games) {
-      if (g.result === "win" && g.pointsDiff > maxEloGain) {
-        maxEloGain = g.pointsDiff;
-      }
-    }
-    progression["david"].current = maxEloGain;
+    // David progression: highest Elo gained from a win where both
+    // players were ranked at the time of the match.
+    progression["david"].current = this.bestDavidGain.get(playerId) ?? 0;
 
     // Count earned achievements
     const achievements = this.getAchievements(playerId);
