@@ -130,11 +130,17 @@ describe("On the Podium Achievement", () => {
   });
 
   it("is NOT awarded to an unranked player even if they have the highest Elo", () => {
-    // Alice (one win) has the highest Elo but only 1 game — not ranked.
+    // Five players become ranked through the standard setup (rankedCount
+    // ≥ 5 gate satisfied). Then a fresh Alice plays her first ever game
+    // and beats A — Alice ends up with the highest Elo in the system
+    // (no opponents have lifted hers and her opponent A was the top).
+    // Alice is still unranked (tg=1 < gameLimit), so the pre-match-
+    // ranked rule must block the podium even though her Elo would
+    // naively place her in the top 3.
     const events: EventType[] = [
-      { time: 1, stream: "alice", type: EventTypeEnum.PLAYER_CREATED, data: { name: "Alice" } },
-      { time: 2, stream: "bob", type: EventTypeEnum.PLAYER_CREATED, data: { name: "Bob" } },
-      game("g1", 100, "alice", "bob"),
+      ...fivePlayerSetup(),
+      { time: 6, stream: "alice", type: EventTypeEnum.PLAYER_CREATED, data: { name: "Alice" } },
+      game("alice-upset", 1000, "alice", "a"),
     ];
 
     const tt = new TennisTable({ events });

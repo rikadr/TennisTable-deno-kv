@@ -39,9 +39,10 @@ describe("Photo Finish Achievement", () => {
   ];
 
   it("awards the achievement to both players when post-match Elos are within 1", () => {
-    const tt = new TennisTable({ events: photoFinishEvents() });
-    // Lower the ranked threshold so Alice (1 game) qualifies for the test.
-    tt.client.gameLimitForRanked = 1;
+    // Lower the ranked threshold via the constructor override so Alice
+    // (one game — the photo finish match itself) qualifies for the test
+    // without having to manipulate the field after construction.
+    const tt = new TennisTable({ events: photoFinishEvents(), gameLimitForRankedOverride: 1 });
     tt.achievements.calculateAchievements();
 
     const alicePhotos = tt.achievements.getAchievements("alice").filter((a) => a.type === "photo-finish");

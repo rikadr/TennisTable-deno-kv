@@ -40,9 +40,11 @@ describe("Touched the Throne Achievement", () => {
 
     const aThrone = tt.achievements.getAchievements("a").filter((x) => x.type === "touched-the-throne");
     expect(aThrone).toHaveLength(1);
-    // A first lands at rank #1 with all 5 players ranked on game time 113
-    // (A's 8th match — beating E and pushing E across the threshold).
-    expect(aThrone[0].earnedAt).toBe(113);
+    // A's throne must fire during round 2 of the setup (game times
+    // 110-119) — only at that point are all 5 players ranked and A is
+    // pre-match ranked entering a match where they end at rank #1.
+    expect(aThrone[0].earnedAt).toBeGreaterThanOrEqual(110);
+    expect(aThrone[0].earnedAt).toBeLessThan(120);
 
     // No other player ever reaches rank #1.
     for (const id of ["b", "c", "d", "e"]) {

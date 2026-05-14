@@ -47,8 +47,11 @@ export class TennisTable {
   predictionsHistory: PredictionsHistory;
   hallOfFame: HallOfFame;
 
-  constructor(data: { events: EventType[] }) {
+  constructor(data: { events: EventType[]; gameLimitForRankedOverride?: number }) {
     this.events = data.events;
+    if (data.gameLimitForRankedOverride !== undefined) {
+      this.client.gameLimitForRanked = data.gameLimitForRankedOverride;
+    }
     this.eventStore = new EventStore(this);
 
     this.leaderboard = new Leaderboard(this);
