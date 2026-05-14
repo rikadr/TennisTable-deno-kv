@@ -12,10 +12,8 @@ export const ComparePlayersPage: React.FC = () => {
   const context = useEventDbContext();
   const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
   const [range, setRange] = useState(0);
-  const [rangeStart, setRangeStart] = useState(0);
   const comparison = useMemo(() => {
     setRange(0);
-    setRangeStart(0);
     return context.leaderboard.comparePlayers(selectedPlayers);
   }, [context.leaderboard, selectedPlayers]);
   const [graphDataToSee, setGraphDataToSee] = useState<Record<string, number>[]>(comparison.graphData);
@@ -23,39 +21,22 @@ export const ComparePlayersPage: React.FC = () => {
   const { width = 0, height = 0 } = useWindowSize();
 
   useEffect(() => {
-    const startIdx = Math.max(range - 2, 0);
-    const trimEnd = Math.max(rangeStart - 2, 0);
-    const endIdx = comparison.graphData.length - trimEnd;
-    setGraphDataToSee(comparison.graphData.slice(startIdx, endIdx) || []);
-  }, [comparison.graphData, range, rangeStart]);
+    setGraphDataToSee(comparison.graphData.slice(Math.max(range - 2, 0)) || []);
+  }, [comparison.graphData, range]);
 
   return (
     <div className="flex flex-col items-center ">
       <section className="flex flex-col-reverse items-center md:items-start md:flex-row md:gap-4 bg-primary-background rounded-lg p-4">
         <PlayerSelector selectedPlayers={selectedPlayers} setSelectedPlayers={setSelectedPlayers} />
         <div className="">
-          <div className="flex items-center gap-2 text-xs text-primary-text">
-            <span className="w-10 shrink-0">Start</span>
-            <input
-              className="w-full"
-              type="range"
-              min="2"
-              max={comparison.graphData.length || 0}
-              value={rangeStart}
-              onChange={(e) => setRangeStart(parseInt(e.target.value))}
-            />
-          </div>
-          <div className="flex items-center gap-2 text-xs text-primary-text">
-            <span className="w-10 shrink-0">End</span>
-            <input
-              className="w-full"
-              type="range"
-              min="2"
-              max={comparison.graphData.length || 0}
-              value={range}
-              onChange={(e) => setRange(parseInt(e.target.value))}
-            />
-          </div>
+          <input
+            className="w-full"
+            type="range"
+            min="2"
+            max={comparison.graphData.length || 0}
+            value={range}
+            onChange={(e) => setRange(parseInt(e.target.value))}
+          />
           {comparison.graphData ? (
             <LineChart
               className="mt-6"
