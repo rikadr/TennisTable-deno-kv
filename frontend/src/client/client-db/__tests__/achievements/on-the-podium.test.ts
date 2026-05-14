@@ -64,4 +64,28 @@ describe("On the Podium Achievement", () => {
 
     expect(tt.achievements.getAchievements("alice").filter((a) => a.type === "on-the-podium")).toHaveLength(0);
   });
+
+  it("ignores deactivated players when computing the leaderboard pool", () => {
+    // Bob plays Carol 5 times and wins all — Bob would naively land at
+    // rank #1 in the all-players pool. But Bob is deactivated *before* any
+    // games are played, so he should not be counted as a ranked player at
+    // game time. With Bob excluded, Carol slips into top-3 (she becomes the
+    // only ranked active player) and earns the achievement; Bob does not.
+    const deactivateBob: EventType = {
+      time: 50,
+      stream: "bob",
+      type: EventTypeEnum.PLAYER_DEACTIVATED,
+      data: null,
+    };
+    const games: EventType[] = [];
+    for (let i = 0; i < 5; i++) {
+      games.push(game(`g${i}`, 100 + i, "bob", "carol"));
+    }
+
+    const tt = new TennisTable({ events: [...baseEvents, deactivateBob, ...games] });
+    tt.achievements.calculateAchievements();
+
+    expect(tt.achievements.getAchievements("bob").filter((a) => a.type === "on-the-podium")).toHaveLength(0);
+    expect(tt.achievements.getAchievements("carol").filter((a) => a.type === "on-the-podium")).toHaveLength(1);
+  });
 });

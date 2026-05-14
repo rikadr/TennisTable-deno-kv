@@ -67,14 +67,14 @@ describe("Photo Finish Achievement", () => {
     expect(tt.achievements.getAchievements("bob").filter((a) => a.type === "photo-finish")).toHaveLength(0);
   });
 
-  it("only awards to ranked players — unranked participants are skipped", () => {
-    // Default ranked threshold = 5 games. After the same sequence, Alice has
-    // played only 1 game (the photo-finish itself), so she is unranked. Bob
-    // has played 6 games and is ranked. Only Bob should receive the badge.
+  it("awards neither player if either is not ranked — it's a shared moment", () => {
+    // Default ranked threshold = 5 games. After the sequence, Alice has
+    // played only 1 game and is unranked, while Bob has played 6 games. The
+    // Photo Finish is all-or-nothing, so neither receives the badge.
     const tt = new TennisTable({ events: photoFinishEvents() });
     tt.achievements.calculateAchievements();
 
     expect(tt.achievements.getAchievements("alice").filter((a) => a.type === "photo-finish")).toHaveLength(0);
-    expect(tt.achievements.getAchievements("bob").filter((a) => a.type === "photo-finish")).toHaveLength(1);
+    expect(tt.achievements.getAchievements("bob").filter((a) => a.type === "photo-finish")).toHaveLength(0);
   });
 });

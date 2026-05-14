@@ -1,4 +1,5 @@
 import { Elo } from "./elo";
+import { EventTypeEnum } from "./event-store/event-types";
 import { TennisTable } from "./tennis-table";
 
 export class Achievements {
@@ -412,13 +413,14 @@ export class Achievements {
   /**
    * Runs a second pass over games to award Elo / rank-derived achievements.
    *
-   * Uses its own minimal Elo tracker (only `elo` + `totalGames` per player) so
-   * we don't depend on the leaderboard projection here, and so the history
-   * stays locked: rank is computed against every player who ever played
-   * (`allPlayers`) — active/inactive flags can't retroactively shift past
-   * ranks.
+   * Uses its own minimal Elo tracker (only `elo` + `totalGames` per player)
+   * plus per-player active-status timelines derived from PLAYER_CREATED /
+   * PLAYER_DEACTIVATED / PLAYER_REACTIVATED events. Rank is computed using
+   * the leaderboard definition — a player must have ≥ gameLimitForRanked
+   * games and have been active at the moment of the game.
    *
-   * Per-game cost is O(P) for rank lookups. Total O(G * P).
+   * Per-game cost is O(P) for rank lookups (with a tiny isActiveAt factor).
+   * Total O(G * P).
    */
   #calculateEloAchievements() {
     const gameLimit = this.parent.client.gameLimitForRanked;
@@ -429,15 +431,50 @@ export class Achievements {
       playerMap.set(player.id, { elo: Elo.INITIAL_ELO, totalGames: 0 });
     }
 
-    // Returns null if the player isn't on the leaderboard yet
-    // (hasn't met gameLimitForRanked).
-    const getRank = (playerId: string): number | null => {
+    // Per-player active-status timeline: each entry is a transition.
+    // PLAYER_CREATED -> active=true, PLAYER_DEACTIVATED -> false,
+    // PLAYER_REACTIVATED -> true. Sorted by time.
+    type Transition = { time: number; active: boolean };
+    const timelines = new Map<string, Transition[]>();
+    for (const event of this.parent.events) {
+      let transition: Transition | null = null;
+      if (event.type === EventTypeEnum.PLAYER_CREATED) {
+        transition = { time: event.time, active: true };
+      } else if (event.type === EventTypeEnum.PLAYER_DEACTIVATED) {
+        transition = { time: event.time, active: false };
+      } else if (event.type === EventTypeEnum.PLAYER_REACTIVATED) {
+        transition = { time: event.time, active: true };
+      }
+      if (transition) {
+        const list = timelines.get(event.stream);
+        if (list) list.push(transition);
+        else timelines.set(event.stream, [transition]);
+      }
+    }
+    for (const list of timelines.values()) list.sort((a, b) => a.time - b.time);
+
+    const isActiveAt = (playerId: string, atTime: number): boolean => {
+      const tl = timelines.get(playerId);
+      if (!tl || tl.length === 0) return false;
+      let active = false;
+      for (const t of tl) {
+        if (t.time > atTime) break;
+        active = t.active;
+      }
+      return active;
+    };
+
+    // Returns null if the player isn't ranked at `atTime` — must have ≥
+    // gameLimitForRanked games and have been active at that moment.
+    const getRank = (playerId: string, atTime: number): number | null => {
       const player = playerMap.get(playerId);
       if (!player || player.totalGames < gameLimit) return null;
+      if (!isActiveAt(playerId, atTime)) return null;
       let higher = 0;
       for (const [otherId, other] of playerMap) {
         if (otherId === playerId) continue;
         if (other.totalGames < gameLimit) continue;
+        if (!isActiveAt(otherId, atTime)) continue;
         if (other.elo > player.elo) higher++;
       }
       return higher + 1;
@@ -445,6 +482,7 @@ export class Achievements {
 
     const touchedThrone = new Set<string>();
     const onPodium = new Set<string>();
+    const kingslayed = new Set<string>();
 
     this.parent.games.forEach((game) => {
       const winner = playerMap.get(game.winner);
@@ -453,11 +491,12 @@ export class Achievements {
 
       // Pre-match ranks (loser's rank needed for Kingslayer; winner's for
       // Climber's "from" rank).
-      const winnerRankBefore = getRank(game.winner);
-      const loserRankBefore = getRank(game.loser);
+      const winnerRankBefore = getRank(game.winner, game.playedAt);
+      const loserRankBefore = getRank(game.loser, game.playedAt);
 
-      // Kingslayer: loser was #1 going into the match.
-      if (loserRankBefore === 1) {
+      // Kingslayer: loser was #1 going into the match. One-time per player.
+      if (loserRankBefore === 1 && !kingslayed.has(game.winner)) {
+        kingslayed.add(game.winner);
         this.#addAchievement(
           game.winner,
           this.#createAchievement("kingslayer", game.winner, game.playedAt, {
@@ -480,8 +519,8 @@ export class Achievements {
       loser.elo = losersNewElo;
 
       // Post-match ranks.
-      const winnerRankAfter = getRank(game.winner);
-      const loserRankAfter = getRank(game.loser);
+      const winnerRankAfter = getRank(game.winner, game.playedAt);
+      const loserRankAfter = getRank(game.loser, game.playedAt);
 
       // Touched the Throne: first time the player ever sits at rank #1.
       if (winnerRankAfter === 1 && !touchedThrone.has(game.winner)) {
@@ -491,10 +530,6 @@ export class Achievements {
           this.#createAchievement("touched-the-throne", game.winner, game.playedAt, undefined),
         );
       }
-      // Loser usually can't ascend by losing, but a rare crossover when an
-      // opponent above them deactivates is impossible here (history is
-      // locked) — still, keep the check symmetric for correctness if a
-      // future Elo model allows it.
       if (loserRankAfter === 1 && !touchedThrone.has(game.loser)) {
         touchedThrone.add(game.loser);
         this.#addAchievement(
@@ -538,31 +573,27 @@ export class Achievements {
         );
       }
 
-      // Photo Finish: post-match Elos within 1 point. Awarded to each
-      // player independently, but only if that player is ranked at the
-      // moment of the achievement.
+      // Photo Finish: post-match Elos within 1 point. Both players must be
+      // ranked — the achievement is awarded to both or neither (it's a
+      // shared moment, not an individual one).
       const eloDiff = Math.abs(winner.elo - loser.elo);
-      if (eloDiff <= 1) {
-        if (winnerRankAfter !== null) {
-          this.#addAchievement(
-            game.winner,
-            this.#createAchievement("photo-finish", game.winner, game.playedAt, {
-              opponent: game.loser,
-              gameId: game.id,
-              eloDiff,
-            }),
-          );
-        }
-        if (loserRankAfter !== null) {
-          this.#addAchievement(
-            game.loser,
-            this.#createAchievement("photo-finish", game.loser, game.playedAt, {
-              opponent: game.winner,
-              gameId: game.id,
-              eloDiff,
-            }),
-          );
-        }
+      if (eloDiff <= 1 && winnerRankAfter !== null && loserRankAfter !== null) {
+        this.#addAchievement(
+          game.winner,
+          this.#createAchievement("photo-finish", game.winner, game.playedAt, {
+            opponent: game.loser,
+            gameId: game.id,
+            eloDiff,
+          }),
+        );
+        this.#addAchievement(
+          game.loser,
+          this.#createAchievement("photo-finish", game.loser, game.playedAt, {
+            opponent: game.winner,
+            gameId: game.id,
+            eloDiff,
+          }),
+        );
       }
     });
   }

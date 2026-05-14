@@ -73,14 +73,14 @@ describe("Kingslayer Achievement", () => {
     expect(tt.achievements.getAchievements("alice").filter((a) => a.type === "kingslayer")).toHaveLength(0);
   });
 
-  it("can be earned multiple times", () => {
+  it("is only awarded once per player even if they kingslay multiple times", () => {
     // Bob beats Carol 5 times → Bob rank #1.
     const setup: EventType[] = [];
     for (let i = 0; i < 5; i++) {
       setup.push(game(`g${i}`, 100 + i, "bob", "carol"));
     }
-    // Alice beats Bob (Bob still #1 entering this match since Alice is unranked).
-    // Bob beats Carol again to restore high Elo. Then Alice beats Bob again.
+    // Alice beats Bob; Bob restores his #1 by beating Carol; Alice beats Bob
+    // again. Both wins fit the Kingslayer rule, but only the first is awarded.
     const moreGames: EventType[] = [
       game("ks-1", 1000, "alice", "bob"),
       game("recover-1", 1100, "bob", "carol"),
@@ -93,6 +93,7 @@ describe("Kingslayer Achievement", () => {
     tt.achievements.calculateAchievements();
 
     const kingslayers = tt.achievements.getAchievements("alice").filter((a) => a.type === "kingslayer");
-    expect(kingslayers.length).toBeGreaterThanOrEqual(2);
+    expect(kingslayers).toHaveLength(1);
+    expect(kingslayers[0].data?.gameId).toBe("ks-1");
   });
 });
