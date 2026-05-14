@@ -508,11 +508,11 @@ export class Achievements {
       const rankedCountBefore = countRankedAt(game.playedAt);
 
       // Kingslayer: loser was #1 going into the match. One-time per
-      // player. Requires ≥2 ranked players so being #1 actually means
-      // outranking someone — otherwise the loser is "#1" trivially.
+      // player. Requires ≥5 ranked players so being "#1" actually means
+      // outranking a real cohort, not a tiny pool.
       if (
         loserRankBefore === 1 &&
-        rankedCountBefore >= 2 &&
+        rankedCountBefore >= 5 &&
         !kingslayed.has(game.winner)
       ) {
         kingslayed.add(game.winner);
@@ -540,13 +540,15 @@ export class Achievements {
       // Post-match ranks.
       const winnerRankAfter = getRank(game.winner, game.playedAt);
       const loserRankAfter = getRank(game.loser, game.playedAt);
+      const rankedCount = countRankedAt(game.playedAt);
 
       // Touched the Throne: first time the player ever sits at rank #1.
-      // The player must already be ranked entering the match — crossing
-      // the game-count threshold via this game doesn't count.
+      // The player must already be ranked entering the match, and there
+      // must be ≥5 ranked active players so "rank #1" is meaningful.
       if (
         winnerRankBefore !== null &&
         winnerRankAfter === 1 &&
+        rankedCount >= 5 &&
         !touchedThrone.has(game.winner)
       ) {
         touchedThrone.add(game.winner);
@@ -558,6 +560,7 @@ export class Achievements {
       if (
         loserRankBefore !== null &&
         loserRankAfter === 1 &&
+        rankedCount >= 5 &&
         !touchedThrone.has(game.loser)
       ) {
         touchedThrone.add(game.loser);
@@ -568,15 +571,12 @@ export class Achievements {
       }
 
       // On the Podium: first time the player ever sits at rank ≤ 3 while
-      // already being a ranked player. Requires at least 4 ranked active
-      // players so that "top 3" is meaningful (you must have outranked at
-      // least one other player to be on the podium).
-      const rankedCount = countRankedAt(game.playedAt);
+      // already being a ranked player. Requires ≥5 ranked active players.
       if (
         winnerRankBefore !== null &&
         winnerRankAfter !== null &&
         winnerRankAfter <= 3 &&
-        rankedCount >= 4 &&
+        rankedCount >= 5 &&
         !onPodium.has(game.winner)
       ) {
         onPodium.add(game.winner);
@@ -589,7 +589,7 @@ export class Achievements {
         loserRankBefore !== null &&
         loserRankAfter !== null &&
         loserRankAfter <= 3 &&
-        rankedCount >= 4 &&
+        rankedCount >= 5 &&
         !onPodium.has(game.loser)
       ) {
         onPodium.add(game.loser);
