@@ -1,12 +1,11 @@
 import { TennisTable } from "../../tennis-table";
 import { EventType, EventTypeEnum } from "../../event-store/event-types";
 
-// Climber fires when the winner improves by 5 or more leaderboard ranks
-// from a single match. With K=32 the largest possible Elo swing is ~32, so
-// the test needs 6 ranked players tightly clustered (so a single swing
-// clears all of them) plus a "low" sixth player ready to leap them.
+// Leap Frog fires when the winner improves by 3 or more leaderboard ranks
+// from a single match. A 3-rank jump needs at least 4 ranked players
+// (e.g. rank 4 → rank 1).
 
-describe("Climber Achievement", () => {
+describe("Leap Frog Achievement", () => {
   const createPlayer = (id: string, time: number): EventType => ({
     time,
     stream: id,
@@ -21,12 +20,9 @@ describe("Climber Achievement", () => {
     data: { playedAt: time, winner, loser },
   });
 
-  it("does NOT fire when there are fewer than 6 ranked players", () => {
+  it("does NOT fire when there are fewer than 4 ranked players", () => {
     // 2 players, 5 games each → only 2 ranked. Max rank jump = 1.
-    const events: EventType[] = [
-      createPlayer("alice", 1),
-      createPlayer("bob", 2),
-    ];
+    const events: EventType[] = [createPlayer("alice", 1), createPlayer("bob", 2)];
     for (let i = 0; i < 5; i++) {
       events.push(game(`g${i}`, 100 + i, "alice", "bob"));
     }
@@ -34,20 +30,16 @@ describe("Climber Achievement", () => {
     const tt = new TennisTable({ events });
     tt.achievements.calculateAchievements();
 
-    expect(tt.achievements.getAchievements("alice").filter((a) => a.type === "climber")).toHaveLength(0);
-    expect(tt.achievements.getAchievements("bob").filter((a) => a.type === "climber")).toHaveLength(0);
+    expect(tt.achievements.getAchievements("alice").filter((a) => a.type === "leap-frog")).toHaveLength(0);
+    expect(tt.achievements.getAchievements("bob").filter((a) => a.type === "leap-frog")).toHaveLength(0);
   });
 
   it("does NOT fire for a 1-rank swap", () => {
     // 2 players, 5 games each, then a rematch that swaps rank 1 and rank 2.
-    const events: EventType[] = [
-      createPlayer("alice", 1),
-      createPlayer("bob", 2),
-    ];
+    const events: EventType[] = [createPlayer("alice", 1), createPlayer("bob", 2)];
     for (let i = 0; i < 5; i++) {
       events.push(game(`setup-${i}`, 100 + i, "alice", "bob"));
     }
-    // Bob wins enough to flip rank.
     for (let i = 0; i < 6; i++) {
       events.push(game(`flip-${i}`, 200 + i, "bob", "alice"));
     }
@@ -55,20 +47,14 @@ describe("Climber Achievement", () => {
     const tt = new TennisTable({ events });
     tt.achievements.calculateAchievements();
 
-    expect(tt.achievements.getAchievements("bob").filter((a) => a.type === "climber")).toHaveLength(0);
+    expect(tt.achievements.getAchievements("bob").filter((a) => a.type === "leap-frog")).toHaveLength(0);
   });
 
-  it("awards climber when the winner jumps 5+ ranks in one match", () => {
-    // Setup that produces the climb:
-    //   * P1-P5 (cluster): each pair plays twice with one win each (1W-1L
-    //     per pair). After 20 games, each cluster player has 8 games and
-    //     the cluster's Elos sit tightly between ~995 and ~1005.
-    //   * P6 (climber): plays a neutral filler N five times in order
-    //     L-L-L-W-W. Net 2W-3L lands P6 at Elo ~994, just below the
-    //     cluster floor.
-    //   * Final game: P6 beats P1 — P6's Elo jumps over the entire cluster
-    //     and the filler, producing a 6-rank improvement.
-
+  it("awards leap-frog when the winner jumps 3+ ranks in one match", () => {
+    // Tight-cluster setup: P1-P5 play a pairwise double round-robin so
+    // their Elos converge close to 1000. P6 plays a neutral filler with
+    // an L-L-L-W-W sequence to land just below the cluster. The final
+    // match (P6 beats P1) leapfrogs P6 to rank 1.
     const events: EventType[] = [
       createPlayer("p1", 1),
       createPlayer("p2", 2),
@@ -88,23 +74,21 @@ describe("Climber Achievement", () => {
       }
     }
 
-    // P6 plays filler with sequence L-L-L-W-W.
     events.push(game("f-1", t++, "filler", "p6"));
     events.push(game("f-2", t++, "filler", "p6"));
     events.push(game("f-3", t++, "filler", "p6"));
     events.push(game("f-4", t++, "p6", "filler"));
     events.push(game("f-5", t++, "p6", "filler"));
 
-    // The climb itself.
-    events.push(game("climb", t++, "p6", "p1"));
+    events.push(game("leap", t++, "p6", "p1"));
 
     const tt = new TennisTable({ events });
     tt.achievements.calculateAchievements();
 
-    const climbers = tt.achievements.getAchievements("p6").filter((a) => a.type === "climber");
-    expect(climbers).toHaveLength(1);
-    expect(climbers[0].data?.gameId).toBe("climb");
-    expect(climbers[0].data?.ranksJumped).toBeGreaterThanOrEqual(5);
-    expect(climbers[0].data?.toRank).toBe(1);
+    const leaps = tt.achievements.getAchievements("p6").filter((a) => a.type === "leap-frog");
+    expect(leaps).toHaveLength(1);
+    expect(leaps[0].data?.gameId).toBe("leap");
+    expect(leaps[0].data?.ranksJumped).toBeGreaterThanOrEqual(3);
+    expect(leaps[0].data?.toRank).toBe(1);
   });
 });

@@ -558,7 +558,7 @@ export class Achievements {
       if (!winner || !loser) continue;
 
       // Pre-match ranks (loser's rank needed for Kingslayer; winner's for
-      // Climber's "from" rank).
+      // Leap Frog's "from" rank).
       const winnerRankBefore = getRank(game.winner, game.playedAt);
       const loserRankBefore = getRank(game.loser, game.playedAt);
       const rankedCountBefore = countRankedAt(game.playedAt);
@@ -655,17 +655,17 @@ export class Achievements {
         );
       }
 
-      // Climber: winner improved by ≥ 5 ranks. Requires being ranked both
-      // before and after — first appearance on the leaderboard isn't a
-      // "climb".
+      // Leap Frog: winner improved by ≥ 3 ranks. Requires being ranked
+      // both before and after — first appearance on the leaderboard
+      // isn't a "jump".
       if (
         winnerRankBefore !== null &&
         winnerRankAfter !== null &&
-        winnerRankBefore - winnerRankAfter >= 5
+        winnerRankBefore - winnerRankAfter >= 3
       ) {
         this.#addAchievement(
           game.winner,
-          this.#createAchievement("climber", game.winner, game.playedAt, {
+          this.#createAchievement("leap-frog", game.winner, game.playedAt, {
             gameId: game.id,
             ranksJumped: winnerRankBefore - winnerRankAfter,
             fromRank: winnerRankBefore,
@@ -1084,7 +1084,7 @@ export class Achievements {
       "touched-the-throne": { earned: 0 },
       "on-the-podium": { earned: 0 },
       "photo-finish": { earned: 0 },
-      "climber": { earned: 0 },
+      "leap-frog": { earned: 0 },
     };
 
     let firstActiveAt: number | null = null;
@@ -1403,7 +1403,7 @@ type AchievementDefinitions = {
   "touched-the-throne": undefined;
   "on-the-podium": undefined;
   "photo-finish": { opponent: string; gameId: string; eloDiff: number };
-  "climber": { gameId: string; ranksJumped: number; fromRank: number; toRank: number };
+  "leap-frog": { gameId: string; ranksJumped: number; fromRank: number; toRank: number };
 };
 
 type AchievementType = keyof AchievementDefinitions;
@@ -1484,5 +1484,5 @@ export type AchievementProgression = {
   "touched-the-throne": BaseProgression;
   "on-the-podium": BaseProgression;
   "photo-finish": BaseProgression;
-  "climber": BaseProgression;
+  "leap-frog": BaseProgression;
 };

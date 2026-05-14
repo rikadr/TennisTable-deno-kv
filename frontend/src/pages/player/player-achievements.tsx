@@ -171,10 +171,10 @@ export const ACHIEVEMENT_LABELS: Record<string, { title: string; description: st
     description: "Play a game that ended with both Elos within 1 point",
     icon: "📸",
   },
-  "climber": {
-    title: "Climber",
-    description: "Jump 5 or more ranks on the leaderboard from a single game",
-    icon: "🧗",
+  "leap-frog": {
+    title: "Leap Frog",
+    description: "Jump 3 or more ranks on the leaderboard from a single game",
+    icon: "🐸",
   },
 };
 
