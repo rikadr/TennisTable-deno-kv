@@ -11,16 +11,23 @@ import { relativeTimeString } from "../common/date-utils";
 export const ComparePlayersPage: React.FC = () => {
   const context = useEventDbContext();
   const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
-  const [range, setRange] = useState(0);
-  const [rangeStart, setRangeStart] = useState(0);
-  const comparison = useMemo(() => {
-    setRange(0);
-    setRangeStart(0);
-    return context.leaderboard.comparePlayers(selectedPlayers);
-  }, [context.leaderboard, selectedPlayers]);
+  // Sliders start at their min (2) — value 2 means "no zoom" because
+  // the slice math subtracts 2 (see the effect below).
+  const [range, setRange] = useState(2);
+  const [rangeStart, setRangeStart] = useState(2);
+  const comparison = useMemo(
+    () => context.leaderboard.comparePlayers(selectedPlayers),
+    [context.leaderboard, selectedPlayers],
+  );
   const [graphDataToSee, setGraphDataToSee] = useState<Record<string, number>[]>(comparison.graphData);
 
   const { width = 0, height = 0 } = useWindowSize();
+
+  // Reset both sliders when the player selection changes.
+  useEffect(() => {
+    setRange(2);
+    setRangeStart(2);
+  }, [selectedPlayers]);
 
   useEffect(() => {
     const startIdx = Math.max(range - 2, 0);
