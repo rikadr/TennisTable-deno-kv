@@ -249,6 +249,72 @@ describe("TennisTable Basic sanity tests", () => {
 
       expect(activePlayers).toHaveLength(2);
     });
+
+    it("should keep remaining players' Elo stable when another player is deactivated", () => {
+      const threePlayerEvents: EventType[] = [
+        { time: 1000, stream: "player-1", type: EventTypeEnum.PLAYER_CREATED, data: { name: "Alice" } },
+        { time: 1100, stream: "player-2", type: EventTypeEnum.PLAYER_CREATED, data: { name: "Bob" } },
+        { time: 1200, stream: "player-3", type: EventTypeEnum.PLAYER_CREATED, data: { name: "Carol" } },
+        {
+          time: 2000,
+          stream: "game-1",
+          type: EventTypeEnum.GAME_CREATED,
+          data: { playedAt: 2000, winner: "player-1", loser: "player-2" },
+        },
+        {
+          time: 2100,
+          stream: "game-2",
+          type: EventTypeEnum.GAME_CREATED,
+          data: { playedAt: 2100, winner: "player-1", loser: "player-3" },
+        },
+        {
+          time: 2200,
+          stream: "game-3",
+          type: EventTypeEnum.GAME_CREATED,
+          data: { playedAt: 2200, winner: "player-3", loser: "player-2" },
+        },
+      ];
+
+      const before = new TennisTable({ events: threePlayerEvents });
+      const aliceEloBefore = before.leaderboard.getPlayerSummary("player-1").elo;
+      const carolEloBefore = before.leaderboard.getPlayerSummary("player-3").elo;
+
+      const after = new TennisTable({
+        events: [
+          ...threePlayerEvents,
+          { time: 3000, stream: "player-2", type: EventTypeEnum.PLAYER_DEACTIVATED, data: null },
+        ],
+      });
+      const aliceEloAfter = after.leaderboard.getPlayerSummary("player-1").elo;
+      const carolEloAfter = after.leaderboard.getPlayerSummary("player-3").elo;
+
+      expect(aliceEloAfter).toBeCloseTo(aliceEloBefore, 6);
+      expect(carolEloAfter).toBeCloseTo(carolEloBefore, 6);
+    });
+
+    it("should hide deactivated players from the displayed leaderboard but keep their score history counting", () => {
+      const events: EventType[] = [
+        { time: 1000, stream: "player-1", type: EventTypeEnum.PLAYER_CREATED, data: { name: "Alice" } },
+        { time: 1100, stream: "player-2", type: EventTypeEnum.PLAYER_CREATED, data: { name: "Bob" } },
+        {
+          time: 2000,
+          stream: "game-1",
+          type: EventTypeEnum.GAME_CREATED,
+          data: { playedAt: 2000, winner: "player-1", loser: "player-2" },
+        },
+        { time: 3000, stream: "player-2", type: EventTypeEnum.PLAYER_DEACTIVATED, data: null },
+      ];
+
+      const tt = new TennisTable({ events });
+      const board = tt.leaderboard.getLeaderboard();
+
+      expect(board.rankedPlayers.find((p) => p.id === "player-2")).toBeUndefined();
+      expect(board.unrankedPlayers.find((p) => p.id === "player-2")).toBeUndefined();
+      // Bob's loss to Alice still counted against Bob's Elo in the map
+      const bobSummary = tt.leaderboard.getPlayerSummary("player-2");
+      expect(bobSummary.loss).toBe(1);
+      expect(bobSummary.elo).toBeLessThan(1000);
+    });
   });
 
   describe("Game Scores", () => {
