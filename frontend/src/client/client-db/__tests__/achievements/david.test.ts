@@ -90,6 +90,47 @@ describe("David Achievement", () => {
     }
   });
 
+  it("tracks the player's highest Elo gain in progression", () => {
+    // After the David upset, progression.david.current should equal the
+    // Elo gain of the upset (the player's all-time best win-gain).
+    const events: EventType[] = [
+      ...buildGoliath(200),
+      createPlayer("david", 5000),
+    ];
+    for (let i = 0; i < 5; i++) {
+      events.push(createPlayer(`dopp-${i}`, 5010 + i));
+    }
+    for (let i = 0; i < 5; i++) {
+      events.push(game(`dg-${i}`, 6000 + i, "david", `dopp-${i}`));
+    }
+    events.push(game("upset", 10000, "david", "goliath"));
+
+    const tt = new TennisTable({ events });
+    tt.achievements.calculateAchievements();
+    const progression = tt.achievements.getPlayerProgression("david");
+
+    expect(progression.david.target).toBe(30);
+    expect(progression.david.earned).toBe(1);
+    expect(progression.david.current).toBeGreaterThanOrEqual(30);
+    // The progression value should equal the Elo gain stored on the badge.
+    const badge = tt.achievements.getAchievements("david").find((a) => a.type === "david");
+    expect(progression.david.current).toBe(badge?.data?.eloGain);
+  });
+
+  it("progression current is 0 when the player has no wins", () => {
+    const events: EventType[] = [
+      createPlayer("alice", 1),
+      createPlayer("bob", 2),
+      game("g1", 100, "bob", "alice"),
+    ];
+
+    const tt = new TennisTable({ events });
+    tt.achievements.calculateAchievements();
+
+    expect(tt.achievements.getPlayerProgression("alice").david.current).toBe(0);
+    expect(tt.achievements.getPlayerProgression("alice").david.earned).toBe(0);
+  });
+
   it("does NOT fire when the winner is unranked", () => {
     // Goliath is ranked at very high Elo. Alice plays her first ever
     // game and beats Goliath. Even though Alice's Elo gain crosses 30,

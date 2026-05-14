@@ -1100,7 +1100,7 @@ export class Achievements {
       "on-the-podium": { earned: 0 },
       "photo-finish": { earned: 0 },
       "leap-frog": { earned: 0 },
-      "david": { earned: 0 },
+      "david": { current: 0, target: 30, earned: 0 },
     };
 
     let firstActiveAt: number | null = null;
@@ -1372,6 +1372,16 @@ export class Achievements {
       }
     }
 
+    // David progression: highest Elo gained from any single win.
+    const playerSummary = this.parent.leaderboard.getPlayerSummary(playerId);
+    let maxEloGain = 0;
+    for (const g of playerSummary.games) {
+      if (g.result === "win" && g.pointsDiff > maxEloGain) {
+        maxEloGain = g.pointsDiff;
+      }
+    }
+    progression["david"].current = maxEloGain;
+
     // Count earned achievements
     const achievements = this.getAchievements(playerId);
     achievements.forEach((achievement) => {
@@ -1502,5 +1512,5 @@ export type AchievementProgression = {
   "on-the-podium": BaseProgression;
   "photo-finish": BaseProgression;
   "leap-frog": BaseProgression;
-  "david": BaseProgression;
+  "david": ProgressionWithTarget;
 };
