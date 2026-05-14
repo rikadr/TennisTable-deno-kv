@@ -163,6 +163,21 @@ function renderDetails(breakdown: HallOfFameScoreBreakdown, key: FactorKey): Rea
         </div>
       );
     }
+    case "peakElo": {
+      const d = data as HallOfFameScoreBreakdown["peakElo"];
+      return (
+        <div className="text-primary-text text-xs space-y-1.5">
+          <div className="flex flex-wrap gap-1.5">
+            <span className="bg-secondary-background text-secondary-text px-2 py-0.5 rounded text-xs inline-flex items-center gap-1.5">
+              Peak ELO
+              <span className="bg-tertiary-background text-tertiary-text h-5 min-w-5 px-1 rounded-full inline-flex items-center justify-center text-xs font-bold">
+                {fmtNum(d.peakElo)}
+              </span>
+            </span>
+          </div>
+        </div>
+      );
+    }
     default: {
       const _exhaustive: never = key;
       return _exhaustive;
@@ -178,6 +193,7 @@ const FACTORS: { key: FactorKey; emoji: string; name: string }[] = [
   { key: "tournamentProgression", emoji: "🏆", name: "Tournament Performance" },
   { key: "socialDiversity", emoji: "👥", name: "Social Diversity" },
   { key: "achievementsEarned", emoji: "🎖️", name: "Achievements Earned" },
+  { key: "peakElo", emoji: "🔥", name: "All-Time High" },
 ];
 
 export const HallOfFamePlayerPage: React.FC = () => {
