@@ -131,6 +131,50 @@ describe("David Achievement", () => {
     expect(tt.achievements.getPlayerProgression("alice").david.earned).toBe(0);
   });
 
+  it("progression is 0 for an unranked player (too few games)", () => {
+    // Bob plays just 4 games against Carol → never ranked. He has wins
+    // but no qualifying ones; progression must be 0.
+    const events: EventType[] = [
+      createPlayer("bob", 1),
+      createPlayer("carol", 2),
+    ];
+    for (let i = 0; i < 4; i++) {
+      events.push(game(`g${i}`, 100 + i, "bob", "carol"));
+    }
+
+    const tt = new TennisTable({ events });
+    tt.achievements.calculateAchievements();
+
+    expect(tt.achievements.getPlayerProgression("bob").david.current).toBe(0);
+  });
+
+  it("progression is 0 for a deactivated player even if they had qualifying wins", () => {
+    // David earns David during the setup, then is deactivated. He is no
+    // longer a ranked active player so progression collapses to 0.
+    const events: EventType[] = [
+      ...buildGoliath(200),
+      createPlayer("david", 5000),
+    ];
+    for (let i = 0; i < 5; i++) {
+      events.push(createPlayer(`dopp-${i}`, 5010 + i));
+    }
+    for (let i = 0; i < 5; i++) {
+      events.push(game(`dg-${i}`, 6000 + i, "david", `dopp-${i}`));
+    }
+    events.push(game("upset", 10000, "david", "goliath"));
+    events.push({
+      time: 20000,
+      stream: "david",
+      type: EventTypeEnum.PLAYER_DEACTIVATED,
+      data: null,
+    });
+
+    const tt = new TennisTable({ events });
+    tt.achievements.calculateAchievements();
+
+    expect(tt.achievements.getPlayerProgression("david").david.current).toBe(0);
+  });
+
   it("progression only counts wins where both players were ranked at the time", () => {
     // Goliath has 200 wins and is ranked. Alice plays Goliath in her
     // very first game and wins — Alice is unranked entering the match,
