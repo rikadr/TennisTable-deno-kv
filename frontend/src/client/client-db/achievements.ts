@@ -480,6 +480,18 @@ export class Achievements {
       return higher + 1;
     };
 
+    // Total number of ranked active players at `atTime`. Used to gate
+    // achievements that should require a non-trivial leaderboard.
+    const countRankedAt = (atTime: number): number => {
+      let count = 0;
+      for (const [id, player] of playerMap) {
+        if (player.totalGames < gameLimit) continue;
+        if (!isActiveAt(id, atTime)) continue;
+        count++;
+      }
+      return count;
+    };
+
     const touchedThrone = new Set<string>();
     const onPodium = new Set<string>();
     const kingslayed = new Set<string>();
@@ -549,11 +561,15 @@ export class Achievements {
       }
 
       // On the Podium: first time the player ever sits at rank ≤ 3 while
-      // already being a ranked player.
+      // already being a ranked player. Requires at least 4 ranked active
+      // players so that "top 3" is meaningful (you must have outranked at
+      // least one other player to be on the podium).
+      const rankedCount = countRankedAt(game.playedAt);
       if (
         winnerRankBefore !== null &&
         winnerRankAfter !== null &&
         winnerRankAfter <= 3 &&
+        rankedCount >= 4 &&
         !onPodium.has(game.winner)
       ) {
         onPodium.add(game.winner);
@@ -566,6 +582,7 @@ export class Achievements {
         loserRankBefore !== null &&
         loserRankAfter !== null &&
         loserRankAfter <= 3 &&
+        rankedCount >= 4 &&
         !onPodium.has(game.loser)
       ) {
         onPodium.add(game.loser);
