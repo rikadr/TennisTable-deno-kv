@@ -19,10 +19,13 @@ describe("Touched the Throne Achievement", () => {
     data: { playedAt: time, winner, loser },
   });
 
-  it("awards the achievement when a player first reaches rank #1", () => {
-    // Bob beats Carol 5 times — both become ranked at game 5, Bob is #1.
+  it("awards the achievement on the first match where a ranked player ends up at rank #1", () => {
+    // Bob beats Carol 5 times — both cross the 5-game threshold on the 5th
+    // game but neither was ranked entering that game, so no award yet. On
+    // the 6th game Bob enters ranked and ends ranked at #1, earning the
+    // achievement.
     const games: EventType[] = [];
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < 6; i++) {
       games.push(game(`g${i}`, 100 + i, "bob", "carol"));
     }
 
@@ -31,11 +34,26 @@ describe("Touched the Throne Achievement", () => {
 
     const bobThrone = tt.achievements.getAchievements("bob").filter((a) => a.type === "touched-the-throne");
     expect(bobThrone).toHaveLength(1);
-    expect(bobThrone[0].earnedAt).toBe(104); // The 5th game (game index 4) timestamp.
+    expect(bobThrone[0].earnedAt).toBe(105); // The 6th game (index 5) timestamp.
 
     // Carol is rank #2 — should not have touched the throne.
     const carolThrone = tt.achievements.getAchievements("carol").filter((a) => a.type === "touched-the-throne");
     expect(carolThrone).toHaveLength(0);
+  });
+
+  it("does NOT award on the very match where a player first becomes ranked", () => {
+    // 5 games — Bob reaches the threshold on this 5th game, but he was not
+    // a ranked player going into it, so the achievement should NOT fire.
+    const games: EventType[] = [];
+    for (let i = 0; i < 5; i++) {
+      games.push(game(`g${i}`, 100 + i, "bob", "carol"));
+    }
+
+    const tt = new TennisTable({ events: [...baseEvents, ...games] });
+    tt.achievements.calculateAchievements();
+
+    expect(tt.achievements.getAchievements("bob").filter((a) => a.type === "touched-the-throne")).toHaveLength(0);
+    expect(tt.achievements.getAchievements("carol").filter((a) => a.type === "touched-the-throne")).toHaveLength(0);
   });
 
   it("does NOT award the achievement before a player has enough games to be ranked", () => {
@@ -52,9 +70,10 @@ describe("Touched the Throne Achievement", () => {
   });
 
   it("is only awarded once even if the player drops from #1 and returns", () => {
-    // Bob reaches #1 by beating Carol 5 times.
+    // Bob beats Carol 6 times — crosses threshold and then has a 6th ranked
+    // match where he is rank #1.
     const ascend: EventType[] = [];
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < 6; i++) {
       ascend.push(game(`asc-${i}`, 100 + i, "bob", "carol"));
     }
     // Carol beats Bob enough times to take #1 from him.
@@ -74,16 +93,17 @@ describe("Touched the Throne Achievement", () => {
     const bobThrone = tt.achievements.getAchievements("bob").filter((a) => a.type === "touched-the-throne");
     expect(bobThrone).toHaveLength(1);
 
-    // Carol also touched #1 in the middle, but only once.
+    // Carol also touched #1 in the middle, once.
     const carolThrone = tt.achievements.getAchievements("carol").filter((a) => a.type === "touched-the-throne");
     expect(carolThrone).toHaveLength(1);
   });
 
   it("is awarded even if the player is later deactivated", () => {
-    // Build Bob's reign with 5 wins, then deactivate Bob. Historical rank
-    // history is locked; the achievement should still be earned.
+    // Bob plays 6 games against Carol, winning all. Then Bob is deactivated.
+    // The achievement must remain because Bob was active and ranked at the
+    // time he reached rank #1.
     const games: EventType[] = [];
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < 6; i++) {
       games.push(game(`g${i}`, 100 + i, "bob", "carol"));
     }
     const deactivate: EventType = {

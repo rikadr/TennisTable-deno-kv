@@ -523,14 +523,24 @@ export class Achievements {
       const loserRankAfter = getRank(game.loser, game.playedAt);
 
       // Touched the Throne: first time the player ever sits at rank #1.
-      if (winnerRankAfter === 1 && !touchedThrone.has(game.winner)) {
+      // The player must already be ranked entering the match — crossing
+      // the game-count threshold via this game doesn't count.
+      if (
+        winnerRankBefore !== null &&
+        winnerRankAfter === 1 &&
+        !touchedThrone.has(game.winner)
+      ) {
         touchedThrone.add(game.winner);
         this.#addAchievement(
           game.winner,
           this.#createAchievement("touched-the-throne", game.winner, game.playedAt, undefined),
         );
       }
-      if (loserRankAfter === 1 && !touchedThrone.has(game.loser)) {
+      if (
+        loserRankBefore !== null &&
+        loserRankAfter === 1 &&
+        !touchedThrone.has(game.loser)
+      ) {
         touchedThrone.add(game.loser);
         this.#addAchievement(
           game.loser,
@@ -538,15 +548,26 @@ export class Achievements {
         );
       }
 
-      // On the Podium: first time the player ever sits at rank ≤ 3.
-      if (winnerRankAfter !== null && winnerRankAfter <= 3 && !onPodium.has(game.winner)) {
+      // On the Podium: first time the player ever sits at rank ≤ 3 while
+      // already being a ranked player.
+      if (
+        winnerRankBefore !== null &&
+        winnerRankAfter !== null &&
+        winnerRankAfter <= 3 &&
+        !onPodium.has(game.winner)
+      ) {
         onPodium.add(game.winner);
         this.#addAchievement(
           game.winner,
           this.#createAchievement("on-the-podium", game.winner, game.playedAt, undefined),
         );
       }
-      if (loserRankAfter !== null && loserRankAfter <= 3 && !onPodium.has(game.loser)) {
+      if (
+        loserRankBefore !== null &&
+        loserRankAfter !== null &&
+        loserRankAfter <= 3 &&
+        !onPodium.has(game.loser)
+      ) {
         onPodium.add(game.loser);
         this.#addAchievement(
           game.loser,
