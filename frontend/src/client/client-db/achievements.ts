@@ -1384,17 +1384,11 @@ export class Achievements {
     }
 
     // David progression: highest Elo gained from a win where both
-    // players were ranked at the time of the match. Only shown for
-    // currently-ranked players (≥ gameLimitForRanked games AND active);
-    // unranked players have no eligible games by definition.
-    const lbPlayer = this.parent.leaderboard.getCachedLeaderboardMap().get(playerId);
-    const isCurrentlyActive =
-      this.parent.eventStore.playersProjector.getPlayer(playerId)?.active === true;
-    const isCurrentlyRanked =
-      !!lbPlayer &&
-      lbPlayer.games.length >= this.parent.client.gameLimitForRanked &&
-      isCurrentlyActive;
-    progression["david"].current = isCurrentlyRanked ? (this.bestDavidGain.get(playerId) ?? 0) : 0;
+    // players were ranked at the time of the match. Players who never
+    // crossed the ranked threshold will naturally have no entries in
+    // bestDavidGain; deactivated players who earned qualifying gains
+    // while active keep their progression here.
+    progression["david"].current = this.bestDavidGain.get(playerId) ?? 0;
 
     // Count earned achievements
     const achievements = this.getAchievements(playerId);

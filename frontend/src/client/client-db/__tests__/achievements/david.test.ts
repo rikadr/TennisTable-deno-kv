@@ -148,9 +148,10 @@ describe("David Achievement", () => {
     expect(tt.achievements.getPlayerProgression("bob").david.current).toBe(0);
   });
 
-  it("progression is 0 for a deactivated player even if they had qualifying wins", () => {
-    // David earns David during the setup, then is deactivated. He is no
-    // longer a ranked active player so progression collapses to 0.
+  it("progression is retained for a deactivated player who had qualifying wins", () => {
+    // David earns David during the setup, then is deactivated. The
+    // qualifying game happened while he was active and ranked, so the
+    // progression value persists past the deactivation.
     const events: EventType[] = [
       ...buildGoliath(200),
       createPlayer("david", 5000),
@@ -172,7 +173,7 @@ describe("David Achievement", () => {
     const tt = new TennisTable({ events });
     tt.achievements.calculateAchievements();
 
-    expect(tt.achievements.getPlayerProgression("david").david.current).toBe(0);
+    expect(tt.achievements.getPlayerProgression("david").david.current).toBeGreaterThanOrEqual(30);
   });
 
   it("progression only counts wins where both players were ranked at the time", () => {
