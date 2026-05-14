@@ -2,9 +2,9 @@ import { TennisTable } from "../../tennis-table";
 import { EventType, EventTypeEnum } from "../../event-store/event-types";
 
 // The Photo Finish achievement fires when, after a match, both players' Elos
-// land within 1 point of each other. With K=32 the math demands a pre-match
-// Elo gap of roughly 35 (when the lower-rated player wins). The sequence
-// below engineers such a gap:
+// land within 1 point of each other AND that player is ranked. With K=32 the
+// math demands a pre-match Elo gap of roughly 35 (when the lower-rated
+// player wins). The sequence below engineers such a gap:
 //
 //   Bob beats Carol 4 times       → Bob ~1055.80, Carol ~944.20
 //   Carol beats Bob (upset)       → Bob ~1034.83, Carol ~965.17
@@ -28,18 +28,20 @@ describe("Photo Finish Achievement", () => {
     data: { playedAt: time, winner, loser },
   });
 
-  it("awards the achievement to both players when post-match Elos are within 1", () => {
-    const events: EventType[] = [
-      ...baseEvents,
-      game("bc-1", 100, "bob", "carol"),
-      game("bc-2", 101, "bob", "carol"),
-      game("bc-3", 102, "bob", "carol"),
-      game("bc-4", 103, "bob", "carol"),
-      game("cb-1", 200, "carol", "bob"),
-      game("photo", 300, "alice", "bob"),
-    ];
+  const photoFinishEvents = (): EventType[] => [
+    ...baseEvents,
+    game("bc-1", 100, "bob", "carol"),
+    game("bc-2", 101, "bob", "carol"),
+    game("bc-3", 102, "bob", "carol"),
+    game("bc-4", 103, "bob", "carol"),
+    game("cb-1", 200, "carol", "bob"),
+    game("photo", 300, "alice", "bob"),
+  ];
 
-    const tt = new TennisTable({ events });
+  it("awards the achievement to both players when post-match Elos are within 1", () => {
+    const tt = new TennisTable({ events: photoFinishEvents() });
+    // Lower the ranked threshold so Alice (1 game) qualifies for the test.
+    tt.client.gameLimitForRanked = 1;
     tt.achievements.calculateAchievements();
 
     const alicePhotos = tt.achievements.getAchievements("alice").filter((a) => a.type === "photo-finish");
@@ -48,7 +50,6 @@ describe("Photo Finish Achievement", () => {
     expect(alicePhotos).toHaveLength(1);
     expect(bobPhotos).toHaveLength(1);
 
-    // Both achievements reference the same game and same Elo diff.
     expect(alicePhotos[0].data).toMatchObject({ opponent: "bob", gameId: "photo" });
     expect(bobPhotos[0].data).toMatchObject({ opponent: "alice", gameId: "photo" });
     expect(alicePhotos[0].data?.eloDiff).toBeLessThanOrEqual(1);
@@ -64,5 +65,16 @@ describe("Photo Finish Achievement", () => {
 
     expect(tt.achievements.getAchievements("alice").filter((a) => a.type === "photo-finish")).toHaveLength(0);
     expect(tt.achievements.getAchievements("bob").filter((a) => a.type === "photo-finish")).toHaveLength(0);
+  });
+
+  it("only awards to ranked players — unranked participants are skipped", () => {
+    // Default ranked threshold = 5 games. After the same sequence, Alice has
+    // played only 1 game (the photo-finish itself), so she is unranked. Bob
+    // has played 6 games and is ranked. Only Bob should receive the badge.
+    const tt = new TennisTable({ events: photoFinishEvents() });
+    tt.achievements.calculateAchievements();
+
+    expect(tt.achievements.getAchievements("alice").filter((a) => a.type === "photo-finish")).toHaveLength(0);
+    expect(tt.achievements.getAchievements("bob").filter((a) => a.type === "photo-finish")).toHaveLength(1);
   });
 });

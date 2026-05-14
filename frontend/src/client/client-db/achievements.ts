@@ -538,26 +538,31 @@ export class Achievements {
         );
       }
 
-      // Photo Finish: post-match Elos within 1 point. Awarded to both
-      // players — they both lived the moment.
+      // Photo Finish: post-match Elos within 1 point. Awarded to each
+      // player independently, but only if that player is ranked at the
+      // moment of the achievement.
       const eloDiff = Math.abs(winner.elo - loser.elo);
       if (eloDiff <= 1) {
-        this.#addAchievement(
-          game.winner,
-          this.#createAchievement("photo-finish", game.winner, game.playedAt, {
-            opponent: game.loser,
-            gameId: game.id,
-            eloDiff,
-          }),
-        );
-        this.#addAchievement(
-          game.loser,
-          this.#createAchievement("photo-finish", game.loser, game.playedAt, {
-            opponent: game.winner,
-            gameId: game.id,
-            eloDiff,
-          }),
-        );
+        if (winnerRankAfter !== null) {
+          this.#addAchievement(
+            game.winner,
+            this.#createAchievement("photo-finish", game.winner, game.playedAt, {
+              opponent: game.loser,
+              gameId: game.id,
+              eloDiff,
+            }),
+          );
+        }
+        if (loserRankAfter !== null) {
+          this.#addAchievement(
+            game.loser,
+            this.#createAchievement("photo-finish", game.loser, game.playedAt, {
+              opponent: game.winner,
+              gameId: game.id,
+              eloDiff,
+            }),
+          );
+        }
       }
     });
   }
