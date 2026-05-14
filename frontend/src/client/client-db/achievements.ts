@@ -1,5 +1,6 @@
 import { Elo } from "./elo";
 import { EventTypeEnum } from "./event-store/event-types";
+import { Game } from "./event-store/projectors/games-projector";
 import { TennisTable } from "./tennis-table";
 
 export class Achievements {
@@ -496,10 +497,65 @@ export class Achievements {
     const onPodium = new Set<string>();
     const kingslayed = new Set<string>();
 
-    this.parent.games.forEach((game) => {
+    // When the leaderboard pool shifts (a player is deactivated or
+    // reactivated) the surviving active players may suddenly find
+    // themselves in top 3 or at rank #1 without playing a match. Walk
+    // all currently active ranked players at `time` and award any new
+    // throne / podium that becomes earnable.
+    const recheckRankAchievementsAt = (time: number) => {
+      const rankedCount = countRankedAt(time);
+      if (rankedCount < 5) return;
+      for (const [playerId] of playerMap) {
+        if (!isActiveAt(playerId, time)) continue;
+        const rank = getRank(playerId, time);
+        if (rank === null) continue;
+        if (rank === 1 && !touchedThrone.has(playerId)) {
+          touchedThrone.add(playerId);
+          this.#addAchievement(
+            playerId,
+            this.#createAchievement("touched-the-throne", playerId, time, undefined),
+          );
+        }
+        if (rank <= 3 && !onPodium.has(playerId)) {
+          onPodium.add(playerId);
+          this.#addAchievement(
+            playerId,
+            this.#createAchievement("on-the-podium", playerId, time, undefined),
+          );
+        }
+      }
+    };
+
+    // Build a time-ordered action list of games + active-state changes.
+    // Games at the same time as a state-change event are processed
+    // first so the recheck sees the post-game state.
+    type Action =
+      | { kind: "game"; time: number; game: Game }
+      | { kind: "recheck"; time: number };
+    const actions: Action[] = [];
+    for (const g of this.parent.games) {
+      actions.push({ kind: "game", time: g.playedAt, game: g });
+    }
+    for (const e of this.parent.events) {
+      if (e.type === EventTypeEnum.PLAYER_DEACTIVATED || e.type === EventTypeEnum.PLAYER_REACTIVATED) {
+        actions.push({ kind: "recheck", time: e.time });
+      }
+    }
+    actions.sort((a, b) => {
+      if (a.time !== b.time) return a.time - b.time;
+      if (a.kind === b.kind) return 0;
+      return a.kind === "game" ? -1 : 1;
+    });
+
+    for (const action of actions) {
+      if (action.kind === "recheck") {
+        recheckRankAchievementsAt(action.time);
+        continue;
+      }
+      const game = action.game;
       const winner = playerMap.get(game.winner);
       const loser = playerMap.get(game.loser);
-      if (!winner || !loser) return;
+      if (!winner || !loser) continue;
 
       // Pre-match ranks (loser's rank needed for Kingslayer; winner's for
       // Climber's "from" rank).
@@ -640,7 +696,7 @@ export class Achievements {
           }),
         );
       }
-    });
+    }
   }
 
   #checkDonutAchievements(

@@ -143,6 +143,57 @@ describe("On the Podium Achievement", () => {
     expect(tt.achievements.getAchievements("alice").filter((x) => x.type === "on-the-podium")).toHaveLength(0);
   });
 
+  it("promotes a player to top 3 when a top-3 player is deactivated", () => {
+    // 6 players in a double round-robin (30 games). Standings:
+    //   A=10W  rank 1,  B=8W 2L  rank 2,  C=6W 4L  rank 3,
+    //   D=4W 6L rank 4,  E=2W 8L rank 5,  F=0W 10L rank 6.
+    // A, B, C earn podium during the setup. C is then deactivated —
+    // leaving 5 ranked active players and shifting D into rank 3. D
+    // should earn the podium at the time of the deactivation event.
+    const events: EventType[] = [
+      { time: 1, stream: "a", type: EventTypeEnum.PLAYER_CREATED, data: { name: "A" } },
+      { time: 2, stream: "b", type: EventTypeEnum.PLAYER_CREATED, data: { name: "B" } },
+      { time: 3, stream: "c", type: EventTypeEnum.PLAYER_CREATED, data: { name: "C" } },
+      { time: 4, stream: "d", type: EventTypeEnum.PLAYER_CREATED, data: { name: "D" } },
+      { time: 5, stream: "e", type: EventTypeEnum.PLAYER_CREATED, data: { name: "E" } },
+      { time: 6, stream: "f", type: EventTypeEnum.PLAYER_CREATED, data: { name: "F" } },
+    ];
+    const pairs: [string, string][] = [
+      ["a", "b"], ["a", "c"], ["a", "d"], ["a", "e"], ["a", "f"],
+      ["b", "c"], ["b", "d"], ["b", "e"], ["b", "f"],
+      ["c", "d"], ["c", "e"], ["c", "f"],
+      ["d", "e"], ["d", "f"],
+      ["e", "f"],
+    ];
+    let t = 100;
+    for (let round = 0; round < 2; round++) {
+      for (const [winner, loser] of pairs) {
+        events.push(game(`g-${round}-${winner}-${loser}`, t++, winner, loser));
+      }
+    }
+    events.push({
+      time: 1000,
+      stream: "c",
+      type: EventTypeEnum.PLAYER_DEACTIVATED,
+      data: null,
+    });
+
+    const tt = new TennisTable({ events });
+    tt.achievements.calculateAchievements();
+
+    // A, B, C earned the podium during the setup.
+    expect(tt.achievements.getAchievements("a").filter((x) => x.type === "on-the-podium")).toHaveLength(1);
+    expect(tt.achievements.getAchievements("b").filter((x) => x.type === "on-the-podium")).toHaveLength(1);
+    expect(tt.achievements.getAchievements("c").filter((x) => x.type === "on-the-podium")).toHaveLength(1);
+    // D was promoted to rank 3 by the deactivation and earns the badge.
+    const dPodium = tt.achievements.getAchievements("d").filter((x) => x.type === "on-the-podium");
+    expect(dPodium).toHaveLength(1);
+    expect(dPodium[0].earnedAt).toBe(1000);
+    // E and F never end in top 3.
+    expect(tt.achievements.getAchievements("e").filter((x) => x.type === "on-the-podium")).toHaveLength(0);
+    expect(tt.achievements.getAchievements("f").filter((x) => x.type === "on-the-podium")).toHaveLength(0);
+  });
+
   it("excludes deactivated players from the ranked count", () => {
     // Same 5-player setup but E is deactivated before any games are
     // played. E has 8 games on the books but is not a ranked active

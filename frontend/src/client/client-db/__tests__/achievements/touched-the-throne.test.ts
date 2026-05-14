@@ -115,6 +115,49 @@ describe("Touched the Throne Achievement", () => {
     expect(tt.achievements.getAchievements("b").filter((x) => x.type === "touched-the-throne")).toHaveLength(1);
   });
 
+  it("promotes rank 2 to rank 1 when rank 1 is deactivated", () => {
+    // 6 players in a double round-robin (30 games). A wins everything
+    // and earns the throne during the setup. When A is later deactivated
+    // the new rank #1 (B) earns the achievement at the deactivation time.
+    const events: EventType[] = [
+      { time: 1, stream: "a", type: EventTypeEnum.PLAYER_CREATED, data: { name: "A" } },
+      { time: 2, stream: "b", type: EventTypeEnum.PLAYER_CREATED, data: { name: "B" } },
+      { time: 3, stream: "c", type: EventTypeEnum.PLAYER_CREATED, data: { name: "C" } },
+      { time: 4, stream: "d", type: EventTypeEnum.PLAYER_CREATED, data: { name: "D" } },
+      { time: 5, stream: "e", type: EventTypeEnum.PLAYER_CREATED, data: { name: "E" } },
+      { time: 6, stream: "f", type: EventTypeEnum.PLAYER_CREATED, data: { name: "F" } },
+    ];
+    const pairs: [string, string][] = [
+      ["a", "b"], ["a", "c"], ["a", "d"], ["a", "e"], ["a", "f"],
+      ["b", "c"], ["b", "d"], ["b", "e"], ["b", "f"],
+      ["c", "d"], ["c", "e"], ["c", "f"],
+      ["d", "e"], ["d", "f"],
+      ["e", "f"],
+    ];
+    let t = 100;
+    for (let round = 0; round < 2; round++) {
+      for (const [winner, loser] of pairs) {
+        events.push(game(`g-${round}-${winner}-${loser}`, t++, winner, loser));
+      }
+    }
+    events.push({
+      time: 1000,
+      stream: "a",
+      type: EventTypeEnum.PLAYER_DEACTIVATED,
+      data: null,
+    });
+
+    const tt = new TennisTable({ events });
+    tt.achievements.calculateAchievements();
+
+    // A earned the throne during the setup.
+    expect(tt.achievements.getAchievements("a").filter((x) => x.type === "touched-the-throne")).toHaveLength(1);
+    // B was promoted to rank 1 by the deactivation and earns the badge.
+    const bThrone = tt.achievements.getAchievements("b").filter((x) => x.type === "touched-the-throne");
+    expect(bThrone).toHaveLength(1);
+    expect(bThrone[0].earnedAt).toBe(1000);
+  });
+
   it("is awarded even if the player is later deactivated", () => {
     // A reaches rank #1 during the setup and is then deactivated. The
     // achievement was earned while A was active and stays.
