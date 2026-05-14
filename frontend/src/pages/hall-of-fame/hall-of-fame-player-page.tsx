@@ -186,6 +186,7 @@ function renderDetails(breakdown: HallOfFameScoreBreakdown, key: FactorKey): Rea
 }
 
 const FACTORS: { key: FactorKey; emoji: string; name: string }[] = [
+  { key: "peakElo", emoji: "🔥", name: "All-Time High" },
   { key: "experience", emoji: "🏓", name: "Experience" },
   { key: "dataVolume", emoji: "📊", name: "Data Volume" },
   { key: "longevity", emoji: "📅", name: "Activity" },
@@ -193,7 +194,6 @@ const FACTORS: { key: FactorKey; emoji: string; name: string }[] = [
   { key: "tournamentProgression", emoji: "🏆", name: "Tournament Performance" },
   { key: "socialDiversity", emoji: "👥", name: "Social Diversity" },
   { key: "achievementsEarned", emoji: "🎖️", name: "Achievements Earned" },
-  { key: "peakElo", emoji: "🔥", name: "All-Time High" },
 ];
 
 export const HallOfFamePlayerPage: React.FC = () => {
