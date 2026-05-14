@@ -1,3 +1,4 @@
+import { Elo } from "./elo";
 import { TennisTable } from "./tennis-table";
 
 export type SeasonDetail = { rank: number; points: number };
@@ -11,6 +12,7 @@ export type HallOfFameScoreBreakdown = {
   longevity: { score: number; activeDays: number };
   experience: { score: number; games: number };
   dataVolume: { score: number; gamesWithSets: number; gamesWithPoints: number };
+  peakElo: { score: number; peakElo: number };
   total: number;
 };
 
@@ -27,7 +29,8 @@ export type HallOfFameFactorKey =
   | "tournamentProgression"
   | "longevity"
   | "experience"
-  | "dataVolume";
+  | "dataVolume"
+  | "peakElo";
 
 export type HallOfFameSectionStats = Record<HallOfFameFactorKey, { max: number; rank: number }>;
 
@@ -39,6 +42,7 @@ const FACTOR_KEYS: HallOfFameFactorKey[] = [
   "longevity",
   "experience",
   "dataVolume",
+  "peakElo",
 ];
 
 export class HallOfFame {
@@ -47,6 +51,7 @@ export class HallOfFame {
   private playerCache = new Map<string, HallOfFameEntry>();
   private sectionMaxes: Record<HallOfFameFactorKey, number> | undefined;
   private sectionRanks: Record<HallOfFameFactorKey, Map<string, number>> | undefined;
+  private peakEloCache: Map<string, number> | undefined;
 
   constructor(parent: TennisTable) {
     this.parent = parent;
@@ -92,6 +97,7 @@ export class HallOfFame {
     this.playerCache.clear();
     this.sectionMaxes = undefined;
     this.sectionRanks = undefined;
+    this.peakEloCache = undefined;
   }
 
   #ensureCrossPlayerStats() {
@@ -110,6 +116,7 @@ export class HallOfFame {
       longevity: [],
       experience: [],
       dataVolume: [],
+      peakElo: [],
     };
 
     for (const player of allPlayers) {
@@ -166,10 +173,12 @@ export class HallOfFame {
     const longevity = this.#calcLongevity(playerId);
     const experience = this.#calcExperience(playerId);
     const dataVolume = this.#calcDataVolume(playerId);
+    const peakElo = this.#calcPeakElo(playerId);
 
     const total =
       seasonPerformance.score + achievementsEarned.score + socialDiversity.score +
-      tournamentProgression.score + longevity.score + experience.score + dataVolume.score;
+      tournamentProgression.score + longevity.score + experience.score + dataVolume.score +
+      peakElo.score;
 
     return {
       seasonPerformance,
@@ -179,6 +188,7 @@ export class HallOfFame {
       longevity,
       experience,
       dataVolume,
+      peakElo,
       total: Math.round(total),
     };
   }
@@ -324,5 +334,25 @@ export class HallOfFame {
     }
 
     return { score: gamesWithSets + gamesWithPoints, gamesWithSets, gamesWithPoints };
+  }
+
+  #calcPeakElo(playerId: string): HallOfFameScoreBreakdown["peakElo"] {
+    const peakElo = this.#getPeakElos().get(playerId) ?? Elo.INITIAL_ELO;
+    const score = Math.max(0, peakElo - Elo.INITIAL_ELO);
+    return { score, peakElo };
+  }
+
+  #getPeakElos(): Map<string, number> {
+    if (this.peakEloCache) return this.peakEloCache;
+    const peaks = new Map<string, number>();
+    Elo.eloCalculator(this.parent.games, this.parent.allPlayers, (map, game) => {
+      const winner = map.get(game.winner);
+      if (winner) {
+        const current = peaks.get(winner.id) ?? Elo.INITIAL_ELO;
+        if (winner.elo > current) peaks.set(winner.id, winner.elo);
+      }
+    });
+    this.peakEloCache = peaks;
+    return peaks;
   }
 }
