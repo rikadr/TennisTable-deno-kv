@@ -176,6 +176,11 @@ export const ACHIEVEMENT_LABELS: Record<string, { title: string; description: st
     description: "Jump 3 or more ranks on the leaderboard from a single game",
     icon: "🐸",
   },
+  "david": {
+    title: "David",
+    description: "Take down a much higher rated opponent (gain 30+ Elo from a single game)",
+    icon: "🪨",
+  },
 };
 
 type TabType = "earned" | "progress";

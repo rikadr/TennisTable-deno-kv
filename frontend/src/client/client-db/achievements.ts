@@ -584,6 +584,7 @@ export class Achievements {
       // Apply Elo update.
       winner.totalGames++;
       loser.totalGames++;
+      const winnerEloBefore = winner.elo;
       const { winnersNewElo, losersNewElo } = Elo.calculateELO(
         winner.elo,
         loser.elo,
@@ -592,6 +593,7 @@ export class Achievements {
       );
       winner.elo = winnersNewElo;
       loser.elo = losersNewElo;
+      const eloGain = winnersNewElo - winnerEloBefore;
 
       // Post-match ranks.
       const winnerRankAfter = getRank(game.winner, game.playedAt);
@@ -670,6 +672,19 @@ export class Achievements {
             ranksJumped: winnerRankBefore - winnerRankAfter,
             fromRank: winnerRankBefore,
             toRank: winnerRankAfter,
+          }),
+        );
+      }
+
+      // David: ≥ 30 Elo gain from beating a much higher rated opponent.
+      // Both players must be ranked (post-match) for this to count.
+      if (eloGain >= 30 && winnerRankAfter !== null && loserRankAfter !== null) {
+        this.#addAchievement(
+          game.winner,
+          this.#createAchievement("david", game.winner, game.playedAt, {
+            opponent: game.loser,
+            gameId: game.id,
+            eloGain,
           }),
         );
       }
@@ -1085,6 +1100,7 @@ export class Achievements {
       "on-the-podium": { earned: 0 },
       "photo-finish": { earned: 0 },
       "leap-frog": { earned: 0 },
+      "david": { earned: 0 },
     };
 
     let firstActiveAt: number | null = null;
@@ -1404,6 +1420,7 @@ type AchievementDefinitions = {
   "on-the-podium": undefined;
   "photo-finish": { opponent: string; gameId: string; eloDiff: number };
   "leap-frog": { gameId: string; ranksJumped: number; fromRank: number; toRank: number };
+  "david": { opponent: string; gameId: string; eloGain: number };
 };
 
 type AchievementType = keyof AchievementDefinitions;
@@ -1485,4 +1502,5 @@ export type AchievementProgression = {
   "on-the-podium": BaseProgression;
   "photo-finish": BaseProgression;
   "leap-frog": BaseProgression;
+  "david": BaseProgression;
 };
