@@ -28,6 +28,12 @@ export const ProgressList: React.FC<ProgressListProps> = ({ selectedType }) => {
         let current = 0;
         let target = 0;
         let percent = 0;
+        let earned = 0;
+
+        if (specificProgression && "earned" in specificProgression) {
+          // @ts-ignore
+          earned = specificProgression.earned;
+        }
 
         if (
           specificProgression &&
@@ -39,8 +45,7 @@ export const ProgressList: React.FC<ProgressListProps> = ({ selectedType }) => {
           // @ts-ignore
           target = specificProgression.target;
         } else if (specificProgression && "earned" in specificProgression) {
-          // @ts-ignore
-          current = specificProgression.earned;
+          current = earned;
           // For achievements without target (just 'earned' count), we can treat 1 as target if earned > 0
           // or just display the count. For sorting purpose, use earned.
           target = 1;
@@ -55,6 +60,7 @@ export const ProgressList: React.FC<ProgressListProps> = ({ selectedType }) => {
           current,
           target,
           percent,
+          earned,
           progression: specificProgression,
         };
       })
@@ -90,13 +96,19 @@ export const ProgressList: React.FC<ProgressListProps> = ({ selectedType }) => {
             </p>
           </div>
 
-            {playersProgress.map(({ player, current, target, percent }, index) => {
+            {playersProgress.map(({ player, current, target, percent, earned }, index) => {
               const isComplete = percent >= 100;
+              const hasEarned = earned > 0;
 
               return (
                  <div
                   key={player.id}
-                  className="bg-background-secondary rounded-lg overflow-hidden border border-primary-text/30 relative"
+                  className={classNames(
+                    "rounded-lg overflow-hidden border border-primary-text/30 relative",
+                    hasEarned
+                      ? "bg-gradient-to-b from-green-400 via-green-500 to-green-600"
+                      : "bg-background-secondary",
+                  )}
                 >
                   {/* Progress Background */}
                   {(target > 1 || current > 0) && (

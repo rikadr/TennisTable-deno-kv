@@ -151,6 +151,41 @@ export const ACHIEVEMENT_LABELS: Record<string, { title: string; description: st
     description: "Win 3 games in under 90 minutes",
     icon: "🎩",
   },
+  "kingslayer": {
+    title: "Kingslayer",
+    description: "Beat the player ranked #1 on the leaderboard",
+    icon: "⚔️",
+  },
+  "touched-the-throne": {
+    title: "Touched the Throne",
+    description: "Reach rank #1 on the leaderboard",
+    icon: "👑",
+  },
+  "on-the-podium": {
+    title: "On the Podium",
+    description: "Reach a top-3 rank on the leaderboard",
+    icon: "🥉",
+  },
+  "photo-finish": {
+    title: "Photo Finish",
+    description: "Play a game that ended with both Elos within 1 point",
+    icon: "📸",
+  },
+  "leap-frog": {
+    title: "Leap Frog",
+    description: "Jump 3 or more ranks on the leaderboard from a single game",
+    icon: "🐸",
+  },
+  "david": {
+    title: "David",
+    description: "Take down a much higher rated opponent (gain 30+ Elo from a single game)",
+    icon: "🪨",
+  },
+  "climber": {
+    title: "Climber",
+    description: "Climb 300 Elo from your all-time low (recorded from when you first became ranked)",
+    icon: "🧗",
+  },
 };
 
 type TabType = "earned" | "progress";
@@ -347,7 +382,12 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
               hasEarned && "bg-gradient-to-b from-green-400 via-green-500 to-green-600",
             )}
           >
-            {/* Progress bar background */}
+            {/* Progress bar background.
+                The row's container has a green gradient when the
+                achievement has been earned — this shows through behind
+                the blue progressing bar so an earned-but-currently-
+                progressing achievement reads as "blue bar over green
+                bg". When progress hits 100%, the bar fills with green. */}
             {hasTarget && (
               <div className="absolute inset-0 pointer-events-none">
                 <div
