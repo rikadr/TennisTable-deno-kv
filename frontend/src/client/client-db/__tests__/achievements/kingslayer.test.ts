@@ -73,6 +73,31 @@ describe("Kingslayer Achievement", () => {
     expect(tt.achievements.getAchievements("alice").filter((a) => a.type === "kingslayer")).toHaveLength(0);
   });
 
+  it("does NOT award when only 1 player is ranked", () => {
+    // Bob beats five different opponents once each, so he reaches the
+    // 5-game threshold while nobody else does. Bob is technically rank #1
+    // but he is the only ranked player. Alice beating him should not be
+    // a kingslay because there's no one else on the leaderboard.
+    const events: EventType[] = [
+      ...baseEvents,
+      { time: 4, stream: "dave", type: EventTypeEnum.PLAYER_CREATED, data: { name: "Dave" } },
+      { time: 5, stream: "eve", type: EventTypeEnum.PLAYER_CREATED, data: { name: "Eve" } },
+      { time: 6, stream: "frank", type: EventTypeEnum.PLAYER_CREATED, data: { name: "Frank" } },
+      { time: 7, stream: "grace", type: EventTypeEnum.PLAYER_CREATED, data: { name: "Grace" } },
+      game("g1", 100, "bob", "carol"),
+      game("g2", 101, "bob", "dave"),
+      game("g3", 102, "bob", "eve"),
+      game("g4", 103, "bob", "frank"),
+      game("g5", 104, "bob", "grace"),
+      game("g-final", 1000, "alice", "bob"),
+    ];
+
+    const tt = new TennisTable({ events });
+    tt.achievements.calculateAchievements();
+
+    expect(tt.achievements.getAchievements("alice").filter((a) => a.type === "kingslayer")).toHaveLength(0);
+  });
+
   it("is only awarded once per player even if they kingslay multiple times", () => {
     // Bob beats Carol 5 times → Bob rank #1.
     const setup: EventType[] = [];

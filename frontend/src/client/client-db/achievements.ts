@@ -505,9 +505,16 @@ export class Achievements {
       // Climber's "from" rank).
       const winnerRankBefore = getRank(game.winner, game.playedAt);
       const loserRankBefore = getRank(game.loser, game.playedAt);
+      const rankedCountBefore = countRankedAt(game.playedAt);
 
-      // Kingslayer: loser was #1 going into the match. One-time per player.
-      if (loserRankBefore === 1 && !kingslayed.has(game.winner)) {
+      // Kingslayer: loser was #1 going into the match. One-time per
+      // player. Requires ≥2 ranked players so being #1 actually means
+      // outranking someone — otherwise the loser is "#1" trivially.
+      if (
+        loserRankBefore === 1 &&
+        rankedCountBefore >= 2 &&
+        !kingslayed.has(game.winner)
+      ) {
         kingslayed.add(game.winner);
         this.#addAchievement(
           game.winner,
