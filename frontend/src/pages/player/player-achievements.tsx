@@ -181,8 +181,8 @@ export const ACHIEVEMENT_LABELS: Record<string, { title: string; description: st
     description: "Take down a much higher rated opponent (gain 30+ Elo from a single game)",
     icon: "🪨",
   },
-  "climbers": {
-    title: "Climbers",
+  "climber": {
+    title: "Climber",
     description: "Climb 300 Elo from your all-time low (recorded from when you first became ranked)",
     icon: "🧗",
   },

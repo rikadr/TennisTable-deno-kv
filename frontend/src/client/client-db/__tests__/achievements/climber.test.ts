@@ -1,11 +1,11 @@
 import { TennisTable } from "../../tennis-table";
 import { EventType, EventTypeEnum } from "../../event-store/event-types";
 
-// Climbers fires once when a ranked player's current Elo is at least 300
+// Climber fires once when a ranked player's current Elo is at least 300
 // above their all-time low — where the low is tracked from the moment
 // the player first becomes ranked and only updates downward.
 
-describe("Climbers Achievement", () => {
+describe("Climber Achievement", () => {
   const createPlayer = (id: string, time: number): EventType => ({
     time,
     stream: id,
@@ -37,19 +37,19 @@ describe("Climbers Achievement", () => {
     return events;
   };
 
-  it("awards Climbers after climbing 300 Elo from the all-time low", () => {
+  it("awards Climber after climbing 300 Elo from the all-time low", () => {
     const tt = new TennisTable({ events: buildClimb(30) });
     tt.achievements.calculateAchievements();
 
-    const climbers = tt.achievements.getAchievements("a").filter((x) => x.type === "climbers");
-    expect(climbers).toHaveLength(1);
+    const climber = tt.achievements.getAchievements("a").filter((x) => x.type === "climber");
+    expect(climber).toHaveLength(1);
   });
 
   it("does NOT fire when the climb is less than 300 Elo", () => {
     const tt = new TennisTable({ events: buildClimb(10) });
     tt.achievements.calculateAchievements();
 
-    expect(tt.achievements.getAchievements("a").filter((x) => x.type === "climbers")).toHaveLength(0);
+    expect(tt.achievements.getAchievements("a").filter((x) => x.type === "climber")).toHaveLength(0);
   });
 
   it("does NOT fire for players who never became ranked", () => {
@@ -62,7 +62,7 @@ describe("Climbers Achievement", () => {
     const tt = new TennisTable({ events });
     tt.achievements.calculateAchievements();
 
-    expect(tt.achievements.getAchievements("a").filter((x) => x.type === "climbers")).toHaveLength(0);
+    expect(tt.achievements.getAchievements("a").filter((x) => x.type === "climber")).toHaveLength(0);
   });
 
   it("tracks current progression as (current Elo − all-time low)", () => {
@@ -70,10 +70,10 @@ describe("Climbers Achievement", () => {
     tt.achievements.calculateAchievements();
 
     const progression = tt.achievements.getPlayerProgression("a");
-    expect(progression.climbers.target).toBe(300);
-    expect(progression.climbers.current).toBeGreaterThan(0);
-    expect(progression.climbers.current).toBeLessThan(300);
-    expect(progression.climbers.earned).toBe(0);
+    expect(progression.climber.target).toBe(300);
+    expect(progression.climber.current).toBeGreaterThan(0);
+    expect(progression.climber.current).toBeLessThan(300);
+    expect(progression.climber.earned).toBe(0);
   });
 
   it("progression is 0 for an unranked player (never reached the threshold)", () => {
@@ -86,7 +86,7 @@ describe("Climbers Achievement", () => {
     const tt = new TennisTable({ events });
     tt.achievements.calculateAchievements();
 
-    expect(tt.achievements.getPlayerProgression("a").climbers.current).toBe(0);
+    expect(tt.achievements.getPlayerProgression("a").climber.current).toBe(0);
   });
 
   it("all-time low updates downward when a ranked player drops below it", () => {
@@ -111,7 +111,7 @@ describe("Climbers Achievement", () => {
     const summary = tt.achievements.getPlayerProgression("a");
     // The low must have moved down from the initial ~1073, so the
     // diff between current and low is < the initial climb (~73).
-    expect(summary.climbers.current).toBeLessThan(20);
+    expect(summary.climber.current).toBeLessThan(20);
   });
 
   it("is only awarded once even if the player drops and climbs again", () => {
@@ -131,7 +131,7 @@ describe("Climbers Achievement", () => {
     const tt = new TennisTable({ events });
     tt.achievements.calculateAchievements();
 
-    expect(tt.achievements.getAchievements("a").filter((x) => x.type === "climbers")).toHaveLength(1);
+    expect(tt.achievements.getAchievements("a").filter((x) => x.type === "climber")).toHaveLength(1);
   });
 
   it("progression persists for a deactivated player who earned the achievement", () => {
@@ -149,7 +149,7 @@ describe("Climbers Achievement", () => {
     tt.achievements.calculateAchievements();
 
     const progression = tt.achievements.getPlayerProgression("a");
-    expect(progression.climbers.earned).toBe(1);
-    expect(progression.climbers.current).toBeGreaterThanOrEqual(300);
+    expect(progression.climber.earned).toBe(1);
+    expect(progression.climber.current).toBeGreaterThanOrEqual(300);
   });
 });
