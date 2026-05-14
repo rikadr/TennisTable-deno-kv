@@ -11,6 +11,10 @@ export class Achievements {
   // Highest Elo gain each player has achieved from a win where BOTH
   // players were ranked at the time. Used for David progression.
   bestDavidGain: Map<string, number> = new Map();
+  // Lowest Elo each player has held while ranked, starting from the
+  // moment they first crossed gameLimitForRanked games. Used for the
+  // Climbers achievement and progression.
+  climbersAllTimeLow: Map<string, number> = new Map();
 
   constructor(parent: TennisTable) {
     this.parent = parent;
@@ -23,6 +27,7 @@ export class Achievements {
     // Clear existing achievements
     this.achievementMap.clear();
     this.bestDavidGain.clear();
+    this.climbersAllTimeLow.clear();
 
     const playerTracker = new Map<
       string,
@@ -500,6 +505,27 @@ export class Achievements {
     const touchedThrone = new Set<string>();
     const onPodium = new Set<string>();
     const kingslayed = new Set<string>();
+    const climbers = new Set<string>();
+
+    // Climbers tracking: each time a player is post-match ranked, lock
+    // in their first-ranked Elo (and update the running low downward).
+    // Award the achievement once when current Elo - low ≥ 300.
+    const updateClimbers = (playerId: string, currentElo: number, totalGames: number, time: number) => {
+      if (totalGames < gameLimit) return;
+      if (!isActiveAt(playerId, time)) return;
+      const prevLow = this.climbersAllTimeLow.get(playerId);
+      if (prevLow === undefined || currentElo < prevLow) {
+        this.climbersAllTimeLow.set(playerId, currentElo);
+      }
+      const low = this.climbersAllTimeLow.get(playerId)!;
+      if (currentElo - low >= 300 && !climbers.has(playerId)) {
+        climbers.add(playerId);
+        this.#addAchievement(
+          playerId,
+          this.#createAchievement("climbers", playerId, time, undefined),
+        );
+      }
+    };
 
     // When the leaderboard pool shifts (a player is deactivated or
     // reactivated) the surviving active players may suddenly find
@@ -598,6 +624,10 @@ export class Achievements {
       winner.elo = winnersNewElo;
       loser.elo = losersNewElo;
       const eloGain = winnersNewElo - winnerEloBefore;
+
+      // Update Climbers tracking for both players (low + threshold check).
+      updateClimbers(game.winner, winner.elo, winner.totalGames, game.playedAt);
+      updateClimbers(game.loser, loser.elo, loser.totalGames, game.playedAt);
 
       // Post-match ranks.
       const winnerRankAfter = getRank(game.winner, game.playedAt);
@@ -1112,6 +1142,7 @@ export class Achievements {
       "photo-finish": { earned: 0 },
       "leap-frog": { earned: 0 },
       "david": { current: 0, target: 30, earned: 0 },
+      "climbers": { current: 0, target: 300, earned: 0 },
     };
 
     let firstActiveAt: number | null = null;
@@ -1390,6 +1421,15 @@ export class Achievements {
     // while active keep their progression here.
     progression["david"].current = this.bestDavidGain.get(playerId) ?? 0;
 
+    // Climbers progression: current Elo - all-time low Elo since the
+    // player first became ranked. Players who never became ranked have
+    // no recorded low → progression stays at 0.
+    const climbersLow = this.climbersAllTimeLow.get(playerId);
+    if (climbersLow !== undefined) {
+      const currentElo = this.parent.leaderboard.getPlayerSummary(playerId).elo;
+      progression["climbers"].current = Math.max(0, currentElo - climbersLow);
+    }
+
     // Count earned achievements
     const achievements = this.getAchievements(playerId);
     achievements.forEach((achievement) => {
@@ -1439,6 +1479,7 @@ type AchievementDefinitions = {
   "photo-finish": { opponent: string; gameId: string; eloDiff: number };
   "leap-frog": { gameId: string; ranksJumped: number; fromRank: number; toRank: number };
   "david": { opponent: string; gameId: string; eloGain: number };
+  "climbers": undefined;
 };
 
 type AchievementType = keyof AchievementDefinitions;
@@ -1521,4 +1562,5 @@ export type AchievementProgression = {
   "photo-finish": BaseProgression;
   "leap-frog": BaseProgression;
   "david": ProgressionWithTarget;
+  "climbers": ProgressionWithTarget;
 };
