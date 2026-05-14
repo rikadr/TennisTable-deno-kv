@@ -1,3 +1,4 @@
+import { Elo } from "./elo";
 import { TennisTable } from "./tennis-table";
 
 export class Achievements {
@@ -404,7 +405,161 @@ export class Achievements {
 
     this.#checkTournamentAchievements();
     this.#checkSeasonAchievements();
+    this.#calculateEloAchievements();
     this.hasCalculated = true;
+  }
+
+  /**
+   * Runs a second pass over games to award Elo / rank-derived achievements.
+   *
+   * Uses its own minimal Elo tracker (only `elo` + `totalGames` per player) so
+   * we don't depend on the leaderboard projection here, and so the history
+   * stays locked: rank is computed against every player who ever played
+   * (`allPlayers`) — active/inactive flags can't retroactively shift past
+   * ranks.
+   *
+   * Per-game cost is O(P) for rank lookups. Total O(G * P).
+   */
+  #calculateEloAchievements() {
+    const gameLimit = this.parent.client.gameLimitForRanked;
+
+    type EloEntry = { elo: number; totalGames: number };
+    const playerMap = new Map<string, EloEntry>();
+    for (const player of this.parent.allPlayers) {
+      playerMap.set(player.id, { elo: Elo.INITIAL_ELO, totalGames: 0 });
+    }
+
+    // Returns null if the player isn't on the leaderboard yet
+    // (hasn't met gameLimitForRanked).
+    const getRank = (playerId: string): number | null => {
+      const player = playerMap.get(playerId);
+      if (!player || player.totalGames < gameLimit) return null;
+      let higher = 0;
+      for (const [otherId, other] of playerMap) {
+        if (otherId === playerId) continue;
+        if (other.totalGames < gameLimit) continue;
+        if (other.elo > player.elo) higher++;
+      }
+      return higher + 1;
+    };
+
+    const touchedThrone = new Set<string>();
+    const onPodium = new Set<string>();
+
+    this.parent.games.forEach((game) => {
+      const winner = playerMap.get(game.winner);
+      const loser = playerMap.get(game.loser);
+      if (!winner || !loser) return;
+
+      // Pre-match ranks (loser's rank needed for Kingslayer; winner's for
+      // Climber's "from" rank).
+      const winnerRankBefore = getRank(game.winner);
+      const loserRankBefore = getRank(game.loser);
+
+      // Kingslayer: loser was #1 going into the match.
+      if (loserRankBefore === 1) {
+        this.#addAchievement(
+          game.winner,
+          this.#createAchievement("kingslayer", game.winner, game.playedAt, {
+            opponent: game.loser,
+            gameId: game.id,
+          }),
+        );
+      }
+
+      // Apply Elo update.
+      winner.totalGames++;
+      loser.totalGames++;
+      const { winnersNewElo, losersNewElo } = Elo.calculateELO(
+        winner.elo,
+        loser.elo,
+        winner.totalGames,
+        loser.totalGames,
+      );
+      winner.elo = winnersNewElo;
+      loser.elo = losersNewElo;
+
+      // Post-match ranks.
+      const winnerRankAfter = getRank(game.winner);
+      const loserRankAfter = getRank(game.loser);
+
+      // Touched the Throne: first time the player ever sits at rank #1.
+      if (winnerRankAfter === 1 && !touchedThrone.has(game.winner)) {
+        touchedThrone.add(game.winner);
+        this.#addAchievement(
+          game.winner,
+          this.#createAchievement("touched-the-throne", game.winner, game.playedAt, undefined),
+        );
+      }
+      // Loser usually can't ascend by losing, but a rare crossover when an
+      // opponent above them deactivates is impossible here (history is
+      // locked) — still, keep the check symmetric for correctness if a
+      // future Elo model allows it.
+      if (loserRankAfter === 1 && !touchedThrone.has(game.loser)) {
+        touchedThrone.add(game.loser);
+        this.#addAchievement(
+          game.loser,
+          this.#createAchievement("touched-the-throne", game.loser, game.playedAt, undefined),
+        );
+      }
+
+      // On the Podium: first time the player ever sits at rank ≤ 3.
+      if (winnerRankAfter !== null && winnerRankAfter <= 3 && !onPodium.has(game.winner)) {
+        onPodium.add(game.winner);
+        this.#addAchievement(
+          game.winner,
+          this.#createAchievement("on-the-podium", game.winner, game.playedAt, undefined),
+        );
+      }
+      if (loserRankAfter !== null && loserRankAfter <= 3 && !onPodium.has(game.loser)) {
+        onPodium.add(game.loser);
+        this.#addAchievement(
+          game.loser,
+          this.#createAchievement("on-the-podium", game.loser, game.playedAt, undefined),
+        );
+      }
+
+      // Climber: winner improved by ≥ 5 ranks. Requires being ranked both
+      // before and after — first appearance on the leaderboard isn't a
+      // "climb".
+      if (
+        winnerRankBefore !== null &&
+        winnerRankAfter !== null &&
+        winnerRankBefore - winnerRankAfter >= 5
+      ) {
+        this.#addAchievement(
+          game.winner,
+          this.#createAchievement("climber", game.winner, game.playedAt, {
+            gameId: game.id,
+            ranksJumped: winnerRankBefore - winnerRankAfter,
+            fromRank: winnerRankBefore,
+            toRank: winnerRankAfter,
+          }),
+        );
+      }
+
+      // Photo Finish: post-match Elos within 1 point. Awarded to both
+      // players — they both lived the moment.
+      const eloDiff = Math.abs(winner.elo - loser.elo);
+      if (eloDiff <= 1) {
+        this.#addAchievement(
+          game.winner,
+          this.#createAchievement("photo-finish", game.winner, game.playedAt, {
+            opponent: game.loser,
+            gameId: game.id,
+            eloDiff,
+          }),
+        );
+        this.#addAchievement(
+          game.loser,
+          this.#createAchievement("photo-finish", game.loser, game.playedAt, {
+            opponent: game.winner,
+            gameId: game.id,
+            eloDiff,
+          }),
+        );
+      }
+    });
   }
 
   #checkDonutAchievements(
@@ -788,6 +943,11 @@ export class Achievements {
       "welcome-committee": { current: 0, target: 3, newPlayers: new Set(), earned: 0 },
       "community-builder": { current: 0, target: 10, newPlayers: new Set(), earned: 0 },
       "hat-trick": { current: 0, target: 3, earned: 0 },
+      "kingslayer": { earned: 0 },
+      "touched-the-throne": { earned: 0 },
+      "on-the-podium": { earned: 0 },
+      "photo-finish": { earned: 0 },
+      "climber": { earned: 0 },
     };
 
     let firstActiveAt: number | null = null;
@@ -1102,6 +1262,11 @@ type AchievementDefinitions = {
   "comeback-kid": undefined;
   "unbreakable-spirit": undefined;
   "hat-trick": { firstWinAt: number; thirdWinAt: number };
+  "kingslayer": { opponent: string; gameId: string };
+  "touched-the-throne": undefined;
+  "on-the-podium": undefined;
+  "photo-finish": { opponent: string; gameId: string; eloDiff: number };
+  "climber": { gameId: string; ranksJumped: number; fromRank: number; toRank: number };
 };
 
 type AchievementType = keyof AchievementDefinitions;
@@ -1178,4 +1343,9 @@ export type AchievementProgression = {
   "comeback-kid": BaseProgression;
   "unbreakable-spirit": BaseProgression;
   "hat-trick": ProgressionWithTarget;
+  "kingslayer": BaseProgression;
+  "touched-the-throne": BaseProgression;
+  "on-the-podium": BaseProgression;
+  "photo-finish": BaseProgression;
+  "climber": BaseProgression;
 };

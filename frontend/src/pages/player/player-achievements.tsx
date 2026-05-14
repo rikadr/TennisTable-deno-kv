@@ -151,6 +151,31 @@ export const ACHIEVEMENT_LABELS: Record<string, { title: string; description: st
     description: "Win 3 games in under 90 minutes",
     icon: "🎩",
   },
+  "kingslayer": {
+    title: "Kingslayer",
+    description: "Beat the player ranked #1 on the leaderboard",
+    icon: "⚔️",
+  },
+  "touched-the-throne": {
+    title: "Touched the Throne",
+    description: "Reach rank #1 on the leaderboard",
+    icon: "👑",
+  },
+  "on-the-podium": {
+    title: "On the Podium",
+    description: "Reach a top-3 rank on the leaderboard",
+    icon: "🥉",
+  },
+  "photo-finish": {
+    title: "Photo Finish",
+    description: "Play a game that ended with both Elos within 1 point",
+    icon: "📸",
+  },
+  "climber": {
+    title: "Climber",
+    description: "Jump 5 or more ranks on the leaderboard from a single game",
+    icon: "🧗",
+  },
 };
 
 type TabType = "earned" | "progress";
