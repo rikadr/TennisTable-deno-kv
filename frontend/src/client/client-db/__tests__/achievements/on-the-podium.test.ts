@@ -143,6 +143,54 @@ describe("On the Podium Achievement", () => {
     expect(tt.achievements.getAchievements("alice").filter((x) => x.type === "on-the-podium")).toHaveLength(0);
   });
 
+  it("promotes a non-participant to top 3 when the loser of a game drops out", () => {
+    // 6-player double round-robin: A=1, B=2, C=3, D=4, E=5, F=6. After
+    // the setup A, B and C have earned podium; D has not. Then F (the
+    // weakest) upsets C three times — C's Elo drops below D's, so D is
+    // now rank 3 even though D never played in those upsets. With the
+    // per-game recheck D should earn podium at the moment of the third
+    // upset (the game that finally tips C below D).
+    const events: EventType[] = [
+      { time: 1, stream: "a", type: EventTypeEnum.PLAYER_CREATED, data: { name: "A" } },
+      { time: 2, stream: "b", type: EventTypeEnum.PLAYER_CREATED, data: { name: "B" } },
+      { time: 3, stream: "c", type: EventTypeEnum.PLAYER_CREATED, data: { name: "C" } },
+      { time: 4, stream: "d", type: EventTypeEnum.PLAYER_CREATED, data: { name: "D" } },
+      { time: 5, stream: "e", type: EventTypeEnum.PLAYER_CREATED, data: { name: "E" } },
+      { time: 6, stream: "f", type: EventTypeEnum.PLAYER_CREATED, data: { name: "F" } },
+    ];
+    const pairs: [string, string][] = [
+      ["a", "b"], ["a", "c"], ["a", "d"], ["a", "e"], ["a", "f"],
+      ["b", "c"], ["b", "d"], ["b", "e"], ["b", "f"],
+      ["c", "d"], ["c", "e"], ["c", "f"],
+      ["d", "e"], ["d", "f"],
+      ["e", "f"],
+    ];
+    let t = 100;
+    for (let round = 0; round < 2; round++) {
+      for (const [winner, loser] of pairs) {
+        events.push(game(`g-${round}-${winner}-${loser}`, t++, winner, loser));
+      }
+    }
+    // F upsets C three times.
+    events.push(game("upset-1", 1000, "f", "c"));
+    events.push(game("upset-2", 1001, "f", "c"));
+    events.push(game("upset-3", 1002, "f", "c"));
+
+    const tt = new TennisTable({ events });
+    tt.achievements.calculateAchievements();
+
+    const dPodium = tt.achievements.getAchievements("d").filter((x) => x.type === "on-the-podium");
+    expect(dPodium).toHaveLength(1);
+    expect(dPodium[0].earnedAt).toBe(1002);
+    // A, B and C already had podium before the upset.
+    expect(tt.achievements.getAchievements("a").filter((x) => x.type === "on-the-podium")).toHaveLength(1);
+    expect(tt.achievements.getAchievements("b").filter((x) => x.type === "on-the-podium")).toHaveLength(1);
+    expect(tt.achievements.getAchievements("c").filter((x) => x.type === "on-the-podium")).toHaveLength(1);
+    // E and F never reach top 3.
+    expect(tt.achievements.getAchievements("e").filter((x) => x.type === "on-the-podium")).toHaveLength(0);
+    expect(tt.achievements.getAchievements("f").filter((x) => x.type === "on-the-podium")).toHaveLength(0);
+  });
+
   it("promotes a player to top 3 when a top-3 player is deactivated", () => {
     // 6 players in a double round-robin (30 games). Standings:
     //   A=10W  rank 1,  B=8W 2L  rank 2,  C=6W 4L  rank 3,

@@ -528,14 +528,19 @@ export class Achievements {
     };
 
     // When the leaderboard pool shifts (a player is deactivated or
-    // reactivated) the surviving active players may suddenly find
-    // themselves in top 3 or at rank #1 without playing a match. Walk
-    // all currently active ranked players at `time` and award any new
-    // throne / podium that becomes earnable.
-    const recheckRankAchievementsAt = (time: number) => {
+    // reactivated, or the loser of a game drops below a non-participant)
+    // the surviving active players may suddenly find themselves in top
+    // 3 or at rank #1 without playing a match. Walk all currently active
+    // ranked players at `time` and award any new throne / podium that
+    // becomes earnable. The optional `skip` set lets the caller exclude
+    // players whose own pre-match state should govern eligibility — used
+    // by the per-game recheck so a winner/loser who just crossed
+    // gameLimitForRanked doesn't sneak past the pre-match-ranked rule.
+    const recheckRankAchievementsAt = (time: number, skip?: Set<string>) => {
       const rankedCount = countRankedAt(time);
       if (rankedCount < 5) return;
       for (const [playerId] of playerMap) {
+        if (skip?.has(playerId)) continue;
         if (!isActiveAt(playerId, time)) continue;
         const rank = getRank(playerId, time);
         if (rank === null) continue;
@@ -752,6 +757,15 @@ export class Achievements {
           }),
         );
       }
+
+      // Re-check non-participants. The loser's Elo drop can promote a
+      // player who was at rank 4 into rank 3 (or the rank-1 player into
+      // rank 2, demoting them); equally, a player crossing
+      // gameLimitForRanked in this game can lift the ranked pool past
+      // the ≥5 threshold and enable previously-blocked awards. The
+      // winner and loser are excluded so their own pre-match-ranked
+      // rule still governs.
+      recheckRankAchievementsAt(game.playedAt, new Set([game.winner, game.loser]));
     }
   }
 
