@@ -88,11 +88,16 @@ export class FutureElo {
       }
     }
 
-    // Create all ranked players pairings
+    // Create all ranked players pairings. Predicted/simulated games are only generated between
+    // currently active players, even though the historical games loop above keeps deactivated
+    // players in the map so their results still feed into win-fraction calculations.
     const rankedPlayeIds: string[] = [];
-    this.playersMap.forEach(
-      (player) => player.totalGames >= this.parent.client.gameLimitForRanked && rankedPlayeIds.push(player.id),
-    );
+    this.playersMap.forEach((player) => {
+      const isActive = this.parent.eventStore.playersProjector.getPlayer(player.id)?.active === true;
+      if (player.totalGames >= this.parent.client.gameLimitForRanked && isActive) {
+        rankedPlayeIds.push(player.id);
+      }
+    });
 
     // Create all unique permutations of player pairings
     for (let playerIndex = 0; playerIndex < rankedPlayeIds.length; playerIndex++) {

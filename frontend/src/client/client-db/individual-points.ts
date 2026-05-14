@@ -33,12 +33,6 @@ export class IndividualPoints {
   #generatePlayerMap(transactionOrder: "FIFO" | "LIFO") {
     const map = new Map<string, PlayerWithIndividualPoints>();
     for (const game of this.parent.games) {
-      if (
-        !this.parent.eventStore.playersProjector.getPlayer(game.winner)?.active ||
-        !this.parent.eventStore.playersProjector.getPlayer(game.loser)?.active
-      ) {
-        continue; // Skip games with inactive players
-      }
       const winner = this.#getOrCreatePlayer(game.winner, map, game.playedAt);
       const loser = this.#getOrCreatePlayer(game.loser, map, game.playedAt);
       const { losersNewElo } = Elo.calculateELO(winner.totalPoints, loser.totalPoints);

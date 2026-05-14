@@ -60,6 +60,9 @@ export class PredictionsHistory {
         if (oponentId === playerId) {
           return;
         }
+        if (this.parent.eventStore.playersProjector.getPlayer(oponentId)?.active !== true) {
+          return;
+        }
         const fraction = this.parent.futureElo.getPredictedFractionForTwoPlayers(playerId, oponentId);
         if (!fraction) {
           return;

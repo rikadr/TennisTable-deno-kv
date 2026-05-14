@@ -15,11 +15,13 @@ export class LeaderboardChanges {
     allChanges: { change: number; time: number }[];
   }[] {
     const oneWeekAgo = Date.now() - 1000 * 60 * 60 * 24 * 7;
+    const isActive = (playerId: string) =>
+      this.parent.eventStore.playersProjector.getPlayer(playerId)?.active === true;
 
     const scoreMaps: { time: number; map: Map<string, PlayerWithElo> }[] = [];
     let lastGamesMap: { time: number; map: Map<string, PlayerWithElo> } = { time: 0, map: new Map() };
 
-    Elo.eloCalculator(this.parent.games, this.parent.players, (map, game) => {
+    Elo.eloCalculator(this.parent.games, this.parent.allPlayers, (map, game) => {
       if (game.playedAt > oneWeekAgo) {
         scoreMaps.push({ time: game.playedAt, map: structuredClone(map) });
       } else {
@@ -35,6 +37,7 @@ export class LeaderboardChanges {
     {
       const leaderboard = Array.from(lastGamesMap.map)
         .filter(([, player]) => player.totalGames >= this.parent.client.gameLimitForRanked)
+        .filter(([id]) => isActive(id))
         .map(([, player]) => ({ id: player.id, score: player.elo }))
         .sort((a, b) => b.score - a.score);
       leaderboard.forEach((player, index) => {
@@ -50,6 +53,7 @@ export class LeaderboardChanges {
     scoreMaps.forEach(({ time, map }) => {
       const leaderboard = Array.from(map)
         .filter(([, player]) => player.totalGames >= this.parent.client.gameLimitForRanked)
+        .filter(([id]) => isActive(id))
         .map(([, player]) => ({ id: player.id, score: player.elo }))
         .sort((a, b) => b.score - a.score);
       leaderboard.forEach((player, index) => {

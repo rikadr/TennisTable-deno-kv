@@ -37,19 +37,14 @@ export class Simulations {
     expected: { id: string; rank: number; score: number }[];
   } {
     const currentLeaderboard = this.parent.leaderboard.getLeaderboard();
-    const allGamesWithActivePlayers = this.parent.games.filter(
-      (game) =>
-        this.parent.eventStore.playersProjector.getPlayer(game.winner)?.active &&
-        this.parent.eventStore.playersProjector.getPlayer(game.loser)?.active,
-    );
-    const predictedGames = this.parent.futureElo.simulatedGamesForAGivenInputOfGames(allGamesWithActivePlayers);
+    const predictedGames = this.parent.futureElo.simulatedGamesForAGivenInputOfGames(this.parent.games);
 
     const simResultMap = new Map<string, number[]>();
 
     for (let i = 0; i < 5_000; i++) {
       this.shuffleArray(predictedGames);
       // Casting, but its only using winner and loser inside it anyway
-      const eloMap = Elo.eloCalculator(predictedGames as Game[], this.parent.players);
+      const eloMap = Elo.eloCalculator(predictedGames as Game[], this.parent.allPlayers);
       eloMap.forEach((player) => {
         if (simResultMap.has(player.id) === false) {
           simResultMap.set(player.id, []);
@@ -83,31 +78,27 @@ export class Simulations {
     const player = this.parent.eventStore.playersProjector.getPlayer(playerId);
     if (!player) return;
 
-    const allGamesWithActivePlayers = this.parent.games.filter(
-      (game) =>
-        this.parent.eventStore.playersProjector.getPlayer(game.winner)?.active &&
-        this.parent.eventStore.playersProjector.getPlayer(game.loser)?.active,
-    );
+    const allGames = this.parent.games;
 
     const playerGameTimes = new Set<number>();
-    for (let i = 0; i < allGamesWithActivePlayers.length; i++) {
-      const game = allGamesWithActivePlayers[i];
+    for (let i = 0; i < allGames.length; i++) {
+      const game = allGames[i];
       const isPlayedByPlayer = [game.winner, game.loser].includes(playerId);
       if (isPlayedByPlayer) {
         playerGameTimes.add(game.playedAt);
-        const gameBefore = allGamesWithActivePlayers[i - 1];
+        const gameBefore = allGames[i - 1];
         if (gameBefore) {
           playerGameTimes.add(gameBefore.playedAt);
         }
       }
     }
     // Add latest game
-    playerGameTimes.add(allGamesWithActivePlayers[allGamesWithActivePlayers.length - 1].playedAt);
+    playerGameTimes.add(allGames[allGames.length - 1].playedAt);
 
     const sortedPlayerGameTimes = Array.from(playerGameTimes).sort((a, b) => a - b); // Verify ascending
     const playerPlayedTheLastGame =
-      allGamesWithActivePlayers[allGamesWithActivePlayers.length - 1].winner === playerId ||
-      allGamesWithActivePlayers[allGamesWithActivePlayers.length - 1].loser === playerId;
+      allGames[allGames.length - 1].winner === playerId ||
+      allGames[allGames.length - 1].loser === playerId;
 
     const BATCH_SIZE = 1; // 5 seems reasonable but 1 works well on my beast mac and gives smooth frame rate
 
@@ -121,7 +112,7 @@ export class Simulations {
     let eloOverTime: { elo: number; time: number }[] = [];
 
     for (const gameTime of sortedPlayerGameTimes.toReversed()) {
-      const relevantGames = allGamesWithActivePlayers.filter((g) => g.playedAt <= gameTime);
+      const relevantGames = allGames.filter((g) => g.playedAt <= gameTime);
       const predictedGames = this.parent.futureElo.simulatedGamesForAGivenInputOfGames(relevantGames);
 
       const playerElos: number[] = [];
@@ -135,7 +126,7 @@ export class Simulations {
         this.shuffleArray(predictedGames);
         const eloMap = Elo.eloCalculator(
           predictedGames as Game[], // Casting, but its only using winner and loser inside it anyway
-          this.parent.players,
+          this.parent.allPlayers,
         );
         const playerElo = eloMap.get(playerId)?.elo;
         playerElo && playerElos.push(playerElo);
