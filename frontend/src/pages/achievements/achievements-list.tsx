@@ -5,6 +5,7 @@ import { useEventDbContext } from "../../wrappers/event-db-context";
 import { ACHIEVEMENT_LABELS, dateString } from "../player/player-achievements";
 import { relativeTimeString } from "../../common/date-utils";
 import { ProfilePicture } from "../player/profile-picture";
+import { fmtNum } from "../../common/number-utils";
 
 interface AchievementsListProps {
   achievements: Achievement[];
@@ -115,6 +116,93 @@ export const AchievementsList: React.FC<AchievementsListProps> = ({ achievements
                         {Math.round((achievement.data.thirdWinAt - achievement.data.firstWinAt) / (60 * 1000))}m interval
                       </span>
                     )}
+                  {achievement.type === "david" && achievement.data && (
+                    <span className="text-[11px] opacity-80">
+                      {fmtNum(achievement.data.eloGain, { digits: 1, signedPositive: true })} Score
+                    </span>
+                  )}
+                  {achievement.type === "goliath" && achievement.data && (
+                    <span className="text-[11px] opacity-80">
+                      {fmtNum(-achievement.data.eloLoss, { digits: 1 })} Score
+                    </span>
+                  )}
+                  {achievement.type === "best-friends" && achievement.data && (
+                    <span className="text-[11px] opacity-80">
+                      50 games in{" "}
+                      {Math.round(
+                        (achievement.earnedAt - achievement.data.firstGame) / (24 * 60 * 60 * 1000),
+                      )}{" "}
+                      days ({dateString(achievement.data.firstGame)} – {dateString(achievement.earnedAt)})
+                    </span>
+                  )}
+                  {achievement.type === "photo-finish" && achievement.data && (
+                    <span className="text-[11px] opacity-80">
+                      Score {fmtNum(achievement.data.playerElo, { digits: 1 })} vs{" "}
+                      {fmtNum(achievement.data.opponentElo, { digits: 1 })} (diff{" "}
+                      {fmtNum(achievement.data.eloDiff, { digits: 1 })})
+                    </span>
+                  )}
+                  {achievement.type === "touched-the-throne" && achievement.data && (
+                    <>
+                      <span className="text-[11px] opacity-80">
+                        Score {fmtNum(achievement.data.elo)}
+                      </span>
+                      <span className="text-[11px] opacity-80">
+                        in{" "}
+                        {Math.round(
+                          (achievement.earnedAt - achievement.data.firstGameAt) /
+                            (24 * 60 * 60 * 1000),
+                        )}{" "}
+                        days
+                      </span>
+                      {achievement.data.dethroned && (
+                        <span className="text-[11px] opacity-80">
+                          Dethroned {context.playerName(achievement.data.dethroned)}
+                        </span>
+                      )}
+                    </>
+                  )}
+                  {achievement.type === "on-the-podium" && achievement.data && (
+                    <>
+                      <span className="text-[11px] opacity-80">
+                        Score {fmtNum(achievement.data.elo)}
+                      </span>
+                      <span className="text-[11px] opacity-80">
+                        in{" "}
+                        {Math.round(
+                          (achievement.earnedAt - achievement.data.firstGameAt) /
+                            (24 * 60 * 60 * 1000),
+                        )}{" "}
+                        days
+                      </span>
+                    </>
+                  )}
+                  {achievement.type === "climber" && achievement.data && (
+                    <span className="text-[11px] opacity-80">
+                      {fmtNum(achievement.data.fromElo, { digits: 0 })} →{" "}
+                      {fmtNum(achievement.data.toElo, { digits: 0 })} in{" "}
+                      {Math.round(
+                        (achievement.data.toDate - achievement.data.fromDate) / (24 * 60 * 60 * 1000),
+                      )}{" "}
+                      days ({dateString(achievement.data.fromDate)} – {dateString(achievement.data.toDate)})
+                    </span>
+                  )}
+                  {achievement.type === "leap-frog" && achievement.data && (
+                    <span className="text-[11px] opacity-80">
+                      #{achievement.data.fromRank} → #{achievement.data.toRank} (
+                      {fmtNum(achievement.data.fromElo, { digits: 1 })} →{" "}
+                      {fmtNum(achievement.data.toElo, { digits: 1 })}
+                      {achievement.data.leapfroggedPlayers.length > 0 && (
+                        <>
+                          {", over "}
+                          {achievement.data.leapfroggedPlayers
+                            .map((p) => context.playerName(p))
+                            .join(", ")}
+                        </>
+                      )}
+                      )
+                    </span>
+                  )}
                 </div>
               </div>
             </div>

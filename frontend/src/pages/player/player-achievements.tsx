@@ -168,7 +168,7 @@ export const ACHIEVEMENT_LABELS: Record<string, { title: string; description: st
   },
   "photo-finish": {
     title: "Photo Finish",
-    description: "Play a game that ended with both Elos within 1 point",
+    description: "Play a game that ended with both Scores within 1 point",
     icon: "📸",
   },
   "leap-frog": {
@@ -178,17 +178,17 @@ export const ACHIEVEMENT_LABELS: Record<string, { title: string; description: st
   },
   "david": {
     title: "David",
-    description: "Take down a much higher rated opponent (gain 30+ Elo from a single game)",
+    description: "Take down a much higher rated opponent (gain 30+ Score from a single game)",
     icon: "🪨",
   },
   "goliath": {
     title: "Goliath",
-    description: "Got upset by a much lower rated opponent (lose 30+ Elo from a single game)",
+    description: "Got upset by a much lower rated opponent (lose 30+ Score from a single game)",
     icon: "🗿",
   },
   "climber": {
     title: "Climber",
-    description: "Climb 300 Elo from your all-time low (recorded from when you first became ranked)",
+    description: "Climb 300 Score from your all-time low (recorded from when you first became ranked)",
     icon: "🧗",
   },
 };
@@ -296,6 +296,18 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
                   </p>
                 )}
 
+                {achievement.type === "david" && achievement.data && (
+                  <p className="text-xs text-secondary-text/70 mt-2">
+                    Gained {fmtNum(achievement.data.eloGain, { digits: 1, signedPositive: true })} Score
+                  </p>
+                )}
+
+                {achievement.type === "goliath" && achievement.data && (
+                  <p className="text-xs text-secondary-text/70 mt-2">
+                    Lost {fmtNum(-achievement.data.eloLoss, { digits: 1 })} Score
+                  </p>
+                )}
+
                 {achievement.data && "tournamentId" in achievement.data && (
                   <p className="text-xs text-secondary-text/70 mt-2">
                     Tournament:{" "}
@@ -340,6 +352,76 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
                     {" "}({Math.round((achievement.data.thirdWinAt - achievement.data.firstWinAt) / (60 * 1000))} minutes)
                   </p>
                 )}
+
+                {achievement.type === "climber" && achievement.data && (
+                  <p className="text-xs text-secondary-text/70 mt-2">
+                    Climbing from {fmtNum(achievement.data.fromElo, { digits: 0 })} to{" "}
+                    {fmtNum(achievement.data.toElo, { digits: 0 })} in{" "}
+                    {daysBetween(achievement.data.fromDate, achievement.data.toDate)} days from{" "}
+                    {dateString(achievement.data.fromDate)} to {dateString(achievement.data.toDate)}
+                  </p>
+                )}
+
+                {achievement.type === "best-friends" && achievement.data && (
+                  <p className="text-xs text-secondary-text/70 mt-2">
+                    50 games in {daysBetween(achievement.data.firstGame, achievement.earnedAt)} days,
+                    from {dateString(achievement.data.firstGame)} to {dateString(achievement.earnedAt)}
+                  </p>
+                )}
+
+                {achievement.type === "photo-finish" && achievement.data && (
+                  <p className="text-xs text-secondary-text/70 mt-2">
+                    Score: {fmtNum(achievement.data.playerElo, { digits: 1 })} vs{" "}
+                    {fmtNum(achievement.data.opponentElo, { digits: 1 })} (diff{" "}
+                    {fmtNum(achievement.data.eloDiff, { digits: 1 })})
+                  </p>
+                )}
+
+                {achievement.type === "touched-the-throne" && achievement.data && (
+                  <div className="text-xs text-secondary-text/70 mt-2 space-y-1">
+                    <p>
+                      Score {fmtNum(achievement.data.elo)} in{" "}
+                      {daysBetween(achievement.data.firstGameAt, achievement.earnedAt)} days
+                    </p>
+                    {achievement.data.dethroned && (
+                      <p>Dethroned {context.playerName(achievement.data.dethroned)}</p>
+                    )}
+                  </div>
+                )}
+
+                {achievement.type === "on-the-podium" && achievement.data && (
+                  <p className="text-xs text-secondary-text/70 mt-2">
+                    Score {fmtNum(achievement.data.elo)} in{" "}
+                    {daysBetween(achievement.data.firstGameAt, achievement.earnedAt)} days
+                  </p>
+                )}
+
+                {achievement.type === "leap-frog" && achievement.data && (
+                  <div className="text-xs text-secondary-text/70 mt-2 space-y-1">
+                    <p>
+                      Jumped {achievement.data.ranksJumped} rank
+                      {achievement.data.ranksJumped !== 1 ? "s" : ""}: #{achievement.data.fromRank} → #
+                      {achievement.data.toRank}
+                    </p>
+                    <p>
+                      Score: {fmtNum(achievement.data.fromElo, { digits: 1 })} →{" "}
+                      {fmtNum(achievement.data.toElo, { digits: 1 })} (
+                      {fmtNum(achievement.data.toElo - achievement.data.fromElo, {
+                        digits: 1,
+                        signedPositive: true,
+                      })}
+                      )
+                    </p>
+                    {achievement.data.leapfroggedPlayers.length > 0 && (
+                      <p>
+                        Leapfrogged:{" "}
+                        {achievement.data.leapfroggedPlayers
+                          .map((p) => context.playerName(p))
+                          .join(", ")}
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -348,6 +430,10 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
     </div>
   );
 };
+
+function daysBetween(from: number, to: number): number {
+  return Math.round((to - from) / (24 * 60 * 60 * 1000));
+}
 
 type ProgressTabProps = {
   progression: AchievementProgression;
