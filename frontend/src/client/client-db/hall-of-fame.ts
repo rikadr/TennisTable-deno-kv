@@ -337,6 +337,10 @@ export class HallOfFame {
   }
 
   #calcPeakElo(playerId: string): HallOfFameScoreBreakdown["peakElo"] {
+    const summary = this.parent.leaderboard.getPlayerSummary(playerId);
+    if (!summary.isRanked) {
+      return { score: 0, peakElo: 0 };
+    }
     const peakElo = this.#getPeakElos().get(playerId) ?? Elo.INITIAL_ELO;
     const score = Math.max(0, peakElo - Elo.INITIAL_ELO);
     return { score, peakElo };
@@ -345,12 +349,15 @@ export class HallOfFame {
   #getPeakElos(): Map<string, number> {
     if (this.peakEloCache) return this.peakEloCache;
     const peaks = new Map<string, number>();
+    const gameLimitForRanked = this.parent.client.gameLimitForRanked;
+    const trackPeak = (player: { id: string; elo: number; totalGames: number } | undefined) => {
+      if (!player || player.totalGames < gameLimitForRanked) return;
+      const current = peaks.get(player.id);
+      if (current === undefined || player.elo > current) peaks.set(player.id, player.elo);
+    };
     Elo.eloCalculator(this.parent.games, this.parent.allPlayers, (map, game) => {
-      const winner = map.get(game.winner);
-      if (winner) {
-        const current = peaks.get(winner.id) ?? Elo.INITIAL_ELO;
-        if (winner.elo > current) peaks.set(winner.id, winner.elo);
-      }
+      trackPeak(map.get(game.winner));
+      trackPeak(map.get(game.loser));
     });
     this.peakEloCache = peaks;
     return peaks;
