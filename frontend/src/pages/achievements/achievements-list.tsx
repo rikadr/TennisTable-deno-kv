@@ -147,6 +147,14 @@ export const AchievementsList: React.FC<AchievementsListProps> = ({ achievements
                       <span className="text-[11px] opacity-80">
                         Score {fmtNum(achievement.data.elo)}
                       </span>
+                      <span className="text-[11px] opacity-80">
+                        in{" "}
+                        {Math.round(
+                          (achievement.earnedAt - achievement.data.firstGameAt) /
+                            (24 * 60 * 60 * 1000),
+                        )}{" "}
+                        days
+                      </span>
                       {achievement.data.dethroned && (
                         <span className="text-[11px] opacity-80">
                           Dethroned {context.playerName(achievement.data.dethroned)}
@@ -155,9 +163,19 @@ export const AchievementsList: React.FC<AchievementsListProps> = ({ achievements
                     </>
                   )}
                   {achievement.type === "on-the-podium" && achievement.data && (
-                    <span className="text-[11px] opacity-80">
-                      Score {fmtNum(achievement.data.elo)}
-                    </span>
+                    <>
+                      <span className="text-[11px] opacity-80">
+                        Score {fmtNum(achievement.data.elo)}
+                      </span>
+                      <span className="text-[11px] opacity-80">
+                        in{" "}
+                        {Math.round(
+                          (achievement.earnedAt - achievement.data.firstGameAt) /
+                            (24 * 60 * 60 * 1000),
+                        )}{" "}
+                        days
+                      </span>
+                    </>
                   )}
                   {achievement.type === "climber" && achievement.data && (
                     <span className="text-[11px] opacity-80">

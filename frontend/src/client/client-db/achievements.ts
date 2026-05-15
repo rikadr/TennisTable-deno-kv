@@ -516,6 +516,11 @@ export class Achievements {
     const kingslayed = new Set<string>();
     const climber = new Set<string>();
 
+    // Timestamp of each player's first game. Used as the "from" date
+    // on throne / podium achievements so the display can show how
+    // long it took the player to reach that rank.
+    const firstGameAt = new Map<string, number>();
+
     // The player currently sitting at rank #1 in the leaderboard pool.
     // Updated AFTER each game / recheck — used as the "dethroned" field
     // when someone takes the throne next. Stays null until the first
@@ -582,6 +587,7 @@ export class Achievements {
             playerId,
             this.#createAchievement("touched-the-throne", playerId, time, {
               elo: player.elo,
+              firstGameAt: firstGameAt.get(playerId)!,
               dethroned:
                 previousThroneHolder && previousThroneHolder !== playerId
                   ? previousThroneHolder
@@ -595,6 +601,7 @@ export class Achievements {
             playerId,
             this.#createAchievement("on-the-podium", playerId, time, {
               elo: player.elo,
+              firstGameAt: firstGameAt.get(playerId)!,
             }),
           );
         }
@@ -632,6 +639,9 @@ export class Achievements {
       const winner = playerMap.get(game.winner);
       const loser = playerMap.get(game.loser);
       if (!winner || !loser) continue;
+
+      if (!firstGameAt.has(game.winner)) firstGameAt.set(game.winner, game.playedAt);
+      if (!firstGameAt.has(game.loser)) firstGameAt.set(game.loser, game.playedAt);
 
       // Pre-match ranks (loser's rank needed for Kingslayer; winner's for
       // Leap Frog's "from" rank).
@@ -695,6 +705,7 @@ export class Achievements {
           game.winner,
           this.#createAchievement("touched-the-throne", game.winner, game.playedAt, {
             elo: winner.elo,
+            firstGameAt: firstGameAt.get(game.winner)!,
             dethroned:
               previousThroneHolder && previousThroneHolder !== game.winner
                 ? previousThroneHolder
@@ -713,6 +724,7 @@ export class Achievements {
           game.loser,
           this.#createAchievement("touched-the-throne", game.loser, game.playedAt, {
             elo: loser.elo,
+            firstGameAt: firstGameAt.get(game.loser)!,
             dethroned:
               previousThroneHolder && previousThroneHolder !== game.loser
                 ? previousThroneHolder
@@ -735,6 +747,7 @@ export class Achievements {
           game.winner,
           this.#createAchievement("on-the-podium", game.winner, game.playedAt, {
             elo: winner.elo,
+            firstGameAt: firstGameAt.get(game.winner)!,
           }),
         );
       }
@@ -750,6 +763,7 @@ export class Achievements {
           game.loser,
           this.#createAchievement("on-the-podium", game.loser, game.playedAt, {
             elo: loser.elo,
+            firstGameAt: firstGameAt.get(game.loser)!,
           }),
         );
       }
@@ -1591,8 +1605,8 @@ type AchievementDefinitions = {
   "unbreakable-spirit": { opponent: string };
   "hat-trick": { firstWinAt: number; thirdWinAt: number };
   "kingslayer": { opponent: string; gameId: string };
-  "touched-the-throne": { elo: number; dethroned?: string };
-  "on-the-podium": { elo: number };
+  "touched-the-throne": { elo: number; firstGameAt: number; dethroned?: string };
+  "on-the-podium": { elo: number; firstGameAt: number };
   "photo-finish": {
     opponent: string;
     gameId: string;

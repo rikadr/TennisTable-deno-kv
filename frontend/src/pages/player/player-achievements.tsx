@@ -168,7 +168,7 @@ export const ACHIEVEMENT_LABELS: Record<string, { title: string; description: st
   },
   "photo-finish": {
     title: "Photo Finish",
-    description: "Play a game that ended with both Elos within 1 point",
+    description: "Play a game that ended with both Scores within 1 point",
     icon: "📸",
   },
   "leap-frog": {
@@ -178,17 +178,17 @@ export const ACHIEVEMENT_LABELS: Record<string, { title: string; description: st
   },
   "david": {
     title: "David",
-    description: "Take down a much higher rated opponent (gain 30+ Elo from a single game)",
+    description: "Take down a much higher rated opponent (gain 30+ Score from a single game)",
     icon: "🪨",
   },
   "goliath": {
     title: "Goliath",
-    description: "Got upset by a much lower rated opponent (lose 30+ Elo from a single game)",
+    description: "Got upset by a much lower rated opponent (lose 30+ Score from a single game)",
     icon: "🗿",
   },
   "climber": {
     title: "Climber",
-    description: "Climb 300 Elo from your all-time low (recorded from when you first became ranked)",
+    description: "Climb 300 Score from your all-time low (recorded from when you first became ranked)",
     icon: "🧗",
   },
 };
@@ -380,6 +380,10 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
                 {achievement.type === "touched-the-throne" && achievement.data && (
                   <div className="text-xs text-secondary-text/70 mt-2 space-y-1">
                     <p>Score at #1: {fmtNum(achievement.data.elo)}</p>
+                    <p>
+                      Reached in {daysBetween(achievement.data.firstGameAt, achievement.earnedAt)} days
+                      since first game
+                    </p>
                     {achievement.data.dethroned && (
                       <p>Dethroned {context.playerName(achievement.data.dethroned)}</p>
                     )}
@@ -387,9 +391,13 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
                 )}
 
                 {achievement.type === "on-the-podium" && achievement.data && (
-                  <p className="text-xs text-secondary-text/70 mt-2">
-                    Score on podium: {fmtNum(achievement.data.elo)}
-                  </p>
+                  <div className="text-xs text-secondary-text/70 mt-2 space-y-1">
+                    <p>Score on podium: {fmtNum(achievement.data.elo)}</p>
+                    <p>
+                      Reached in {daysBetween(achievement.data.firstGameAt, achievement.earnedAt)} days
+                      since first game
+                    </p>
+                  </div>
                 )}
 
                 {achievement.type === "leap-frog" && achievement.data && (
