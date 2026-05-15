@@ -5,6 +5,7 @@ import { useEventDbContext } from "../../wrappers/event-db-context";
 import { ACHIEVEMENT_LABELS, dateString } from "../player/player-achievements";
 import { relativeTimeString } from "../../common/date-utils";
 import { ProfilePicture } from "../player/profile-picture";
+import { fmtNum } from "../../common/number-utils";
 
 interface AchievementsListProps {
   achievements: Achievement[];
@@ -115,6 +116,16 @@ export const AchievementsList: React.FC<AchievementsListProps> = ({ achievements
                         {Math.round((achievement.data.thirdWinAt - achievement.data.firstWinAt) / (60 * 1000))}m interval
                       </span>
                     )}
+                  {achievement.type === "david" && achievement.data && (
+                    <span className="text-[11px] opacity-80">
+                      {fmtNum(achievement.data.eloGain, { digits: 1, signedPositive: true })} Elo
+                    </span>
+                  )}
+                  {achievement.type === "goliath" && achievement.data && (
+                    <span className="text-[11px] opacity-80">
+                      {fmtNum(-achievement.data.eloLoss, { digits: 1 })} Elo
+                    </span>
+                  )}
                   {achievement.type === "climber" && achievement.data && (
                     <span className="text-[11px] opacity-80">
                       {achievement.data.fromElo} → {achievement.data.toElo} in{" "}

@@ -296,6 +296,18 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
                   </p>
                 )}
 
+                {achievement.type === "david" && achievement.data && (
+                  <p className="text-xs text-secondary-text/70 mt-2">
+                    Gained {fmtNum(achievement.data.eloGain, { digits: 1, signedPositive: true })} Elo
+                  </p>
+                )}
+
+                {achievement.type === "goliath" && achievement.data && (
+                  <p className="text-xs text-secondary-text/70 mt-2">
+                    Lost {fmtNum(-achievement.data.eloLoss, { digits: 1 })} Elo
+                  </p>
+                )}
+
                 {achievement.data && "tournamentId" in achievement.data && (
                   <p className="text-xs text-secondary-text/70 mt-2">
                     Tournament:{" "}
