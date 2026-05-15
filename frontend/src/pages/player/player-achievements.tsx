@@ -361,6 +361,13 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
                   </p>
                 )}
 
+                {achievement.type === "best-friends" && achievement.data && (
+                  <p className="text-xs text-secondary-text/70 mt-2">
+                    50 games in {daysBetween(achievement.data.firstGame, achievement.earnedAt)} days,
+                    from {dateString(achievement.data.firstGame)} to {dateString(achievement.earnedAt)}
+                  </p>
+                )}
+
                 {achievement.type === "photo-finish" && achievement.data && (
                   <p className="text-xs text-secondary-text/70 mt-2">
                     Elo: {fmtNum(achievement.data.playerElo, { digits: 1 })} vs{" "}

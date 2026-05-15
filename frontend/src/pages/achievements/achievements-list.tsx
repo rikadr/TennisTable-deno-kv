@@ -126,6 +126,15 @@ export const AchievementsList: React.FC<AchievementsListProps> = ({ achievements
                       {fmtNum(-achievement.data.eloLoss, { digits: 1 })} Elo
                     </span>
                   )}
+                  {achievement.type === "best-friends" && achievement.data && (
+                    <span className="text-[11px] opacity-80">
+                      50 games in{" "}
+                      {Math.round(
+                        (achievement.earnedAt - achievement.data.firstGame) / (24 * 60 * 60 * 1000),
+                      )}{" "}
+                      days ({dateString(achievement.data.firstGame)} – {dateString(achievement.earnedAt)})
+                    </span>
+                  )}
                   {achievement.type === "photo-finish" && achievement.data && (
                     <span className="text-[11px] opacity-80">
                       {fmtNum(achievement.data.playerElo, { digits: 1 })} vs{" "}
