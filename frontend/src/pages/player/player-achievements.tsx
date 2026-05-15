@@ -340,6 +340,36 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
                     {" "}({Math.round((achievement.data.thirdWinAt - achievement.data.firstWinAt) / (60 * 1000))} minutes)
                   </p>
                 )}
+
+                {achievement.type === "climber" && achievement.data && (
+                  <p className="text-xs text-secondary-text/70 mt-2">
+                    Climbing from {fmtNum(achievement.data.fromElo)} to {fmtNum(achievement.data.toElo)} in{" "}
+                    {daysBetween(achievement.data.fromDate, achievement.data.toDate)} days from{" "}
+                    {dateString(achievement.data.fromDate)} to {dateString(achievement.data.toDate)}
+                  </p>
+                )}
+
+                {achievement.type === "leap-frog" && achievement.data && (
+                  <div className="text-xs text-secondary-text/70 mt-2 space-y-1">
+                    <p>
+                      Jumped {achievement.data.ranksJumped} rank
+                      {achievement.data.ranksJumped !== 1 ? "s" : ""}: #{achievement.data.fromRank} → #
+                      {achievement.data.toRank}
+                    </p>
+                    <p>
+                      Elo: {fmtNum(achievement.data.fromElo)} → {fmtNum(achievement.data.toElo)} (+
+                      {fmtNum(achievement.data.toElo - achievement.data.fromElo)})
+                    </p>
+                    {achievement.data.leapfroggedPlayers.length > 0 && (
+                      <p>
+                        Leapfrogged:{" "}
+                        {achievement.data.leapfroggedPlayers
+                          .map((p) => context.playerName(p))
+                          .join(", ")}
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -348,6 +378,10 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
     </div>
   );
 };
+
+function daysBetween(from: number, to: number): number {
+  return Math.round((to - from) / (24 * 60 * 60 * 1000));
+}
 
 type ProgressTabProps = {
   progression: AchievementProgression;

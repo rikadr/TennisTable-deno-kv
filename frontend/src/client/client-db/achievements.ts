@@ -16,8 +16,9 @@ export class Achievements {
   worstGoliathLoss: Map<string, number> = new Map();
   // Lowest Elo each player has held while ranked, starting from the
   // moment they first crossed gameLimitForRanked games. Used for the
-  // Climber achievement and progression.
-  climberAllTimeLow: Map<string, number> = new Map();
+  // Climber achievement and progression. `time` is when that low was
+  // set — needed so the awarded achievement can report the "from" date.
+  climberAllTimeLow: Map<string, { elo: number; time: number }> = new Map();
 
   constructor(parent: TennisTable) {
     this.parent = parent;
@@ -518,15 +519,20 @@ export class Achievements {
       if (totalGames < gameLimit) return;
       if (!isActiveAt(playerId, time)) return;
       const prevLow = this.climberAllTimeLow.get(playerId);
-      if (prevLow === undefined || currentElo < prevLow) {
-        this.climberAllTimeLow.set(playerId, currentElo);
+      if (prevLow === undefined || currentElo < prevLow.elo) {
+        this.climberAllTimeLow.set(playerId, { elo: currentElo, time });
       }
       const low = this.climberAllTimeLow.get(playerId)!;
-      if (currentElo - low >= 300 && !climber.has(playerId)) {
+      if (currentElo - low.elo >= 300 && !climber.has(playerId)) {
         climber.add(playerId);
         this.#addAchievement(
           playerId,
-          this.#createAchievement("climber", playerId, time, undefined),
+          this.#createAchievement("climber", playerId, time, {
+            fromElo: low.elo,
+            toElo: currentElo,
+            fromDate: low.time,
+            toDate: time,
+          }),
         );
       }
     };
@@ -624,6 +630,7 @@ export class Achievements {
       winner.totalGames++;
       loser.totalGames++;
       const winnerEloBefore = winner.elo;
+      const loserEloBefore = loser.elo;
       const { winnersNewElo, losersNewElo } = Elo.calculateELO(
         winner.elo,
         loser.elo,
@@ -708,6 +715,20 @@ export class Achievements {
         winnerRankAfter !== null &&
         winnerRankBefore - winnerRankAfter >= 3
       ) {
+        // Leapfrogged players: ranked active players whose pre-match Elo
+        // was above the winner's pre-match Elo but who now sit below
+        // the winner's post-match Elo. Only winner and loser had their
+        // Elo change, so for everyone else pre = post = `other.elo`.
+        const leapfroggedPlayers: string[] = [];
+        for (const [otherId, other] of playerMap) {
+          if (otherId === game.winner) continue;
+          if (other.totalGames < gameLimit) continue;
+          if (!isActiveAt(otherId, game.playedAt)) continue;
+          const otherEloBefore = otherId === game.loser ? loserEloBefore : other.elo;
+          if (otherEloBefore > winnerEloBefore && other.elo < winner.elo) {
+            leapfroggedPlayers.push(otherId);
+          }
+        }
         this.#addAchievement(
           game.winner,
           this.#createAchievement("leap-frog", game.winner, game.playedAt, {
@@ -715,6 +736,9 @@ export class Achievements {
             ranksJumped: winnerRankBefore - winnerRankAfter,
             fromRank: winnerRankBefore,
             toRank: winnerRankAfter,
+            fromElo: winnerEloBefore,
+            toElo: winner.elo,
+            leapfroggedPlayers,
           }),
         );
       }
@@ -1467,7 +1491,7 @@ export class Achievements {
     const climberLow = this.climberAllTimeLow.get(playerId);
     if (climberLow !== undefined) {
       const currentElo = this.parent.leaderboard.getPlayerSummary(playerId).elo;
-      progression["climber"].current = Math.max(0, currentElo - climberLow);
+      progression["climber"].current = Math.max(0, currentElo - climberLow.elo);
     }
 
     // Count earned achievements
@@ -1517,10 +1541,18 @@ type AchievementDefinitions = {
   "touched-the-throne": undefined;
   "on-the-podium": undefined;
   "photo-finish": { opponent: string; gameId: string; eloDiff: number };
-  "leap-frog": { gameId: string; ranksJumped: number; fromRank: number; toRank: number };
+  "leap-frog": {
+    gameId: string;
+    ranksJumped: number;
+    fromRank: number;
+    toRank: number;
+    fromElo: number;
+    toElo: number;
+    leapfroggedPlayers: string[];
+  };
   "david": { opponent: string; gameId: string; eloGain: number };
   "goliath": { opponent: string; gameId: string; eloLoss: number };
-  "climber": undefined;
+  "climber": { fromElo: number; toElo: number; fromDate: number; toDate: number };
 };
 
 type AchievementType = keyof AchievementDefinitions;

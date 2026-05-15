@@ -115,6 +115,31 @@ export const AchievementsList: React.FC<AchievementsListProps> = ({ achievements
                         {Math.round((achievement.data.thirdWinAt - achievement.data.firstWinAt) / (60 * 1000))}m interval
                       </span>
                     )}
+                  {achievement.type === "climber" && achievement.data && (
+                    <span className="text-[11px] opacity-80">
+                      {achievement.data.fromElo} → {achievement.data.toElo} in{" "}
+                      {Math.round(
+                        (achievement.data.toDate - achievement.data.fromDate) / (24 * 60 * 60 * 1000),
+                      )}{" "}
+                      days ({dateString(achievement.data.fromDate)} – {dateString(achievement.data.toDate)})
+                    </span>
+                  )}
+                  {achievement.type === "leap-frog" && achievement.data && (
+                    <span className="text-[11px] opacity-80">
+                      #{achievement.data.fromRank} → #{achievement.data.toRank} ({achievement.data.fromElo}
+                      {" → "}
+                      {achievement.data.toElo}
+                      {achievement.data.leapfroggedPlayers.length > 0 && (
+                        <>
+                          {", over "}
+                          {achievement.data.leapfroggedPlayers
+                            .map((p) => context.playerName(p))
+                            .join(", ")}
+                        </>
+                      )}
+                      )
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
