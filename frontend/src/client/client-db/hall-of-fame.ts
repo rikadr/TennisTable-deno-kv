@@ -350,12 +350,14 @@ export class HallOfFame {
     if (this.peakEloCache) return this.peakEloCache;
     const peaks = new Map<string, number>();
     const gameLimitForRanked = this.parent.client.gameLimitForRanked;
+    const trackPeak = (player: { id: string; elo: number; totalGames: number } | undefined) => {
+      if (!player || player.totalGames < gameLimitForRanked) return;
+      const current = peaks.get(player.id);
+      if (current === undefined || player.elo > current) peaks.set(player.id, player.elo);
+    };
     Elo.eloCalculator(this.parent.games, this.parent.allPlayers, (map, game) => {
-      const winner = map.get(game.winner);
-      if (winner && winner.totalGames >= gameLimitForRanked) {
-        const current = peaks.get(winner.id) ?? Elo.INITIAL_ELO;
-        if (winner.elo > current) peaks.set(winner.id, winner.elo);
-      }
+      trackPeak(map.get(game.winner));
+      trackPeak(map.get(game.loser));
     });
     this.peakEloCache = peaks;
     return peaks;
