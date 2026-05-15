@@ -298,13 +298,13 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
 
                 {achievement.type === "david" && achievement.data && (
                   <p className="text-xs text-secondary-text/70 mt-2">
-                    Gained {fmtNum(achievement.data.eloGain, { digits: 1, signedPositive: true })} Elo
+                    Gained {fmtNum(achievement.data.eloGain, { digits: 1, signedPositive: true })} Score
                   </p>
                 )}
 
                 {achievement.type === "goliath" && achievement.data && (
                   <p className="text-xs text-secondary-text/70 mt-2">
-                    Lost {fmtNum(-achievement.data.eloLoss, { digits: 1 })} Elo
+                    Lost {fmtNum(-achievement.data.eloLoss, { digits: 1 })} Score
                   </p>
                 )}
 
@@ -371,24 +371,24 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
 
                 {achievement.type === "photo-finish" && achievement.data && (
                   <p className="text-xs text-secondary-text/70 mt-2">
-                    Elo: {fmtNum(achievement.data.playerElo, { digits: 1 })} vs{" "}
+                    Score: {fmtNum(achievement.data.playerElo, { digits: 1 })} vs{" "}
                     {fmtNum(achievement.data.opponentElo, { digits: 1 })} (diff{" "}
                     {fmtNum(achievement.data.eloDiff, { digits: 1 })})
                   </p>
                 )}
 
                 {achievement.type === "touched-the-throne" && achievement.data && (
-                  <p className="text-xs text-secondary-text/70 mt-2">
-                    Elo at #1: {fmtNum(achievement.data.elo, { digits: 1 })}
+                  <div className="text-xs text-secondary-text/70 mt-2 space-y-1">
+                    <p>Score at #1: {fmtNum(achievement.data.elo)}</p>
                     {achievement.data.dethroned && (
-                      <> · Dethroned {context.playerName(achievement.data.dethroned)}</>
+                      <p>Dethroned {context.playerName(achievement.data.dethroned)}</p>
                     )}
-                  </p>
+                  </div>
                 )}
 
                 {achievement.type === "on-the-podium" && achievement.data && (
                   <p className="text-xs text-secondary-text/70 mt-2">
-                    Elo on podium: {fmtNum(achievement.data.elo, { digits: 1 })}
+                    Score on podium: {fmtNum(achievement.data.elo)}
                   </p>
                 )}
 
@@ -400,7 +400,7 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
                       {achievement.data.toRank}
                     </p>
                     <p>
-                      Elo: {fmtNum(achievement.data.fromElo, { digits: 1 })} →{" "}
+                      Score: {fmtNum(achievement.data.fromElo, { digits: 1 })} →{" "}
                       {fmtNum(achievement.data.toElo, { digits: 1 })} (
                       {fmtNum(achievement.data.toElo - achievement.data.fromElo, {
                         digits: 1,

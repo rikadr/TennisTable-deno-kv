@@ -118,12 +118,12 @@ export const AchievementsList: React.FC<AchievementsListProps> = ({ achievements
                     )}
                   {achievement.type === "david" && achievement.data && (
                     <span className="text-[11px] opacity-80">
-                      {fmtNum(achievement.data.eloGain, { digits: 1, signedPositive: true })} Elo
+                      {fmtNum(achievement.data.eloGain, { digits: 1, signedPositive: true })} Score
                     </span>
                   )}
                   {achievement.type === "goliath" && achievement.data && (
                     <span className="text-[11px] opacity-80">
-                      {fmtNum(-achievement.data.eloLoss, { digits: 1 })} Elo
+                      {fmtNum(-achievement.data.eloLoss, { digits: 1 })} Score
                     </span>
                   )}
                   {achievement.type === "best-friends" && achievement.data && (
@@ -137,22 +137,26 @@ export const AchievementsList: React.FC<AchievementsListProps> = ({ achievements
                   )}
                   {achievement.type === "photo-finish" && achievement.data && (
                     <span className="text-[11px] opacity-80">
-                      {fmtNum(achievement.data.playerElo, { digits: 1 })} vs{" "}
+                      Score {fmtNum(achievement.data.playerElo, { digits: 1 })} vs{" "}
                       {fmtNum(achievement.data.opponentElo, { digits: 1 })} (diff{" "}
                       {fmtNum(achievement.data.eloDiff, { digits: 1 })})
                     </span>
                   )}
                   {achievement.type === "touched-the-throne" && achievement.data && (
-                    <span className="text-[11px] opacity-80">
-                      Elo {fmtNum(achievement.data.elo, { digits: 1 })}
+                    <>
+                      <span className="text-[11px] opacity-80">
+                        Score {fmtNum(achievement.data.elo)}
+                      </span>
                       {achievement.data.dethroned && (
-                        <> · dethroned {context.playerName(achievement.data.dethroned)}</>
+                        <span className="text-[11px] opacity-80">
+                          Dethroned {context.playerName(achievement.data.dethroned)}
+                        </span>
                       )}
-                    </span>
+                    </>
                   )}
                   {achievement.type === "on-the-podium" && achievement.data && (
                     <span className="text-[11px] opacity-80">
-                      Elo {fmtNum(achievement.data.elo, { digits: 1 })}
+                      Score {fmtNum(achievement.data.elo)}
                     </span>
                   )}
                   {achievement.type === "climber" && achievement.data && (
