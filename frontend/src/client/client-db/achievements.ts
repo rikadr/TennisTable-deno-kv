@@ -11,6 +11,9 @@ export class Achievements {
   // Highest Elo gain each player has achieved from a win where BOTH
   // players were ranked at the time. Used for David progression.
   bestDavidGain: Map<string, number> = new Map();
+  // Largest Elo loss each player has suffered from a loss where BOTH
+  // players were ranked at the time. Used for Goliath progression.
+  worstGoliathLoss: Map<string, number> = new Map();
   // Lowest Elo each player has held while ranked, starting from the
   // moment they first crossed gameLimitForRanked games. Used for the
   // Climber achievement and progression.
@@ -27,6 +30,7 @@ export class Achievements {
     // Clear existing achievements
     this.achievementMap.clear();
     this.bestDavidGain.clear();
+    this.worstGoliathLoss.clear();
     this.climberAllTimeLow.clear();
 
     const playerTracker = new Map<
@@ -716,12 +720,19 @@ export class Achievements {
       }
 
       // David: ≥ 30 Elo gain from beating a much higher rated opponent.
-      // Both players must have been ranked at the time of playing the
-      // match (pre-match ranks non-null) for this to count.
+      // Goliath: mirror image — ≥ 30 Elo lost by the higher-rated loser.
+      // Elo is zero-sum, so the loser's loss magnitude equals the
+      // winner's gain. Both players must have been ranked at the time
+      // of playing the match (pre-match ranks non-null) for either to
+      // count.
       if (winnerRankBefore !== null && loserRankBefore !== null) {
         const prevBest = this.bestDavidGain.get(game.winner) ?? 0;
         if (eloGain > prevBest) {
           this.bestDavidGain.set(game.winner, eloGain);
+        }
+        const prevWorst = this.worstGoliathLoss.get(game.loser) ?? 0;
+        if (eloGain > prevWorst) {
+          this.worstGoliathLoss.set(game.loser, eloGain);
         }
         if (eloGain >= 30) {
           this.#addAchievement(
@@ -730,6 +741,14 @@ export class Achievements {
               opponent: game.loser,
               gameId: game.id,
               eloGain,
+            }),
+          );
+          this.#addAchievement(
+            game.loser,
+            this.#createAchievement("goliath", game.loser, game.playedAt, {
+              opponent: game.winner,
+              gameId: game.id,
+              eloLoss: eloGain,
             }),
           );
         }
@@ -1156,6 +1175,7 @@ export class Achievements {
       "photo-finish": { earned: 0 },
       "leap-frog": { earned: 0 },
       "david": { current: 0, target: 30, earned: 0 },
+      "goliath": { current: 0, target: 30, earned: 0 },
       "climber": { current: 0, target: 300, earned: 0 },
     };
 
@@ -1435,6 +1455,12 @@ export class Achievements {
     // while active keep their progression here.
     progression["david"].current = this.bestDavidGain.get(playerId) ?? 0;
 
+    // Goliath progression: largest Elo lost from a single match where
+    // both players were ranked at the time. Mirrors David — deactivated
+    // players who suffered qualifying losses while ranked keep their
+    // progression here.
+    progression["goliath"].current = this.worstGoliathLoss.get(playerId) ?? 0;
+
     // Climber progression: current Elo - all-time low Elo since the
     // player first became ranked. Players who never became ranked have
     // no recorded low → progression stays at 0.
@@ -1493,6 +1519,7 @@ type AchievementDefinitions = {
   "photo-finish": { opponent: string; gameId: string; eloDiff: number };
   "leap-frog": { gameId: string; ranksJumped: number; fromRank: number; toRank: number };
   "david": { opponent: string; gameId: string; eloGain: number };
+  "goliath": { opponent: string; gameId: string; eloLoss: number };
   "climber": undefined;
 };
 
@@ -1576,5 +1603,6 @@ export type AchievementProgression = {
   "photo-finish": BaseProgression;
   "leap-frog": BaseProgression;
   "david": ProgressionWithTarget;
+  "goliath": ProgressionWithTarget;
   "climber": ProgressionWithTarget;
 };
