@@ -379,10 +379,9 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
 
                 {achievement.type === "touched-the-throne" && achievement.data && (
                   <div className="text-xs text-secondary-text/70 mt-2 space-y-1">
-                    <p>Score at #1: {fmtNum(achievement.data.elo)}</p>
                     <p>
-                      Reached in {daysBetween(achievement.data.firstGameAt, achievement.earnedAt)} days
-                      since first game
+                      Score {fmtNum(achievement.data.elo)} in{" "}
+                      {daysBetween(achievement.data.firstGameAt, achievement.earnedAt)} days
                     </p>
                     {achievement.data.dethroned && (
                       <p>Dethroned {context.playerName(achievement.data.dethroned)}</p>
@@ -391,13 +390,10 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
                 )}
 
                 {achievement.type === "on-the-podium" && achievement.data && (
-                  <div className="text-xs text-secondary-text/70 mt-2 space-y-1">
-                    <p>Score on podium: {fmtNum(achievement.data.elo)}</p>
-                    <p>
-                      Reached in {daysBetween(achievement.data.firstGameAt, achievement.earnedAt)} days
-                      since first game
-                    </p>
-                  </div>
+                  <p className="text-xs text-secondary-text/70 mt-2">
+                    Score {fmtNum(achievement.data.elo)} in{" "}
+                    {daysBetween(achievement.data.firstGameAt, achievement.earnedAt)} days
+                  </p>
                 )}
 
                 {achievement.type === "leap-frog" && achievement.data && (

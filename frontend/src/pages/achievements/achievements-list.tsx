@@ -148,12 +148,12 @@ export const AchievementsList: React.FC<AchievementsListProps> = ({ achievements
                         Score {fmtNum(achievement.data.elo)}
                       </span>
                       <span className="text-[11px] opacity-80">
-                        Reached in{" "}
+                        in{" "}
                         {Math.round(
                           (achievement.earnedAt - achievement.data.firstGameAt) /
                             (24 * 60 * 60 * 1000),
                         )}{" "}
-                        days since first game
+                        days
                       </span>
                       {achievement.data.dethroned && (
                         <span className="text-[11px] opacity-80">
@@ -168,12 +168,12 @@ export const AchievementsList: React.FC<AchievementsListProps> = ({ achievements
                         Score {fmtNum(achievement.data.elo)}
                       </span>
                       <span className="text-[11px] opacity-80">
-                        Reached in{" "}
+                        in{" "}
                         {Math.round(
                           (achievement.earnedAt - achievement.data.firstGameAt) /
                             (24 * 60 * 60 * 1000),
                         )}{" "}
-                        days since first game
+                        days
                       </span>
                     </>
                   )}
