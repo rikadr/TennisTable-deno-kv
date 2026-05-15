@@ -157,7 +157,8 @@ export const AchievementsList: React.FC<AchievementsListProps> = ({ achievements
                   )}
                   {achievement.type === "climber" && achievement.data && (
                     <span className="text-[11px] opacity-80">
-                      {achievement.data.fromElo} → {achievement.data.toElo} in{" "}
+                      {fmtNum(achievement.data.fromElo, { digits: 0 })} →{" "}
+                      {fmtNum(achievement.data.toElo, { digits: 0 })} in{" "}
                       {Math.round(
                         (achievement.data.toDate - achievement.data.fromDate) / (24 * 60 * 60 * 1000),
                       )}{" "}
@@ -166,9 +167,9 @@ export const AchievementsList: React.FC<AchievementsListProps> = ({ achievements
                   )}
                   {achievement.type === "leap-frog" && achievement.data && (
                     <span className="text-[11px] opacity-80">
-                      #{achievement.data.fromRank} → #{achievement.data.toRank} ({achievement.data.fromElo}
-                      {" → "}
-                      {achievement.data.toElo}
+                      #{achievement.data.fromRank} → #{achievement.data.toRank} (
+                      {fmtNum(achievement.data.fromElo, { digits: 1 })} →{" "}
+                      {fmtNum(achievement.data.toElo, { digits: 1 })}
                       {achievement.data.leapfroggedPlayers.length > 0 && (
                         <>
                           {", over "}

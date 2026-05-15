@@ -355,7 +355,8 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
 
                 {achievement.type === "climber" && achievement.data && (
                   <p className="text-xs text-secondary-text/70 mt-2">
-                    Climbing from {fmtNum(achievement.data.fromElo)} to {fmtNum(achievement.data.toElo)} in{" "}
+                    Climbing from {fmtNum(achievement.data.fromElo, { digits: 0 })} to{" "}
+                    {fmtNum(achievement.data.toElo, { digits: 0 })} in{" "}
                     {daysBetween(achievement.data.fromDate, achievement.data.toDate)} days from{" "}
                     {dateString(achievement.data.fromDate)} to {dateString(achievement.data.toDate)}
                   </p>
@@ -399,8 +400,13 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
                       {achievement.data.toRank}
                     </p>
                     <p>
-                      Elo: {fmtNum(achievement.data.fromElo)} → {fmtNum(achievement.data.toElo)} (+
-                      {fmtNum(achievement.data.toElo - achievement.data.fromElo)})
+                      Elo: {fmtNum(achievement.data.fromElo, { digits: 1 })} →{" "}
+                      {fmtNum(achievement.data.toElo, { digits: 1 })} (
+                      {fmtNum(achievement.data.toElo - achievement.data.fromElo, {
+                        digits: 1,
+                        signedPositive: true,
+                      })}
+                      )
                     </p>
                     {achievement.data.leapfroggedPlayers.length > 0 && (
                       <p>
