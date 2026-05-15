@@ -126,6 +126,26 @@ export const AchievementsList: React.FC<AchievementsListProps> = ({ achievements
                       {fmtNum(-achievement.data.eloLoss, { digits: 1 })} Elo
                     </span>
                   )}
+                  {achievement.type === "photo-finish" && achievement.data && (
+                    <span className="text-[11px] opacity-80">
+                      {fmtNum(achievement.data.playerElo, { digits: 1 })} vs{" "}
+                      {fmtNum(achievement.data.opponentElo, { digits: 1 })} (diff{" "}
+                      {fmtNum(achievement.data.eloDiff, { digits: 1 })})
+                    </span>
+                  )}
+                  {achievement.type === "touched-the-throne" && achievement.data && (
+                    <span className="text-[11px] opacity-80">
+                      Elo {fmtNum(achievement.data.elo, { digits: 1 })}
+                      {achievement.data.dethroned && (
+                        <> · dethroned {context.playerName(achievement.data.dethroned)}</>
+                      )}
+                    </span>
+                  )}
+                  {achievement.type === "on-the-podium" && achievement.data && (
+                    <span className="text-[11px] opacity-80">
+                      Elo {fmtNum(achievement.data.elo, { digits: 1 })}
+                    </span>
+                  )}
                   {achievement.type === "climber" && achievement.data && (
                     <span className="text-[11px] opacity-80">
                       {achievement.data.fromElo} → {achievement.data.toElo} in{" "}

@@ -361,6 +361,29 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
                   </p>
                 )}
 
+                {achievement.type === "photo-finish" && achievement.data && (
+                  <p className="text-xs text-secondary-text/70 mt-2">
+                    Elo: {fmtNum(achievement.data.playerElo, { digits: 1 })} vs{" "}
+                    {fmtNum(achievement.data.opponentElo, { digits: 1 })} (diff{" "}
+                    {fmtNum(achievement.data.eloDiff, { digits: 1 })})
+                  </p>
+                )}
+
+                {achievement.type === "touched-the-throne" && achievement.data && (
+                  <p className="text-xs text-secondary-text/70 mt-2">
+                    Elo at #1: {fmtNum(achievement.data.elo, { digits: 1 })}
+                    {achievement.data.dethroned && (
+                      <> · Dethroned {context.playerName(achievement.data.dethroned)}</>
+                    )}
+                  </p>
+                )}
+
+                {achievement.type === "on-the-podium" && achievement.data && (
+                  <p className="text-xs text-secondary-text/70 mt-2">
+                    Elo on podium: {fmtNum(achievement.data.elo, { digits: 1 })}
+                  </p>
+                )}
+
                 {achievement.type === "leap-frog" && achievement.data && (
                   <div className="text-xs text-secondary-text/70 mt-2 space-y-1">
                     <p>
