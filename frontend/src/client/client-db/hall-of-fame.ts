@@ -345,9 +345,10 @@ export class HallOfFame {
   #getPeakElos(): Map<string, number> {
     if (this.peakEloCache) return this.peakEloCache;
     const peaks = new Map<string, number>();
+    const gameLimitForRanked = this.parent.client.gameLimitForRanked;
     Elo.eloCalculator(this.parent.games, this.parent.allPlayers, (map, game) => {
       const winner = map.get(game.winner);
-      if (winner) {
+      if (winner && winner.totalGames >= gameLimitForRanked) {
         const current = peaks.get(winner.id) ?? Elo.INITIAL_ELO;
         if (winner.elo > current) peaks.set(winner.id, winner.elo);
       }
