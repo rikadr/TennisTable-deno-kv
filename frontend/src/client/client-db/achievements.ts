@@ -312,6 +312,9 @@ export class Achievements {
         // Check for "Nice Game" achievement (total points = 69)
         this.#checkNiceGameAchievement(game.winner, game.loser, game.id, game.score.setPoints, game.playedAt);
 
+        // Check for "Less Is More" achievement (winner scored fewer total points)
+        this.#checkLessIsMoreAchievement(game.winner, game.loser, game.id, game.score.setPoints, game.playedAt);
+
         // Check for "Close Calls" achievement (all sets decided by 2 points or less)
         const isCloseCall = this.#checkCloseCallGame(game.score.setPoints);
         if (isCloseCall) {
@@ -935,6 +938,29 @@ export class Achievements {
     }
   }
 
+  #checkLessIsMoreAchievement(
+    winner: string,
+    loser: string,
+    gameId: string,
+    setPoints: { gameWinner: number; gameLoser: number }[],
+    playedAt: number,
+  ) {
+    const winnerPoints = setPoints.reduce((sum, set) => sum + set.gameWinner, 0);
+    const loserPoints = setPoints.reduce((sum, set) => sum + set.gameLoser, 0);
+
+    if (winnerPoints < loserPoints) {
+      this.#addAchievement(
+        winner,
+        this.#createAchievement("less-is-more", winner, playedAt, {
+          gameId,
+          opponent: loser,
+          playerPoints: winnerPoints,
+          opponentPoints: loserPoints,
+        }),
+      );
+    }
+  }
+
   #checkCloseCallGame(setPoints: { gameWinner: number; gameLoser: number }[]): boolean {
     // Must have at least 2 sets
     if (setPoints.length < 2) {
@@ -1251,6 +1277,7 @@ export class Achievements {
       "tournament-winner": { earned: 0 },
       "season-winner": { current: 0, target: 1, earned: 0 },
       "nice-game": { earned: 0 },
+      "less-is-more": { earned: 0 },
       "close-calls": { current: 0, target: 5, earned: 0 },
       "edge-lord": { current: 0, target: 20, earned: 0 },
       "consistency-is-key": { current: 0, target: 5, earned: 0 },
@@ -1591,6 +1618,7 @@ type AchievementDefinitions = {
   "tournament-winner": { tournamentId: string };
   "season-winner": { seasonStart: number };
   "nice-game": { gameId: string; opponent: string };
+  "less-is-more": { gameId: string; opponent: string; playerPoints: number; opponentPoints: number };
   "close-calls": undefined;
   "edge-lord": undefined;
   "consistency-is-key": undefined;
@@ -1689,6 +1717,7 @@ export type AchievementProgression = {
   "tournament-winner": BaseProgression;
   "season-winner": ProgressionWithTarget;
   "nice-game": BaseProgression;
+  "less-is-more": BaseProgression;
   "close-calls": ProgressionWithTarget;
   "edge-lord": ProgressionWithTarget;
   "consistency-is-key": ProgressionWithTarget;

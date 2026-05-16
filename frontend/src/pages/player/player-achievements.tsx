@@ -106,6 +106,11 @@ export const ACHIEVEMENT_LABELS: Record<string, { title: string; description: st
     description: "Play a game where total points scored is 69",
     icon: "👌",
   },
+  "less-is-more": {
+    title: "Less Is More",
+    description: "Win a game while scoring fewer total points than your opponent",
+    icon: "🤏",
+  },
   "close-calls": {
     title: "Close Calls",
     description: "Play 5 games where all sets are decided by 2 points or less",
