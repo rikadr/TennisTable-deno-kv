@@ -106,6 +106,11 @@ export const ACHIEVEMENT_LABELS: Record<string, { title: string; description: st
     description: "Play a game where total points scored is 69",
     icon: "👌",
   },
+  "less-is-more": {
+    title: "Less Is More",
+    description: "Win a game while scoring fewer total points than your opponent",
+    icon: "🤏",
+  },
   "close-calls": {
     title: "Close Calls",
     description: "Play 5 games where all sets are decided by 2 points or less",
@@ -155,6 +160,11 @@ export const ACHIEVEMENT_LABELS: Record<string, { title: string; description: st
     title: "Kingslayer",
     description: "Beat the player ranked #1 on the leaderboard",
     icon: "⚔️",
+  },
+  "king-maker": {
+    title: "King Maker",
+    description: "Be the opponent who contributed the most Score to a new #1's climb to the throne",
+    icon: "🥂",
   },
   "touched-the-throne": {
     title: "Touched the Throne",
@@ -374,6 +384,19 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
                     Score: {fmtNum(achievement.data.playerElo, { digits: 1 })} vs{" "}
                     {fmtNum(achievement.data.opponentElo, { digits: 1 })} (diff{" "}
                     {fmtNum(achievement.data.eloDiff, { digits: 1 })})
+                  </p>
+                )}
+
+                {achievement.type === "less-is-more" && achievement.data && (
+                  <p className="text-xs text-secondary-text/70 mt-2">
+                    {achievement.data.playerPoints} pts vs {achievement.data.opponentPoints} pts
+                  </p>
+                )}
+
+                {achievement.type === "king-maker" && achievement.data && (
+                  <p className="text-xs text-secondary-text/70 mt-2">
+                    New king: {context.playerName(achievement.data.newKing)} (gained{" "}
+                    {fmtNum(achievement.data.netScoreGained, { digits: 0, signedPositive: true })} Score from you)
                   </p>
                 )}
 

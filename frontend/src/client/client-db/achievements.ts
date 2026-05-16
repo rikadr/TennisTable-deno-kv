@@ -312,6 +312,9 @@ export class Achievements {
         // Check for "Nice Game" achievement (total points = 69)
         this.#checkNiceGameAchievement(game.winner, game.loser, game.id, game.score.setPoints, game.playedAt);
 
+        // Check for "Less Is More" achievement (winner scored fewer total points)
+        this.#checkLessIsMoreAchievement(game.winner, game.loser, game.id, game.score.setPoints, game.playedAt);
+
         // Check for "Close Calls" achievement (all sets decided by 2 points or less)
         const isCloseCall = this.#checkCloseCallGame(game.score.setPoints);
         if (isCloseCall) {
@@ -516,6 +519,43 @@ export class Achievements {
     const kingslayed = new Set<string>();
     const climber = new Set<string>();
 
+    // Per-player map of opponent → net Elo gained from that opponent.
+    // When a player first reaches rank #1, the opponent who contributed
+    // the largest positive net Elo to that climb is awarded King Maker.
+    const netGainPerOpponent = new Map<string, Map<string, number>>();
+    const updateNetGain = (player: string, opponent: string, delta: number) => {
+      let map = netGainPerOpponent.get(player);
+      if (!map) {
+        map = new Map();
+        netGainPerOpponent.set(player, map);
+      }
+      map.set(opponent, (map.get(opponent) ?? 0) + delta);
+    };
+
+    // Award King Maker to whichever opponent contributed the most positive
+    // net Elo to `newKing` over their history up to `time`. No-op if no
+    // opponent has a positive net contribution.
+    const awardKingMaker = (newKing: string, time: number) => {
+      const gains = netGainPerOpponent.get(newKing);
+      if (!gains) return;
+      let bestOpponent: string | null = null;
+      let bestGain = 0;
+      for (const [opponent, gain] of gains) {
+        if (gain > bestGain) {
+          bestGain = gain;
+          bestOpponent = opponent;
+        }
+      }
+      if (!bestOpponent) return;
+      this.#addAchievement(
+        bestOpponent,
+        this.#createAchievement("king-maker", bestOpponent, time, {
+          newKing,
+          netScoreGained: bestGain,
+        }),
+      );
+    };
+
     // Timestamp of each player's first game. Used as the "from" date
     // on throne / podium achievements so the display can show how
     // long it took the player to reach that rank.
@@ -594,6 +634,7 @@ export class Achievements {
                   : undefined,
             }),
           );
+          awardKingMaker(playerId, time);
         }
         if (rank <= 3 && !onPodium.has(playerId)) {
           onPodium.add(playerId);
@@ -682,6 +723,10 @@ export class Achievements {
       loser.elo = losersNewElo;
       const eloGain = winnersNewElo - winnerEloBefore;
 
+      // King Maker tracking: zero-sum Elo move feeds both players' maps.
+      updateNetGain(game.winner, game.loser, eloGain);
+      updateNetGain(game.loser, game.winner, -eloGain);
+
       // Update Climber tracking for both players (low + threshold check).
       updateClimber(game.winner, winner.elo, winner.totalGames, game.playedAt);
       updateClimber(game.loser, loser.elo, loser.totalGames, game.playedAt);
@@ -712,6 +757,7 @@ export class Achievements {
                 : undefined,
           }),
         );
+        awardKingMaker(game.winner, game.playedAt);
       }
       if (
         loserRankBefore !== null &&
@@ -731,6 +777,7 @@ export class Achievements {
                 : undefined,
           }),
         );
+        awardKingMaker(game.loser, game.playedAt);
       }
 
       // On the Podium: first time the player ever sits at rank ≤ 3 while
@@ -930,6 +977,29 @@ export class Achievements {
         this.#createAchievement("nice-game", loser, playedAt, {
           gameId,
           opponent: winner,
+        }),
+      );
+    }
+  }
+
+  #checkLessIsMoreAchievement(
+    winner: string,
+    loser: string,
+    gameId: string,
+    setPoints: { gameWinner: number; gameLoser: number }[],
+    playedAt: number,
+  ) {
+    const winnerPoints = setPoints.reduce((sum, set) => sum + set.gameWinner, 0);
+    const loserPoints = setPoints.reduce((sum, set) => sum + set.gameLoser, 0);
+
+    if (winnerPoints < loserPoints) {
+      this.#addAchievement(
+        winner,
+        this.#createAchievement("less-is-more", winner, playedAt, {
+          gameId,
+          opponent: loser,
+          playerPoints: winnerPoints,
+          opponentPoints: loserPoints,
         }),
       );
     }
@@ -1251,6 +1321,7 @@ export class Achievements {
       "tournament-winner": { earned: 0 },
       "season-winner": { current: 0, target: 1, earned: 0 },
       "nice-game": { earned: 0 },
+      "less-is-more": { earned: 0 },
       "close-calls": { current: 0, target: 5, earned: 0 },
       "edge-lord": { current: 0, target: 20, earned: 0 },
       "consistency-is-key": { current: 0, target: 5, earned: 0 },
@@ -1261,6 +1332,7 @@ export class Achievements {
       "community-builder": { current: 0, target: 10, newPlayers: new Set(), earned: 0 },
       "hat-trick": { current: 0, target: 3, earned: 0 },
       "kingslayer": { earned: 0 },
+      "king-maker": { earned: 0 },
       "touched-the-throne": { earned: 0 },
       "on-the-podium": { earned: 0 },
       "photo-finish": { earned: 0 },
@@ -1591,6 +1663,7 @@ type AchievementDefinitions = {
   "tournament-winner": { tournamentId: string };
   "season-winner": { seasonStart: number };
   "nice-game": { gameId: string; opponent: string };
+  "less-is-more": { gameId: string; opponent: string; playerPoints: number; opponentPoints: number };
   "close-calls": undefined;
   "edge-lord": undefined;
   "consistency-is-key": undefined;
@@ -1605,6 +1678,7 @@ type AchievementDefinitions = {
   "unbreakable-spirit": { opponent: string };
   "hat-trick": { firstWinAt: number; thirdWinAt: number };
   "kingslayer": { opponent: string; gameId: string };
+  "king-maker": { newKing: string; netScoreGained: number };
   "touched-the-throne": { elo: number; firstGameAt: number; dethroned?: string };
   "on-the-podium": { elo: number; firstGameAt: number };
   "photo-finish": {
@@ -1689,6 +1763,7 @@ export type AchievementProgression = {
   "tournament-winner": BaseProgression;
   "season-winner": ProgressionWithTarget;
   "nice-game": BaseProgression;
+  "less-is-more": BaseProgression;
   "close-calls": ProgressionWithTarget;
   "edge-lord": ProgressionWithTarget;
   "consistency-is-key": ProgressionWithTarget;
@@ -1703,6 +1778,7 @@ export type AchievementProgression = {
   "unbreakable-spirit": BaseProgression;
   "hat-trick": ProgressionWithTarget;
   "kingslayer": BaseProgression;
+  "king-maker": BaseProgression;
   "touched-the-throne": BaseProgression;
   "on-the-podium": BaseProgression;
   "photo-finish": BaseProgression;
