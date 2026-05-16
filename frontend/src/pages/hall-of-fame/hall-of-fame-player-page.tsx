@@ -178,6 +178,39 @@ function renderDetails(breakdown: HallOfFameScoreBreakdown, key: FactorKey): Rea
         </div>
       );
     }
+    case "podiumTime": {
+      const d = data as HallOfFameScoreBreakdown["podiumTime"];
+      const podiumTiers = [
+        { label: "🥇 Day at #1", pts: 1, count: d.rank1Days },
+        { label: "🥈 Day at #2", pts: 0.5, count: d.rank2Days },
+        { label: "🥉 Day at #3", pts: 0.5, count: d.rank3Days },
+      ];
+      return (
+        <div className="text-primary-text text-xs space-y-1.5">
+          <p className="italic">Days spent in the top 3 of the ranked leaderboard</p>
+          <div className="flex flex-wrap gap-1.5">
+            {podiumTiers.map((tier) => (
+              <span
+                key={tier.label}
+                className={classNames(
+                  "px-2 py-0.5 rounded text-xs inline-flex items-center gap-1.5",
+                  tier.count === 0
+                    ? "bg-secondary-background/50 text-secondary-text/75"
+                    : "bg-secondary-background text-secondary-text",
+                )}
+              >
+                {tier.label}: {tier.pts} pts
+                {tier.count > 0 && (
+                  <span className="bg-tertiary-background text-tertiary-text h-5 min-w-5 px-1 rounded-full inline-flex items-center justify-center text-xs font-bold">
+                    {fmtNum(tier.count)}x
+                  </span>
+                )}
+              </span>
+            ))}
+          </div>
+        </div>
+      );
+    }
     default: {
       const _exhaustive: never = key;
       return _exhaustive;
@@ -187,6 +220,7 @@ function renderDetails(breakdown: HallOfFameScoreBreakdown, key: FactorKey): Rea
 
 const FACTORS: { key: FactorKey; emoji: string; name: string }[] = [
   { key: "peakElo", emoji: "🔥", name: "All-Time High" },
+  { key: "podiumTime", emoji: "🥉", name: "Podium Time" },
   { key: "experience", emoji: "🏓", name: "Experience" },
   { key: "dataVolume", emoji: "📊", name: "Data Volume" },
   { key: "longevity", emoji: "📅", name: "Activity" },
