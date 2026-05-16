@@ -192,6 +192,12 @@ export const AchievementsList: React.FC<AchievementsListProps> = ({ achievements
                       {achievement.data.playerPoints} pts vs {achievement.data.opponentPoints} pts
                     </span>
                   )}
+                  {achievement.type === "king-maker" && achievement.data && (
+                    <span className="text-[11px] opacity-80">
+                      New king: {context.playerName(achievement.data.newKing)} (
+                      {fmtNum(achievement.data.netScoreGained, { digits: 1, signedPositive: true })} Score)
+                    </span>
+                  )}
                   {achievement.type === "leap-frog" && achievement.data && (
                     <span className="text-[11px] opacity-80">
                       #{achievement.data.fromRank} → #{achievement.data.toRank} (

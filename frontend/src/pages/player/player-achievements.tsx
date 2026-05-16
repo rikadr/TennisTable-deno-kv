@@ -161,6 +161,11 @@ export const ACHIEVEMENT_LABELS: Record<string, { title: string; description: st
     description: "Beat the player ranked #1 on the leaderboard",
     icon: "⚔️",
   },
+  "king-maker": {
+    title: "King Maker",
+    description: "Be the opponent who contributed the most Score to a new #1's climb to the throne",
+    icon: "🪜",
+  },
   "touched-the-throne": {
     title: "Touched the Throne",
     description: "Reach rank #1 on the leaderboard",
@@ -385,6 +390,13 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
                 {achievement.type === "less-is-more" && achievement.data && (
                   <p className="text-xs text-secondary-text/70 mt-2">
                     {achievement.data.playerPoints} pts vs {achievement.data.opponentPoints} pts
+                  </p>
+                )}
+
+                {achievement.type === "king-maker" && achievement.data && (
+                  <p className="text-xs text-secondary-text/70 mt-2">
+                    New king: {context.playerName(achievement.data.newKing)} (gained{" "}
+                    {fmtNum(achievement.data.netScoreGained, { digits: 1, signedPositive: true })} Score from you)
                   </p>
                 )}
 
