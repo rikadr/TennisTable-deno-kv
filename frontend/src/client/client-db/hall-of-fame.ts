@@ -1,4 +1,5 @@
 import { Elo } from "./elo";
+import { EventTypeEnum } from "./event-store/event-types";
 import { TennisTable } from "./tennis-table";
 
 export type SeasonDetail = { rank: number; points: number };
@@ -13,6 +14,7 @@ export type HallOfFameScoreBreakdown = {
   experience: { score: number; games: number };
   dataVolume: { score: number; gamesWithSets: number; gamesWithPoints: number };
   peakElo: { score: number; peakElo: number };
+  podiumTime: { score: number; rank1Days: number; rank2Days: number; rank3Days: number };
   total: number;
 };
 
@@ -30,7 +32,8 @@ export type HallOfFameFactorKey =
   | "longevity"
   | "experience"
   | "dataVolume"
-  | "peakElo";
+  | "peakElo"
+  | "podiumTime";
 
 export type HallOfFameSectionStats = Record<HallOfFameFactorKey, { max: number; rank: number }>;
 
@@ -43,6 +46,7 @@ const FACTOR_KEYS: HallOfFameFactorKey[] = [
   "experience",
   "dataVolume",
   "peakElo",
+  "podiumTime",
 ];
 
 export class HallOfFame {
@@ -52,6 +56,7 @@ export class HallOfFame {
   private sectionMaxes: Record<HallOfFameFactorKey, number> | undefined;
   private sectionRanks: Record<HallOfFameFactorKey, Map<string, number>> | undefined;
   private peakEloCache: Map<string, number> | undefined;
+  private podiumMsCache: Map<string, { rank1Days: number; rank2Days: number; rank3Days: number }> | undefined;
 
   constructor(parent: TennisTable) {
     this.parent = parent;
@@ -98,6 +103,7 @@ export class HallOfFame {
     this.sectionMaxes = undefined;
     this.sectionRanks = undefined;
     this.peakEloCache = undefined;
+    this.podiumMsCache = undefined;
   }
 
   #ensureCrossPlayerStats() {
@@ -117,6 +123,7 @@ export class HallOfFame {
       experience: [],
       dataVolume: [],
       peakElo: [],
+      podiumTime: [],
     };
 
     for (const player of allPlayers) {
@@ -174,11 +181,12 @@ export class HallOfFame {
     const experience = this.#calcExperience(playerId);
     const dataVolume = this.#calcDataVolume(playerId);
     const peakElo = this.#calcPeakElo(playerId);
+    const podiumTime = this.#calcPodiumTime(playerId);
 
     const total =
       seasonPerformance.score + achievementsEarned.score + socialDiversity.score +
       tournamentProgression.score + longevity.score + experience.score + dataVolume.score +
-      peakElo.score;
+      peakElo.score + podiumTime.score;
 
     return {
       seasonPerformance,
@@ -189,6 +197,7 @@ export class HallOfFame {
       experience,
       dataVolume,
       peakElo,
+      podiumTime,
       total: Math.round(total),
     };
   }
@@ -361,5 +370,128 @@ export class HallOfFame {
     });
     this.peakEloCache = peaks;
     return peaks;
+  }
+
+  #calcPodiumTime(playerId: string): HallOfFameScoreBreakdown["podiumTime"] {
+    const days = this.#getPodiumDaysByPlayer().get(playerId);
+    const rank1Days = days?.rank1Days ?? 0;
+    const rank2Days = days?.rank2Days ?? 0;
+    const rank3Days = days?.rank3Days ?? 0;
+    const score = rank1Days + rank2Days * 0.5 + rank3Days * 0.5;
+    return { score, rank1Days, rank2Days, rank3Days };
+  }
+
+  #getPodiumDaysByPlayer(): Map<string, { rank1Days: number; rank2Days: number; rank3Days: number }> {
+    if (this.podiumMsCache) return this.podiumMsCache;
+    const ONE_DAY = 24 * 60 * 60 * 1000;
+    const gameLimitForRanked = this.parent.client.gameLimitForRanked;
+    const MIN_RANKED_FOR_PODIUM = 5;
+
+    type Timeline = { kind: "game"; time: number; winner: string; loser: string }
+      | { kind: "activity"; time: number; playerId: string; active: boolean };
+
+    const timeline: Timeline[] = [];
+    for (const event of this.parent.events) {
+      switch (event.type) {
+        case EventTypeEnum.PLAYER_CREATED:
+          timeline.push({ kind: "activity", time: event.time, playerId: event.stream, active: true });
+          break;
+        case EventTypeEnum.PLAYER_DEACTIVATED:
+          timeline.push({ kind: "activity", time: event.time, playerId: event.stream, active: false });
+          break;
+        case EventTypeEnum.PLAYER_REACTIVATED:
+          timeline.push({ kind: "activity", time: event.time, playerId: event.stream, active: true });
+          break;
+      }
+    }
+    for (const game of this.parent.games) {
+      timeline.push({ kind: "game", time: game.playedAt, winner: game.winner, loser: game.loser });
+    }
+    timeline.sort((a, b) => a.time - b.time);
+
+    type State = { elo: number; totalGames: number; active: boolean };
+    const playerState = new Map<string, State>();
+    let currentTop3: string[] = [];
+    let lastTime: number | undefined;
+
+    const recomputeTop3 = (): string[] => {
+      const ranked = Array.from(playerState.entries())
+        .filter(([, s]) => s.active && s.totalGames >= gameLimitForRanked);
+      if (ranked.length < MIN_RANKED_FOR_PODIUM) return [];
+      return ranked
+        .sort((a, b) => b[1].elo - a[1].elo)
+        .slice(0, 3)
+        .map(([id]) => id);
+    };
+
+    // Per player: day index -> best (lowest) rank held on that day.
+    const dayBestRank = new Map<string, Map<number, 1 | 2 | 3>>();
+
+    const recordInterval = (playerId: string, rank: 1 | 2 | 3, tStart: number, tEnd: number) => {
+      if (tEnd <= tStart) return;
+      const dStart = Math.floor(tStart / ONE_DAY);
+      const dEnd = Math.ceil(tEnd / ONE_DAY) - 1;
+      let map = dayBestRank.get(playerId);
+      if (!map) {
+        map = new Map();
+        dayBestRank.set(playerId, map);
+      }
+      for (let d = dStart; d <= dEnd; d++) {
+        const existing = map.get(d);
+        if (existing === undefined || rank < existing) map.set(d, rank);
+      }
+    };
+
+    for (const entry of timeline) {
+      if (lastTime !== undefined && currentTop3.length > 0) {
+        for (let i = 0; i < currentTop3.length; i++) {
+          const rank = (i + 1) as 1 | 2 | 3;
+          recordInterval(currentTop3[i], rank, lastTime, entry.time);
+        }
+      }
+
+      if (entry.kind === "game") {
+        const winner = playerState.get(entry.winner);
+        const loser = playerState.get(entry.loser);
+        if (winner && loser) {
+          winner.totalGames++;
+          loser.totalGames++;
+          const { winnersNewElo, losersNewElo } = Elo.calculateELO(
+            winner.elo,
+            loser.elo,
+            winner.totalGames,
+            loser.totalGames,
+          );
+          winner.elo = winnersNewElo;
+          loser.elo = losersNewElo;
+        }
+      } else {
+        const existing = playerState.get(entry.playerId);
+        if (existing) {
+          existing.active = entry.active;
+        } else {
+          playerState.set(entry.playerId, { elo: Elo.INITIAL_ELO, totalGames: 0, active: entry.active });
+        }
+      }
+
+      currentTop3 = recomputeTop3();
+      lastTime = entry.time;
+    }
+
+    const result = new Map<string, { rank1Days: number; rank2Days: number; rank3Days: number }>();
+    for (const [playerId, dayMap] of dayBestRank) {
+      let rank1Days = 0;
+      let rank2Days = 0;
+      let rank3Days = 0;
+      for (const rank of dayMap.values()) {
+        if (rank === 1) rank1Days++;
+        else if (rank === 2) rank2Days++;
+        else rank3Days++;
+      }
+      result.set(playerId, { rank1Days, rank2Days, rank3Days });
+    }
+
+    this.podiumMsCache = result;
+    return result;
   }
 }
