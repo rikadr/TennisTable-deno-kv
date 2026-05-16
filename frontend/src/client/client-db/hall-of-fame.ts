@@ -413,13 +413,17 @@ export class HallOfFame {
     const playerState = new Map<string, State>();
     let currentTop3: string[] = [];
     let lastTime: number | undefined;
+    const MIN_RANKED_FOR_PODIUM = 5;
 
-    const recomputeTop3 = (): string[] =>
-      Array.from(playerState.entries())
-        .filter(([, s]) => s.active && s.totalGames >= gameLimitForRanked)
+    const recomputeTop3 = (): string[] => {
+      const ranked = Array.from(playerState.entries())
+        .filter(([, s]) => s.active && s.totalGames >= gameLimitForRanked);
+      if (ranked.length < MIN_RANKED_FOR_PODIUM) return [];
+      return ranked
         .sort((a, b) => b[1].elo - a[1].elo)
         .slice(0, 3)
         .map(([id]) => id);
+    };
 
     const creditAt = (playerId: string, rank: 1 | 2 | 3, elapsed: number) => {
       const existing = result.get(playerId) ?? { rank1: 0, rank2: 0, rank3: 0 };

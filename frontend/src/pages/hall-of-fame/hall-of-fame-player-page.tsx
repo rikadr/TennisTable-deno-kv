@@ -187,7 +187,7 @@ function renderDetails(breakdown: HallOfFameScoreBreakdown, key: FactorKey): Rea
       ];
       return (
         <div className="text-primary-text text-xs space-y-1.5">
-          <p className="italic">Days spent in the top 3 of the ranked leaderboard</p>
+          <p className="italic">Days spent in the top 3 of the ranked leaderboard. Only counts while at least 5 players are ranked.</p>
           <div className="flex flex-wrap gap-1.5">
             {podiumTiers.map((tier) => (
               <span
