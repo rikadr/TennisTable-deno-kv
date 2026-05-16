@@ -396,7 +396,7 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
                 {achievement.type === "king-maker" && achievement.data && (
                   <p className="text-xs text-secondary-text/70 mt-2">
                     New king: {context.playerName(achievement.data.newKing)} (gained{" "}
-                    {fmtNum(achievement.data.netScoreGained, { digits: 1, signedPositive: true })} Score from you)
+                    {fmtNum(achievement.data.netScoreGained, { digits: 0, signedPositive: true })} Score from you)
                   </p>
                 )}
 
