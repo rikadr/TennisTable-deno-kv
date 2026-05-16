@@ -382,6 +382,12 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
                   </p>
                 )}
 
+                {achievement.type === "less-is-more" && achievement.data && (
+                  <p className="text-xs text-secondary-text/70 mt-2">
+                    {achievement.data.playerPoints} pts vs {achievement.data.opponentPoints} pts
+                  </p>
+                )}
+
                 {achievement.type === "touched-the-throne" && achievement.data && (
                   <div className="text-xs text-secondary-text/70 mt-2 space-y-1">
                     <p>
