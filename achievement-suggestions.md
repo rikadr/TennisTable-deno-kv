@@ -41,8 +41,8 @@ Lose 5+ games in a single day without a win.
 ## 13. Tour de Table 🚲
 Play against 5 different opponents in a single day.
 
-## 14. Pyrrhic Victory 💀
-Win a game by the smallest possible margin — you actually lost more total points than your opponent across all sets.
+## 14. Less Is More 🤏
+Win a game while scoring fewer total points than your opponent across all sets.
 
 ## 15. King Maker 🤝
 Be the player from whom the new #1 has gained the most Score on their climb to the throne. Awarded retroactively when a player reaches rank #1, to the opponent who contributed the most Score gain to that climb.
