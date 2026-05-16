@@ -56,7 +56,7 @@ export class HallOfFame {
   private sectionMaxes: Record<HallOfFameFactorKey, number> | undefined;
   private sectionRanks: Record<HallOfFameFactorKey, Map<string, number>> | undefined;
   private peakEloCache: Map<string, number> | undefined;
-  private podiumMsCache: Map<string, { rank1: number; rank2: number; rank3: number }> | undefined;
+  private podiumMsCache: Map<string, { rank1Days: number; rank2Days: number; rank3Days: number }> | undefined;
 
   constructor(parent: TennisTable) {
     this.parent = parent;
@@ -373,19 +373,19 @@ export class HallOfFame {
   }
 
   #calcPodiumTime(playerId: string): HallOfFameScoreBreakdown["podiumTime"] {
-    const ONE_DAY = 24 * 60 * 60 * 1000;
-    const ms = this.#getPodiumMsByPlayer().get(playerId);
-    const rank1Days = Math.floor((ms?.rank1 ?? 0) / ONE_DAY);
-    const rank2Days = Math.floor((ms?.rank2 ?? 0) / ONE_DAY);
-    const rank3Days = Math.floor((ms?.rank3 ?? 0) / ONE_DAY);
+    const days = this.#getPodiumDaysByPlayer().get(playerId);
+    const rank1Days = days?.rank1Days ?? 0;
+    const rank2Days = days?.rank2Days ?? 0;
+    const rank3Days = days?.rank3Days ?? 0;
     const score = rank1Days + rank2Days * 0.5 + rank3Days * 0.5;
     return { score, rank1Days, rank2Days, rank3Days };
   }
 
-  #getPodiumMsByPlayer(): Map<string, { rank1: number; rank2: number; rank3: number }> {
+  #getPodiumDaysByPlayer(): Map<string, { rank1Days: number; rank2Days: number; rank3Days: number }> {
     if (this.podiumMsCache) return this.podiumMsCache;
-    const result = new Map<string, { rank1: number; rank2: number; rank3: number }>();
+    const ONE_DAY = 24 * 60 * 60 * 1000;
     const gameLimitForRanked = this.parent.client.gameLimitForRanked;
+    const MIN_RANKED_FOR_PODIUM = 5;
 
     type Timeline = { kind: "game"; time: number; winner: string; loser: string }
       | { kind: "activity"; time: number; playerId: string; active: boolean };
@@ -413,7 +413,6 @@ export class HallOfFame {
     const playerState = new Map<string, State>();
     let currentTop3: string[] = [];
     let lastTime: number | undefined;
-    const MIN_RANKED_FOR_PODIUM = 5;
 
     const recomputeTop3 = (): string[] => {
       const ranked = Array.from(playerState.entries())
@@ -425,22 +424,29 @@ export class HallOfFame {
         .map(([id]) => id);
     };
 
-    const creditAt = (playerId: string, rank: 1 | 2 | 3, elapsed: number) => {
-      const existing = result.get(playerId) ?? { rank1: 0, rank2: 0, rank3: 0 };
-      if (rank === 1) existing.rank1 += elapsed;
-      else if (rank === 2) existing.rank2 += elapsed;
-      else existing.rank3 += elapsed;
-      result.set(playerId, existing);
+    // Per player: day index -> best (lowest) rank held on that day.
+    const dayBestRank = new Map<string, Map<number, 1 | 2 | 3>>();
+
+    const recordInterval = (playerId: string, rank: 1 | 2 | 3, tStart: number, tEnd: number) => {
+      if (tEnd <= tStart) return;
+      const dStart = Math.floor(tStart / ONE_DAY);
+      const dEnd = Math.ceil(tEnd / ONE_DAY) - 1;
+      let map = dayBestRank.get(playerId);
+      if (!map) {
+        map = new Map();
+        dayBestRank.set(playerId, map);
+      }
+      for (let d = dStart; d <= dEnd; d++) {
+        const existing = map.get(d);
+        if (existing === undefined || rank < existing) map.set(d, rank);
+      }
     };
 
     for (const entry of timeline) {
       if (lastTime !== undefined && currentTop3.length > 0) {
-        const elapsed = entry.time - lastTime;
-        if (elapsed > 0) {
-          for (let i = 0; i < currentTop3.length; i++) {
-            const rank = (i + 1) as 1 | 2 | 3;
-            creditAt(currentTop3[i], rank, elapsed);
-          }
+        for (let i = 0; i < currentTop3.length; i++) {
+          const rank = (i + 1) as 1 | 2 | 3;
+          recordInterval(currentTop3[i], rank, lastTime, entry.time);
         }
       }
 
@@ -470,6 +476,19 @@ export class HallOfFame {
 
       currentTop3 = recomputeTop3();
       lastTime = entry.time;
+    }
+
+    const result = new Map<string, { rank1Days: number; rank2Days: number; rank3Days: number }>();
+    for (const [playerId, dayMap] of dayBestRank) {
+      let rank1Days = 0;
+      let rank2Days = 0;
+      let rank3Days = 0;
+      for (const rank of dayMap.values()) {
+        if (rank === 1) rank1Days++;
+        else if (rank === 2) rank2Days++;
+        else rank3Days++;
+      }
+      result.set(playerId, { rank1Days, rank2Days, rank3Days });
     }
 
     this.podiumMsCache = result;
