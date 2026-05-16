@@ -164,7 +164,7 @@ export const ACHIEVEMENT_LABELS: Record<string, { title: string; description: st
   "king-maker": {
     title: "King Maker",
     description: "Be the opponent who contributed the most Score to a new #1's climb to the throne",
-    icon: "🪜",
+    icon: "🥂",
   },
   "touched-the-throne": {
     title: "Touched the Throne",
