@@ -206,6 +206,17 @@ export const AchievementsList: React.FC<AchievementsListProps> = ({ achievements
                       {fmtNum(achievement.data.netScoreGained, { digits: 0, signedPositive: true })} Score)
                     </span>
                   )}
+                  {achievement.type === "streak-ender" && achievement.data && (
+                    <span className="text-[11px] opacity-80">
+                      Ended {achievement.data.streakLength}-game streak
+                    </span>
+                  )}
+                  {achievement.type === "group-stage-star" && achievement.data && (
+                    <span className="text-[11px] opacity-80">
+                      Undefeated ({achievement.data.wins} win
+                      {achievement.data.wins !== 1 ? "s" : ""})
+                    </span>
+                  )}
                   {achievement.type === "leap-frog" && achievement.data && (
                     <span className="text-[11px] opacity-80">
                       #{achievement.data.fromRank} → #{achievement.data.toRank} (
