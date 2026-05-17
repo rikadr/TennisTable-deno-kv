@@ -267,6 +267,19 @@ export class Achievements {
       }
       playerStreak.count++;
 
+      // Check for Streak Ender: winner just ended a 10+ game win streak.
+      // Must read loser.winStreakAll BEFORE it is reset below.
+      if (loser.winStreakAll >= 10) {
+        this.#addAchievement(
+          game.winner,
+          this.#createAchievement("streak-ender", game.winner, game.playedAt, {
+            opponent: game.loser,
+            gameId: game.id,
+            streakLength: loser.winStreakAll,
+          }),
+        );
+      }
+
       // Update loser stats
       loser.lastActiveAt = game.playedAt;
       loser.winStreakAll = 0;
@@ -1302,6 +1315,24 @@ export class Achievements {
           }),
         );
       }
+
+      // Check for Group Stage Star: a player who finished their group stage
+      // with zero losses and zero own-skips (opponent skips that gave them a
+      // free win still count). Awarded once per tournament group stage.
+      if (t.groupPlay && t.groupPlay.groupPlayEnded !== undefined) {
+        const endedAt = t.groupPlay.groupPlayEnded;
+        t.groupPlay.groupScores.forEach((score, playerId) => {
+          if (score.loss === 0 && score.skips === 0 && score.wins > 0) {
+            this.#addAchievement(
+              playerId,
+              this.#createAchievement("group-stage-star", playerId, endedAt, {
+                tournamentId,
+                wins: score.wins,
+              }),
+            );
+          }
+        });
+      }
     });
   }
 
@@ -1406,6 +1437,8 @@ export class Achievements {
         target: this.marathonSetRecord.score,
         recordHolder: this.marathonSetRecord.holder,
       },
+      "streak-ender": { earned: 0 },
+      "group-stage-star": { earned: 0 },
     };
 
     let firstActiveAt: number | null = null;
@@ -1794,6 +1827,8 @@ type AchievementDefinitions = {
     // Undefined when this set is the first to establish the league record.
     previousRecord?: number;
   };
+  "streak-ender": { opponent: string; gameId: string; streakLength: number };
+  "group-stage-star": { tournamentId: string; wins: number };
 };
 
 type AchievementType = keyof AchievementDefinitions;
@@ -1894,4 +1929,6 @@ export type AchievementProgression = {
   "goliath": ProgressionWithTarget;
   "climber": ProgressionWithTarget;
   "marathon-set": MarathonSetProgression;
+  "streak-ender": BaseProgression;
+  "group-stage-star": BaseProgression;
 };

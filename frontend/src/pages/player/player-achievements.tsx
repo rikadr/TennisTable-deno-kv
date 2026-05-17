@@ -206,6 +206,16 @@ export const ACHIEVEMENT_LABELS: Record<string, { title: string; description: st
     description: "Win a deuce set with the highest winning score in league history",
     icon: "🏓",
   },
+  "streak-ender": {
+    title: "Streak Ender",
+    description: "Beat a player who was on an active 10+ game win streak",
+    icon: "🛑",
+  },
+  "group-stage-star": {
+    title: "Group Stage Star",
+    description: "Go undefeated in a tournament group stage",
+    icon: "⭐",
+  },
 };
 
 type TabType = "earned" | "progress";
@@ -430,6 +440,18 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
                   <p className="text-xs text-secondary-text/70 mt-2">
                     Score {fmtNum(achievement.data.elo)} in{" "}
                     {daysBetween(achievement.data.firstGameAt, achievement.earnedAt)} days
+                  </p>
+                )}
+
+                {achievement.type === "streak-ender" && achievement.data && (
+                  <p className="text-xs text-secondary-text/70 mt-2">
+                    Ended {context.playerName(achievement.data.opponent)}'s {achievement.data.streakLength}-game win streak
+                  </p>
+                )}
+
+                {achievement.type === "group-stage-star" && achievement.data && (
+                  <p className="text-xs text-secondary-text/70 mt-2">
+                    Undefeated with {achievement.data.wins} win{achievement.data.wins !== 1 ? "s" : ""}
                   </p>
                 )}
 
