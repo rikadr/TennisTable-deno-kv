@@ -109,18 +109,14 @@ export const ProgressList: React.FC<ProgressListProps> = ({ selectedType }) => {
                       : "bg-background-secondary",
                   )}
                 >
-                  {/* Progress Background. The bar only turns green
-                      once the achievement has actually been earned —
-                      hitting 100% progress alone is not enough. */}
+                  {/* Progress Background. The bar itself is always
+                      blue; the green earned-row background shows
+                      through behind it so an earned-but-progressing
+                      achievement reads as "blue bar over green bg". */}
                   {(target > 1 || current > 0) && (
                     <div className="absolute inset-0 pointer-events-none">
                       <div
-                        className={classNames(
-                          "h-full transition-all duration-300",
-                          hasEarned
-                            ? "bg-gradient-to-b from-green-400 via-green-500 to-green-600"
-                            : "bg-gradient-to-b from-blue-400 via-blue-500 to-blue-600",
-                        )}
+                        className="h-full transition-all duration-300 bg-gradient-to-b from-blue-400 via-blue-500 to-blue-600"
                         style={{ width: `${percent}%` }}
                       />
                     </div>
