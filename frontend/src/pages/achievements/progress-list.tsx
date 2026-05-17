@@ -97,7 +97,6 @@ export const ProgressList: React.FC<ProgressListProps> = ({ selectedType }) => {
           </div>
 
             {playersProgress.map(({ player, current, target, percent, earned }, index) => {
-              const isComplete = percent >= 100;
               const hasEarned = earned > 0;
 
               return (
@@ -110,13 +109,15 @@ export const ProgressList: React.FC<ProgressListProps> = ({ selectedType }) => {
                       : "bg-background-secondary",
                   )}
                 >
-                  {/* Progress Background */}
+                  {/* Progress Background. The bar only turns green
+                      once the achievement has actually been earned —
+                      hitting 100% progress alone is not enough. */}
                   {(target > 1 || current > 0) && (
                     <div className="absolute inset-0 pointer-events-none">
                       <div
                         className={classNames(
                           "h-full transition-all duration-300",
-                          isComplete
+                          hasEarned
                             ? "bg-gradient-to-b from-green-400 via-green-500 to-green-600"
                             : "bg-gradient-to-b from-blue-400 via-blue-500 to-blue-600",
                         )}
