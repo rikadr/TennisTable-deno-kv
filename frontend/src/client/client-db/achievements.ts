@@ -21,10 +21,13 @@ export class Achievements {
   climberAllTimeLow: Map<string, { elo: number; time: number }> = new Map();
   // League-wide running record for the Marathon Set achievement: the
   // highest winning set score from a true-deuce set (winner ≥ 12,
-  // loser ≥ 10). Starts at 11 so the first qualifying set strictly
-  // exceeds it. Used by the progression view so players can see what
+  // loser ≥ 10). Undefined until the first qualifying set establishes
+  // the record. Used by the progression view so players can see what
   // they need to beat.
-  marathonSetRecord: { score: number; holder: string | null } = { score: 11, holder: null };
+  marathonSetRecord: { score: number | undefined; holder: string | undefined } = {
+    score: undefined,
+    holder: undefined,
+  };
 
   constructor(parent: TennisTable) {
     this.parent = parent;
@@ -39,7 +42,7 @@ export class Achievements {
     this.bestDavidGain.clear();
     this.worstGoliathLoss.clear();
     this.climberAllTimeLow.clear();
-    this.marathonSetRecord = { score: 11, holder: null };
+    this.marathonSetRecord = { score: undefined, holder: undefined };
 
     const playerTracker = new Map<
       string,
@@ -962,7 +965,8 @@ export class Achievements {
       const setWinnerScore = Math.max(set.gameWinner, set.gameLoser);
       const setLoserScore = Math.min(set.gameWinner, set.gameLoser);
       if (setWinnerScore < 12 || setLoserScore < 10) return;
-      if (setWinnerScore <= this.marathonSetRecord.score) return;
+      const currentRecord = this.marathonSetRecord.score;
+      if (currentRecord !== undefined && setWinnerScore <= currentRecord) return;
 
       const setWinnerId = set.gameWinner > set.gameLoser ? gameWinner : gameLoser;
       const setLoserId = setWinnerId === gameWinner ? gameLoser : gameWinner;
@@ -974,7 +978,7 @@ export class Achievements {
           opponent: setLoserId,
           setWinnerScore,
           setLoserScore,
-          previousRecord: this.marathonSetRecord.score,
+          previousRecord: currentRecord,
         }),
       );
 
@@ -1400,7 +1404,7 @@ export class Achievements {
         earned: 0,
         current: 0,
         target: this.marathonSetRecord.score,
-        recordHolder: this.marathonSetRecord.holder ?? undefined,
+        recordHolder: this.marathonSetRecord.holder,
       },
     };
 
@@ -1787,7 +1791,8 @@ type AchievementDefinitions = {
     opponent: string;
     setWinnerScore: number;
     setLoserScore: number;
-    previousRecord: number;
+    // Undefined when this set is the first to establish the league record.
+    previousRecord?: number;
   };
 };
 
@@ -1841,9 +1846,10 @@ type MarathonSetProgression = BaseProgression & {
   // they won (winner ≥ 12, loser ≥ 10). 0 if they have none.
   current: number;
   // The league-wide record — the winning score this player must
-  // strictly exceed to earn the next Marathon Set award. Starts at
-  // 11 if no one has set a record yet.
-  target: number;
+  // strictly exceed to earn the next Marathon Set award. Undefined
+  // when no one has set a record yet (next qualifying deuce set wins
+  // it outright).
+  target?: number;
   // Player who currently holds the league record, if any.
   recordHolder?: string;
 };

@@ -194,8 +194,10 @@ export const AchievementsList: React.FC<AchievementsListProps> = ({ achievements
                   )}
                   {achievement.type === "marathon-set" && achievement.data && (
                     <span className="text-[11px] opacity-80">
-                      {achievement.data.setWinnerScore}–{achievement.data.setLoserScore} (prev record{" "}
-                      {achievement.data.previousRecord})
+                      {achievement.data.setWinnerScore}–{achievement.data.setLoserScore}
+                      {achievement.data.previousRecord !== undefined
+                        ? ` (prev record ${achievement.data.previousRecord})`
+                        : " (first league record!)"}
                     </span>
                   )}
                   {achievement.type === "king-maker" && achievement.data && (

@@ -8,7 +8,7 @@ describe("Marathon Set Achievement", () => {
     { type: EventTypeEnum.PLAYER_CREATED, stream: "carol", time: 3, data: { name: "Carol" } },
   ];
 
-  it("awards the set winner with the previous record (11) when a deuce set is won at 12+", () => {
+  it("awards the set winner with undefined previousRecord when first establishing the league record", () => {
     const events: EventType[] = [
       ...baseEvents,
       {
@@ -45,7 +45,7 @@ describe("Marathon Set Achievement", () => {
         opponent: "bob",
         setWinnerScore: 12,
         setLoserScore: 10,
-        previousRecord: 11,
+        previousRecord: undefined,
       },
     });
     expect(tt.achievements.marathonSetRecord).toStrictEqual({ score: 12, holder: "alice" });
@@ -78,7 +78,7 @@ describe("Marathon Set Achievement", () => {
     tt.achievements.calculateAchievements();
 
     expect(tt.achievements.getAchievements("alice").filter((a) => a.type === "marathon-set")).toHaveLength(0);
-    expect(tt.achievements.marathonSetRecord).toStrictEqual({ score: 11, holder: null });
+    expect(tt.achievements.marathonSetRecord).toStrictEqual({ score: undefined, holder: undefined });
   });
 
   it("ties do NOT award (strictly greater only)", () => {
@@ -167,7 +167,7 @@ describe("Marathon Set Achievement", () => {
       opponent: "alice",
       setWinnerScore: 15,
       setLoserScore: 13,
-      previousRecord: 11,
+      previousRecord: undefined,
     });
   });
 
@@ -208,7 +208,7 @@ describe("Marathon Set Achievement", () => {
       opponent: "bob",
       setWinnerScore: 12,
       setLoserScore: 10,
-      previousRecord: 11,
+      previousRecord: undefined,
     });
     expect(aliceAwards[1].data).toStrictEqual({
       gameId: "g1",
@@ -218,6 +218,39 @@ describe("Marathon Set Achievement", () => {
       previousRecord: 12,
     });
     expect(tt.achievements.marathonSetRecord).toStrictEqual({ score: 14, holder: "alice" });
+  });
+
+  it("progression target and recordHolder are undefined when no record has been set", () => {
+    const events: EventType[] = [
+      ...baseEvents,
+      {
+        type: EventTypeEnum.GAME_CREATED,
+        stream: "g1",
+        time: 100,
+        data: { winner: "alice", loser: "bob", playedAt: 100 },
+      },
+      {
+        type: EventTypeEnum.GAME_SCORE,
+        stream: "g1",
+        time: 101,
+        data: {
+          setsWon: { gameWinner: 2, gameLoser: 0 },
+          setPoints: [
+            { gameWinner: 11, gameLoser: 9 },
+            { gameWinner: 11, gameLoser: 7 },
+          ],
+        },
+      },
+    ];
+
+    const tt = new TennisTable({ events });
+    tt.achievements.calculateAchievements();
+
+    const aliceProg = tt.achievements.getPlayerProgression("alice")["marathon-set"];
+    expect(aliceProg.current).toBe(0);
+    expect(aliceProg.target).toBeUndefined();
+    expect(aliceProg.recordHolder).toBeUndefined();
+    expect(aliceProg.earned).toBe(0);
   });
 
   it("progression shows player's personal best deuce-set winning score vs the league record", () => {

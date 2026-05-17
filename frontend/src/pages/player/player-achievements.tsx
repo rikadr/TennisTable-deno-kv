@@ -400,8 +400,10 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
 
                 {achievement.type === "marathon-set" && achievement.data && (
                   <p className="text-xs text-secondary-text/70 mt-2">
-                    Set score: {achievement.data.setWinnerScore}–{achievement.data.setLoserScore}{" "}
-                    (previous record: {achievement.data.previousRecord})
+                    Set score: {achievement.data.setWinnerScore}–{achievement.data.setLoserScore}
+                    {achievement.data.previousRecord !== undefined
+                      ? ` (previous record: ${achievement.data.previousRecord})`
+                      : " (first league record!)"}
                   </p>
                 )}
 
@@ -700,6 +702,10 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                         </div>
                       )}
                     </>
+                  ) : type === "marathon-set" ? (
+                    <div className="mt-2 text-xs text-secondary-text/70">
+                      No league record yet — win a deuce set with the winning score at 12 or above to set the first record.
+                    </div>
                   ) : (
                     // Fallback for achievements without targets (like tournament achievements)
                     <div className="mt-2 text-xs text-secondary-text/70">
