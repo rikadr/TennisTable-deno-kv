@@ -201,6 +201,11 @@ export const ACHIEVEMENT_LABELS: Record<string, { title: string; description: st
     description: "Climb 300 Score from your all-time low (recorded from when you first became ranked)",
     icon: "🧗",
   },
+  "marathon-set": {
+    title: "Marathon Set",
+    description: "Win a deuce set with the highest winning score in league history",
+    icon: "🏓",
+  },
 };
 
 type TabType = "earned" | "progress";
@@ -390,6 +395,13 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
                 {achievement.type === "less-is-more" && achievement.data && (
                   <p className="text-xs text-secondary-text/70 mt-2">
                     {achievement.data.playerPoints} pts vs {achievement.data.opponentPoints} pts
+                  </p>
+                )}
+
+                {achievement.type === "marathon-set" && achievement.data && (
+                  <p className="text-xs text-secondary-text/70 mt-2">
+                    Set score: {achievement.data.setWinnerScore}–{achievement.data.setLoserScore}{" "}
+                    (previous record: {achievement.data.previousRecord})
                   </p>
                 )}
 
@@ -668,6 +680,25 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                             </div>
                           </div>
                         )}
+
+                      {/* Record holder for marathon-set */}
+                      {type === "marathon-set" && "recordHolder" in data && (
+                        <div className="mt-2 text-xs text-secondary-text/70">
+                          {data.recordHolder ? (
+                            <>
+                              League record held by{" "}
+                              <Link to={"/player/" + data.recordHolder}>
+                                <span className="text-secondary-text underline">
+                                  {context.playerName(data.recordHolder)}
+                                </span>
+                              </Link>
+                              . Beat {data.target} to take it.
+                            </>
+                          ) : (
+                            <>No record set yet — win a deuce set above 11 to start the record.</>
+                          )}
+                        </div>
+                      )}
                     </>
                   ) : (
                     // Fallback for achievements without targets (like tournament achievements)

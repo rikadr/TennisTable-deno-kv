@@ -19,6 +19,12 @@ export class Achievements {
   // Climber achievement and progression. `time` is when that low was
   // set — needed so the awarded achievement can report the "from" date.
   climberAllTimeLow: Map<string, { elo: number; time: number }> = new Map();
+  // League-wide running record for the Marathon Set achievement: the
+  // highest winning set score from a true-deuce set (winner ≥ 12,
+  // loser ≥ 10). Starts at 11 so the first qualifying set strictly
+  // exceeds it. Used by the progression view so players can see what
+  // they need to beat.
+  marathonSetRecord: { score: number; holder: string | null } = { score: 11, holder: null };
 
   constructor(parent: TennisTable) {
     this.parent = parent;
@@ -33,6 +39,7 @@ export class Achievements {
     this.bestDavidGain.clear();
     this.worstGoliathLoss.clear();
     this.climberAllTimeLow.clear();
+    this.marathonSetRecord = { score: 11, holder: null };
 
     const playerTracker = new Map<
       string,
@@ -283,6 +290,18 @@ export class Achievements {
           this.#createAchievement("never-give-up", game.loser, game.playedAt, {
             startedAt: loser.loseStreakAllStartedAt,
           }),
+        );
+      }
+
+      // Check for marathon-set achievements (each set evaluated in
+      // order against the running league-wide record).
+      if (game.score?.setPoints) {
+        this.#checkMarathonSetAchievements(
+          game.winner,
+          game.loser,
+          game.id,
+          game.score.setPoints,
+          game.playedAt,
         );
       }
 
@@ -926,6 +945,43 @@ export class Achievements {
     }
   }
 
+  // Awards "Marathon Set" to the set winner for every set in this
+  // game (evaluated in order) whose winning score strictly exceeds
+  // the league-wide running record AND that was a true-deuce set
+  // (winner ≥ 12, loser ≥ 10). Multiple awards from one game are
+  // possible if successive sets each beat the running record.
+  #checkMarathonSetAchievements(
+    gameWinner: string,
+    gameLoser: string,
+    gameId: string,
+    setPoints: { gameWinner: number; gameLoser: number }[],
+    playedAt: number,
+  ) {
+    setPoints.forEach((set) => {
+      if (set.gameWinner === set.gameLoser) return;
+      const setWinnerScore = Math.max(set.gameWinner, set.gameLoser);
+      const setLoserScore = Math.min(set.gameWinner, set.gameLoser);
+      if (setWinnerScore < 12 || setLoserScore < 10) return;
+      if (setWinnerScore <= this.marathonSetRecord.score) return;
+
+      const setWinnerId = set.gameWinner > set.gameLoser ? gameWinner : gameLoser;
+      const setLoserId = setWinnerId === gameWinner ? gameLoser : gameWinner;
+
+      this.#addAchievement(
+        setWinnerId,
+        this.#createAchievement("marathon-set", setWinnerId, playedAt, {
+          gameId,
+          opponent: setLoserId,
+          setWinnerScore,
+          setLoserScore,
+          previousRecord: this.marathonSetRecord.score,
+        }),
+      );
+
+      this.marathonSetRecord = { score: setWinnerScore, holder: setWinnerId };
+    });
+  }
+
   #checkDonutAchievements(
     winner: string,
     loser: string,
@@ -1340,6 +1396,12 @@ export class Achievements {
       "david": { current: 0, target: 30, earned: 0 },
       "goliath": { current: 0, target: 30, earned: 0 },
       "climber": { current: 0, target: 300, earned: 0 },
+      "marathon-set": {
+        earned: 0,
+        current: 0,
+        target: this.marathonSetRecord.score,
+        recordHolder: this.marathonSetRecord.holder ?? undefined,
+      },
     };
 
     let firstActiveAt: number | null = null;
@@ -1350,6 +1412,7 @@ export class Achievements {
     let closeCallsCount = 0;
     let edgeLordCount = 0;
     let consistencyCount = 0;
+    let bestDeuceSetWon = 0;
     const streaksPerOpponent = new Map<string, number>();
     const opponentsPlayed = new Set<string>();
     const gamesPerOpponent = new Map<string, { count: number; firstGame: number; lastGame: number }>();
@@ -1448,6 +1511,24 @@ export class Achievements {
       if (game.score?.setPoints && this.#checkConsistentGame(game.score.setPoints)) {
         consistencyCount++;
       }
+
+      // Track highest deuce-set winning score this player has won
+      // (regardless of overall game outcome — the achievement is
+      // awarded to set winners).
+      if (game.score?.setPoints) {
+        game.score.setPoints.forEach((set) => {
+          if (set.gameWinner === set.gameLoser) return;
+          const setWinnerScore = Math.max(set.gameWinner, set.gameLoser);
+          const setLoserScore = Math.min(set.gameWinner, set.gameLoser);
+          if (setWinnerScore < 12 || setLoserScore < 10) return;
+          const setWinnerIsGameWinner = set.gameWinner > set.gameLoser;
+          const playerWonSet =
+            (isWinner && setWinnerIsGameWinner) || (isLoser && !setWinnerIsGameWinner);
+          if (playerWonSet && setWinnerScore > bestDeuceSetWon) {
+            bestDeuceSetWon = setWinnerScore;
+          }
+        });
+      }
     });
 
     // Update progression with current stats
@@ -1457,6 +1538,7 @@ export class Achievements {
     progression["close-calls"].current = closeCallsCount;
     progression["edge-lord"].current = edgeLordCount;
     progression["consistency-is-key"].current = consistencyCount;
+    progression["marathon-set"].current = bestDeuceSetWon;
     progression["variety-player"].current = opponentsPlayed.size;
     progression["variety-player"].opponents = opponentsPlayed;
     progression["global-player"].current = opponentsPlayed.size;
@@ -1700,6 +1782,13 @@ type AchievementDefinitions = {
   "david": { opponent: string; gameId: string; eloGain: number };
   "goliath": { opponent: string; gameId: string; eloLoss: number };
   "climber": { fromElo: number; toElo: number; fromDate: number; toDate: number };
+  "marathon-set": {
+    gameId: string;
+    opponent: string;
+    setWinnerScore: number;
+    setLoserScore: number;
+    previousRecord: number;
+  };
 };
 
 type AchievementType = keyof AchievementDefinitions;
@@ -1747,6 +1836,18 @@ type WelcomeCommitteeProgression = ProgressionWithTarget & {
   newPlayers?: Set<string>; // List of new players this person was first opponent for
 };
 
+type MarathonSetProgression = BaseProgression & {
+  // Player's own highest winning set score from a true-deuce set
+  // they won (winner ≥ 12, loser ≥ 10). 0 if they have none.
+  current: number;
+  // The league-wide record — the winning score this player must
+  // strictly exceed to earn the next Marathon Set award. Starts at
+  // 11 if no one has set a record yet.
+  target: number;
+  // Player who currently holds the league record, if any.
+  recordHolder?: string;
+};
+
 export type AchievementProgression = {
   "donut-1": ProgressionWithTarget;
   "donut-5": ProgressionWithTarget;
@@ -1786,4 +1887,5 @@ export type AchievementProgression = {
   "david": ProgressionWithTarget;
   "goliath": ProgressionWithTarget;
   "climber": ProgressionWithTarget;
+  "marathon-set": MarathonSetProgression;
 };
