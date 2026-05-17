@@ -201,6 +201,11 @@ export const ACHIEVEMENT_LABELS: Record<string, { title: string; description: st
     description: "Climb 300 Score from your all-time low (recorded from when you first became ranked)",
     icon: "🧗",
   },
+  "marathon-set": {
+    title: "Marathon Set",
+    description: "Win a deuce set with the highest winning score in league history",
+    icon: "🏓",
+  },
 };
 
 type TabType = "earned" | "progress";
@@ -393,6 +398,15 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
                   </p>
                 )}
 
+                {achievement.type === "marathon-set" && achievement.data && (
+                  <p className="text-xs text-secondary-text/70 mt-2">
+                    Set score: {achievement.data.setWinnerScore}–{achievement.data.setLoserScore}
+                    {achievement.data.previousRecord !== undefined
+                      ? ` (previous record: ${achievement.data.previousRecord})`
+                      : " (first league record!)"}
+                  </p>
+                )}
+
                 {achievement.type === "king-maker" && achievement.data && (
                   <p className="text-xs text-secondary-text/70 mt-2">
                     New king: {context.playerName(achievement.data.newKing)} (gained{" "}
@@ -484,7 +498,6 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
       {progressItems.map(({ type, label, data }) => {
         const hasTarget = "target" in data && !!data.target;
         const hasCurrent = "current" in data && !!data.current;
-        const isComplete = hasTarget && hasCurrent && data.current! >= data.target!;
         const percentage = hasTarget && hasCurrent ? Math.min((data.current! / data.target!) * 100, 100) : 0;
         const hasEarned = data.earned > 0;
 
@@ -497,20 +510,16 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
             )}
           >
             {/* Progress bar background.
-                The row's container has a green gradient when the
-                achievement has been earned — this shows through behind
-                the blue progressing bar so an earned-but-currently-
-                progressing achievement reads as "blue bar over green
-                bg". When progress hits 100%, the bar fills with green. */}
+                The bar itself is always blue and represents current
+                progress. The row's container has a green gradient
+                when the achievement has been earned, which shows
+                through to the right of the blue bar — so an earned
+                achievement that's currently 94% progressed reads as
+                "94% blue over green bg, with a 6% green sliver". */}
             {hasTarget && (
               <div className="absolute inset-0 pointer-events-none">
                 <div
-                  className={classNames(
-                    "h-full transition-all duration-300",
-                    isComplete
-                      ? "bg-gradient-to-b from-green-400 via-green-500 to-green-600"
-                      : "bg-gradient-to-b from-blue-400 via-blue-500 to-blue-600",
-                  )}
+                  className="h-full transition-all duration-300 bg-gradient-to-b from-blue-400 via-blue-500 to-blue-600"
                   style={{ width: `${percentage}%` }}
                 />
               </div>
@@ -668,7 +677,30 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                             </div>
                           </div>
                         )}
+
+                      {/* Record holder for marathon-set */}
+                      {type === "marathon-set" && "recordHolder" in data && (
+                        <div className="mt-2 text-xs text-secondary-text/70">
+                          {data.recordHolder ? (
+                            <>
+                              League record held by{" "}
+                              <Link to={"/player/" + data.recordHolder}>
+                                <span className="text-secondary-text underline">
+                                  {context.playerName(data.recordHolder)}
+                                </span>
+                              </Link>
+                              . Beat {data.target} to take it.
+                            </>
+                          ) : (
+                            <>No record set yet — win a deuce set above 11 to start the record.</>
+                          )}
+                        </div>
+                      )}
                     </>
+                  ) : type === "marathon-set" ? (
+                    <div className="mt-2 text-xs text-secondary-text/70">
+                      No league record yet — win a deuce set with the winning score at 12 or above to set the first record.
+                    </div>
                   ) : (
                     // Fallback for achievements without targets (like tournament achievements)
                     <div className="mt-2 text-xs text-secondary-text/70">
