@@ -5,6 +5,26 @@ import { TennisTable } from "./tennis-table";
 
 export type Fraction = { fraction: number; confidence: number };
 
+export type ConfidenceConfig = {
+  additions: number;
+  products: number;
+};
+
+export const GAME_CONFIDENCE_CONFIG: ConfidenceConfig = {
+  additions: 3,
+  products: 0.15,
+};
+
+export const SET_CONFIDENCE_CONFIG: ConfidenceConfig = {
+  additions: 1.6,
+  products: 0.02,
+};
+
+export const POINT_CONFIDENCE_CONFIG: ConfidenceConfig = {
+  additions: 0.2,
+  products: 0,
+};
+
 export class FutureElo {
   constructor(parent: TennisTable) {
     this.parent = parent;
@@ -224,10 +244,7 @@ export class FutureElo {
         wins: gameWinsWeighted,
         loss: gameLossesWeighted,
         probabilityLookup: gameToGame,
-        confidenceConfig: {
-          additions: 5,
-          products: 1,
-        },
+        confidenceConfig: GAME_CONFIDENCE_CONFIG,
       });
       predictions.push(gameFraction);
     }
@@ -253,10 +270,7 @@ export class FutureElo {
         wins: setWinsWeighted,
         loss: setLossesWeighted,
         probabilityLookup: setToGame,
-        confidenceConfig: {
-          additions: 3.2,
-          products: 0.4,
-        },
+        confidenceConfig: SET_CONFIDENCE_CONFIG,
       });
 
       predictions.push(setFraction);
@@ -283,10 +297,7 @@ export class FutureElo {
         wins: pointWinsWeighted,
         loss: pointLossesWeighted,
         probabilityLookup: pointToGame,
-        confidenceConfig: {
-          additions: 0.7,
-          products: 0,
-        },
+        confidenceConfig: POINT_CONFIDENCE_CONFIG,
       });
 
       predictions.push(pointFraction);
@@ -349,10 +360,7 @@ export class FutureElo {
         wins: gameWinsWeighted,
         loss: gameLossesWeighted,
         probabilityLookup: gameToGame,
-        confidenceConfig: {
-          additions: 5,
-          products: 1,
-        },
+        confidenceConfig: GAME_CONFIDENCE_CONFIG,
       }),
       won: totalWins,
       lost: totalLoss,
@@ -413,10 +421,7 @@ export class FutureElo {
         wins: setWinsWeighted,
         loss: setLossesWeighted,
         probabilityLookup: setToGame,
-        confidenceConfig: {
-          additions: 3.2,
-          products: 0.4,
-        },
+        confidenceConfig: SET_CONFIDENCE_CONFIG,
       }),
       won: setWins,
       lost: setLosses,
@@ -477,10 +482,7 @@ export class FutureElo {
         wins: pointWinsWeighted,
         loss: pointLossesWeighted,
         probabilityLookup: pointToGame,
-        confidenceConfig: {
-          additions: 0.7,
-          products: 0,
-        },
+        confidenceConfig: POINT_CONFIDENCE_CONFIG,
       }),
       won: pointWins,
       lost: pointLosses,
@@ -493,10 +495,7 @@ export class FutureElo {
     wins: number;
     loss: number;
     probabilityLookup: number[]; // The pre-generated probability table
-    confidenceConfig: {
-      additions: number;
-      products: number;
-    };
+    confidenceConfig: ConfidenceConfig;
   }): Fraction {
     const {
       wins,
