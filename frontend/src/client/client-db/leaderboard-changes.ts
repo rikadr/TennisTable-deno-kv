@@ -14,7 +14,7 @@ export class LeaderboardChanges {
     netChange: number;
     allChanges: { change: number; time: number }[];
   }[] {
-    const oneWeekAgo = Date.now() - 1000 * 60 * 60 * 24 * 7;
+    const twoDaysAgo = Date.now() - 1000 * 60 * 60 * 24 * 2;
     const isActive = (playerId: string) =>
       this.parent.eventStore.playersProjector.getPlayer(playerId)?.active === true;
 
@@ -22,7 +22,7 @@ export class LeaderboardChanges {
     let lastGamesMap: { time: number; map: Map<string, PlayerWithElo> } = { time: 0, map: new Map() };
 
     Elo.eloCalculator(this.parent.games, this.parent.allPlayers, (map, game) => {
-      if (game.playedAt > oneWeekAgo) {
+      if (game.playedAt > twoDaysAgo) {
         scoreMaps.push({ time: game.playedAt, map: structuredClone(map) });
       } else {
         lastGamesMap = { time: game.playedAt, map: structuredClone(map) };
