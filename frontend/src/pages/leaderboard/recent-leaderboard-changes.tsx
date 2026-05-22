@@ -21,11 +21,11 @@ export const RecentLeaderBoardChanges: React.FC<Props> = ({ view }) => {
       const currentSeason = seasons.find((s) => Date.now() >= s.start && Date.now() <= s.end);
 
       if (currentSeason) {
-        const oneWeekAgo = Date.now() - 1000 * 60 * 60 * 24 * 7;
+        const twoDaysAgo = Date.now() - 1000 * 60 * 60 * 24 * 2;
         const sortedGames = [...currentSeason.games].sort((a, b) => a.playedAt - b.playedAt);
 
-        const oldGames = sortedGames.filter((g) => g.playedAt <= oneWeekAgo);
-        const recentGames = sortedGames.filter((g) => g.playedAt > oneWeekAgo);
+        const oldGames = sortedGames.filter((g) => g.playedAt <= twoDaysAgo);
+        const recentGames = sortedGames.filter((g) => g.playedAt > twoDaysAgo);
 
         // Initialize simulation with old games
         const simSeason = new Season({ start: currentSeason.start, end: currentSeason.end });
@@ -116,7 +116,7 @@ export const RecentLeaderBoardChanges: React.FC<Props> = ({ view }) => {
 
   return (
     <div className="bg-primary-background rounded-lg ">
-      <h1 className="text-2xl text-center mb-4 mt-[27.5px] text-primary-text">Leaderboard changes last 7 days</h1>
+      <h1 className="text-2xl text-center mb-4 mt-[27.5px] text-primary-text">Leaderboard changes last 2 days</h1>
       <div className="flex flex-col divide-y divide-primary-text/50 text-primary-text">
         <div className="flex gap-4 text-base text-center mb-2">
           <div className="w-20 pl-5">Player</div>
