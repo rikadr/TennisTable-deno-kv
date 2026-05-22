@@ -33,7 +33,8 @@ export const PlayerPage: React.FC = () => {
 
   const summary = context.leaderboard.getPlayerSummary(playerId || "");
   const leaderboard = context.leaderboard.getLeaderboard();
-  const playerInLeaderBoard = leaderboard.rankedPlayers.find((p) => p.id === playerId);
+  const player = playerId ? context.eventStore.playersProjector.getPlayer(playerId) : undefined;
+  const isActive = player?.active ?? true;
   const pendingGames = context.tournaments.findAllPendingGamesByPlayer(playerId);
 
   const seasons = context.seasons.getSeasons();
@@ -64,11 +65,16 @@ export const PlayerPage: React.FC = () => {
         <div className="flex gap-4">
           <div className="relative">
             <ProfilePicture playerId={playerId} border={8} size={150} shape="rounded" clickToEdit />
-            {summary.isRanked && (
+            {isActive && summary.isRanked && (
               <div className="absolute -bottom-1 -right-1">
                 <Shimmer className="rounded-full" enabled={!!summary.rank && summary.rank <= 10}>
                   <ThemedPlaceNumber place={summary.rank} size="xs" />
                 </Shimmer>
+              </div>
+            )}
+            {!isActive && (
+              <div className="absolute -bottom-1 -right-1 text-3xl drop-shadow-md" title="Retired">
+                🏛️
               </div>
             )}
           </div>
@@ -77,21 +83,31 @@ export const PlayerPage: React.FC = () => {
           <div className="flex-1 flex flex-col gap-2 text-secondary-text sm:flex-row sm:justify-between">
             <div>
               <h1 className="text-3xl xs:text-4xl sm:text-5xl font-bold mb-1">{context.playerName(playerId)}</h1>
+              {!isActive && (
+                <Link
+                  to={`/hall-of-fame/${playerId}`}
+                  className="inline-flex items-center gap-1.5 px-3 py-1 mb-2 text-xs font-bold uppercase tracking-wider rounded-full bg-gradient-to-r from-amber-600 via-yellow-500 to-amber-600 text-white shadow hover:from-amber-500 hover:via-yellow-400 hover:to-amber-500 transition-all"
+                >
+                  🏛️ Retired
+                </Link>
+              )}
               <div className="text-base space-y-1">
-                {summary.isRanked ? (
-                  <div>
-                    🏆 Overall Rank {fmtNum(summary.rank)} of {fmtNum(leaderboard.rankedPlayers.length)}
-                  </div>
-                ) : (
-                  <div>
-                    <p>Not yet ranked overall.</p>
-                    <p>
-                      <span className="font-bold">
-                        {fmtNum(summary.games.length)} of {fmtNum(context.client.gameLimitForRanked)}
-                      </span>{" "}
-                      required games played.
-                    </p>
-                  </div>
+                {isActive && (
+                  summary.isRanked ? (
+                    <div>
+                      🏆 Overall Rank {fmtNum(summary.rank)} of {fmtNum(leaderboard.rankedPlayers.length)}
+                    </div>
+                  ) : (
+                    <div>
+                      <p>Not yet ranked overall.</p>
+                      <p>
+                        <span className="font-bold">
+                          {fmtNum(summary.games.length)} of {fmtNum(context.client.gameLimitForRanked)}
+                        </span>{" "}
+                        required games played.
+                      </p>
+                    </div>
+                  )
                 )}
                 {playerSeasonRank && (
                   <div className="text-secondary-text">
@@ -116,7 +132,7 @@ export const PlayerPage: React.FC = () => {
                 case "statistics":
                   return summary.games.length > 0;
                 case "predictions":
-                  return summary.isRanked;
+                  return summary.isRanked && isActive;
                 case "season":
                   // Show tab if player has participated in any season
                   return hasParticipatedInAnySeason;
@@ -205,19 +221,19 @@ export const PlayerPage: React.FC = () => {
             </ContentCard>
 
             {/* Quick Stats */}
-            {playerInLeaderBoard && (
+            {summary.games.length > 0 && (
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4 text-primary-text">
                 <div className="bg-primary-background rounded-lg p-4">
                   <p className="text-sm  mb-1">Win Rate</p>
 
                   <p className="text-2xl font-bold">
-                    {fmtNum(100 * (playerInLeaderBoard.wins / (playerInLeaderBoard.wins + playerInLeaderBoard.loss)))}%
+                    {fmtNum(100 * (summary.wins / (summary.wins + summary.loss)))}%
                   </p>
                 </div>
                 <div className="bg-primary-background rounded-lg p-4">
                   <p className="text-sm  mb-1">Win / Loss Ratio</p>
                   <p className="text-2xl font-bold">
-                    {fmtNum(playerInLeaderBoard.wins / playerInLeaderBoard.loss, { digits: 1 })}
+                    {summary.loss === 0 ? "∞" : fmtNum(summary.wins / summary.loss, { digits: 1 })}
                   </p>
                 </div>
                 {summary.streaks && (

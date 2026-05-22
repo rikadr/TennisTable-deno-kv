@@ -55,6 +55,7 @@ export class HallOfFame {
   private playerCache = new Map<string, HallOfFameEntry>();
   private sectionMaxes: Record<HallOfFameFactorKey, number> | undefined;
   private sectionRanks: Record<HallOfFameFactorKey, Map<string, number>> | undefined;
+  private totalRanks: Map<string, number> | undefined;
   private peakEloCache: Map<string, number> | undefined;
   private podiumMsCache: Map<string, { rank1Days: number; rank2Days: number; rank3Days: number }> | undefined;
 
@@ -97,17 +98,23 @@ export class HallOfFame {
     return stats;
   }
 
+  getTotalRank(playerId: string): number {
+    this.#ensureCrossPlayerStats();
+    return this.totalRanks?.get(playerId) ?? 0;
+  }
+
   clearCache() {
     this.cache = undefined;
     this.playerCache.clear();
     this.sectionMaxes = undefined;
     this.sectionRanks = undefined;
+    this.totalRanks = undefined;
     this.peakEloCache = undefined;
     this.podiumMsCache = undefined;
   }
 
   #ensureCrossPlayerStats() {
-    if (this.sectionMaxes && this.sectionRanks) return;
+    if (this.sectionMaxes && this.sectionRanks && this.totalRanks) return;
 
     const allPlayers = [
       ...this.parent.eventStore.playersProjector.activePlayers,
@@ -125,12 +132,14 @@ export class HallOfFame {
       peakElo: [],
       podiumTime: [],
     };
+    const totals: { playerId: string; total: number }[] = [];
 
     for (const player of allPlayers) {
       const breakdown = this.#calculatePlayerScore(player.id);
       for (const key of FACTOR_KEYS) {
         scoresByFactor[key].push({ playerId: player.id, score: breakdown[key].score });
       }
+      totals.push({ playerId: player.id, total: breakdown.total });
     }
 
     const maxes = {} as Record<HallOfFameFactorKey, number>;
@@ -155,6 +164,19 @@ export class HallOfFame {
 
     this.sectionMaxes = maxes;
     this.sectionRanks = ranks;
+
+    const sortedTotals = totals.sort((a, b) => b.total - a.total);
+    const totalRankMap = new Map<string, number>();
+    let currentTotalRank = 0;
+    let lastTotal = Number.POSITIVE_INFINITY;
+    for (let i = 0; i < sortedTotals.length; i++) {
+      if (sortedTotals[i].total !== lastTotal) {
+        currentTotalRank = i + 1;
+        lastTotal = sortedTotals[i].total;
+      }
+      totalRankMap.set(sortedTotals[i].playerId, currentTotalRank);
+    }
+    this.totalRanks = totalRankMap;
   }
 
   #calculateAll(): HallOfFameEntry[] {

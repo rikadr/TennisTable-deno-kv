@@ -25,6 +25,7 @@ import { classNames } from "../../common/class-names";
 export const PlayerEloGraph: React.FC<{ playerId: string }> = ({ playerId }) => {
   const context = useEventDbContext();
   const summary = context.leaderboard.getPlayerSummary(playerId || "");
+  const isActive = context.eventStore.playersProjector.getPlayer(playerId)?.active ?? true;
 
   const { width = 0 } = useWindowSize();
 
@@ -194,7 +195,7 @@ export const PlayerEloGraph: React.FC<{ playerId: string }> = ({ playerId }) => 
           )}
         </div>
       )}
-      {!showExpectedElo && summary.games.length >= context.client.gameLimitForRanked && (
+      {!showExpectedElo && isActive && summary.games.length >= context.client.gameLimitForRanked && (
         <button
           className="mb-4 px-2 py-1 bg-secondary-background text-secondary-text hover:bg-secondary-background/50 rounded-lg"
           onClick={() =>

@@ -37,6 +37,9 @@ export const PvPStats: React.FC<Props> = ({ player1, player2 }) => {
 
   const p1IsRanked = !!context.leaderboard.getPlayerSummary(player1)?.isRanked;
   const p2IsRanked = !!context.leaderboard.getPlayerSummary(player2)?.isRanked;
+  const p1IsActive = context.eventStore.playersProjector.getPlayer(player1)?.active ?? true;
+  const p2IsActive = context.eventStore.playersProjector.getPlayer(player2)?.active ?? true;
+  const bothActive = p1IsActive && p2IsActive;
 
   return (
     <div className="space-y-6 text-primary-text">
@@ -50,7 +53,13 @@ export const PvPStats: React.FC<Props> = ({ player1, player2 }) => {
       {combinedPrediction !== undefined && (
         <div className="bg-secondary-background/20 rounded-lg p-4 border border-secondary-background/30">
           <h3 className="text-lg font-semibold text-center">Win Chanse Prediction</h3>
-          {p1IsRanked && p2IsRanked ? (
+          {!bothActive ? (
+            <p className="text-center text-primary-text/70 mt-2">
+              🏛️ Cannot predict win chance — {!p1IsActive && !p2IsActive
+                ? `${p1.name} and ${p2.name} are`
+                : `${!p1IsActive ? p1.name : p2.name} is`} retired
+            </p>
+          ) : p1IsRanked && p2IsRanked ? (
             <>
               <div className="flex items-center gap-4">
                 {/* Player 1 Probability */}

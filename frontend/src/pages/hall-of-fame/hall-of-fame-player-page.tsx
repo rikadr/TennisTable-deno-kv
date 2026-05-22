@@ -262,6 +262,7 @@ export const HallOfFamePlayerPage: React.FC = () => {
   const sectionStats = viewMode === "compared"
     ? context.hallOfFame.getSectionStats(playerId)
     : undefined;
+  const totalRank = viewMode === "compared" ? context.hallOfFame.getTotalRank(playerId) : 0;
 
   const total = entry.score.total || 1;
 
@@ -298,7 +299,7 @@ export const HallOfFamePlayerPage: React.FC = () => {
           <Link to="/hall-of-fame" className="text-primary-text hover:underline text-sm">
             &larr; Back
           </Link>
-          <ProfilePicture playerId={entry.playerId} size={48} border={3} />
+          <ProfilePicture playerId={entry.playerId} size={48} border={3} linkToPlayer />
           <h1 className="text-2xl text-primary-text font-semibold">{entry.playerName}</h1>
         </div>
 
@@ -311,7 +312,12 @@ export const HallOfFamePlayerPage: React.FC = () => {
           )}
           <div className="flex justify-between items-center mb-1">
             <h2 className="text-xl text-primary-text font-semibold">Hall of Fame Score Breakdown</h2>
-            <span className="text-primary-text font-bold text-2xl">{fmtNum(entry.score.total)} pts</span>
+            <span className="text-primary-text font-bold text-2xl">
+              {viewMode === "compared" && totalRank > 0 && (
+                <span className="text-primary-text/70 mr-1.5 text-lg font-medium">#{totalRank} ·</span>
+              )}
+              {fmtNum(entry.score.total)} pts
+            </span>
           </div>
           <p className="text-primary-text text-sm mb-4">
             A combined score of everything you accomplished during your career.
@@ -388,6 +394,9 @@ export const HallOfFamePlayerPage: React.FC = () => {
               Final Hall of Fame Score
             </span>
             <span className="text-primary-text font-bold text-2xl">
+              {viewMode === "compared" && totalRank > 0 && (
+                <span className="text-primary-text/70 mr-1.5 text-lg font-medium">#{totalRank} ·</span>
+              )}
               {fmtNum(entry.score.total)} pts
             </span>
           </div>
