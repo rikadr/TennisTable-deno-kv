@@ -457,6 +457,7 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
 
                 {achievement.type === "leap-frog" && achievement.data && (
                   <div className="text-xs text-secondary-text/70 mt-2 space-y-1">
+                    <p>Beat {context.playerName(achievement.data.opponent)}</p>
                     <p>
                       Jumped {achievement.data.ranksJumped} rank
                       {achievement.data.ranksJumped !== 1 ? "s" : ""}: #{achievement.data.fromRank} → #

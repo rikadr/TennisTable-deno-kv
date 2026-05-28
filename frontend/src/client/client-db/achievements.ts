@@ -875,6 +875,7 @@ export class Achievements {
         this.#addAchievement(
           game.winner,
           this.#createAchievement("leap-frog", game.winner, game.playedAt, {
+            opponent: game.loser,
             gameId: game.id,
             ranksJumped: winnerRankBefore - winnerRankAfter,
             fromRank: winnerRankBefore,
@@ -1808,6 +1809,7 @@ type AchievementDefinitions = {
     opponentElo: number;
   };
   "leap-frog": {
+    opponent: string;
     gameId: string;
     ranksJumped: number;
     fromRank: number;
