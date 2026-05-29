@@ -24,7 +24,7 @@ export const PlayerPointsDistrubution: React.FC<Props> = ({ playerId }) => {
               <div
                 className={classNames(
                   "absolute h-6 group-hover:opacity-75 top-0 transition-all duration-300",
-                  points > 0 ? "right-1/2 rounded-l-md" : "left-1/2  rounded-r-md",
+                  points > 0 ? "left-1/2 rounded-r-md" : "right-1/2 rounded-l-md",
                 )}
                 style={{ width: `${(Math.abs(fraction) / 2) * 100}%`, backgroundColor: stringToColor(oponentId) }}
               />
@@ -32,7 +32,7 @@ export const PlayerPointsDistrubution: React.FC<Props> = ({ playerId }) => {
               <div
                 className={classNames(
                   "absolute top-0 text-primary-text",
-                  points > 0 ? "right-1/2 pr-2" : "left-1/2 pl-2",
+                  points > 0 ? "left-1/2 pl-2" : "right-1/2 pr-2",
                 )}
               >
                 {points?.toLocaleString("no-NO", { maximumFractionDigits: 0 })}
