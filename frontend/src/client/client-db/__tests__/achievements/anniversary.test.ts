@@ -150,6 +150,8 @@ describe("TennisTable", () => {
       expect(progression.target).toBe(ONE_YEAR);
       expect(progression.current).toBeGreaterThan(99 * ONE_DAY);
       expect(progression.current).toBeLessThan(101 * ONE_DAY);
+      // The anniversary date anchor is the player's first ever game.
+      expect(progression.firstGameAt).toBe(firstGame);
     });
 
     it("resets toward the next year once the window passes without earning", () => {

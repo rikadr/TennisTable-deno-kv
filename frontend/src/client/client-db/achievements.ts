@@ -1765,6 +1765,7 @@ export class Achievements {
       const cycleStart = firstActiveAt + (targetYear - 1) * ONE_YEAR;
       progression["anniversary"].current = Math.max(0, now - cycleStart);
       progression["anniversary"].target = ONE_YEAR;
+      progression["anniversary"].firstGameAt = firstActiveAt;
     }
 
     // Calculate back-after progression (time since last activity)
@@ -1928,6 +1929,10 @@ type BackAfterProgression = BaseProgression & {
   lastActiveAt?: number; // When they were last active
 };
 
+type AnniversaryProgression = ProgressionWithTarget & {
+  firstGameAt?: number; // The player's first ever game — the recurring anniversary date
+};
+
 type StreakPlayerProgression = ProgressionWithTarget & {
   perOpponent?: Map<string, number>; // Breakdown of current streaks per opponent
 };
@@ -1969,7 +1974,7 @@ export type AchievementProgression = {
   "active-6-months": ProgressionWithTarget;
   "active-1-year": ProgressionWithTarget;
   "active-2-years": ProgressionWithTarget;
-  "anniversary": ProgressionWithTarget;
+  "anniversary": AnniversaryProgression;
   "tournament-participated": BaseProgression;
   "tournament-winner": BaseProgression;
   "season-winner": ProgressionWithTarget;

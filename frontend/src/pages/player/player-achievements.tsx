@@ -606,12 +606,11 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                         </div>
                       )}
 
-                      {/* Show the next earnable anniversary date.
-                          current = now - cycleStart and target = one year, so
-                          the next anniversary is cycleStart + one year. */}
-                      {type === "anniversary" && "current" in data && !!data.current && (
+                      {/* Show the recurring anniversary date — the player's
+                          first ever game. */}
+                      {type === "anniversary" && "firstGameAt" in data && !!data.firstGameAt && (
                         <div className="mt-2 text-xs text-secondary-text/70">
-                          Anniversary date: {dateString(Date.now() - data.current + data.target!)}
+                          Anniversary date: {dateString(data.firstGameAt)}
                         </div>
                       )}
 
