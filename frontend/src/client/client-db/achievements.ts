@@ -227,6 +227,11 @@ export class Achievements {
       this.#checkBackAfterAchievement(game.winner, winner.lastActiveAt, game.playedAt);
       this.#checkBackAfterAchievement(game.loser, loser.lastActiveAt, game.playedAt);
 
+      // Check for "Anniversary": a game played within ±1 day of the one-year
+      // mark of the player's first ever game.
+      this.#checkAnniversaryAchievement(game.winner, winner.firstActiveAt, game.playedAt);
+      this.#checkAnniversaryAchievement(game.loser, loser.firstActiveAt, game.playedAt);
+
       // Update winner stats
       winner.lastActiveAt = game.playedAt;
 
@@ -1206,6 +1211,37 @@ export class Achievements {
     }
   }
 
+  // Awards "Anniversary" when a player plays a game within ±1 day of a yearly
+  // mark of their first ever game (1 year, 2 years, ...). Earnable once per
+  // year mark.
+  #checkAnniversaryAchievement(playerId: string, firstActiveAt: number, currentGameAt: number) {
+    const ONE_YEAR = 365 * 24 * 60 * 60 * 1000;
+    const ONE_DAY = 24 * 60 * 60 * 1000;
+
+    // Nearest whole-year anniversary to this game. ONE_DAY ≪ half a year, so
+    // rounding unambiguously identifies which anniversary a window game hits.
+    const year = Math.round((currentGameAt - firstActiveAt) / ONE_YEAR);
+    if (year < 1) {
+      return;
+    }
+    const anniversaryAt = firstActiveAt + year * ONE_YEAR;
+    if (Math.abs(currentGameAt - anniversaryAt) > ONE_DAY) {
+      return;
+    }
+
+    const alreadyEarned = this.getAchievements(playerId).some(
+      (a) => a.type === "anniversary" && a.data.year === year,
+    );
+    if (alreadyEarned) {
+      return;
+    }
+
+    this.#addAchievement(
+      playerId,
+      this.#createAchievement("anniversary", playerId, currentGameAt, { firstGameAt: firstActiveAt, year }),
+    );
+  }
+
   #checkActivityAchievements(playerId: string, firstActiveAt: number, currentGameAt: number) {
     const activePeriod = currentGameAt - firstActiveAt;
     const SIX_MONTHS = 6 * 30 * 24 * 60 * 60 * 1000;
@@ -1392,6 +1428,7 @@ export class Achievements {
     const SIX_MONTHS = 6 * 30 * 24 * 60 * 60 * 1000;
     const ONE_YEAR = 365 * 24 * 60 * 60 * 1000;
     const TWO_YEARS = 2 * ONE_YEAR;
+    const ONE_DAY = 24 * 60 * 60 * 1000;
 
     const progression: AchievementProgression = {
       "donut-1": { current: 0, target: 1, earned: 0 },
@@ -1409,6 +1446,10 @@ export class Achievements {
       "active-6-months": { current: 0, target: SIX_MONTHS, earned: 0 },
       "active-1-year": { current: 0, target: ONE_YEAR, earned: 0 },
       "active-2-years": { current: 0, target: TWO_YEARS, earned: 0 },
+      // Target is the one-year mark of the first game; current is how much of
+      // that year has elapsed. When current reaches target the player is at
+      // their anniversary and playing a game awards it (within a ±1 day window).
+      "anniversary": { current: 0, target: ONE_YEAR, earned: 0 },
       "tournament-participated": { earned: 0 },
       "tournament-winner": { earned: 0 },
       "season-winner": { current: 0, target: 1, earned: 0 },
@@ -1702,6 +1743,31 @@ export class Achievements {
       progression["active-2-years"].current = ongoingPeriod;
     }
 
+    // Anniversary progress counts toward the next anniversary the player can
+    // still earn, and resets to 0 each year. The "target year" is the earliest
+    // whole year that has neither been earned nor had its ±1 day window pass
+    // (now > anniversary + 1 day). Progress is the time elapsed since the start
+    // of that year's cycle (the previous anniversary, or the first game).
+    if (firstActiveAt !== null) {
+      const now = Date.now();
+      const earnedYears = new Set<number>();
+      for (const achievement of this.getAchievements(playerId)) {
+        if (achievement.type === "anniversary") {
+          earnedYears.add(achievement.data.year);
+        }
+      }
+
+      let targetYear = 1;
+      while (earnedYears.has(targetYear) || now > firstActiveAt + targetYear * ONE_YEAR + ONE_DAY) {
+        targetYear++;
+      }
+
+      const cycleStart = firstActiveAt + (targetYear - 1) * ONE_YEAR;
+      progression["anniversary"].current = Math.max(0, now - cycleStart);
+      progression["anniversary"].target = ONE_YEAR;
+      progression["anniversary"].firstGameAt = firstActiveAt;
+    }
+
     // Calculate back-after progression (time since last activity)
     if (lastActiveAt !== null) {
       const now = Date.now();
@@ -1779,6 +1845,7 @@ type AchievementDefinitions = {
   "active-6-months": { firstGameInPeriod: number };
   "active-1-year": { firstGameInPeriod: number };
   "active-2-years": { firstGameInPeriod: number };
+  "anniversary": { firstGameAt: number; year: number };
   "tournament-participated": { tournamentId: string };
   "tournament-winner": { tournamentId: string };
   "season-winner": { seasonStart: number };
@@ -1862,6 +1929,10 @@ type BackAfterProgression = BaseProgression & {
   lastActiveAt?: number; // When they were last active
 };
 
+type AnniversaryProgression = ProgressionWithTarget & {
+  firstGameAt?: number; // The player's first ever game — the recurring anniversary date
+};
+
 type StreakPlayerProgression = ProgressionWithTarget & {
   perOpponent?: Map<string, number>; // Breakdown of current streaks per opponent
 };
@@ -1903,6 +1974,7 @@ export type AchievementProgression = {
   "active-6-months": ProgressionWithTarget;
   "active-1-year": ProgressionWithTarget;
   "active-2-years": ProgressionWithTarget;
+  "anniversary": AnniversaryProgression;
   "tournament-participated": BaseProgression;
   "tournament-winner": BaseProgression;
   "season-winner": ProgressionWithTarget;

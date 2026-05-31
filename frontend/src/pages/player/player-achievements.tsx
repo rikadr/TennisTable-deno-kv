@@ -86,6 +86,11 @@ export const ACHIEVEMENT_LABELS: Record<string, { title: string; description: st
     description: "Active for 2 years without a 30-day break",
     icon: "🎖️",
   },
+  "anniversary": {
+    title: "Anniversary",
+    description: "Play a game within a day of a yearly anniversary of your first game",
+    icon: "🎂",
+  },
   "tournament-participated": {
     title: "Competitor",
     description: "Participated in a tournament",
@@ -523,6 +528,8 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
         const hasCurrent = "current" in data && !!data.current;
         const percentage = hasTarget && hasCurrent ? Math.min((data.current! / data.target!) * 100, 100) : 0;
         const hasEarned = data.earned > 0;
+        const isTimePeriod =
+          type.startsWith("active-") || type.startsWith("back-after-") || type === "anniversary";
 
         return (
           <div
@@ -573,13 +580,9 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                       <div className="mt-2">
                         <div className="text-sm text-secondary-text">
                           <span className="font-medium">
-                            {type.startsWith("active-") || type.startsWith("back-after-")
-                              ? formatTimePeriod(data.current)
-                              : fmtNum(data.current)}{" "}
+                            {isTimePeriod ? formatTimePeriod(data.current) : fmtNum(data.current)}{" "}
                             /{" "}
-                            {type.startsWith("active-") || type.startsWith("back-after-")
-                              ? formatTimePeriod(data.target)
-                              : fmtNum(data.target)}
+                            {isTimePeriod ? formatTimePeriod(data.target) : fmtNum(data.target)}
                             {type === "season-winner" && (
                               <span className="text-xs text-secondary-text/70 font-normal ml-2">
                                 (Current leader's points)
@@ -600,6 +603,14 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                       {type.startsWith("active-") && "current" in data && !!data.current && (
                         <div className="mt-2 text-xs text-secondary-text/70">
                           Since: {dateString(Date.now() - data.current)}
+                        </div>
+                      )}
+
+                      {/* Show the recurring anniversary date — the player's
+                          first ever game. */}
+                      {type === "anniversary" && "firstGameAt" in data && !!data.firstGameAt && (
+                        <div className="mt-2 text-xs text-secondary-text/70">
+                          Anniversary date: {dateString(data.firstGameAt)}
                         </div>
                       )}
 
