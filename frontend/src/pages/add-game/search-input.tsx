@@ -15,7 +15,7 @@ export const SearchInput: React.FC<{ value: string; onChange: (text: string) => 
     {value && (
       <button
         onClick={() => onChange("")}
-        className="absolute right-4 top-1/2 transform -translate-y-1/2 text-primary-text/50 hover:text-primary-text text-xl"
+        className="absolute right-2 top-1/2 transform -translate-y-1/2 p-2 text-primary-text/50 hover:text-primary-text text-xl"
         tabIndex={-1}
       >
         ✕

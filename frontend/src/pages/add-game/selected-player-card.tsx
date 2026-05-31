@@ -16,7 +16,7 @@ export const SelectedPlayerCard: React.FC<{
         </div>
         <button
           onClick={onClear}
-          className="px-3 py-1 bg-tertiary-background text-tertiary-text hover:bg-tertiary-background/50 rounded-lg text-sm font-medium transition-colors"
+          className="px-4 py-2.5 bg-tertiary-background text-tertiary-text hover:bg-tertiary-background/50 rounded-lg text-sm font-medium transition-colors"
         >
           Clear
         </button>
