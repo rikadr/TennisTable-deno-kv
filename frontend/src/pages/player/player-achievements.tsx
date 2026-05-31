@@ -86,6 +86,11 @@ export const ACHIEVEMENT_LABELS: Record<string, { title: string; description: st
     description: "Active for 2 years without a 30-day break",
     icon: "🎖️",
   },
+  "anniversary": {
+    title: "Anniversary",
+    description: "Played a game on the one-year anniversary of your first game",
+    icon: "🎂",
+  },
   "tournament-participated": {
     title: "Competitor",
     description: "Participated in a tournament",

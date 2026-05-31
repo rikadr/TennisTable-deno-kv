@@ -227,6 +227,11 @@ export class Achievements {
       this.#checkBackAfterAchievement(game.winner, winner.lastActiveAt, game.playedAt);
       this.#checkBackAfterAchievement(game.loser, loser.lastActiveAt, game.playedAt);
 
+      // Check for "Anniversary": a game played within ±1 day of the one-year
+      // mark of the player's first ever game.
+      this.#checkAnniversaryAchievement(game.winner, winner.firstActiveAt, game.playedAt);
+      this.#checkAnniversaryAchievement(game.loser, loser.firstActiveAt, game.playedAt);
+
       // Update winner stats
       winner.lastActiveAt = game.playedAt;
 
@@ -1206,6 +1211,28 @@ export class Achievements {
     }
   }
 
+  // Awards "Anniversary" when a player plays a game within ±1 day of the
+  // one-year mark of their first ever game. Earned once per player.
+  #checkAnniversaryAchievement(playerId: string, firstActiveAt: number, currentGameAt: number) {
+    const ONE_YEAR = 365 * 24 * 60 * 60 * 1000;
+    const ONE_DAY = 24 * 60 * 60 * 1000;
+
+    const anniversary = firstActiveAt + ONE_YEAR;
+    if (Math.abs(currentGameAt - anniversary) > ONE_DAY) {
+      return;
+    }
+
+    const alreadyEarned = this.getAchievements(playerId).some((a) => a.type === "anniversary");
+    if (alreadyEarned) {
+      return;
+    }
+
+    this.#addAchievement(
+      playerId,
+      this.#createAchievement("anniversary", playerId, currentGameAt, { firstGameAt: firstActiveAt }),
+    );
+  }
+
   #checkActivityAchievements(playerId: string, firstActiveAt: number, currentGameAt: number) {
     const activePeriod = currentGameAt - firstActiveAt;
     const SIX_MONTHS = 6 * 30 * 24 * 60 * 60 * 1000;
@@ -1409,6 +1436,7 @@ export class Achievements {
       "active-6-months": { current: 0, target: SIX_MONTHS, earned: 0 },
       "active-1-year": { current: 0, target: ONE_YEAR, earned: 0 },
       "active-2-years": { current: 0, target: TWO_YEARS, earned: 0 },
+      "anniversary": { earned: 0 },
       "tournament-participated": { earned: 0 },
       "tournament-winner": { earned: 0 },
       "season-winner": { current: 0, target: 1, earned: 0 },
@@ -1779,6 +1807,7 @@ type AchievementDefinitions = {
   "active-6-months": { firstGameInPeriod: number };
   "active-1-year": { firstGameInPeriod: number };
   "active-2-years": { firstGameInPeriod: number };
+  "anniversary": { firstGameAt: number };
   "tournament-participated": { tournamentId: string };
   "tournament-winner": { tournamentId: string };
   "season-winner": { seasonStart: number };
@@ -1903,6 +1932,7 @@ export type AchievementProgression = {
   "active-6-months": ProgressionWithTarget;
   "active-1-year": ProgressionWithTarget;
   "active-2-years": ProgressionWithTarget;
+  "anniversary": BaseProgression;
   "tournament-participated": BaseProgression;
   "tournament-winner": BaseProgression;
   "season-winner": ProgressionWithTarget;
