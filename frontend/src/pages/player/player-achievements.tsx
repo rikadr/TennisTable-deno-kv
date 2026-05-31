@@ -528,6 +528,8 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
         const hasCurrent = "current" in data && !!data.current;
         const percentage = hasTarget && hasCurrent ? Math.min((data.current! / data.target!) * 100, 100) : 0;
         const hasEarned = data.earned > 0;
+        const isTimePeriod =
+          type.startsWith("active-") || type.startsWith("back-after-") || type === "anniversary";
 
         return (
           <div
@@ -578,13 +580,9 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                       <div className="mt-2">
                         <div className="text-sm text-secondary-text">
                           <span className="font-medium">
-                            {type.startsWith("active-") || type.startsWith("back-after-")
-                              ? formatTimePeriod(data.current)
-                              : fmtNum(data.current)}{" "}
+                            {isTimePeriod ? formatTimePeriod(data.current) : fmtNum(data.current)}{" "}
                             /{" "}
-                            {type.startsWith("active-") || type.startsWith("back-after-")
-                              ? formatTimePeriod(data.target)
-                              : fmtNum(data.target)}
+                            {isTimePeriod ? formatTimePeriod(data.target) : fmtNum(data.target)}
                             {type === "season-winner" && (
                               <span className="text-xs text-secondary-text/70 font-normal ml-2">
                                 (Current leader's points)
@@ -605,6 +603,15 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                       {type.startsWith("active-") && "current" in data && !!data.current && (
                         <div className="mt-2 text-xs text-secondary-text/70">
                           Since: {dateString(Date.now() - data.current)}
+                        </div>
+                      )}
+
+                      {/* Show the next earnable anniversary date.
+                          current = now - cycleStart and target = one year, so
+                          the next anniversary is cycleStart + one year. */}
+                      {type === "anniversary" && "current" in data && !!data.current && (
+                        <div className="mt-2 text-xs text-secondary-text/70">
+                          Anniversary date: {dateString(Date.now() - data.current + data.target!)}
                         </div>
                       )}
 
