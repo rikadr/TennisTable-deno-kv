@@ -1436,7 +1436,10 @@ export class Achievements {
       "active-6-months": { current: 0, target: SIX_MONTHS, earned: 0 },
       "active-1-year": { current: 0, target: ONE_YEAR, earned: 0 },
       "active-2-years": { current: 0, target: TWO_YEARS, earned: 0 },
-      "anniversary": { earned: 0 },
+      // Target is the one-year mark of the first game; current is how much of
+      // that year has elapsed. When current reaches target the player is at
+      // their anniversary and playing a game awards it (within a ±1 day window).
+      "anniversary": { current: 0, target: ONE_YEAR, earned: 0 },
       "tournament-participated": { earned: 0 },
       "tournament-winner": { earned: 0 },
       "season-winner": { current: 0, target: 1, earned: 0 },
@@ -1730,6 +1733,13 @@ export class Achievements {
       progression["active-2-years"].current = ongoingPeriod;
     }
 
+    // Anniversary progress: time elapsed since the player's first ever game,
+    // counting toward the one-year target. Anchored to the very first game
+    // (no 30-day reset), so it keeps climbing toward the anniversary window.
+    if (firstActiveAt !== null) {
+      progression["anniversary"].current = Math.max(0, Date.now() - firstActiveAt);
+    }
+
     // Calculate back-after progression (time since last activity)
     if (lastActiveAt !== null) {
       const now = Date.now();
@@ -1932,7 +1942,7 @@ export type AchievementProgression = {
   "active-6-months": ProgressionWithTarget;
   "active-1-year": ProgressionWithTarget;
   "active-2-years": ProgressionWithTarget;
-  "anniversary": BaseProgression;
+  "anniversary": ProgressionWithTarget;
   "tournament-participated": BaseProgression;
   "tournament-winner": BaseProgression;
   "season-winner": ProgressionWithTarget;

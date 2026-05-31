@@ -125,5 +125,31 @@ describe("TennisTable", () => {
       tt.achievements.calculateAchievements();
       expect(tt.achievements.getPlayerProgression("alice").anniversary.earned).toBe(1);
     });
+
+    it("tracks progress toward the one-year target before the anniversary", () => {
+      // First (and only) game ~100 days ago: not yet at the anniversary.
+      const firstGame = Date.now() - 100 * ONE_DAY;
+      const events = [...baseEvents(), game("g0", firstGame)];
+      const tt = new TennisTable({ events });
+      tt.achievements.calculateAchievements();
+
+      const progression = tt.achievements.getPlayerProgression("alice").anniversary;
+      expect(progression.earned).toBe(0);
+      expect(progression.target).toBe(ONE_YEAR);
+      // ~100 days elapsed, still short of a full year.
+      expect(progression.current).toBeGreaterThanOrEqual(100 * ONE_DAY);
+      expect(progression.current).toBeLessThan(ONE_YEAR);
+    });
+
+    it("progression target is the one-year mark and current passes it after the anniversary", () => {
+      const events = [...baseEvents(), game("g0", T0), game("g1", T0 + ONE_YEAR)];
+      const tt = new TennisTable({ events });
+      tt.achievements.calculateAchievements();
+
+      const progression = tt.achievements.getPlayerProgression("alice").anniversary;
+      expect(progression.target).toBe(ONE_YEAR);
+      // T0 is years in the past, so elapsed time is well beyond the target.
+      expect(progression.current).toBeGreaterThan(ONE_YEAR);
+    });
   });
 });
