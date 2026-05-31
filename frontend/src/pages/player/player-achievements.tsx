@@ -88,7 +88,7 @@ export const ACHIEVEMENT_LABELS: Record<string, { title: string; description: st
   },
   "anniversary": {
     title: "Anniversary",
-    description: "Played a game on the one-year anniversary of your first game",
+    description: "Play a game within a day of a yearly anniversary of your first game (earn it again each year)",
     icon: "🎂",
   },
   "tournament-participated": {

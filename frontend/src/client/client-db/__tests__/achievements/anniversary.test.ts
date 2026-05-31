@@ -5,7 +5,7 @@ describe("TennisTable", () => {
   describe("Anniversary", () => {
     const ONE_YEAR = 365 * 24 * 60 * 60 * 1000;
     const ONE_DAY = 24 * 60 * 60 * 1000;
-    const T0 = 1_700_000_000_000; // fixed base time for the player's first ever game
+    const T0 = 1_500_000_000_000; // fixed base time for the player's first ever game (well in the past)
 
     const baseEvents = (): EventType[] => [
       { type: EventTypeEnum.PLAYER_CREATED, stream: "alice", time: 1, data: { name: "Alice" } },
@@ -35,23 +35,19 @@ describe("TennisTable", () => {
           type: "anniversary",
           earnedBy: player,
           earnedAt: T0 + ONE_YEAR,
-          data: { firstGameAt: T0 },
+          data: { firstGameAt: T0, year: 1 },
         });
       }
     });
 
-    it("awards when the game is exactly one day before the anniversary", () => {
-      const events = [...baseEvents(), game("g0", T0), game("g1", T0 + ONE_YEAR - ONE_DAY)];
-      const earned = anniversariesFor(events, "alice");
-      expect(earned).toHaveLength(1);
-      expect(earned[0].earnedAt).toBe(T0 + ONE_YEAR - ONE_DAY);
-    });
-
-    it("awards when the game is exactly one day after the anniversary", () => {
-      const events = [...baseEvents(), game("g0", T0), game("g1", T0 + ONE_YEAR + ONE_DAY)];
-      const earned = anniversariesFor(events, "alice");
-      expect(earned).toHaveLength(1);
-      expect(earned[0].earnedAt).toBe(T0 + ONE_YEAR + ONE_DAY);
+    it("awards when the game is one day before / after the anniversary", () => {
+      for (const offset of [-ONE_DAY, ONE_DAY]) {
+        const events = [...baseEvents(), game("g0", T0), game("g1", T0 + ONE_YEAR + offset)];
+        const earned = anniversariesFor(events, "alice");
+        expect(earned).toHaveLength(1);
+        expect(earned[0].earnedAt).toBe(T0 + ONE_YEAR + offset);
+        expect(earned[0].data).toStrictEqual({ firstGameAt: T0, year: 1 });
+      }
     });
 
     it("does not award when the game is more than one day outside the window", () => {
@@ -70,7 +66,7 @@ describe("TennisTable", () => {
       expect(anniversariesFor(events, "alice")).toHaveLength(0);
     });
 
-    it("awards only once even when multiple games fall inside the window", () => {
+    it("awards only once per year even when multiple games fall inside one window", () => {
       const events = [
         ...baseEvents(),
         game("g0", T0),
@@ -80,13 +76,40 @@ describe("TennisTable", () => {
       ];
       const earned = anniversariesFor(events, "alice");
       expect(earned).toHaveLength(1);
-      // Earned on the first qualifying game (one day before the anniversary).
-      expect(earned[0].earnedAt).toBe(T0 + ONE_YEAR - ONE_DAY);
+      expect(earned[0].earnedAt).toBe(T0 + ONE_YEAR - ONE_DAY); // first qualifying game
+      expect(earned[0].data.year).toBe(1);
+    });
+
+    it("can be earned again on later yearly anniversaries", () => {
+      const events = [
+        ...baseEvents(),
+        game("g0", T0),
+        game("g1", T0 + ONE_YEAR),
+        game("g2", T0 + 2 * ONE_YEAR),
+        game("g3", T0 + 3 * ONE_YEAR),
+      ];
+      const earned = anniversariesFor(events, "alice").sort((a, b) => a.earnedAt - b.earnedAt);
+      expect(earned.map((a) => a.type === "anniversary" && a.data.year)).toStrictEqual([1, 2, 3]);
+      expect(earned.map((a) => a.earnedAt)).toStrictEqual([
+        T0 + ONE_YEAR,
+        T0 + 2 * ONE_YEAR,
+        T0 + 3 * ONE_YEAR,
+      ]);
+    });
+
+    it("skips a missed year but still awards a later one", () => {
+      // Plays on year 1 and year 3, but not year 2.
+      const events = [
+        ...baseEvents(),
+        game("g0", T0),
+        game("g1", T0 + ONE_YEAR),
+        game("g2", T0 + 3 * ONE_YEAR),
+      ];
+      const earned = anniversariesFor(events, "alice").sort((a, b) => a.earnedAt - b.earnedAt);
+      expect(earned.map((a) => a.type === "anniversary" && a.data.year)).toStrictEqual([1, 3]);
     });
 
     it("uses each player's own first game as the anchor", () => {
-      // Alice's first game is at T0. Bob debuts later (against Carol), so Bob's
-      // anniversary window is anchored to his own debut, not Alice's.
       const bobFirst = T0 + 100 * ONE_DAY;
       const events: EventType[] = [
         { type: EventTypeEnum.PLAYER_CREATED, stream: "alice", time: 1, data: { name: "Alice" } },
@@ -94,62 +117,70 @@ describe("TennisTable", () => {
         { type: EventTypeEnum.PLAYER_CREATED, stream: "bob", time: 3, data: { name: "Bob" } },
         game("g0", T0, "alice", "carol"),
         game("gBobDebut", bobFirst, "bob", "alice"),
-        // A game on Alice's anniversary — Alice earns, Bob does not (too early for him).
         game("gAliceAnniv", T0 + ONE_YEAR, "alice", "bob"),
-        // A game on Bob's anniversary — Bob earns now.
         game("gBobAnniv", bobFirst + ONE_YEAR, "bob", "alice"),
       ];
 
-      const alice = anniversariesFor(events, "alice");
-      expect(alice).toHaveLength(1);
-      expect(alice[0]).toStrictEqual({
-        type: "anniversary",
-        earnedBy: "alice",
-        earnedAt: T0 + ONE_YEAR,
-        data: { firstGameAt: T0 },
-      });
-
-      const bob = anniversariesFor(events, "bob");
-      expect(bob).toHaveLength(1);
-      expect(bob[0]).toStrictEqual({
-        type: "anniversary",
-        earnedBy: "bob",
-        earnedAt: bobFirst + ONE_YEAR,
-        data: { firstGameAt: bobFirst },
-      });
+      expect(anniversariesFor(events, "alice")).toStrictEqual([
+        { type: "anniversary", earnedBy: "alice", earnedAt: T0 + ONE_YEAR, data: { firstGameAt: T0, year: 1 } },
+      ]);
+      expect(anniversariesFor(events, "bob")).toStrictEqual([
+        {
+          type: "anniversary",
+          earnedBy: "bob",
+          earnedAt: bobFirst + ONE_YEAR,
+          data: { firstGameAt: bobFirst, year: 1 },
+        },
+      ]);
     });
 
-    it("reflects the earned count in player progression", () => {
-      const events = [...baseEvents(), game("g0", T0), game("g1", T0 + ONE_YEAR)];
+    // --- Progression --------------------------------------------------------
+
+    function progressionFor(events: EventType[]) {
       const tt = new TennisTable({ events });
       tt.achievements.calculateAchievements();
-      expect(tt.achievements.getPlayerProgression("alice").anniversary.earned).toBe(1);
-    });
+      return tt.achievements.getPlayerProgression("alice").anniversary;
+    }
 
-    it("tracks progress toward the one-year target before the anniversary", () => {
-      // First (and only) game ~100 days ago: not yet at the anniversary.
+    it("tracks progress toward the first anniversary (target = one year)", () => {
       const firstGame = Date.now() - 100 * ONE_DAY;
-      const events = [...baseEvents(), game("g0", firstGame)];
-      const tt = new TennisTable({ events });
-      tt.achievements.calculateAchievements();
+      const progression = progressionFor([...baseEvents(), game("g0", firstGame)]);
 
-      const progression = tt.achievements.getPlayerProgression("alice").anniversary;
       expect(progression.earned).toBe(0);
       expect(progression.target).toBe(ONE_YEAR);
-      // ~100 days elapsed, still short of a full year.
-      expect(progression.current).toBeGreaterThanOrEqual(100 * ONE_DAY);
-      expect(progression.current).toBeLessThan(ONE_YEAR);
+      expect(progression.current).toBeGreaterThan(99 * ONE_DAY);
+      expect(progression.current).toBeLessThan(101 * ONE_DAY);
     });
 
-    it("progression target is the one-year mark and current passes it after the anniversary", () => {
-      const events = [...baseEvents(), game("g0", T0), game("g1", T0 + ONE_YEAR)];
-      const tt = new TennisTable({ events });
-      tt.achievements.calculateAchievements();
+    it("resets toward the next year once the window passes without earning", () => {
+      // First game 1 year + 100 days ago; player never played in the window.
+      const firstGame = Date.now() - (ONE_YEAR + 100 * ONE_DAY);
+      const progression = progressionFor([...baseEvents(), game("g0", firstGame)]);
 
-      const progression = tt.achievements.getPlayerProgression("alice").anniversary;
-      expect(progression.target).toBe(ONE_YEAR);
-      // T0 is years in the past, so elapsed time is well beyond the target.
-      expect(progression.current).toBeGreaterThan(ONE_YEAR);
+      expect(progression.earned).toBe(0);
+      // Progress reset: counts ~100 days toward year 2, not ~465 days.
+      expect(progression.current).toBeGreaterThan(99 * ONE_DAY);
+      expect(progression.current).toBeLessThan(101 * ONE_DAY);
+    });
+
+    it("resets to ~0 immediately after earning a year", () => {
+      // First game 1 year + 10 days ago; played a game in the year-1 window.
+      const firstGame = Date.now() - (ONE_YEAR + 10 * ONE_DAY);
+      const progression = progressionFor([
+        ...baseEvents(),
+        game("g0", firstGame),
+        game("g1", firstGame + ONE_YEAR),
+      ]);
+
+      expect(progression.earned).toBe(1);
+      // Now counting toward year 2, ~10 days in.
+      expect(progression.current).toBeGreaterThan(9 * ONE_DAY);
+      expect(progression.current).toBeLessThan(11 * ONE_DAY);
+    });
+
+    it("counts multiple earns in the progression earned field", () => {
+      const events = [...baseEvents(), game("g0", T0), game("g1", T0 + ONE_YEAR), game("g2", T0 + 2 * ONE_YEAR)];
+      expect(progressionFor(events).earned).toBe(2);
     });
   });
 });
