@@ -26,6 +26,9 @@ export const StepSelectWinner: React.FC<{
   const EloIfPlayer1Wins = Elo.calculateELO(player1Elo, player2Elo, player1Games, player2Games, now, gameLimit);
   const EloIfPlayer2Wins = Elo.calculateELO(player2Elo, player1Elo, player2Games, player1Games, now, gameLimit);
 
+  const player1HasBoostedPoints = Elo.kFactor(player1Games, now, gameLimit) > Elo.K;
+  const player2HasBoostedPoints = Elo.kFactor(player2Games, now, gameLimit) > Elo.K;
+
   return (
     <div className="space-y-6 max-w-2xl mx-auto">
       <PendingTournamentGame key={`${player1}-${player2}`} player1={player1} player2={player2} />
@@ -35,6 +38,7 @@ export const StepSelectWinner: React.FC<{
           playerId={player1}
           winner={winner}
           onWinnerSelect={onWinnerSelect}
+          boostedPoints={player1HasBoostedPoints}
           eloDiffAfterGame={
             (winner === player2 ? EloIfPlayer2Wins.losersNewElo : EloIfPlayer1Wins.winnersNewElo) - player1Elo
           }
@@ -46,6 +50,7 @@ export const StepSelectWinner: React.FC<{
           playerId={player2}
           winner={winner}
           onWinnerSelect={onWinnerSelect}
+          boostedPoints={player2HasBoostedPoints}
           eloDiffAfterGame={
             (winner === player1 ? EloIfPlayer1Wins.losersNewElo : EloIfPlayer2Wins.winnersNewElo) - player2Elo
           }
@@ -60,7 +65,8 @@ const PlayerBox: React.FC<{
   winner: string | null;
   onWinnerSelect: (playerId: string) => void;
   eloDiffAfterGame?: number;
-}> = ({ playerId, winner, onWinnerSelect, eloDiffAfterGame }) => {
+  boostedPoints?: boolean;
+}> = ({ playerId, winner, onWinnerSelect, eloDiffAfterGame, boostedPoints }) => {
   const context = useEventDbContext();
 
   const isWinner = playerId === winner;
@@ -77,7 +83,12 @@ const PlayerBox: React.FC<{
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <ProfilePicture playerId={playerId} size={64} border={4} />
-          <h3 className="text-xl font-semibold">{context.playerName(playerId)}</h3>
+          <div className="flex flex-col items-start text-left">
+            <h3 className="text-xl font-semibold">{context.playerName(playerId)}</h3>
+            {boostedPoints && (
+              <span className="text-xs italic opacity-80">⚡ Bigger point swings until ranked</span>
+            )}
+          </div>
           {eloDiffAfterGame && (
             <span className="text-2xl italic font-thin">
               {eloDiffAfterGame > 0 && "+"}
