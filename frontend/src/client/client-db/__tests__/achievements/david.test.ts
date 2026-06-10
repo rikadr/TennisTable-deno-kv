@@ -2,11 +2,11 @@ import { TennisTable } from "../../tennis-table";
 import { EventType, EventTypeEnum } from "../../event-store/event-types";
 import { Elo } from "../../elo";
 
-// David fires on the upset magnitude at the standard K-factor,
-// K * (1 - expected score) ≥ 30, which requires the loser to have been
-// roughly 470+ Elo above the winner. Both players must be ranked at the
-// time of the match. Provisional (inflated) K-factors change the points a
-// player actually receives but not the upset required for the badge.
+// David fires when the winner gains ≥ 30 Elo from a single match, which
+// requires the loser to have been roughly 470+ Elo above the winner. Both
+// players must be ranked at the time of the match — and a ranked player's
+// provisional K-factor has fully decayed, so qualifying swings are always
+// plain standard-K exchanges.
 
 describe("David Achievement", () => {
   const createPlayer = (id: string, time: number): EventType => ({
@@ -211,13 +211,12 @@ describe("David Achievement", () => {
     expect(tt.achievements.getAchievements("alice").filter((a) => a.type === "david")).toHaveLength(0);
   });
 
-  it("does NOT fire when only an inflated provisional K pushes an even match past 30 points", () => {
+  it("cannot be inflated by provisional K-factors — ranked players play at standard K", () => {
     // Post-epoch: a and b each beat 5 fresh opponents through identical
     // sequences, so they enter the final game ranked and with equal Elo.
-    // a's 6th game is rated at K=60, so beating the equal-rated b moves
-    // a's score by exactly 30 — a raw ≥30 threshold would award David
-    // for a coin-flip match. The standard-K upset magnitude is only 16,
-    // so neither David nor Goliath may fire.
+    // By the ranked threshold the provisional K has fully decayed, so
+    // the even match moves exactly K/2 = 16 points for both sides — far
+    // from the 30 needed. Neither David nor Goliath may fire.
     const events: EventType[] = [createPlayer("a", 1), createPlayer("b", 2)];
     for (let i = 0; i < 5; i++) {
       events.push(createPlayer(`fa-${i}`, 10 + i));
@@ -233,10 +232,11 @@ describe("David Achievement", () => {
     const tt = new TennisTable({ events });
     tt.achievements.calculateAchievements();
 
-    // Sanity: the raw swing really did reach 30 points.
+    // Both ranked players' swings are plain standard-K: exactly ±16.
     const aSummary = tt.leaderboard.getPlayerSummary("a");
-    const lastGame = aSummary.games[aSummary.games.length - 1];
-    expect(lastGame.pointsDiff).toBeGreaterThanOrEqual(30);
+    const bSummary = tt.leaderboard.getPlayerSummary("b");
+    expect(aSummary.games[aSummary.games.length - 1].pointsDiff).toBeCloseTo(16, 8);
+    expect(bSummary.games[bSummary.games.length - 1].pointsDiff).toBeCloseTo(-16, 8);
 
     expect(tt.achievements.getAchievements("a").filter((x) => x.type === "david")).toHaveLength(0);
     expect(tt.achievements.getAchievements("b").filter((x) => x.type === "goliath")).toHaveLength(0);

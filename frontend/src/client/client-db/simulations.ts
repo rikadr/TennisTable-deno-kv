@@ -44,7 +44,12 @@ export class Simulations {
     for (let i = 0; i < 5_000; i++) {
       this.shuffleArray(predictedGames);
       // Casting, but its only using winner and loser inside it anyway
-      const eloMap = Elo.eloCalculator(predictedGames as Game[], this.parent.allPlayers);
+      const eloMap = Elo.eloCalculator(
+        predictedGames as Game[],
+        this.parent.allPlayers,
+        undefined,
+        this.parent.client.gameLimitForRanked,
+      );
       eloMap.forEach((player) => {
         if (simResultMap.has(player.id) === false) {
           simResultMap.set(player.id, []);
@@ -127,6 +132,8 @@ export class Simulations {
         const eloMap = Elo.eloCalculator(
           predictedGames as Game[], // Casting, but its only using winner and loser inside it anyway
           this.parent.allPlayers,
+          undefined,
+          this.parent.client.gameLimitForRanked,
         );
         const playerElo = eloMap.get(playerId)?.elo;
         playerElo && playerElos.push(playerElo);

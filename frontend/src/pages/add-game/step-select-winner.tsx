@@ -21,9 +21,10 @@ export const StepSelectWinner: React.FC<{
   // preview uses the same provisional K-factors as the real rating will.
   const player1Games = player1Summary.games.length + 1;
   const player2Games = player2Summary.games.length + 1;
+  const gameLimit = context.client.gameLimitForRanked;
   const now = Date.now();
-  const EloIfPlayer1Wins = Elo.calculateELO(player1Elo, player2Elo, player1Games, player2Games, now);
-  const EloIfPlayer2Wins = Elo.calculateELO(player2Elo, player1Elo, player2Games, player1Games, now);
+  const EloIfPlayer1Wins = Elo.calculateELO(player1Elo, player2Elo, player1Games, player2Games, now, gameLimit);
+  const EloIfPlayer2Wins = Elo.calculateELO(player2Elo, player1Elo, player2Games, player1Games, now, gameLimit);
 
   return (
     <div className="space-y-6 max-w-2xl mx-auto">

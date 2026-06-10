@@ -8,14 +8,16 @@ export abstract class Elo {
   static readonly DIVISOR = 400;
   static readonly INITIAL_ELO = 1_000;
 
-  // Provisional rating: a player's first games are rated with an inflated,
-  // decaying K-factor so newcomers converge on their real strength in about
-  // a dozen games instead of 30-50. Each player's rating change is computed
-  // with their OWN K-factor, so a game between a provisional and an
-  // established player is intentionally not zero-sum: the newcomer's rating
-  // moves a lot while the established player is only exposed at standard K.
+  // Provisional rating: a player's unranked games are rated with an
+  // inflated K-factor that decays linearly from PROVISIONAL_K_MAX on their
+  // first game down to the standard K on their first game as a ranked
+  // player. New players therefore converge fast while every ranked
+  // player's games are always rated at the standard K. Each player's
+  // rating change is computed with their OWN K-factor, so a game between
+  // a provisional and an established player is intentionally not
+  // zero-sum: the newcomer's rating moves a lot while the established
+  // player is only exposed at standard K.
   static readonly PROVISIONAL_K_MAX = 80;
-  static readonly PROVISIONAL_K_DECAY = 4; // K reduction per game played
   // Games played before this moment are rated with the fixed, zero-sum K
   // for both players, so replaying the event log does not rewrite results
   // from before the provisional system was introduced.
@@ -24,15 +26,20 @@ export abstract class Elo {
   /**
    * K-factor for a single game. `totalGames` includes the game being rated:
    * a player's first game is rated at PROVISIONAL_K_MAX, decaying linearly
-   * by PROVISIONAL_K_DECAY per game until it reaches the standard K
-   * (after (80-32)/4 = 12 games with the current constants).
+   * so that every game played as a ranked player (totalGames >
+   * gameLimitForRanked) is rated at the standard K.
    */
-  static kFactor(totalGames: number, playedAt?: number): number {
-    if (playedAt === undefined || playedAt < this.PROVISIONAL_EPOCH) {
+  static kFactor(totalGames: number, playedAt?: number, gameLimitForRanked?: number): number {
+    if (
+      playedAt === undefined ||
+      playedAt < this.PROVISIONAL_EPOCH ||
+      gameLimitForRanked === undefined ||
+      gameLimitForRanked < 1
+    ) {
       return this.K;
     }
-    const provisionalK = this.PROVISIONAL_K_MAX - this.PROVISIONAL_K_DECAY * Math.max(totalGames - 1, 0);
-    return Math.max(this.K, Math.min(this.PROVISIONAL_K_MAX, provisionalK));
+    const unrankedGamesRemaining = Math.min(Math.max(gameLimitForRanked - (totalGames - 1), 0), gameLimitForRanked);
+    return this.K + (this.PROVISIONAL_K_MAX - this.K) * (unrankedGamesRemaining / gameLimitForRanked);
   }
 
   /** Probability (0..1) that a player rated `playerElo` beats one rated `oponentElo` */
@@ -44,6 +51,7 @@ export abstract class Elo {
     games: Game[],
     players: Player[],
     onGameResult?: (map: Map<string, PlayerWithElo>, game: Game) => void,
+    gameLimitForRanked?: number,
   ): Map<string, PlayerWithElo> {
     const playerMap = new Map<string, PlayerWithElo>(
       players.map((player) => [player.id, { ...player, elo: this.INITIAL_ELO, totalGames: 0 }]),
@@ -65,6 +73,7 @@ export abstract class Elo {
         winner.totalGames,
         loser.totalGames,
         game.playedAt,
+        gameLimitForRanked,
       );
 
       winner.elo = winnersNewElo;
@@ -81,13 +90,16 @@ export abstract class Elo {
     winnersGames: number = 0,
     losersGames: number = 0,
     playedAt?: number,
+    gameLimitForRanked?: number,
   ) {
     // Calculate the expected scores for both players
     const expectedScoreWinner = this.expectedScore(winnersElo, losersElo);
     const expectedScoreLoser = this.expectedScore(losersElo, winnersElo);
 
-    const winnersNewElo = winnersElo + this.kFactor(winnersGames, playedAt) * (1 - expectedScoreWinner);
-    const losersNewElo = losersElo + this.kFactor(losersGames, playedAt) * (0 - expectedScoreLoser);
+    const winnersNewElo =
+      winnersElo + this.kFactor(winnersGames, playedAt, gameLimitForRanked) * (1 - expectedScoreWinner);
+    const losersNewElo =
+      losersElo + this.kFactor(losersGames, playedAt, gameLimitForRanked) * (0 - expectedScoreLoser);
 
     return {
       winnersNewElo,

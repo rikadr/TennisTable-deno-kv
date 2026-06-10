@@ -28,7 +28,7 @@ export class PlayerOponentDistribution {
       if (game.loser === playerId) {
         playerDiffs.push(winnerElo - loserElo);
       }
-    });
+    }, this.parent.client.gameLimitForRanked);
 
     const avgDiff = average(playerDiffs);
 
