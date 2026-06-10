@@ -28,8 +28,6 @@ import { EventDbWrapper } from "./wrappers/event-db-context";
 import { ImageKitContext } from "./wrappers/image-kit-context";
 import { AddGamePageV2 } from "./pages/add-game/add-game-page";
 import { EditGameSore } from "./pages/edit-game-score";
-import { IndividualPointsOverview } from "./pages/simulations/individual-points/individual-points-overview";
-import { IndividualPointsPlayer } from "./pages/simulations/individual-points/individual-points-player";
 import { PlayerPage } from "./pages/player/player-page";
 import { SimulatedLeaderboard } from "./pages/simulations/expected-leaderboard/expected-leaderboard-page";
 import { OptioPongPage } from "./pages/simulations/optio-pong";
@@ -117,8 +115,6 @@ function App() {
                           <Route index element={<SimulationsPage />} />
                           <Route path="win-loss" element={<WinLoss />} />
                           <Route path="expected-leaderboard" element={<SimulatedLeaderboard />} />
-                          <Route path="individual-points" element={<IndividualPointsOverview />} />
-                          <Route path="individual-points/player" element={<IndividualPointsPlayer />} />
                           <Route path="optio-pong" element={<OptioPongPage />} />
                         </Route>
                         <Route path="/add-player" element={<AddPlayerPage />} />

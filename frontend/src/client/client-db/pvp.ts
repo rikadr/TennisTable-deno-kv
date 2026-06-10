@@ -29,15 +29,25 @@ export class PVP {
     const relevantSummaryGames = player1Summary?.games.filter((game) => game.oponent === player2);
     const points = { p1: { gained: 0, lost: 0 }, p2: { gained: 0, lost: 0 } };
 
+    // Each player's gains/losses come from their own per-game diffs.
+    // With provisional K-factors one side's gain no longer mirrors the
+    // other side's loss.
     relevantSummaryGames?.forEach((game) => {
       if (game.result === "win") {
         points.p1.gained += game.pointsDiff;
-        points.p2.lost += game.pointsDiff;
       } else {
         points.p1.lost -= game.pointsDiff;
-        points.p2.gained -= game.pointsDiff;
       }
     });
+    player2Summary?.games
+      .filter((game) => game.oponent === player1)
+      .forEach((game) => {
+        if (game.result === "win") {
+          points.p2.gained += game.pointsDiff;
+        } else {
+          points.p2.lost -= game.pointsDiff;
+        }
+      });
 
     return {
       player1: {

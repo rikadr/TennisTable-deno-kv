@@ -389,7 +389,7 @@ export class HallOfFame {
     Elo.eloCalculator(this.parent.games, this.parent.allPlayers, (map, game) => {
       trackPeak(map.get(game.winner));
       trackPeak(map.get(game.loser));
-    });
+    }, gameLimitForRanked);
     this.peakEloCache = peaks;
     return peaks;
   }
@@ -483,6 +483,7 @@ export class HallOfFame {
             loser.elo,
             winner.totalGames,
             loser.totalGames,
+            gameLimitForRanked,
           );
           winner.elo = winnersNewElo;
           loser.elo = losersNewElo;

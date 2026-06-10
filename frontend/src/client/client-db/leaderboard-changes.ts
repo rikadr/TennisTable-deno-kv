@@ -27,7 +27,7 @@ export class LeaderboardChanges {
       } else {
         lastGamesMap = { time: game.playedAt, map: structuredClone(map) };
       }
-    });
+    }, this.parent.client.gameLimitForRanked);
 
     const leaderboardChangesMap = new Map<
       string,
