@@ -10,14 +10,14 @@ export abstract class Elo {
 
   // Provisional rating: a player's unranked games are rated with an
   // inflated K-factor that decays linearly from PROVISIONAL_K_MAX on their
-  // first game down to the standard K on their first game as a ranked
-  // player. New players therefore converge fast while every ranked
-  // player's games are always rated at the standard K. Each player's
-  // rating change is computed with their OWN K-factor, so a game between
-  // a provisional and an established player is intentionally not
-  // zero-sum: the newcomer's rating moves a lot while the established
-  // player is only exposed at standard K.
-  static readonly PROVISIONAL_K_MAX = 80;
+  // first game down to the standard K on the game that makes them ranked
+  // (their gameLimitForRanked-th game). New players therefore converge
+  // fast while every game between two ranked players is rated at the
+  // standard K. Each player's rating change is computed with their OWN
+  // K-factor, so a game between a provisional and an established player
+  // is intentionally not zero-sum: the newcomer's rating moves a lot
+  // while the established player is only exposed at standard K.
+  static readonly PROVISIONAL_K_MAX = 100;
   // Games played before this moment are rated with the fixed, zero-sum K
   // for both players, so replaying the event log does not rewrite results
   // from before the provisional system was introduced.
@@ -26,20 +26,20 @@ export abstract class Elo {
   /**
    * K-factor for a single game. `totalGames` includes the game being rated:
    * a player's first game is rated at PROVISIONAL_K_MAX, decaying linearly
-   * so that every game played as a ranked player (totalGames >
-   * gameLimitForRanked) is rated at the standard K.
+   * to exactly the standard K on the game that makes the player ranked
+   * (totalGames === gameLimitForRanked) and every game after.
    */
   static kFactor(totalGames: number, playedAt?: number, gameLimitForRanked?: number): number {
     if (
       playedAt === undefined ||
       playedAt < this.PROVISIONAL_EPOCH ||
       gameLimitForRanked === undefined ||
-      gameLimitForRanked < 1
+      gameLimitForRanked < 2
     ) {
       return this.K;
     }
-    const unrankedGamesRemaining = Math.min(Math.max(gameLimitForRanked - (totalGames - 1), 0), gameLimitForRanked);
-    return this.K + (this.PROVISIONAL_K_MAX - this.K) * (unrankedGamesRemaining / gameLimitForRanked);
+    const gamesUntilRanked = Math.min(Math.max(gameLimitForRanked - totalGames, 0), gameLimitForRanked - 1);
+    return this.K + (this.PROVISIONAL_K_MAX - this.K) * (gamesUntilRanked / (gameLimitForRanked - 1));
   }
 
   /** Probability (0..1) that a player rated `playerElo` beats one rated `oponentElo` */

@@ -4,10 +4,10 @@ import { EventType, EventTypeEnum } from "../event-store/event-types";
 
 // Provisional rating system: games played after PROVISIONAL_EPOCH rate each
 // player with their own K-factor — inflated for a player's unranked games
-// and fully decayed back to the standard K from their first game as a
-// ranked player (totalGames > gameLimitForRanked). Games from before the
-// epoch (and all existing test fixtures with small timestamps) keep the
-// legacy fixed-K, zero-sum behaviour.
+// and decayed back to exactly the standard K on the game that makes them
+// ranked (totalGames >= gameLimitForRanked). Games from before the epoch
+// (and all existing test fixtures with small timestamps) keep the legacy
+// fixed-K, zero-sum behaviour.
 
 const POST_EPOCH = Elo.PROVISIONAL_EPOCH + 1_000;
 const GAME_LIMIT = 5;
@@ -26,21 +26,27 @@ describe("Elo provisional K-factor", () => {
     });
 
     it("decays from PROVISIONAL_K_MAX to K across the unranked games", () => {
-      expect(Elo.kFactor(1, POST_EPOCH, GAME_LIMIT)).toBe(80);
-      expect(Elo.kFactor(2, POST_EPOCH, GAME_LIMIT)).toBeCloseTo(70.4, 10);
-      expect(Elo.kFactor(5, POST_EPOCH, GAME_LIMIT)).toBeCloseTo(41.6, 10);
+      expect(Elo.kFactor(1, POST_EPOCH, GAME_LIMIT)).toBe(100);
+      expect(Elo.kFactor(2, POST_EPOCH, GAME_LIMIT)).toBe(83);
+      expect(Elo.kFactor(3, POST_EPOCH, GAME_LIMIT)).toBe(66);
+      expect(Elo.kFactor(4, POST_EPOCH, GAME_LIMIT)).toBe(49);
     });
 
-    it("is exactly the standard K for every game played as a ranked player", () => {
+    it("is exactly the standard K from the game that makes a player ranked", () => {
+      expect(Elo.kFactor(GAME_LIMIT, POST_EPOCH, GAME_LIMIT)).toBe(Elo.K);
       expect(Elo.kFactor(GAME_LIMIT + 1, POST_EPOCH, GAME_LIMIT)).toBe(Elo.K);
-      expect(Elo.kFactor(GAME_LIMIT + 2, POST_EPOCH, GAME_LIMIT)).toBe(Elo.K);
       expect(Elo.kFactor(100, POST_EPOCH, GAME_LIMIT)).toBe(Elo.K);
     });
 
     it("respects the client's ranked limit for the decay window", () => {
-      expect(Elo.kFactor(1, POST_EPOCH, 1)).toBe(80);
-      expect(Elo.kFactor(2, POST_EPOCH, 1)).toBe(Elo.K);
-      expect(Elo.kFactor(10, POST_EPOCH, 10)).toBeCloseTo(36.8, 10);
+      // With a limit of 1 the first game already makes you ranked, so
+      // there is no provisional boost at all.
+      expect(Elo.kFactor(1, POST_EPOCH, 1)).toBe(Elo.K);
+      expect(Elo.kFactor(1, POST_EPOCH, 2)).toBe(100);
+      expect(Elo.kFactor(2, POST_EPOCH, 2)).toBe(Elo.K);
+      expect(Elo.kFactor(1, POST_EPOCH, 10)).toBe(100);
+      expect(Elo.kFactor(2, POST_EPOCH, 10)).toBeCloseTo(32 + 68 * (8 / 9), 10);
+      expect(Elo.kFactor(10, POST_EPOCH, 10)).toBe(Elo.K);
       expect(Elo.kFactor(11, POST_EPOCH, 10)).toBe(Elo.K);
     });
 
@@ -68,20 +74,20 @@ describe("Elo provisional K-factor", () => {
 
     it("rates two brand-new players with the full provisional K", () => {
       const { winnersNewElo, losersNewElo } = Elo.calculateELO(1000, 1000, 1, 1, POST_EPOCH, GAME_LIMIT);
-      expect(winnersNewElo).toBeCloseTo(1040, 10);
-      expect(losersNewElo).toBeCloseTo(960, 10);
+      expect(winnersNewElo).toBeCloseTo(1050, 10);
+      expect(losersNewElo).toBeCloseTo(950, 10);
     });
 
     it("rates each player with their own K — newcomer vs ranked is not zero-sum", () => {
-      // New winner (game 1, K=80) beats ranked loser (game 6, K=32)
+      // New winner (game 1, K=100) beats ranked loser (game 6, K=32)
       const newcomerWins = Elo.calculateELO(1000, 1000, 1, 6, POST_EPOCH, GAME_LIMIT);
-      expect(newcomerWins.winnersNewElo).toBeCloseTo(1040, 10);
+      expect(newcomerWins.winnersNewElo).toBeCloseTo(1050, 10);
       expect(newcomerWins.losersNewElo).toBeCloseTo(984, 10);
 
-      // Ranked winner (game 6, K=32) beats new loser (game 1, K=80)
+      // Ranked winner (game 6, K=32) beats new loser (game 1, K=100)
       const rankedWins = Elo.calculateELO(1000, 1000, 6, 1, POST_EPOCH, GAME_LIMIT);
       expect(rankedWins.winnersNewElo).toBeCloseTo(1016, 10);
-      expect(rankedWins.losersNewElo).toBeCloseTo(960, 10);
+      expect(rankedWins.losersNewElo).toBeCloseTo(950, 10);
     });
   });
 
@@ -130,7 +136,7 @@ describe("Elo provisional K-factor", () => {
       for (let i = 0; i < 8; i++) {
         events.push(game(`warmup-${i}`, t++, "b", "c"));
       }
-      // a's first game (K=80) against ranked b (K=32).
+      // a's first game (K=100) against ranked b (K=32).
       events.push(game("upset", t++, "a", "b"));
 
       const tt = new TennisTable({ events });
@@ -141,7 +147,7 @@ describe("Elo provisional K-factor", () => {
       const bDiff = bSummary.games[bSummary.games.length - 1].pointsDiff;
 
       // Winner gain = K_winner * p, loser loss = K_loser * p for the same
-      // upset probability p, so the ratio is exactly 80/32.
+      // upset probability p, so the ratio is exactly 100/32.
       expect(aDiff).toBeGreaterThan(0);
       expect(bDiff).toBeLessThan(0);
       expect(aDiff / -bDiff).toBeCloseTo(Elo.PROVISIONAL_K_MAX / Elo.K, 6);
@@ -156,8 +162,8 @@ describe("Elo provisional K-factor", () => {
       ];
       const tt = new TennisTable({ events });
 
-      expect(tt.leaderboard.getPlayerSummary("a").elo).toBeCloseTo(1040, 10);
-      expect(tt.leaderboard.getPlayerSummary("b").elo).toBeCloseTo(960, 10);
+      expect(tt.leaderboard.getPlayerSummary("a").elo).toBeCloseTo(1050, 10);
+      expect(tt.leaderboard.getPlayerSummary("b").elo).toBeCloseTo(950, 10);
     });
   });
 });
