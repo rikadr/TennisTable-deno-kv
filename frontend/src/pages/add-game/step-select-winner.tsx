@@ -12,11 +12,18 @@ export const StepSelectWinner: React.FC<{
   onWinnerSelect: (playerId: string) => void;
 }> = ({ player1, player2, winner, onWinnerSelect }) => {
   const context = useEventDbContext();
-  const player1Elo = context.leaderboard.getPlayerSummary(player1).elo;
-  const player2Elo = context.leaderboard.getPlayerSummary(player2).elo;
+  const player1Summary = context.leaderboard.getPlayerSummary(player1);
+  const player2Summary = context.leaderboard.getPlayerSummary(player2);
+  const player1Elo = player1Summary.elo;
+  const player2Elo = player2Summary.elo;
 
-  const EloIfPlayer1Wins = Elo.calculateELO(player1Elo, player2Elo);
-  const EloIfPlayer2Wins = Elo.calculateELO(player2Elo, player1Elo);
+  // The pending game will be each player's (games + 1)th game, so the
+  // preview uses the same provisional K-factors as the real rating will.
+  const player1Games = player1Summary.games.length + 1;
+  const player2Games = player2Summary.games.length + 1;
+  const now = Date.now();
+  const EloIfPlayer1Wins = Elo.calculateELO(player1Elo, player2Elo, player1Games, player2Games, now);
+  const EloIfPlayer2Wins = Elo.calculateELO(player2Elo, player1Elo, player2Games, player1Games, now);
 
   return (
     <div className="space-y-6 max-w-2xl mx-auto">

@@ -74,7 +74,6 @@ export class FutureElo {
   private reset() {
     this.parent.leaderboard.clearCaches();
     this.parent.tournaments.clearTournamentCache();
-    this.parent.individualPoints.clearCache();
     this.parent.seasons.clearCache();
     this.playersMap = new Map();
     this.playerPairings = [];
