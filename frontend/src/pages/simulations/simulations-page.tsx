@@ -7,6 +7,7 @@ export const SimulationsPage: React.FC = () => {
     { name: "Player network 🕸️", url: "/player-network" },
     { name: "Expected win/loss rate 🏆💔", url: "win-loss" },
     { name: "Numbered points 🔢🧮 (Experimental)", url: "individual-points" },
+    { name: "Optio Pong 🏓👾 (Playable game)", url: "optio-pong" },
   ];
 
   return (
