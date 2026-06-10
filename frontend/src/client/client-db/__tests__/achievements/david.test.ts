@@ -1,6 +1,5 @@
 import { TennisTable } from "../../tennis-table";
 import { EventType, EventTypeEnum } from "../../event-store/event-types";
-import { Elo } from "../../elo";
 
 // David fires when the winner gains ≥ 30 Elo from a single match, which
 // requires the loser to have been roughly 470+ Elo above the winner. Both
@@ -212,17 +211,17 @@ describe("David Achievement", () => {
   });
 
   it("cannot be inflated by provisional K-factors — ranked players play at standard K", () => {
-    // Post-epoch: a and b each beat 5 fresh opponents through identical
-    // sequences, so they enter the final game ranked and with equal Elo.
-    // By the ranked threshold the provisional K has fully decayed, so
-    // the even match moves exactly K/2 = 16 points for both sides — far
-    // from the 30 needed. Neither David nor Goliath may fire.
+    // a and b each beat 5 fresh opponents through identical sequences,
+    // so they enter the final game ranked and with equal Elo. By the
+    // ranked threshold the provisional K has fully decayed, so the even
+    // match moves exactly K/2 = 16 points for both sides — far from the
+    // 30 needed. Neither David nor Goliath may fire.
     const events: EventType[] = [createPlayer("a", 1), createPlayer("b", 2)];
     for (let i = 0; i < 5; i++) {
       events.push(createPlayer(`fa-${i}`, 10 + i));
       events.push(createPlayer(`fb-${i}`, 20 + i));
     }
-    let t = Elo.PROVISIONAL_EPOCH + 1_000;
+    let t = 100_000;
     for (let i = 0; i < 5; i++) {
       events.push(game(`ga-${i}`, t++, "a", `fa-${i}`));
       events.push(game(`gb-${i}`, t++, "b", `fb-${i}`));

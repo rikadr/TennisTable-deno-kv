@@ -53,8 +53,9 @@ describe("Leap Frog Achievement", () => {
   it("awards leap-frog when the winner jumps 3+ ranks in one match", () => {
     // Tight-cluster setup: P1-P5 play a pairwise double round-robin so
     // their Elos converge close to 1000. P6 plays a neutral filler with
-    // an L-L-L-W-W sequence to land just below the cluster. The final
-    // match (P6 beats P1) leapfrogs P6 to rank 1.
+    // an L-L-W-W-L sequence — the provisional K swings land P6 at the
+    // bottom of the ranked list (rank 7) but close enough to the cluster
+    // that beating P5 (rank 3) vaults P6 four ranks up to rank 3.
     const events: EventType[] = [
       createPlayer("p1", 1),
       createPlayer("p2", 2),
@@ -76,11 +77,11 @@ describe("Leap Frog Achievement", () => {
 
     events.push(game("f-1", t++, "filler", "p6"));
     events.push(game("f-2", t++, "filler", "p6"));
-    events.push(game("f-3", t++, "filler", "p6"));
+    events.push(game("f-3", t++, "p6", "filler"));
     events.push(game("f-4", t++, "p6", "filler"));
-    events.push(game("f-5", t++, "p6", "filler"));
+    events.push(game("f-5", t++, "filler", "p6"));
 
-    events.push(game("leap", t++, "p6", "p1"));
+    events.push(game("leap", t++, "p6", "p5"));
 
     const tt = new TennisTable({ events });
     tt.achievements.calculateAchievements();
@@ -89,6 +90,6 @@ describe("Leap Frog Achievement", () => {
     expect(leaps).toHaveLength(1);
     expect(leaps[0].data?.gameId).toBe("leap");
     expect(leaps[0].data?.ranksJumped).toBeGreaterThanOrEqual(3);
-    expect(leaps[0].data?.toRank).toBe(1);
+    expect(leaps[0].data?.toRank).toBe(3);
   });
 });

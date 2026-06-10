@@ -758,7 +758,6 @@ export class Achievements {
         loser.elo,
         winner.totalGames,
         loser.totalGames,
-        game.playedAt,
         gameLimit,
       );
       winner.elo = winnersNewElo;

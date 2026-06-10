@@ -483,7 +483,6 @@ export class HallOfFame {
             loser.elo,
             winner.totalGames,
             loser.totalGames,
-            entry.time,
             gameLimitForRanked,
           );
           winner.elo = winnersNewElo;
