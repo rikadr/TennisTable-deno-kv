@@ -32,6 +32,7 @@ import { IndividualPointsOverview } from "./pages/simulations/individual-points/
 import { IndividualPointsPlayer } from "./pages/simulations/individual-points/individual-points-player";
 import { PlayerPage } from "./pages/player/player-page";
 import { SimulatedLeaderboard } from "./pages/simulations/expected-leaderboard/expected-leaderboard-page";
+import { OptioPongPage } from "./pages/simulations/optio-pong";
 import { PlayerNetwork } from "./pages/player-network/player-network";
 import { TrackGamePage } from "./pages/add-game/track-game";
 import { ChooseAddOrTrack } from "./pages/add-game/choose-add-or-track";
@@ -118,6 +119,7 @@ function App() {
                           <Route path="expected-leaderboard" element={<SimulatedLeaderboard />} />
                           <Route path="individual-points" element={<IndividualPointsOverview />} />
                           <Route path="individual-points/player" element={<IndividualPointsPlayer />} />
+                          <Route path="optio-pong" element={<OptioPongPage />} />
                         </Route>
                         <Route path="/add-player" element={<AddPlayerPage />} />
                         <Route path="/add-game" element={<ChooseAddOrTrack />} />
