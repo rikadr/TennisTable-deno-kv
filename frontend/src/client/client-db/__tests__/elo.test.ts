@@ -3,66 +3,85 @@ import { TennisTable } from "../tennis-table";
 import { EventType, EventTypeEnum } from "../event-store/event-types";
 
 // Provisional rating system: games played after PROVISIONAL_EPOCH rate each
-// player with their own K-factor — inflated for a player's first games and
-// decaying down to the standard K. Games from before the epoch (and all
-// existing test fixtures with small timestamps) keep the legacy fixed-K,
-// zero-sum behaviour.
+// player with their own K-factor — inflated for a player's unranked games
+// and fully decayed back to the standard K from their first game as a
+// ranked player (totalGames > gameLimitForRanked). Games from before the
+// epoch (and all existing test fixtures with small timestamps) keep the
+// legacy fixed-K, zero-sum behaviour.
 
 const POST_EPOCH = Elo.PROVISIONAL_EPOCH + 1_000;
+const GAME_LIMIT = 5;
 
 describe("Elo provisional K-factor", () => {
   describe("kFactor", () => {
     it("uses the standard K for games before the provisional epoch", () => {
-      expect(Elo.kFactor(1, Elo.PROVISIONAL_EPOCH - 1)).toBe(Elo.K);
-      expect(Elo.kFactor(5, 1000)).toBe(Elo.K);
+      expect(Elo.kFactor(1, Elo.PROVISIONAL_EPOCH - 1, GAME_LIMIT)).toBe(Elo.K);
+      expect(Elo.kFactor(5, 1000, GAME_LIMIT)).toBe(Elo.K);
     });
 
-    it("uses the standard K when no game time is given", () => {
+    it("uses the standard K when no game time or ranked limit is given", () => {
       expect(Elo.kFactor(1)).toBe(Elo.K);
-      expect(Elo.kFactor(100)).toBe(Elo.K);
+      expect(Elo.kFactor(1, POST_EPOCH)).toBe(Elo.K);
+      expect(Elo.kFactor(1, POST_EPOCH, 0)).toBe(Elo.K);
     });
 
-    it("decays from PROVISIONAL_K_MAX to K over the first games", () => {
-      expect(Elo.kFactor(1, POST_EPOCH)).toBe(80);
-      expect(Elo.kFactor(2, POST_EPOCH)).toBe(76);
-      expect(Elo.kFactor(6, POST_EPOCH)).toBe(60);
-      expect(Elo.kFactor(12, POST_EPOCH)).toBe(36);
-      expect(Elo.kFactor(13, POST_EPOCH)).toBe(32);
-      expect(Elo.kFactor(100, POST_EPOCH)).toBe(32);
+    it("decays from PROVISIONAL_K_MAX to K across the unranked games", () => {
+      expect(Elo.kFactor(1, POST_EPOCH, GAME_LIMIT)).toBe(80);
+      expect(Elo.kFactor(2, POST_EPOCH, GAME_LIMIT)).toBeCloseTo(70.4, 10);
+      expect(Elo.kFactor(5, POST_EPOCH, GAME_LIMIT)).toBeCloseTo(41.6, 10);
+    });
+
+    it("is exactly the standard K for every game played as a ranked player", () => {
+      expect(Elo.kFactor(GAME_LIMIT + 1, POST_EPOCH, GAME_LIMIT)).toBe(Elo.K);
+      expect(Elo.kFactor(GAME_LIMIT + 2, POST_EPOCH, GAME_LIMIT)).toBe(Elo.K);
+      expect(Elo.kFactor(100, POST_EPOCH, GAME_LIMIT)).toBe(Elo.K);
+    });
+
+    it("respects the client's ranked limit for the decay window", () => {
+      expect(Elo.kFactor(1, POST_EPOCH, 1)).toBe(80);
+      expect(Elo.kFactor(2, POST_EPOCH, 1)).toBe(Elo.K);
+      expect(Elo.kFactor(10, POST_EPOCH, 10)).toBeCloseTo(36.8, 10);
+      expect(Elo.kFactor(11, POST_EPOCH, 10)).toBe(Elo.K);
     });
 
     it("starts the provisional window exactly at the epoch", () => {
-      expect(Elo.kFactor(1, Elo.PROVISIONAL_EPOCH)).toBe(Elo.PROVISIONAL_K_MAX);
+      expect(Elo.kFactor(1, Elo.PROVISIONAL_EPOCH, GAME_LIMIT)).toBe(Elo.PROVISIONAL_K_MAX);
     });
 
     it("never exceeds PROVISIONAL_K_MAX even for a zero game count", () => {
-      expect(Elo.kFactor(0, POST_EPOCH)).toBe(Elo.PROVISIONAL_K_MAX);
+      expect(Elo.kFactor(0, POST_EPOCH, GAME_LIMIT)).toBe(Elo.PROVISIONAL_K_MAX);
     });
   });
 
   describe("calculateELO", () => {
     it("keeps the legacy zero-sum exchange for pre-epoch games", () => {
-      const { winnersNewElo, losersNewElo } = Elo.calculateELO(1000, 1000, 1, 13, 1000);
+      const { winnersNewElo, losersNewElo } = Elo.calculateELO(1000, 1000, 1, 6, 1000, GAME_LIMIT);
+      expect(winnersNewElo).toBeCloseTo(1016, 10);
+      expect(losersNewElo).toBeCloseTo(984, 10);
+    });
+
+    it("keeps the legacy exchange when no ranked limit is provided", () => {
+      const { winnersNewElo, losersNewElo } = Elo.calculateELO(1000, 1000, 1, 1, POST_EPOCH);
       expect(winnersNewElo).toBeCloseTo(1016, 10);
       expect(losersNewElo).toBeCloseTo(984, 10);
     });
 
     it("rates two brand-new players with the full provisional K", () => {
-      const { winnersNewElo, losersNewElo } = Elo.calculateELO(1000, 1000, 1, 1, POST_EPOCH);
+      const { winnersNewElo, losersNewElo } = Elo.calculateELO(1000, 1000, 1, 1, POST_EPOCH, GAME_LIMIT);
       expect(winnersNewElo).toBeCloseTo(1040, 10);
       expect(losersNewElo).toBeCloseTo(960, 10);
     });
 
-    it("rates each player with their own K — newcomer vs established is not zero-sum", () => {
-      // New winner (game 1, K=80) beats established loser (game 13, K=32)
-      const newcomerWins = Elo.calculateELO(1000, 1000, 1, 13, POST_EPOCH);
+    it("rates each player with their own K — newcomer vs ranked is not zero-sum", () => {
+      // New winner (game 1, K=80) beats ranked loser (game 6, K=32)
+      const newcomerWins = Elo.calculateELO(1000, 1000, 1, 6, POST_EPOCH, GAME_LIMIT);
       expect(newcomerWins.winnersNewElo).toBeCloseTo(1040, 10);
       expect(newcomerWins.losersNewElo).toBeCloseTo(984, 10);
 
-      // Established winner (game 13, K=32) beats new loser (game 1, K=80)
-      const establishedWins = Elo.calculateELO(1000, 1000, 13, 1, POST_EPOCH);
-      expect(establishedWins.winnersNewElo).toBeCloseTo(1016, 10);
-      expect(establishedWins.losersNewElo).toBeCloseTo(960, 10);
+      // Ranked winner (game 6, K=32) beats new loser (game 1, K=80)
+      const rankedWins = Elo.calculateELO(1000, 1000, 6, 1, POST_EPOCH, GAME_LIMIT);
+      expect(rankedWins.winnersNewElo).toBeCloseTo(1016, 10);
+      expect(rankedWins.losersNewElo).toBeCloseTo(960, 10);
     });
   });
 
@@ -105,12 +124,13 @@ describe("Elo provisional K-factor", () => {
 
     it("post-epoch: each side's points diff uses their own K-factor", () => {
       const events: EventType[] = [createPlayer("a", 1), createPlayer("b", 2), createPlayer("c", 3)];
-      // b plays 12 post-epoch games against c so b's K is back to standard.
+      // b plays enough post-epoch games against c to be ranked, so b's K
+      // is fully decayed back to standard.
       let t = POST_EPOCH;
-      for (let i = 0; i < 12; i++) {
+      for (let i = 0; i < 8; i++) {
         events.push(game(`warmup-${i}`, t++, "b", "c"));
       }
-      // a's first game (K=80) against established b (game 13, K=32).
+      // a's first game (K=80) against ranked b (K=32).
       events.push(game("upset", t++, "a", "b"));
 
       const tt = new TennisTable({ events });

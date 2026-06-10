@@ -175,23 +175,28 @@ export class Leaderboard {
     players.forEach((player) => (graphEntry[player] = Elo.INITIAL_ELO));
     graphData.push({ ...graphEntry });
 
-    Elo.eloCalculator(this.parent.games, this.parent.allPlayers, (map, game) => {
-      if (players.includes(game.winner) || players.includes(game.loser)) {
-        if (players.includes(game.winner)) {
-          const newElo = map.get(game.winner);
-          if (newElo) {
-            graphEntry[game.winner] = newElo.elo;
+    Elo.eloCalculator(
+      this.parent.games,
+      this.parent.allPlayers,
+      (map, game) => {
+        if (players.includes(game.winner) || players.includes(game.loser)) {
+          if (players.includes(game.winner)) {
+            const newElo = map.get(game.winner);
+            if (newElo) {
+              graphEntry[game.winner] = newElo.elo;
+            }
           }
-        }
-        if (players.includes(game.loser)) {
-          const newElo = map.get(game.loser);
-          if (newElo) {
-            graphEntry[game.loser] = newElo.elo;
+          if (players.includes(game.loser)) {
+            const newElo = map.get(game.loser);
+            if (newElo) {
+              graphEntry[game.loser] = newElo.elo;
+            }
           }
+          graphData.push({ ...graphEntry, time: game.playedAt });
         }
-        graphData.push({ ...graphEntry, time: game.playedAt });
-      }
-    });
+      },
+      this.parent.client.gameLimitForRanked,
+    );
 
     return {
       graphData,
@@ -253,7 +258,7 @@ export class Leaderboard {
 
       winner.elo = winnersNewElo;
       loser.elo = losersNewElo;
-    });
+    }, this.parent.client.gameLimitForRanked);
 
     return leaderboardMap;
   }
