@@ -7,7 +7,7 @@ export const OptioPongPage: React.FC = () => {
     <iframe
       src={`${process.env.PUBLIC_URL}/optio-pong.html`}
       title="Optio Pong"
-      className="fixed left-0 right-0 bottom-0 top-16 md:top-12 w-full h-auto border-0 bg-[#0c0d0f]"
+      className="fixed left-0 top-16 md:top-12 w-full h-[calc(100svh-4rem)] md:h-[calc(100svh-3rem)] border-0 bg-[#0c0d0f]"
     />
   );
 };
