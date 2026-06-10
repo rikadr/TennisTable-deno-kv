@@ -1,9 +1,12 @@
 import { TennisTable } from "../../tennis-table";
 import { EventType, EventTypeEnum } from "../../event-store/event-types";
+import { Elo } from "../../elo";
 
-// David fires when the winner gains ≥ 30 Elo from a single match, which
-// requires the loser to have been roughly 470+ Elo above the winner. Both
-// players must be ranked at the time of the match.
+// David fires on the upset magnitude at the standard K-factor,
+// K * (1 - expected score) ≥ 30, which requires the loser to have been
+// roughly 470+ Elo above the winner. Both players must be ranked at the
+// time of the match. Provisional (inflated) K-factors change the points a
+// player actually receives but not the upset required for the badge.
 
 describe("David Achievement", () => {
   const createPlayer = (id: string, time: number): EventType => ({
@@ -206,5 +209,36 @@ describe("David Achievement", () => {
     tt.achievements.calculateAchievements();
 
     expect(tt.achievements.getAchievements("alice").filter((a) => a.type === "david")).toHaveLength(0);
+  });
+
+  it("does NOT fire when only an inflated provisional K pushes an even match past 30 points", () => {
+    // Post-epoch: a and b each beat 5 fresh opponents through identical
+    // sequences, so they enter the final game ranked and with equal Elo.
+    // a's 6th game is rated at K=60, so beating the equal-rated b moves
+    // a's score by exactly 30 — a raw ≥30 threshold would award David
+    // for a coin-flip match. The standard-K upset magnitude is only 16,
+    // so neither David nor Goliath may fire.
+    const events: EventType[] = [createPlayer("a", 1), createPlayer("b", 2)];
+    for (let i = 0; i < 5; i++) {
+      events.push(createPlayer(`fa-${i}`, 10 + i));
+      events.push(createPlayer(`fb-${i}`, 20 + i));
+    }
+    let t = Elo.PROVISIONAL_EPOCH + 1_000;
+    for (let i = 0; i < 5; i++) {
+      events.push(game(`ga-${i}`, t++, "a", `fa-${i}`));
+      events.push(game(`gb-${i}`, t++, "b", `fb-${i}`));
+    }
+    events.push(game("even-upset", t++, "a", "b"));
+
+    const tt = new TennisTable({ events });
+    tt.achievements.calculateAchievements();
+
+    // Sanity: the raw swing really did reach 30 points.
+    const aSummary = tt.leaderboard.getPlayerSummary("a");
+    const lastGame = aSummary.games[aSummary.games.length - 1];
+    expect(lastGame.pointsDiff).toBeGreaterThanOrEqual(30);
+
+    expect(tt.achievements.getAchievements("a").filter((x) => x.type === "david")).toHaveLength(0);
+    expect(tt.achievements.getAchievements("b").filter((x) => x.type === "goliath")).toHaveLength(0);
   });
 });

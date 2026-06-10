@@ -222,18 +222,21 @@ export class Leaderboard {
       return leaderboardMap.get(id)!;
     };
 
-    Elo.eloCalculator(this.parent.games, this.parent.allPlayers, (map, game, pointsWon) => {
+    Elo.eloCalculator(this.parent.games, this.parent.allPlayers, (map, game) => {
       const winner = getPlayer(game.winner);
       const loser = getPlayer(game.loser);
       const winnersNewElo = map.get(game.winner)!.elo;
       const losersNewElo = map.get(game.loser)!.elo;
 
+      // Each side's diff is computed from their own previous Elo. With
+      // provisional K-factors the winner's gain and the loser's loss can
+      // differ, so the exchange is no longer mirrored.
       winner.games.push({
         time: game.playedAt,
         result: "win",
         oponent: loser.id,
         eloAfterGame: winnersNewElo,
-        pointsDiff: pointsWon,
+        pointsDiff: winnersNewElo - winner.elo,
         score: game.score,
       });
       loser.games.push({
@@ -241,7 +244,7 @@ export class Leaderboard {
         result: "loss",
         oponent: winner.id,
         eloAfterGame: losersNewElo,
-        pointsDiff: -pointsWon,
+        pointsDiff: losersNewElo - loser.elo,
         score: game.score,
       });
 

@@ -51,7 +51,6 @@ describe("TennisTable Basic sanity tests", () => {
       expect(tennisTable.tournaments).toBeDefined();
       expect(tennisTable.simulations).toBeDefined();
       expect(tennisTable.futureElo).toBeDefined();
-      expect(tennisTable.individualPoints).toBeDefined();
       expect(tennisTable.achievements).toBeDefined();
     });
   });

@@ -8,11 +8,13 @@ export class Achievements {
   private hasCalculated = false;
 
   achievementMap: Map<string, Achievement[]> = new Map();
-  // Highest Elo gain each player has achieved from a win where BOTH
-  // players were ranked at the time. Used for David progression.
+  // Biggest upset each player has won, measured at the standard K-factor
+  // (K * (1 - expected score)), from a win where BOTH players were ranked
+  // at the time. Used for David progression.
   bestDavidGain: Map<string, number> = new Map();
-  // Largest Elo loss each player has suffered from a loss where BOTH
-  // players were ranked at the time. Used for Goliath progression.
+  // Biggest upset each player has suffered, measured at the standard
+  // K-factor, from a loss where BOTH players were ranked at the time.
+  // Used for Goliath progression.
   worstGoliathLoss: Map<string, number> = new Map();
   // Lowest Elo each player has held while ranked, starting from the
   // moment they first crossed gameLimitForRanked games. Used for the
@@ -758,14 +760,17 @@ export class Achievements {
         loser.elo,
         winner.totalGames,
         loser.totalGames,
+        game.playedAt,
       );
       winner.elo = winnersNewElo;
       loser.elo = losersNewElo;
       const eloGain = winnersNewElo - winnerEloBefore;
+      const eloLoss = loserEloBefore - losersNewElo;
 
-      // King Maker tracking: zero-sum Elo move feeds both players' maps.
+      // King Maker tracking: each player's own Elo move feeds their map.
+      // With provisional K-factors the gain and loss can differ in size.
       updateNetGain(game.winner, game.loser, eloGain);
-      updateNetGain(game.loser, game.winner, -eloGain);
+      updateNetGain(game.loser, game.winner, -eloLoss);
 
       // Update Climber tracking for both players (low + threshold check).
       updateClimber(game.winner, winner.elo, winner.totalGames, game.playedAt);
@@ -892,22 +897,28 @@ export class Achievements {
         );
       }
 
-      // David: ≥ 30 Elo gain from beating a much higher rated opponent.
-      // Goliath: mirror image — ≥ 30 Elo lost by the higher-rated loser.
-      // Elo is zero-sum, so the loser's loss magnitude equals the
-      // winner's gain. Both players must have been ranked at the time
-      // of playing the match (pre-match ranks non-null) for either to
-      // count.
+      // David: beating a much higher rated opponent. Goliath: mirror
+      // image — the higher-rated loser got upset. The trigger is the
+      // upset magnitude normalized to the standard K-factor (each side's
+      // actual Elo move scaled by K / their own K), so an inflated
+      // provisional K can't turn an ordinary win into a David: the
+      // opponent gap required is the same for everyone. For established
+      // players this equals their actual Elo move; provisional players'
+      // actual swings are at least as large as the magnitude. Both
+      // players must have been ranked at the time of playing the match
+      // (pre-match ranks non-null) for either to count.
       if (winnerRankBefore !== null && loserRankBefore !== null) {
+        const davidMagnitude = eloGain * (Elo.K / Elo.kFactor(winner.totalGames, game.playedAt));
+        const goliathMagnitude = eloLoss * (Elo.K / Elo.kFactor(loser.totalGames, game.playedAt));
         const prevBest = this.bestDavidGain.get(game.winner) ?? 0;
-        if (eloGain > prevBest) {
-          this.bestDavidGain.set(game.winner, eloGain);
+        if (davidMagnitude > prevBest) {
+          this.bestDavidGain.set(game.winner, davidMagnitude);
         }
         const prevWorst = this.worstGoliathLoss.get(game.loser) ?? 0;
-        if (eloGain > prevWorst) {
-          this.worstGoliathLoss.set(game.loser, eloGain);
+        if (goliathMagnitude > prevWorst) {
+          this.worstGoliathLoss.set(game.loser, goliathMagnitude);
         }
-        if (eloGain >= 30) {
+        if (davidMagnitude >= 30) {
           this.#addAchievement(
             game.winner,
             this.#createAchievement("david", game.winner, game.playedAt, {
@@ -916,12 +927,14 @@ export class Achievements {
               eloGain,
             }),
           );
+        }
+        if (goliathMagnitude >= 30) {
           this.#addAchievement(
             game.loser,
             this.#createAchievement("goliath", game.loser, game.playedAt, {
               opponent: game.winner,
               gameId: game.id,
-              eloLoss: eloGain,
+              eloLoss,
             }),
           );
         }
@@ -1797,17 +1810,17 @@ export class Achievements {
       }
     }
 
-    // David progression: highest Elo gained from a win where both
-    // players were ranked at the time of the match. Players who never
-    // crossed the ranked threshold will naturally have no entries in
-    // bestDavidGain; deactivated players who earned qualifying gains
-    // while active keep their progression here.
+    // David progression: biggest upset (standard-K magnitude) from a win
+    // where both players were ranked at the time of the match. Players
+    // who never crossed the ranked threshold will naturally have no
+    // entries in bestDavidGain; deactivated players who earned qualifying
+    // gains while active keep their progression here.
     progression["david"].current = this.bestDavidGain.get(playerId) ?? 0;
 
-    // Goliath progression: largest Elo lost from a single match where
-    // both players were ranked at the time. Mirrors David — deactivated
-    // players who suffered qualifying losses while ranked keep their
-    // progression here.
+    // Goliath progression: biggest upset suffered (standard-K magnitude)
+    // in a single match where both players were ranked at the time.
+    // Mirrors David — deactivated players who suffered qualifying losses
+    // while ranked keep their progression here.
     progression["goliath"].current = this.worstGoliathLoss.get(playerId) ?? 0;
 
     // Climber progression: current Elo - all-time low Elo since the
