@@ -8,21 +8,29 @@ export type Fraction = { fraction: number; confidence: number };
 export type ConfidenceConfig = {
   additions: number;
   products: number;
+  halfLifePoints: number; // Confidence points needed to reach 50% confidence (at curveExponent 1)
+  curveExponent: number; // Below 1 the curve rises faster early and flattens out sooner
 };
 
 export const GAME_CONFIDENCE_CONFIG: ConfidenceConfig = {
   additions: 3,
   products: 0.15,
+  halfLifePoints: 28, // ~90% confidence at 12:12 games
+  curveExponent: 1,
 };
 
 export const SET_CONFIDENCE_CONFIG: ConfidenceConfig = {
   additions: 1.6,
   products: 0.02,
+  halfLifePoints: 28, // ~90% confidence at 25:25 sets
+  curveExponent: 1,
 };
 
 export const POINT_CONFIDENCE_CONFIG: ConfidenceConfig = {
   additions: 0.2,
   products: 0,
+  halfLifePoints: 34, // ~90% confidence at 420:420 points, ~40% at 60:60
+  curveExponent: 0.75,
 };
 
 export class FutureElo {
@@ -501,7 +509,7 @@ export class FutureElo {
       wins,
       loss,
       probabilityLookup,
-      confidenceConfig: { additions, products },
+      confidenceConfig: { additions, products, halfLifePoints, curveExponent },
     } = input;
 
     // Calculate raw win fraction (0 to 1)
@@ -530,11 +538,16 @@ export class FutureElo {
       expectedWinProbability = lowerValue + (upperValue - lowerValue) * fraction;
     }
 
-    // Calculate confidence based on sample size
+    // Calculate confidence based on sample size.
+    // The product term makes uneven win/loss ratios require more data to gain confidence.
     const addition = wins + loss;
     const product = wins * loss;
     const confidencePoints = addition * additions + product * products;
-    const confidence = Math.min(confidencePoints, 100) / 100;
+
+    // Saturating curve: each confidence point fills a fixed fraction of the remaining
+    // uncertainty, so early data counts more and confidence approaches 1 asymptotically.
+    // A curveExponent below 1 stretches the curve, boosting the early rise further.
+    const confidence = 1 - Math.pow(2, -Math.pow(confidencePoints / halfLifePoints, curveExponent));
 
     return {
       fraction: expectedWinProbability,
