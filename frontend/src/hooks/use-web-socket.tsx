@@ -7,6 +7,7 @@ export enum WS_MESSAGE {
   HEART_BEAT = "heart-beat",
   LATEST_EVENT = "latest-event",
   LIVE_GAME = "live-game",
+  CLEAR_CACHE = "clear-cache",
 }
 
 export const useWebSocket = (

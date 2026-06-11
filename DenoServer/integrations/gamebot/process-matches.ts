@@ -94,7 +94,7 @@ export async function processMatchesResponse(response: MatchesApiResponse) {
 
   console.log(`Compleded syncing ${matchesToSync.length} matches, resulting in ${eventsToWrite.length} events.`);
 
-  // webSocketClientManager.broadcastRefetch(); // Maybe too hars to do full refetch?
+  // webSocketClientManager.broadcastClearCache(); // Maybe too hars to do full refetch?
   webSocketClientManager.broadcastLatestEvent();
 }
 
