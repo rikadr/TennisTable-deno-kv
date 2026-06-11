@@ -14,19 +14,19 @@ export type ConfidenceConfig = {
 export const GAME_CONFIDENCE_CONFIG: ConfidenceConfig = {
   additions: 3,
   products: 0.15,
-  halfLifePoints: 50,
+  halfLifePoints: 28, // ~90% confidence at 12:12 games
 };
 
 export const SET_CONFIDENCE_CONFIG: ConfidenceConfig = {
   additions: 1.6,
   products: 0.02,
-  halfLifePoints: 50,
+  halfLifePoints: 28, // ~90% confidence at 25:25 sets
 };
 
 export const POINT_CONFIDENCE_CONFIG: ConfidenceConfig = {
   additions: 0.2,
   products: 0,
-  halfLifePoints: 50,
+  halfLifePoints: 50, // ~90% confidence at 420:420 points
 };
 
 export class FutureElo {

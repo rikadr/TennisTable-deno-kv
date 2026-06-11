@@ -1,4 +1,10 @@
-import { ConfidenceConfig, Fraction, GAME_CONFIDENCE_CONFIG } from "../future-elo";
+import {
+  ConfidenceConfig,
+  Fraction,
+  GAME_CONFIDENCE_CONFIG,
+  POINT_CONFIDENCE_CONFIG,
+  SET_CONFIDENCE_CONFIG,
+} from "../future-elo";
 import { TennisTable } from "../tennis-table";
 
 // Narrow view of FutureElo's private confidence calculation for testing
@@ -55,6 +61,17 @@ describe("FutureElo confidence curve", () => {
     const lopsided = confidenceOf(10, 0, GAME_CONFIDENCE_CONFIG);
 
     expect(balanced).toBeGreaterThan(lopsided);
+  });
+
+  it.each([
+    ["games", GAME_CONFIDENCE_CONFIG, 12],
+    ["sets", SET_CONFIDENCE_CONFIG, 25],
+    ["points", POINT_CONFIDENCE_CONFIG, 420],
+  ])("reaches ~90%% confidence at the calibration anchor for %s", (_, config, perPlayer) => {
+    const confidence = confidenceOf(perPlayer, perPlayer, config);
+
+    expect(confidence).toBeGreaterThan(0.89);
+    expect(confidence).toBeLessThan(0.91);
   });
 
   it("gives zero confidence with no data", () => {
