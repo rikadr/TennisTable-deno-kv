@@ -6,6 +6,7 @@ import { fmtNum } from "../../common/number-utils";
 import { Game } from "../../client/client-db/event-store/projectors/games-projector";
 import { classNames } from "../../common/class-names";
 import { useLocalStorage } from "../../hooks/use-local-storage";
+import { useMediaQuery } from "../../hooks/use-media-query";
 import { session } from "../../services/auth";
 import { ProfilePicture } from "../player/profile-picture";
 
@@ -24,6 +25,8 @@ export const RecentGamesPage: React.FC = () => {
   const context = useEventDbContext();
   const navigate = useNavigate();
   const leaderboardMap = context.leaderboard.getCachedLeaderboardMap();
+  const isLargeScreen = useMediaQuery("(min-width: 1024px)");
+  const profilePictureSize = isLargeScreen ? 32 : 20;
 
   const isAdmin = session.isAuthenticated && session.sessionData?.role === "admin";
   const minGames = isAdmin ? MIN_GAMES_ADMIN : MIN_GAMES_DEFAULT;
@@ -93,7 +96,7 @@ export const RecentGamesPage: React.FC = () => {
           {game.score.setsWon.gameWinner} - {game.score.setsWon.gameLoser}
         </div>
         {game.score.setPoints && (
-          <div className="font-light italic text-[10px] whitespace-nowrap leading-none">
+          <div className="font-light italic text-[10px] lg:text-xs whitespace-nowrap leading-none">
             {game.score.setPoints.map((set) => `${set.gameWinner}-${set.gameLoser}`).join(", ")}
           </div>
         )}
@@ -103,10 +106,10 @@ export const RecentGamesPage: React.FC = () => {
 
   return (
     <div className="w-full px-4 flex flex-col items-center">
-      <div className="w-full max-w-2xl">
+      <div className="w-full max-w-2xl lg:max-w-4xl">
         <div className="bg-primary-background rounded-lg w-full overflow-hidden">
-          <h1 className="text-2xl text-center mt-2 text-primary-text">Recent games</h1>
-          <p className="text-center text-sm text-primary-text/60 mb-1">
+          <h1 className="text-2xl lg:text-4xl text-center mt-2 lg:mt-4 text-primary-text">Recent games</h1>
+          <p className="text-center text-sm lg:text-base text-primary-text/60 mb-1 lg:mb-2">
             Last {processedGames.length} matches{isAdmin ? " (admin view)" : ""}
           </p>
 
@@ -115,7 +118,7 @@ export const RecentGamesPage: React.FC = () => {
             <button
               onClick={() => setView("overall")}
               className={classNames(
-                "px-4 py-2 rounded text-sm font-medium transition-colors ring-1",
+                "px-4 py-2 lg:px-6 rounded text-sm lg:text-base font-medium transition-colors ring-1",
                 view === "overall"
                   ? "bg-secondary-background text-secondary-text ring-secondary-text"
                   : "bg-primary-background text-primary-text ring-secondary-background hover:opacity-80",
@@ -126,7 +129,7 @@ export const RecentGamesPage: React.FC = () => {
             <button
               onClick={() => setView("season")}
               className={classNames(
-                "px-4 py-2 rounded text-sm font-medium transition-colors ring-1",
+                "px-4 py-2 lg:px-6 rounded text-sm lg:text-base font-medium transition-colors ring-1",
                 view === "season"
                   ? "bg-secondary-background text-secondary-text ring-secondary-text"
                   : "bg-primary-background text-primary-text ring-secondary-background hover:opacity-80",
@@ -150,25 +153,25 @@ export const RecentGamesPage: React.FC = () => {
             <table className="w-full text-primary-text border-collapse">
               <thead className="border-b border-primary-text/20">
                 {view === "season" ? (
-                  <tr className="text-xs md:text-sm font-medium text-primary-text">
-                    <th className="py-1 px-1 md:px-2 text-left font-medium">🏆 Winner</th>
-                    <th className="py-1 px-1 text-center font-medium">Score</th>
-                    <th className="py-1 px-1 md:px-2 text-right font-medium">Loser 💔</th>
-                    <th className="py-1 px-1 text-right font-medium">W pts</th>
-                    <th className="py-1 px-1 text-right font-medium">L pts</th>
-                    <th className="py-1 px-1 md:px-2"></th>
+                  <tr className="text-xs md:text-sm lg:text-base font-medium text-primary-text">
+                    <th className="py-1 px-1 md:px-2 lg:py-2 lg:px-3 text-left font-medium">🏆 Winner</th>
+                    <th className="py-1 px-1 lg:py-2 lg:px-2 text-center font-medium">Score</th>
+                    <th className="py-1 px-1 md:px-2 lg:py-2 lg:px-3 text-right font-medium">Loser 💔</th>
+                    <th className="py-1 px-1 lg:py-2 lg:px-2 text-right font-medium">W pts</th>
+                    <th className="py-1 px-1 lg:py-2 lg:px-2 text-right font-medium">L pts</th>
+                    <th className="py-1 px-1 md:px-2 lg:py-2 lg:px-3"></th>
                   </tr>
                 ) : (
-                  <tr className="text-xs md:text-sm font-medium text-primary-text">
-                    <th className="py-1 px-1 md:px-2 text-left font-medium">🏆 Winner</th>
-                    <th className="py-1 px-1 text-center font-medium">Score</th>
-                    <th className="py-1 px-1 md:px-2 text-right font-medium">Loser 💔</th>
-                    <th className="py-1 px-1 md:px-2 text-right font-medium">Elo won</th>
-                    <th className="py-1 px-1 md:px-2"></th>
+                  <tr className="text-xs md:text-sm lg:text-base font-medium text-primary-text">
+                    <th className="py-1 px-1 md:px-2 lg:py-2 lg:px-3 text-left font-medium">🏆 Winner</th>
+                    <th className="py-1 px-1 lg:py-2 lg:px-2 text-center font-medium">Score</th>
+                    <th className="py-1 px-1 md:px-2 lg:py-2 lg:px-3 text-right font-medium">Loser 💔</th>
+                    <th className="py-1 px-1 md:px-2 lg:py-2 lg:px-3 text-right font-medium">Elo won</th>
+                    <th className="py-1 px-1 md:px-2 lg:py-2 lg:px-3"></th>
                   </tr>
                 )}
               </thead>
-              <tbody className="divide-y divide-primary-text/20 text-xs md:text-sm">
+              <tbody className="divide-y divide-primary-text/20 text-xs md:text-sm lg:text-base">
                 {processedGames.map((game, index) => {
                   const rowClick = () => navigate(`/1v1?player1=${game.winner}&player2=${game.loser}`);
 
@@ -179,28 +182,28 @@ export const RecentGamesPage: React.FC = () => {
                         onClick={rowClick}
                         className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text cursor-pointer transition-colors"
                       >
-                        <td className="py-1 px-1 md:px-2 whitespace-nowrap">
-                          <div className="flex items-center gap-1">
-                            <ProfilePicture playerId={game.winner} size={20} border={2} />
+                        <td className="py-1 px-1 md:px-2 lg:py-2 lg:px-3 whitespace-nowrap">
+                          <div className="flex items-center gap-1 lg:gap-2">
+                            <ProfilePicture playerId={game.winner} size={profilePictureSize} border={2} />
                             <span className="font-medium">{context.playerName(game.winner)}</span>
                           </div>
                         </td>
-                        <td className="py-1 px-1 text-center whitespace-nowrap">
+                        <td className="py-1 px-1 lg:py-2 lg:px-2 text-center whitespace-nowrap">
                           {renderScore(game)}
                         </td>
-                        <td className="py-1 px-1 md:px-2 text-right whitespace-nowrap">
-                          <div className="flex items-center justify-end gap-1">
+                        <td className="py-1 px-1 md:px-2 lg:py-2 lg:px-3 text-right whitespace-nowrap">
+                          <div className="flex items-center justify-end gap-1 lg:gap-2">
                             <span className="font-medium">{context.playerName(game.loser)}</span>
-                            <ProfilePicture playerId={game.loser} size={20} border={2} />
+                            <ProfilePicture playerId={game.loser} size={profilePictureSize} border={2} />
                           </div>
                         </td>
-                        <td className="py-1 px-1 text-right font-medium">
+                        <td className="py-1 px-1 lg:py-2 lg:px-2 text-right font-medium">
                           {fmtNum(game.pointsDiff, { digits: 1 })}
                         </td>
-                        <td className="py-1 px-1 text-right">
+                        <td className="py-1 px-1 lg:py-2 lg:px-2 text-right">
                           {game.loserPointsDiff !== undefined ? fmtNum(game.loserPointsDiff, { digits: 1 }) : ""}
                         </td>
-                        <td className="py-1 px-1 md:px-2 text-right whitespace-nowrap">
+                        <td className="py-1 px-1 md:px-2 lg:py-2 lg:px-3 text-right whitespace-nowrap">
                           <RelativeTime date={new Date(game.playedAt)} />
                         </td>
                       </tr>
@@ -213,25 +216,25 @@ export const RecentGamesPage: React.FC = () => {
                       onClick={rowClick}
                       className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text cursor-pointer transition-colors"
                     >
-                      <td className="py-1 px-1 md:px-2 whitespace-nowrap">
-                        <div className="flex items-center gap-1">
-                          <ProfilePicture playerId={game.winner} size={20} border={2} />
+                      <td className="py-1 px-1 md:px-2 lg:py-2 lg:px-3 whitespace-nowrap">
+                        <div className="flex items-center gap-1 lg:gap-2">
+                          <ProfilePicture playerId={game.winner} size={profilePictureSize} border={2} />
                           <span className="font-medium">{context.playerName(game.winner)}</span>
                         </div>
                       </td>
-                      <td className="py-1 px-1 text-center whitespace-nowrap">
+                      <td className="py-1 px-1 lg:py-2 lg:px-2 text-center whitespace-nowrap">
                         {renderScore(game)}
                       </td>
-                      <td className="py-1 px-1 md:px-2 text-right whitespace-nowrap">
-                        <div className="flex items-center justify-end gap-1">
+                      <td className="py-1 px-1 md:px-2 lg:py-2 lg:px-3 text-right whitespace-nowrap">
+                        <div className="flex items-center justify-end gap-1 lg:gap-2">
                           <span className="font-medium">{context.playerName(game.loser)}</span>
-                          <ProfilePicture playerId={game.loser} size={20} border={2} />
+                          <ProfilePicture playerId={game.loser} size={profilePictureSize} border={2} />
                         </div>
                       </td>
-                      <td className="py-1 px-1 md:px-2 text-right font-medium">
+                      <td className="py-1 px-1 md:px-2 lg:py-2 lg:px-3 text-right font-medium">
                         +{fmtNum(game.pointsDiff, { digits: 0 })}
                       </td>
-                      <td className="py-1 px-1 md:px-2 text-right whitespace-nowrap">
+                      <td className="py-1 px-1 md:px-2 lg:py-2 lg:px-3 text-right whitespace-nowrap">
                         <RelativeTime date={new Date(game.playedAt)} />
                       </td>
                     </tr>
