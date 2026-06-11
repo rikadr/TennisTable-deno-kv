@@ -8,21 +8,25 @@ export type Fraction = { fraction: number; confidence: number };
 export type ConfidenceConfig = {
   additions: number;
   products: number;
+  halfLifePoints: number; // Confidence points needed to reach 50% confidence
 };
 
 export const GAME_CONFIDENCE_CONFIG: ConfidenceConfig = {
   additions: 3,
   products: 0.15,
+  halfLifePoints: 50,
 };
 
 export const SET_CONFIDENCE_CONFIG: ConfidenceConfig = {
   additions: 1.6,
   products: 0.02,
+  halfLifePoints: 50,
 };
 
 export const POINT_CONFIDENCE_CONFIG: ConfidenceConfig = {
   additions: 0.2,
   products: 0,
+  halfLifePoints: 50,
 };
 
 export class FutureElo {
@@ -501,7 +505,7 @@ export class FutureElo {
       wins,
       loss,
       probabilityLookup,
-      confidenceConfig: { additions, products },
+      confidenceConfig: { additions, products, halfLifePoints },
     } = input;
 
     // Calculate raw win fraction (0 to 1)
@@ -530,11 +534,15 @@ export class FutureElo {
       expectedWinProbability = lowerValue + (upperValue - lowerValue) * fraction;
     }
 
-    // Calculate confidence based on sample size
+    // Calculate confidence based on sample size.
+    // The product term makes uneven win/loss ratios require more data to gain confidence.
     const addition = wins + loss;
     const product = wins * loss;
     const confidencePoints = addition * additions + product * products;
-    const confidence = Math.min(confidencePoints, 100) / 100;
+
+    // Saturating curve: each confidence point fills a fixed fraction of the remaining
+    // uncertainty, so early data counts more and confidence approaches 1 asymptotically.
+    const confidence = 1 - Math.pow(2, -confidencePoints / halfLifePoints);
 
     return {
       fraction: expectedWinProbability,
