@@ -26,7 +26,7 @@ describe("FutureElo confidence curve", () => {
     futureElo.getWinFractionWithConfidence({ wins, loss, probabilityLookup, confidenceConfig }).confidence;
 
   // 10 points per game, no product term: confidence points are linear in game count
-  const linearConfig: ConfidenceConfig = { additions: 10, products: 0, halfLifePoints: 50 };
+  const linearConfig: ConfidenceConfig = { additions: 10, products: 0, halfLifePoints: 50, curveExponent: 1 };
 
   it("reaches 50% confidence at halfLifePoints", () => {
     expect(confidenceOf(5, 0, linearConfig)).toBeCloseTo(0.5, 10);
@@ -74,12 +74,19 @@ describe("FutureElo confidence curve", () => {
     expect(confidence).toBeLessThan(0.91);
   });
 
+  it("rises faster early for points: ~40% confidence already at 60:60", () => {
+    const confidence = confidenceOf(60, 60, POINT_CONFIDENCE_CONFIG);
+
+    expect(confidence).toBeGreaterThan(0.38);
+    expect(confidence).toBeLessThan(0.44);
+  });
+
   it("gives zero confidence with no data", () => {
     const result = futureElo.getWinFractionWithConfidence({
       wins: 1,
       loss: 1,
       probabilityLookup,
-      confidenceConfig: { additions: 0, products: 0, halfLifePoints: 50 },
+      confidenceConfig: { additions: 0, products: 0, halfLifePoints: 50, curveExponent: 1 },
     });
 
     expect(result.confidence).toBe(0);
