@@ -222,12 +222,25 @@ export const Events = () => {
                   // Edit mode
                   <>
                     <td className="border border-gray-300 px-4 py-2">
-                      <input
-                        type="number"
-                        value={editForm.time}
-                        onChange={(e) => handleFieldChange("time", Number(e.target.value))}
-                        className="w-full border rounded px-2 py-1 bg-primary-background"
-                      />
+                      <div className="flex gap-1">
+                        <input
+                          type="number"
+                          value={editForm.time}
+                          onChange={(e) => handleFieldChange("time", Number(e.target.value))}
+                          className="flex-1 border rounded px-2 py-1 bg-primary-background"
+                        />
+                        <input
+                          type="datetime-local"
+                          step="1"
+                          value={toDatetimeLocalValue(editForm.time)}
+                          onChange={(e) => {
+                            const ms = new Date(e.target.value).getTime();
+                            if (!isNaN(ms)) handleFieldChange("time", ms);
+                          }}
+                          className="border rounded px-2 py-1 bg-primary-background text-sm w-[2.5rem] cursor-pointer"
+                          title="Pick a date/time to fill the timestamp"
+                        />
+                      </div>
                     </td>
                     <td className="border border-gray-300 px-4 py-2">
                       <input
@@ -359,3 +372,17 @@ export const Events = () => {
     </div>
   );
 };
+
+// Convert a millisecond timestamp into the local "YYYY-MM-DDTHH:mm:ss" string
+// expected by a <input type="datetime-local"> element.
+function toDatetimeLocalValue(ms: number): string {
+  if (typeof ms !== "number" || isNaN(ms)) {
+    return "";
+  }
+  const date = new Date(ms);
+  const pad = (n: number) => n.toString().padStart(2, "0");
+  return (
+    `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}` +
+    `T${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`
+  );
+}
