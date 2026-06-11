@@ -6,12 +6,20 @@ import { EventType } from "../client/client-db/event-store/event-types";
 import { PingPongLoader } from "../common/ping-loader";
 import { useAutoSeedTournaments } from "../hooks/use-auto-seed-tournaments";
 
+export const EVENTS_LOCAL_STORAGE_KEY = "tennis-table-events";
+export const EVENTS_CACHE_TIMESTAMP_KEY = "tennis-table-events-cache-time";
+
+export function clearEventsLocalStorageCache() {
+  localStorage.removeItem(EVENTS_LOCAL_STORAGE_KEY);
+  localStorage.removeItem(EVENTS_CACHE_TIMESTAMP_KEY);
+}
+
 export function useEventDb() {
   return useQuery<EventType[]>({
     queryKey: ["event-db"],
     queryFn: async () => {
-      const LOCAL_STORAGE_KEY = "tennis-table-events";
-      const CACHE_TIMESTAMP_KEY = "tennis-table-events-cache-time";
+      const LOCAL_STORAGE_KEY = EVENTS_LOCAL_STORAGE_KEY;
+      const CACHE_TIMESTAMP_KEY = EVENTS_CACHE_TIMESTAMP_KEY;
       const TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
       const FORCE_INVALIDATE_BEFORE = new Date("2026-02-23T00:00:00").getTime();
 

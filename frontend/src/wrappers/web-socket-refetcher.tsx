@@ -1,7 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useWebSocket, WS_MESSAGE } from "../hooks/use-web-socket";
 import { useEffect, useState, useRef } from "react";
-import { useEventDbContext } from "./event-db-context";
+import { clearEventsLocalStorageCache, useEventDbContext } from "./event-db-context";
 
 type Props = {
   children: React.ReactNode;
@@ -49,6 +49,13 @@ export const WebSocketRefetcher: React.FC<Props> = ({ children }) => {
     }
     if (message.startsWith(WS_MESSAGE.LIVE_GAME)) {
       queryClient.invalidateQueries({ queryKey: ["live-game"] });
+      return;
+    }
+    if (message.startsWith(WS_MESSAGE.CLEAR_CACHE)) {
+      // The event history itself was changed (edit/delete), so the cached
+      // events can no longer be trusted. Clear and refetch everything.
+      clearEventsLocalStorageCache();
+      queryClient.invalidateQueries();
       return;
     }
   }

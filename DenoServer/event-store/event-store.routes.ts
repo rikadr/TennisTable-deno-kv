@@ -87,8 +87,12 @@ export function registerEventStoreRoutes(api: Router) {
     // Assume frontend has validated business logic for the event // TODO: Do reducer business logic backend too
     // Run zod validation??
 
-    await updateEvent(eventPayload);
-    webSocketClientManager.broadcastRefetch();
+    const updated = await updateEvent(eventPayload);
+    if (updated === false) {
+      context.response.status = 409;
+      return;
+    }
+    webSocketClientManager.broadcastClearCache();
     context.response.status = 201;
   });
 
@@ -104,8 +108,12 @@ export function registerEventStoreRoutes(api: Router) {
     // Assume frontend has validated business logic for the event // TODO: Do reducer business logic backend too
     // Run zod validation??
 
-    await deleteEvent(eventTime);
-    webSocketClientManager.broadcastRefetch();
+    const deleted = await deleteEvent(eventTime);
+    if (deleted === false) {
+      context.response.status = 409;
+      return;
+    }
+    webSocketClientManager.broadcastClearCache();
     context.response.status = 201;
   });
 

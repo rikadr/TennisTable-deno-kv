@@ -9,6 +9,7 @@ enum WS_MESSAGE {
   HEART_BEAT = "heart-beat",
   LATEST_EVENT = "latest-event",
   LIVE_GAME = "live-game",
+  CLEAR_CACHE = "clear-cache",
 }
 
 export class WebSocketClientManager {
@@ -142,10 +143,12 @@ export class WebSocketClientManager {
   }
 
   /**
-   * Only for event manipulation... dont use this if you can avoid it
+   * Tell all clients to clear their local storage event cache and refetch the
+   * full event history. Only for event manipulation (edit/delete), where
+   * already-cached events have changed... dont use this if you can avoid it
    */
-  broadcastRefetch() {
-    this.broadcastMessage(WS_MESSAGE.LATEST_EVENT + ":999999999999999");
+  broadcastClearCache() {
+    this.broadcastMessage(WS_MESSAGE.CLEAR_CACHE);
   }
 
   /**
