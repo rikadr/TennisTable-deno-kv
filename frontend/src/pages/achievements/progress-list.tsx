@@ -13,6 +13,11 @@ interface ProgressListProps {
 export const ProgressList: React.FC<ProgressListProps> = ({ selectedType }) => {
   const context = useEventDbContext();
 
+  // Time-based achievements store current/target as raw milliseconds, which
+  // would render as enormous numbers. Show them as whole days instead.
+  const isTimePeriod =
+    selectedType.startsWith("active-") || selectedType.startsWith("back-after-") || selectedType === "anniversary";
+
   // Calculate progress for all players when a specific type is selected
   const playersProgress = useMemo(() => {
     if (selectedType === "all") return [];
@@ -140,7 +145,9 @@ export const ProgressList: React.FC<ProgressListProps> = ({ selectedType }) => {
                           {player.name}
                         </Link>
                         <span className="text-sm font-mono">
-                           {fmtNum(current)} {target > 1 ? `/ ${fmtNum(target)}` : ""}
+                           {isTimePeriod
+                            ? `${formatTimePeriod(current)} / ${formatTimePeriod(target)}`
+                            : `${fmtNum(current)} ${target > 1 ? `/ ${fmtNum(target)}` : ""}`}
                         </span>
                       </div>
 
@@ -166,3 +173,9 @@ export const ProgressList: React.FC<ProgressListProps> = ({ selectedType }) => {
     </div>
   );
 };
+
+// Format milliseconds into a readable whole-day count (e.g. "123 days").
+function formatTimePeriod(ms: number): string {
+  const days = Math.floor(ms / (24 * 60 * 60 * 1000));
+  return `${days} day${days !== 1 ? "s" : ""}`;
+}
