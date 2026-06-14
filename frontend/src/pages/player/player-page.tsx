@@ -132,7 +132,8 @@ export const PlayerPage: React.FC = () => {
                 case "statistics":
                   return summary.games.length > 0;
                 case "predictions":
-                  return summary.isRanked && isActive;
+                  // Unranked players still get the tab (gated behind a warning); retired players don't.
+                  return isActive;
                 case "season":
                   // Show tab if player has participated in any season
                   return hasParticipatedInAnySeason;
@@ -367,7 +368,9 @@ export const PlayerPage: React.FC = () => {
           </div>
         )}
         {activeTab === "achievements" && playerId && <PlayerAchievements playerId={playerId} />}
-        {activeTab === "predictions" && playerId && <PlayerPredictionsPage playerId={playerId} />}
+        {activeTab === "predictions" && playerId && (
+          <PlayerPredictionsPage playerId={playerId} isRanked={summary.isRanked} />
+        )}
         {activeTab === "season" && playerId && <PlayerSeasonStats playerId={playerId} />}
       </div>
     </div>
