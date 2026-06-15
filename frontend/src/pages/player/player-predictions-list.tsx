@@ -25,22 +25,19 @@ export const PlayerPredictionsList = ({ playerId }: Props) => {
   };
 
   const context = useEventDbContext();
-  context.futureElo.calculatePlayerFractionsForToday();
+  // Pass the focus player so unranked players still get paired against every ranked player and
+  // receive direct + intermediary fractions, just like a ranked player.
+  context.futureElo.calculatePlayerFractionsForToday({ focusPlayerId: playerId });
 
   const leaderboard = context.leaderboard.getLeaderboard();
 
   const playersData = context.futureElo.playersMap.get(playerId)!;
 
-  const opponents = Array.from(playersData.oponentsMap.entries())
-    .filter((o) => leaderboard.rankedPlayers.find((r) => r.id === o[0]))
-    .sort((a, b) => {
-      const aRankedIndex = leaderboard.rankedPlayers.findIndex((r) => r.id === a[0]);
-      const bRankedIndex = leaderboard.rankedPlayers.findIndex((r) => r.id === b[0]);
-      return (
-        (leaderboard.rankedPlayers[aRankedIndex]?.rank || Infinity) -
-        (leaderboard.rankedPlayers[bRankedIndex]?.rank || Infinity)
-      );
-    });
+  // List every currently ranked player as an opponent (ordered by rank), regardless of whether the
+  // focus player has played them, so the breakdown matches what a ranked player sees.
+  const opponents = leaderboard.rankedPlayers
+    .filter((r) => r.id !== playerId && playersData.oponentsMap.has(r.id))
+    .map((r) => [r.id, playersData.oponentsMap.get(r.id)!] as const);
 
   return (
     <div className="space-y-2">

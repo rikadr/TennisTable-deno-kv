@@ -93,7 +93,7 @@ export class TournamentPrediction {
     });
 
     const stateAtTime = new TennisTable({ events: eventsUpToTime }); // TODO Performance test impact of this performance.now before and after
-    stateAtTime.futureElo.calculatePlayerFractionsForToday(simulationTime); // TODO Performance test impact of this performance.now before and after
+    stateAtTime.futureElo.calculatePlayerFractionsForToday({ overrideTime: simulationTime }); // TODO Performance test impact of this performance.now before and after
 
     const tournamentAtTime = stateAtTime.tournaments.getTournament(tournamentId);
     if (!tournamentAtTime) {

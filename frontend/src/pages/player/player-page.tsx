@@ -132,7 +132,8 @@ export const PlayerPage: React.FC = () => {
                 case "statistics":
                   return summary.games.length > 0;
                 case "predictions":
-                  return summary.isRanked && isActive;
+                  // Unranked players still get the tab (gated behind a warning); retired players don't.
+                  return isActive;
                 case "season":
                   // Show tab if player has participated in any season
                   return hasParticipatedInAnySeason;
@@ -264,7 +265,7 @@ export const PlayerPage: React.FC = () => {
           <div className="overflow-x-auto bg-primary-background text-primary-text rounded-xl px-1">
             <table className="w-full min-w-[450px]">
               <thead>
-                <tr className="border-b border-gray-200 text-xs md:text-sm">
+                <tr className="border-b border-gray-200 text-xs md:text-sm lg:text-base xl:text-lg">
                   <th className="text-left py-2 md:py-3 px-1 md:px-4 font-medium">Opponent</th>
                   <th className="text-left py-2 md:py-3 px-1 font-medium"></th>
                   <th className="text-left py-2 md:py-3 px-1 font-medium">Pts</th>
@@ -273,7 +274,7 @@ export const PlayerPage: React.FC = () => {
                   <th className="text-left py-2 md:py-3 px-1 md:px-4 font-medium">Actions</th>
                 </tr>
               </thead>
-              <tbody className="text-xs md:text-sm">
+              <tbody className="text-xs md:text-sm lg:text-base xl:text-lg">
                 {summary.games
                   .toReversed()
                   .slice(0, isAdmin ? undefined : 10)
@@ -285,7 +286,7 @@ export const PlayerPage: React.FC = () => {
                         </Link>
                       </td>
                       <td className="py-1 px-1">
-                        <span className="text-base md:text-2xl">{game.result === "win" ? "🏆" : "💔"}</span>
+                        <span className="text-base md:text-2xl lg:text-3xl">{game.result === "win" ? "🏆" : "💔"}</span>
                       </td>
                       <td className="py-1 px-1">
                         <span className="font-medium">
@@ -302,7 +303,7 @@ export const PlayerPage: React.FC = () => {
                           </div>
                         )}
                         {game.score?.setPoints && (
-                          <div className="font-light italic text-xs whitespace-nowrap">
+                          <div className="font-light italic text-xs lg:text-sm whitespace-nowrap">
                             {game.result === "win"
                               ? game.score.setPoints.map((set) => `${set.gameWinner}-${set.gameLoser}`).join(", ")
                               : game.score.setPoints.map((set) => `${set.gameLoser}-${set.gameWinner}`).join(", ")}
@@ -367,7 +368,9 @@ export const PlayerPage: React.FC = () => {
           </div>
         )}
         {activeTab === "achievements" && playerId && <PlayerAchievements playerId={playerId} />}
-        {activeTab === "predictions" && playerId && <PlayerPredictionsPage playerId={playerId} />}
+        {activeTab === "predictions" && playerId && (
+          <PlayerPredictionsPage playerId={playerId} isRanked={summary.isRanked} />
+        )}
         {activeTab === "season" && playerId && <PlayerSeasonStats playerId={playerId} />}
       </div>
     </div>

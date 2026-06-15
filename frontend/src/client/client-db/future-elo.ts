@@ -47,14 +47,14 @@ export class FutureElo {
   predictedGamesTemp: { winner: string; loser: string }[][] = [];
   predictedGames: Game[] = [];
 
-  calculatePlayerFractionsForToday(overrideTime?: number) {
+  calculatePlayerFractionsForToday(opts?: { overrideTime?: number; focusPlayerId?: string }) {
     this.reset();
-    this.setup();
+    this.setup(undefined, opts?.focusPlayerId);
     // Calculate win fraction for all player pairings
     for (const { p1, p2 } of this.playerPairings) {
-      this.getDirectFraction(p1, p2, overrideTime || Date.now());
-      this.getOneLayerFraction(p1, p2, overrideTime || Date.now());
-      this.getTwoLayerFraction(p1, p2, overrideTime || Date.now());
+      this.getDirectFraction(p1, p2, opts?.overrideTime || Date.now());
+      this.getOneLayerFraction(p1, p2, opts?.overrideTime || Date.now());
+      this.getTwoLayerFraction(p1, p2, opts?.overrideTime || Date.now());
     }
   }
 
@@ -90,7 +90,7 @@ export class FutureElo {
     this.predictedGames = [];
   }
 
-  private setup(games?: Game[]) {
+  private setup(games?: Game[], focusPlayerId?: string) {
     // Add all existing games
     for (const game of games ?? this.parent.games) {
       const { winner, loser } = game;
@@ -131,6 +131,16 @@ export class FutureElo {
     for (let playerIndex = 0; playerIndex < rankedPlayeIds.length; playerIndex++) {
       for (let oponentIndex = playerIndex + 1; oponentIndex < rankedPlayeIds.length; oponentIndex++) {
         this.playerPairings.push({ p1: rankedPlayeIds[playerIndex], p2: rankedPlayeIds[oponentIndex] });
+      }
+    }
+
+    // When an unranked player is in focus (e.g. viewing their predictions page) pair them against
+    // every ranked player so their direct and intermediary fractions get computed like a ranked
+    // player's, even though they don't qualify for the ranked pairing grid above. Ranked focus
+    // players are already covered by the permutations above.
+    if (focusPlayerId && this.playersMap.has(focusPlayerId) && rankedPlayeIds.includes(focusPlayerId) === false) {
+      for (const rankedId of rankedPlayeIds) {
+        this.playerPairings.push({ p1: focusPlayerId, p2: rankedId });
       }
     }
 
