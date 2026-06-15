@@ -47,14 +47,14 @@ export class FutureElo {
   predictedGamesTemp: { winner: string; loser: string }[][] = [];
   predictedGames: Game[] = [];
 
-  calculatePlayerFractionsForToday(overrideTime?: number, focusPlayerId?: string) {
+  calculatePlayerFractionsForToday(opts?: { overrideTime?: number; focusPlayerId?: string }) {
     this.reset();
-    this.setup(undefined, focusPlayerId);
+    this.setup(undefined, opts?.focusPlayerId);
     // Calculate win fraction for all player pairings
     for (const { p1, p2 } of this.playerPairings) {
-      this.getDirectFraction(p1, p2, overrideTime || Date.now());
-      this.getOneLayerFraction(p1, p2, overrideTime || Date.now());
-      this.getTwoLayerFraction(p1, p2, overrideTime || Date.now());
+      this.getDirectFraction(p1, p2, opts?.overrideTime || Date.now());
+      this.getOneLayerFraction(p1, p2, opts?.overrideTime || Date.now());
+      this.getTwoLayerFraction(p1, p2, opts?.overrideTime || Date.now());
     }
   }
 

@@ -27,7 +27,7 @@ export const PlayerPredictionsList = ({ playerId }: Props) => {
   const context = useEventDbContext();
   // Pass the focus player so unranked players still get paired against every ranked player and
   // receive direct + intermediary fractions, just like a ranked player.
-  context.futureElo.calculatePlayerFractionsForToday(undefined, playerId);
+  context.futureElo.calculatePlayerFractionsForToday({ focusPlayerId: playerId });
 
   const leaderboard = context.leaderboard.getLeaderboard();
 
