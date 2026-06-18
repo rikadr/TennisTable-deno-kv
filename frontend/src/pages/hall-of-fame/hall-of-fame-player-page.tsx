@@ -1,5 +1,5 @@
 import React from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { ProfilePicture } from "../player/profile-picture";
 import { HallOfFameScoreBreakdown } from "../../client/client-db/hall-of-fame";
@@ -232,6 +232,7 @@ const FACTORS: { key: FactorKey; emoji: string; name: string }[] = [
 
 export const HallOfFamePlayerPage: React.FC = () => {
   const { playerId } = useParams<{ playerId: string }>();
+  const navigate = useNavigate();
   const context = useEventDbContext();
   const [storedViewMode, setStoredViewMode] = useLocalStorage(VIEW_MODE_STORAGE_KEY, "total");
   const viewMode: ViewMode = storedViewMode === "compared" ? "compared" : "total";
@@ -353,6 +354,18 @@ export const HallOfFamePlayerPage: React.FC = () => {
                 </button>
               );
             })}
+            <button
+              type="button"
+              role="tab"
+              aria-selected={false}
+              onClick={() => navigate("/hall-of-fame/leaderboard")}
+              className={classNames(
+                "px-3 py-1 rounded-full text-xs font-medium transition-colors",
+                "text-secondary-text hover:text-primary-text",
+              )}
+            >
+              Full hypothetical leaderboard
+            </button>
           </div>
 
           <div className="space-y-6">
