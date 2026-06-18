@@ -47,6 +47,7 @@ import { SeasonPlayerPage } from "./pages/seasons/season-player-page";
 import { RecentGamesPage } from "./pages/recent-games/recent-games-page";
 import { HallOfFamePage } from "./pages/hall-of-fame/hall-of-fame-page";
 import { HallOfFamePlayerPage } from "./pages/hall-of-fame/hall-of-fame-player-page";
+import { HallOfFameLeaderboardPage } from "./pages/hall-of-fame/hall-of-fame-leaderboard-page";
 import { LiveGamePage } from "./pages/live-game/live-game-page";
 import { LiveGameAdminPage } from "./pages/live-game/live-game-admin-page";
 import { LiveGameOverlay } from "./pages/live-game/live-game-overlay";
@@ -111,6 +112,7 @@ function App() {
                         <Route path="/achievements" element={<AchievementsPage />} />
                         <Route path="/hall-of-fame">
                           <Route index element={<HallOfFamePage />} />
+                          <Route path="leaderboard" element={<HallOfFameLeaderboardPage />} />
                           <Route path=":playerId" element={<HallOfFamePlayerPage />} />
                         </Route>
                         <Route path="/simulations">

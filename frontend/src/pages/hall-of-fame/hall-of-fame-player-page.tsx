@@ -1,5 +1,5 @@
 import React from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { ProfilePicture } from "../player/profile-picture";
 import { HallOfFameScoreBreakdown } from "../../client/client-db/hall-of-fame";
@@ -232,6 +232,7 @@ const FACTORS: { key: FactorKey; emoji: string; name: string }[] = [
 
 export const HallOfFamePlayerPage: React.FC = () => {
   const { playerId } = useParams<{ playerId: string }>();
+  const navigate = useNavigate();
   const context = useEventDbContext();
   const [storedViewMode, setStoredViewMode] = useLocalStorage(VIEW_MODE_STORAGE_KEY, "total");
   const viewMode: ViewMode = storedViewMode === "compared" ? "compared" : "total";
@@ -263,6 +264,7 @@ export const HallOfFamePlayerPage: React.FC = () => {
     ? context.hallOfFame.getSectionStats(playerId)
     : undefined;
   const totalRank = viewMode === "compared" ? context.hallOfFame.getTotalRank(playerId) : 0;
+  const playerCount = viewMode === "compared" ? context.hallOfFame.getRankedPlayerCount() : 0;
 
   const total = entry.score.total || 1;
 
@@ -314,7 +316,7 @@ export const HallOfFamePlayerPage: React.FC = () => {
             <h2 className="text-xl text-primary-text font-semibold">Hall of Fame Score Breakdown</h2>
             <span className="text-primary-text font-bold text-2xl">
               {viewMode === "compared" && totalRank > 0 && (
-                <span className="text-primary-text/70 mr-1.5 text-lg font-medium">#{totalRank} ·</span>
+                <span className="text-primary-text/70 mr-1.5 text-lg font-medium">#{totalRank} of {playerCount} ·</span>
               )}
               {fmtNum(entry.score.total)} pts
             </span>
@@ -353,6 +355,18 @@ export const HallOfFamePlayerPage: React.FC = () => {
                 </button>
               );
             })}
+            <button
+              type="button"
+              role="tab"
+              aria-selected={false}
+              onClick={() => navigate("/hall-of-fame/leaderboard")}
+              className={classNames(
+                "px-3 py-1 rounded-full text-xs font-medium transition-colors",
+                "text-secondary-text hover:text-primary-text",
+              )}
+            >
+              Full hypothetical leaderboard
+            </button>
           </div>
 
           <div className="space-y-6">
@@ -364,7 +378,7 @@ export const HallOfFamePlayerPage: React.FC = () => {
                   </span>
                   <span className="text-primary-text font-medium text-sm">
                     {viewMode === "compared" && segment.rank > 0 && (
-                      <span className="text-primary-text/70 mr-1.5">#{segment.rank} ·</span>
+                      <span className="text-primary-text/70 mr-1.5">#{segment.rank} of {playerCount} ·</span>
                     )}
                     {fmtNum(segment.value)} pts
                     {viewMode === "compared" && (
@@ -395,7 +409,7 @@ export const HallOfFamePlayerPage: React.FC = () => {
             </span>
             <span className="text-primary-text font-bold text-2xl">
               {viewMode === "compared" && totalRank > 0 && (
-                <span className="text-primary-text/70 mr-1.5 text-lg font-medium">#{totalRank} ·</span>
+                <span className="text-primary-text/70 mr-1.5 text-lg font-medium">#{totalRank} of {playerCount} ·</span>
               )}
               {fmtNum(entry.score.total)} pts
             </span>

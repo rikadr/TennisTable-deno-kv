@@ -74,6 +74,19 @@ export class HallOfFame {
     return this.getHallOfFame().find((e) => e.playerId === playerId);
   }
 
+  getFullHypotheticalLeaderboard(): HallOfFameEntry[] {
+    const allPlayers = [
+      ...this.parent.eventStore.playersProjector.activePlayers,
+      ...this.parent.eventStore.playersProjector.inactivePlayers,
+    ];
+    const entries: HallOfFameEntry[] = [];
+    for (const player of allPlayers) {
+      const entry = this.getScoreForAnyPlayer(player.id);
+      if (entry) entries.push(entry);
+    }
+    return entries.sort((a, b) => b.score.total - a.score.total);
+  }
+
   getScoreForAnyPlayer(playerId: string): HallOfFameEntry | undefined {
     const cached = this.playerCache.get(playerId);
     if (cached) return cached;
@@ -101,6 +114,11 @@ export class HallOfFame {
   getTotalRank(playerId: string): number {
     this.#ensureCrossPlayerStats();
     return this.totalRanks?.get(playerId) ?? 0;
+  }
+
+  getRankedPlayerCount(): number {
+    this.#ensureCrossPlayerStats();
+    return this.totalRanks?.size ?? 0;
   }
 
   clearCache() {
