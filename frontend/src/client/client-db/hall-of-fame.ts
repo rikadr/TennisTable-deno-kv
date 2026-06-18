@@ -11,7 +11,7 @@ export type HallOfFameScoreBreakdown = {
   socialDiversity: { score: number; uniqueOpponents: number };
   tournamentProgression: { score: number; tournaments: TournamentDetail[] };
   longevity: { score: number; activeDays: number };
-  experience: { score: number; games: number };
+  experience: { score: number; gamesWon: number; gamesLost: number };
   dataVolume: { score: number; gamesWithSets: number; gamesWithPoints: number };
   peakElo: { score: number; peakElo: number };
   podiumTime: { score: number; rank1Days: number; rank2Days: number; rank3Days: number };
@@ -359,10 +359,13 @@ export class HallOfFame {
   }
 
   #calcExperience(playerId: string): HallOfFameScoreBreakdown["experience"] {
-    const games = this.parent.games.filter(
-      (g) => g.winner === playerId || g.loser === playerId,
-    ).length;
-    return { score: games * 3, games };
+    let gamesWon = 0;
+    let gamesLost = 0;
+    for (const game of this.parent.games) {
+      if (game.winner === playerId) gamesWon++;
+      else if (game.loser === playerId) gamesLost++;
+    }
+    return { score: gamesWon * 3 + gamesLost * 1, gamesWon, gamesLost };
   }
 
   #calcDataVolume(playerId: string): HallOfFameScoreBreakdown["dataVolume"] {

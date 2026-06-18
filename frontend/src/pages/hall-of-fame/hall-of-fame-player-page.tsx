@@ -133,9 +133,15 @@ function renderDetails(breakdown: HallOfFameScoreBreakdown, key: FactorKey): Rea
         <div className="text-primary-text text-xs space-y-1.5">
           <div className="flex flex-wrap gap-1.5">
             <span className="bg-secondary-background text-secondary-text px-2 py-0.5 rounded text-xs inline-flex items-center gap-1.5">
-              Games played: 3 pts
+              Games won: 3 pts
               <span className="bg-tertiary-background text-tertiary-text h-5 min-w-5 px-1 rounded-full inline-flex items-center justify-center text-xs font-bold">
-                {fmtNum(d.games)}x
+                {fmtNum(d.gamesWon)}x
+              </span>
+            </span>
+            <span className="bg-secondary-background text-secondary-text px-2 py-0.5 rounded text-xs inline-flex items-center gap-1.5">
+              Games lost: 1 pt
+              <span className="bg-tertiary-background text-tertiary-text h-5 min-w-5 px-1 rounded-full inline-flex items-center justify-center text-xs font-bold">
+                {fmtNum(d.gamesLost)}x
               </span>
             </span>
           </div>
