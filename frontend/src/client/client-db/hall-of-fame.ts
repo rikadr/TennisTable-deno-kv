@@ -116,6 +116,11 @@ export class HallOfFame {
     return this.totalRanks?.get(playerId) ?? 0;
   }
 
+  getRankedPlayerCount(): number {
+    this.#ensureCrossPlayerStats();
+    return this.totalRanks?.size ?? 0;
+  }
+
   clearCache() {
     this.cache = undefined;
     this.playerCache.clear();
