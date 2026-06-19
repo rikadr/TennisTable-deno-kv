@@ -129,10 +129,17 @@ export const HallOfFameLeaderboardPage: React.FC = () => {
                   <tr
                     key={entry.playerId}
                     onClick={() => navigate(`/hall-of-fame/${entry.playerId}`)}
-                    className="cursor-pointer hover:bg-secondary-background hover:text-secondary-text text-xl font-light"
+                    className="relative cursor-pointer hover:bg-secondary-background hover:text-secondary-text text-xl font-light"
                   >
-                    <td className="py-2 px-2 italic">{index + 1}</td>
-                    <td className="py-2 px-2 relative overflow-hidden">
+                    <td className="py-2 px-2 italic">
+                      {index + 1}
+                      {/* Bar spans the full row width; the row is the positioning context. */}
+                      <div
+                        className="absolute bottom-0 left-0 h-[2px] bg-current"
+                        style={{ width: `${relativePercent}%` }}
+                      />
+                    </td>
+                    <td className="py-2 px-2">
                       <div className="flex items-center gap-3 font-normal whitespace-nowrap">
                         <ProfilePicture playerId={entry.playerId} size={28} border={2} />
                         {entry.playerName}
@@ -142,10 +149,6 @@ export const HallOfFameLeaderboardPage: React.FC = () => {
                           </span>
                         )}
                       </div>
-                      <div
-                        className="absolute bottom-0 left-0 h-[2px] bg-current"
-                        style={{ width: `${relativePercent}%` }}
-                      />
                     </td>
                     <td className="py-2 px-2 text-right">
                       {fmtNum(score)}
