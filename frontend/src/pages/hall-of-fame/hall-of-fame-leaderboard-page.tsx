@@ -135,7 +135,7 @@ export const HallOfFameLeaderboardPage: React.FC = () => {
                       {index + 1}
                       {/* Bar spans the full row width; the row is the positioning context. */}
                       <div
-                        className="absolute bottom-0 left-0 h-[2px] bg-current"
+                        className="absolute bottom-0 left-0 h-[3px] bg-current"
                         style={{ width: `${relativePercent}%` }}
                       />
                     </td>
