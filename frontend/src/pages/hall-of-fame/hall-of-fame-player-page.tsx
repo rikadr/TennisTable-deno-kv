@@ -224,7 +224,7 @@ function renderDetails(breakdown: HallOfFameScoreBreakdown, key: FactorKey): Rea
   }
 }
 
-const FACTORS: { key: FactorKey; emoji: string; name: string }[] = [
+export const FACTORS: { key: FactorKey; emoji: string; name: string }[] = [
   { key: "peakElo", emoji: "🔥", name: "All-Time High" },
   { key: "podiumTime", emoji: "🥉", name: "Podium Time" },
   { key: "experience", emoji: "🏓", name: "Experience" },
