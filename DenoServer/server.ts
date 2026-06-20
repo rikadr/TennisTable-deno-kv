@@ -4,7 +4,6 @@ import { registerUserRoutes } from "./user/user.routes.ts";
 import { registerWebSocketRoutes } from "./web-socket/web-socket.routs.ts";
 import { WebSocketClientManager } from "./web-socket/web-socket-client-manager.ts";
 import { registerEventStoreRoutes } from "./event-store/event-store.routes.ts";
-import { registerMigrationsRoutes } from "./migrations/migrations.routes.ts";
 import { registerImageKitRoutes } from "./image-kit/image-kit.routes.ts";
 import { registerLiveGameRoutes } from "./live-game/live-game.routes.ts";
 
@@ -23,12 +22,6 @@ app.use(
 );
 
 export const webSocketClientManager = new WebSocketClientManager();
-
-/**
- * Run database migrations
- */
-// await runMigrations();
-registerMigrationsRoutes(api);
 
 /**
  * Register routes
