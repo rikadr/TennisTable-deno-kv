@@ -1,35 +1,16 @@
-import { kv } from "../db.ts";
+import { db } from "../db.ts";
 
-export type SetPoint = {
-  player1: number;
-  player2: number;
-};
-
-export type LiveGameState = {
-  player1Id: string | null;
-  player2Id: string | null;
-  setsWon: {
-    player1: number;
-    player2: number;
-  };
-  currentSet: SetPoint;
-  completedSets: SetPoint[];
-  startedAt: number | null;
-  finishedAt: number | null;
-  updatedAt: number;
-};
-
-const LIVE_GAME_KEY = ["live-game"];
+export type { SetPoint, LiveGameState } from "../db/database.ts";
+import type { LiveGameState } from "../db/database.ts";
 
 export async function getLiveGame(): Promise<LiveGameState | null> {
-  const result = await kv.get<LiveGameState>(LIVE_GAME_KEY);
-  return result.value;
+  return db.getLiveGame();
 }
 
 export async function setLiveGame(state: LiveGameState): Promise<void> {
-  await kv.set(LIVE_GAME_KEY, state);
+  await db.setLiveGame(state);
 }
 
 export async function clearLiveGame(): Promise<void> {
-  await kv.delete(LIVE_GAME_KEY);
+  await db.clearLiveGame();
 }

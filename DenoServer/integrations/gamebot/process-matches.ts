@@ -1,4 +1,4 @@
-import { kv } from "../../db.ts";
+import { db } from "../../db.ts";
 import { storeEvent } from "../../event-store/event-store.ts";
 import { EventType, EventTypeEnum } from "../../event-store/event-types.ts";
 import { newId } from "../../event-store/nano-id.ts";
@@ -32,9 +32,9 @@ export async function processMatchesResponse(response: MatchesApiResponse) {
 
   let syncFrom = FIRST_SYNC_FROM;
 
-  const lastSynced = await kv.get<number>([LAST_SYNCED_MATCH_TIMESTAMP_KV_KEY]);
-  if (lastSynced.value !== null) {
-    syncFrom = Math.max(FIRST_SYNC_FROM, lastSynced.value);
+  const lastSynced = await db.getValue<number>(LAST_SYNCED_MATCH_TIMESTAMP_KV_KEY);
+  if (lastSynced !== null) {
+    syncFrom = Math.max(FIRST_SYNC_FROM, lastSynced);
   }
 
   const matchesToSync = matches
@@ -87,10 +87,7 @@ export async function processMatchesResponse(response: MatchesApiResponse) {
     await storeEvent(event);
   }
   const lastEventSynced = Math.max(...eventsToWrite.map((e) => e.time));
-  const result = await kv.atomic().set([LAST_SYNCED_MATCH_TIMESTAMP_KV_KEY], lastEventSynced).commit();
-  if (!result.ok) {
-    console.error(`Failed to store lastEventSynced ${lastEventSynced}`);
-  }
+  await db.setValue(LAST_SYNCED_MATCH_TIMESTAMP_KV_KEY, lastEventSynced);
 
   console.log(`Compleded syncing ${matchesToSync.length} matches, resulting in ${eventsToWrite.length} events.`);
 

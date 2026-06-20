@@ -1,17 +1,20 @@
 {
   "nodeModulesDir": "auto",
-  "unstable": ["kv", "cron"],
+  "unstable": ["cron"],
   "tasks": {
-    "dev": "deno run --allow-net --allow-env --allow-read --env --watch --unstable-kv --unstable-cron server.ts",
+    "dev": "deno run --allow-net --allow-env --allow-read --allow-write --allow-ffi --env --watch --unstable-cron --unstable-ffi server.ts",
     "check": "deno check ."
   },
   "compilerOptions": {
     "lib": [
       "deno.window",
+      "deno.unstable",
       "es2015"
     ]
   },
   "imports": {
+    "@db/sqlite": "jsr:@db/sqlite@^0.12",
+    "@supabase/supabase-js": "npm:@supabase/supabase-js@^2",
     "bcrypt": "https://deno.land/x/bcrypt@v0.4.1/mod.ts",
     "jose": "npm:jose@^5.10.0",
     "oak": "jsr:@oak/oak@^17.2.0",

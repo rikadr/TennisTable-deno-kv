@@ -2,7 +2,7 @@ import { EventType, EventTypeEnum } from "./event-types.ts";
 import { deleteEvent, getEventsAfter, storeEvent, updateEvent } from "./event-store.ts";
 import { webSocketClientManager } from "../server.ts";
 import { hasAccess } from "../auth-service/middleware.ts";
-import { kv } from "../db.ts";
+import { db } from "../db.ts";
 import { Router } from "oak";
 
 export function registerEventStoreRoutes(api: Router) {
@@ -117,29 +117,6 @@ export function registerEventStoreRoutes(api: Router) {
     context.response.status = 201;
   });
 
-  // Temporary: expose gamebot env vars for migration (remove after migration)
-  api.get("/gamebot-config", (context) => {
-    const token = Deno.env.get("GAMEBOT_TOKEN") ?? "";
-    const channelId = Deno.env.get("GAMEBOT_CHANNEL_ID") ?? "";
-    context.response.body = {
-      GAMEBOT_TOKEN: token,
-      GAMEBOT_TOKEN_starts_with_quote: token.startsWith('"') || token.startsWith("'"),
-      GAMEBOT_TOKEN_length: token.length,
-      GAMEBOT_CHANNEL_ID: channelId,
-      GAMEBOT_CHANNEL_ID_starts_with_quote: channelId.startsWith('"') || channelId.startsWith("'"),
-      GAMEBOT_CHANNEL_ID_length: channelId.length,
-    };
-  });
-
-  // Temporary: dump all KV entries for database migration (remove after migration)
-  api.get("/dump", async (context) => {
-    const entries = [];
-    for await (const entry of kv.list({ prefix: [] })) {
-      entries.push({ key: entry.key, value: entry.value });
-    }
-    context.response.body = entries;
-  });
-
   /**
    * DEBUG AND DEV ONLY: -----------------------------------------------------------
    * Do not register the following routes in production
@@ -153,7 +130,7 @@ export function registerEventStoreRoutes(api: Router) {
 
   /**
    * Stores multiple new events
-  */
+   */
   api.post("/events", async (context) => {
     const eventsPayload = (await context.request.body.json()) as EventType[];
 
@@ -166,18 +143,11 @@ export function registerEventStoreRoutes(api: Router) {
     context.response.status = 201;
   });
 
-
   /**
    * Delete all events
    */
   api.delete("/events", async (context) => {
-    let deletedCount = 0;
-
-    const events = kv.list<EventType>({ prefix: ["event"] });
-    for await (const event of events) {
-      await kv.delete(event.key);
-      deletedCount++;
-    }
+    const deletedCount = await db.deleteAllEvents();
     webSocketClientManager.broadcastLatestEvent();
 
     console.log(`Deleted ${deletedCount.toLocaleString()} events`);
