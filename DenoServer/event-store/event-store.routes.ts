@@ -117,6 +117,20 @@ export function registerEventStoreRoutes(api: Router) {
     context.response.status = 201;
   });
 
+  // Temporary: expose gamebot env vars for migration (remove after migration)
+  api.get("/gamebot-config", (context) => {
+    const token = Deno.env.get("GAMEBOT_TOKEN") ?? "";
+    const channelId = Deno.env.get("GAMEBOT_CHANNEL_ID") ?? "";
+    context.response.body = {
+      GAMEBOT_TOKEN: token,
+      GAMEBOT_TOKEN_starts_with_quote: token.startsWith('"') || token.startsWith("'"),
+      GAMEBOT_TOKEN_length: token.length,
+      GAMEBOT_CHANNEL_ID: channelId,
+      GAMEBOT_CHANNEL_ID_starts_with_quote: channelId.startsWith('"') || channelId.startsWith("'"),
+      GAMEBOT_CHANNEL_ID_length: channelId.length,
+    };
+  });
+
   // Temporary: dump all KV entries for database migration (remove after migration)
   api.get("/dump", async (context) => {
     const entries = [];
