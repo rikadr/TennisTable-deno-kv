@@ -80,18 +80,29 @@ export class SupabaseDatabase implements Database {
   }
 
   async getEventsAfter(time: number): Promise<EventType[]> {
-    const { data, error } = await this.client
-      .from("events")
-      .select("time, stream, type, data")
-      .eq("client_id", this.clientId)
-      .gt("time", time)
-      .order("time", { ascending: true });
+    const rows: EventRow[] = [];
+    let from = 0;
+    const pageSize = 1000;
 
-    if (error) {
-      throw new Error(`Failed to get events: ${error.message}`);
+    while (true) {
+      const { data, error } = await this.client
+        .from("events")
+        .select("time, stream, type, data")
+        .eq("client_id", this.clientId)
+        .gt("time", time)
+        .order("time", { ascending: true })
+        .range(from, from + pageSize - 1);
+
+      if (error) {
+        throw new Error(`Failed to get events: ${error.message}`);
+      }
+
+      rows.push(...(data as EventRow[]));
+      if (data.length < pageSize) break;
+      from += pageSize;
     }
 
-    return (data as EventRow[]).map((row) => ({
+    return rows.map((row) => ({
       time: row.time,
       stream: row.stream,
       type: row.type,
@@ -117,17 +128,24 @@ export class SupabaseDatabase implements Database {
   async getAllEntries(): Promise<{ key: unknown[]; value: unknown }[]> {
     const entries: { key: unknown[]; value: unknown }[] = [];
 
-    const { data: events } = await this.client
-      .from("events")
-      .select("time, stream, type, data")
-      .eq("client_id", this.clientId)
-      .order("time", { ascending: true });
+    let from = 0;
+    const pageSize = 1000;
+    while (true) {
+      const { data: events } = await this.client
+        .from("events")
+        .select("time, stream, type, data")
+        .eq("client_id", this.clientId)
+        .order("time", { ascending: true })
+        .range(from, from + pageSize - 1);
 
-    for (const row of events ?? []) {
-      entries.push({
-        key: ["event", row.time],
-        value: { time: row.time, stream: row.stream, type: row.type, data: row.data },
-      });
+      for (const row of events ?? []) {
+        entries.push({
+          key: ["event", row.time],
+          value: { time: row.time, stream: row.stream, type: row.type, data: row.data },
+        });
+      }
+      if (!events || events.length < pageSize) break;
+      from += pageSize;
     }
 
     const { data: users } = await this.client
