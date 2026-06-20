@@ -199,7 +199,7 @@ export const LeaderBoard: React.FC = () => {
                 <Link
                   key={index}
                   to={`/player/${player.id}`}
-                  className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text py-2 px-2 flex items-center gap-4 text-xl font-light text-primary-text"
+                  className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text py-1 px-2 flex items-center gap-4 text-xl font-light text-primary-text"
                 >
                   <div className="w-5 italic">{themedPlaceNumber(player.rank) ?? player.rank}</div>
                   <ProfilePicture playerId={player.id} size={28} border={2} />
@@ -239,7 +239,7 @@ export const LeaderBoard: React.FC = () => {
                 <Link
                   key={index}
                   to={`/player/${player.id}`}
-                  className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text py-2 px-2 flex items-center gap-4 text-xl text-primary-text font-light"
+                  className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text py-1 px-2 flex items-center gap-4 text-xl text-primary-text font-light"
                 >
                   <ProfilePicture playerId={player.id} size={28} border={2} />
                   <div className="w-28 font-normal whitespace-nowrap">{player.name}</div>
@@ -255,7 +255,7 @@ export const LeaderBoard: React.FC = () => {
                 <Link
                   key={index}
                   to={`/player/${player.id}`}
-                  className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text py-2 px-2 flex items-center gap-4 text-xl text-primary-text font-light"
+                  className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text py-1 px-2 flex items-center gap-4 text-xl text-primary-text font-light"
                 >
                   <ProfilePicture playerId={player.id} size={28} border={2} />
                   <div className="w-28 font-normal whitespace-nowrap">{player.name}</div>
@@ -281,7 +281,7 @@ export const LeaderBoard: React.FC = () => {
                     <Link
                       key={player.playerId}
                       to={`/player/${player.playerId}?tab=season`}
-                      className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text py-2 px-2 flex items-center gap-4 text-xl font-light text-primary-text"
+                      className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text py-1 px-2 flex items-center gap-4 text-xl font-light text-primary-text"
                     >
                       <div className="w-5 italic">{themedPlaceNumber(index + 1) ?? index + 1}</div>
                       <ProfilePicture playerId={player.playerId} size={28} border={2} />
@@ -306,7 +306,7 @@ export const LeaderBoard: React.FC = () => {
                     <Link
                       key={player.id}
                       to={`/player/${player.id}?tab=season`}
-                      className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text py-2 px-2 flex items-center gap-4 text-xl text-primary-text font-light"
+                      className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text py-1 px-2 flex items-center gap-4 text-xl text-primary-text font-light"
                     >
                       <ProfilePicture playerId={player.id} size={28} border={2} />
                       <div className="w-28 font-normal whitespace-nowrap">{player.name}</div>
