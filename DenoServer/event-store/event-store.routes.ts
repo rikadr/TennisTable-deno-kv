@@ -117,12 +117,6 @@ export function registerEventStoreRoutes(api: Router) {
     context.response.status = 201;
   });
 
-  // Temporary: dump all DB entries for database migration (remove after migration)
-  api.get("/dump", async (context) => {
-    const entries = await db.getAllEntries();
-    context.response.body = entries;
-  });
-
   /**
    * DEBUG AND DEV ONLY: -----------------------------------------------------------
    * Do not register the following routes in production
