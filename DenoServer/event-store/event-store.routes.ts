@@ -117,6 +117,15 @@ export function registerEventStoreRoutes(api: Router) {
     context.response.status = 201;
   });
 
+  // Temporary: dump all KV entries for database migration (remove after migration)
+  api.get("/dump", async (context) => {
+    const entries = [];
+    for await (const entry of kv.list({ prefix: [] })) {
+      entries.push({ key: entry.key, value: entry.value });
+    }
+    context.response.body = entries;
+  });
+
   /**
    * DEBUG AND DEV ONLY: -----------------------------------------------------------
    * Do not register the following routes in production
