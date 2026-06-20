@@ -6,14 +6,14 @@ export const useAuth = () => {
   return {
     login: useMutation({
       mutationFn: async (data: { username: string; password: string }) => {
-        const response = await httpClient(`${process.env.REACT_APP_API_BASE_URL}/user/login`, {
+        const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/user/login`, {
           method: "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify(data),
         });
 
         if (!response.ok) {
-          console.log("Failed to login", response.status, response.statusText);
-          return;
+          throw new Error(response.status === 401 ? "Invalid username or password" : `Login failed (${response.status})`);
         }
 
         const json = (await response.json()) as { token: string };
