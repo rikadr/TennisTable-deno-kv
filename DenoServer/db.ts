@@ -4,11 +4,15 @@ import type { Database } from "./db/database.ts";
 
 function createDatabase(): Database {
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
-  const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  const supabaseKey = Deno.env.get("SUPABASE_SECRET_KEY");
+  const clientId = Deno.env.get("CLIENT");
 
   if (supabaseUrl && supabaseKey) {
-    console.log("Using Supabase Postgres database");
-    return new SupabaseDatabase(supabaseUrl, supabaseKey);
+    if (!clientId) {
+      throw new Error("CLIENT env var is required when using Supabase");
+    }
+    console.log(`Using Supabase Postgres database (client: ${clientId})`);
+    return new SupabaseDatabase(supabaseUrl, supabaseKey, clientId);
   }
 
   console.log("Using local SQLite database");

@@ -11,15 +11,26 @@ interface EventRow {
 
 export class SupabaseDatabase implements Database {
   private client: SupabaseClient;
+  private clientId: string;
 
-  constructor(url: string, serviceRoleKey: string) {
-    this.client = createClient(url, serviceRoleKey);
+  constructor(url: string, apiKey: string, clientId: string) {
+    this.client = createClient(url, apiKey, {
+      global: {
+        headers: { apikey: apiKey },
+      },
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    });
+    this.clientId = clientId;
   }
 
   // Events
 
   async storeEvent(event: EventType): Promise<void> {
     const { error } = await this.client.from("events").insert({
+      client_id: this.clientId,
       time: event.time,
       stream: event.stream,
       type: event.type,
@@ -34,6 +45,7 @@ export class SupabaseDatabase implements Database {
     const { data } = await this.client
       .from("events")
       .delete()
+      .eq("client_id", this.clientId)
       .eq("time", time)
       .select("time");
     return (data?.length ?? 0) > 0;
@@ -43,6 +55,7 @@ export class SupabaseDatabase implements Database {
     const { data: deleted } = await this.client
       .from("events")
       .delete()
+      .eq("client_id", this.clientId)
       .eq("time", oldTime)
       .select("time");
 
@@ -51,6 +64,7 @@ export class SupabaseDatabase implements Database {
     }
 
     const { error } = await this.client.from("events").insert({
+      client_id: this.clientId,
       time: newEvent.time,
       stream: newEvent.stream,
       type: newEvent.type,
@@ -69,6 +83,7 @@ export class SupabaseDatabase implements Database {
     const { data, error } = await this.client
       .from("events")
       .select("time, stream, type, data")
+      .eq("client_id", this.clientId)
       .gt("time", time)
       .order("time", { ascending: true });
 
@@ -88,6 +103,7 @@ export class SupabaseDatabase implements Database {
     const { data, error } = await this.client
       .from("events")
       .select("time")
+      .eq("client_id", this.clientId)
       .order("time", { ascending: false })
       .limit(1);
 
@@ -104,6 +120,7 @@ export class SupabaseDatabase implements Database {
     const { data: events } = await this.client
       .from("events")
       .select("time, stream, type, data")
+      .eq("client_id", this.clientId)
       .order("time", { ascending: true });
 
     for (const row of events ?? []) {
@@ -115,7 +132,8 @@ export class SupabaseDatabase implements Database {
 
     const { data: users } = await this.client
       .from("users")
-      .select("username, password, role");
+      .select("username, password, role")
+      .eq("client_id", this.clientId);
 
     for (const row of users ?? []) {
       entries.push({
@@ -127,7 +145,7 @@ export class SupabaseDatabase implements Database {
     const { data: liveGame } = await this.client
       .from("live_game")
       .select("state")
-      .eq("id", 1)
+      .eq("client_id", this.clientId)
       .maybeSingle();
 
     if (liveGame) {
@@ -136,7 +154,8 @@ export class SupabaseDatabase implements Database {
 
     const { data: kvEntries } = await this.client
       .from("key_value")
-      .select("key, value");
+      .select("key, value")
+      .eq("client_id", this.clientId);
 
     for (const row of kvEntries ?? []) {
       entries.push({ key: [row.key], value: row.value });
@@ -149,6 +168,7 @@ export class SupabaseDatabase implements Database {
     const { data } = await this.client
       .from("events")
       .delete()
+      .eq("client_id", this.clientId)
       .gte("time", 0)
       .select("time");
     return data?.length ?? 0;
@@ -159,7 +179,7 @@ export class SupabaseDatabase implements Database {
   async createUser(username: string, password: string, role: string): Promise<User> {
     const { error } = await this.client
       .from("users")
-      .insert({ username, password, role });
+      .insert({ client_id: this.clientId, username, password, role });
     if (error) {
       throw new Error(`Failed to create user: ${error.message}`);
     }
@@ -170,13 +190,16 @@ export class SupabaseDatabase implements Database {
     const { data } = await this.client
       .from("users")
       .select("username, password, role")
+      .eq("client_id", this.clientId)
       .eq("username", username)
       .maybeSingle();
     return data as User | null;
   }
 
   async deleteUser(username: string): Promise<void> {
-    await this.client.from("users").delete().eq("username", username);
+    await this.client.from("users").delete()
+      .eq("client_id", this.clientId)
+      .eq("username", username);
   }
 
   async updateUser(username: string, data: Partial<Omit<User, "username">>): Promise<void> {
@@ -187,6 +210,7 @@ export class SupabaseDatabase implements Database {
     const { error } = await this.client
       .from("users")
       .update(data)
+      .eq("client_id", this.clientId)
       .eq("username", username);
     if (error) {
       throw new Error(`Failed to update user: ${error.message}`);
@@ -196,7 +220,8 @@ export class SupabaseDatabase implements Database {
   async findAllUsers(): Promise<Omit<User, "password">[]> {
     const { data, error } = await this.client
       .from("users")
-      .select("username, role");
+      .select("username, role")
+      .eq("client_id", this.clientId);
     if (error) {
       throw new Error(`Failed to find users: ${error.message}`);
     }
@@ -209,7 +234,7 @@ export class SupabaseDatabase implements Database {
     const { data } = await this.client
       .from("live_game")
       .select("state")
-      .eq("id", 1)
+      .eq("client_id", this.clientId)
       .maybeSingle();
     return data?.state as LiveGameState | null;
   }
@@ -217,14 +242,14 @@ export class SupabaseDatabase implements Database {
   async setLiveGame(state: LiveGameState): Promise<void> {
     const { error } = await this.client
       .from("live_game")
-      .upsert({ id: 1, state });
+      .upsert({ client_id: this.clientId, state });
     if (error) {
       throw new Error(`Failed to set live game: ${error.message}`);
     }
   }
 
   async clearLiveGame(): Promise<void> {
-    await this.client.from("live_game").delete().eq("id", 1);
+    await this.client.from("live_game").delete().eq("client_id", this.clientId);
   }
 
   // Key-Value
@@ -233,6 +258,7 @@ export class SupabaseDatabase implements Database {
     const { data } = await this.client
       .from("key_value")
       .select("value")
+      .eq("client_id", this.clientId)
       .eq("key", key)
       .maybeSingle();
     return data?.value as T | null;
@@ -241,7 +267,7 @@ export class SupabaseDatabase implements Database {
   async setValue<T>(key: string, value: T): Promise<void> {
     const { error } = await this.client
       .from("key_value")
-      .upsert({ key, value });
+      .upsert({ client_id: this.clientId, key, value });
     if (error) {
       throw new Error(`Failed to set value: ${error.message}`);
     }

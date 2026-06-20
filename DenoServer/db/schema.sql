@@ -1,25 +1,31 @@
 -- Supabase Postgres schema for TennisTable
--- Run this in each Supabase project's SQL editor
+-- Shared database — all deployments use client_id to isolate data
 
 CREATE TABLE events (
-  time    BIGINT PRIMARY KEY,
-  stream  TEXT NOT NULL,
-  type    TEXT NOT NULL,
-  data    JSONB NOT NULL
+  client_id TEXT NOT NULL,
+  time      BIGINT NOT NULL,
+  stream    TEXT NOT NULL,
+  type      TEXT NOT NULL,
+  data      JSONB,
+  PRIMARY KEY (client_id, time)
 );
 
 CREATE TABLE users (
-  username TEXT PRIMARY KEY,
-  password TEXT NOT NULL,
-  role     TEXT NOT NULL DEFAULT 'user'
+  client_id TEXT NOT NULL,
+  username  TEXT NOT NULL,
+  password  TEXT NOT NULL,
+  role      TEXT NOT NULL DEFAULT 'user',
+  PRIMARY KEY (client_id, username)
 );
 
 CREATE TABLE live_game (
-  id    INTEGER PRIMARY KEY DEFAULT 1 CHECK (id = 1),
-  state JSONB NOT NULL
+  client_id TEXT PRIMARY KEY,
+  state     JSONB NOT NULL
 );
 
 CREATE TABLE key_value (
-  key   TEXT PRIMARY KEY,
-  value JSONB NOT NULL
+  client_id TEXT NOT NULL,
+  key       TEXT NOT NULL,
+  value     JSONB NOT NULL,
+  PRIMARY KEY (client_id, key)
 );
