@@ -14,6 +14,10 @@ async function createDatabase(): Promise<Database> {
     return new SupabaseDatabase(supabaseUrl, supabaseKey, clientId);
   }
 
+  if (Deno.env.get("DENO_DEPLOYMENT_ID")) {
+    throw new Error("SUPABASE_URL and SUPABASE_SECRET_KEY must be set on Deno Deploy");
+  }
+
   console.log("Using local SQLite database");
   const { SqliteDatabase } = await import("./db/sqlite.ts");
   return new SqliteDatabase("./data/local.db");
