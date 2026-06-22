@@ -758,14 +758,17 @@ export class Achievements {
         loser.elo,
         winner.totalGames,
         loser.totalGames,
+        gameLimit,
       );
       winner.elo = winnersNewElo;
       loser.elo = losersNewElo;
       const eloGain = winnersNewElo - winnerEloBefore;
+      const eloLoss = loserEloBefore - losersNewElo;
 
-      // King Maker tracking: zero-sum Elo move feeds both players' maps.
+      // King Maker tracking: each player's own Elo move feeds their map.
+      // With provisional K-factors the gain and loss can differ in size.
       updateNetGain(game.winner, game.loser, eloGain);
-      updateNetGain(game.loser, game.winner, -eloGain);
+      updateNetGain(game.loser, game.winner, -eloLoss);
 
       // Update Climber tracking for both players (low + threshold check).
       updateClimber(game.winner, winner.elo, winner.totalGames, game.playedAt);
@@ -894,18 +897,18 @@ export class Achievements {
 
       // David: ≥ 30 Elo gain from beating a much higher rated opponent.
       // Goliath: mirror image — ≥ 30 Elo lost by the higher-rated loser.
-      // Elo is zero-sum, so the loser's loss magnitude equals the
-      // winner's gain. Both players must have been ranked at the time
-      // of playing the match (pre-match ranks non-null) for either to
-      // count.
+      // Both players must have been ranked at the time of playing the
+      // match (pre-match ranks non-null) for either to count, and a
+      // ranked player's K-factor is always fully decayed back to the
+      // standard K, so these swings are plain standard-K exchanges.
       if (winnerRankBefore !== null && loserRankBefore !== null) {
         const prevBest = this.bestDavidGain.get(game.winner) ?? 0;
         if (eloGain > prevBest) {
           this.bestDavidGain.set(game.winner, eloGain);
         }
         const prevWorst = this.worstGoliathLoss.get(game.loser) ?? 0;
-        if (eloGain > prevWorst) {
-          this.worstGoliathLoss.set(game.loser, eloGain);
+        if (eloLoss > prevWorst) {
+          this.worstGoliathLoss.set(game.loser, eloLoss);
         }
         if (eloGain >= 30) {
           this.#addAchievement(
@@ -916,12 +919,14 @@ export class Achievements {
               eloGain,
             }),
           );
+        }
+        if (eloLoss >= 30) {
           this.#addAchievement(
             game.loser,
             this.#createAchievement("goliath", game.loser, game.playedAt, {
               opponent: game.winner,
               gameId: game.id,
-              eloLoss: eloGain,
+              eloLoss,
             }),
           );
         }

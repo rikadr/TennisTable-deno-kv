@@ -3,7 +3,9 @@ import { EventType, EventTypeEnum } from "../../event-store/event-types";
 
 // David fires when the winner gains ≥ 30 Elo from a single match, which
 // requires the loser to have been roughly 470+ Elo above the winner. Both
-// players must be ranked at the time of the match.
+// players must be ranked at the time of the match — and a ranked player's
+// provisional K-factor has fully decayed, so qualifying swings are always
+// plain standard-K exchanges.
 
 describe("David Achievement", () => {
   const createPlayer = (id: string, time: number): EventType => ({
@@ -206,5 +208,36 @@ describe("David Achievement", () => {
     tt.achievements.calculateAchievements();
 
     expect(tt.achievements.getAchievements("alice").filter((a) => a.type === "david")).toHaveLength(0);
+  });
+
+  it("cannot be inflated by provisional K-factors — ranked players play at standard K", () => {
+    // a and b each beat 5 fresh opponents through identical sequences,
+    // so they enter the final game ranked and with equal Elo. By the
+    // ranked threshold the provisional K has fully decayed, so the even
+    // match moves exactly K/2 = 16 points for both sides — far from the
+    // 30 needed. Neither David nor Goliath may fire.
+    const events: EventType[] = [createPlayer("a", 1), createPlayer("b", 2)];
+    for (let i = 0; i < 5; i++) {
+      events.push(createPlayer(`fa-${i}`, 10 + i));
+      events.push(createPlayer(`fb-${i}`, 20 + i));
+    }
+    let t = 100_000;
+    for (let i = 0; i < 5; i++) {
+      events.push(game(`ga-${i}`, t++, "a", `fa-${i}`));
+      events.push(game(`gb-${i}`, t++, "b", `fb-${i}`));
+    }
+    events.push(game("even-upset", t++, "a", "b"));
+
+    const tt = new TennisTable({ events });
+    tt.achievements.calculateAchievements();
+
+    // Both ranked players' swings are plain standard-K: exactly ±16.
+    const aSummary = tt.leaderboard.getPlayerSummary("a");
+    const bSummary = tt.leaderboard.getPlayerSummary("b");
+    expect(aSummary.games[aSummary.games.length - 1].pointsDiff).toBeCloseTo(16, 8);
+    expect(bSummary.games[bSummary.games.length - 1].pointsDiff).toBeCloseTo(-16, 8);
+
+    expect(tt.achievements.getAchievements("a").filter((x) => x.type === "david")).toHaveLength(0);
+    expect(tt.achievements.getAchievements("b").filter((x) => x.type === "goliath")).toHaveLength(0);
   });
 });

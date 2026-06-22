@@ -175,23 +175,28 @@ export class Leaderboard {
     players.forEach((player) => (graphEntry[player] = Elo.INITIAL_ELO));
     graphData.push({ ...graphEntry });
 
-    Elo.eloCalculator(this.parent.games, this.parent.allPlayers, (map, game) => {
-      if (players.includes(game.winner) || players.includes(game.loser)) {
-        if (players.includes(game.winner)) {
-          const newElo = map.get(game.winner);
-          if (newElo) {
-            graphEntry[game.winner] = newElo.elo;
+    Elo.eloCalculator(
+      this.parent.games,
+      this.parent.allPlayers,
+      (map, game) => {
+        if (players.includes(game.winner) || players.includes(game.loser)) {
+          if (players.includes(game.winner)) {
+            const newElo = map.get(game.winner);
+            if (newElo) {
+              graphEntry[game.winner] = newElo.elo;
+            }
           }
-        }
-        if (players.includes(game.loser)) {
-          const newElo = map.get(game.loser);
-          if (newElo) {
-            graphEntry[game.loser] = newElo.elo;
+          if (players.includes(game.loser)) {
+            const newElo = map.get(game.loser);
+            if (newElo) {
+              graphEntry[game.loser] = newElo.elo;
+            }
           }
+          graphData.push({ ...graphEntry, time: game.playedAt });
         }
-        graphData.push({ ...graphEntry, time: game.playedAt });
-      }
-    });
+      },
+      this.parent.client.gameLimitForRanked,
+    );
 
     return {
       graphData,
@@ -222,18 +227,21 @@ export class Leaderboard {
       return leaderboardMap.get(id)!;
     };
 
-    Elo.eloCalculator(this.parent.games, this.parent.allPlayers, (map, game, pointsWon) => {
+    Elo.eloCalculator(this.parent.games, this.parent.allPlayers, (map, game) => {
       const winner = getPlayer(game.winner);
       const loser = getPlayer(game.loser);
       const winnersNewElo = map.get(game.winner)!.elo;
       const losersNewElo = map.get(game.loser)!.elo;
 
+      // Each side's diff is computed from their own previous Elo. With
+      // provisional K-factors the winner's gain and the loser's loss can
+      // differ, so the exchange is no longer mirrored.
       winner.games.push({
         time: game.playedAt,
         result: "win",
         oponent: loser.id,
         eloAfterGame: winnersNewElo,
-        pointsDiff: pointsWon,
+        pointsDiff: winnersNewElo - winner.elo,
         score: game.score,
       });
       loser.games.push({
@@ -241,7 +249,7 @@ export class Leaderboard {
         result: "loss",
         oponent: winner.id,
         eloAfterGame: losersNewElo,
-        pointsDiff: -pointsWon,
+        pointsDiff: losersNewElo - loser.elo,
         score: game.score,
       });
 
@@ -250,7 +258,7 @@ export class Leaderboard {
 
       winner.elo = winnersNewElo;
       loser.elo = losersNewElo;
-    });
+    }, this.parent.client.gameLimitForRanked);
 
     return leaderboardMap;
   }
