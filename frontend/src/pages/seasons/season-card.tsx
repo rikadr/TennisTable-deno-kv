@@ -90,7 +90,7 @@ export const SeasonCard: React.FC<SeasonCardProps> = ({ season, index, totalSeas
               <div className="flex items-center gap-1.5 md:gap-2 bg-primary-background px-2 md:px-3 py-1 md:py-1.5 rounded-lg">
                 <span className="text-base md:text-xl">🏆</span>
                 <ProfilePicture playerId={winnerId} size={20} border={1} />
-                <span className="font-bold text-secondary-text text-xs md:text-sm truncate max-w-[80px] md:max-w-none">{context.playerName(winnerId)}</span>
+                <span className="font-bold text-primary-text text-xs md:text-sm truncate max-w-[80px] md:max-w-none">{context.playerName(winnerId)}</span>
               </div>
             )}
           </div>

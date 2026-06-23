@@ -64,6 +64,7 @@ export enum Theme {
   CLIENT_SKIMORE = "skimore",
   CLIENT_ASPLAN_VIAK = "asplanviak",
   CLIENT_DEEPINSIGHT = "deepinsight",
+  CLIENT_OPTIO = "optio",
 }
 
 export function themeOrOverrideTheme(theme: Theme): Theme {

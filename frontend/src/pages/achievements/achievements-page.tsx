@@ -106,7 +106,7 @@ export const AchievementsPage: React.FC = () => {
               "px-4 py-2 rounded text-sm font-medium border transition-colors",
               showProgress
                 ? "bg-accent text-white border-accent"
-                : "bg-secondary-background text-primary-text border-primary-text hover:border-accent",
+                : "bg-secondary-background text-secondary-text border-primary-text hover:border-accent",
             )}
           >
             {showProgress ? "Show Recent Achievements" : "Show Everyone's Progress"}
