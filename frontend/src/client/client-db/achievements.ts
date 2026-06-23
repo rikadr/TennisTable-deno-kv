@@ -227,8 +227,8 @@ export class Achievements {
       this.#checkBackAfterAchievement(game.winner, winner.lastActiveAt, game.playedAt);
       this.#checkBackAfterAchievement(game.loser, loser.lastActiveAt, game.playedAt);
 
-      // Check for "Anniversary": a game played within ±1 day of the one-year
-      // mark of the player's first ever game.
+      // Check for "Anniversary": a game played on the day before, the day of,
+      // or the day after a yearly mark of the player's first ever game.
       this.#checkAnniversaryAchievement(game.winner, winner.firstActiveAt, game.playedAt);
       this.#checkAnniversaryAchievement(game.loser, loser.firstActiveAt, game.playedAt);
 
@@ -1211,21 +1211,43 @@ export class Achievements {
     }
   }
 
-  // Awards "Anniversary" when a player plays a game within ±1 day of a yearly
-  // mark of their first ever game (1 year, 2 years, ...). Earnable once per
+  // The calendar date of a player's `year`-th anniversary: the same month and
+  // day as their first ever game, `year` years later. Returned at local
+  // midnight (matching the seasons logic, which also works in local time).
+  #anniversaryDate(firstActiveAt: number, year: number): Date {
+    const date = new Date(firstActiveAt);
+    date.setHours(0, 0, 0, 0);
+    date.setFullYear(date.getFullYear() + year);
+    return date;
+  }
+
+  // Whole calendar days between two instants (local time). Both are floored to
+  // local midnight first; Math.round absorbs DST days that are 23 or 25 hours.
+  #calendarDayDiff(aMs: number, bMs: number): number {
+    const ONE_DAY = 24 * 60 * 60 * 1000;
+    const a = new Date(aMs);
+    a.setHours(0, 0, 0, 0);
+    const b = new Date(bMs);
+    b.setHours(0, 0, 0, 0);
+    return Math.round((a.getTime() - b.getTime()) / ONE_DAY);
+  }
+
+  // Awards "Anniversary" when a player plays a game around a yearly mark of
+  // their first ever game (1 year, 2 years, ...). The game qualifies as long as
+  // it lands on the calendar date before the anniversary, on the anniversary
+  // date itself, or the date after — at any time of day. Earnable once per
   // year mark.
   #checkAnniversaryAchievement(playerId: string, firstActiveAt: number, currentGameAt: number) {
     const ONE_YEAR = 365 * 24 * 60 * 60 * 1000;
-    const ONE_DAY = 24 * 60 * 60 * 1000;
 
-    // Nearest whole-year anniversary to this game. ONE_DAY ≪ half a year, so
-    // rounding unambiguously identifies which anniversary a window game hits.
+    // Which whole-year anniversary is this game closest to? A few days of
+    // leap-year drift stays far below half a year, so rounding is unambiguous.
     const year = Math.round((currentGameAt - firstActiveAt) / ONE_YEAR);
     if (year < 1) {
       return;
     }
-    const anniversaryAt = firstActiveAt + year * ONE_YEAR;
-    if (Math.abs(currentGameAt - anniversaryAt) > ONE_DAY) {
+    const anniversaryDate = this.#anniversaryDate(firstActiveAt, year);
+    if (Math.abs(this.#calendarDayDiff(currentGameAt, anniversaryDate.getTime())) > 1) {
       return;
     }
 
@@ -1428,7 +1450,6 @@ export class Achievements {
     const SIX_MONTHS = 6 * 30 * 24 * 60 * 60 * 1000;
     const ONE_YEAR = 365 * 24 * 60 * 60 * 1000;
     const TWO_YEARS = 2 * ONE_YEAR;
-    const ONE_DAY = 24 * 60 * 60 * 1000;
 
     const progression: AchievementProgression = {
       "donut-1": { current: 0, target: 1, earned: 0 },
@@ -1448,7 +1469,8 @@ export class Achievements {
       "active-2-years": { current: 0, target: TWO_YEARS, earned: 0 },
       // Target is the one-year mark of the first game; current is how much of
       // that year has elapsed. When current reaches target the player is at
-      // their anniversary and playing a game awards it (within a ±1 day window).
+      // their anniversary and playing a game awards it (on the day before, day
+      // of, or day after the anniversary date).
       "anniversary": { current: 0, target: ONE_YEAR, earned: 0 },
       "tournament-participated": { earned: 0 },
       "tournament-winner": { earned: 0 },
@@ -1745,9 +1767,10 @@ export class Achievements {
 
     // Anniversary progress counts toward the next anniversary the player can
     // still earn, and resets to 0 each year. The "target year" is the earliest
-    // whole year that has neither been earned nor had its ±1 day window pass
-    // (now > anniversary + 1 day). Progress is the time elapsed since the start
-    // of that year's cycle (the previous anniversary, or the first game).
+    // whole year that has neither been earned nor had its window pass (now is
+    // more than one calendar day after the anniversary date). Progress is the
+    // time elapsed since the start of that year's cycle (the previous
+    // anniversary, or the first game).
     if (firstActiveAt !== null) {
       const now = Date.now();
       const earnedYears = new Set<number>();
@@ -1758,7 +1781,10 @@ export class Achievements {
       }
 
       let targetYear = 1;
-      while (earnedYears.has(targetYear) || now > firstActiveAt + targetYear * ONE_YEAR + ONE_DAY) {
+      while (
+        earnedYears.has(targetYear) ||
+        this.#calendarDayDiff(now, this.#anniversaryDate(firstActiveAt, targetYear).getTime()) > 1
+      ) {
         targetYear++;
       }
 

@@ -55,6 +55,39 @@ describe("TennisTable", () => {
       expect(anniversariesFor(events, "alice")).toHaveLength(0);
     });
 
+    // The window is by calendar date (day before / day of / day after), not a
+    // strict ±24h band around the anniversary instant.
+    const at = (y: number, mo: number, d: number, h = 12) => new Date(y, mo, d, h, 0, 0, 0).getTime();
+
+    it("awards a game late on the day-after date even though it is more than 24h past the anniversary instant", () => {
+      const firstGame = at(2021, 0, 15, 8); // first game in the morning
+      // Day after the Jan-15-2022 anniversary, at night: ~39h after the instant.
+      const game1 = at(2022, 0, 16, 23);
+      expect(game1 - (firstGame + ONE_YEAR)).toBeGreaterThan(ONE_DAY); // outside the old ±24h band
+
+      const events = [...baseEvents(), game("g0", firstGame), game("g1", game1)];
+      const earned = anniversariesFor(events, "alice");
+      expect(earned).toHaveLength(1);
+      expect(earned[0].data).toStrictEqual({ firstGameAt: firstGame, year: 1 });
+    });
+
+    it("awards a game early on the day-before date even though it is more than 24h before the anniversary instant", () => {
+      const firstGame = at(2021, 0, 15, 20); // first game in the evening
+      const game1 = at(2022, 0, 14, 1); // day before the anniversary, just after midnight
+      expect(firstGame + ONE_YEAR - game1).toBeGreaterThan(ONE_DAY); // outside the old ±24h band
+
+      const events = [...baseEvents(), game("g0", firstGame), game("g1", game1)];
+      const earned = anniversariesFor(events, "alice");
+      expect(earned).toHaveLength(1);
+      expect(earned[0].data).toStrictEqual({ firstGameAt: firstGame, year: 1 });
+    });
+
+    it("does not award a game two calendar days after the anniversary date", () => {
+      const firstGame = at(2021, 0, 15, 8);
+      const events = [...baseEvents(), game("g0", firstGame), game("g1", at(2022, 0, 17, 0))];
+      expect(anniversariesFor(events, "alice")).toHaveLength(0);
+    });
+
     it("does not award for games well short of one year", () => {
       const sixMonths = 6 * 30 * ONE_DAY;
       const events = [...baseEvents(), game("g0", T0), game("g1", T0 + sixMonths)];
