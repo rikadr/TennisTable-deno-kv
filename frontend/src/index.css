@@ -66,13 +66,6 @@
   --color-secondary-background: 79,131,232;
   --color-tertiary-text: 79,131,232;
   --color-tertiary-background: 234,241,253;
-  --background-image-url: radial-gradient(
-      circle at 15% 85%,
-      rgba(99, 132, 235, 0.35) 0%,
-      rgba(99, 132, 235, 0) 45%
-    ),
-    radial-gradient(circle at 85% 20%, rgba(120, 150, 240, 0.3) 0%, rgba(120, 150, 240, 0) 50%),
-    radial-gradient(circle at 50% 50%, rgba(220, 230, 252, 0.4) 0%, rgba(255, 255, 255, 0) 60%);
 }
 
 body {
