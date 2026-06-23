@@ -64,10 +64,10 @@ export const PvPStats: React.FC<Props> = ({ player1, player2 }) => {
               <div className="flex items-center gap-4">
                 {/* Player 1 Probability */}
                 <div className="flex-1 text-center">
-                  <div className="text-3xl font-bold text-secondary-text">
+                  <div className="text-3xl font-bold text-primary-text">
                     {fmtNum(combinedPrediction.fraction * 100)}%
                   </div>
-                  <div className="text-sm text-secondary-text/70 mt-1">{p1.name}</div>
+                  <div className="text-sm text-primary-text/70 mt-1">{p1.name}</div>
                 </div>
 
                 {/* Visual Bar */}
@@ -83,13 +83,13 @@ export const PvPStats: React.FC<Props> = ({ player1, player2 }) => {
 
                 {/* Player 2 Probability */}
                 <div className="flex-1 text-center">
-                  <div className="text-3xl font-bold text-secondary-text">
+                  <div className="text-3xl font-bold text-primary-text">
                     {fmtNum((1 - combinedPrediction.fraction) * 100)}%
                   </div>
-                  <div className="text-sm text-secondary-text/70 mt-1">{p2.name}</div>
+                  <div className="text-sm text-primary-text/70 mt-1">{p2.name}</div>
                 </div>
               </div>
-              <p className="text-center text-secondary-text/50">
+              <p className="text-center text-primary-text/50">
                 At {fmtNum(combinedPrediction.confidence * 100)}% confidence
               </p>
               <Link
