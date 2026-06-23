@@ -10,6 +10,17 @@ interface PeriodData {
   timestamp: number;
 }
 
+interface CurrentEntry {
+  rank: number;
+  total: number;
+  entry: PeriodData;
+}
+
+interface TopPeriodsResult {
+  top: PeriodData[];
+  current: CurrentEntry | null;
+}
+
 const PERIOD_LABELS: Record<Period, { singular: string; plural: string }> = {
   day: { singular: "Day", plural: "Days" },
   week: { singular: "Week", plural: "Weeks" },
@@ -109,9 +120,12 @@ export const TopGamingDays: React.FC = () => {
 
   const recentCutoff = useMemo(() => Date.now() - RECENT_WINDOW_MS[period], [period]);
 
+  const currentKey = useMemo(() => getPeriodKey(new Date(), period), [period]);
+
   const { topAllTime, topRecent } = useMemo(() => {
+    const empty: TopPeriodsResult = { top: [], current: null };
     if (context.games.length === 0) {
-      return { topAllTime: [], topRecent: [] };
+      return { topAllTime: empty, topRecent: empty };
     }
 
     const allTimeCounts = new Map<string, { count: number; timestamp: number }>();
@@ -139,21 +153,29 @@ export const TopGamingDays: React.FC = () => {
       }
     });
 
-    const sortAndSlice = (map: Map<string, { count: number; timestamp: number }>): PeriodData[] =>
-      Array.from(map.entries())
+    const buildResult = (map: Map<string, { count: number; timestamp: number }>): TopPeriodsResult => {
+      const sorted = Array.from(map.entries())
         .map(([key, data]) => ({
           key,
           count: data.count,
           timestamp: data.timestamp,
         }))
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 10);
+        .sort((a, b) => b.count - a.count);
+
+      const currentIndex = sorted.findIndex((entry) => entry.key === currentKey);
+      const current: CurrentEntry | null =
+        currentIndex >= 0
+          ? { rank: currentIndex + 1, total: sorted.length, entry: sorted[currentIndex] }
+          : null;
+
+      return { top: sorted.slice(0, 10), current };
+    };
 
     return {
-      topAllTime: sortAndSlice(allTimeCounts),
-      topRecent: sortAndSlice(recentCounts),
+      topAllTime: buildResult(allTimeCounts),
+      topRecent: buildResult(recentCounts),
     };
-  }, [context.games, period, recentCutoff]);
+  }, [context.games, period, recentCutoff, currentKey]);
 
   const periodLabel = PERIOD_LABELS[period];
 
@@ -168,14 +190,45 @@ export const TopGamingDays: React.FC = () => {
     );
   }
 
-  const TopPeriodsTable = ({ title, data }: { title: string; data: PeriodData[] }) => {
+  const TopPeriodsTable = ({ title, data }: { title: string; data: TopPeriodsResult }) => {
     const now = Date.now();
     const windowMs = RECENT_WINDOW_MS[period];
+    const { top, current } = data;
+
+    const renderRow = (entry: PeriodData, rank: number, total: number | null) => {
+      const ageMs = now - entry.timestamp;
+      const recencyPercent = Math.max(0, Math.min(100, (1 - ageMs / windowMs) * 100));
+      const isCurrent = entry.key === currentKey;
+
+      return (
+        <tr
+          key={entry.key}
+          className={
+            isCurrent ? "bg-tertiary-background text-tertiary-text" : "hover:bg-secondary-background/50"
+          }
+        >
+          <td className="px-2 py-1 border border-primary-text/20 font-medium whitespace-nowrap">
+            {total !== null ? `${rank} / ${total}` : rank}
+          </td>
+          <td className="px-2 py-1 border border-primary-text/20 whitespace-nowrap">
+            {formatPeriod(entry.timestamp, period)}
+          </td>
+          <td className="px-2 py-1 border border-primary-text/20 whitespace-nowrap relative overflow-hidden">
+            {relativeTimeString(new Date(entry.timestamp))}
+            <div
+              className={`absolute bottom-0 left-0 h-[2px] ${isCurrent ? "bg-tertiary-text" : "bg-current"}`}
+              style={{ width: `${recencyPercent}%` }}
+            />
+          </td>
+          <td className="px-2 py-1 border border-primary-text/20 text-right font-bold">{entry.count}</td>
+        </tr>
+      );
+    };
 
     return (
       <div className="flex-1 min-w-0">
         <h3 className="text-sm font-semibold mb-2">{title}</h3>
-        {data.length === 0 ? (
+        {top.length === 0 ? (
           <div className="text-center text-primary-text p-4 bg-secondary-background rounded-lg text-xs">
             No data for this period
           </div>
@@ -190,27 +243,8 @@ export const TopGamingDays: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {data.map((entry, index) => {
-                const ageMs = now - entry.timestamp;
-                const recencyPercent = Math.max(0, Math.min(100, (1 - ageMs / windowMs) * 100));
-
-                return (
-                  <tr key={entry.key} className="hover:bg-secondary-background/50">
-                    <td className="px-2 py-1 border border-primary-text/20 font-medium">{index + 1}</td>
-                    <td className="px-2 py-1 border border-primary-text/20 whitespace-nowrap">
-                      {formatPeriod(entry.timestamp, period)}
-                    </td>
-                    <td className="px-2 py-1 border border-primary-text/20 whitespace-nowrap relative overflow-hidden">
-                      {relativeTimeString(new Date(entry.timestamp))}
-                      <div
-                        className="absolute bottom-0 left-0 h-[2px] bg-current"
-                        style={{ width: `${recencyPercent}%` }}
-                      />
-                    </td>
-                    <td className="px-2 py-1 border border-primary-text/20 text-right font-bold">{entry.count}</td>
-                  </tr>
-                );
-              })}
+              {top.map((entry, index) => renderRow(entry, index + 1, null))}
+              {current && current.rank > 10 && renderRow(current.entry, current.rank, current.total)}
             </tbody>
           </table>
         )}
@@ -245,6 +279,12 @@ export const TopGamingDays: React.FC = () => {
         <TopPeriodsTable title="All Time" data={topAllTime} />
         <TopPeriodsTable title={RECENT_WINDOW_LABELS[period]} data={topRecent} />
       </div>
+      {(topAllTime.current || topRecent.current) && (
+        <div className="mt-3 text-xs flex items-center gap-2">
+          <span className="inline-block w-3 h-3 rounded-sm bg-tertiary-background border border-primary-text/20" />
+          <span>Current {periodLabel.singular.toLowerCase()}</span>
+        </div>
+      )}
     </div>
   );
 };
