@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { relativeTimeString } from "../common/date-utils";
 import { fmtNum } from "../common/number-utils";
 import { useState } from "react";
+import { Predictions } from "../client/client-db/predictions";
 
 type Props = {
   player1?: string;
@@ -21,13 +22,11 @@ export const PvPStats: React.FC<Props> = ({ player1, player2 }) => {
     );
   }
 
-  context.futureElo.calculatePlayerFractionsForToday();
+  const directPrediction = context.predictions.getDirectFraction(player1, player2);
+  const oneLayerPrediction = context.predictions.getOneLayerFraction(player1, player2);
+  const twoLayerPrediction = context.predictions.getTwoLayerFraction(player1, player2);
 
-  const directPrediction = context.futureElo.playersMap.get(player1)?.oponentsMap.get(player2)?.directFraction;
-  const oneLayerPrediction = context.futureElo.playersMap.get(player1)?.oponentsMap.get(player2)?.oneLayerFraction;
-  const twoLayerPrediction = context.futureElo.playersMap.get(player1)?.oponentsMap.get(player2)?.twoLayerFraction;
-
-  const combinedPrediction = context.futureElo.combinePrioritizedFractions([
+  const combinedPrediction = Predictions.combinePrioritizedFractions([
     directPrediction,
     oneLayerPrediction,
     twoLayerPrediction,

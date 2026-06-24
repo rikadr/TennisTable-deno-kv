@@ -92,8 +92,7 @@ export class TournamentPrediction {
       return e.time <= simulationTime;
     });
 
-    const stateAtTime = new TennisTable({ events: eventsUpToTime }); // TODO Performance test impact of this performance.now before and after
-    stateAtTime.futureElo.calculatePlayerFractionsForToday({ overrideTime: simulationTime }); // TODO Performance test impact of this performance.now before and after
+    const stateAtTime = new TennisTable({ events: eventsUpToTime, referenceTime: simulationTime });
 
     const tournamentAtTime = stateAtTime.tournaments.getTournament(tournamentId);
     if (!tournamentAtTime) {

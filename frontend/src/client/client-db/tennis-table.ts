@@ -1,4 +1,3 @@
-import { FutureElo } from "./future-elo";
 import { Leaderboard } from "./leaderboard";
 import { PVP } from "./pvp";
 import { Simulations } from "./simulations";
@@ -12,6 +11,7 @@ import { PlayerOponentDistribution } from "./playerOponentDistribution";
 import { Achievements } from "./achievements";
 import { Seasons } from "./seasons/seasons";
 import { PredictionsHistory } from "./predictions-history";
+import { Predictions } from "./predictions";
 import { HallOfFame } from "./hall-of-fame";
 
 export class TennisTable {
@@ -39,15 +39,15 @@ export class TennisTable {
   pvp: PVP;
   tournaments: Tournaments;
   simulations: Simulations;
-  futureElo: FutureElo;
   individualPoints: IndividualPoints;
   playerOponentDistribution: PlayerOponentDistribution;
   achievements: Achievements;
   seasons: Seasons;
+  predictions: Predictions;
   predictionsHistory: PredictionsHistory;
   hallOfFame: HallOfFame;
 
-  constructor(data: { events: EventType[]; gameLimitForRankedOverride?: number }) {
+  constructor(data: { events: EventType[]; gameLimitForRankedOverride?: number; referenceTime?: number }) {
     this.events = data.events;
     if (data.gameLimitForRankedOverride !== undefined) {
       this.client.gameLimitForRanked = data.gameLimitForRankedOverride;
@@ -59,11 +59,11 @@ export class TennisTable {
     this.pvp = new PVP(this);
     this.tournaments = new Tournaments(this);
     this.simulations = new Simulations(this);
-    this.futureElo = new FutureElo(this);
     this.individualPoints = new IndividualPoints(this);
     this.playerOponentDistribution = new PlayerOponentDistribution(this);
     this.achievements = new Achievements(this);
     this.seasons = new Seasons(this);
+    this.predictions = new Predictions(this, data.referenceTime);
     this.predictionsHistory = new PredictionsHistory(this);
     this.hallOfFame = new HallOfFame(this);
   }

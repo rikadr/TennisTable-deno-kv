@@ -1,3 +1,4 @@
+import { Predictions } from "./predictions";
 import { TennisTable } from "./tennis-table";
 
 export type Prediction = {
@@ -52,21 +53,16 @@ export class PredictionsHistory {
       const gamesInPeriod = this.parent.games.filter((g) => g.playedAt > periodStart && g.playedAt <= time);
       const gamesPlayed = gamesInPeriod.filter((g) => g.winner === playerId || g.loser === playerId).length;
 
-      this.parent.futureElo.calculatePlayerFractionsForGivenGames(games, time);
+      const predictions = new Predictions(this.parent, time, games);
 
       const oponentsOutput: Record<string, Prediction> = {};
 
-      this.parent.futureElo.playersMap.forEach((_, oponentId) => {
-        if (oponentId === playerId) {
-          return;
-        }
-        if (this.parent.eventStore.playersProjector.getPlayer(oponentId)?.active !== true) {
-          return;
-        }
-        const fraction = this.parent.futureElo.getPredictedFractionForTwoPlayers(playerId, oponentId);
-        if (!fraction) {
-          return;
-        }
+      for (const oponentId of predictions.getAllPlayerIds()) {
+        if (oponentId === playerId) continue;
+        if (this.parent.eventStore.playersProjector.getPlayer(oponentId)?.active !== true) continue;
+
+        const fraction = predictions.getPredictedFraction(playerId, oponentId);
+        if (!fraction) continue;
 
         const gamesPlayedAgainst = gamesInPeriod.filter(
           (g) => (g.winner === playerId && g.loser === oponentId) || (g.winner === oponentId && g.loser === playerId),
@@ -77,13 +73,13 @@ export class PredictionsHistory {
           confidence: fraction.confidence,
           gamesPlayedAgainst,
         };
-      });
+      }
 
       let rankedCount = 0;
       let totalConfidenceSum = 0;
       const totalWinChanceSum = Object.entries(oponentsOutput).reduce((sum, [oponentId, fraction]) => {
-        const oponent = this.parent.futureElo.playersMap.get(oponentId);
-        if (!oponent || oponent.totalGames < this.parent.client.gameLimitForRanked) return sum;
+        const totalGames = predictions.getPlayerTotalGames(oponentId);
+        if (totalGames < this.parent.client.gameLimitForRanked) return sum;
         rankedCount++;
         totalConfidenceSum += fraction.confidence;
         return sum + fraction.winChance;

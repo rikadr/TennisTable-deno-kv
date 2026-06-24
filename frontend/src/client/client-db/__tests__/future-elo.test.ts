@@ -1,29 +1,16 @@
 import {
   ConfidenceConfig,
-  Fraction,
   GAME_CONFIDENCE_CONFIG,
   POINT_CONFIDENCE_CONFIG,
+  Predictions,
   SET_CONFIDENCE_CONFIG,
-} from "../future-elo";
-import { TennisTable } from "../tennis-table";
-
-// Narrow view of FutureElo's private confidence calculation for testing
-type FutureEloInternal = {
-  getWinFractionWithConfidence(input: {
-    wins: number;
-    loss: number;
-    probabilityLookup: number[];
-    confidenceConfig: ConfidenceConfig;
-  }): Fraction;
-};
+} from "../predictions";
 
 describe("FutureElo confidence curve", () => {
   const probabilityLookup = Array.from({ length: 101 }, (_, i) => i / 100);
 
-  const futureElo = new TennisTable({ events: [] }).futureElo as unknown as FutureEloInternal;
-
   const confidenceOf = (wins: number, loss: number, confidenceConfig: ConfidenceConfig): number =>
-    futureElo.getWinFractionWithConfidence({ wins, loss, probabilityLookup, confidenceConfig }).confidence;
+    Predictions.getWinFractionWithConfidence(wins, loss, probabilityLookup, confidenceConfig).confidence;
 
   // 10 points per game, no product term: confidence points are linear in game count
   const linearConfig: ConfidenceConfig = { additions: 10, products: 0, halfLifePoints: 50, curveExponent: 1 };
@@ -82,11 +69,11 @@ describe("FutureElo confidence curve", () => {
   });
 
   it("gives zero confidence with no data", () => {
-    const result = futureElo.getWinFractionWithConfidence({
-      wins: 1,
-      loss: 1,
-      probabilityLookup,
-      confidenceConfig: { additions: 0, products: 0, halfLifePoints: 50, curveExponent: 1 },
+    const result = Predictions.getWinFractionWithConfidence(1, 1, probabilityLookup, {
+      additions: 0,
+      products: 0,
+      halfLifePoints: 50,
+      curveExponent: 1,
     });
 
     expect(result.confidence).toBe(0);

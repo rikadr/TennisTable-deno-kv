@@ -1,5 +1,6 @@
 import { Elo } from "./elo";
 import { Game } from "./event-store/projectors/games-projector";
+import { Predictions } from "./predictions";
 import { TennisTable } from "./tennis-table";
 
 export class Simulations {
@@ -37,7 +38,7 @@ export class Simulations {
     expected: { id: string; rank: number; score: number }[];
   } {
     const currentLeaderboard = this.parent.leaderboard.getLeaderboard();
-    const predictedGames = this.parent.futureElo.simulatedGamesForAGivenInputOfGames(this.parent.games);
+    const predictedGames = this.parent.predictions.generateSimulatedGames(20);
 
     const simResultMap = new Map<string, number[]>();
 
@@ -113,7 +114,8 @@ export class Simulations {
 
     for (const gameTime of sortedPlayerGameTimes.toReversed()) {
       const relevantGames = allGames.filter((g) => g.playedAt <= gameTime);
-      const predictedGames = this.parent.futureElo.simulatedGamesForAGivenInputOfGames(relevantGames);
+      const predictions = new Predictions(this.parent, gameTime, relevantGames);
+      const predictedGames = predictions.generateSimulatedGames(20);
 
       const playerElos: number[] = [];
 

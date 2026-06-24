@@ -50,7 +50,7 @@ describe("TennisTable Basic sanity tests", () => {
       expect(tennisTable.pvp).toBeDefined();
       expect(tennisTable.tournaments).toBeDefined();
       expect(tennisTable.simulations).toBeDefined();
-      expect(tennisTable.futureElo).toBeDefined();
+      expect(tennisTable.predictions).toBeDefined();
       expect(tennisTable.individualPoints).toBeDefined();
       expect(tennisTable.achievements).toBeDefined();
     });

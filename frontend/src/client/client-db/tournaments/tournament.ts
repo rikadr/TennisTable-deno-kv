@@ -311,7 +311,7 @@ export class Tournament {
 
   simulateGameFn(state: TennisTable): SimulateGameFn {
     return function fn(player1: string, player2: string) {
-      const fraction = state.futureElo.getPredictedFractionForTwoPlayers(player1, player2);
+      const fraction = state.predictions.getPredictedFraction(player1, player2);
 
       if (!fraction) {
         // No prediction available, default to 50/50 with low confidence

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { ProfilePicture } from "./profile-picture";
 import { fmtNum } from "../../common/number-utils";
-import { Fraction } from "../../client/client-db/future-elo";
+import { Fraction, Predictions } from "../../client/client-db/predictions";
 import { classNames } from "../../common/class-names";
 import { Link } from "react-router-dom";
 
@@ -25,26 +25,21 @@ export const PlayerPredictionsList = ({ playerId }: Props) => {
   };
 
   const context = useEventDbContext();
-  // Pass the focus player so unranked players still get paired against every ranked player and
-  // receive direct + intermediary fractions, just like a ranked player.
-  context.futureElo.calculatePlayerFractionsForToday({ focusPlayerId: playerId });
-
   const leaderboard = context.leaderboard.getLeaderboard();
+  const predictions = context.predictions;
 
-  const playersData = context.futureElo.playersMap.get(playerId)!;
-
-  // List every currently ranked player as an opponent (ordered by rank), regardless of whether the
-  // focus player has played them, so the breakdown matches what a ranked player sees.
-  const opponents = leaderboard.rankedPlayers
-    .filter((r) => r.id !== playerId && playersData.oponentsMap.has(r.id))
-    .map((r) => [r.id, playersData.oponentsMap.get(r.id)!] as const);
+  const opponents = leaderboard.rankedPlayers.filter((r) => r.id !== playerId);
 
   return (
     <div className="space-y-2">
-      {opponents.map(([oponentId, oponent]) => {
+      {opponents.map((opponent) => {
+        const oponentId = opponent.id;
         const isExpanded = expandedPlayers.has(oponentId);
-        const fractions = [oponent.directFraction, oponent.oneLayerFraction, oponent.twoLayerFraction];
-        const combined = context.futureElo.combinePrioritizedFractions(fractions);
+        const directFraction = predictions.getDirectFraction(playerId, oponentId);
+        const oneLayerFraction = predictions.getOneLayerFraction(playerId, oponentId);
+        const twoLayerFraction = predictions.getTwoLayerFraction(playerId, oponentId);
+        const fractions = [directFraction, oneLayerFraction, twoLayerFraction];
+        const combined = Predictions.combinePrioritizedFractions(fractions);
         const winChance = combined?.fraction || 0;
         const confidence = combined?.confidence || 0;
 
@@ -142,21 +137,21 @@ export const PlayerPredictionsList = ({ playerId }: Props) => {
                         switch (index) {
                           case 0:
                             {
-                              const game = context.futureElo.getDirectGameFraction(playerId, oponentId);
+                              const game = predictions.getDirectGameStats(playerId, oponentId);
                               fraction = game.fraction;
                               lable = "Games";
                             }
                             break;
                           case 1:
                             {
-                              const game = context.futureElo.getDirectSetFraction(playerId, oponentId);
+                              const game = predictions.getDirectSetStats(playerId, oponentId);
                               fraction = game.fraction;
                               lable = "Sets -> game";
                             }
                             break;
                           case 2:
                             {
-                              const game = context.futureElo.getDirectPointFraction(playerId, oponentId);
+                              const game = predictions.getDirectPointStats(playerId, oponentId);
                               fraction = game.fraction;
                               lable = "Points -> game";
                             }
@@ -199,7 +194,7 @@ export const PlayerPredictionsList = ({ playerId }: Props) => {
                         switch (index) {
                           case 0:
                             {
-                              const game = context.futureElo.getDirectGameFraction(playerId, oponentId);
+                              const game = predictions.getDirectGameStats(playerId, oponentId);
                               won = game.weightedWins;
                               lost = game.weightedLost;
                               lable = "Games";
@@ -207,7 +202,7 @@ export const PlayerPredictionsList = ({ playerId }: Props) => {
                             break;
                           case 1:
                             {
-                              const game = context.futureElo.getDirectSetFraction(playerId, oponentId);
+                              const game = predictions.getDirectSetStats(playerId, oponentId);
                               won = game.weightedWins;
                               lost = game.weightedLost;
                               lable = "Sets";
@@ -215,7 +210,7 @@ export const PlayerPredictionsList = ({ playerId }: Props) => {
                             break;
                           case 2:
                             {
-                              const game = context.futureElo.getDirectPointFraction(playerId, oponentId);
+                              const game = predictions.getDirectPointStats(playerId, oponentId);
                               won = game.weightedWins;
                               lost = game.weightedLost;
                               lable = "Points";
@@ -262,7 +257,7 @@ export const PlayerPredictionsList = ({ playerId }: Props) => {
                         switch (index) {
                           case 0:
                             {
-                              const game = context.futureElo.getDirectGameFraction(playerId, oponentId);
+                              const game = predictions.getDirectGameStats(playerId, oponentId);
                               won = game.won;
                               lost = game.lost;
                               lable = "Games";
@@ -270,7 +265,7 @@ export const PlayerPredictionsList = ({ playerId }: Props) => {
                             break;
                           case 1:
                             {
-                              const game = context.futureElo.getDirectSetFraction(playerId, oponentId);
+                              const game = predictions.getDirectSetStats(playerId, oponentId);
                               won = game.won;
                               lost = game.lost;
                               lable = "Sets";
@@ -278,7 +273,7 @@ export const PlayerPredictionsList = ({ playerId }: Props) => {
                             break;
                           case 2:
                             {
-                              const game = context.futureElo.getDirectPointFraction(playerId, oponentId);
+                              const game = predictions.getDirectPointStats(playerId, oponentId);
                               won = game.won;
                               lost = game.lost;
                               lable = "Points";
