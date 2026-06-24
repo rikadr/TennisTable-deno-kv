@@ -32,6 +32,16 @@
   --color-tertiary-background: 243,255,7;
 }
 
+.theme-stealth {
+  --color-primary-text: 128,128,128;
+  --color-primary-background: 0,0,0;
+  --color-secondary-text: 115,115,115;
+  --color-secondary-background: 23,23,23;
+  --color-tertiary-text: 102,102,102;
+  --color-tertiary-background: 38,38,38;
+  --background-image-url: none;
+}
+
 .theme-skimore {
   --color-primary-text: 31,42,68;
   --color-primary-background: 183,220,225;

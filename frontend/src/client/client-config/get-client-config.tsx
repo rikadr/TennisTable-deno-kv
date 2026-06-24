@@ -61,6 +61,7 @@ export enum Theme {
   DEFAULT = "default",
   HALLOWEEN = "halloween",
   EASTER = "easter",
+  STEALTH = "stealth",
   CLIENT_SKIMORE = "skimore",
   CLIENT_ASPLAN_VIAK = "asplanviak",
   CLIENT_DEEPINSIGHT = "deepinsight",
