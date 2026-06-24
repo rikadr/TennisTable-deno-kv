@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import {
   CartesianGrid,
   Line,
@@ -14,6 +14,7 @@ import { NameType, ValueType } from "recharts/types/component/DefaultTooltipCont
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { relativeTimeString } from "../../common/date-utils";
 import { Link, useSearchParams } from "react-router-dom";
+import { usePredictionsHistoryWorker } from "../../hooks/use-predictions-history-worker";
 
 import { ProfilePicture } from "./profile-picture";
 
@@ -34,25 +35,34 @@ export const PlayerPredictionsHistory = ({ playerId }: Props) => {
     });
   };
 
-  const history = useMemo(
-    () => context.predictionsHistory.getHistoryForPlayer(playerId),
-    [context.predictionsHistory, playerId],
-  );
+  const { startComputation, entryByTime, times, isDone, progress } = usePredictionsHistoryWorker();
+
+  useEffect(() => {
+    startComputation(playerId);
+  }, [startComputation, playerId]);
 
   const leaderboard = context.leaderboard.getLeaderboard();
 
   const availableOpponents = useMemo(() => {
-    const opponentIds = new Set<string>();
-    history.forEach((entry) => {
-      Object.keys(entry.oponents).forEach((opId) => {
-        leaderboard.rankedPlayers.find((r) => r.id === opId) && opponentIds.add(opId);
-      });
-    });
-    return Array.from(opponentIds).sort((a, b) => context.playerName(a).localeCompare(context.playerName(b)));
-  }, [history, context, leaderboard.rankedPlayers]);
+    return leaderboard.rankedPlayers
+      .filter((r) => r.id !== playerId)
+      .map((r) => r.id)
+      .sort((a, b) => context.playerName(a).localeCompare(context.playerName(b)));
+  }, [leaderboard.rankedPlayers, playerId, context]);
 
   const historicalData = useMemo(() => {
-    return history.map((entry) => {
+    return times.map((time) => {
+      const date = new Date(time);
+      const isToday = date.toDateString() === new Date().toDateString();
+      const timeStr = date.toLocaleTimeString("no-NO", { hour: "2-digit", minute: "2-digit" });
+      const dateStr = date.toLocaleDateString("no-NO", { month: "short", day: "numeric" });
+      const name = isToday ? `Today ${timeStr}` : `${dateStr} ${timeStr}`;
+
+      const entry = entryByTime.get(time);
+      if (!entry) {
+        return { time, name, winChance: null, confidence: null, gamesCount: 0 };
+      }
+
       let winChance = 0;
       let confidence = 0;
       let gamesCount = 0;
@@ -70,22 +80,17 @@ export const PlayerPredictionsHistory = ({ playerId }: Props) => {
         }
       }
 
-      const date = new Date(entry.time);
-      const isToday = date.toDateString() === new Date().toDateString();
-      const timeStr = date.toLocaleTimeString("no-NO", { hour: "2-digit", minute: "2-digit" });
-      const dateStr = date.toLocaleDateString("no-NO", { month: "short", day: "numeric" });
-
       return {
-        time: entry.time,
-        name: isToday ? `Today ${timeStr}` : `${dateStr} ${timeStr}`,
+        time,
+        name,
         winChance: winChance * 100,
         confidence: confidence * 100,
         gamesCount,
       };
     });
-  }, [history, selectedTargetId]);
+  }, [times, entryByTime, selectedTargetId]);
 
-  if (history.length === 0) {
+  if (isDone && entryByTime.size === 0) {
     return (
       <div className="w-full h-64 flex items-center justify-center bg-primary-background/50 rounded-xl border border-white/10 text-primary-text/50 italic">
         No prediction history available for this player.
@@ -150,6 +155,15 @@ export const PlayerPredictionsHistory = ({ playerId }: Props) => {
         </div>
       </div>
 
+      {!isDone && (
+        <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden mb-2">
+          <div
+            className="h-full bg-blue-500/50 transition-all duration-300"
+            style={{ width: `${progress * 100}%` }}
+          />
+        </div>
+      )}
+
       <div className="w-full h-[350px] md:h-[450px]">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={historicalData} margin={{ top: 5, right: 10, left: -15, bottom: 5 }}>
@@ -187,7 +201,8 @@ export const PlayerPredictionsHistory = ({ playerId }: Props) => {
               dataKey="winChance"
               stroke="rgb(var(--color-primary-text))"
               strokeWidth={3}
-              animationDuration={300}
+              animationDuration={250}
+              connectNulls
               dot={(props: any) => {
                 const { cx, cy, payload, index } = props;
                 if (payload.gamesCount > 0) {
@@ -212,6 +227,7 @@ export const PlayerPredictionsHistory = ({ playerId }: Props) => {
               stroke="#fb8c00"
               strokeWidth={2}
               strokeDasharray="5 5"
+              connectNulls
               dot={(props: any) => {
                 const { cx, cy, payload, index } = props;
                 if (payload.gamesCount > 0) {
@@ -229,7 +245,7 @@ export const PlayerPredictionsHistory = ({ playerId }: Props) => {
                 }
                 return <g key={`conf-dot-empty-${index}`} />;
               }}
-              animationDuration={300}
+              animationDuration={250}
               opacity={0.6}
             />
           </LineChart>
@@ -237,7 +253,8 @@ export const PlayerPredictionsHistory = ({ playerId }: Props) => {
       </div>
 
       {historicalData.length > 0 && (() => {
-        const latest = historicalData[historicalData.length - 1];
+        const latest = historicalData.findLast((d) => d.winChance !== null);
+        if (!latest || latest.winChance === null || latest.confidence === null) return null;
         return (
           <div className="mt-4 flex items-center gap-4 px-2 py-3 rounded-xl bg-white/5 border border-white/10">
             <span className="text-primary-text/50 text-xs font-medium">Current</span>

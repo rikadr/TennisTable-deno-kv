@@ -21,11 +21,14 @@ export class PredictionsHistory {
     this.parent = parent;
   }
 
-  getHistoryForPlayer(playerId: string): PredictionHistoryEntry[] {
+  computeHistoryForPlayer(
+    playerId: string,
+    callback: (data: { entry: PredictionHistoryEntry; progress: number }) => void,
+    timesCallback?: (times: number[]) => void,
+  ): void {
     const playersFirstGame = this.parent.games.find((g) => g.winner === playerId || g.loser === playerId);
-    if (!playersFirstGame) {
-      return [];
-    }
+    if (!playersFirstGame) return;
+
     const startTime = playersFirstGame.playedAt;
     const endTime = Date.now();
     const duration = endTime - startTime;
@@ -43,12 +46,15 @@ export class PredictionsHistory {
     }
 
     times.push(endTime);
+    timesCallback?.(times);
 
-    const output: PredictionHistoryEntry[] = [];
-    let lastTime = 0;
+    const totalPoints = times.length;
+    let processed = 0;
 
-    for (const time of times) {
-      const periodStart = lastTime;
+    for (let i = times.length - 1; i >= 0; i--) {
+      const time = times[i];
+      const periodStart = i > 0 ? times[i - 1] : 0;
+
       const games = this.parent.games.filter((g) => g.playedAt <= time);
       const gamesInPeriod = this.parent.games.filter((g) => g.playedAt > periodStart && g.playedAt <= time);
       const gamesPlayed = gamesInPeriod.filter((g) => g.winner === playerId || g.loser === playerId).length;
@@ -87,17 +93,17 @@ export class PredictionsHistory {
       const overAllWinChance = rankedCount === 0 ? 0 : totalWinChanceSum / rankedCount;
       const overAllConfidence = rankedCount === 0 ? 0 : totalConfidenceSum / rankedCount;
 
-      output.push({
-        time,
-        overAllWinChance,
-        overAllConfidence,
-        oponents: oponentsOutput,
-        gamesPlayed,
+      processed++;
+      callback({
+        entry: {
+          time,
+          overAllWinChance,
+          overAllConfidence,
+          oponents: oponentsOutput,
+          gamesPlayed,
+        },
+        progress: processed / totalPoints,
       });
-
-      lastTime = time;
     }
-
-    return output;
   }
 }

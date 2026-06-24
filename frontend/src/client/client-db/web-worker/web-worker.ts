@@ -1,4 +1,5 @@
 import { EventType } from "../event-store/event-types";
+import { PredictionHistoryEntry } from "../predictions-history";
 import { TennisTable } from "../tennis-table";
 import { TournamentPredictionResult } from "../tournaments/prediction";
 
@@ -12,7 +13,11 @@ export type WorkerMessage =
     }
   | { type: "tournament-prediction-times"; data: { times: number[]; progress: number } }
   | { type: "tournament-prediction-data"; data: { result: TournamentPredictionResult; progress: number } }
-  | { type: "tournament-prediction-complete" };
+  | { type: "tournament-prediction-complete" }
+  | { type: "start-predictions-history"; data: { playerId: string; events: EventType[] } }
+  | { type: "predictions-history-times"; data: { times: number[] } }
+  | { type: "predictions-history-data"; data: { entry: PredictionHistoryEntry; progress: number } }
+  | { type: "predictions-history-complete" };
 
 // eslint-disable-next-line no-restricted-globals
 const scope = self as unknown as DedicatedWorkerGlobalScope;
@@ -50,6 +55,16 @@ function handleWorkerMessage(message: WorkerMessage) {
         message.data.numSimulations,
       );
       setTimeout(() => postWorkerMessage({ type: "tournament-prediction-complete" }), 1000);
+      break;
+
+    case "start-predictions-history":
+      const tennisTableForHistory = new TennisTable({ events: message.data.events });
+      tennisTableForHistory.predictionsHistory.computeHistoryForPlayer(
+        message.data.playerId,
+        (data) => postWorkerMessage({ type: "predictions-history-data", data }),
+        (times) => postWorkerMessage({ type: "predictions-history-times", data: { times } }),
+      );
+      setTimeout(() => postWorkerMessage({ type: "predictions-history-complete" }), 1000);
       break;
   }
 }
