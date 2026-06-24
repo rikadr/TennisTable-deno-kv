@@ -445,11 +445,15 @@ export class Predictions {
   // Simulated game generation
   // ---------------------------------------------------------------------------
 
-  generateSimulatedGames(gamesPerPairing: number): Game[] {
+  generateSimulatedGames(targetGamesPerPlayer = 400): Game[] {
     const rankedPlayerIds = this.getAllPlayerIds().filter((id) => {
       const isActive = this.parent.eventStore.playersProjector.getPlayer(id)?.active === true;
       return this.getPlayerTotalGames(id) >= this.parent.client.gameLimitForRanked && isActive;
     });
+
+    if (rankedPlayerIds.length < 2) return [];
+
+    const gamesPerPairing = Math.max(1, Math.round(targetGamesPerPlayer / (rankedPlayerIds.length - 1)));
 
     const predictedGamesTemp: { winner: string; loser: string }[][] = [];
 

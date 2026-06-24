@@ -38,7 +38,7 @@ export class Simulations {
     expected: { id: string; rank: number; score: number }[];
   } {
     const currentLeaderboard = this.parent.leaderboard.getLeaderboard();
-    const predictedGames = this.parent.predictions.generateSimulatedGames(20);
+    const predictedGames = this.parent.predictions.generateSimulatedGames();
 
     const simResultMap = new Map<string, number[]>();
 
@@ -115,7 +115,7 @@ export class Simulations {
     for (const gameTime of sortedPlayerGameTimes.toReversed()) {
       const relevantGames = allGames.filter((g) => g.playedAt <= gameTime);
       const predictions = new Predictions(this.parent, gameTime, relevantGames);
-      const predictedGames = predictions.generateSimulatedGames(20);
+      const predictedGames = predictions.generateSimulatedGames();
 
       const playerElos: number[] = [];
 
