@@ -2,6 +2,7 @@ import React from "react";
 import { useSearchParams } from "react-router-dom";
 import { useLiveGameQuery } from "./use-live-game";
 import { useEventDbContext } from "../../wrappers/event-db-context";
+import { getServeInfo } from "../../common/serve-tracker";
 
 const POLL_FALLBACK_MS = 1_000;
 const CHROMA_GREEN = "#00b140";
@@ -25,6 +26,7 @@ export const LiveGameOverlay: React.FC = () => {
 
   const p1Name = context.playerName(state.player1Id);
   const p2Name = context.playerName(state.player2Id);
+  const { server } = getServeInfo(state.currentSet, state.firstServer ?? 1);
 
   return (
     <div
@@ -34,7 +36,8 @@ export const LiveGameOverlay: React.FC = () => {
       <div className="relative flex flex-col items-center gap-0" style={{ zoom }}>
         {/* Sets bar */}
         <div className="flex rounded-lg overflow-hidden ">
-          <div className="bg-white text-gray-800 px-4 py-2 flex items-center min-w-[90px]">
+          <div className="bg-white text-gray-800 px-4 py-2 flex items-center min-w-[90px] gap-1">
+            {server === 1 && <span className="text-sm">🏓</span>}
             <span className="text-sm font-semibold truncate">{p1Name}</span>
           </div>
           <div
@@ -45,8 +48,9 @@ export const LiveGameOverlay: React.FC = () => {
             <span className={`text-sm font-bold opacity-70 ${DASH_W} text-center`}>-</span>
             <span className={`text-2xl font-black ${DIGIT_W} text-left`}>{state.setsWon.player2}</span>
           </div>
-          <div className="bg-white text-gray-800 px-4 py-2 flex items-center min-w-[90px] justify-end">
+          <div className="bg-white text-gray-800 px-4 py-2 flex items-center min-w-[90px] justify-end gap-1">
             <span className="text-sm font-semibold truncate">{p2Name}</span>
+            {server === 2 && <span className="text-sm">🏓</span>}
           </div>
         </div>
 

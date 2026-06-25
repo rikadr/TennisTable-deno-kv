@@ -16,6 +16,8 @@ export type LiveGameState = {
   };
   currentSet: SetPoint;
   completedSets: SetPoint[];
+  /** Which player (1 or 2) served the first point of the current set. */
+  firstServer: 1 | 2;
   startedAt: number | null;
   finishedAt: number | null;
   updatedAt: number;

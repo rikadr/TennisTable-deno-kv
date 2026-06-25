@@ -12,6 +12,8 @@ import { useTennisParams } from "../../hooks/use-tennis-params";
 import { classNames } from "../../common/class-names";
 import { ProfilePicture } from "../player/profile-picture";
 import { stringToColor } from "../../common/string-to-color";
+import { getServeInfo, Server } from "../../common/serve-tracker";
+import { ServeTrackerDisplay } from "../../common/serve-tracker-display";
 
 interface SetPoint {
   player1: number;
@@ -45,6 +47,7 @@ export const TrackGamePage: React.FC = () => {
     player1: 0,
     player2: 0,
   });
+  const [firstServer, setFirstServer] = useState<Server>(1);
   const [validationError, setValidationError] = useState<string>("");
   const [gameSuccessfullyAdded, setGameSuccessfullyAdded] = useState(false);
 
@@ -77,6 +80,8 @@ export const TrackGamePage: React.FC = () => {
     }));
 
     setCurrentSetScore({ player1: 0, player2: 0 });
+    // Alternate who serves first in the next set, per table tennis convention.
+    setFirstServer((prev) => (prev === 1 ? 2 : 1));
   };
 
   const startMatch = () => {
@@ -184,6 +189,7 @@ export const TrackGamePage: React.FC = () => {
       setPoints: [],
     });
     setCurrentSetScore({ player1: 0, player2: 0 });
+    setFirstServer(1);
     setValidationError("");
   };
 
@@ -216,6 +222,9 @@ export const TrackGamePage: React.FC = () => {
     const canEndMatch =
       (matchData.setPoints?.length || 0) > 0 && isSetEmpty && matchData.setsWon.player1 !== matchData.setsWon.player2;
 
+    // Serve tracker: each player serves 2 points in a row, then it switches.
+    const { server: currentServer } = getServeInfo(currentSetScore, firstServer);
+
     return (
       <div className="text-black p-4 pt-0">
         <div className="max-w-sm mx-auto">
@@ -246,6 +255,17 @@ export const TrackGamePage: React.FC = () => {
               <h2 className="text-gray-400 text-xs uppercase tracking-widest font-bold mt-4">
                 Set {(matchData.setPoints?.length || 0) + 1}
               </h2>
+
+              {/* Serve Tracker */}
+              <div className="mt-3">
+                <ServeTrackerDisplay
+                  currentSet={currentSetScore}
+                  firstServer={firstServer}
+                  player1Name={context.playerName(player1)}
+                  player2Name={context.playerName(player2)}
+                  onSelectFirstServer={setFirstServer}
+                />
+              </div>
             </div>
 
             {/* Score Display */}
@@ -254,6 +274,7 @@ export const TrackGamePage: React.FC = () => {
               {/* Player 1 */}
               <div className="bg-blue-50 rounded-lg p-2">
                 <h3 className="text-sm font-semibold text-gray-700 mb-1 text-center truncate">
+                  {currentServer === 1 && <span className="mr-1">🏓</span>}
                   {context.playerName(player1)}
                 </h3>
                 <div className="flex flex-col items-center justify-center gap-2">
@@ -286,6 +307,7 @@ export const TrackGamePage: React.FC = () => {
               {/* Player 2 */}
               <div className="bg-purple-50 rounded-lg p-2">
                 <h3 className="text-sm font-semibold text-gray-700 mb-1 text-center truncate">
+                  {currentServer === 2 && <span className="mr-1">🏓</span>}
                   {context.playerName(player2)}
                 </h3>
                 <div className="flex flex-col items-center justify-center gap-2">
