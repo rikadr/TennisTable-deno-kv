@@ -22,6 +22,8 @@ import {
 import { emptyLiveGame, LiveGameSetPoint, LiveGameState } from "./live-game-types";
 import { CompletedSetsList } from "./completed-sets-list";
 import ConfettiExplosion from "react-confetti-explosion";
+import { Server } from "../../common/serve-tracker";
+import { ServeTrackerDisplay } from "../../common/serve-tracker-display";
 
 type Stage = "scoring" | "confirm";
 
@@ -42,7 +44,9 @@ export const LiveGameAdminPage: React.FC = () => {
 
   useEffect(() => {
     if (localState === null && liveGameQuery.isSuccess) {
-      setLocalState(liveGameQuery.data ?? emptyLiveGame);
+      // Spread over emptyLiveGame so older games without newer fields (e.g.
+      // firstServer) pick up sensible defaults.
+      setLocalState(liveGameQuery.data ? { ...emptyLiveGame, ...liveGameQuery.data } : emptyLiveGame);
     }
   }, [localState, liveGameQuery.isSuccess, liveGameQuery.data]);
 
@@ -78,10 +82,15 @@ export const LiveGameAdminPage: React.FC = () => {
       setsWon: { player1: 0, player2: 0 },
       currentSet: { player1: 0, player2: 0 },
       completedSets: [],
+      firstServer: localState!.firstServer,
       startedAt: Date.now(),
       finishedAt: null,
       updatedAt: Date.now(),
     });
+  }
+
+  function setFirstServer(player: Server) {
+    pushState({ ...localState!, firstServer: player });
   }
 
   function addPoint(player: 1 | 2) {
@@ -115,6 +124,8 @@ export const LiveGameAdminPage: React.FC = () => {
       },
       completedSets: [...localState!.completedSets, { ...localState!.currentSet }],
       currentSet: { player1: 0, player2: 0 },
+      // Alternate who serves first in the next set, per table tennis convention.
+      firstServer: localState!.firstServer === 1 ? 2 : 1,
     });
   }
 
@@ -125,6 +136,7 @@ export const LiveGameAdminPage: React.FC = () => {
       setsWon: { player1: 0, player2: 0 },
       currentSet: { player1: 0, player2: 0 },
       completedSets: [],
+      firstServer: 1,
       updatedAt: Date.now(),
     });
   }
@@ -275,6 +287,16 @@ export const LiveGameAdminPage: React.FC = () => {
             <h2 className="text-gray-400 text-xs uppercase tracking-widest font-bold mt-4 text-center">
               Set {localState.completedSets.length + 1}
             </h2>
+
+            <div className="mt-3">
+              <ServeTrackerDisplay
+                currentSet={localState.currentSet}
+                firstServer={localState.firstServer}
+                player1Name={context.playerName(localState.player1Id)}
+                player2Name={context.playerName(localState.player2Id)}
+                onSelectFirstServer={setFirstServer}
+              />
+            </div>
           </div>
 
           <div className="bg-white rounded-xl shadow-lg p-4 text-black">

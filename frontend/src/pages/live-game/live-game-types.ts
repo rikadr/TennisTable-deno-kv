@@ -12,6 +12,8 @@ export type LiveGameState = {
   };
   currentSet: LiveGameSetPoint;
   completedSets: LiveGameSetPoint[];
+  /** Which player (1 or 2) served the first point of the current set. */
+  firstServer: 1 | 2;
   startedAt: number | null;
   finishedAt: number | null;
   updatedAt: number;
@@ -23,6 +25,7 @@ export const emptyLiveGame: LiveGameState = {
   setsWon: { player1: 0, player2: 0 },
   currentSet: { player1: 0, player2: 0 },
   completedSets: [],
+  firstServer: 1,
   startedAt: null,
   finishedAt: null,
   updatedAt: 0,

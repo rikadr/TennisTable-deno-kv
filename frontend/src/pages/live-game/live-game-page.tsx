@@ -7,6 +7,8 @@ import { Link } from "react-router-dom";
 import { session } from "../../services/auth";
 import { CompletedSetsList } from "./completed-sets-list";
 import { LiveGameSetPoint } from "./live-game-types";
+import { Server } from "../../common/serve-tracker";
+import { ServeTrackerDisplay } from "../../common/serve-tracker-display";
 
 // Fallback poll in case the WebSocket drops — primary updates come from
 // the LIVE_GAME broadcast handled in WebSocketRefetcher.
@@ -65,6 +67,7 @@ export const LiveGamePage: React.FC = () => {
           setsWon={state.setsWon}
           currentSet={state.currentSet}
           completedSets={state.completedSets}
+          firstServer={state.firstServer ?? 1}
           player1Name={context.playerName(state.player1Id)}
           player2Name={context.playerName(state.player2Id)}
         />
@@ -90,6 +93,7 @@ type ScoreboardProps = {
   setsWon: { player1: number; player2: number };
   currentSet: LiveGameSetPoint;
   completedSets: LiveGameSetPoint[];
+  firstServer: Server;
   player1Name: string;
   player2Name: string;
 };
@@ -100,6 +104,7 @@ const LiveScoreboard: React.FC<ScoreboardProps> = ({
   setsWon,
   currentSet,
   completedSets,
+  firstServer,
   player1Name,
   player2Name,
 }) => {
@@ -149,6 +154,14 @@ const LiveScoreboard: React.FC<ScoreboardProps> = ({
             <h3 className="text-sm font-semibold text-gray-700 mb-1 truncate">{player2Name}</h3>
             <div className="text-7xl font-bold text-purple-600">{currentSet.player2}</div>
           </div>
+        </div>
+        <div className="mt-4 flex justify-center">
+          <ServeTrackerDisplay
+            currentSet={currentSet}
+            firstServer={firstServer}
+            player1Name={player1Name}
+            player2Name={player2Name}
+          />
         </div>
       </div>
 

@@ -4,6 +4,7 @@ import { UseQueryResult } from "@tanstack/react-query";
 import { LiveGameState } from "../live-game/live-game-types";
 import { ProfilePicture } from "../player/profile-picture";
 import { useEventDbContext } from "../../wrappers/event-db-context";
+import { getServeInfo } from "../../common/serve-tracker";
 
 const ONE_HOUR_MS = 60 * 60 * 1000;
 
@@ -21,6 +22,7 @@ export const LiveGameCard: React.FC<Props> = ({ liveGameQuery }) => {
 
   const player1Won = state.setsWon.player1 > state.setsWon.player2;
   const winnerName = player1Won ? context.playerName(state.player1Id) : context.playerName(state.player2Id);
+  const server = isActive ? getServeInfo(state.currentSet, state.firstServer ?? 1).server : null;
 
   return (
     <Link
@@ -48,7 +50,10 @@ export const LiveGameCard: React.FC<Props> = ({ liveGameQuery }) => {
       <div className="flex items-center justify-between gap-2">
         <div className="flex flex-col items-center gap-1 min-w-0">
           <ProfilePicture playerId={state.player1Id!} size={32} border={2} />
-          <span className="font-semibold text-sm truncate max-w-[100px]">{context.playerName(state.player1Id)}</span>
+          <span className="font-semibold text-sm truncate max-w-[100px]">
+            {server === 1 && "🏓 "}
+            {context.playerName(state.player1Id)}
+          </span>
         </div>
         <div className="flex flex-col items-center shrink-0">
           <span className="text-[10px] font-bold uppercase tracking-wider opacity-70">Sets</span>
@@ -70,7 +75,10 @@ export const LiveGameCard: React.FC<Props> = ({ liveGameQuery }) => {
         </div>
         <div className="flex flex-col items-center gap-1 min-w-0">
           <ProfilePicture playerId={state.player2Id!} size={32} border={2} />
-          <span className="font-semibold text-sm truncate max-w-[100px]">{context.playerName(state.player2Id)}</span>
+          <span className="font-semibold text-sm truncate max-w-[100px]">
+            {server === 2 && "🏓 "}
+            {context.playerName(state.player2Id)}
+          </span>
         </div>
       </div>
     </Link>
