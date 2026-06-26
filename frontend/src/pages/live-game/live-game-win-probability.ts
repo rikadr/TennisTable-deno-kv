@@ -140,65 +140,89 @@ function derivePerPointWinChance(input: LiveWinPredictionInput): Fraction {
   return combined;
 }
 
-/** Play a single set to completion from (a, b); returns the winning player (1 or 2). */
-function simulateSet(perPoint: number, startA: number, startB: number, random: () => number): 1 | 2 {
-  let a = startA;
-  let b = startB;
-  // eslint-disable-next-line no-constant-condition
-  while (true) {
-    if (a >= POINTS_TO_WIN_SET && a - b >= 2) return 1;
-    if (b >= POINTS_TO_WIN_SET && b - a >= 2) return 2;
-    if (random() < perPoint) a++;
-    else b++;
-  }
-}
+type SimulationSummary = {
+  /** Fraction of simulations player 1 won. */
+  winRate: number;
+  /** Average number of points still to be played before the match ends. */
+  avgRemainingPoints: number;
+};
 
-/** Simulate the rest of the match once from the current score; returns true if player 1 wins. */
-function simulateMatchOnce(
+/**
+ * Simulate the rest of the match many times from a given score. Returns the win
+ * rate and the average number of points left to play (used as a measure of how
+ * close the match is to finishing).
+ */
+function runSimulations(
   perPoint: number,
   setsWon1: number,
   setsWon2: number,
   currentA: number,
   currentB: number,
+  simulations: number,
   random: () => number,
-): boolean {
-  let s1 = setsWon1;
-  let s2 = setsWon2;
-  let a = currentA;
-  let b = currentB;
-  while (s1 < SETS_TO_WIN_MATCH && s2 < SETS_TO_WIN_MATCH) {
-    if (simulateSet(perPoint, a, b, random) === 1) s1++;
-    else s2++;
-    a = 0;
-    b = 0;
+): SimulationSummary {
+  let wins = 0;
+  let totalRemainingPoints = 0;
+
+  for (let i = 0; i < simulations; i++) {
+    let s1 = setsWon1;
+    let s2 = setsWon2;
+    let a = currentA;
+    let b = currentB;
+    let points = 0;
+
+    while (s1 < SETS_TO_WIN_MATCH && s2 < SETS_TO_WIN_MATCH) {
+      // Play one set to completion, counting the points played.
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        if (a >= POINTS_TO_WIN_SET && a - b >= 2) {
+          s1++;
+          break;
+        }
+        if (b >= POINTS_TO_WIN_SET && b - a >= 2) {
+          s2++;
+          break;
+        }
+        if (random() < perPoint) a++;
+        else b++;
+        points++;
+      }
+      a = 0;
+      b = 0;
+    }
+
+    if (s1 >= SETS_TO_WIN_MATCH) wins++;
+    totalRemainingPoints += points;
   }
-  return s1 >= SETS_TO_WIN_MATCH;
+
+  return { winRate: wins / simulations, avgRemainingPoints: totalRemainingPoints / simulations };
 }
 
 export function computeLiveWinPrediction(input: LiveWinPredictionInput): LiveWinPrediction {
-  const { setsWon, currentSet, preGameWinChance, preGameConfidence } = input;
+  const { setsWon, currentSet } = input;
   const simulations = input.simulations ?? DEFAULT_SIMULATIONS;
   const random = input.random ?? Math.random;
 
   const perPoint = derivePerPointWinChance(input);
 
-  let wins = 0;
-  for (let i = 0; i < simulations; i++) {
-    if (simulateMatchOnce(perPoint.fraction, setsWon.player1, setsWon.player2, currentSet.player1, currentSet.player2, random)) {
-      wins++;
-    }
-  }
-  const player1WinChance = wins / simulations;
+  const current = runSimulations(
+    perPoint.fraction,
+    setsWon.player1,
+    setsWon.player2,
+    currentSet.player1,
+    currentSet.player2,
+    simulations,
+    random,
+  );
+  const player1WinChance = current.winRate;
 
   // Confidence rises from the per-point estimate's data confidence toward 100 %
-  // as the match outcome becomes determined (outcome-variance collapse relative
-  // to the pre-game prediction). At 0–0 with no points this is the pre-game
-  // confidence.
-  const baseMatchChance = preGameConfidence > 0 ? preGameWinChance : 0.5;
-  const baseVariance = Math.max(baseMatchChance * (1 - baseMatchChance), 1e-6);
-  const currentVariance = player1WinChance * (1 - player1WinChance);
-  const resolution = clamp(1 - currentVariance / baseVariance, 0, 1);
-  const confidence = perPoint.confidence + (1 - perPoint.confidence) * resolution;
+  // as the match nears its end — measured by how few points remain to be played
+  // relative to a full match from 0–0 (NOT by how lopsided the win % is, so a
+  // tied deciding set is still high-confidence: we are confident it is close).
+  const fullMatch = runSimulations(perPoint.fraction, 0, 0, 0, 0, simulations, random);
+  const matchProgress = clamp(1 - current.avgRemainingPoints / Math.max(fullMatch.avgRemainingPoints, 1), 0, 1);
+  const confidence = perPoint.confidence + (1 - perPoint.confidence) * matchProgress;
 
   return { player1WinChance, confidence, perPointWinChance: perPoint.fraction };
 }

@@ -93,7 +93,7 @@ describe("computeLiveWinPrediction", () => {
     expect(decided.confidence).toBe(1);
   });
 
-  it("keeps a genuine coin-flip decider uncertain", () => {
+  it("keeps a coin-flip decider's win chance even but stays confident it is close", () => {
     const decider = computeLiveWinPrediction({
       preGameWinChance: 0.5,
       preGameConfidence: 0.5,
@@ -106,8 +106,11 @@ describe("computeLiveWinPrediction", () => {
       simulations: 20000,
       random: seededRandom(7),
     });
+    // The win chance is a genuine coin flip...
     expect(decider.player1WinChance).toBeGreaterThan(0.4);
     expect(decider.player1WinChance).toBeLessThan(0.6);
+    // ...but the match is almost over, so confidence in that 50/50 is high.
+    expect(decider.confidence).toBeGreaterThan(0.8);
   });
 
   it("builds a confident prediction from live points alone when there is no pairing data", () => {
