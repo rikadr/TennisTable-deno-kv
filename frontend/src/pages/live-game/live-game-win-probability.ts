@@ -218,10 +218,16 @@ export function computeLiveWinPrediction(input: LiveWinPredictionInput): LiveWin
 
   // Confidence rises from the per-point estimate's data confidence toward 100 %
   // as the match nears its end — measured by how few points remain to be played
-  // relative to a full match from 0–0 (NOT by how lopsided the win % is, so a
-  // tied deciding set is still high-confidence: we are confident it is close).
+  // relative to a full match from 0–0. This is independent of how lopsided the
+  // win % is: a tied deciding deuce is high-confidence because we are confident
+  // in the prediction (a 50/50), even though the result itself is a coin flip.
+  //
+  // The mapping is concave (1 − r²) so the final stretch saturates to ~100 %:
+  // once only a handful of points remain we are essentially certain of the
+  // prediction, whatever it is.
   const fullMatch = runSimulations(perPoint.fraction, 0, 0, 0, 0, simulations, random);
-  const matchProgress = clamp(1 - current.avgRemainingPoints / Math.max(fullMatch.avgRemainingPoints, 1), 0, 1);
+  const remainingRatio = current.avgRemainingPoints / Math.max(fullMatch.avgRemainingPoints, 1);
+  const matchProgress = clamp(1 - remainingRatio * remainingRatio, 0, 1);
   const confidence = perPoint.confidence + (1 - perPoint.confidence) * matchProgress;
 
   return { player1WinChance, confidence, perPointWinChance: perPoint.fraction };

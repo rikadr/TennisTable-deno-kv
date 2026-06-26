@@ -109,8 +109,9 @@ describe("computeLiveWinPrediction", () => {
     // The win chance is a genuine coin flip...
     expect(decider.player1WinChance).toBeGreaterThan(0.4);
     expect(decider.player1WinChance).toBeLessThan(0.6);
-    // ...but the match is almost over, so confidence in that 50/50 is high.
-    expect(decider.confidence).toBeGreaterThan(0.8);
+    // ...but the match is all but over, so we are ~fully confident in that
+    // 50/50 prediction.
+    expect(decider.confidence).toBeGreaterThan(0.95);
   });
 
   it("builds a confident prediction from live points alone when there is no pairing data", () => {
