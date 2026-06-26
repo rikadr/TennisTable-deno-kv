@@ -21,6 +21,7 @@ import {
 } from "./use-live-game";
 import { emptyLiveGame, LiveGameSetPoint, LiveGameState } from "./live-game-types";
 import { CompletedSetsList } from "./completed-sets-list";
+import { LiveGamePredictionCard } from "./live-game-prediction-card";
 import ConfettiExplosion from "react-confetti-explosion";
 import { Server } from "../../common/serve-tracker";
 import { ServeTrackerDisplay } from "../../common/serve-tracker-display";
@@ -344,6 +345,13 @@ export const LiveGameAdminPage: React.FC = () => {
               </button>
             </div>
           </div>
+
+          <LiveGamePredictionCard
+            player1Id={localState.player1Id!}
+            player2Id={localState.player2Id!}
+            player1Name={context.playerName(localState.player1Id)}
+            player2Name={context.playerName(localState.player2Id)}
+          />
 
           <CompletedSetsList sets={localState.completedSets} />
 

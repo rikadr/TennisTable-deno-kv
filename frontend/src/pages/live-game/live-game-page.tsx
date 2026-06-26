@@ -6,6 +6,7 @@ import { stringToColor } from "../../common/string-to-color";
 import { Link } from "react-router-dom";
 import { session } from "../../services/auth";
 import { CompletedSetsList } from "./completed-sets-list";
+import { LiveGamePredictionCard } from "./live-game-prediction-card";
 import { LiveGameSetPoint } from "./live-game-types";
 import { Server } from "../../common/serve-tracker";
 import { ServeTrackerDisplay } from "../../common/serve-tracker-display";
@@ -164,6 +165,13 @@ const LiveScoreboard: React.FC<ScoreboardProps> = ({
           />
         </div>
       </div>
+
+      <LiveGamePredictionCard
+        player1Id={player1Id}
+        player2Id={player2Id}
+        player1Name={player1Name}
+        player2Name={player2Name}
+      />
 
       <CompletedSetsList sets={completedSets} />
     </div>
