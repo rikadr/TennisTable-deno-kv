@@ -11,6 +11,11 @@ type Props = {
 };
 
 export const ACHIEVEMENT_LABELS: Record<string, { title: string; description: string; icon: string }> = {
+  "ranked": {
+    title: "Ranked",
+    description: "Play enough games to qualify for the leaderboard",
+    icon: "📊",
+  },
   "donut-1": {
     title: "Donut",
     description: "Won a set without opponent scoring",

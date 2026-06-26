@@ -62,8 +62,11 @@ export class Achievements {
         gamesPerOpponent: Map<string, { count: number; firstGame: number }>;
         firstOpponentFor: Set<string>; // Track players this person was first opponent for
         hatTrickWins: { playedAt: number }[]; // Track recent wins for hat-trick
+        gamesPlayed: number; // Total games played, used for the "ranked" achievement
       }
     >();
+
+    const gameLimitForRanked = this.parent.client.gameLimitForRanked;
 
     this.parent.games.forEach((game) => {
       // Initialize player trackers if they don't exist
@@ -84,6 +87,7 @@ export class Achievements {
           gamesPerOpponent: new Map(),
           firstOpponentFor: new Set(),
           hatTrickWins: [],
+          gamesPlayed: 0,
         });
       }
       if (!playerTracker.has(game.loser)) {
@@ -103,11 +107,36 @@ export class Achievements {
           gamesPerOpponent: new Map(),
           firstOpponentFor: new Set(),
           hatTrickWins: [],
+          gamesPlayed: 0,
         });
       }
 
       const winner = playerTracker.get(game.winner)!;
       const loser = playerTracker.get(game.loser)!;
+
+      // Check for "Ranked" achievement: awarded on the game that pushes a
+      // player up to gameLimitForRanked total games — i.e. the game that
+      // makes them appear on the leaderboard. Earnable once.
+      winner.gamesPlayed++;
+      if (winner.gamesPlayed === gameLimitForRanked) {
+        this.#addAchievement(
+          game.winner,
+          this.#createAchievement("ranked", game.winner, game.playedAt, {
+            gameId: game.id,
+            opponent: game.loser,
+          }),
+        );
+      }
+      loser.gamesPlayed++;
+      if (loser.gamesPlayed === gameLimitForRanked) {
+        this.#addAchievement(
+          game.loser,
+          this.#createAchievement("ranked", game.loser, game.playedAt, {
+            gameId: game.id,
+            opponent: game.winner,
+          }),
+        );
+      }
 
       // Check for Welcome Committee achievement
       // If this is the loser's first game ever, the winner is their first opponent
@@ -1450,8 +1479,10 @@ export class Achievements {
     const SIX_MONTHS = 6 * 30 * 24 * 60 * 60 * 1000;
     const ONE_YEAR = 365 * 24 * 60 * 60 * 1000;
     const TWO_YEARS = 2 * ONE_YEAR;
+    const gameLimitForRanked = this.parent.client.gameLimitForRanked;
 
     const progression: AchievementProgression = {
+      "ranked": { current: 0, target: gameLimitForRanked, earned: 0 },
       "donut-1": { current: 0, target: 1, earned: 0 },
       "donut-5": { current: 0, target: 5, earned: 0 },
       "streak-all-10": { current: 0, target: 10, earned: 0 },
@@ -1507,6 +1538,7 @@ export class Achievements {
 
     let firstActiveAt: number | null = null;
     let lastActiveAt: number | null = null;
+    let gamesPlayedCount = 0;
     let currentWinStreakAll = 0;
     let currentLoseStreakAll = 0;
     let donutCount = 0;
@@ -1550,6 +1582,8 @@ export class Achievements {
       const isLoser = game.loser === playerId;
 
       if (!isWinner && !isLoser) return;
+
+      gamesPlayedCount++;
 
       // Track first active time
       if (firstActiveAt === null) {
@@ -1633,6 +1667,10 @@ export class Achievements {
     });
 
     // Update progression with current stats
+    // "Ranked" progress is the games played toward the ranked threshold,
+    // capped at the target so it never exceeds 100% once earned — going
+    // beyond would leak the player's total games count.
+    progression["ranked"].current = Math.min(gamesPlayedCount, gameLimitForRanked);
     progression["donut-1"].current = donutCount;
     progression["donut-5"].current = donutCount;
     progression["streak-all-10"].current = currentWinStreakAll;
@@ -1860,6 +1898,7 @@ export class Achievements {
 
 // Type Definitions
 type AchievementDefinitions = {
+  "ranked": { gameId: string; opponent: string };
   "donut-1": { gameId: string; opponent: string };
   "donut-5": undefined;
   "streak-all-10": { startedAt: number };
@@ -1989,6 +2028,7 @@ type MarathonSetProgression = BaseProgression & {
 };
 
 export type AchievementProgression = {
+  "ranked": ProgressionWithTarget;
   "donut-1": ProgressionWithTarget;
   "donut-5": ProgressionWithTarget;
   "streak-all-10": ProgressionWithTarget;
