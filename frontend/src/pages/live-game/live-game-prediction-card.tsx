@@ -47,12 +47,21 @@ export const LiveGamePredictionCard: React.FC<Props> = ({
   const twoLayer = predictions.getTwoLayerFraction(player1Id, player2Id);
   const base = Predictions.combinePrioritizedFractions([direct, oneLayer, twoLayer]);
   const baseConfidence = base?.confidence ?? 0;
+  const baseFraction = base?.fraction ?? 0;
   const hasBasePrediction = baseConfidence > 0;
 
   const pointsPlayed =
     currentSet.player1 +
     currentSet.player2 +
     completedSets.reduce((sum, set) => sum + set.player1 + set.player2, 0);
+
+  // Primitives + a serialized key so the memo depends only on stable values
+  // (the score objects get new identities on every poll/render).
+  const setsWonP1 = setsWon.player1;
+  const setsWonP2 = setsWon.player2;
+  const currentSetP1 = currentSet.player1;
+  const currentSetP2 = currentSet.player2;
+  const completedSetsKey = JSON.stringify(completedSets);
 
   // Live prediction: derive a per-point win chance from the pre-game prediction
   // plus the points/sets played so far, then Monte-Carlo simulate the rest of
@@ -61,22 +70,21 @@ export const LiveGamePredictionCard: React.FC<Props> = ({
   const { player1WinChance, confidence } = useMemo(
     () =>
       computeLiveWinPrediction({
-        preGameWinChance: hasBasePrediction ? base.fraction : 0.5,
+        preGameWinChance: hasBasePrediction ? baseFraction : 0.5,
         preGameConfidence: baseConfidence,
-        setsWon,
-        currentSet,
-        completedSets,
+        setsWon: { player1: setsWonP1, player2: setsWonP2 },
+        currentSet: { player1: currentSetP1, player2: currentSetP2 },
+        completedSets: JSON.parse(completedSetsKey) as LiveGameSetPoint[],
       }),
     [
       hasBasePrediction,
-      base.fraction,
+      baseFraction,
       baseConfidence,
-      setsWon.player1,
-      setsWon.player2,
-      currentSet.player1,
-      currentSet.player2,
-      // Re-simulate whenever a set is completed (count + the latest set's score).
-      completedSets.length,
+      setsWonP1,
+      setsWonP2,
+      currentSetP1,
+      currentSetP2,
+      completedSetsKey,
     ],
   );
   const player2WinChance = 1 - player1WinChance;
