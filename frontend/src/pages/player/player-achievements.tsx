@@ -11,6 +11,11 @@ type Props = {
 };
 
 export const ACHIEVEMENT_LABELS: Record<string, { title: string; description: string; icon: string }> = {
+  "first-game": {
+    title: "Welcome to the Table",
+    description: "Play your first game",
+    icon: "🐣",
+  },
   "ranked": {
     title: "Ranked",
     // The number of games is client-specific (gameLimitForRanked); the
