@@ -12,9 +12,9 @@ type Props = {
 
 export const ACHIEVEMENT_LABELS: Record<string, { title: string; description: string; icon: string }> = {
   "first-game": {
-    title: "Welcome to the Table",
+    title: "First Game",
     description: "Play your first game",
-    icon: "🐣",
+    icon: "👶",
   },
   "ranked": {
     title: "Ranked",
