@@ -114,10 +114,32 @@ export class Achievements {
       const winner = playerTracker.get(game.winner)!;
       const loser = playerTracker.get(game.loser)!;
 
+      // Check for "First Game" achievement: awarded on a player's very
+      // first game ever, win or lose. Earnable once.
+      winner.gamesPlayed++;
+      if (winner.gamesPlayed === 1) {
+        this.#addAchievement(
+          game.winner,
+          this.#createAchievement("first-game", game.winner, game.playedAt, {
+            gameId: game.id,
+            opponent: game.loser,
+          }),
+        );
+      }
+      loser.gamesPlayed++;
+      if (loser.gamesPlayed === 1) {
+        this.#addAchievement(
+          game.loser,
+          this.#createAchievement("first-game", game.loser, game.playedAt, {
+            gameId: game.id,
+            opponent: game.winner,
+          }),
+        );
+      }
+
       // Check for "Ranked" achievement: awarded on the game that pushes a
       // player up to gameLimitForRanked total games — i.e. the game that
       // makes them appear on the leaderboard. Earnable once.
-      winner.gamesPlayed++;
       if (winner.gamesPlayed === gameLimitForRanked) {
         this.#addAchievement(
           game.winner,
@@ -127,7 +149,6 @@ export class Achievements {
           }),
         );
       }
-      loser.gamesPlayed++;
       if (loser.gamesPlayed === gameLimitForRanked) {
         this.#addAchievement(
           game.loser,
@@ -1482,6 +1503,7 @@ export class Achievements {
     const gameLimitForRanked = this.parent.client.gameLimitForRanked;
 
     const progression: AchievementProgression = {
+      "first-game": { current: 0, target: 1, earned: 0 },
       "ranked": { current: 0, target: gameLimitForRanked, earned: 0 },
       "donut-1": { current: 0, target: 1, earned: 0 },
       "donut-5": { current: 0, target: 5, earned: 0 },
@@ -1670,6 +1692,7 @@ export class Achievements {
     // "Ranked" progress is the games played toward the ranked threshold,
     // capped at the target so it never exceeds 100% once earned — going
     // beyond would leak the player's total games count.
+    progression["first-game"].current = Math.min(gamesPlayedCount, 1);
     progression["ranked"].current = Math.min(gamesPlayedCount, gameLimitForRanked);
     progression["donut-1"].current = donutCount;
     progression["donut-5"].current = donutCount;
@@ -1898,6 +1921,7 @@ export class Achievements {
 
 // Type Definitions
 type AchievementDefinitions = {
+  "first-game": { gameId: string; opponent: string };
   "ranked": { gameId: string; opponent: string };
   "donut-1": { gameId: string; opponent: string };
   "donut-5": undefined;
@@ -2028,6 +2052,7 @@ type MarathonSetProgression = BaseProgression & {
 };
 
 export type AchievementProgression = {
+  "first-game": ProgressionWithTarget;
   "ranked": ProgressionWithTarget;
   "donut-1": ProgressionWithTarget;
   "donut-5": ProgressionWithTarget;
