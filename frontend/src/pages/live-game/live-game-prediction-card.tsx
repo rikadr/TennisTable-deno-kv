@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { Predictions } from "../../client/client-db/predictions";
 import { fmtNum } from "../../common/number-utils";
@@ -40,7 +40,7 @@ export const LiveGamePredictionCard: React.FC<Props> = ({
   const bothUnranked = !player1Ranked && !player2Ranked;
   const hasUnranked = !player1Ranked || !player2Ranked;
 
-  // Static pairing prediction (same math as the player-page predictions tab).
+  // Static pre-game pairing prediction (same math as the player-page tab).
   const predictions = context.predictions;
   const direct = predictions.getDirectFraction(player1Id, player2Id);
   const oneLayer = predictions.getOneLayerFraction(player1Id, player2Id);
@@ -49,21 +49,38 @@ export const LiveGamePredictionCard: React.FC<Props> = ({
   const baseConfidence = base?.confidence ?? 0;
   const hasBasePrediction = baseConfidence > 0;
 
-  // Live prediction: starts at the pairing prediction and evolves with the
-  // points and sets played in the current game (see live-game-win-probability).
-  const { player1WinChance, confidence } = computeLiveWinPrediction({
-    basePlayer1WinChance: hasBasePrediction ? base.fraction : 0.5,
-    baseConfidence,
-    setsWon,
-    currentSet,
-    completedSets,
-  });
-  const player2WinChance = 1 - player1WinChance;
-
   const pointsPlayed =
     currentSet.player1 +
     currentSet.player2 +
     completedSets.reduce((sum, set) => sum + set.player1 + set.player2, 0);
+
+  // Live prediction: derive a per-point win chance from the pre-game prediction
+  // plus the points/sets played so far, then Monte-Carlo simulate the rest of
+  // the match from the current score (see live-game-win-probability). Memoised
+  // so the simulation only re-runs when the score actually changes.
+  const { player1WinChance, confidence } = useMemo(
+    () =>
+      computeLiveWinPrediction({
+        preGameWinChance: hasBasePrediction ? base.fraction : 0.5,
+        preGameConfidence: baseConfidence,
+        setsWon,
+        currentSet,
+        completedSets,
+      }),
+    [
+      hasBasePrediction,
+      base.fraction,
+      baseConfidence,
+      setsWon.player1,
+      setsWon.player2,
+      currentSet.player1,
+      currentSet.player2,
+      // Re-simulate whenever a set is completed (count + the latest set's score).
+      completedSets.length,
+    ],
+  );
+  const player2WinChance = 1 - player1WinChance;
+
   // With no pairing data and no points played yet there is nothing to predict.
   const hasPrediction = hasBasePrediction || pointsPlayed > 0;
 
