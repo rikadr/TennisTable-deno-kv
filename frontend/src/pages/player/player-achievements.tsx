@@ -13,8 +13,10 @@ type Props = {
 export const ACHIEVEMENT_LABELS: Record<string, { title: string; description: string; icon: string }> = {
   "ranked": {
     title: "Ranked",
+    // The number of games is client-specific (gameLimitForRanked); the
+    // concrete count is filled in by getAchievementLabel at render time.
     description: "Play enough games to qualify for the leaderboard",
-    icon: "📊",
+    icon: "🔢",
   },
   "donut-1": {
     title: "Donut",
@@ -228,6 +230,20 @@ export const ACHIEVEMENT_LABELS: Record<string, { title: string; description: st
   },
 };
 
+// Resolves the display label for an achievement type, filling in any
+// client-specific values. The "ranked" description embeds the current
+// gameLimitForRanked so players see the exact number of games required.
+export function getAchievementLabel(
+  type: string,
+  gameLimitForRanked: number,
+): { title: string; description: string; icon: string } {
+  const label = ACHIEVEMENT_LABELS[type] || { title: type, description: "", icon: "🏅" };
+  if (type === "ranked") {
+    return { ...label, description: `Play ${gameLimitForRanked} games to qualify for the leaderboard` };
+  }
+  return label;
+}
+
 type TabType = "earned" | "progress";
 const tabs: { id: TabType; label: string }[] = [
   { id: "earned", label: "Earned" },
@@ -303,11 +319,7 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
   return (
     <div className="space-y-3">
       {achievements.map((achievement, index) => {
-        const label = ACHIEVEMENT_LABELS[achievement.type] || {
-          title: achievement.type,
-          description: "",
-          icon: "🏅",
-        };
+        const label = getAchievementLabel(achievement.type, context.client.gameLimitForRanked);
 
         return (
           <div
@@ -513,11 +525,7 @@ type ProgressTabProps = {
 const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
   const context = useEventDbContext();
   const progressItems = Object.entries(progression).map(([type, data]) => {
-    const label = ACHIEVEMENT_LABELS[type] || {
-      title: type,
-      description: "",
-      icon: "🏅",
-    };
+    const label = getAchievementLabel(type, context.client.gameLimitForRanked);
 
     return {
       type,

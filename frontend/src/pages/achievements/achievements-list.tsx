@@ -2,7 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { Achievement } from "../../client/client-db/achievements";
 import { useEventDbContext } from "../../wrappers/event-db-context";
-import { ACHIEVEMENT_LABELS, dateString } from "../player/player-achievements";
+import { getAchievementLabel, dateString } from "../player/player-achievements";
 import { relativeTimeString } from "../../common/date-utils";
 import { ProfilePicture } from "../player/profile-picture";
 import { fmtNum } from "../../common/number-utils";
@@ -27,11 +27,7 @@ export const AchievementsList: React.FC<AchievementsListProps> = ({ achievements
   return (
     <div className="space-y-2">
       {achievements.map((achievement, index) => {
-        const label = ACHIEVEMENT_LABELS[achievement.type] || {
-          title: achievement.type,
-          description: "",
-          icon: "🏅",
-        };
+        const label = getAchievementLabel(achievement.type, context.client.gameLimitForRanked);
 
         return (
           <div
