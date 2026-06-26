@@ -171,6 +171,9 @@ const LiveScoreboard: React.FC<ScoreboardProps> = ({
         player2Id={player2Id}
         player1Name={player1Name}
         player2Name={player2Name}
+        setsWon={setsWon}
+        currentSet={currentSet}
+        completedSets={completedSets}
       />
 
       <CompletedSetsList sets={completedSets} />

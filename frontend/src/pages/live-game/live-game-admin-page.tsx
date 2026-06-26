@@ -351,6 +351,9 @@ export const LiveGameAdminPage: React.FC = () => {
             player2Id={localState.player2Id!}
             player1Name={context.playerName(localState.player1Id)}
             player2Name={context.playerName(localState.player2Id)}
+            setsWon={localState.setsWon}
+            currentSet={localState.currentSet}
+            completedSets={localState.completedSets}
           />
 
           <CompletedSetsList sets={localState.completedSets} />

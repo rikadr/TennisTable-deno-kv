@@ -3,15 +3,28 @@ import { useEventDbContext } from "../../wrappers/event-db-context";
 import { Predictions } from "../../client/client-db/predictions";
 import { fmtNum } from "../../common/number-utils";
 import { stringToColor } from "../../common/string-to-color";
+import { LiveGameSetPoint } from "./live-game-types";
+import { computeLiveWinPrediction } from "./live-game-win-probability";
 
 type Props = {
   player1Id: string;
   player2Id: string;
   player1Name: string;
   player2Name: string;
+  setsWon: { player1: number; player2: number };
+  currentSet: LiveGameSetPoint;
+  completedSets: LiveGameSetPoint[];
 };
 
-export const LiveGamePredictionCard: React.FC<Props> = ({ player1Id, player2Id, player1Name, player2Name }) => {
+export const LiveGamePredictionCard: React.FC<Props> = ({
+  player1Id,
+  player2Id,
+  player1Name,
+  player2Name,
+  setsWon,
+  currentSet,
+  completedSets,
+}) => {
   const context = useEventDbContext();
 
   // Mirror the player-page predictions tab: when at least one player is unranked
@@ -27,16 +40,32 @@ export const LiveGamePredictionCard: React.FC<Props> = ({ player1Id, player2Id, 
   const bothUnranked = !player1Ranked && !player2Ranked;
   const hasUnranked = !player1Ranked || !player2Ranked;
 
+  // Static pairing prediction (same math as the player-page predictions tab).
   const predictions = context.predictions;
   const direct = predictions.getDirectFraction(player1Id, player2Id);
   const oneLayer = predictions.getOneLayerFraction(player1Id, player2Id);
   const twoLayer = predictions.getTwoLayerFraction(player1Id, player2Id);
-  const combined = Predictions.combinePrioritizedFractions([direct, oneLayer, twoLayer]);
+  const base = Predictions.combinePrioritizedFractions([direct, oneLayer, twoLayer]);
+  const baseConfidence = base?.confidence ?? 0;
+  const hasBasePrediction = baseConfidence > 0;
 
-  const confidence = combined?.confidence ?? 0;
-  const player1WinChance = combined?.fraction ?? 0;
+  // Live prediction: starts at the pairing prediction and evolves with the
+  // points and sets played in the current game (see live-game-win-probability).
+  const { player1WinChance, confidence } = computeLiveWinPrediction({
+    basePlayer1WinChance: hasBasePrediction ? base.fraction : 0.5,
+    baseConfidence,
+    setsWon,
+    currentSet,
+    completedSets,
+  });
   const player2WinChance = 1 - player1WinChance;
-  const hasPrediction = confidence > 0;
+
+  const pointsPlayed =
+    currentSet.player1 +
+    currentSet.player2 +
+    completedSets.reduce((sum, set) => sum + set.player1 + set.player2, 0);
+  // With no pairing data and no points played yet there is nothing to predict.
+  const hasPrediction = hasBasePrediction || pointsPlayed > 0;
 
   const unrankedLabel = bothUnranked ? "Both players are not ranked" : "One player is not ranked";
 
@@ -44,7 +73,7 @@ export const LiveGamePredictionCard: React.FC<Props> = ({ player1Id, player2Id, 
   if (hasUnranked && !revealed) {
     return (
       <div className="bg-white rounded-xl shadow-lg p-4 text-black text-center">
-        <h2 className="text-gray-400 text-xs uppercase tracking-widest font-bold mb-3">Win Prediction</h2>
+        <h2 className="text-gray-400 text-xs uppercase tracking-widest font-bold mb-3">Live Win Prediction</h2>
         <div className="text-3xl mb-2">⚠️</div>
         <p className="text-base font-semibold mb-1">{unrankedLabel}</p>
         <p className="text-sm text-gray-500 mb-4">
@@ -62,7 +91,9 @@ export const LiveGamePredictionCard: React.FC<Props> = ({ player1Id, player2Id, 
 
   return (
     <div className="bg-white rounded-xl shadow-lg p-4 text-black">
-      <h2 className="text-gray-400 text-xs uppercase tracking-widest font-bold mb-3 text-center">Win Prediction</h2>
+      <h2 className="text-gray-400 text-xs uppercase tracking-widest font-bold mb-3 text-center">
+        Live Win Prediction
+      </h2>
 
       {hasUnranked && (
         <div className="mb-3 flex items-center gap-2 rounded-lg border border-yellow-500/60 bg-yellow-50 px-3 py-2 text-xs text-yellow-800">
@@ -83,13 +114,13 @@ export const LiveGamePredictionCard: React.FC<Props> = ({ player1Id, player2Id, 
           </div>
           <div className="flex h-8 w-full overflow-hidden rounded-full bg-gray-100">
             <div
-              className="flex items-center justify-start bg-blue-500 px-2 text-xs font-bold text-white transition-all"
+              className="flex items-center justify-start bg-blue-500 px-2 text-xs font-bold text-white transition-all duration-500"
               style={{ width: `${player1WinChance * 100}%` }}
             >
               {player1WinChance >= 0.12 && `${fmtNum(player1WinChance * 100)}%`}
             </div>
             <div
-              className="flex items-center justify-end bg-purple-500 px-2 text-xs font-bold text-white transition-all"
+              className="flex items-center justify-end bg-purple-500 px-2 text-xs font-bold text-white transition-all duration-500"
               style={{ width: `${player2WinChance * 100}%` }}
             >
               {player2WinChance >= 0.12 && `${fmtNum(player2WinChance * 100)}%`}
