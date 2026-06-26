@@ -1,7 +1,7 @@
 import React, { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { useEventDbContext } from "../../wrappers/event-db-context";
-import { ACHIEVEMENT_LABELS } from "../player/player-achievements";
+import { ACHIEVEMENT_LABELS, getAchievementLabel } from "../player/player-achievements";
 import { ProfilePicture } from "../player/profile-picture";
 import { fmtNum } from "../../common/number-utils";
 import { classNames } from "../../common/class-names";
@@ -97,7 +97,7 @@ export const ProgressList: React.FC<ProgressListProps> = ({ selectedType }) => {
               </span>
             </h2>
             <p className="text-sm opacity-70 mt-2">
-              {ACHIEVEMENT_LABELS[selectedType]?.description}
+              {getAchievementLabel(selectedType, context.client.gameLimitForRanked).description}
             </p>
           </div>
 
