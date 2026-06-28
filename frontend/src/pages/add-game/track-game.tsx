@@ -14,6 +14,7 @@ import { ProfilePicture } from "../player/profile-picture";
 import { stringToColor } from "../../common/string-to-color";
 import { getServeInfo, Server } from "../../common/serve-tracker";
 import { ServeTrackerDisplay } from "../../common/serve-tracker-display";
+import { LiveGamePredictionCard } from "../live-game/live-game-prediction-card";
 
 interface SetPoint {
   player1: number;
@@ -386,6 +387,19 @@ export const TrackGamePage: React.FC = () => {
                 </div>
               )}
             </button>
+          </div>
+
+          {/* Live Win Prediction */}
+          <div className="mb-4">
+            <LiveGamePredictionCard
+              player1Id={player1!}
+              player2Id={player2!}
+              player1Name={context.playerName(player1)}
+              player2Name={context.playerName(player2)}
+              setsWon={matchData.setsWon}
+              currentSet={currentSetScore}
+              completedSets={matchData.setPoints ?? []}
+            />
           </div>
 
           {/* Sets History */}
