@@ -1,4 +1,4 @@
-import { determineSeason } from "../../seasons/seasons";
+import { determineNextSeason, determineSeason } from "../../seasons/seasons";
 
 describe("determineSeason", () => {
   describe("Season start times", () => {
@@ -238,6 +238,46 @@ describe("determineSeason", () => {
       // Allowing some variance due to month length differences
       expect(durationDays).toBeGreaterThan(70);
       expect(durationDays).toBeLessThan(90);
+    });
+  });
+
+  describe("determineNextSeason", () => {
+    it("should return the next quarter's season when time is within an active season", () => {
+      const time = new Date(2024, 0, 15).getTime(); // Mid-January (Q1)
+      const result = determineNextSeason(time);
+
+      const expectedStart = new Date(2024, 3, 1, 8, 0, 0, 0).getTime(); // April 1, 2024 is a Monday
+      expect(result.start).toBe(expectedStart);
+    });
+
+    it("should return the upcoming season when time is in the 10-day gap", () => {
+      // Q1 2024 ends March 22 at 17:00, Q2 starts April 1 at 08:00
+      const timeInGap = new Date(2024, 2, 25, 12, 0, 0, 0).getTime(); // March 25
+      const result = determineNextSeason(timeInGap);
+
+      const expectedStart = new Date(2024, 3, 1, 8, 0, 0, 0).getTime();
+      expect(result.start).toBe(expectedStart);
+      expect(result.start).toBeGreaterThan(timeInGap);
+    });
+
+    it("should return next year's Q1 season when time is in Q4", () => {
+      const time = new Date(2024, 11, 15).getTime(); // December (Q4)
+      const result = determineNextSeason(time);
+
+      const startDate = new Date(result.start);
+      expect(startDate.getFullYear()).toBe(2025);
+      expect(startDate.getMonth()).toBe(0); // January
+    });
+
+    it("should return a season directly following the current one", () => {
+      const time = new Date(2025, 4, 10).getTime(); // Mid-Q2 2025
+      const current = determineSeason(time);
+      const next = determineNextSeason(time);
+
+      // Next season starts 10 days after the current one ends (grace period)
+      const gapDays = (next.start - current.end) / (24 * 60 * 60 * 1000);
+      expect(gapDays).toBeGreaterThan(9);
+      expect(gapDays).toBeLessThan(11);
     });
   });
 

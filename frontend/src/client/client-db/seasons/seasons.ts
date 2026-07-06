@@ -77,6 +77,14 @@ export function determineSeason(time: number): { start: number; end: number } {
   return seasonOfQuarter(year, seasonStartMonth - 3);
 }
 
+/** Returns start and end time of the season following the one the provided time stamp belongs to */
+export function determineNextSeason(time: number): { start: number; end: number } {
+  const season = determineSeason(time);
+  // The next season starts 10 days after the current one ends,
+  // so a time 11 days past the end is always within the next season.
+  return determineSeason(season.end + 11 * 24 * 60 * 60 * 1000);
+}
+
 function seasonOfQuarter(year: number, seasonStartMonth: number): { start: number; end: number } {
   const seasonStart = firstMondayAt8(year, seasonStartMonth);
   const nextSeasonStart = firstMondayAt8(year, seasonStartMonth + 3);

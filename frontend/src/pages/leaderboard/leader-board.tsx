@@ -16,6 +16,8 @@ import { classNames } from "../../common/class-names";
 import { useLocalStorage } from "../../hooks/use-local-storage";
 import { useLiveGameQuery } from "../live-game/use-live-game";
 import { LiveGameCard } from "./live-game-card";
+import { determineNextSeason, determineSeason } from "../../client/client-db/seasons/seasons";
+import { RelativeTime } from "../../common/date-utils";
 
 type LeaderboardView = "overall" | "season";
 
@@ -78,6 +80,12 @@ export const LeaderBoard: React.FC = () => {
   const currentSeason = seasons.find((s) => Date.now() >= s.start && Date.now() <= s.end);
   const seasonLeaderboard = currentSeason?.getLeaderboard() || [];
 
+  // Off-season: we are in the grace period between two seasons
+  const isOffSeason = Date.now() > determineSeason(Date.now()).end;
+  const nextSeason = determineNextSeason(Date.now());
+  const lastSeason = isOffSeason ? [...seasons].reverse().find((s) => s.end < Date.now()) : undefined;
+  const lastSeasonTop3 = lastSeason?.getLeaderboard().slice(0, 3) ?? [];
+
   // Get players who haven't participated in current season
   const seasonParticipantIds = new Set(seasonLeaderboard.map((p) => p.playerId));
   const playersNotInSeason = context.players
@@ -127,47 +135,88 @@ export const LeaderBoard: React.FC = () => {
             view={view}
             setView={setView}
           />
-          {nr1 && (
-            <PodiumPlace
-              size="default"
-              place={1}
-              playerSummary={nr1}
-              profilePicture
-              score={nr1Score}
-              to={
-                view === "season" && currentSeason
-                  ? `/player/${nr1.id}?tab=season`
-                  : undefined
-              }
-            />
-          )}
-          {nr2 && (
-            <PodiumPlace
-              size="sm"
-              place={2}
-              playerSummary={nr2}
-              profilePicture
-              score={nr2Score}
-              to={
-                view === "season" && currentSeason
-                  ? `/player/${nr2.id}?tab=season`
-                  : undefined
-              }
-            />
-          )}
-          {nr3 && (
-            <PodiumPlace
-              size="xs"
-              place={3}
-              playerSummary={nr3}
-              profilePicture
-              score={nr3Score}
-              to={
-                view === "season" && currentSeason
-                  ? `/player/${nr3.id}?tab=season`
-                  : undefined
-              }
-            />
+          {view === "season" && isOffSeason ? (
+            <>
+              <div className="w-full p-4 rounded-lg bg-secondary-background text-secondary-text text-center space-y-1">
+                <p className="text-lg font-medium">
+                  Next season starts <RelativeTime date={new Date(nextSeason.start)} />
+                </p>
+                <p className="text-sm opacity-80">
+                  {new Date(nextSeason.start).toLocaleString("nb-NO", {
+                    weekday: "long",
+                    day: "numeric",
+                    month: "long",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </p>
+              </div>
+              {lastSeason && lastSeasonTop3.length > 0 && (
+                <>
+                  <h2 className="text-lg text-center text-primary-text pt-2">Top 3 last season</h2>
+                  {lastSeasonTop3.map((player, index) => {
+                    const playerSummary = context.leaderboard.getPlayerSummary(player.playerId);
+                    if (!playerSummary) return null;
+                    return (
+                      <PodiumPlace
+                        key={player.playerId}
+                        size={(["default", "sm", "xs"] as const)[index]}
+                        place={index + 1}
+                        playerSummary={playerSummary}
+                        profilePicture
+                        score={player.seasonScore}
+                        to={`/season/player?seasonStart=${lastSeason.start}&playerId=${player.playerId}`}
+                      />
+                    );
+                  })}
+                </>
+              )}
+            </>
+          ) : (
+            <>
+              {nr1 && (
+                <PodiumPlace
+                  size="default"
+                  place={1}
+                  playerSummary={nr1}
+                  profilePicture
+                  score={nr1Score}
+                  to={
+                    view === "season" && currentSeason
+                      ? `/player/${nr1.id}?tab=season`
+                      : undefined
+                  }
+                />
+              )}
+              {nr2 && (
+                <PodiumPlace
+                  size="sm"
+                  place={2}
+                  playerSummary={nr2}
+                  profilePicture
+                  score={nr2Score}
+                  to={
+                    view === "season" && currentSeason
+                      ? `/player/${nr2.id}?tab=season`
+                      : undefined
+                  }
+                />
+              )}
+              {nr3 && (
+                <PodiumPlace
+                  size="xs"
+                  place={3}
+                  playerSummary={nr3}
+                  profilePicture
+                  score={nr3Score}
+                  to={
+                    view === "season" && currentSeason
+                      ? `/player/${nr3.id}?tab=season`
+                      : undefined
+                  }
+                />
+              )}
+            </>
           )}
         </div>
         <RecentGames view={view} />
