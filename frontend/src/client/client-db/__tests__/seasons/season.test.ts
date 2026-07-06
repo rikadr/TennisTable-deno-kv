@@ -2,6 +2,10 @@ import { TennisTable } from "../../tennis-table";
 import { EventType, EventTypeEnum } from "../../event-store/event-types";
 import { Season } from "../../seasons/season";
 
+// Q1 2024 season: starts Monday January 1 2024 at 08:00, ends Friday March 22 2024 at 17:00.
+// Game times are small offsets from mid-season so they always fall within a single season.
+const SEASON = new Date(2024, 0, 15, 12, 0, 0, 0).getTime();
+
 describe("Season Class Tests", () => {
   let tennisTable: TennisTable;
   let baseEvents: EventType[];
@@ -53,7 +57,7 @@ describe("Season Class Tests", () => {
           stream: "game-1",
           type: EventTypeEnum.GAME_CREATED,
           data: {
-            playedAt: 4000,
+            playedAt: SEASON + 4000,
             winner: "player-1",
             loser: "player-2",
           },
@@ -77,7 +81,7 @@ describe("Season Class Tests", () => {
           stream: "game-1",
           type: EventTypeEnum.GAME_CREATED,
           data: {
-            playedAt: 4000, // Within first season
+            playedAt: SEASON + 4000, // Within first season
             winner: "player-1",
             loser: "player-2",
           },
@@ -87,7 +91,7 @@ describe("Season Class Tests", () => {
           stream: "game-2",
           type: EventTypeEnum.GAME_CREATED,
           data: {
-            playedAt: 10000, // In a different season
+            playedAt: new Date(2024, 4, 15, 12, 0, 0, 0).getTime(), // In a different season (Q2 2024)
             winner: "player-2",
             loser: "player-3",
           },
@@ -106,6 +110,46 @@ describe("Season Class Tests", () => {
         expect(season.games.length).toBeGreaterThan(0);
       });
     });
+
+    it("should not include grace period games in any season", () => {
+      // Q3 2024 ends Friday September 27 at 17:00, Q4 2024 starts Monday October 7 at 08:00.
+      // The days in between are the grace period and count towards no season.
+      const inQ3 = new Date(2024, 8, 20, 12, 0, 0, 0).getTime(); // September 20
+      const inGraceSameMonth = new Date(2024, 8, 28, 12, 0, 0, 0).getTime(); // September 28
+      const inGraceNextMonth = new Date(2024, 9, 2, 12, 0, 0, 0).getTime(); // October 2, before Q4 starts
+      const inQ4 = new Date(2024, 9, 10, 12, 0, 0, 0).getTime(); // October 10
+
+      const events: EventType[] = [
+        ...baseEvents,
+        ...[inQ3, inGraceSameMonth, inGraceNextMonth, inQ4].map((playedAt, index) => ({
+          time: playedAt,
+          stream: `game-${index + 1}`,
+          type: EventTypeEnum.GAME_CREATED as const,
+          data: {
+            playedAt,
+            winner: "player-1",
+            loser: "player-2",
+          },
+        })),
+      ];
+
+      tennisTable = new TennisTable({ events });
+      const seasons = tennisTable.seasons.getSeasons();
+
+      expect(seasons).toHaveLength(2);
+      expect(seasons[0].games).toHaveLength(1);
+      expect(seasons[0].games[0].playedAt).toBe(inQ3);
+      expect(seasons[1].games).toHaveLength(1);
+      expect(seasons[1].games[0].playedAt).toBe(inQ4);
+
+      // Every included game must be within its season's start and end
+      seasons.forEach((season) => {
+        season.games.forEach((game) => {
+          expect(game.playedAt).toBeGreaterThanOrEqual(season.start);
+          expect(game.playedAt).toBeLessThan(season.end);
+        });
+      });
+    });
   });
 
   describe("Leaderboard Calculation", () => {
@@ -117,7 +161,7 @@ describe("Season Class Tests", () => {
           stream: "game-1",
           type: EventTypeEnum.GAME_CREATED,
           data: {
-            playedAt: 4000,
+            playedAt: SEASON + 4000,
             winner: "player-1",
             loser: "player-2",
           },
@@ -142,7 +186,7 @@ describe("Season Class Tests", () => {
           stream: "game-1",
           type: EventTypeEnum.GAME_CREATED,
           data: {
-            playedAt: 4000,
+            playedAt: SEASON + 4000,
             winner: "player-1",
             loser: "player-2",
           },
@@ -152,7 +196,7 @@ describe("Season Class Tests", () => {
           stream: "game-2",
           type: EventTypeEnum.GAME_CREATED,
           data: {
-            playedAt: 5000,
+            playedAt: SEASON + 5000,
             winner: "player-1",
             loser: "player-3",
           },
@@ -162,7 +206,7 @@ describe("Season Class Tests", () => {
           stream: "game-3",
           type: EventTypeEnum.GAME_CREATED,
           data: {
-            playedAt: 6000,
+            playedAt: SEASON + 6000,
             winner: "player-2",
             loser: "player-3",
           },
@@ -187,7 +231,7 @@ describe("Season Class Tests", () => {
           stream: "game-1",
           type: EventTypeEnum.GAME_CREATED,
           data: {
-            playedAt: 4000,
+            playedAt: SEASON + 4000,
             winner: "player-1",
             loser: "player-2",
           },
@@ -212,7 +256,7 @@ describe("Season Class Tests", () => {
           stream: "game-1",
           type: EventTypeEnum.GAME_CREATED,
           data: {
-            playedAt: 4000,
+            playedAt: SEASON + 4000,
             winner: "player-1",
             loser: "player-2",
           },
@@ -222,7 +266,7 @@ describe("Season Class Tests", () => {
           stream: "game-2",
           type: EventTypeEnum.GAME_CREATED,
           data: {
-            playedAt: 5000,
+            playedAt: SEASON + 5000,
             winner: "player-2",
             loser: "player-1",
           },
@@ -254,7 +298,7 @@ describe("Season Class Tests", () => {
           stream: "game-1",
           type: EventTypeEnum.GAME_CREATED,
           data: {
-            playedAt: 5000,
+            playedAt: SEASON + 5000,
             winner: "player-1",
             loser: "player-2",
           },
@@ -265,7 +309,7 @@ describe("Season Class Tests", () => {
           stream: "game-2",
           type: EventTypeEnum.GAME_CREATED,
           data: {
-            playedAt: 6000,
+            playedAt: SEASON + 6000,
             winner: "player-3",
             loser: "player-2",
           },
@@ -275,7 +319,7 @@ describe("Season Class Tests", () => {
           stream: "game-3",
           type: EventTypeEnum.GAME_CREATED,
           data: {
-            playedAt: 7000,
+            playedAt: SEASON + 7000,
             winner: "player-3",
             loser: "player-4",
           },
@@ -303,7 +347,7 @@ describe("Season Class Tests", () => {
           stream: "game-1",
           type: EventTypeEnum.GAME_CREATED,
           data: {
-            playedAt: 4000,
+            playedAt: SEASON + 4000,
             winner: "player-1",
             loser: "player-2",
           },
@@ -314,7 +358,7 @@ describe("Season Class Tests", () => {
           stream: "game-2",
           type: EventTypeEnum.GAME_CREATED,
           data: {
-            playedAt: 3000, // Earlier than player-1
+            playedAt: SEASON + 3000, // Earlier than player-1
             winner: "player-3",
             loser: "player-4",
           },
@@ -348,7 +392,7 @@ describe("Season Class Tests", () => {
           stream: "game-1",
           type: EventTypeEnum.GAME_CREATED,
           data: {
-            playedAt: 4000,
+            playedAt: SEASON + 4000,
             winner: "player-1",
             loser: "player-2",
           },
@@ -373,7 +417,7 @@ describe("Season Class Tests", () => {
           stream: "game-1",
           type: EventTypeEnum.GAME_CREATED,
           data: {
-            playedAt: 4000,
+            playedAt: SEASON + 4000,
             winner: "player-1",
             loser: "player-2",
           },
@@ -412,7 +456,7 @@ describe("Season Class Tests", () => {
           stream: "game-1",
           type: EventTypeEnum.GAME_CREATED,
           data: {
-            playedAt: 4000,
+            playedAt: SEASON + 4000,
             winner: "player-1",
             loser: "player-2",
           },
@@ -436,7 +480,7 @@ describe("Season Class Tests", () => {
           stream: "game-2",
           type: EventTypeEnum.GAME_CREATED,
           data: {
-            playedAt: 5000,
+            playedAt: SEASON + 5000,
             winner: "player-1",
             loser: "player-2",
           },
@@ -476,7 +520,7 @@ describe("Season Class Tests", () => {
           stream: "game-1",
           type: EventTypeEnum.GAME_CREATED,
           data: {
-            playedAt: 4000,
+            playedAt: SEASON + 4000,
             winner: "player-1",
             loser: "player-2",
           },
@@ -501,7 +545,7 @@ describe("Season Class Tests", () => {
           stream: "game-1",
           type: EventTypeEnum.GAME_CREATED,
           data: {
-            playedAt: 4000,
+            playedAt: SEASON + 4000,
             winner: "player-1",
             loser: "player-2",
           },
@@ -511,7 +555,7 @@ describe("Season Class Tests", () => {
           stream: "game-2",
           type: EventTypeEnum.GAME_CREATED,
           data: {
-            playedAt: 5000,
+            playedAt: SEASON + 5000,
             winner: "player-1",
             loser: "player-3",
           },
@@ -542,7 +586,7 @@ describe("Season Class Tests", () => {
           stream: "game-1",
           type: EventTypeEnum.GAME_CREATED,
           data: {
-            playedAt: 4000,
+            playedAt: SEASON + 4000,
             winner: "player-1",
             loser: "player-2",
           },
@@ -567,7 +611,7 @@ describe("Season Class Tests", () => {
           stream: "game-2",
           type: EventTypeEnum.GAME_CREATED,
           data: {
-            playedAt: 5000,
+            playedAt: SEASON + 5000,
             winner: "player-2",
             loser: "player-3",
           },
@@ -577,7 +621,7 @@ describe("Season Class Tests", () => {
           stream: "game-1",
           type: EventTypeEnum.GAME_CREATED,
           data: {
-            playedAt: 4000,
+            playedAt: SEASON + 4000,
             winner: "player-1",
             loser: "player-2",
           },
@@ -615,7 +659,7 @@ describe("Season Class Tests", () => {
           stream: "game-1",
           type: EventTypeEnum.GAME_CREATED,
           data: {
-            playedAt: 4000,
+            playedAt: SEASON + 4000,
             winner: "player-1",
             loser: "player-2",
           },
@@ -625,7 +669,7 @@ describe("Season Class Tests", () => {
           stream: "game-2",
           type: EventTypeEnum.GAME_CREATED,
           data: {
-            playedAt: 5000,
+            playedAt: SEASON + 5000,
             winner: "player-1",
             loser: "player-2",
           },
@@ -635,7 +679,7 @@ describe("Season Class Tests", () => {
           stream: "game-3",
           type: EventTypeEnum.GAME_CREATED,
           data: {
-            playedAt: 6000,
+            playedAt: SEASON + 6000,
             winner: "player-2",
             loser: "player-1",
           },
@@ -660,7 +704,7 @@ describe("Season Class Tests", () => {
           stream: "game-1",
           type: EventTypeEnum.GAME_CREATED,
           data: {
-            playedAt: 4000,
+            playedAt: SEASON + 4000,
             winner: "player-1",
             loser: "player-2",
           },
@@ -679,13 +723,13 @@ describe("Season Class Tests", () => {
     });
 
     it("should invalidate cache when adding new game", () => {
-      const season = new Season({ start: 1000, end: 10000 });
+      const season = new Season({ start: SEASON, end: SEASON + 10000 });
       const leaderboard1 = season.getLeaderboard();
 
       // Add a game
       season.addGame({
         id: "game-1",
-        playedAt: 5000,
+        playedAt: SEASON + 5000,
         winner: "player-1",
         loser: "player-2",
         score: undefined,
