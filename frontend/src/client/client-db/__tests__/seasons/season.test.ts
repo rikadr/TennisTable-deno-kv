@@ -2,7 +2,7 @@ import { TennisTable } from "../../tennis-table";
 import { EventType, EventTypeEnum } from "../../event-store/event-types";
 import { Season } from "../../seasons/season";
 
-// Q1 2024 season: starts Monday January 1 2024 at 10:00, ends Friday March 22 2024 at 17:00.
+// Q1 2024 season: starts Monday January 1 2024 at 08:00, ends Friday March 22 2024 at 17:00.
 // Game times are small offsets from mid-season so they always fall within a single season.
 const SEASON = new Date(2024, 0, 15, 12, 0, 0, 0).getTime();
 
@@ -112,7 +112,7 @@ describe("Season Class Tests", () => {
     });
 
     it("should not include grace period games in any season", () => {
-      // Q3 2024 ends Friday September 27 at 17:00, Q4 2024 starts Monday October 7 at 10:00.
+      // Q3 2024 ends Friday September 27 at 17:00, Q4 2024 starts Monday October 7 at 08:00.
       // The days in between are the grace period and count towards no season.
       const inQ3 = new Date(2024, 8, 20, 12, 0, 0, 0).getTime(); // September 20
       const inGraceSameMonth = new Date(2024, 8, 28, 12, 0, 0, 0).getTime(); // September 28

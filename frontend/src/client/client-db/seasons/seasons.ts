@@ -52,7 +52,7 @@ export class Seasons {
 }
 
 /** Returns start and end time of the season that the provided time stamp belongs to
- * Seasons start on first Monday of the month at 10:00.
+ * Seasons start on first Monday of the month at 08:00.
  * Seasons end on the Friday at 17:00, 10 days before the next season starts.
  * A provided time within the 10 day period will return the season that just ended.
  */
@@ -78,8 +78,8 @@ export function determineSeason(time: number): { start: number; end: number } {
 }
 
 function seasonOfQuarter(year: number, seasonStartMonth: number): { start: number; end: number } {
-  const seasonStart = firstMondayAt10(year, seasonStartMonth);
-  const nextSeasonStart = firstMondayAt10(year, seasonStartMonth + 3);
+  const seasonStart = firstMondayAt8(year, seasonStartMonth);
+  const nextSeasonStart = firstMondayAt8(year, seasonStartMonth + 3);
 
   // Season ends on Friday, 10 days before next season starts, at 17:00
   const seasonEnd = nextSeasonStart - 10 * 24 * 60 * 60 * 1000;
@@ -89,11 +89,11 @@ function seasonOfQuarter(year: number, seasonStartMonth: number): { start: numbe
   return { start: seasonStart, end: seasonEndDate.getTime() };
 }
 
-function firstMondayAt10(year: number, month: number): number {
+function firstMondayAt8(year: number, month: number): number {
   const firstOfMonth = new Date(year, month, 1);
   const dayOfWeek = firstOfMonth.getDay(); // 0 = Sunday, 1 = Monday, etc.
 
   // Calculate days until next Monday (if not already Monday)
   const daysUntilMonday = dayOfWeek === 0 ? 1 : dayOfWeek === 1 ? 0 : 8 - dayOfWeek;
-  return new Date(year, month, 1 + daysUntilMonday, 10, 0, 0, 0).getTime();
+  return new Date(year, month, 1 + daysUntilMonday, 8, 0, 0, 0).getTime();
 }

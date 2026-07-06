@@ -2,39 +2,39 @@ import { determineSeason } from "../../seasons/seasons";
 
 describe("determineSeason", () => {
   describe("Season start times", () => {
-    it("should start Q1 season on first Monday of January at 10:00", () => {
+    it("should start Q1 season on first Monday of January at 08:00", () => {
       // January 1, 2024 is a Monday
       const time = new Date(2024, 0, 15).getTime(); // Mid-January
       const result = determineSeason(time);
 
-      const expectedStart = new Date(2024, 0, 1, 10, 0, 0, 0).getTime();
+      const expectedStart = new Date(2024, 0, 1, 8, 0, 0, 0).getTime();
       expect(result.start).toBe(expectedStart);
     });
 
-    it("should start Q2 season on first Monday of April at 10:00", () => {
+    it("should start Q2 season on first Monday of April at 08:00", () => {
       // April 1, 2024 is a Monday
       const time = new Date(2024, 3, 15).getTime(); // Mid-April
       const result = determineSeason(time);
 
-      const expectedStart = new Date(2024, 3, 1, 10, 0, 0, 0).getTime();
+      const expectedStart = new Date(2024, 3, 1, 8, 0, 0, 0).getTime();
       expect(result.start).toBe(expectedStart);
     });
 
-    it("should start Q3 season on first Monday of July at 10:00", () => {
+    it("should start Q3 season on first Monday of July at 08:00", () => {
       // July 1, 2024 is a Monday
       const time = new Date(2024, 6, 15).getTime(); // Mid-July
       const result = determineSeason(time);
 
-      const expectedStart = new Date(2024, 6, 1, 10, 0, 0, 0).getTime();
+      const expectedStart = new Date(2024, 6, 1, 8, 0, 0, 0).getTime();
       expect(result.start).toBe(expectedStart);
     });
 
-    it("should start Q4 season on first Monday of October at 10:00", () => {
+    it("should start Q4 season on first Monday of October at 08:00", () => {
       // October 7, 2024 is the first Monday (Oct 1 is Tuesday)
       const time = new Date(2024, 9, 15).getTime(); // Mid-October
       const result = determineSeason(time);
 
-      const expectedStart = new Date(2024, 9, 7, 10, 0, 0, 0).getTime();
+      const expectedStart = new Date(2024, 9, 7, 8, 0, 0, 0).getTime();
       expect(result.start).toBe(expectedStart);
     });
 
@@ -43,7 +43,7 @@ describe("determineSeason", () => {
       const time = new Date(2024, 8, 15).getTime(); // Mid-September (Q3)
       const result = determineSeason(time);
 
-      const expectedStart = new Date(2024, 6, 1, 10, 0, 0, 0).getTime(); // July 1 is Monday
+      const expectedStart = new Date(2024, 6, 1, 8, 0, 0, 0).getTime(); // July 1 is Monday
       expect(result.start).toBe(expectedStart);
     });
 
@@ -52,7 +52,7 @@ describe("determineSeason", () => {
       const time = new Date(2024, 9, 15).getTime();
       const result = determineSeason(time);
 
-      const expectedStart = new Date(2024, 9, 7, 10, 0, 0, 0).getTime();
+      const expectedStart = new Date(2024, 9, 7, 8, 0, 0, 0).getTime();
       expect(result.start).toBe(expectedStart);
     });
   });
@@ -62,10 +62,10 @@ describe("determineSeason", () => {
       const time = new Date(2024, 0, 15).getTime(); // Mid-January (Q1)
       const result = determineSeason(time);
 
-      // Q2 starts April 1 (Monday) at 10:00
+      // Q2 starts April 1 (Monday) at 08:00
       // 10 days before = March 22
       // Find the Friday before that at 17:00
-      const q2Start = new Date(2024, 3, 1, 10, 0, 0, 0).getTime();
+      const q2Start = new Date(2024, 3, 1, 8, 0, 0, 0).getTime();
       const tenDaysBefore = q2Start - 10 * 24 * 60 * 60 * 1000;
       const expectedEnd = new Date(tenDaysBefore);
       expectedEnd.setHours(17, 0, 0, 0);
@@ -137,7 +137,7 @@ describe("determineSeason", () => {
 
   describe("10-day gap period", () => {
     it("should return the just-ended season when time is in the 10-day gap", () => {
-      // Q2 2024 starts April 1 at 10:00
+      // Q2 2024 starts April 1 at 08:00
       // Q1 ends 10 days before (March 22) at 17:00
       // March 23-31 is the gap period and should return Q1 season
       const timeInGap = new Date(2024, 2, 25, 12, 0, 0, 0).getTime(); // March 25
@@ -157,7 +157,7 @@ describe("determineSeason", () => {
     });
 
     it("should return the just-ended season when the gap extends into the new quarter's first month", () => {
-      // Q4 2024 starts Monday October 7 at 10:00 (October 1 is a Tuesday)
+      // Q4 2024 starts Monday October 7 at 08:00 (October 1 is a Tuesday)
       // Q3 2024 ends Friday September 27 at 17:00
       // October 1-6 is still gap period and should return the Q3 season
       const timeInGap = new Date(2024, 9, 2, 12, 0, 0, 0).getTime(); // October 2
@@ -169,7 +169,7 @@ describe("determineSeason", () => {
     });
 
     it("should return the previous year's Q4 season when the gap extends into January", () => {
-      // Q1 2027 starts Monday January 4 2027 at 10:00 (January 1 2027 is a Friday)
+      // Q1 2027 starts Monday January 4 2027 at 08:00 (January 1 2027 is a Friday)
       // Q4 2026 ends Friday December 25 2026 at 17:00
       const timeInGap = new Date(2027, 0, 2, 12, 0, 0, 0).getTime(); // January 2 2027
       const result = determineSeason(timeInGap);
@@ -182,7 +182,7 @@ describe("determineSeason", () => {
 
   describe("Edge cases", () => {
     it("should handle exact season start time", () => {
-      const seasonStartTime = new Date(2024, 0, 1, 10, 0, 0, 0).getTime();
+      const seasonStartTime = new Date(2024, 0, 1, 8, 0, 0, 0).getTime();
       const result = determineSeason(seasonStartTime);
 
       expect(result.start).toBe(seasonStartTime);
