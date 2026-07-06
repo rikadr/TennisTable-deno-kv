@@ -155,6 +155,29 @@ describe("determineSeason", () => {
       const startDate = new Date(result.start);
       expect(startDate.getMonth()).toBe(0); // Should return Q1
     });
+
+    it("should return the just-ended season when the gap extends into the new quarter's first month", () => {
+      // Q4 2024 starts Monday October 7 at 10:00 (October 1 is a Tuesday)
+      // Q3 2024 ends Friday September 27 at 17:00
+      // October 1-6 is still gap period and should return the Q3 season
+      const timeInGap = new Date(2024, 9, 2, 12, 0, 0, 0).getTime(); // October 2
+      const result = determineSeason(timeInGap);
+
+      const startDate = new Date(result.start);
+      expect(startDate.getMonth()).toBe(6); // Should return Q3 (July start)
+      expect(result.end).toBeLessThan(timeInGap); // The returned season has already ended
+    });
+
+    it("should return the previous year's Q4 season when the gap extends into January", () => {
+      // Q1 2027 starts Monday January 4 2027 at 10:00 (January 1 2027 is a Friday)
+      // Q4 2026 ends Friday December 25 2026 at 17:00
+      const timeInGap = new Date(2027, 0, 2, 12, 0, 0, 0).getTime(); // January 2 2027
+      const result = determineSeason(timeInGap);
+
+      const startDate = new Date(result.start);
+      expect(startDate.getFullYear()).toBe(2026);
+      expect(startDate.getMonth()).toBe(9); // Should return Q4 (October start)
+    });
   });
 
   describe("Edge cases", () => {

@@ -19,18 +19,19 @@ export class Seasons {
     let currentSeason: Season | undefined = undefined;
 
     for (const game of this.parent.games) {
-      // Initialise first season
-      if (!currentSeason) {
-        currentSeason = new Season(determineSeason(game.playedAt));
+      const gameSeason = determineSeason(game.playedAt);
+
+      // Only games within the season's start and end count.
+      // Games in the grace period between seasons do not count towards any season.
+      if (game.playedAt < gameSeason.start || game.playedAt >= gameSeason.end) {
+        continue;
       }
+
       // Start next season
-      if (game.playedAt >= currentSeason.end) {
-        const gameSeason = determineSeason(game.playedAt);
-        if (gameSeason.start === currentSeason.start) {
-          // Game is after end but before next. Does not count towards any season
-          continue;
+      if (!currentSeason || gameSeason.start !== currentSeason.start) {
+        if (currentSeason) {
+          seasons.push(currentSeason);
         }
-        seasons.push(currentSeason);
         currentSeason = new Season(gameSeason);
       }
 
@@ -65,19 +66,20 @@ export function determineSeason(time: number): { start: number; end: number } {
   // Round down to nearest quarter start month (0, 3, 6, 9)
   const seasonStartMonth = Math.floor(month / 3) * 3;
 
-  // Find the first Monday of the season start month
-  const firstOfMonth = new Date(year, seasonStartMonth, 1);
-  const dayOfWeek = firstOfMonth.getDay(); // 0 = Sunday, 1 = Monday, etc.
+  const season = seasonOfQuarter(year, seasonStartMonth);
+  if (time >= season.start) {
+    return season;
+  }
 
-  // Calculate days until next Monday (if not already Monday)
-  const daysUntilMonday = dayOfWeek === 0 ? 1 : dayOfWeek === 1 ? 0 : 8 - dayOfWeek;
-  const seasonStart = new Date(year, seasonStartMonth, 1 + daysUntilMonday, 10, 0, 0, 0).getTime();
+  // Time is before this quarter's season starts, i.e. in the part of the grace
+  // period that spills into the new quarter's first month. It belongs to the
+  // season that just ended.
+  return seasonOfQuarter(year, seasonStartMonth - 3);
+}
 
-  // Find the first Monday of the next season
-  const nextSeasonFirstOfMonth = new Date(year, seasonStartMonth + 3, 1);
-  const nextDayOfWeek = nextSeasonFirstOfMonth.getDay();
-  const nextDaysUntilMonday = nextDayOfWeek === 0 ? 1 : nextDayOfWeek === 1 ? 0 : 8 - nextDayOfWeek;
-  const nextSeasonStart = new Date(year, seasonStartMonth + 3, 1 + nextDaysUntilMonday, 10, 0, 0, 0).getTime();
+function seasonOfQuarter(year: number, seasonStartMonth: number): { start: number; end: number } {
+  const seasonStart = firstMondayAt10(year, seasonStartMonth);
+  const nextSeasonStart = firstMondayAt10(year, seasonStartMonth + 3);
 
   // Season ends on Friday, 10 days before next season starts, at 17:00
   const seasonEnd = nextSeasonStart - 10 * 24 * 60 * 60 * 1000;
@@ -85,4 +87,13 @@ export function determineSeason(time: number): { start: number; end: number } {
   seasonEndDate.setHours(17, 0, 0, 0);
 
   return { start: seasonStart, end: seasonEndDate.getTime() };
+}
+
+function firstMondayAt10(year: number, month: number): number {
+  const firstOfMonth = new Date(year, month, 1);
+  const dayOfWeek = firstOfMonth.getDay(); // 0 = Sunday, 1 = Monday, etc.
+
+  // Calculate days until next Monday (if not already Monday)
+  const daysUntilMonday = dayOfWeek === 0 ? 1 : dayOfWeek === 1 ? 0 : 8 - dayOfWeek;
+  return new Date(year, month, 1 + daysUntilMonday, 10, 0, 0, 0).getTime();
 }

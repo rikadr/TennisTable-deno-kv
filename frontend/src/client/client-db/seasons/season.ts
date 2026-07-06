@@ -23,6 +23,10 @@ export class Season {
   }
 
   addGame(game: Game) {
+    // A season only includes games within its own start and end
+    if (game.playedAt < this.start || game.playedAt >= this.end) {
+      return;
+    }
     this.games.push(game);
     this.leaderboard = undefined; // Invalidate cache
   }
