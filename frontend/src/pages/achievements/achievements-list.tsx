@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { Achievement } from "../../client/client-db/achievements";
+import { Achievement, getAchievementScore } from "../../client/client-db/achievements";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { getAchievementLabel, dateString } from "../player/player-achievements";
 import { relativeTimeString } from "../../common/date-utils";
@@ -28,6 +28,7 @@ export const AchievementsList: React.FC<AchievementsListProps> = ({ achievements
     <div className="space-y-2">
       {achievements.map((achievement, index) => {
         const label = getAchievementLabel(achievement.type, context.client.gameLimitForRanked);
+        const score = getAchievementScore(achievement.type);
 
         return (
           <div
@@ -40,6 +41,9 @@ export const AchievementsList: React.FC<AchievementsListProps> = ({ achievements
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-baseline gap-2 overflow-hidden">
                     <h3 className="font-semibold text-primary-text whitespace-nowrap">{label.title}</h3>
+                    <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-primary-text/10 whitespace-nowrap self-center">
+                      {score} pts
+                    </span>
                     <p className="text-xs opacity-70 truncate hidden sm:block">{label.description}</p>
                   </div>
                   <div className="text-[10px] whitespace-nowrap opacity-60 text-right shrink-0">

@@ -2,7 +2,7 @@ import { useEventDbContext } from "../../wrappers/event-db-context";
 import { relativeTimeString } from "../../common/date-utils";
 import { classNames } from "../../common/class-names";
 import { useState } from "react";
-import { Achievement, AchievementProgression } from "../../client/client-db/achievements";
+import { Achievement, AchievementProgression, getAchievementScore } from "../../client/client-db/achievements";
 import { Link } from "react-router-dom";
 import { fmtNum } from "../../common/number-utils";
 
@@ -325,6 +325,7 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
     <div className="space-y-3">
       {achievements.map((achievement, index) => {
         const label = getAchievementLabel(achievement.type, context.client.gameLimitForRanked);
+        const score = getAchievementScore(achievement.type);
 
         return (
           <div
@@ -335,7 +336,12 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
               <div className="text-4xl">{label.icon}</div>
               <div className="flex-1">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-semibold text-secondary-text">{label.title}</h3>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-semibold text-secondary-text">{label.title}</h3>
+                    <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-secondary-text/10 text-secondary-text whitespace-nowrap">
+                      {score} pts
+                    </span>
+                  </div>
                   <span className="text-xs text-secondary-text">
                     {relativeTimeString(new Date(achievement.earnedAt))} - {dateString(achievement.earnedAt)}
                   </span>
@@ -535,13 +541,14 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
     return {
       type,
       label,
+      score: getAchievementScore(type),
       data,
     };
   });
 
   return (
     <div className="space-y-4 text-secondary-text">
-      {progressItems.map(({ type, label, data }) => {
+      {progressItems.map(({ type, label, score, data }) => {
         const hasTarget = "target" in data && !!data.target;
         const hasCurrent = "current" in data && !!data.current;
         const percentage = hasTarget && hasCurrent ? Math.min((data.current! / data.target!) * 100, 100) : 0;
@@ -581,6 +588,9 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                     <div className="flex-1">
                       <div className="flex items-center gap-3">
                         <h3 className="font-semibold ">{label.title}</h3>
+                        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-secondary-text/10 whitespace-nowrap">
+                          {score} pts
+                        </span>
                         {hasTarget && <span className="text-lg font-bold">{percentage.toFixed(0)}%</span>}
                       </div>
                       <p className="text-sm text-secondary-text">{label.description}</p>

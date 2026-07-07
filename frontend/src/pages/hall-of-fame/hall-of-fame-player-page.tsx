@@ -52,15 +52,30 @@ function renderDetails(breakdown: HallOfFameScoreBreakdown, key: FactorKey): Rea
     }
     case "achievementsEarned": {
       const d = data as HallOfFameScoreBreakdown["achievementsEarned"];
+      const tierLabels: Record<number, string> = { 10: "Common", 20: "Standard", 30: "Rare" };
       return (
         <div className="text-primary-text text-xs space-y-1.5">
+          <p className="italic">Each achievement is worth points based on how rare or difficult it is.</p>
           <div className="flex flex-wrap gap-1.5">
-            <span className="bg-secondary-background text-secondary-text px-2 py-0.5 rounded text-xs inline-flex items-center gap-1.5">
-              Achievements: 20 pts
-              <span className="bg-tertiary-background text-tertiary-text h-5 min-w-5 px-1 rounded-full inline-flex items-center justify-center text-xs font-bold">
-                {d.count}x
+            {d.byWeight.map((tier) => (
+              <span
+                key={tier.weight}
+                className={classNames(
+                  "px-2 py-0.5 rounded text-xs inline-flex items-center gap-1.5",
+                  tier.count === 0
+                    ? "bg-secondary-background/50 text-secondary-text/75"
+                    : "bg-secondary-background text-secondary-text",
+                )}
+              >
+                {tierLabels[tier.weight] ? `${tierLabels[tier.weight]}: ` : ""}
+                {tier.weight} pts
+                {tier.count > 0 && (
+                  <span className="bg-tertiary-background text-tertiary-text h-5 min-w-5 px-1 rounded-full inline-flex items-center justify-center text-xs font-bold">
+                    {tier.count}x
+                  </span>
+                )}
               </span>
-            </span>
+            ))}
           </div>
         </div>
       );

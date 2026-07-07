@@ -1,6 +1,7 @@
 import React, { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { useEventDbContext } from "../../wrappers/event-db-context";
+import { getAchievementScore } from "../../client/client-db/achievements";
 import { ACHIEVEMENT_LABELS, getAchievementLabel } from "../player/player-achievements";
 import { ProfilePicture } from "../player/profile-picture";
 import { fmtNum } from "../../common/number-utils";
@@ -89,11 +90,14 @@ export const ProgressList: React.FC<ProgressListProps> = ({ selectedType }) => {
       ) : (
         <div className="space-y-2">
           <div className="mb-6">
-            <h2 className="text-xl font-bold flex items-center gap-3">
+            <h2 className="text-xl font-bold flex items-center gap-3 flex-wrap">
               <span>Progress:</span>
               <span className="bg-background-secondary px-3 py-1 rounded-md border border-primary-text/20 flex items-center gap-2">
                 {ACHIEVEMENT_LABELS[selectedType]?.icon}{" "}
                 {ACHIEVEMENT_LABELS[selectedType]?.title}
+              </span>
+              <span className="text-xs font-semibold px-2 py-1 rounded-full bg-primary-text/10">
+                {getAchievementScore(selectedType)} pts
               </span>
             </h2>
             <p className="text-sm opacity-70 mt-2">
