@@ -72,18 +72,20 @@ describe("Weighted achievement scoring", () => {
     const events: EventType[] = [...players()];
     let t = 100;
     // 10 straight wins for Alice, each a donut set (bob scores 0), which
-    // also crosses the ranked threshold and the 10-game win streak.
+    // also crosses the ranked threshold and the 10-game win streak. The
+    // score is recorded via a separate GAME_SCORE event per game.
     for (let i = 0; i < 10; i++) {
       events.push({
         time: t,
         stream: `g${i}`,
         type: EventTypeEnum.GAME_CREATED,
-        data: {
-          playedAt: t,
-          winner: "alice",
-          loser: "bob",
-          score: { setsWon: { gameWinner: 1, gameLoser: 0 }, setPoints: [{ gameWinner: 11, gameLoser: 0 }] },
-        },
+        data: { playedAt: t, winner: "alice", loser: "bob" },
+      });
+      events.push({
+        time: t + 1,
+        stream: `g${i}`,
+        type: EventTypeEnum.GAME_SCORE,
+        data: { setsWon: { gameWinner: 1, gameLoser: 0 }, setPoints: [{ gameWinner: 11, gameLoser: 0 }] },
       });
       t += 1000;
     }
@@ -108,8 +110,10 @@ describe("Weighted achievement scoring", () => {
       expect(tier.count).toBe(expectedCount);
     }
 
-    // Alice earned at least one rare (30-pt) achievement (streak-all-10).
-    expect(earned.some((a) => a.type === "streak-all-10")).toBe(true);
+    // Alice earned at least one rare (30-pt) achievement: donut-5, from
+    // reaching 5 donut sets across the 10 donut wins.
+    expect(earned.some((a) => a.type === "donut-5")).toBe(true);
+    expect(getAchievementScore("donut-5")).toBe(30);
     expect(breakdown.byWeight.find((tier) => tier.weight === 30)!.count).toBeGreaterThan(0);
   });
 });
