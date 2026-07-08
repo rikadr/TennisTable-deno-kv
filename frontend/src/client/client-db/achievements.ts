@@ -1502,21 +1502,61 @@ export class Achievements {
     const TWO_YEARS = 2 * ONE_YEAR;
     const gameLimitForRanked = this.parent.client.gameLimitForRanked;
 
+    // The key order here is the order achievements appear in the player's
+    // Progress tab (which iterates this object). Grouped by theme, and within
+    // each group ordered easiest → hardest.
     const progression: AchievementProgression = {
+      // Getting started
       "first-game": { current: 0, target: 1, earned: 0 },
       "ranked": { current: 0, target: gameLimitForRanked, earned: 0 },
-      "donut-1": { current: 0, target: 1, earned: 0 },
-      "donut-5": { current: 0, target: 5, earned: 0 },
+
+      // Win streaks
       "streak-all-10": { current: 0, target: 10, earned: 0 },
       "streak-player-10": { current: 0, target: 10, perOpponent: new Map(), earned: 0 },
       "streak-player-20": { current: 0, target: 20, perOpponent: new Map(), earned: 0 },
+      "hat-trick": { current: 0, target: 3, earned: 0 },
+      "streak-ender": { earned: 0 },
+
+      // Resilience
       "punching-bag": { current: 0, target: 10, earned: 0 },
       "never-give-up": { current: 0, target: 20, earned: 0 },
       "comeback-kid": { earned: 0 },
       "unbreakable-spirit": { earned: 0 },
-      "back-after-6-months": { earned: 0, target: SIX_MONTHS },
-      "back-after-1-year": { earned: 0, target: ONE_YEAR },
-      "back-after-2-years": { earned: 0, target: TWO_YEARS },
+
+      // Rank & Score
+      "on-the-podium": { earned: 0 },
+      "touched-the-throne": { earned: 0 },
+      "kingslayer": { earned: 0 },
+      "king-maker": { earned: 0 },
+      "leap-frog": { earned: 0 },
+      "david": { current: 0, target: 30, earned: 0 },
+      "goliath": { current: 0, target: 30, earned: 0 },
+      "climber": { current: 0, target: 300, earned: 0 },
+
+      // Game feats
+      "donut-1": { current: 0, target: 1, earned: 0 },
+      "donut-5": { current: 0, target: 5, earned: 0 },
+      "nice-game": { earned: 0 },
+      "less-is-more": { earned: 0 },
+      "close-calls": { current: 0, target: 5, earned: 0 },
+      "edge-lord": { current: 0, target: 20, earned: 0 },
+      "consistency-is-key": { current: 0, target: 5, earned: 0 },
+      "photo-finish": { earned: 0 },
+      "marathon-set": {
+        earned: 0,
+        current: 0,
+        target: this.marathonSetRecord.score,
+        recordHolder: this.marathonSetRecord.holder,
+      },
+
+      // Social
+      "variety-player": { current: 0, target: 10, opponents: new Set(), earned: 0 },
+      "global-player": { current: 0, target: 20, opponents: new Set(), earned: 0 },
+      "best-friends": { current: 0, target: 50, perOpponent: new Map(), earned: 0 },
+      "welcome-committee": { current: 0, target: 3, newPlayers: new Set(), earned: 0 },
+      "community-builder": { current: 0, target: 10, newPlayers: new Set(), earned: 0 },
+
+      // Loyalty & activity
       "active-6-months": { current: 0, target: SIX_MONTHS, earned: 0 },
       "active-1-year": { current: 0, target: ONE_YEAR, earned: 0 },
       "active-2-years": { current: 0, target: TWO_YEARS, earned: 0 },
@@ -1525,37 +1565,15 @@ export class Achievements {
       // their anniversary and playing a game awards it (on the day before, day
       // of, or day after the anniversary date).
       "anniversary": { current: 0, target: ONE_YEAR, earned: 0 },
+      "back-after-6-months": { earned: 0, target: SIX_MONTHS },
+      "back-after-1-year": { earned: 0, target: ONE_YEAR },
+      "back-after-2-years": { earned: 0, target: TWO_YEARS },
+
+      // Competition
       "tournament-participated": { earned: 0 },
       "tournament-winner": { earned: 0 },
-      "season-winner": { current: 0, target: 1, earned: 0 },
-      "nice-game": { earned: 0 },
-      "less-is-more": { earned: 0 },
-      "close-calls": { current: 0, target: 5, earned: 0 },
-      "edge-lord": { current: 0, target: 20, earned: 0 },
-      "consistency-is-key": { current: 0, target: 5, earned: 0 },
-      "variety-player": { current: 0, target: 10, opponents: new Set(), earned: 0 },
-      "global-player": { current: 0, target: 20, opponents: new Set(), earned: 0 },
-      "best-friends": { current: 0, target: 50, perOpponent: new Map(), earned: 0 },
-      "welcome-committee": { current: 0, target: 3, newPlayers: new Set(), earned: 0 },
-      "community-builder": { current: 0, target: 10, newPlayers: new Set(), earned: 0 },
-      "hat-trick": { current: 0, target: 3, earned: 0 },
-      "kingslayer": { earned: 0 },
-      "king-maker": { earned: 0 },
-      "touched-the-throne": { earned: 0 },
-      "on-the-podium": { earned: 0 },
-      "photo-finish": { earned: 0 },
-      "leap-frog": { earned: 0 },
-      "david": { current: 0, target: 30, earned: 0 },
-      "goliath": { current: 0, target: 30, earned: 0 },
-      "climber": { current: 0, target: 300, earned: 0 },
-      "marathon-set": {
-        earned: 0,
-        current: 0,
-        target: this.marathonSetRecord.score,
-        recordHolder: this.marathonSetRecord.holder,
-      },
-      "streak-ender": { earned: 0 },
       "group-stage-star": { earned: 0 },
+      "season-winner": { current: 0, target: 1, earned: 0 },
     };
 
     let firstActiveAt: number | null = null;
