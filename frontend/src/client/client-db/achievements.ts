@@ -2009,6 +2009,88 @@ type AchievementDefinitions = {
 
 type AchievementType = keyof AchievementDefinitions;
 
+// The distinct Hall of Fame point values an achievement can be worth,
+// ascending. 20 is the standard value; common/easy achievements are
+// worth 10 and rare/difficult ones 30. The Hall of Fame UI renders one
+// badge per tier, so keep this in sync with ACHIEVEMENT_SCORES below.
+export const ACHIEVEMENT_SCORE_TIERS = [10, 20, 30] as const;
+
+// The standard value used when an achievement is not listed (or as the
+// neutral middle tier).
+export const DEFAULT_ACHIEVEMENT_SCORE = 20;
+
+// Static Hall of Fame point value for every achievement type. This is
+// the single source of truth for achievement scoring — it lives with
+// the achievement definitions so the client-db core owns it rather than
+// a page component. Using Record<AchievementType, number> forces every
+// new achievement to declare a score at compile time.
+//
+// Tiers are driven primarily by how rare each achievement actually is
+// across the league (rarer = worth more), with two deliberate overrides:
+//   - The marquee championships (season / tournament win, reaching #1)
+//     are only mid-frequency but are the most prestigious, so they are
+//     bumped to the top tier.
+//   - Purely negative outcomes (Goliath = getting upset, Never Give Up =
+//     losing 20 in a row) are held down despite being rare — a Hall of
+//     Fame score shouldn't reward them like a real accomplishment.
+export const ACHIEVEMENT_SCORES: Record<AchievementType, number> = {
+  // Common — worth 10 (frequently earned across the league)
+  "tournament-participated": 10,
+  "first-game": 10,
+  "donut-1": 10,
+  "ranked": 10,
+  "less-is-more": 10,
+  "streak-player-10": 10,
+  "variety-player": 10,
+  "hat-trick": 10,
+  "anniversary": 10,
+  "punching-bag": 10,
+  "goliath": 10, // rare, but a negative outcome — kept low
+
+  // Standard — worth 20 (mid-frequency)
+  "streak-all-10": 20,
+  "global-player": 20,
+  "kingslayer": 20,
+  "photo-finish": 20,
+  "streak-ender": 20,
+  "group-stage-star": 20,
+  "comeback-kid": 20,
+  "consistency-is-key": 20,
+  "best-friends": 20,
+  "active-6-months": 20,
+  "nice-game": 20,
+  "close-calls": 20,
+  "welcome-committee": 20,
+  "on-the-podium": 20,
+  "king-maker": 20,
+  "climber": 20,
+  "never-give-up": 20, // rare, but a negative outcome — held at standard
+
+  // Rare / prestigious — worth 30
+  "season-winner": 30, // prestige bump (mid-frequency)
+  "tournament-winner": 30, // prestige bump (mid-frequency)
+  "touched-the-throne": 30, // prestige bump (mid-frequency)
+  "back-after-6-months": 30,
+  "marathon-set": 30,
+  "back-after-1-year": 30,
+  "leap-frog": 30,
+  "streak-player-20": 30,
+  "unbreakable-spirit": 30,
+  "active-1-year": 30,
+  "donut-5": 30,
+  "active-2-years": 30,
+  "edge-lord": 30,
+  "david": 30,
+  "community-builder": 30,
+  "back-after-2-years": 30,
+};
+
+// Resolves the static Hall of Fame point value for an achievement type,
+// falling back to the standard value for any unrecognised type.
+export function getAchievementScore(type: string): number {
+  return (ACHIEVEMENT_SCORES as Record<string, number>)[type] ?? DEFAULT_ACHIEVEMENT_SCORE;
+}
+
 type GenericAchievement<T extends AchievementType = AchievementType> = {
   type: T;
   earnedBy: string;

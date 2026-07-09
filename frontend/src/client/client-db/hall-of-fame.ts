@@ -1,13 +1,16 @@
+import { ACHIEVEMENT_SCORE_TIERS, getAchievementScore } from "./achievements";
 import { Elo } from "./elo";
 import { EventTypeEnum } from "./event-store/event-types";
 import { TennisTable } from "./tennis-table";
+
+export type AchievementWeightTier = { weight: number; count: number };
 
 export type SeasonDetail = { rank: number; points: number };
 export type TournamentDetail = { name: string; placement: string; points: number };
 
 export type HallOfFameScoreBreakdown = {
   seasonPerformance: { score: number; seasons: SeasonDetail[] };
-  achievementsEarned: { score: number; count: number };
+  achievementsEarned: { score: number; count: number; byWeight: AchievementWeightTier[] };
   socialDiversity: { score: number; uniqueOpponents: number };
   tournamentProgression: { score: number; tournaments: TournamentDetail[] };
   longevity: { score: number; activeDays: number };
@@ -269,9 +272,26 @@ export class HallOfFame {
 
   #calcAchievements(playerId: string): HallOfFameScoreBreakdown["achievementsEarned"] {
     this.parent.achievements.calculateAchievements();
-    const achievements = this.parent.achievements.achievementMap.get(playerId);
-    const count = achievements?.length ?? 0;
-    return { score: count * 20, count };
+    const achievements = this.parent.achievements.achievementMap.get(playerId) ?? [];
+    const count = achievements.length;
+
+    // Each achievement contributes its static weight (see ACHIEVEMENT_SCORES).
+    // We also tally how many the player earned at each weight tier so the
+    // Hall of Fame page can render one badge per tier.
+    const countsByWeight = new Map<number, number>();
+    let score = 0;
+    for (const achievement of achievements) {
+      const weight = getAchievementScore(achievement.type);
+      score += weight;
+      countsByWeight.set(weight, (countsByWeight.get(weight) ?? 0) + 1);
+    }
+
+    const byWeight: AchievementWeightTier[] = ACHIEVEMENT_SCORE_TIERS.map((weight) => ({
+      weight,
+      count: countsByWeight.get(weight) ?? 0,
+    }));
+
+    return { score, count, byWeight };
   }
 
   #calcSocialDiversity(playerId: string): HallOfFameScoreBreakdown["socialDiversity"] {
