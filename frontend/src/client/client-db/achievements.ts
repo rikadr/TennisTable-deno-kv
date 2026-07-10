@@ -2067,8 +2067,9 @@ export class Achievements {
 
     // Full House / Humbled progression: how many of the currently ranked
     // active players (excluding the player themselves) this player has
-    // beaten / lost to. Target is the size of that cohort, so it always
-    // matches the set they must complete to earn the achievement.
+    // beaten / lost to. Target is the total number of currently ranked
+    // players, minus one when the player is ranked themselves — i.e. the
+    // exact set they must complete to earn the achievement.
     const rankedActiveIds = this.parent.leaderboard.getLeaderboard().rankedPlayers.map((p) => p.id);
     const rankedTargetPool = new Set(rankedActiveIds.filter((id) => id !== playerId));
     const beatenRanked = new Set<string>();
@@ -2077,7 +2078,7 @@ export class Achievements {
       if (game.winner === playerId && rankedTargetPool.has(game.loser)) beatenRanked.add(game.loser);
       if (game.loser === playerId && rankedTargetPool.has(game.winner)) lostToRanked.add(game.winner);
     });
-    const rankedTarget = Math.max(rankedTargetPool.size, 1);
+    const rankedTarget = rankedTargetPool.size;
     progression["full-house"].current = beatenRanked.size;
     progression["full-house"].target = rankedTarget;
     progression["humbled"].current = lostToRanked.size;

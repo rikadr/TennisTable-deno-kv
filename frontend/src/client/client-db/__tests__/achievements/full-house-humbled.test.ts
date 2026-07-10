@@ -209,7 +209,7 @@ describe("Full House & Humbled Achievements", () => {
     const tt = new TennisTable({ events });
     tt.achievements.calculateAchievements();
 
-    // A is ranked, so the target pool excludes A → 4 opponents.
+    // A is ranked, so the target is the 5 ranked players minus A → 4.
     const aProgress = tt.achievements.getPlayerProgression("a");
     expect(aProgress["full-house"].target).toBe(4);
     expect(aProgress["full-house"].current).toBe(4);
@@ -218,5 +218,22 @@ describe("Full House & Humbled Achievements", () => {
     const eProgress = tt.achievements.getPlayerProgression("e");
     expect(eProgress["humbled"].target).toBe(4);
     expect(eProgress["humbled"].current).toBe(4);
+  });
+
+  it("targets the full ranked count for an unranked player (no self subtraction)", () => {
+    // Z plays a single game, so Z is not ranked. The target is the total
+    // number of ranked players (5) with no minus-one, since Z isn't in the
+    // ranked cohort. Beating A once puts Z's Full House progress at 1/5.
+    const events = [
+      ...fivePlayerSetup(),
+      createPlayer("z", 50),
+      game("z-a", 5000, "z", "a"),
+    ];
+    const tt = new TennisTable({ events });
+    tt.achievements.calculateAchievements();
+
+    const zProgress = tt.achievements.getPlayerProgression("z");
+    expect(zProgress["full-house"].target).toBe(5);
+    expect(zProgress["full-house"].current).toBe(1);
   });
 });
