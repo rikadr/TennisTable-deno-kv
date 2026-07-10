@@ -233,6 +233,16 @@ export const ACHIEVEMENT_LABELS: Record<string, { title: string; description: st
     description: "Go undefeated in a tournament group stage",
     icon: "⭐",
   },
+  "full-house": {
+    title: "Full House",
+    description: "Beat every currently ranked player at least once",
+    icon: "🃏",
+  },
+  "humbled": {
+    title: "Humbled",
+    description: "Lose to every currently ranked player at least once",
+    icon: "🙇",
+  },
 };
 
 // Resolves the display label for an achievement type, filling in any
@@ -482,6 +492,14 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
                   </p>
                 )}
 
+                {(achievement.type === "full-house" || achievement.type === "humbled") && achievement.data && (
+                  <p className="text-xs text-secondary-text/70 mt-2">
+                    {achievement.type === "full-house" ? "Beat " : "Lost to "}
+                    {achievement.data.count} ranked player{achievement.data.count !== 1 ? "s" : ""} in{" "}
+                    {daysBetween(achievement.data.firstGameAt, achievement.earnedAt)} days
+                  </p>
+                )}
+
                 {achievement.type === "leap-frog" && achievement.data && (
                   <div className="text-xs text-secondary-text/70 mt-2 space-y-1">
                     <p>Beat {context.playerName(achievement.data.opponent)}</p>
@@ -720,6 +738,27 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                             <p className="text-xs text-secondary-text/70 mb-2">First opponent for:</p>
                             <div className="flex flex-wrap gap-1">
                               {Array.from(data.newPlayers).map((player: string) => (
+                                <Link to={"/player/" + player} key={player}>
+                                  <span className="text-xs bg-background px-2 py-1 rounded text-secondary-text">
+                                    {context.playerName(player)}
+                                  </span>
+                                </Link>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                      {/* Missing players for full-house / humbled */}
+                      {(type === "full-house" || type === "humbled") &&
+                        "missing" in data &&
+                        data.missing &&
+                        data.missing.size > 0 && (
+                          <div className="mt-3 pt-3 border-t border-secondary-text/50">
+                            <p className="text-xs text-secondary-text/70 mb-2">
+                              {type === "full-house" ? "Still need to beat:" : "Still need to lose to:"}
+                            </p>
+                            <div className="flex flex-wrap gap-1">
+                              {Array.from(data.missing).map((player: string) => (
                                 <Link to={"/player/" + player} key={player}>
                                   <span className="text-xs bg-background px-2 py-1 rounded text-secondary-text">
                                     {context.playerName(player)}

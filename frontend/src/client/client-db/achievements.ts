@@ -519,7 +519,169 @@ export class Achievements {
     this.#checkTournamentAchievements();
     this.#checkSeasonAchievements();
     this.#calculateEloAchievements();
+    this.#checkFullHouseAndHumbledAchievements();
     this.hasCalculated = true;
+  }
+
+  // Awards "Full House" (beat every currently ranked player at least once)
+  // and "Humbled" (lose to every currently ranked player at least once). The
+  // target cohort is the set of ranked players AT THE MOMENT being evaluated,
+  // which shifts as players cross the ranked threshold or are deactivated /
+  // reactivated (a deactivated player is not ranked). A win / loss counts
+  // whenever it happened (even before the opponent was ranked); what matters
+  // is the opponent belongs to the cohort at the time of the check.
+  //
+  // Because the cohort shrinks when a player is deactivated, either
+  // achievement can be earned by a DEACTIVATION rather than a game: if the
+  // deactivated player was the only ranked player you had not yet beaten
+  // (or lost to), the set completes the instant they drop off the
+  // leaderboard. To catch that, games and active-state changes are replayed
+  // in time order and the whole ranked cohort is re-checked after each.
+  //
+  // Requires ≥5 ranked players in the cohort so completing the set is a real
+  // feat, matching the gate used by the rank achievements. The earner
+  // does NOT need to be ranked themselves — an unranked player who has beaten
+  // (or lost to) the whole ranked field still qualifies. Each is awarded
+  // once, stamped at the moment the set completes, recording how many players
+  // were beaten / lost to and the player's first game (so the display can
+  // show how long it took).
+  #checkFullHouseAndHumbledAchievements() {
+    const gameLimit = this.parent.client.gameLimitForRanked;
+
+    // Per-player active-status timeline (same construction as the Elo pass).
+    type Transition = { time: number; active: boolean };
+    const timelines = new Map<string, Transition[]>();
+    for (const event of this.parent.events) {
+      let transition: Transition | null = null;
+      if (event.type === EventTypeEnum.PLAYER_CREATED) {
+        transition = { time: event.time, active: true };
+      } else if (event.type === EventTypeEnum.PLAYER_DEACTIVATED) {
+        transition = { time: event.time, active: false };
+      } else if (event.type === EventTypeEnum.PLAYER_REACTIVATED) {
+        transition = { time: event.time, active: true };
+      }
+      if (transition) {
+        const list = timelines.get(event.stream);
+        if (list) list.push(transition);
+        else timelines.set(event.stream, [transition]);
+      }
+    }
+    for (const list of timelines.values()) list.sort((a, b) => a.time - b.time);
+
+    const isActiveAt = (playerId: string, atTime: number): boolean => {
+      const tl = timelines.get(playerId);
+      if (!tl || tl.length === 0) return false;
+      let active = false;
+      for (const t of tl) {
+        if (t.time > atTime) break;
+        active = t.active;
+      }
+      return active;
+    };
+
+    const totalGames = new Map<string, number>();
+    const firstGameAt = new Map<string, number>();
+    const beaten = new Map<string, Set<string>>();
+    const lostTo = new Map<string, Set<string>>();
+    const fullHouseAwarded = new Set<string>();
+    const humbledAwarded = new Set<string>();
+
+    const addEdge = (map: Map<string, Set<string>>, key: string, value: string) => {
+      let set = map.get(key);
+      if (!set) {
+        set = new Set();
+        map.set(key, set);
+      }
+      set.add(value);
+    };
+
+    // The ranked cohort at `atTime`: players with ≥ gameLimit games so far
+    // who are active at that moment (a deactivated player is not ranked).
+    const cohortAt = (atTime: number): Set<string> => {
+      const cohort = new Set<string>();
+      for (const [id, games] of totalGames) {
+        if (games < gameLimit) continue;
+        if (!isActiveAt(id, atTime)) continue;
+        cohort.add(id);
+      }
+      return cohort;
+    };
+
+    // Whether `playerId` has an edge to every OTHER member of `cohort`.
+    const coversCohort = (edges: Set<string> | undefined, cohort: Set<string>, playerId: string): boolean => {
+      if (!edges) return false;
+      for (const target of cohort) {
+        if (target === playerId) continue;
+        if (!edges.has(target)) return false;
+      }
+      return true;
+    };
+
+    const recheckAt = (time: number) => {
+      const cohort = cohortAt(time);
+      if (cohort.size < 5) return;
+      // Candidates are everyone who has played a game — the earner need not
+      // be part of the ranked cohort themselves. When the earner IS ranked
+      // they are excluded from their own target (they can't beat themselves),
+      // so the number to beat / lose to is the cohort minus one.
+      for (const playerId of totalGames.keys()) {
+        const targetCount = cohort.size - (cohort.has(playerId) ? 1 : 0);
+        if (!fullHouseAwarded.has(playerId) && coversCohort(beaten.get(playerId), cohort, playerId)) {
+          fullHouseAwarded.add(playerId);
+          this.#addAchievement(
+            playerId,
+            this.#createAchievement("full-house", playerId, time, {
+              count: targetCount,
+              firstGameAt: firstGameAt.get(playerId)!,
+            }),
+          );
+        }
+        if (!humbledAwarded.has(playerId) && coversCohort(lostTo.get(playerId), cohort, playerId)) {
+          humbledAwarded.add(playerId);
+          this.#addAchievement(
+            playerId,
+            this.#createAchievement("humbled", playerId, time, {
+              count: targetCount,
+              firstGameAt: firstGameAt.get(playerId)!,
+            }),
+          );
+        }
+      }
+    };
+
+    // Replay games and active-state changes in time order. Games at the same
+    // instant as a state change are applied first so the recheck sees the
+    // post-game totals. A game recheck can newly complete the winner/loser
+    // (or, via a threshold crossing, anyone); a state-change recheck can
+    // complete a player whose last missing opponent just left the cohort.
+    type Action = { kind: "game"; time: number; game: Game } | { kind: "recheck"; time: number };
+    const actions: Action[] = [];
+    for (const g of this.parent.games) {
+      actions.push({ kind: "game", time: g.playedAt, game: g });
+    }
+    for (const e of this.parent.events) {
+      if (e.type === EventTypeEnum.PLAYER_DEACTIVATED || e.type === EventTypeEnum.PLAYER_REACTIVATED) {
+        actions.push({ kind: "recheck", time: e.time });
+      }
+    }
+    actions.sort((a, b) => {
+      if (a.time !== b.time) return a.time - b.time;
+      if (a.kind === b.kind) return 0;
+      return a.kind === "game" ? -1 : 1;
+    });
+
+    for (const action of actions) {
+      if (action.kind === "game") {
+        const game = action.game;
+        totalGames.set(game.winner, (totalGames.get(game.winner) ?? 0) + 1);
+        totalGames.set(game.loser, (totalGames.get(game.loser) ?? 0) + 1);
+        if (!firstGameAt.has(game.winner)) firstGameAt.set(game.winner, game.playedAt);
+        if (!firstGameAt.has(game.loser)) firstGameAt.set(game.loser, game.playedAt);
+        addEdge(beaten, game.winner, game.loser);
+        addEdge(lostTo, game.loser, game.winner);
+      }
+      recheckAt(action.time);
+    }
   }
 
   /**
@@ -1532,6 +1694,8 @@ export class Achievements {
       "david": { current: 0, target: 30, earned: 0 },
       "goliath": { current: 0, target: 30, earned: 0 },
       "climber": { current: 0, target: 300, earned: 0 },
+      "full-house": { current: 0, target: 1, missing: new Set(), earned: 0 },
+      "humbled": { current: 0, target: 1, missing: new Set(), earned: 0 },
 
       // Game feats
       "donut-1": { current: 0, target: 1, earned: 0 },
@@ -1924,6 +2088,37 @@ export class Achievements {
       progression["climber"].current = Math.max(0, currentElo - climberLow.elo);
     }
 
+    // Full House / Humbled progression: how many of the currently ranked
+    // players (excluding the player themselves) this player has beaten /
+    // lost to. Target is the total number of currently ranked
+    // players, minus one when the player is ranked themselves — i.e. the
+    // exact set they must complete to earn the achievement. Neither is
+    // earnable until at least 5 players are ranked, so while the ranked
+    // field is smaller than that the progress is shown as 0.
+    const rankedActiveIds = this.parent.leaderboard.getLeaderboard().rankedPlayers.map((p) => p.id);
+    const rankedTargetPool = new Set(rankedActiveIds.filter((id) => id !== playerId));
+    const enoughRanked = rankedActiveIds.length >= 5;
+    const beatenRanked = new Set<string>();
+    const lostToRanked = new Set<string>();
+    if (enoughRanked) {
+      this.parent.games.forEach((game) => {
+        if (game.winner === playerId && rankedTargetPool.has(game.loser)) beatenRanked.add(game.loser);
+        if (game.loser === playerId && rankedTargetPool.has(game.winner)) lostToRanked.add(game.winner);
+      });
+    }
+    const rankedTarget = rankedTargetPool.size;
+    // Players still standing between you and the achievement. While the ranked
+    // field is too small (progress forced to 0) the beaten / lost-to sets are
+    // empty, so the whole target pool shows as missing.
+    const fullHouseMissing = new Set([...rankedTargetPool].filter((id) => !beatenRanked.has(id)));
+    const humbledMissing = new Set([...rankedTargetPool].filter((id) => !lostToRanked.has(id)));
+    progression["full-house"].current = beatenRanked.size;
+    progression["full-house"].target = rankedTarget;
+    progression["full-house"].missing = fullHouseMissing;
+    progression["humbled"].current = lostToRanked.size;
+    progression["humbled"].target = rankedTarget;
+    progression["humbled"].missing = humbledMissing;
+
     // Count earned achievements
     const achievements = this.getAchievements(playerId);
     achievements.forEach((achievement) => {
@@ -2005,6 +2200,8 @@ type AchievementDefinitions = {
   };
   "streak-ender": { opponent: string; gameId: string; streakLength: number };
   "group-stage-star": { tournamentId: string; wins: number };
+  "full-house": { count: number; firstGameAt: number };
+  "humbled": { count: number; firstGameAt: number };
 };
 
 type AchievementType = keyof AchievementDefinitions;
@@ -2054,6 +2251,12 @@ type BestFriendsProgression = ProgressionWithTarget & {
 
 type WelcomeCommitteeProgression = ProgressionWithTarget & {
   newPlayers?: Set<string>; // List of new players this person was first opponent for
+};
+
+type MissingPlayersProgression = ProgressionWithTarget & {
+  // Currently ranked players the player has not yet beaten (Full House) /
+  // not yet lost to (Humbled) — i.e. what's left to complete the set.
+  missing?: Set<string>;
 };
 
 type MarathonSetProgression = BaseProgression & {
@@ -2114,4 +2317,6 @@ export type AchievementProgression = {
   "marathon-set": MarathonSetProgression;
   "streak-ender": BaseProgression;
   "group-stage-star": BaseProgression;
+  "full-house": MissingPlayersProgression;
+  "humbled": MissingPlayersProgression;
 };

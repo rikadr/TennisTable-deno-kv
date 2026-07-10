@@ -213,6 +213,18 @@ export const AchievementsList: React.FC<AchievementsListProps> = ({ achievements
                       {achievement.data.wins !== 1 ? "s" : ""})
                     </span>
                   )}
+                  {(achievement.type === "full-house" || achievement.type === "humbled") &&
+                    achievement.data && (
+                      <span className="text-[11px] opacity-80">
+                        {achievement.type === "full-house" ? "Beat " : "Lost to "}
+                        {achievement.data.count} ranked player
+                        {achievement.data.count !== 1 ? "s" : ""} in{" "}
+                        {Math.round(
+                          (achievement.earnedAt - achievement.data.firstGameAt) / (24 * 60 * 60 * 1000),
+                        )}{" "}
+                        days
+                      </span>
+                    )}
                   {achievement.type === "leap-frog" && achievement.data && (
                     <span className="text-[11px] opacity-80">
                       #{achievement.data.fromRank} → #{achievement.data.toRank} (
