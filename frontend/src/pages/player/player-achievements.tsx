@@ -492,6 +492,14 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
                   </p>
                 )}
 
+                {(achievement.type === "full-house" || achievement.type === "humbled") && achievement.data && (
+                  <p className="text-xs text-secondary-text/70 mt-2">
+                    {achievement.type === "full-house" ? "Beat " : "Lost to "}
+                    {achievement.data.count} ranked player{achievement.data.count !== 1 ? "s" : ""} in{" "}
+                    {daysBetween(achievement.data.firstGameAt, achievement.earnedAt)} days
+                  </p>
+                )}
+
                 {achievement.type === "leap-frog" && achievement.data && (
                   <div className="text-xs text-secondary-text/70 mt-2 space-y-1">
                     <p>Beat {context.playerName(achievement.data.opponent)}</p>

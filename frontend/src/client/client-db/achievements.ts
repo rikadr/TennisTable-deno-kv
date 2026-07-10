@@ -540,8 +540,11 @@ export class Achievements {
   //
   // Requires ≥5 ranked active players in the cohort so completing the set is
   // a real feat, matching the gate used by the rank achievements. The earner
-  // must themselves be a ranked active player at the time. Each is awarded
-  // once, stamped at the moment the set completes.
+  // does NOT need to be ranked themselves — an unranked player who has beaten
+  // (or lost to) the whole ranked field still qualifies. Each is awarded
+  // once, stamped at the moment the set completes, recording how many players
+  // were beaten / lost to and the player's first game (so the display can
+  // show how long it took).
   #checkFullHouseAndHumbledAchievements() {
     const gameLimit = this.parent.client.gameLimitForRanked;
 
@@ -577,6 +580,7 @@ export class Achievements {
     };
 
     const totalGames = new Map<string, number>();
+    const firstGameAt = new Map<string, number>();
     const beaten = new Map<string, Set<string>>();
     const lostTo = new Map<string, Set<string>>();
     const fullHouseAwarded = new Set<string>();
@@ -616,14 +620,31 @@ export class Achievements {
     const recheckAt = (time: number) => {
       const cohort = cohortAt(time);
       if (cohort.size < 5) return;
-      for (const playerId of cohort) {
+      // Candidates are everyone who has played a game — the earner need not
+      // be part of the ranked cohort themselves. When the earner IS ranked
+      // they are excluded from their own target (they can't beat themselves),
+      // so the number to beat / lose to is the cohort minus one.
+      for (const playerId of totalGames.keys()) {
+        const targetCount = cohort.size - (cohort.has(playerId) ? 1 : 0);
         if (!fullHouseAwarded.has(playerId) && coversCohort(beaten.get(playerId), cohort, playerId)) {
           fullHouseAwarded.add(playerId);
-          this.#addAchievement(playerId, this.#createAchievement("full-house", playerId, time, undefined));
+          this.#addAchievement(
+            playerId,
+            this.#createAchievement("full-house", playerId, time, {
+              count: targetCount,
+              firstGameAt: firstGameAt.get(playerId)!,
+            }),
+          );
         }
         if (!humbledAwarded.has(playerId) && coversCohort(lostTo.get(playerId), cohort, playerId)) {
           humbledAwarded.add(playerId);
-          this.#addAchievement(playerId, this.#createAchievement("humbled", playerId, time, undefined));
+          this.#addAchievement(
+            playerId,
+            this.#createAchievement("humbled", playerId, time, {
+              count: targetCount,
+              firstGameAt: firstGameAt.get(playerId)!,
+            }),
+          );
         }
       }
     };
@@ -654,6 +675,8 @@ export class Achievements {
         const game = action.game;
         totalGames.set(game.winner, (totalGames.get(game.winner) ?? 0) + 1);
         totalGames.set(game.loser, (totalGames.get(game.loser) ?? 0) + 1);
+        if (!firstGameAt.has(game.winner)) firstGameAt.set(game.winner, game.playedAt);
+        if (!firstGameAt.has(game.loser)) firstGameAt.set(game.loser, game.playedAt);
         addEdge(beaten, game.winner, game.loser);
         addEdge(lostTo, game.loser, game.winner);
       }
@@ -2069,15 +2092,20 @@ export class Achievements {
     // active players (excluding the player themselves) this player has
     // beaten / lost to. Target is the total number of currently ranked
     // players, minus one when the player is ranked themselves — i.e. the
-    // exact set they must complete to earn the achievement.
+    // exact set they must complete to earn the achievement. Neither is
+    // earnable until at least 5 players are ranked, so while the ranked
+    // field is smaller than that the progress is shown as 0.
     const rankedActiveIds = this.parent.leaderboard.getLeaderboard().rankedPlayers.map((p) => p.id);
     const rankedTargetPool = new Set(rankedActiveIds.filter((id) => id !== playerId));
+    const enoughRanked = rankedActiveIds.length >= 5;
     const beatenRanked = new Set<string>();
     const lostToRanked = new Set<string>();
-    this.parent.games.forEach((game) => {
-      if (game.winner === playerId && rankedTargetPool.has(game.loser)) beatenRanked.add(game.loser);
-      if (game.loser === playerId && rankedTargetPool.has(game.winner)) lostToRanked.add(game.winner);
-    });
+    if (enoughRanked) {
+      this.parent.games.forEach((game) => {
+        if (game.winner === playerId && rankedTargetPool.has(game.loser)) beatenRanked.add(game.loser);
+        if (game.loser === playerId && rankedTargetPool.has(game.winner)) lostToRanked.add(game.winner);
+      });
+    }
     const rankedTarget = rankedTargetPool.size;
     progression["full-house"].current = beatenRanked.size;
     progression["full-house"].target = rankedTarget;
@@ -2165,8 +2193,8 @@ type AchievementDefinitions = {
   };
   "streak-ender": { opponent: string; gameId: string; streakLength: number };
   "group-stage-star": { tournamentId: string; wins: number };
-  "full-house": undefined;
-  "humbled": undefined;
+  "full-house": { count: number; firstGameAt: number };
+  "humbled": { count: number; firstGameAt: number };
 };
 
 type AchievementType = keyof AchievementDefinitions;

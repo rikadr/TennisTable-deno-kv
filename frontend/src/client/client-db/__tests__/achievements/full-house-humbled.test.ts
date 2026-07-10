@@ -172,6 +172,65 @@ describe("Full House & Humbled Achievements", () => {
     const fullHouse = tt.achievements.getAchievements("a").filter((x) => x.type === "full-house");
     expect(fullHouse).toHaveLength(1);
     expect(fullHouse[0].earnedAt).toBe(200);
+    // A is ranked, so the completed set is the cohort of 5 minus A → 4. A's
+    // first game was against F at t=100.
+    expect(fullHouse[0].data).toEqual({ count: 4, firstGameAt: 100 });
+  });
+
+  it("can be earned by an unranked player who beat the whole ranked field", () => {
+    // gameLimitForRanked is raised to 6 so a player can beat all 5 ranked
+    // players (5 games) while still being unranked themselves. A–E become
+    // ranked via the double round-robin (8 games each). Z then beats all of
+    // them across 5 games — Z has only 5 games (< 6) so is NOT ranked, yet
+    // Full House still fires, counting all 5 beaten players.
+    const events = [
+      ...fivePlayerSetup(),
+      createPlayer("z", 50),
+      game("z-a", 2000, "z", "a"),
+      game("z-b", 2001, "z", "b"),
+      game("z-c", 2002, "z", "c"),
+      game("z-d", 2003, "z", "d"),
+      game("z-e", 2004, "z", "e"),
+    ];
+    const tt = new TennisTable({ events, gameLimitForRankedOverride: 6 });
+    tt.achievements.calculateAchievements();
+
+    // Sanity: Z is not on the leaderboard (only 5 games, needs 6).
+    const ranked = tt.leaderboard.getLeaderboard().rankedPlayers.map((p) => p.id);
+    expect(ranked).not.toContain("z");
+
+    const fullHouse = tt.achievements.getAchievements("z").filter((x) => x.type === "full-house");
+    expect(fullHouse).toHaveLength(1);
+    expect(fullHouse[0].earnedAt).toBe(2004);
+    // Z is unranked, so nothing is subtracted — all 5 ranked players counted.
+    expect(fullHouse[0].data).toEqual({ count: 5, firstGameAt: 2000 });
+  });
+
+  it("shows 0 progress while fewer than 5 players are ranked", () => {
+    // 4-player double round-robin: A beats B, C, D. Only 4 players are
+    // ranked, below the ≥5 gate, so progress is reported as 0 even though A
+    // has beaten every ranked opponent.
+    const events: EventType[] = [
+      createPlayer("a", 1),
+      createPlayer("b", 2),
+      createPlayer("c", 3),
+      createPlayer("d", 4),
+    ];
+    const outcomes: [string, string, string][] = [
+      ["a-b", "a", "b"], ["a-c", "a", "c"], ["a-d", "a", "d"],
+      ["b-c", "b", "c"], ["b-d", "b", "d"], ["c-d", "c", "d"],
+    ];
+    let t = 100;
+    for (let round = 0; round < 2; round++) {
+      for (const [id, winner, loser] of outcomes) {
+        events.push(game(`${id}-${round}`, t++, winner, loser));
+      }
+    }
+    const tt = new TennisTable({ events });
+    tt.achievements.calculateAchievements();
+
+    const aProgress = tt.achievements.getPlayerProgression("a");
+    expect(aProgress["full-house"].current).toBe(0);
   });
 
   it("does NOT award when a deactivation drops the cohort below 5", () => {
