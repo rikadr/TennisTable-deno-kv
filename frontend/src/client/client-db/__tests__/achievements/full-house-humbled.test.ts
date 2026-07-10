@@ -1,12 +1,12 @@
 import { TennisTable } from "../../tennis-table";
 import { EventType, EventTypeEnum } from "../../event-store/event-types";
 
-// Full House: beat every currently ranked active player at least once.
-// Humbled: lose to every currently ranked active player at least once.
-// The target cohort is the CURRENT leaderboard (ranked active players now),
-// and each requires ≥5 ranked active players to be earnable — matching the
-// cohort gate used by the rank achievements. Default GuestClient has
-// gameLimitForRanked = 5.
+// Full House: beat every currently ranked player at least once.
+// Humbled: lose to every currently ranked player at least once.
+// The target cohort is the CURRENT leaderboard (ranked players now, i.e.
+// active players with enough games), and each requires ≥5 ranked players to
+// be earnable — matching the cohort gate used by the rank achievements.
+// Default GuestClient has gameLimitForRanked = 5.
 
 describe("Full House & Humbled Achievements", () => {
   const createPlayer = (id: string, time: number): EventType => ({
@@ -55,7 +55,7 @@ describe("Full House & Humbled Achievements", () => {
     return events;
   };
 
-  it("awards Full House when a player has beaten every currently ranked active player", () => {
+  it("awards Full House when a player has beaten every currently ranked player", () => {
     // In the double round-robin, A beats B, C, D and E at least once — A has
     // beaten all 4 other ranked players, so Full House fires for A.
     const events = fivePlayerSetup();
@@ -66,7 +66,7 @@ describe("Full House & Humbled Achievements", () => {
     expect(fullHouse).toHaveLength(1);
   });
 
-  it("awards Humbled when a player has lost to every currently ranked active player", () => {
+  it("awards Humbled when a player has lost to every currently ranked player", () => {
     // E loses to A, B, C and D at least once — Humbled fires for E.
     const events = fivePlayerSetup();
     const tt = new TennisTable({ events });

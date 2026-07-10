@@ -235,12 +235,12 @@ export const ACHIEVEMENT_LABELS: Record<string, { title: string; description: st
   },
   "full-house": {
     title: "Full House",
-    description: "Beat every currently ranked active player at least once",
+    description: "Beat every currently ranked player at least once",
     icon: "🃏",
   },
   "humbled": {
     title: "Humbled",
-    description: "Lose to every currently ranked active player at least once",
+    description: "Lose to every currently ranked player at least once",
     icon: "🙇",
   },
 };

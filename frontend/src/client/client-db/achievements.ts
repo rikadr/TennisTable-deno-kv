@@ -523,13 +523,13 @@ export class Achievements {
     this.hasCalculated = true;
   }
 
-  // Awards "Full House" (beat every currently ranked active player at least
-  // once) and "Humbled" (lose to every currently ranked active player at
-  // least once). The target cohort is the set of ranked active players AT THE
-  // MOMENT being evaluated, which shifts as players cross the ranked
-  // threshold or are deactivated / reactivated. A win / loss counts whenever
-  // it happened (even before the opponent was ranked); what matters is the
-  // opponent belongs to the cohort at the time of the check.
+  // Awards "Full House" (beat every currently ranked player at least once)
+  // and "Humbled" (lose to every currently ranked player at least once). The
+  // target cohort is the set of ranked players AT THE MOMENT being evaluated,
+  // which shifts as players cross the ranked threshold or are deactivated /
+  // reactivated (a deactivated player is not ranked). A win / loss counts
+  // whenever it happened (even before the opponent was ranked); what matters
+  // is the opponent belongs to the cohort at the time of the check.
   //
   // Because the cohort shrinks when a player is deactivated, either
   // achievement can be earned by a DEACTIVATION rather than a game: if the
@@ -538,8 +538,8 @@ export class Achievements {
   // leaderboard. To catch that, games and active-state changes are replayed
   // in time order and the whole ranked cohort is re-checked after each.
   //
-  // Requires ≥5 ranked active players in the cohort so completing the set is
-  // a real feat, matching the gate used by the rank achievements. The earner
+  // Requires ≥5 ranked players in the cohort so completing the set is a real
+  // feat, matching the gate used by the rank achievements. The earner
   // does NOT need to be ranked themselves — an unranked player who has beaten
   // (or lost to) the whole ranked field still qualifies. Each is awarded
   // once, stamped at the moment the set completes, recording how many players
@@ -595,8 +595,8 @@ export class Achievements {
       set.add(value);
     };
 
-    // The ranked active cohort at `atTime`: players with ≥ gameLimit games so
-    // far who are active at that moment.
+    // The ranked cohort at `atTime`: players with ≥ gameLimit games so far
+    // who are active at that moment (a deactivated player is not ranked).
     const cohortAt = (atTime: number): Set<string> => {
       const cohort = new Set<string>();
       for (const [id, games] of totalGames) {
@@ -2089,8 +2089,8 @@ export class Achievements {
     }
 
     // Full House / Humbled progression: how many of the currently ranked
-    // active players (excluding the player themselves) this player has
-    // beaten / lost to. Target is the total number of currently ranked
+    // players (excluding the player themselves) this player has beaten /
+    // lost to. Target is the total number of currently ranked
     // players, minus one when the player is ranked themselves — i.e. the
     // exact set they must complete to earn the achievement. Neither is
     // earnable until at least 5 players are ranked, so while the ranked
@@ -2254,8 +2254,8 @@ type WelcomeCommitteeProgression = ProgressionWithTarget & {
 };
 
 type MissingPlayersProgression = ProgressionWithTarget & {
-  // Currently ranked active players the player has not yet beaten (Full
-  // House) / not yet lost to (Humbled) — i.e. what's left to complete the set.
+  // Currently ranked players the player has not yet beaten (Full House) /
+  // not yet lost to (Humbled) — i.e. what's left to complete the set.
   missing?: Set<string>;
 };
 
