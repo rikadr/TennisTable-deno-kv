@@ -519,7 +519,67 @@ export class Achievements {
     this.#checkTournamentAchievements();
     this.#checkSeasonAchievements();
     this.#calculateEloAchievements();
+    this.#checkFullHouseAndHumbledAchievements();
     this.hasCalculated = true;
+  }
+
+  // Awards "Full House" (beat every currently ranked active player at least
+  // once) and "Humbled" (lose to every currently ranked active player at
+  // least once). The target cohort is the CURRENT leaderboard — the set of
+  // ranked active players right now — so beating/losing to a player who has
+  // since dropped off the leaderboard no longer counts, while any historical
+  // result against a currently-ranked player does. Requires ≥5 ranked active
+  // players so completing the set is a real feat, matching the cohort gate
+  // used by the rank achievements. Each is awarded once, at the game that
+  // completes the set.
+  #checkFullHouseAndHumbledAchievements() {
+    const rankedActive = this.parent.leaderboard.getLeaderboard().rankedPlayers.map((p) => p.id);
+    if (rankedActive.length < 5) return;
+    const rankedSet = new Set(rankedActive);
+
+    // Per-player sets of currently-ranked-active opponents beaten / lost to.
+    const beaten = new Map<string, Set<string>>();
+    const lostTo = new Map<string, Set<string>>();
+    const fullHouseAwarded = new Set<string>();
+    const humbledAwarded = new Set<string>();
+
+    const targetSizeFor = (playerId: string) => rankedSet.size - (rankedSet.has(playerId) ? 1 : 0);
+
+    this.parent.games.forEach((game) => {
+      // Full House for the winner: they just beat a ranked active player.
+      if (rankedSet.has(game.loser) && !fullHouseAwarded.has(game.winner)) {
+        let set = beaten.get(game.winner);
+        if (!set) {
+          set = new Set();
+          beaten.set(game.winner, set);
+        }
+        set.add(game.loser);
+        if (set.size === targetSizeFor(game.winner)) {
+          fullHouseAwarded.add(game.winner);
+          this.#addAchievement(
+            game.winner,
+            this.#createAchievement("full-house", game.winner, game.playedAt, undefined),
+          );
+        }
+      }
+
+      // Humbled for the loser: they just lost to a ranked active player.
+      if (rankedSet.has(game.winner) && !humbledAwarded.has(game.loser)) {
+        let set = lostTo.get(game.loser);
+        if (!set) {
+          set = new Set();
+          lostTo.set(game.loser, set);
+        }
+        set.add(game.winner);
+        if (set.size === targetSizeFor(game.loser)) {
+          humbledAwarded.add(game.loser);
+          this.#addAchievement(
+            game.loser,
+            this.#createAchievement("humbled", game.loser, game.playedAt, undefined),
+          );
+        }
+      }
+    });
   }
 
   /**
@@ -1532,6 +1592,8 @@ export class Achievements {
       "david": { current: 0, target: 30, earned: 0 },
       "goliath": { current: 0, target: 30, earned: 0 },
       "climber": { current: 0, target: 300, earned: 0 },
+      "full-house": { current: 0, target: 1, earned: 0 },
+      "humbled": { current: 0, target: 1, earned: 0 },
 
       // Game feats
       "donut-1": { current: 0, target: 1, earned: 0 },
@@ -1924,6 +1986,24 @@ export class Achievements {
       progression["climber"].current = Math.max(0, currentElo - climberLow.elo);
     }
 
+    // Full House / Humbled progression: how many of the currently ranked
+    // active players (excluding the player themselves) this player has
+    // beaten / lost to. Target is the size of that cohort, so it always
+    // matches the set they must complete to earn the achievement.
+    const rankedActiveIds = this.parent.leaderboard.getLeaderboard().rankedPlayers.map((p) => p.id);
+    const rankedTargetPool = new Set(rankedActiveIds.filter((id) => id !== playerId));
+    const beatenRanked = new Set<string>();
+    const lostToRanked = new Set<string>();
+    this.parent.games.forEach((game) => {
+      if (game.winner === playerId && rankedTargetPool.has(game.loser)) beatenRanked.add(game.loser);
+      if (game.loser === playerId && rankedTargetPool.has(game.winner)) lostToRanked.add(game.winner);
+    });
+    const rankedTarget = Math.max(rankedTargetPool.size, 1);
+    progression["full-house"].current = beatenRanked.size;
+    progression["full-house"].target = rankedTarget;
+    progression["humbled"].current = lostToRanked.size;
+    progression["humbled"].target = rankedTarget;
+
     // Count earned achievements
     const achievements = this.getAchievements(playerId);
     achievements.forEach((achievement) => {
@@ -2005,6 +2085,8 @@ type AchievementDefinitions = {
   };
   "streak-ender": { opponent: string; gameId: string; streakLength: number };
   "group-stage-star": { tournamentId: string; wins: number };
+  "full-house": undefined;
+  "humbled": undefined;
 };
 
 type AchievementType = keyof AchievementDefinitions;
@@ -2114,4 +2196,6 @@ export type AchievementProgression = {
   "marathon-set": MarathonSetProgression;
   "streak-ender": BaseProgression;
   "group-stage-star": BaseProgression;
+  "full-house": ProgressionWithTarget;
+  "humbled": ProgressionWithTarget;
 };

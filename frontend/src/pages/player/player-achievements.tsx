@@ -233,6 +233,16 @@ export const ACHIEVEMENT_LABELS: Record<string, { title: string; description: st
     description: "Go undefeated in a tournament group stage",
     icon: "⭐",
   },
+  "full-house": {
+    title: "Full House",
+    description: "Beat every currently ranked active player at least once",
+    icon: "🃏",
+  },
+  "humbled": {
+    title: "Humbled",
+    description: "Lose to every currently ranked active player at least once",
+    icon: "🙇",
+  },
 };
 
 // Resolves the display label for an achievement type, filling in any
