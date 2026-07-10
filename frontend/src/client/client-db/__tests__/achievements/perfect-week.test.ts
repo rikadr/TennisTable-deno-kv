@@ -140,20 +140,80 @@ describe("Perfect Week Achievement Tests", () => {
     expect(perfectWeeks).toHaveLength(0);
   });
 
-  it("tracks progression toward perfect-week (distinct weekdays won)", () => {
-    const events: EventType[] = [
-      ...baseEvents,
-      win(2024, 0, 15, "player-1", "player-2", "mon"),
-      win(2024, 0, 17, "player-1", "player-2", "wed"),
-      win(2024, 0, 19, "player-1", "player-2", "fri"),
-    ];
+  describe("Progression (live, resets on a missed weekday)", () => {
+    afterEach(() => {
+      jest.useRealTimers();
+    });
 
-    const tennisTable = new TennisTable({ events });
-    tennisTable.achievements.calculateAchievements();
+    it("a Monday win reads 1/5 and holds through Tuesday", () => {
+      // "now" is Tuesday afternoon; only Monday has been won so far.
+      jest.useFakeTimers();
+      jest.setSystemTime(new Date(2024, 0, 16, 15));
 
-    const progression = tennisTable.achievements.getPlayerProgression("player-1");
-    expect(progression["perfect-week"].current).toBe(3);
-    expect(progression["perfect-week"].target).toBe(5);
-    expect(progression["perfect-week"].earned).toBe(0);
+      const events: EventType[] = [...baseEvents, win(2024, 0, 15, "player-1", "player-2", "mon")];
+
+      const tennisTable = new TennisTable({ events });
+      tennisTable.achievements.calculateAchievements();
+
+      const progression = tennisTable.achievements.getPlayerProgression("player-1");
+      expect(progression["perfect-week"].current).toBe(1);
+      expect(progression["perfect-week"].target).toBe(5);
+      expect(progression["perfect-week"].earned).toBe(0);
+    });
+
+    it("counts the current weekday once it is won (Mon+Tue on Tuesday = 2/5)", () => {
+      jest.useFakeTimers();
+      jest.setSystemTime(new Date(2024, 0, 16, 20));
+
+      const events: EventType[] = [
+        ...baseEvents,
+        win(2024, 0, 15, "player-1", "player-2", "mon"),
+        win(2024, 0, 16, "player-1", "player-2", "tue"),
+      ];
+
+      const tennisTable = new TennisTable({ events });
+      tennisTable.achievements.calculateAchievements();
+
+      const progression = tennisTable.achievements.getPlayerProgression("player-1");
+      expect(progression["perfect-week"].current).toBe(2);
+    });
+
+    it("drops to 0 on Wednesday when Tuesday passed with no win", () => {
+      // "now" is Wednesday; Monday and Wednesday won, but Tuesday was missed.
+      jest.useFakeTimers();
+      jest.setSystemTime(new Date(2024, 0, 17, 12));
+
+      const events: EventType[] = [
+        ...baseEvents,
+        win(2024, 0, 15, "player-1", "player-2", "mon"),
+        win(2024, 0, 17, "player-1", "player-2", "wed"),
+      ];
+
+      const tennisTable = new TennisTable({ events });
+      tennisTable.achievements.calculateAchievements();
+
+      const progression = tennisTable.achievements.getPlayerProgression("player-1");
+      expect(progression["perfect-week"].current).toBe(0);
+    });
+
+    it("resets to 0 the following week (last week's wins do not carry over)", () => {
+      // "now" is the Monday after a fully-won week — new attempt, no games yet.
+      jest.useFakeTimers();
+      jest.setSystemTime(new Date(2024, 0, 22, 8));
+
+      const events: EventType[] = [
+        ...baseEvents,
+        win(2024, 0, 15, "player-1", "player-2", "mon"),
+        win(2024, 0, 16, "player-1", "player-2", "tue"),
+        win(2024, 0, 17, "player-1", "player-2", "wed"),
+        win(2024, 0, 18, "player-1", "player-2", "thu"),
+      ];
+
+      const tennisTable = new TennisTable({ events });
+      tennisTable.achievements.calculateAchievements();
+
+      const progression = tennisTable.achievements.getPlayerProgression("player-1");
+      expect(progression["perfect-week"].current).toBe(0);
+    });
   });
 });

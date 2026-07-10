@@ -2042,25 +2042,42 @@ export class Achievements {
     progression["punching-bag"].current = currentLoseStreakAll;
     progression["never-give-up"].current = currentLoseStreakAll;
 
-    // Perfect Day progression: best undefeated day so far (most wins on a
-    // day with zero losses), capped at the target so it never reads > 5/5.
-    let bestUndefeatedDayWins = 0;
-    perfectDayStats.forEach((stat) => {
-      if (stat.losses === 0 && stat.wins > bestUndefeatedDayWins) {
-        bestUndefeatedDayWins = stat.wins;
-      }
-    });
-    progression["perfect-day"].current = Math.min(bestUndefeatedDayWins, 5);
+    // Perfect Day progression tracks TODAY's live attempt: the number of
+    // games won today with zero losses so far. A single loss today nullifies
+    // it — progress drops to 0 and the player must try again tomorrow. No
+    // games today → 0.
+    const nowMs = Date.now();
+    const todayStart = new Date(nowMs);
+    todayStart.setHours(0, 0, 0, 0);
+    const todayStat = perfectDayStats.get(todayStart.getTime());
+    progression["perfect-day"].current =
+      todayStat && todayStat.losses === 0 ? Math.min(todayStat.wins, 5) : 0;
 
-    // Perfect Week progression: most distinct Mon–Fri weekdays won within a
-    // single working week so far.
-    let bestWeekdaysWon = 0;
-    perfectWeekWeekdays.forEach((weekdays) => {
-      if (weekdays.size > bestWeekdaysWon) {
-        bestWeekdaysWon = weekdays.size;
+    // Perfect Week progression tracks THIS working week's live attempt: the
+    // run of consecutive weekdays from Monday, each with at least one win.
+    // A weekday that has fully elapsed without a win breaks the run to 0 (try
+    // again next Monday); the current weekday only counts once it has a win.
+    // E.g. a Monday win reads 1/5 all through Tuesday; if Tuesday then passes
+    // with no win, Wednesday starts the player at 0/5.
+    const weekStartNow = new Date(nowMs);
+    weekStartNow.setHours(0, 0, 0, 0);
+    const daysSinceMonday = (weekStartNow.getDay() + 6) % 7; // 0=Mon..6=Sun
+    weekStartNow.setDate(weekStartNow.getDate() - daysSinceMonday);
+    const weekdaysWonThisWeek = perfectWeekWeekdays.get(weekStartNow.getTime()) ?? new Set<number>();
+    // Weekdays (1=Mon..5=Fri) that have fully elapsed must each carry a win.
+    const passedWeekdays = Math.min(daysSinceMonday, 5);
+    let perfectWeekProgress = passedWeekdays;
+    for (let weekday = 1; weekday <= passedWeekdays; weekday++) {
+      if (!weekdaysWonThisWeek.has(weekday)) {
+        perfectWeekProgress = 0;
+        break;
       }
-    });
-    progression["perfect-week"].current = bestWeekdaysWon;
+    }
+    // The current weekday (Mon–Fri) counts only once it has a win.
+    if (perfectWeekProgress !== 0 && daysSinceMonday <= 4 && weekdaysWonThisWeek.has(daysSinceMonday + 1)) {
+      perfectWeekProgress += 1;
+    }
+    progression["perfect-week"].current = perfectWeekProgress;
 
     // Calculate hat-trick progression (wins within last 90 minutes)
     const NINETY_MINUTES = 90 * 60 * 1000;
