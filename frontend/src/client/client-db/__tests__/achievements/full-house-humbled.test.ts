@@ -130,11 +130,74 @@ describe("Full House & Humbled Achievements", () => {
     expect(tt.achievements.getAchievements("d").filter((x) => x.type === "humbled")).toHaveLength(0);
   });
 
-  it("ignores results against players who are no longer ranked active", () => {
-    // A beats B, C, D, E. Then E is deactivated, dropping the ranked cohort
-    // to 4 (A, B, C, D). Full House now needs ≥5 ranked active — the gate
-    // fails and A gets nothing despite having beaten everyone historically.
-    const events = [...fivePlayerSetup(), deactivate("e", 5000)];
+  it("awards Full House the moment a deactivation removes the last unbeaten ranked player", () => {
+    // 6 players. F is made ranked first and beats A (so A never beats F).
+    // A then beats B, C, D, E, and B–E are brought up to ranked. With all 6
+    // ranked, A is missing only F, so Full House does NOT fire. When F is
+    // deactivated the cohort drops to {A,B,C,D,E} (still 5) and A has beaten
+    // all of them — Full House fires, stamped at the deactivation time.
+    const events: EventType[] = [
+      createPlayer("a", 1),
+      createPlayer("b", 2),
+      createPlayer("c", 3),
+      createPlayer("d", 4),
+      createPlayer("e", 5),
+      createPlayer("f", 6),
+    ];
+    // Phase 1 — F plays everyone once (F reaches 5 games → ranked first).
+    // F beats A, so A can never complete the set while F is in the cohort.
+    events.push(game("f-a", 100, "f", "a"));
+    events.push(game("f-b", 101, "f", "b"));
+    events.push(game("f-c", 102, "f", "c"));
+    events.push(game("f-d", 103, "f", "d"));
+    events.push(game("f-e", 104, "f", "e"));
+    // Phase 2 — A beats B, C, D, E (A reaches 5 games → ranked).
+    events.push(game("a-b", 110, "a", "b"));
+    events.push(game("a-c", 111, "a", "c"));
+    events.push(game("a-d", 112, "a", "d"));
+    events.push(game("a-e", 113, "a", "e"));
+    // Phase 3 — round-robin among B, C, D, E so each reaches 5 games.
+    events.push(game("b-c", 120, "b", "c"));
+    events.push(game("b-d", 121, "b", "d"));
+    events.push(game("b-e", 122, "b", "e"));
+    events.push(game("c-d", 123, "c", "d"));
+    events.push(game("c-e", 124, "c", "e"));
+    events.push(game("d-e", 125, "d", "e"));
+    // Phase 4 — F deactivated. A's last missing target leaves the cohort.
+    events.push(deactivate("f", 200));
+
+    const tt = new TennisTable({ events });
+    tt.achievements.calculateAchievements();
+
+    const fullHouse = tt.achievements.getAchievements("a").filter((x) => x.type === "full-house");
+    expect(fullHouse).toHaveLength(1);
+    expect(fullHouse[0].earnedAt).toBe(200);
+  });
+
+  it("does NOT award when a deactivation drops the cohort below 5", () => {
+    // 5 ranked players. A beats B, C, D but loses to E, so A is missing only
+    // E. Deactivating E leaves a cohort of 4 (A, B, C, D) — below the ≥5
+    // gate — so A earns nothing despite having beaten everyone still ranked.
+    const events: EventType[] = [
+      createPlayer("a", 1),
+      createPlayer("b", 2),
+      createPlayer("c", 3),
+      createPlayer("d", 4),
+      createPlayer("e", 5),
+    ];
+    const outcomes: [string, string, string][] = [
+      ["a-b", "a", "b"], ["a-c", "a", "c"], ["a-d", "a", "d"], ["e-a", "e", "a"],
+      ["b-c", "b", "c"], ["b-d", "b", "d"], ["b-e", "b", "e"],
+      ["c-d", "c", "d"], ["c-e", "c", "e"], ["d-e", "d", "e"],
+    ];
+    let t = 100;
+    for (let round = 0; round < 2; round++) {
+      for (const [id, winner, loser] of outcomes) {
+        events.push(game(`${id}-${round}`, t++, winner, loser));
+      }
+    }
+    events.push(deactivate("e", 5000));
+
     const tt = new TennisTable({ events });
     tt.achievements.calculateAchievements();
 

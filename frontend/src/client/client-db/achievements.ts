@@ -525,61 +525,140 @@ export class Achievements {
 
   // Awards "Full House" (beat every currently ranked active player at least
   // once) and "Humbled" (lose to every currently ranked active player at
-  // least once). The target cohort is the CURRENT leaderboard — the set of
-  // ranked active players right now — so beating/losing to a player who has
-  // since dropped off the leaderboard no longer counts, while any historical
-  // result against a currently-ranked player does. Requires ≥5 ranked active
-  // players so completing the set is a real feat, matching the cohort gate
-  // used by the rank achievements. Each is awarded once, at the game that
-  // completes the set.
+  // least once). The target cohort is the set of ranked active players AT THE
+  // MOMENT being evaluated, which shifts as players cross the ranked
+  // threshold or are deactivated / reactivated. A win / loss counts whenever
+  // it happened (even before the opponent was ranked); what matters is the
+  // opponent belongs to the cohort at the time of the check.
+  //
+  // Because the cohort shrinks when a player is deactivated, either
+  // achievement can be earned by a DEACTIVATION rather than a game: if the
+  // deactivated player was the only ranked player you had not yet beaten
+  // (or lost to), the set completes the instant they drop off the
+  // leaderboard. To catch that, games and active-state changes are replayed
+  // in time order and the whole ranked cohort is re-checked after each.
+  //
+  // Requires ≥5 ranked active players in the cohort so completing the set is
+  // a real feat, matching the gate used by the rank achievements. The earner
+  // must themselves be a ranked active player at the time. Each is awarded
+  // once, stamped at the moment the set completes.
   #checkFullHouseAndHumbledAchievements() {
-    const rankedActive = this.parent.leaderboard.getLeaderboard().rankedPlayers.map((p) => p.id);
-    if (rankedActive.length < 5) return;
-    const rankedSet = new Set(rankedActive);
+    const gameLimit = this.parent.client.gameLimitForRanked;
 
-    // Per-player sets of currently-ranked-active opponents beaten / lost to.
+    // Per-player active-status timeline (same construction as the Elo pass).
+    type Transition = { time: number; active: boolean };
+    const timelines = new Map<string, Transition[]>();
+    for (const event of this.parent.events) {
+      let transition: Transition | null = null;
+      if (event.type === EventTypeEnum.PLAYER_CREATED) {
+        transition = { time: event.time, active: true };
+      } else if (event.type === EventTypeEnum.PLAYER_DEACTIVATED) {
+        transition = { time: event.time, active: false };
+      } else if (event.type === EventTypeEnum.PLAYER_REACTIVATED) {
+        transition = { time: event.time, active: true };
+      }
+      if (transition) {
+        const list = timelines.get(event.stream);
+        if (list) list.push(transition);
+        else timelines.set(event.stream, [transition]);
+      }
+    }
+    for (const list of timelines.values()) list.sort((a, b) => a.time - b.time);
+
+    const isActiveAt = (playerId: string, atTime: number): boolean => {
+      const tl = timelines.get(playerId);
+      if (!tl || tl.length === 0) return false;
+      let active = false;
+      for (const t of tl) {
+        if (t.time > atTime) break;
+        active = t.active;
+      }
+      return active;
+    };
+
+    const totalGames = new Map<string, number>();
     const beaten = new Map<string, Set<string>>();
     const lostTo = new Map<string, Set<string>>();
     const fullHouseAwarded = new Set<string>();
     const humbledAwarded = new Set<string>();
 
-    const targetSizeFor = (playerId: string) => rankedSet.size - (rankedSet.has(playerId) ? 1 : 0);
+    const addEdge = (map: Map<string, Set<string>>, key: string, value: string) => {
+      let set = map.get(key);
+      if (!set) {
+        set = new Set();
+        map.set(key, set);
+      }
+      set.add(value);
+    };
 
-    this.parent.games.forEach((game) => {
-      // Full House for the winner: they just beat a ranked active player.
-      if (rankedSet.has(game.loser) && !fullHouseAwarded.has(game.winner)) {
-        let set = beaten.get(game.winner);
-        if (!set) {
-          set = new Set();
-          beaten.set(game.winner, set);
+    // The ranked active cohort at `atTime`: players with ≥ gameLimit games so
+    // far who are active at that moment.
+    const cohortAt = (atTime: number): Set<string> => {
+      const cohort = new Set<string>();
+      for (const [id, games] of totalGames) {
+        if (games < gameLimit) continue;
+        if (!isActiveAt(id, atTime)) continue;
+        cohort.add(id);
+      }
+      return cohort;
+    };
+
+    // Whether `playerId` has an edge to every OTHER member of `cohort`.
+    const coversCohort = (edges: Set<string> | undefined, cohort: Set<string>, playerId: string): boolean => {
+      if (!edges) return false;
+      for (const target of cohort) {
+        if (target === playerId) continue;
+        if (!edges.has(target)) return false;
+      }
+      return true;
+    };
+
+    const recheckAt = (time: number) => {
+      const cohort = cohortAt(time);
+      if (cohort.size < 5) return;
+      for (const playerId of cohort) {
+        if (!fullHouseAwarded.has(playerId) && coversCohort(beaten.get(playerId), cohort, playerId)) {
+          fullHouseAwarded.add(playerId);
+          this.#addAchievement(playerId, this.#createAchievement("full-house", playerId, time, undefined));
         }
-        set.add(game.loser);
-        if (set.size === targetSizeFor(game.winner)) {
-          fullHouseAwarded.add(game.winner);
-          this.#addAchievement(
-            game.winner,
-            this.#createAchievement("full-house", game.winner, game.playedAt, undefined),
-          );
+        if (!humbledAwarded.has(playerId) && coversCohort(lostTo.get(playerId), cohort, playerId)) {
+          humbledAwarded.add(playerId);
+          this.#addAchievement(playerId, this.#createAchievement("humbled", playerId, time, undefined));
         }
       }
+    };
 
-      // Humbled for the loser: they just lost to a ranked active player.
-      if (rankedSet.has(game.winner) && !humbledAwarded.has(game.loser)) {
-        let set = lostTo.get(game.loser);
-        if (!set) {
-          set = new Set();
-          lostTo.set(game.loser, set);
-        }
-        set.add(game.winner);
-        if (set.size === targetSizeFor(game.loser)) {
-          humbledAwarded.add(game.loser);
-          this.#addAchievement(
-            game.loser,
-            this.#createAchievement("humbled", game.loser, game.playedAt, undefined),
-          );
-        }
+    // Replay games and active-state changes in time order. Games at the same
+    // instant as a state change are applied first so the recheck sees the
+    // post-game totals. A game recheck can newly complete the winner/loser
+    // (or, via a threshold crossing, anyone); a state-change recheck can
+    // complete a player whose last missing opponent just left the cohort.
+    type Action = { kind: "game"; time: number; game: Game } | { kind: "recheck"; time: number };
+    const actions: Action[] = [];
+    for (const g of this.parent.games) {
+      actions.push({ kind: "game", time: g.playedAt, game: g });
+    }
+    for (const e of this.parent.events) {
+      if (e.type === EventTypeEnum.PLAYER_DEACTIVATED || e.type === EventTypeEnum.PLAYER_REACTIVATED) {
+        actions.push({ kind: "recheck", time: e.time });
       }
+    }
+    actions.sort((a, b) => {
+      if (a.time !== b.time) return a.time - b.time;
+      if (a.kind === b.kind) return 0;
+      return a.kind === "game" ? -1 : 1;
     });
+
+    for (const action of actions) {
+      if (action.kind === "game") {
+        const game = action.game;
+        totalGames.set(game.winner, (totalGames.get(game.winner) ?? 0) + 1);
+        totalGames.set(game.loser, (totalGames.get(game.loser) ?? 0) + 1);
+        addEdge(beaten, game.winner, game.loser);
+        addEdge(lostTo, game.loser, game.winner);
+      }
+      recheckAt(action.time);
+    }
   }
 
   /**
