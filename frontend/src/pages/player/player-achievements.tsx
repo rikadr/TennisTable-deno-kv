@@ -748,6 +748,27 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                           </div>
                         )}
 
+                      {/* Missing players for full-house / humbled */}
+                      {(type === "full-house" || type === "humbled") &&
+                        "missing" in data &&
+                        data.missing &&
+                        data.missing.size > 0 && (
+                          <div className="mt-3 pt-3 border-t border-secondary-text/50">
+                            <p className="text-xs text-secondary-text/70 mb-2">
+                              {type === "full-house" ? "Still need to beat:" : "Still need to lose to:"}
+                            </p>
+                            <div className="flex flex-wrap gap-1">
+                              {Array.from(data.missing).map((player: string) => (
+                                <Link to={"/player/" + player} key={player}>
+                                  <span className="text-xs bg-background px-2 py-1 rounded text-secondary-text">
+                                    {context.playerName(player)}
+                                  </span>
+                                </Link>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
                       {/* Record holder for marathon-set */}
                       {type === "marathon-set" && "recordHolder" in data && (
                         <div className="mt-2 text-xs text-secondary-text/70">

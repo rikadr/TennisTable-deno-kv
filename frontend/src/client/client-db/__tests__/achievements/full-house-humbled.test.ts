@@ -279,6 +279,40 @@ describe("Full House & Humbled Achievements", () => {
     expect(eProgress["humbled"].current).toBe(4);
   });
 
+  it("lists the players still missing from the set in progression", () => {
+    // 5-player double round-robin where A beats B, C, D but loses to E both
+    // rounds. A is missing only E for Full House; E is missing only A for
+    // Humbled (E beats A but loses to B, C, D).
+    const events: EventType[] = [
+      createPlayer("a", 1),
+      createPlayer("b", 2),
+      createPlayer("c", 3),
+      createPlayer("d", 4),
+      createPlayer("e", 5),
+    ];
+    const outcomes: [string, string, string][] = [
+      ["a-b", "a", "b"], ["a-c", "a", "c"], ["a-d", "a", "d"], ["e-a", "e", "a"],
+      ["b-c", "b", "c"], ["b-d", "b", "d"], ["b-e", "b", "e"],
+      ["c-d", "c", "d"], ["c-e", "c", "e"], ["d-e", "d", "e"],
+    ];
+    let t = 100;
+    for (let round = 0; round < 2; round++) {
+      for (const [id, winner, loser] of outcomes) {
+        events.push(game(`${id}-${round}`, t++, winner, loser));
+      }
+    }
+    const tt = new TennisTable({ events });
+    tt.achievements.calculateAchievements();
+
+    const aProgress = tt.achievements.getPlayerProgression("a");
+    expect(aProgress["full-house"].current).toBe(3);
+    expect(aProgress["full-house"].target).toBe(4);
+    expect(Array.from(aProgress["full-house"].missing!)).toEqual(["e"]);
+
+    const eProgress = tt.achievements.getPlayerProgression("e");
+    expect(Array.from(eProgress["humbled"].missing!)).toEqual(["a"]);
+  });
+
   it("targets the full ranked count for an unranked player (no self subtraction)", () => {
     // Z plays a single game, so Z is not ranked. The target is the total
     // number of ranked players (5) with no minus-one, since Z isn't in the

@@ -1694,8 +1694,8 @@ export class Achievements {
       "david": { current: 0, target: 30, earned: 0 },
       "goliath": { current: 0, target: 30, earned: 0 },
       "climber": { current: 0, target: 300, earned: 0 },
-      "full-house": { current: 0, target: 1, earned: 0 },
-      "humbled": { current: 0, target: 1, earned: 0 },
+      "full-house": { current: 0, target: 1, missing: new Set(), earned: 0 },
+      "humbled": { current: 0, target: 1, missing: new Set(), earned: 0 },
 
       // Game feats
       "donut-1": { current: 0, target: 1, earned: 0 },
@@ -2107,10 +2107,17 @@ export class Achievements {
       });
     }
     const rankedTarget = rankedTargetPool.size;
+    // Players still standing between you and the achievement. While the ranked
+    // field is too small (progress forced to 0) the beaten / lost-to sets are
+    // empty, so the whole target pool shows as missing.
+    const fullHouseMissing = new Set([...rankedTargetPool].filter((id) => !beatenRanked.has(id)));
+    const humbledMissing = new Set([...rankedTargetPool].filter((id) => !lostToRanked.has(id)));
     progression["full-house"].current = beatenRanked.size;
     progression["full-house"].target = rankedTarget;
+    progression["full-house"].missing = fullHouseMissing;
     progression["humbled"].current = lostToRanked.size;
     progression["humbled"].target = rankedTarget;
+    progression["humbled"].missing = humbledMissing;
 
     // Count earned achievements
     const achievements = this.getAchievements(playerId);
@@ -2246,6 +2253,12 @@ type WelcomeCommitteeProgression = ProgressionWithTarget & {
   newPlayers?: Set<string>; // List of new players this person was first opponent for
 };
 
+type MissingPlayersProgression = ProgressionWithTarget & {
+  // Currently ranked active players the player has not yet beaten (Full
+  // House) / not yet lost to (Humbled) — i.e. what's left to complete the set.
+  missing?: Set<string>;
+};
+
 type MarathonSetProgression = BaseProgression & {
   // Player's own highest winning set score from a true-deuce set
   // they won (winner ≥ 12, loser ≥ 10). 0 if they have none.
@@ -2304,6 +2317,6 @@ export type AchievementProgression = {
   "marathon-set": MarathonSetProgression;
   "streak-ender": BaseProgression;
   "group-stage-star": BaseProgression;
-  "full-house": ProgressionWithTarget;
-  "humbled": ProgressionWithTarget;
+  "full-house": MissingPlayersProgression;
+  "humbled": MissingPlayersProgression;
 };
