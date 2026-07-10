@@ -194,10 +194,12 @@ export const TopGamingDays: React.FC = () => {
     const now = Date.now();
     const windowMs = RECENT_WINDOW_MS[period];
     const { top, current } = data;
+    const maxCount = top.length > 0 ? top[0].count : 0;
 
     const renderRow = (entry: PeriodData, rank: number, total: number | null) => {
       const ageMs = now - entry.timestamp;
       const recencyPercent = Math.max(0, Math.min(100, (1 - ageMs / windowMs) * 100));
+      const countPercent = maxCount > 0 ? Math.max(0, Math.min(100, (entry.count / maxCount) * 100)) : 0;
       const isCurrent = entry.key === currentKey;
 
       return (
@@ -220,7 +222,13 @@ export const TopGamingDays: React.FC = () => {
               style={{ width: `${recencyPercent}%` }}
             />
           </td>
-          <td className="px-2 py-1 border border-primary-text/20 text-right font-bold">{entry.count}</td>
+          <td className="px-2 py-1 border border-primary-text/20 text-right font-bold relative overflow-hidden">
+            {entry.count}
+            <div
+              className={`absolute bottom-0 left-0 h-[2px] ${isCurrent ? "bg-tertiary-text" : "bg-current"}`}
+              style={{ width: `${countPercent}%` }}
+            />
+          </td>
         </tr>
       );
     };
