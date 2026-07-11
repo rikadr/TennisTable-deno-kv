@@ -9,5 +9,5 @@ export class LocalDevClient implements ClientConfig {
   snow = new GuestClient().snow;
   title = new GuestClient().title;
   favicon = new GuestClient().favicon;
-  gameLimitForRanked = new GuestClient().gameLimitForRanked;
+  gameLimitForRanked = 30;
 }
