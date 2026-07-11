@@ -5,6 +5,8 @@ import { httpClient } from "../../common/http-client";
 export const useAuth = () => {
   return {
     login: useMutation({
+      // Handle failures inline in the UI instead of throwing to an error boundary.
+      throwOnError: false,
       mutationFn: async (data: { username: string; password: string }) => {
         const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/user/login`, {
           method: "POST",
@@ -32,14 +34,18 @@ export const auth = {
     });
   },
   async signup(username: string, password: string) {
-    const response = await httpClient(`${process.env.REACT_APP_API_BASE_URL}/user/sign-up`, {
+    const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/user/sign-up`, {
       method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username, password }),
     });
 
     if (!response.ok) {
-      console.error("Failed to sign up", response.status, response.statusText);
-      return;
+      const body = (await response.json().catch(() => null)) as { error?: string } | null;
+      throw new Error(
+        body?.error ??
+          (response.status === 409 ? "Username already taken" : `Sign up failed (${response.status})`),
+      );
     }
 
     const json = (await response.json()) as { token: string };

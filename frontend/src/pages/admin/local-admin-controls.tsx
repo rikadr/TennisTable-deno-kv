@@ -8,10 +8,9 @@ const LOCAL_API_BASE = process.env.REACT_APP_API_BASE_URL || "http://localhost:8
 const LOCAL_STORAGE_KEY = "tennis-table-events";
 
 const PRODUCTION_ENVIRONMENTS = [
-  { name: "Optio", url: "https://tennis-table-optio.deno.dev" },
-  { name: "Tryvann", url: "https://tennis-table-tryvann.deno.dev" },
-  { name: "Asplan Viak", url: "https://tennis-table-asplan-viak.deno.dev" },
-  { name: "Deepinsight", url: "https://tennis-table-deepinsight.deno.dev" },
+  { name: "Optio", url: "https://tennis-table-optio.rikadr.deno.net" },
+  { name: "Tryvann Skimore", url: "https://tennis-table-tryvann.rikadr.deno.net" },
+  { name: "Deepinsight", url: "https://tennis-table-deepinsight.rikadr.deno.net" },
 ];
 
 export const LocalAdminControls: React.FC = () => {

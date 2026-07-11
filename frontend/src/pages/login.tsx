@@ -1,9 +1,11 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../services/auth/auth";
 
 export const LoginPage: React.FC = () => {
   const auth = useAuth();
   const navigate = useNavigate();
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   return (
     <div className="h-screen w-screen flex items-center justify-center">
@@ -11,24 +13,26 @@ export const LoginPage: React.FC = () => {
         className="space-y-2 p-10 rounded-xl ring-1 ring-gray-300 drop-shadow bg-gray-50 text-black"
         onSubmit={async (e) => {
           e.preventDefault();
+          setValidationError(null);
           const username = document.getElementById("username") as HTMLInputElement;
           const password = document.getElementById("password") as HTMLInputElement;
 
-          if (username && password) {
-            auth.login.mutate(
-              {
-                username: username.value,
-                password: password.value,
-              },
-              {
-                onSuccess: () => {
-                  navigate("/");
-                },
-              },
-            );
-          } else {
-            console.error("No username or password");
+          if (!username?.value || !password?.value) {
+            setValidationError("Please enter a username and password.");
+            return;
           }
+
+          auth.login.mutate(
+            {
+              username: username.value,
+              password: password.value,
+            },
+            {
+              onSuccess: () => {
+                navigate("/");
+              },
+            },
+          );
         }}
       >
         <div className="w-full flex items-center justify-between">
@@ -48,8 +52,10 @@ export const LoginPage: React.FC = () => {
             id="password"
           />
         </div>
-        {auth.login.isError && (
-          <p className="text-red-600 text-sm">{(auth.login.error as Error).message}</p>
+        {(validationError || auth.login.isError) && (
+          <p className="text-red-600 text-sm">
+            {validationError ?? (auth.login.error as Error).message}
+          </p>
         )}
         <div className="/* flex flex-col w-full items-center justify-end space-y-3 pt-3 */">
           <button type="submit" className="p-2 w-full bg-blue-300 text-black rounded-md hover:bg-blue-500">

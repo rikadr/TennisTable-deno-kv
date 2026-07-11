@@ -19,7 +19,13 @@ export class SqliteDatabase implements Database {
     if (dir) {
       Deno.mkdirSync(dir, { recursive: true });
     }
-    this.db = new SqliteDb(path);
+    // int64: true is REQUIRED — event times are ms-since-epoch (~1.7e12), which
+    // exceed 32 bits. Without this, @db/sqlite reads integer columns via the
+    // 32-bit sqlite3_column_int and silently truncates them (e.g. 1715674898853
+    // -> 1982947749, or negative). Writes already bind as int64, so on-disk data
+    // is correct; this only fixes the read path. Values stay within
+    // Number.MAX_SAFE_INTEGER, so they come back as regular numbers (not BigInt).
+    this.db = new SqliteDb(path, { int64: true });
     this.db.exec("PRAGMA journal_mode = WAL");
     this.createTables();
   }
