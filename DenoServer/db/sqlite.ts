@@ -13,6 +13,12 @@ export class SqliteDatabase implements Database {
   private db: SqliteDb;
 
   constructor(path: string) {
+    // Ensure the parent directory exists — @db/sqlite creates the DB file but
+    // not its parent dir, and git doesn't track empty dirs so it may be absent.
+    const dir = path.slice(0, path.lastIndexOf("/"));
+    if (dir) {
+      Deno.mkdirSync(dir, { recursive: true });
+    }
     this.db = new SqliteDb(path);
     this.db.exec("PRAGMA journal_mode = WAL");
     this.createTables();
