@@ -173,6 +173,16 @@ export const ACHIEVEMENT_LABELS: Record<string, { title: string; description: st
     description: "Win 3 games in under 90 minutes",
     icon: "🎩",
   },
+  "perfect-day": {
+    title: "Perfect Day",
+    description: "Go undefeated across 5 or more games in a single day",
+    icon: "☀️",
+  },
+  "perfect-week": {
+    title: "Perfect Week",
+    description: "Win a game on every day of a working week (Mon–Fri)",
+    icon: "🗓️",
+  },
   "kingslayer": {
     title: "Kingslayer",
     description: "Beat the player ranked #1 on the leaderboard",
@@ -483,6 +493,18 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
                 {achievement.type === "streak-ender" && achievement.data && (
                   <p className="text-xs text-secondary-text/70 mt-2">
                     Ended {context.playerName(achievement.data.opponent)}'s {achievement.data.streakLength}-game win streak
+                  </p>
+                )}
+
+                {achievement.type === "perfect-day" && achievement.data && (
+                  <p className="text-xs text-secondary-text/70 mt-2">
+                    {achievement.data.wins} wins, 0 losses on {dateString(achievement.data.day)}
+                  </p>
+                )}
+
+                {achievement.type === "perfect-week" && achievement.data && (
+                  <p className="text-xs text-secondary-text/70 mt-2">
+                    Working week of {dateString(achievement.data.weekStart)}
                   </p>
                 )}
 

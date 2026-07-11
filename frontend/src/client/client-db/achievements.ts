@@ -520,7 +520,123 @@ export class Achievements {
     this.#checkSeasonAchievements();
     this.#calculateEloAchievements();
     this.#checkFullHouseAndHumbledAchievements();
+    this.#checkPerfectDayAndWeekAchievements();
     this.hasCalculated = true;
+  }
+
+  // Awards "Perfect Day" and "Perfect Week".
+  //
+  // Perfect Day: for every calendar day (local time) on which a player
+  // played 5 or more games and won every single one of them (zero losses
+  // that day). Stamped at the day's last (winning) game.
+  //
+  // Perfect Week: for every working week (Monday–Friday, local time) in
+  // which a player won at least one game on each of the five weekdays.
+  // Wins on Saturday / Sunday do not count. Stamped at the game that
+  // completed the fifth distinct weekday.
+  //
+  // Both are earnable multiple times — once per qualifying day / week.
+  // Games are already time-ordered, so the completing win's timestamp is
+  // the natural earned-at moment.
+  #checkPerfectDayAndWeekAchievements() {
+    // Local midnight of the day containing `ms`.
+    const dayStartOf = (ms: number): number => {
+      const d = new Date(ms);
+      d.setHours(0, 0, 0, 0);
+      return d.getTime();
+    };
+    // Local Monday-midnight of the working week containing `ms`.
+    const weekStartOf = (ms: number): number => {
+      const d = new Date(ms);
+      d.setHours(0, 0, 0, 0);
+      const daysSinceMonday = (d.getDay() + 6) % 7; // getDay: 0=Sun..6=Sat
+      d.setDate(d.getDate() - daysSinceMonday);
+      return d.getTime();
+    };
+
+    type DayStats = { wins: number; losses: number; lastWinAt: number };
+    const perDay = new Map<string, Map<number, DayStats>>();
+    type WeekStats = { weekdaysWon: Set<number>; completedAt: number | null };
+    const perWeek = new Map<string, Map<number, WeekStats>>();
+
+    const getDayStats = (playerId: string, day: number): DayStats => {
+      let days = perDay.get(playerId);
+      if (!days) {
+        days = new Map();
+        perDay.set(playerId, days);
+      }
+      let stats = days.get(day);
+      if (!stats) {
+        stats = { wins: 0, losses: 0, lastWinAt: 0 };
+        days.set(day, stats);
+      }
+      return stats;
+    };
+    const getWeekStats = (playerId: string, week: number): WeekStats => {
+      let weeks = perWeek.get(playerId);
+      if (!weeks) {
+        weeks = new Map();
+        perWeek.set(playerId, weeks);
+      }
+      let stats = weeks.get(week);
+      if (!stats) {
+        stats = { weekdaysWon: new Set(), completedAt: null };
+        weeks.set(week, stats);
+      }
+      return stats;
+    };
+
+    this.parent.games.forEach((game) => {
+      const day = dayStartOf(game.playedAt);
+      const winnerDay = getDayStats(game.winner, day);
+      winnerDay.wins++;
+      winnerDay.lastWinAt = game.playedAt;
+      getDayStats(game.loser, day).losses++;
+
+      // Perfect Week only counts wins on Monday–Friday.
+      const weekday = new Date(game.playedAt).getDay(); // 0=Sun..6=Sat
+      if (weekday >= 1 && weekday <= 5) {
+        const week = weekStartOf(game.playedAt);
+        const winnerWeek = getWeekStats(game.winner, week);
+        if (!winnerWeek.weekdaysWon.has(weekday)) {
+          winnerWeek.weekdaysWon.add(weekday);
+          if (winnerWeek.weekdaysWon.size === 5 && winnerWeek.completedAt === null) {
+            winnerWeek.completedAt = game.playedAt;
+          }
+        }
+      }
+    });
+
+    // Award Perfect Day for each undefeated 5+ game day, in day order.
+    for (const [playerId, days] of perDay) {
+      const sortedDays = Array.from(days.entries()).sort((a, b) => a[0] - b[0]);
+      for (const [day, stats] of sortedDays) {
+        if (stats.losses === 0 && stats.wins >= 5) {
+          this.#addAchievement(
+            playerId,
+            this.#createAchievement("perfect-day", playerId, stats.lastWinAt, {
+              day,
+              wins: stats.wins,
+            }),
+          );
+        }
+      }
+    }
+
+    // Award Perfect Week for each week won on all five weekdays, in week order.
+    for (const [playerId, weeks] of perWeek) {
+      const sortedWeeks = Array.from(weeks.entries()).sort((a, b) => a[0] - b[0]);
+      for (const [week, stats] of sortedWeeks) {
+        if (stats.completedAt !== null) {
+          this.#addAchievement(
+            playerId,
+            this.#createAchievement("perfect-week", playerId, stats.completedAt, {
+              weekStart: week,
+            }),
+          );
+        }
+      }
+    }
   }
 
   // Awards "Full House" (beat every currently ranked player at least once)
@@ -1677,6 +1793,8 @@ export class Achievements {
       "streak-player-10": { current: 0, target: 10, perOpponent: new Map(), earned: 0 },
       "streak-player-20": { current: 0, target: 20, perOpponent: new Map(), earned: 0 },
       "hat-trick": { current: 0, target: 3, earned: 0 },
+      "perfect-day": { current: 0, target: 5, earned: 0 },
+      "perfect-week": { current: 0, target: 5, earned: 0 },
       "streak-ender": { earned: 0 },
 
       // Resilience
@@ -1751,6 +1869,10 @@ export class Achievements {
     let consistencyCount = 0;
     let bestDeuceSetWon = 0;
     const streaksPerOpponent = new Map<string, number>();
+    // Perfect Day progression: wins / losses grouped by local calendar day.
+    const perfectDayStats = new Map<number, { wins: number; losses: number }>();
+    // Perfect Week progression: distinct weekdays (Mon–Fri) won per working week.
+    const perfectWeekWeekdays = new Map<number, Set<number>>();
     const opponentsPlayed = new Set<string>();
     const gamesPerOpponent = new Map<string, { count: number; firstGame: number; lastGame: number }>();
     const firstOpponentForSet = new Set<string>();
@@ -1796,6 +1918,36 @@ export class Achievements {
 
       // Track last active time
       lastActiveAt = game.playedAt;
+
+      // Perfect Day progression: tally wins / losses per local calendar day.
+      const dayStart = new Date(game.playedAt);
+      dayStart.setHours(0, 0, 0, 0);
+      const dayKey = dayStart.getTime();
+      let dayStat = perfectDayStats.get(dayKey);
+      if (!dayStat) {
+        dayStat = { wins: 0, losses: 0 };
+        perfectDayStats.set(dayKey, dayStat);
+      }
+      if (isWinner) {
+        dayStat.wins++;
+      } else {
+        dayStat.losses++;
+      }
+
+      // Perfect Week progression: collect distinct Mon–Fri weekdays won.
+      const weekday = new Date(game.playedAt).getDay(); // 0=Sun..6=Sat
+      if (isWinner && weekday >= 1 && weekday <= 5) {
+        const weekDate = new Date(game.playedAt);
+        weekDate.setHours(0, 0, 0, 0);
+        weekDate.setDate(weekDate.getDate() - ((weekDate.getDay() + 6) % 7));
+        const weekKey = weekDate.getTime();
+        let weekdaysWon = perfectWeekWeekdays.get(weekKey);
+        if (!weekdaysWon) {
+          weekdaysWon = new Set();
+          perfectWeekWeekdays.set(weekKey, weekdaysWon);
+        }
+        weekdaysWon.add(weekday);
+      }
 
       // Track opponents
       const opponent = isWinner ? game.loser : game.winner;
@@ -1889,6 +2041,43 @@ export class Achievements {
     progression["global-player"].opponents = opponentsPlayed;
     progression["punching-bag"].current = currentLoseStreakAll;
     progression["never-give-up"].current = currentLoseStreakAll;
+
+    // Perfect Day progression tracks TODAY's live attempt: the number of
+    // games won today with zero losses so far. A single loss today nullifies
+    // it — progress drops to 0 and the player must try again tomorrow. No
+    // games today → 0.
+    const nowMs = Date.now();
+    const todayStart = new Date(nowMs);
+    todayStart.setHours(0, 0, 0, 0);
+    const todayStat = perfectDayStats.get(todayStart.getTime());
+    progression["perfect-day"].current =
+      todayStat && todayStat.losses === 0 ? Math.min(todayStat.wins, 5) : 0;
+
+    // Perfect Week progression tracks THIS working week's live attempt: the
+    // run of consecutive weekdays from Monday, each with at least one win.
+    // A weekday that has fully elapsed without a win breaks the run to 0 (try
+    // again next Monday); the current weekday only counts once it has a win.
+    // E.g. a Monday win reads 1/5 all through Tuesday; if Tuesday then passes
+    // with no win, Wednesday starts the player at 0/5.
+    const weekStartNow = new Date(nowMs);
+    weekStartNow.setHours(0, 0, 0, 0);
+    const daysSinceMonday = (weekStartNow.getDay() + 6) % 7; // 0=Mon..6=Sun
+    weekStartNow.setDate(weekStartNow.getDate() - daysSinceMonday);
+    const weekdaysWonThisWeek = perfectWeekWeekdays.get(weekStartNow.getTime()) ?? new Set<number>();
+    // Weekdays (1=Mon..5=Fri) that have fully elapsed must each carry a win.
+    const passedWeekdays = Math.min(daysSinceMonday, 5);
+    let perfectWeekProgress = passedWeekdays;
+    for (let weekday = 1; weekday <= passedWeekdays; weekday++) {
+      if (!weekdaysWonThisWeek.has(weekday)) {
+        perfectWeekProgress = 0;
+        break;
+      }
+    }
+    // The current weekday (Mon–Fri) counts only once it has a win.
+    if (perfectWeekProgress !== 0 && daysSinceMonday <= 4 && weekdaysWonThisWeek.has(daysSinceMonday + 1)) {
+      perfectWeekProgress += 1;
+    }
+    progression["perfect-week"].current = perfectWeekProgress;
 
     // Calculate hat-trick progression (wins within last 90 minutes)
     const NINETY_MINUTES = 90 * 60 * 1000;
@@ -2166,6 +2355,8 @@ type AchievementDefinitions = {
   "comeback-kid": { opponent: string };
   "unbreakable-spirit": { opponent: string };
   "hat-trick": { firstWinAt: number; thirdWinAt: number };
+  "perfect-day": { day: number; wins: number };
+  "perfect-week": { weekStart: number };
   "kingslayer": { opponent: string; gameId: string };
   "king-maker": { newKing: string; netScoreGained: number };
   "touched-the-throne": { elo: number; firstGameAt: number; dethroned?: string };
@@ -2305,6 +2496,8 @@ export type AchievementProgression = {
   "comeback-kid": BaseProgression;
   "unbreakable-spirit": BaseProgression;
   "hat-trick": ProgressionWithTarget;
+  "perfect-day": ProgressionWithTarget;
+  "perfect-week": ProgressionWithTarget;
   "kingslayer": BaseProgression;
   "king-maker": BaseProgression;
   "touched-the-throne": BaseProgression;

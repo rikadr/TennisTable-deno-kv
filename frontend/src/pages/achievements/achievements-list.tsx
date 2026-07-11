@@ -207,6 +207,16 @@ export const AchievementsList: React.FC<AchievementsListProps> = ({ achievements
                       Ended {achievement.data.streakLength}-game streak
                     </span>
                   )}
+                  {achievement.type === "perfect-day" && achievement.data && (
+                    <span className="text-[11px] opacity-80">
+                      {achievement.data.wins} wins, 0 losses
+                    </span>
+                  )}
+                  {achievement.type === "perfect-week" && achievement.data && (
+                    <span className="text-[11px] opacity-80">
+                      Week of {dateString(achievement.data.weekStart)}
+                    </span>
+                  )}
                   {achievement.type === "group-stage-star" && achievement.data && (
                     <span className="text-[11px] opacity-80">
                       Undefeated ({achievement.data.wins} win

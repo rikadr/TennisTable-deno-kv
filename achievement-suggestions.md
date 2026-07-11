@@ -21,20 +21,17 @@ Climb 100 Score in a single calendar week.
 ## 6. Yin Yang ☯️
 Alternate Win/Loss/Win/Loss for 10 games straight.
 
-## 7. Perfect Day ☀️
-Go undefeated across 5+ games in a single day.
-
-## 8. Worst Day 🌧️
+## 7. Worst Day 🌧️
 Lose 5+ games in a single day without a win.
 
-## 9. Tour de Table 🚲
+## 8. Tour de Table 🚲
 Play against 5 different opponents in a single day.
 
-## 10. Late Bloomer 🌷
+## 9. Late Bloomer 🌷
 Enter a season's top 3 only in its final week.
 
-## 11. Founding Member 🪴
+## 10. Founding Member 🪴
 Be among the first 5 players ever created in the league.
 
-## 12. Block Party 🎉
+## 11. Block Party 🎉
 Play on a day where every currently active ranked player also plays.
