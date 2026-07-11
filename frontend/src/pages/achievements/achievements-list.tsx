@@ -237,7 +237,9 @@ export const AchievementsList: React.FC<AchievementsListProps> = ({ achievements
                     )}
                   {achievement.type === "leap-frog" && achievement.data && (
                     <span className="text-[11px] opacity-80">
-                      #{achievement.data.fromRank} → #{achievement.data.toRank} (
+                      Jumped {achievement.data.ranksJumped} rank
+                      {achievement.data.ranksJumped !== 1 ? "s" : ""}: #{achievement.data.fromRank} → #
+                      {achievement.data.toRank} (
                       {fmtNum(achievement.data.fromElo, { digits: 1 })} →{" "}
                       {fmtNum(achievement.data.toElo, { digits: 1 })}
                       {achievement.data.leapfroggedPlayers.length > 0 && (

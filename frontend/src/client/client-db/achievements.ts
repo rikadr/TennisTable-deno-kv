@@ -28,6 +28,18 @@ export class Achievements {
     score: undefined,
     holder: undefined,
   };
+  // League-wide running record for the Leap Frog achievement: the most
+  // leaderboard ranks a player has jumped in a single game (while ranked
+  // both before and after). Undefined until the first ≥2-rank jump
+  // establishes it. Used by the progression view so players can see the
+  // record they need to beat.
+  leapFrogRecord: { ranksJumped: number | undefined; holder: string | undefined } = {
+    ranksJumped: undefined,
+    holder: undefined,
+  };
+  // Each player's own largest single-game leaderboard jump (ranked before
+  // and after). Used for Leap Frog progression.
+  bestRankJump: Map<string, number> = new Map();
 
   constructor(parent: TennisTable) {
     this.parent = parent;
@@ -43,6 +55,8 @@ export class Achievements {
     this.worstGoliathLoss.clear();
     this.climberAllTimeLow.clear();
     this.marathonSetRecord = { score: undefined, holder: undefined };
+    this.leapFrogRecord = { ranksJumped: undefined, holder: undefined };
+    this.bestRankJump.clear();
 
     const playerTracker = new Map<
       string,
@@ -1183,41 +1197,52 @@ export class Achievements {
         );
       }
 
-      // Leap Frog: winner improved by ≥ 3 ranks. Requires being ranked
-      // both before and after — first appearance on the leaderboard
-      // isn't a "jump".
-      if (
-        winnerRankBefore !== null &&
-        winnerRankAfter !== null &&
-        winnerRankBefore - winnerRankAfter >= 3
-      ) {
-        // Leapfrogged players: ranked active players whose pre-match Elo
-        // was above the winner's pre-match Elo but who now sit below
-        // the winner's post-match Elo. Only winner and loser had their
-        // Elo change, so for everyone else pre = post = `other.elo`.
-        const leapfroggedPlayers: string[] = [];
-        for (const [otherId, other] of playerMap) {
-          if (otherId === game.winner) continue;
-          if (other.totalGames < gameLimit) continue;
-          if (!isActiveAt(otherId, game.playedAt)) continue;
-          const otherEloBefore = otherId === game.loser ? loserEloBefore : other.elo;
-          if (otherEloBefore > winnerEloBefore && other.elo < winner.elo) {
-            leapfroggedPlayers.push(otherId);
-          }
+      // Leap Frog: awarded to a winner who jumps leaderboard ranks in a
+      // single game and, in doing so, beats the league-wide record for the
+      // biggest jump. Requires being ranked both before and after — a first
+      // appearance on the leaderboard isn't a "jump". The first qualifying
+      // jump of ≥ 2 ranks establishes the record; afterwards only a
+      // strictly larger jump earns the award again.
+      if (winnerRankBefore !== null && winnerRankAfter !== null) {
+        const ranksJumped = winnerRankBefore - winnerRankAfter;
+        // Track the winner's personal best jump for the progression view.
+        if (ranksJumped > (this.bestRankJump.get(game.winner) ?? 0)) {
+          this.bestRankJump.set(game.winner, ranksJumped);
         }
-        this.#addAchievement(
-          game.winner,
-          this.#createAchievement("leap-frog", game.winner, game.playedAt, {
-            opponent: game.loser,
-            gameId: game.id,
-            ranksJumped: winnerRankBefore - winnerRankAfter,
-            fromRank: winnerRankBefore,
-            toRank: winnerRankAfter,
-            fromElo: winnerEloBefore,
-            toElo: winner.elo,
-            leapfroggedPlayers,
-          }),
-        );
+        const currentRecord = this.leapFrogRecord.ranksJumped;
+        const beatsRecord =
+          currentRecord === undefined ? ranksJumped >= 2 : ranksJumped > currentRecord;
+        if (beatsRecord) {
+          // Leapfrogged players: ranked active players whose pre-match Elo
+          // was above the winner's pre-match Elo but who now sit below
+          // the winner's post-match Elo. Only winner and loser had their
+          // Elo change, so for everyone else pre = post = `other.elo`.
+          const leapfroggedPlayers: string[] = [];
+          for (const [otherId, other] of playerMap) {
+            if (otherId === game.winner) continue;
+            if (other.totalGames < gameLimit) continue;
+            if (!isActiveAt(otherId, game.playedAt)) continue;
+            const otherEloBefore = otherId === game.loser ? loserEloBefore : other.elo;
+            if (otherEloBefore > winnerEloBefore && other.elo < winner.elo) {
+              leapfroggedPlayers.push(otherId);
+            }
+          }
+          this.#addAchievement(
+            game.winner,
+            this.#createAchievement("leap-frog", game.winner, game.playedAt, {
+              opponent: game.loser,
+              gameId: game.id,
+              ranksJumped,
+              fromRank: winnerRankBefore,
+              toRank: winnerRankAfter,
+              fromElo: winnerEloBefore,
+              toElo: winner.elo,
+              leapfroggedPlayers,
+              previousRecord: currentRecord,
+            }),
+          );
+          this.leapFrogRecord = { ranksJumped, holder: game.winner };
+        }
       }
 
       // David: ≥ 30 Elo gain from beating a much higher rated opponent.
@@ -1808,7 +1833,12 @@ export class Achievements {
       "touched-the-throne": { earned: 0 },
       "kingslayer": { earned: 0 },
       "king-maker": { earned: 0 },
-      "leap-frog": { earned: 0 },
+      "leap-frog": {
+        earned: 0,
+        current: 0,
+        target: this.leapFrogRecord.ranksJumped,
+        recordHolder: this.leapFrogRecord.holder,
+      },
       "david": { current: 0, target: 30, earned: 0 },
       "goliath": { current: 0, target: 30, earned: 0 },
       "climber": { current: 0, target: 300, earned: 0 },
@@ -2262,6 +2292,11 @@ export class Achievements {
     // while active keep their progression here.
     progression["david"].current = this.bestDavidGain.get(playerId) ?? 0;
 
+    // Leap Frog progression: the player's own biggest single-game
+    // leaderboard jump (ranked before and after), compared against the
+    // league record they must strictly exceed to earn the award.
+    progression["leap-frog"].current = this.bestRankJump.get(playerId) ?? 0;
+
     // Goliath progression: largest Elo lost from a single match where
     // both players were ranked at the time. Mirrors David — deactivated
     // players who suffered qualifying losses while ranked keep their
@@ -2377,6 +2412,8 @@ type AchievementDefinitions = {
     fromElo: number;
     toElo: number;
     leapfroggedPlayers: string[];
+    // Undefined when this jump is the first to establish the league record.
+    previousRecord?: number;
   };
   "david": { opponent: string; gameId: string; eloGain: number };
   "goliath": { opponent: string; gameId: string; eloLoss: number };
@@ -2450,6 +2487,17 @@ type MissingPlayersProgression = ProgressionWithTarget & {
   missing?: Set<string>;
 };
 
+type LeapFrogProgression = BaseProgression & {
+  // Player's own biggest single-game leaderboard jump (0 if none).
+  current: number;
+  // The league record — ranks the player must strictly exceed to earn the
+  // next Leap Frog award. Undefined when no one has set a record yet (a
+  // ≥ 2-rank jump wins it outright).
+  target?: number;
+  // Player who currently holds the league record, if any.
+  recordHolder?: string;
+};
+
 type MarathonSetProgression = BaseProgression & {
   // Player's own highest winning set score from a true-deuce set
   // they won (winner ≥ 12, loser ≥ 10). 0 if they have none.
@@ -2503,7 +2551,7 @@ export type AchievementProgression = {
   "touched-the-throne": BaseProgression;
   "on-the-podium": BaseProgression;
   "photo-finish": BaseProgression;
-  "leap-frog": BaseProgression;
+  "leap-frog": LeapFrogProgression;
   "david": ProgressionWithTarget;
   "goliath": ProgressionWithTarget;
   "climber": ProgressionWithTarget;

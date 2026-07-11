@@ -210,7 +210,7 @@ export const ACHIEVEMENT_LABELS: Record<string, { title: string; description: st
   },
   "leap-frog": {
     title: "Leap Frog",
-    description: "Jump 3 or more ranks on the leaderboard from a single game",
+    description: "Jump more leaderboard ranks in a single game than anyone before you",
     icon: "🐸",
   },
   "david": {
@@ -531,6 +531,13 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
                       {achievement.data.toRank}
                     </p>
                     <p>
+                      {achievement.data.previousRecord !== undefined
+                        ? `Broke the previous record of ${achievement.data.previousRecord} rank${
+                            achievement.data.previousRecord !== 1 ? "s" : ""
+                          }`
+                        : "First league record!"}
+                    </p>
+                    <p>
                       Score: {fmtNum(achievement.data.fromElo, { digits: 1 })} →{" "}
                       {fmtNum(achievement.data.toElo, { digits: 1 })} (
                       {fmtNum(achievement.data.toElo - achievement.data.fromElo, {
@@ -809,10 +816,33 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                           )}
                         </div>
                       )}
+
+                      {/* Record holder for leap-frog */}
+                      {type === "leap-frog" && "recordHolder" in data && (
+                        <div className="mt-2 text-xs text-secondary-text/70">
+                          {data.recordHolder ? (
+                            <>
+                              League record held by{" "}
+                              <Link to={"/player/" + data.recordHolder}>
+                                <span className="text-secondary-text underline">
+                                  {context.playerName(data.recordHolder)}
+                                </span>
+                              </Link>
+                              . Jump more than {data.target} rank{data.target !== 1 ? "s" : ""} in one game to take it.
+                            </>
+                          ) : (
+                            <>No record set yet — jump 2 or more ranks in a single game to start the record.</>
+                          )}
+                        </div>
+                      )}
                     </>
                   ) : type === "marathon-set" ? (
                     <div className="mt-2 text-xs text-secondary-text/70">
                       No league record yet — win a deuce set with the winning score at 12 or above to set the first record.
+                    </div>
+                  ) : type === "leap-frog" ? (
+                    <div className="mt-2 text-xs text-secondary-text/70">
+                      No league record yet — jump 2 or more ranks in a single game to set the first record.
                     </div>
                   ) : (
                     // Fallback for achievements without targets (like tournament achievements)
