@@ -86,6 +86,27 @@ const getPeriodTimestamp = (date: Date, period: Period): number => {
   }
 };
 
+const getPeriodStart = (date: Date, period: Period): Date => new Date(getPeriodTimestamp(date, period));
+
+const advancePeriod = (date: Date, period: Period): Date => {
+  const d = new Date(date);
+  switch (period) {
+    case "day":
+      d.setDate(d.getDate() + 1);
+      break;
+    case "week":
+      d.setDate(d.getDate() + 7);
+      break;
+    case "month":
+      d.setMonth(d.getMonth() + 1);
+      break;
+    case "year":
+      d.setFullYear(d.getFullYear() + 1);
+      break;
+  }
+  return d;
+};
+
 const formatPeriod = (timestamp: number, period: Period): string => {
   const date = new Date(timestamp);
   switch (period) {
@@ -131,7 +152,13 @@ export const TopGamingDays: React.FC = () => {
     const allTimeCounts = new Map<string, { count: number; timestamp: number }>();
     const recentCounts = new Map<string, { count: number; timestamp: number }>();
 
+    let earliestPlayedAt = Infinity;
+
     context.games.forEach(({ playedAt }) => {
+      if (playedAt < earliestPlayedAt) {
+        earliestPlayedAt = playedAt;
+      }
+
       const date = new Date(playedAt);
       const key = getPeriodKey(date, period);
       const timestamp = getPeriodTimestamp(date, period);
@@ -153,6 +180,24 @@ export const TopGamingDays: React.FC = () => {
       }
     });
 
+    // Seed every calendar period in the range with a 0-count entry so that periods
+    // with no games are still considered (including the current, possibly empty, period).
+    const now = new Date();
+    const seedRange = (map: Map<string, { count: number; timestamp: number }>, rangeStart: number) => {
+      let cursor = getPeriodStart(new Date(rangeStart), period);
+      const endTimestamp = getPeriodTimestamp(now, period);
+      while (cursor.getTime() <= endTimestamp) {
+        const key = getPeriodKey(cursor, period);
+        if (!map.has(key)) {
+          map.set(key, { count: 0, timestamp: getPeriodTimestamp(cursor, period) });
+        }
+        cursor = advancePeriod(cursor, period);
+      }
+    };
+
+    seedRange(allTimeCounts, earliestPlayedAt);
+    seedRange(recentCounts, Math.max(earliestPlayedAt, recentCutoff));
+
     const buildResult = (map: Map<string, { count: number; timestamp: number }>): TopPeriodsResult => {
       const sorted = Array.from(map.entries())
         .map(([key, data]) => ({
@@ -160,7 +205,7 @@ export const TopGamingDays: React.FC = () => {
           count: data.count,
           timestamp: data.timestamp,
         }))
-        .sort((a, b) => b.count - a.count);
+        .sort((a, b) => b.count - a.count || b.timestamp - a.timestamp);
 
       const currentIndex = sorted.findIndex((entry) => entry.key === currentKey);
       const current: CurrentEntry | null =
