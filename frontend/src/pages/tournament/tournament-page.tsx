@@ -43,11 +43,11 @@ export const TournamentPage: React.FC = () => {
       return "group-play";
     if (tournament.bracket !== undefined) {
       if (isDoubleElimination) {
-        // When arriving via a pending game link, open the tab the game is in
+        // When arriving via a game link (pending, or just registered), open the tab the game is in
         if (player1 && player2) {
-          const pendingGame = tournament.findPendingGame(player1, player2);
-          if (pendingGame?.bracketSection === "losers") return "losers";
-          if (pendingGame?.bracketSection === "grandFinal" || pendingGame?.bracketSection === "bracketReset") {
+          const game = tournament.bracket.findGameByPlayers(player1, player2);
+          if (game?.section === "losers") return "losers";
+          if (game?.section === "grandFinal" || game?.section === "bracketReset") {
             return "grand-final";
           }
           return "finals";

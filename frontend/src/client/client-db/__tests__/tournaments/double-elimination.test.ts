@@ -355,6 +355,48 @@ describe("Double elimination simulation", () => {
   });
 });
 
+describe("findGameByPlayers (used for tab selection after registering a game)", () => {
+  it("locates a just-completed losers bracket game in the losers section", () => {
+    const events = [
+      ...baseEvents(["P1", "P2", "P3", "P4"]),
+      gameEvent("P1", "P4"),
+      gameEvent("P2", "P3"),
+      gameEvent("P4", "P3"), // Losers round 1, just registered
+    ];
+    const bracket = getTournament(events).bracket!;
+    expect(bracket.findGameByPlayers("P4", "P3")?.section).toBe("losers");
+    // The winners semifinal is found in the winners section
+    expect(bracket.findGameByPlayers("P1", "P4")?.section).toBe("winners");
+  });
+
+  it("prefers the pending rematch over the completed earlier meeting", () => {
+    const events = [
+      ...baseEvents(["P1", "P2", "P3", "P4"]),
+      gameEvent("P1", "P4"),
+      gameEvent("P2", "P3"),
+      gameEvent("P4", "P3"),
+      gameEvent("P1", "P2"), // Winners final
+      gameEvent("P2", "P4"), // Losers final -> grand final is P1 vs P2 again
+    ];
+    const bracket = getTournament(events).bracket!;
+    expect(bracket.findGameByPlayers("P1", "P2")?.section).toBe("grandFinal");
+  });
+
+  it("returns the latest completed meeting when nothing is pending", () => {
+    const events = [
+      ...baseEvents(["P1", "P2", "P3", "P4"]),
+      gameEvent("P1", "P4"),
+      gameEvent("P2", "P3"),
+      gameEvent("P4", "P3"),
+      gameEvent("P1", "P2"), // Winners final
+      gameEvent("P2", "P4"), // Losers final
+      gameEvent("P1", "P2"), // Grand final, just registered — tournament over
+    ];
+    const bracket = getTournament(events).bracket!;
+    expect(bracket.findGameByPlayers("P1", "P2")?.section).toBe("grandFinal");
+  });
+});
+
 describe("Single elimination regression", () => {
   it("works exactly as before when double elimination is off", () => {
     const events = [

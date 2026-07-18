@@ -130,6 +130,29 @@ export class TournamentBracket {
     return pending;
   }
 
+  /**
+   * Find the game between two players across all bracket sections.
+   * Prefers a pending game; otherwise returns the most recently completed one
+   * (the same pair can meet more than once in double elimination)
+   */
+  findGameByPlayers(
+    player1: string,
+    player2: string,
+  ): { game: Partial<TournamentGame>; section: TournamentBracketSection } | undefined {
+    const players = [player1, player2];
+    const candidates = this.#orderedGames().filter(
+      ({ game }) =>
+        game.player1 !== undefined &&
+        game.player2 !== undefined &&
+        players.includes(game.player1) &&
+        players.includes(game.player2),
+    );
+    if (candidates.length === 0) return undefined;
+    const pending = candidates.find(({ game }) => game.winner === undefined && game.skipped === undefined);
+    if (pending) return pending;
+    return candidates.sort((a, b) => (b.game.completedAt ?? 0) - (a.game.completedAt ?? 0))[0];
+  }
+
   /** All completed games across all bracket sections */
   getCompletedGames(): TournamentGame[] {
     const completed: TournamentGame[] = [];
