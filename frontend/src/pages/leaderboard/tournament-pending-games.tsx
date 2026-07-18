@@ -247,22 +247,31 @@ export const WinnerBox: React.FC<WinnerBoxProps> = ({ winner }) => {
  * losers dropping in from a winners bracket round, odd ("minor") rounds are played among losers
  * bracket survivors only, to reduce the field for the next drop-in round.
  */
-export function losersLayerIndexToTournamentRound(layerIndex: number, totalLayers: number): string {
+export function losersRoundLabel(layerIndex: number, totalLayers: number): { title: string; subtitle?: string } {
   const round = totalLayers - layerIndex; // Forward round number: 1 is played first
   const winnersLayerCount = totalLayers / 2 + 1;
 
-  if (layerIndex === 0) return "Losers Final — loser of the Winners Final enters";
+  if (layerIndex === 0) return { title: "Losers Final", subtitle: "Loser of the Winners Final enters" };
   if (round === 1) {
     const winnersRound = layerIndexToTournamentRound(winnersLayerCount - 1);
-    return winnersRound ? `Losers Round 1 — losers from Winners ${winnersRound}` : "Losers Round 1";
+    return {
+      title: "Losers Round 1",
+      subtitle: winnersRound ? `Losers from Winners ${winnersRound}` : undefined,
+    };
   }
   if (round % 2 === 0) {
     const winnersRound = layerIndexToTournamentRound(winnersLayerCount - 1 - round / 2);
-    return winnersRound
-      ? `Losers Round ${round} — losers from Winners ${winnersRound} enter`
-      : `Losers Round ${round}`;
+    return {
+      title: `Losers Round ${round}`,
+      subtitle: winnersRound ? `Losers from Winners ${winnersRound} enter` : undefined,
+    };
   }
-  return `Losers Round ${round} — losers only`;
+  return { title: `Losers Round ${round}`, subtitle: "Losers only" };
+}
+
+export function losersLayerIndexToTournamentRound(layerIndex: number, totalLayers: number): string {
+  const { title, subtitle } = losersRoundLabel(layerIndex, totalLayers);
+  return subtitle ? `${title} — ${subtitle}` : title;
 }
 
 export function layerIndexToTournamentRound(index: number): string | undefined {
