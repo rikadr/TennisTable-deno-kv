@@ -242,9 +242,27 @@ export const WinnerBox: React.FC<WinnerBoxProps> = ({ winner }) => {
   );
 };
 
+/**
+ * Names a losers bracket round after how it is filled: even ("major") rounds receive fresh
+ * losers dropping in from a winners bracket round, odd ("minor") rounds are played among losers
+ * bracket survivors only, to reduce the field for the next drop-in round.
+ */
 export function losersLayerIndexToTournamentRound(layerIndex: number, totalLayers: number): string {
-  if (layerIndex === 0) return "Losers Final";
-  return `Losers Round ${totalLayers - layerIndex}`;
+  const round = totalLayers - layerIndex; // Forward round number: 1 is played first
+  const winnersLayerCount = totalLayers / 2 + 1;
+
+  if (layerIndex === 0) return "Losers Final — loser of the Winners Final enters";
+  if (round === 1) {
+    const winnersRound = layerIndexToTournamentRound(winnersLayerCount - 1);
+    return winnersRound ? `Losers Round 1 — losers from Winners ${winnersRound}` : "Losers Round 1";
+  }
+  if (round % 2 === 0) {
+    const winnersRound = layerIndexToTournamentRound(winnersLayerCount - 1 - round / 2);
+    return winnersRound
+      ? `Losers Round ${round} — losers from Winners ${winnersRound} enter`
+      : `Losers Round ${round}`;
+  }
+  return `Losers Round ${round} — losers only`;
 }
 
 export function layerIndexToTournamentRound(index: number): string | undefined {
