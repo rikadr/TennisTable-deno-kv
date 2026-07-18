@@ -47,7 +47,12 @@ export const TournamentLosersBracket = ({
               at the bottom. Not a recursive tree: consecutive losers rounds can have the same
               number of games */}
           {losersBracket.map((layer, layerIndex) => {
+            const playableGamesInRound = layer.filter((game) => !game.isBye).length;
+            if (playableGamesInRound === 0) return null; // Round consists only of bye slots
             const { title, subtitle } = losersRoundLabel(layerIndex, losersBracket.length);
+            // Card size follows how many games are in the round (like the winners tree, where
+            // a layer of 2^depth games renders at that depth's size), not how deep the round is
+            const sizeDepth = Math.max(0, Math.ceil(Math.log2(playableGamesInRound)));
             return (
               <div key={layerIndex} className="space-y-1">
                 <h3 className="text-center text-sm text-primary-text">{title}</h3>
@@ -66,7 +71,7 @@ export const TournamentLosersBracket = ({
                         gameIndex={gameIndex}
                         itemRefs={itemRefs}
                         section="losers"
-                        depth={layerIndex}
+                        depth={sizeDepth}
                       />
                     );
                   })}
