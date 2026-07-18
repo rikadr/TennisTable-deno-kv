@@ -61,7 +61,7 @@ const getISOWeek = (date: Date): number => {
 const getPeriodKey = (date: Date, period: Period): string => {
   switch (period) {
     case "day":
-      return date.toISOString().split("T")[0];
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
     case "week": {
       const ws = getWeekStart(date);
       return `W-${ws.getFullYear()}-${String(ws.getMonth() + 1).padStart(2, "0")}-${String(ws.getDate()).padStart(2, "0")}`;
