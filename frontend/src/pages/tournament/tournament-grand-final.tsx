@@ -46,6 +46,7 @@ export const TournamentGrandFinal = ({
           game={grandFinal}
           itemRefs={itemRefs}
           fallbackKey="GRAND-FINAL"
+          size="lg"
         />
         <div className="flex justify-between text-xs text-primary-text/60 px-2">
           <span>Winners bracket champion</span>
@@ -65,6 +66,7 @@ export const TournamentGrandFinal = ({
             game={bracketReset}
             itemRefs={itemRefs}
             fallbackKey="BRACKET-RESET"
+            size="lg"
           />
         </div>
       ) : grandFinalDecidedWithoutReset ? (
@@ -103,24 +105,26 @@ const GhostGameCard = ({ player1, player2 }: { player1?: string; player2?: strin
   return (
     <div
       aria-disabled
-      className="relative w-full px-4 py-2 rounded-lg flex items-center gap-x-4 h-12 text-secondary-text bg-secondary-background/60 opacity-50 select-none pointer-events-none"
+      className="relative w-full px-5 py-4 rounded-xl flex items-center gap-x-4 h-24 text-secondary-text bg-secondary-background/60 opacity-50 select-none pointer-events-none"
     >
-      <h2 className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2">VS</h2>
+      <h2 className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 text-xl font-bold italic">
+        VS
+      </h2>
       <div className="flex gap-3 items-center justify-center">
         {player1 ? (
-          <ProfilePicture playerId={player1} size={35} shape="circle" clickToEdit={false} border={3} />
+          <ProfilePicture playerId={player1} size={60} shape="circle" clickToEdit={false} border={4} />
         ) : (
-          <QuestionMark size={38} />
+          <QuestionMark size={64} />
         )}
-        <h3>{player1 && context.playerName(player1)}</h3>
+        <h3 className="text-xl md:text-2xl font-semibold">{player1 && context.playerName(player1)}</h3>
       </div>
       <div className="grow" />
       <div className="flex gap-3 items-center justify-center">
-        <h3>{player2 && context.playerName(player2)}</h3>
+        <h3 className="text-xl md:text-2xl font-semibold">{player2 && context.playerName(player2)}</h3>
         {player2 ? (
-          <ProfilePicture playerId={player2} size={35} shape="circle" clickToEdit={false} border={3} />
+          <ProfilePicture playerId={player2} size={60} shape="circle" clickToEdit={false} border={4} />
         ) : (
-          <QuestionMark size={38} />
+          <QuestionMark size={64} />
         )}
       </div>
     </div>

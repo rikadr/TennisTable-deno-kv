@@ -131,15 +131,20 @@ type TournamentGameListCardProps = {
   }>;
   /** Key used for scroll-to registration when both players are not known yet */
   fallbackKey: string;
+  /** "lg" renders a bigger, more substantial card (used for the grand final) */
+  size?: "md" | "lg";
 };
 export const TournamentGameListCard: React.FC<TournamentGameListCardProps> = ({
   tournament,
   game,
   itemRefs,
   fallbackKey,
+  size = "md",
 }) => {
   const context = useEventDbContext();
   const { player1, player2 } = useTennisParams();
+
+  const isLarge = size === "lg";
 
   const { isPending, p1IsWinner, p2IsWinner, p1IsLoser, p2IsLoser, showMenu, ...states } = getGameStates(
     tournament,
@@ -157,32 +162,64 @@ export const TournamentGameListCard: React.FC<TournamentGameListCardProps> = ({
         <MenuButton
           disabled={!showMenu}
           className={classNames(
-            "relative w-full px-4 py-2 rounded-lg flex items-center gap-x-4 h-12 text-secondary-text",
+            "relative w-full rounded-lg flex items-center gap-x-4 text-secondary-text",
+            isLarge ? "px-5 py-4 h-24 rounded-xl" : "px-4 py-2 h-12",
             isPending ? "bg-secondary-background ring-2 ring-secondary-text" : "bg-secondary-background/60",
             showMenu && "hover:bg-secondary-background/70",
             isParamSelectedGame && "animate-wiggle",
           )}
         >
-          <h2 className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2">VS</h2>
+          <h2
+            className={classNames(
+              "absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2",
+              isLarge && "text-xl font-bold italic",
+            )}
+          >
+            VS
+          </h2>
           <div className="flex gap-3 items-center justify-center">
             {game.player1 ? (
-              <ProfilePicture playerId={game.player1} size={35} shape="circle" clickToEdit={false} border={3} />
+              <ProfilePicture
+                playerId={game.player1}
+                size={isLarge ? 60 : 35}
+                shape="circle"
+                clickToEdit={false}
+                border={isLarge ? 4 : 3}
+              />
             ) : (
-              <QuestionMark size={38} />
+              <QuestionMark size={isLarge ? 64 : 38} />
             )}
-            <h3 className={classNames(p1IsWinner && "font-semibold", p1IsLoser && "line-through font-thin")}>
+            <h3
+              className={classNames(
+                isLarge && "text-xl md:text-2xl font-semibold",
+                p1IsWinner && "font-semibold",
+                p1IsLoser && "line-through font-thin",
+              )}
+            >
               {game.player1 && context.playerName(game.player1)} {winStateEmoji(p1IsWinner, game.skipped)}
             </h3>
           </div>
           <div className="grow" />
           <div className="flex gap-3 items-center justify-center">
-            <h3 className={classNames(p2IsWinner && "font-semibold", p2IsLoser && "line-through font-thin")}>
+            <h3
+              className={classNames(
+                isLarge && "text-xl md:text-2xl font-semibold",
+                p2IsWinner && "font-semibold",
+                p2IsLoser && "line-through font-thin",
+              )}
+            >
               {winStateEmoji(p2IsWinner, game.skipped)} {game.player2 && context.playerName(game.player2)}
             </h3>
             {game.player2 ? (
-              <ProfilePicture playerId={game.player2} size={35} shape="circle" clickToEdit={false} border={3} />
+              <ProfilePicture
+                playerId={game.player2}
+                size={isLarge ? 60 : 35}
+                shape="circle"
+                clickToEdit={false}
+                border={isLarge ? 4 : 3}
+              />
             ) : (
-              <QuestionMark size={38} />
+              <QuestionMark size={isLarge ? 64 : 38} />
             )}
           </div>
         </MenuButton>
