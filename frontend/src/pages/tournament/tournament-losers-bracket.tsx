@@ -1,6 +1,7 @@
+import { useSessionStorage } from "usehooks-ts";
 import { Tournament } from "../../client/client-db/tournaments/tournament";
 import { losersRoundLabel } from "../leaderboard/tournament-pending-games";
-import { TournamentGameListCard } from "./tournament-bracket";
+import { GameTriangle, TournamentGameListCard, TreeListToggle } from "./tournament-bracket";
 
 export const TournamentLosersBracket = ({
   tournament,
@@ -11,6 +12,10 @@ export const TournamentLosersBracket = ({
     [key: string]: HTMLElement | null;
   }>;
 }) => {
+  const [showAsList, setShowAsList] = useSessionStorage(
+    `show-losers-tournament-as-list${tournament.id}`,
+    window.innerWidth < 1_000,
+  );
   const losersBracket = tournament.bracket?.losersBracket;
 
   if (!losersBracket) return null;
@@ -35,6 +40,20 @@ export const TournamentLosersBracket = ({
         Players who lose in the winners bracket drop down here for a second chance. Lose again and you are out. The
         winner of the losers bracket meets the winners bracket champion in the grand final.
       </p>
+      <TreeListToggle showAsList={showAsList} setShowAsList={setShowAsList} />
+      {showAsList === false && (
+        <div className="w-fit m-auto bg-primary-background rounded-lg p-4">
+          <GameTriangle
+            tournament={tournament}
+            layerIndex={0}
+            gameIndex={0}
+            itemRefs={itemRefs}
+            section="losers"
+            depth={0}
+          />
+        </div>
+      )}
+      {showAsList && (
       <div className="flex flex-col items-center lg:flex-row-reverse lg:justify-end lg:items-start gap-2 bg-primary-background rounded-lg py-4">
         {losersBracket.map((layer, layerIndex) => {
           const { title, subtitle } = losersRoundLabel(layerIndex, losersBracket.length);
@@ -63,6 +82,7 @@ export const TournamentLosersBracket = ({
           );
         })}
       </div>
+      )}
     </div>
   );
 };

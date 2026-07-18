@@ -4,7 +4,7 @@ import { useSessionStorage } from "usehooks-ts";
 import { classNames } from "../../common/class-names";
 import { useTennisParams } from "../../hooks/use-tennis-params";
 import { useEventDbContext } from "../../wrappers/event-db-context";
-import { layerIndexToTournamentRound } from "../leaderboard/tournament-pending-games";
+import { layerIndexToTournamentRound, losersRoundLabel } from "../leaderboard/tournament-pending-games";
 import { ProfilePicture } from "../player/profile-picture";
 import { getGameKeyFromPlayers } from "./tournament-page";
 import { Link } from "react-router-dom";
@@ -41,32 +41,7 @@ export const TournamentBracket = ({
   }
   return (
     <>
-      <Switch
-        checked={showAsList}
-        onChange={setShowAsList}
-        className="group relative flex h-10 w-36 cursor-pointer rounded-full bg-secondary-background p-1 transition-colors duration-200 ease-in-out focus:outline-none data-[focus]:outline-1 data-[focus]:outline-white"
-      >
-        <div
-          className={classNames(
-            "absolute top-1/2 transform -translate-y-1/2 left-5 z-10",
-            showAsList ? "text-secondary-text" : "text-primary-text",
-          )}
-        >
-          Tree {!showAsList && "🌲"}
-        </div>
-        <div
-          className={classNames(
-            "absolute top-1/2 transform -translate-y-1/2 right-5 z-10",
-            showAsList ? "text-primary-text" : "text-secondary-text",
-          )}
-        >
-          {showAsList && "🟰"} List{" "}
-        </div>
-        <span
-          aria-hidden="true"
-          className="pointer-events-none inline-block h-8 w-[5rem] translate-x-0 rounded-full bg-primary-background ring-0 shadow-lg transition duration-200 ease-in-out group-data-[checked]:translate-x-[3.5rem]"
-        />
-      </Switch>
+      <TreeListToggle showAsList={showAsList} setShowAsList={setShowAsList} />
       {showAsList ? (
         <GamesList tournament={tournament} itemRefs={itemRefs} />
       ) : (
@@ -75,6 +50,43 @@ export const TournamentBracket = ({
         </div>
       )}
     </>
+  );
+};
+
+export const TreeListToggle = ({
+  showAsList,
+  setShowAsList,
+}: {
+  showAsList: boolean;
+  setShowAsList: (value: boolean) => void;
+}) => {
+  return (
+    <Switch
+      checked={showAsList}
+      onChange={setShowAsList}
+      className="group relative flex h-10 w-36 cursor-pointer rounded-full bg-secondary-background p-1 transition-colors duration-200 ease-in-out focus:outline-none data-[focus]:outline-1 data-[focus]:outline-white"
+    >
+      <div
+        className={classNames(
+          "absolute top-1/2 transform -translate-y-1/2 left-5 z-10",
+          showAsList ? "text-secondary-text" : "text-primary-text",
+        )}
+      >
+        Tree {!showAsList && "🌲"}
+      </div>
+      <div
+        className={classNames(
+          "absolute top-1/2 transform -translate-y-1/2 right-5 z-10",
+          showAsList ? "text-primary-text" : "text-secondary-text",
+        )}
+      >
+        {showAsList && "🟰"} List{" "}
+      </div>
+      <span
+        aria-hidden="true"
+        className="pointer-events-none inline-block h-8 w-[5rem] translate-x-0 rounded-full bg-primary-background ring-0 shadow-lg transition duration-200 ease-in-out group-data-[checked]:translate-x-[3.5rem]"
+      />
+    </Switch>
   );
 };
 
@@ -200,13 +212,25 @@ type GameTriangleProps = {
   itemRefs: React.MutableRefObject<{
     [key: string]: HTMLElement | null;
   }>;
+  /** Which bracket to render from. Defaults to the winners bracket */
+  section?: "winners" | "losers";
+  /** Visual depth used for sizing. Defaults to layerIndex (correct for the winners bracket) */
+  depth?: number;
 };
-const GameTriangle: React.FC<GameTriangleProps> = ({ tournament, layerIndex, gameIndex, itemRefs }) => {
+export const GameTriangle: React.FC<GameTriangleProps> = ({
+  tournament,
+  layerIndex,
+  gameIndex,
+  itemRefs,
+  section = "winners",
+  depth,
+}) => {
   const context = useEventDbContext();
   const { player1, player2 } = useTennisParams();
 
+  const visualDepth = depth ?? layerIndex;
   let size: Size = "xxs";
-  switch (layerIndex) {
+  switch (visualDepth) {
     case 0:
       size = "lg";
       break;
@@ -269,9 +293,12 @@ const GameTriangle: React.FC<GameTriangleProps> = ({ tournament, layerIndex, gam
     return null;
   }
 
-  const game = tournament.bracket.bracket[layerIndex]?.[gameIndex];
+  const layers = section === "losers" ? tournament.bracket.losersBracket : tournament.bracket.bracket;
+  if (!layers) return null;
 
-  if (!game || (layerIndex === tournament.bracket.bracket.length - 1 && !game.player1 && !game.player2)) {
+  const game = layers[layerIndex]?.[gameIndex];
+
+  if (!game || game.isBye || (layerIndex === layers.length - 1 && !game.player1 && !game.player2)) {
     return size === "xs" || size === "xxs" ? null : <div className="grow" />;
   }
 
@@ -287,10 +314,34 @@ const GameTriangle: React.FC<GameTriangleProps> = ({ tournament, layerIndex, gam
 
   const isParamSelectedGame = gameKey === getGameKeyFromPlayers(player1, player2, "bracket");
 
+  const roundTitle =
+    section === "losers" ? losersRoundLabel(layerIndex, layers.length).title : layerIndexToTournamentRound(layerIndex);
+
+  // The losers bracket is not a plain binary tree: some slots are filled by winners bracket
+  // dropouts instead of a feeder game. Find the actual feeder games via their advance pointers
+  const feeders: { layerIndex: number; gameIndex: number; role: "player1" | "player2" }[] = [];
+  if (section === "losers") {
+    layers.forEach((layer, feederLayerIndex) => {
+      if (feederLayerIndex <= layerIndex) return;
+      layer.forEach((feeder, feederGameIndex) => {
+        const target = feeder.advanceTo;
+        if (
+          !feeder.isBye &&
+          target?.section === "losers" &&
+          target.layerIndex === layerIndex &&
+          target.gameIndex === gameIndex
+        ) {
+          feeders.push({ layerIndex: feederLayerIndex, gameIndex: feederGameIndex, role: target.role });
+        }
+      });
+    });
+    feeders.sort((a, b) => (a.role === b.role ? 0 : a.role === "player1" ? -1 : 1));
+  }
+
   return (
     <div className="w-fit space-y-2">
-      {layerIndex < 3 ? (
-        <h2 className="font-light text-sm text-center text-primary-text">{layerIndexToTournamentRound(layerIndex)}</h2>
+      {visualDepth < 3 ? (
+        <h2 className="font-light text-sm text-center text-primary-text">{roundTitle}</h2>
       ) : (
         <div className="h-0" />
       )}
@@ -373,7 +424,7 @@ const GameTriangle: React.FC<GameTriangleProps> = ({ tournament, layerIndex, gam
         </div>
       </Menu>
 
-      {layerIndex < tournament.bracket.bracket.length && (
+      {section === "winners" && layerIndex < layers.length && (
         <div className="flex gap-2">
           <GameTriangle
             tournament={tournament}
@@ -387,6 +438,21 @@ const GameTriangle: React.FC<GameTriangleProps> = ({ tournament, layerIndex, gam
             gameIndex={gameIndex * 2 + 1}
             itemRefs={itemRefs}
           />
+        </div>
+      )}
+      {section === "losers" && feeders.length > 0 && (
+        <div className="flex gap-2">
+          {feeders.map((feeder) => (
+            <GameTriangle
+              key={`${feeder.layerIndex}-${feeder.gameIndex}`}
+              tournament={tournament}
+              layerIndex={feeder.layerIndex}
+              gameIndex={feeder.gameIndex}
+              itemRefs={itemRefs}
+              section="losers"
+              depth={visualDepth + 1}
+            />
+          ))}
         </div>
       )}
     </div>
