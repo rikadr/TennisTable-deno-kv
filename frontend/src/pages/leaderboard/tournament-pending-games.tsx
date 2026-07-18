@@ -105,7 +105,7 @@ export const TournamentHighlightsAndPendingGames: React.FC = () => {
               bracket.grandFinalGames.pending.map((game) => (
                 <div key={game.player1 + game.player2} className="space-y-1">
                   <h3 className="text-center text-sm text-primary-text">
-                    {game === bracket.bracketReset ? "Grand Final Reset" : "Grand Final"}
+                    {game === bracket.bracketReset ? "The Final Decider" : "Grand Final"}
                   </h3>
                   <PendingGame player1={game.player1} player2={game.player2} tournamentId={id} />
                 </div>

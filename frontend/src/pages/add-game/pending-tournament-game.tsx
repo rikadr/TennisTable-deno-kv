@@ -12,7 +12,7 @@ function pendingGameRoundLabel(pendingGame: {
     case "grandFinal":
       return "Grand Final";
     case "bracketReset":
-      return "Grand Final Reset";
+      return "The Final Decider";
     default:
       return pendingGame.layerIndex !== undefined ? layerIndexToTournamentRound(pendingGame.layerIndex) : undefined;
   }

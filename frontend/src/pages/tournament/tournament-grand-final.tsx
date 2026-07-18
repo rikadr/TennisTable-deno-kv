@@ -23,15 +23,20 @@ export const TournamentGrandFinal = ({
   const grandFinalDecidedWithoutReset =
     grandFinal.winner !== undefined && grandFinal.winner === grandFinal.player1;
 
-  const losersChampionName = grandFinal.player2
-    ? context.playerName(grandFinal.player2)
+  // Only use real names once both finalists are decided; a mix of a name and a placeholder reads oddly
+  const bothFinalistsKnown = grandFinal.player1 !== undefined && grandFinal.player2 !== undefined;
+  const winnersChampionName = bothFinalistsKnown
+    ? context.playerName(grandFinal.player1!)
+    : "the winners bracket champion";
+  const losersChampionName = bothFinalistsKnown
+    ? context.playerName(grandFinal.player2!)
     : "the losers bracket champion";
 
   return (
     <div className="space-y-6 max-w-2xl">
       <p className="text-sm text-primary-text/70">
         The winners bracket champion meets the losers bracket champion in the grand final. If the losers bracket
-        champion wins the grand final, both players have one loss each — a deciding bracket reset match is played.
+        champion wins the grand final, both players have one loss each — the final decider is played.
       </p>
 
       <div className="space-y-1">
@@ -50,10 +55,10 @@ export const TournamentGrandFinal = ({
 
       {bracketResetActivated && bracketReset ? (
         <div className="space-y-1">
-          <h3 className="text-center text-sm text-primary-text">Bracket Reset — deciding match</h3>
+          <h3 className="text-center text-sm text-primary-text">The Final Decider</h3>
           <p className="text-center text-xs text-primary-text/60">
-            The losers bracket champion won the grand final. Both players now have one loss, so this match decides
-            the tournament.
+            {losersChampionName} won the grand final, so {winnersChampionName} and {losersChampionName} now have one
+            loss each. The winner of this match wins the tournament.
           </p>
           <TournamentGameListCard
             tournament={tournament}
@@ -64,20 +69,20 @@ export const TournamentGrandFinal = ({
         </div>
       ) : grandFinalDecidedWithoutReset ? (
         <div className="space-y-1">
-          <h3 className="text-center text-sm text-primary-text">Bracket Reset — deciding match</h3>
+          <h3 className="text-center text-sm text-primary-text">The Final Decider</h3>
           <p className="text-center text-xs text-primary-text/60">
-            Not needed — the winners bracket champion won the grand final and stayed undefeated.
+            Not needed — {winnersChampionName} won the grand final and stayed undefeated.
           </p>
         </div>
       ) : (
         <div className="space-y-1">
           <p className="text-center text-sm text-primary-text">If {losersChampionName} wins the grand final</p>
           <p className="text-center text-lg text-primary-text leading-none">↓</p>
-          <h3 className="text-center text-sm text-primary-text">Bracket Reset — deciding match</h3>
+          <h3 className="text-center text-sm text-primary-text">The Final Decider</h3>
           <GhostGameCard player1={grandFinal.player1} player2={grandFinal.player2} />
           <p className="text-center text-xs text-primary-text/60">
-            Winning the grand final only evens the score at one loss each, so this second match would decide the
-            tournament. The winners bracket champion wins the tournament by winning the grand final alone.
+            If {winnersChampionName} wins the grand final, the tournament is over. If {losersChampionName} wins,
+            both players have one loss each — and this match decides everything.
           </p>
         </div>
       )}
