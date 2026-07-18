@@ -17,6 +17,8 @@ export const TournamentGrandFinal = ({
   const grandFinal = bracket.grandFinal;
   const bracketReset = bracket.bracketReset;
   const bracketResetActivated = bracketReset?.player1 !== undefined && bracketReset?.player2 !== undefined;
+  const grandFinalDecidedWithoutReset =
+    grandFinal.winner !== undefined && grandFinal.winner === grandFinal.player1;
 
   return (
     <div className="space-y-6 max-w-2xl">
@@ -39,21 +41,33 @@ export const TournamentGrandFinal = ({
         </div>
       </div>
 
-      {bracketResetActivated && bracketReset && (
-        <div className="space-y-1">
-          <h3 className="text-center text-sm text-primary-text">Bracket Reset — deciding match</h3>
+      <div className="space-y-1">
+        <h3 className="text-center text-sm text-primary-text">Bracket Reset — deciding match</h3>
+        {bracketResetActivated && bracketReset ? (
+          <>
+            <p className="text-center text-xs text-primary-text/60">
+              The losers bracket champion won the grand final. Both players now have one loss, so this match decides
+              the tournament.
+            </p>
+            <TournamentGameListCard
+              tournament={tournament}
+              game={bracketReset}
+              itemRefs={itemRefs}
+              fallbackKey="BRACKET-RESET"
+            />
+          </>
+        ) : grandFinalDecidedWithoutReset ? (
           <p className="text-center text-xs text-primary-text/60">
-            The losers bracket champion won the grand final. Both players now have one loss, so this match decides
-            the tournament.
+            Not needed — the winners bracket champion won the grand final and stayed undefeated.
           </p>
-          <TournamentGameListCard
-            tournament={tournament}
-            game={bracketReset}
-            itemRefs={itemRefs}
-            fallbackKey="BRACKET-RESET"
-          />
-        </div>
-      )}
+        ) : (
+          <p className="text-center text-xs text-primary-text/60">
+            Winning the grand final is not enough for the losers bracket champion: it only evens the score at one
+            loss each. If that happens, this second match is played and its winner takes the tournament. The winners
+            bracket champion wins the tournament by winning the grand final alone.
+          </p>
+        )}
+      </div>
 
       {tournament.winner && (
         <div>
