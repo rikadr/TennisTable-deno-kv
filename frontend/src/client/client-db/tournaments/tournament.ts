@@ -5,6 +5,16 @@ import { TennisTable } from "../tennis-table";
 import { TournamentBracket } from "./bracket";
 import { TournamentGroupPlay } from "./group-play";
 
+export type TournamentBracketSection = "winners" | "losers" | "grandFinal" | "bracketReset";
+
+export type TournamentGameTarget = {
+  /** Which bracket structure the target game is in. Undefined means the same (winners) bracket */
+  section?: TournamentBracketSection;
+  layerIndex: number;
+  gameIndex: number;
+  role: "player1" | "player2";
+};
+
 export type TournamentGame = {
   player1: string;
   player2: string;
@@ -12,7 +22,11 @@ export type TournamentGame = {
   skipped?: SkippedGame;
   completedAt: number;
   /** The nex game the winner will advance to */
-  advanceTo?: { layerIndex: number; gameIndex: number; role: "player1" | "player2" };
+  advanceTo?: TournamentGameTarget;
+  /** Double elimination: the game the loser drops down to */
+  loserAdvanceTo?: TournamentGameTarget;
+  /** Double elimination: structural slot that will never be played (bye). Hidden in the UI */
+  isBye?: boolean;
 };
 
 export class Tournament {
@@ -92,7 +106,7 @@ export class Tournament {
     }
 
     // Check bracket
-    return this.bracket!.bracketGames.some((layer) => layer.pending.length > 0);
+    return this.bracket!.hasPendingGames;
   }
 
   /** Used by bracket and group play to get the relevant games and skips */
@@ -133,6 +147,7 @@ export class Tournament {
       player2: string;
       groupIndex?: number;
       layerIndex?: number;
+      bracketSection?: TournamentBracketSection;
     }
     | undefined {
     if (this.startDate > Date.now()) return; // Not started
@@ -159,19 +174,17 @@ export class Tournament {
     }
     if (!this.bracket) return;
 
-    // Check bracket games
-    const pendingLayerIndex = this.bracket!.bracketGames.findIndex((layer) =>
-      layer.pending.some((game) => players.includes(game.player1!) && players.includes(game.player2!)),
-    );
-    const pendingGame = this.bracket?.bracketGames[pendingLayerIndex]?.pending.find(
-      (game) => players.includes(game.player1!) && players.includes(game.player2!),
-    );
-    if (pendingGame) {
+    // Check bracket games (winners bracket, losers bracket, grand final)
+    const pendingBracketGame = this.bracket
+      .getPendingGames()
+      .find(({ game }) => players.includes(game.player1!) && players.includes(game.player2!));
+    if (pendingBracketGame) {
       return {
         tournament: { name: this.name, id: this.id },
-        player1: pendingGame.player1!,
-        player2: pendingGame.player2!,
-        layerIndex: pendingLayerIndex,
+        player1: pendingBracketGame.game.player1!,
+        player2: pendingBracketGame.game.player2!,
+        layerIndex: pendingBracketGame.layerIndex,
+        bracketSection: pendingBracketGame.section,
       };
     }
   }
@@ -200,17 +213,15 @@ export class Tournament {
       });
     });
 
-    // Check bracket games
-    this.bracket?.bracketGames.forEach((layer) => {
-      layer.pending.forEach((game) => {
-        if (game.player1 === player || game.player2 === player) {
-          games.push({
-            oponent: game.player1 === player ? game.player2! : game.player1!,
-            player1: game.player1!,
-            player2: game.player2!,
-          });
-        }
-      });
+    // Check bracket games (winners bracket, losers bracket, grand final)
+    this.bracket?.getPendingGames().forEach(({ game }) => {
+      if (game.player1 === player || game.player2 === player) {
+        games.push({
+          oponent: game.player1 === player ? game.player2! : game.player1!,
+          player1: game.player1!,
+          player2: game.player2!,
+        });
+      }
     });
 
     if (games.length === 0) return;
@@ -248,13 +259,11 @@ export class Tournament {
       });
     }
 
-    // Check bracket games
-    this.bracket?.bracketGames.forEach((layer) => {
-      layer.pending.forEach((game) => {
-        games.push({
-          player1: game.player1!,
-          player2: game.player2!,
-        });
+    // Check bracket games (winners bracket, losers bracket, grand final)
+    this.bracket?.getPendingGames().forEach(({ game }) => {
+      games.push({
+        player1: game.player1!,
+        player2: game.player2!,
       });
     });
 
@@ -271,10 +280,8 @@ export class Tournament {
       }
     }
     if (this.bracket) {
-      for (const layer of this.bracket.bracketGames) {
-        for (const game of layer.played) {
-          times.push(game.completedAt);
-        }
+      for (const game of this.bracket.getCompletedGames()) {
+        times.push(game.completedAt);
       }
     }
     times.sort((a, b) => a - b);
@@ -292,6 +299,7 @@ export class Tournament {
         simulateGameFn,
         time,
         groupPlayResult.playerOrder,
+        this.tournamentConfig.doubleElimination,
       );
       return {
         winner: bracketResult.winner,

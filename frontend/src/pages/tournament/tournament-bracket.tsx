@@ -85,9 +85,6 @@ type GamesListProps = {
   }>;
 };
 const GamesList: React.FC<GamesListProps> = ({ tournament, itemRefs }) => {
-  const context = useEventDbContext();
-  const { player1, player2 } = useTennisParams();
-
   return (
     <div className="flex flex-col items-center lg:flex-row-reverse lg:justify-end lg:items-start gap-2 bg-primary-background rounded-lg py-4">
       {tournament.bracket &&
@@ -97,88 +94,100 @@ const GamesList: React.FC<GamesListProps> = ({ tournament, itemRefs }) => {
             {layer.map((game, gameIndex) => {
               // Skip empty qualifier games
               if (layerIndex === tournament.bracket!.bracket.length - 1 && !game.player1 && !game.player2) return null;
-              const { isPending, p1IsWinner, p2IsWinner, p1IsLoser, p2IsLoser, showMenu, ...states } = getGameStates(
-                tournament,
-                game,
-              );
-
-              const gameKey =
-                game.player1 && game.player2
-                  ? getGameKeyFromPlayers(game.player1, game.player2, "bracket")
-                  : "L" + layerIndex + "G+" + gameIndex;
-
-              const isParamSelectedGame = gameKey === getGameKeyFromPlayers(player1, player2, "bracket");
-
+              const fallbackKey = "L" + layerIndex + "G+" + gameIndex;
               return (
-                <Menu key={gameKey} ref={(el) => (itemRefs.current[gameKey] = el)}>
-                  <div>
-                    <MenuButton
-                      disabled={!showMenu}
-                      className={classNames(
-                        "relative w-full px-4 py-2 rounded-lg flex items-center gap-x-4 h-12 text-secondary-text",
-                        isPending ? "bg-secondary-background ring-2 ring-secondary-text" : "bg-secondary-background/60",
-                        showMenu && "hover:bg-secondary-background/70",
-                        isParamSelectedGame && "animate-wiggle",
-                      )}
-                    >
-                      <h2 className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2">VS</h2>
-                      <div className="flex gap-3 items-center justify-center">
-                        {game.player1 ? (
-                          <ProfilePicture
-                            playerId={game.player1}
-                            size={35}
-                            shape="circle"
-                            clickToEdit={false}
-                            border={3}
-                          />
-                        ) : (
-                          <QuestionMark size={38} />
-                        )}
-                        <h3
-                          className={classNames(p1IsWinner && "font-semibold", p1IsLoser && "line-through font-thin")}
-                        >
-                          {game.player1 && context.playerName(game.player1)} {winStateEmoji(p1IsWinner, game.skipped)}
-                        </h3>
-                      </div>
-                      <div className="grow" />
-                      <div className="flex gap-3 items-center justify-center">
-                        <h3
-                          className={classNames(p2IsWinner && "font-semibold", p2IsLoser && "line-through font-thin")}
-                        >
-                          {winStateEmoji(p2IsWinner, game.skipped)} {game.player2 && context.playerName(game.player2)}
-                        </h3>
-                        {game.player2 ? (
-                          <ProfilePicture
-                            playerId={game.player2}
-                            size={35}
-                            shape="circle"
-                            clickToEdit={false}
-                            border={3}
-                          />
-                        ) : (
-                          <QuestionMark size={38} />
-                        )}
-                      </div>
-                    </MenuButton>
-                    <GameMenuItems
-                      player1={game.player1}
-                      player2={game.player2}
-                      showCompare={states.showCompareOption}
-                      showRegisterResult={states.showRegisterResultOption}
-                      showSkipGame={{ show: states.showSkipGameOption, tournamentId: tournament.id }}
-                      showUndoSkip={{
-                        show: states.showUndoSkipOption,
-                        skipId: game.skipped?.skipId || "",
-                        tournamentId: tournament.id,
-                      }}
-                    />
-                  </div>
-                </Menu>
+                <TournamentGameListCard
+                  key={game.player1 && game.player2 ? getGameKeyFromPlayers(game.player1, game.player2, "bracket") : fallbackKey}
+                  tournament={tournament}
+                  game={game}
+                  itemRefs={itemRefs}
+                  fallbackKey={fallbackKey}
+                />
               );
             })}
           </div>
         ))}
     </div>
+  );
+};
+
+type TournamentGameListCardProps = {
+  tournament: Tournament;
+  game: Partial<TournamentGame>;
+  itemRefs: React.MutableRefObject<{
+    [key: string]: HTMLElement | null;
+  }>;
+  /** Key used for scroll-to registration when both players are not known yet */
+  fallbackKey: string;
+};
+export const TournamentGameListCard: React.FC<TournamentGameListCardProps> = ({
+  tournament,
+  game,
+  itemRefs,
+  fallbackKey,
+}) => {
+  const context = useEventDbContext();
+  const { player1, player2 } = useTennisParams();
+
+  const { isPending, p1IsWinner, p2IsWinner, p1IsLoser, p2IsLoser, showMenu, ...states } = getGameStates(
+    tournament,
+    game,
+  );
+
+  const gameKey =
+    game.player1 && game.player2 ? getGameKeyFromPlayers(game.player1, game.player2, "bracket") : fallbackKey;
+
+  const isParamSelectedGame = gameKey === getGameKeyFromPlayers(player1, player2, "bracket");
+
+  return (
+    <Menu ref={(el) => (itemRefs.current[gameKey] = el)}>
+      <div>
+        <MenuButton
+          disabled={!showMenu}
+          className={classNames(
+            "relative w-full px-4 py-2 rounded-lg flex items-center gap-x-4 h-12 text-secondary-text",
+            isPending ? "bg-secondary-background ring-2 ring-secondary-text" : "bg-secondary-background/60",
+            showMenu && "hover:bg-secondary-background/70",
+            isParamSelectedGame && "animate-wiggle",
+          )}
+        >
+          <h2 className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2">VS</h2>
+          <div className="flex gap-3 items-center justify-center">
+            {game.player1 ? (
+              <ProfilePicture playerId={game.player1} size={35} shape="circle" clickToEdit={false} border={3} />
+            ) : (
+              <QuestionMark size={38} />
+            )}
+            <h3 className={classNames(p1IsWinner && "font-semibold", p1IsLoser && "line-through font-thin")}>
+              {game.player1 && context.playerName(game.player1)} {winStateEmoji(p1IsWinner, game.skipped)}
+            </h3>
+          </div>
+          <div className="grow" />
+          <div className="flex gap-3 items-center justify-center">
+            <h3 className={classNames(p2IsWinner && "font-semibold", p2IsLoser && "line-through font-thin")}>
+              {winStateEmoji(p2IsWinner, game.skipped)} {game.player2 && context.playerName(game.player2)}
+            </h3>
+            {game.player2 ? (
+              <ProfilePicture playerId={game.player2} size={35} shape="circle" clickToEdit={false} border={3} />
+            ) : (
+              <QuestionMark size={38} />
+            )}
+          </div>
+        </MenuButton>
+        <GameMenuItems
+          player1={game.player1}
+          player2={game.player2}
+          showCompare={states.showCompareOption}
+          showRegisterResult={states.showRegisterResultOption}
+          showSkipGame={{ show: states.showSkipGameOption, tournamentId: tournament.id }}
+          showUndoSkip={{
+            show: states.showUndoSkipOption,
+            skipId: game.skipped?.skipId || "",
+            tournamentId: tournament.id,
+          }}
+        />
+      </div>
+    </Menu>
   );
 };
 
@@ -384,7 +393,7 @@ const GameTriangle: React.FC<GameTriangleProps> = ({ tournament, layerIndex, gam
   );
 };
 
-function getGameStates(tournament: Tournament, game: Partial<TournamentGame>) {
+export function getGameStates(tournament: Tournament, game: Partial<TournamentGame>) {
   const isPending = !!game.player1 && !!game.player2 && !game.winner && !game.skipped;
 
   const p1IsWinner = !!game.winner && game.winner === game.player1;
@@ -398,11 +407,15 @@ function getGameStates(tournament: Tournament, game: Partial<TournamentGame>) {
     !!game.player1 && !!game.player2 && game.winner === undefined && game.skipped === undefined;
   const showSkipGameOption =
     !!game.player1 && !!game.player2 && game.winner === undefined && game.skipped === undefined;
-  const advanceToGame = game.advanceTo
-    ? tournament.bracket!.bracket[game.advanceTo.layerIndex]?.[game.advanceTo.gameIndex]
-    : undefined;
-  const showUndoSkipOption =
-    !!game.skipped && advanceToGame?.winner === undefined && advanceToGame?.skipped === undefined;
+  // A skip can only be undone while none of the games downstream of this one have been completed
+  const bracket = tournament.bracket;
+  const advanceToGame = game.advanceTo ? bracket?.getGame(game.advanceTo) : undefined;
+  const loserAdvanceToGame = game.loserAdvanceTo ? bracket?.getGame(game.loserAdvanceTo) : undefined;
+  const grandFinalFollowUpGame = game === bracket?.grandFinal ? bracket?.bracketReset : undefined;
+  const downstreamGameCompleted = [advanceToGame, loserAdvanceToGame, grandFinalFollowUpGame].some(
+    (downstream) => downstream !== undefined && (downstream.winner !== undefined || downstream.skipped !== undefined),
+  );
+  const showUndoSkipOption = !!game.skipped && downstreamGameCompleted === false;
 
   const showMenu = showCompareOption || showRegisterResultOption || showSkipGameOption || showUndoSkipOption;
   return {

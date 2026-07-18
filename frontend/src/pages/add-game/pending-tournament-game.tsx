@@ -2,6 +2,22 @@ import { Link } from "react-router-dom";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { layerIndexToTournamentRound } from "../leaderboard/tournament-pending-games";
 
+function pendingGameRoundLabel(pendingGame: {
+  layerIndex?: number;
+  bracketSection?: "winners" | "losers" | "grandFinal" | "bracketReset";
+}): string | undefined {
+  switch (pendingGame.bracketSection) {
+    case "losers":
+      return "Losers bracket";
+    case "grandFinal":
+      return "Grand Final";
+    case "bracketReset":
+      return "Grand Final Reset";
+    default:
+      return pendingGame.layerIndex !== undefined ? layerIndexToTournamentRound(pendingGame.layerIndex) : undefined;
+  }
+}
+
 export const PendingTournamentGame: React.FC<{ player1: string; player2: string }> = ({ player1, player2 }) => {
   const context = useEventDbContext();
   const pendingTournamentGames = context.tournaments.findAllPendingGames(player1, player2);
@@ -20,8 +36,8 @@ export const PendingTournamentGame: React.FC<{ player1: string; player2: string 
         >
           <div className="ring-1 ring-secondary-background px-4 py-2 rounded-lg hover:bg-secondary-background/50 mb-2 text-primary-text">
             <h1>{pendingGame.tournament.name}</h1>
-            {pendingGame.layerIndex !== undefined && (
-              <p className="text-center text-lg">{layerIndexToTournamentRound(pendingGame.layerIndex)}</p>
+            {pendingGameRoundLabel(pendingGame) && (
+              <p className="text-center text-lg">{pendingGameRoundLabel(pendingGame)}</p>
             )}
             {pendingGame.groupIndex !== undefined && (
               <p className="text-center text-lg">Group {pendingGame.groupIndex + 1}</p>

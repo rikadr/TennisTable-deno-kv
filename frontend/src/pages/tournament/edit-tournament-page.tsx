@@ -56,6 +56,8 @@ export const EditTournamentPage: React.FC = () => {
       const newStartDate = datetimeLocalToTimestamp(data.startDate);
       if (newStartDate !== tournament.startDate) updateData.startDate = newStartDate;
       if (data.groupPlay !== tournament.tournamentConfig.groupPlay) updateData.groupPlay = data.groupPlay;
+      if (data.doubleElimination !== tournament.tournamentConfig.doubleElimination)
+        updateData.doubleElimination = data.doubleElimination;
       if (data.overridePreferredGroupSize !== tournament.tournamentConfig.overridePreferredGroupSize)
         updateData.overridePreferredGroupSize = data.overridePreferredGroupSize;
     }
@@ -130,12 +132,13 @@ export const EditTournamentPage: React.FC = () => {
             description: tournament.description ?? "",
             startDate: timestampToDatetimeLocal(tournament.startDate),
             groupPlay: tournament.tournamentConfig.groupPlay,
+            doubleElimination: tournament.tournamentConfig.doubleElimination,
             overridePreferredGroupSize: tournament.tournamentConfig.overridePreferredGroupSize,
           }}
           onSubmit={handleSubmit}
           submitLabel="Save changes"
           isPending={addEventMutation.isPending}
-          lockedFields={hasStarted ? { startDate: true, groupPlay: true } : undefined}
+          lockedFields={hasStarted ? { startDate: true, groupPlay: true, doubleElimination: true } : undefined}
         />
       </div>
 

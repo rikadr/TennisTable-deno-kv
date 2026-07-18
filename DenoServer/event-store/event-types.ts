@@ -45,11 +45,25 @@ export type GameScore = GenericEvent<
 
 export type TournamentCreated = GenericEvent<
   EventTypeEnum.TOURNAMENT_CREATED,
-  { name: string; description?: string; startDate: number; groupPlay: boolean; overridePreferredGroupSize?: number }
+  {
+    name: string;
+    description?: string;
+    startDate: number;
+    groupPlay: boolean;
+    overridePreferredGroupSize?: number;
+    doubleElimination?: boolean;
+  }
 >;
 export type TournamentUpdated = GenericEvent<
   EventTypeEnum.TOURNAMENT_UPDATED,
-  { name?: string; description?: string; startDate?: number; groupPlay?: boolean; overridePreferredGroupSize?: number }
+  {
+    name?: string;
+    description?: string;
+    startDate?: number;
+    groupPlay?: boolean;
+    overridePreferredGroupSize?: number;
+    doubleElimination?: boolean;
+  }
 >;
 export type TournamentDeleted = GenericEvent<EventTypeEnum.TOURNAMENT_DELETED, null>;
 export type TournamentSetPlayerOrder = GenericEvent<

@@ -60,11 +60,14 @@ export const TournamentHighlightsAndPendingGames: React.FC = () => {
               )}
             {hasPendingGames &&
               bracket &&
-              // Bracket games
+              // Bracket games (winners bracket)
               bracket.bracketGames.map((layer, layerIndex) => (
                 <div key={layerIndex} className="space-y-1">
                   {layerIndexToTournamentRound(layerIndex) && layer.pending.length > 0 && (
-                    <h3 className="text-center text-sm text-primary-text">{layerIndexToTournamentRound(layerIndex)}</h3>
+                    <h3 className="text-center text-sm text-primary-text">
+                      {bracket.doubleElimination && "Winners "}
+                      {layerIndexToTournamentRound(layerIndex)}
+                    </h3>
                   )}
                   {layer.pending.map((game) => (
                     <PendingGame
@@ -74,6 +77,37 @@ export const TournamentHighlightsAndPendingGames: React.FC = () => {
                       tournamentId={id}
                     />
                   ))}
+                </div>
+              ))}
+            {hasPendingGames &&
+              bracket?.losersBracketGames &&
+              // Losers bracket games (double elimination)
+              bracket.losersBracketGames.map((layer, layerIndex) => (
+                <div key={layerIndex} className="space-y-1">
+                  {layer.pending.length > 0 && (
+                    <h3 className="text-center text-sm text-primary-text">
+                      {losersLayerIndexToTournamentRound(layerIndex, bracket.losersBracketGames!.length)}
+                    </h3>
+                  )}
+                  {layer.pending.map((game) => (
+                    <PendingGame
+                      key={game.player1 + game.player2}
+                      player1={game.player1}
+                      player2={game.player2}
+                      tournamentId={id}
+                    />
+                  ))}
+                </div>
+              ))}
+            {hasPendingGames &&
+              bracket?.grandFinalGames &&
+              // Grand final and bracket reset games (double elimination)
+              bracket.grandFinalGames.pending.map((game) => (
+                <div key={game.player1 + game.player2} className="space-y-1">
+                  <h3 className="text-center text-sm text-primary-text">
+                    {game === bracket.bracketReset ? "Grand Final Reset" : "Grand Final"}
+                  </h3>
+                  <PendingGame player1={game.player1} player2={game.player2} tournamentId={id} />
                 </div>
               ))}
           </div>
@@ -207,6 +241,11 @@ export const WinnerBox: React.FC<WinnerBoxProps> = ({ winner }) => {
     </Link>
   );
 };
+
+export function losersLayerIndexToTournamentRound(layerIndex: number, totalLayers: number): string {
+  if (layerIndex === 0) return "Losers Final";
+  return `Losers Round ${totalLayers - layerIndex}`;
+}
 
 export function layerIndexToTournamentRound(index: number): string | undefined {
   switch (index) {
