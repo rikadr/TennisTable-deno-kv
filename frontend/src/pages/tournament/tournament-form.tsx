@@ -124,7 +124,7 @@ export const TournamentForm = ({ initialData, onSubmit, submitLabel, isPending, 
             checked={groupPlay}
             onChange={(e) => setGroupPlay(e.target.checked)}
             disabled={lockedFields?.groupPlay}
-            className="w-5 h-5 rounded accent-secondary-background"
+            className="w-5 h-5 shrink-0 rounded accent-secondary-background"
           />
           <div>
             <span className="text-xs font-medium text-primary-text/70 uppercase tracking-wide">Group play</span>
@@ -133,35 +133,6 @@ export const TournamentForm = ({ initialData, onSubmit, submitLabel, isPending, 
             )}
             <p className="text-xs text-primary-text/60 mt-0.5">
               Players are divided into groups for round-robin play before elimination bracket
-            </p>
-          </div>
-        </label>
-      </div>
-
-      <div>
-        <label
-          className={classNames(
-            "flex items-center gap-3 cursor-pointer",
-            lockedFields?.doubleElimination && "opacity-50 cursor-not-allowed",
-          )}
-        >
-          <input
-            type="checkbox"
-            checked={doubleElimination}
-            onChange={(e) => setDoubleElimination(e.target.checked)}
-            disabled={lockedFields?.doubleElimination}
-            className="w-5 h-5 rounded accent-secondary-background"
-          />
-          <div>
-            <span className="text-xs font-medium text-primary-text/70 uppercase tracking-wide">
-              Double elimination
-            </span>
-            {lockedFields?.doubleElimination && (
-              <span className="ml-2 text-xs text-primary-text/50">(locked - tournament has started)</span>
-            )}
-            <p className="text-xs text-primary-text/60 mt-0.5">
-              Players who lose in the winners bracket get a second chance in the losers bracket. The winner of the
-              losers bracket plays the winners bracket champion in the grand final
             </p>
           </div>
         </label>
@@ -186,6 +157,35 @@ export const TournamentForm = ({ initialData, onSubmit, submitLabel, isPending, 
         <p className="text-xs text-primary-text/60 mt-1">
           Override the preferred number of players per group. Leave empty for automatic sizing.
         </p>
+      </div>
+
+      <div>
+        <label
+          className={classNames(
+            "flex items-center gap-3 cursor-pointer",
+            lockedFields?.doubleElimination && "opacity-50 cursor-not-allowed",
+          )}
+        >
+          <input
+            type="checkbox"
+            checked={doubleElimination}
+            onChange={(e) => setDoubleElimination(e.target.checked)}
+            disabled={lockedFields?.doubleElimination}
+            className="w-5 h-5 shrink-0 rounded accent-secondary-background"
+          />
+          <div>
+            <span className="text-xs font-medium text-primary-text/70 uppercase tracking-wide">
+              Double elimination
+            </span>
+            {lockedFields?.doubleElimination && (
+              <span className="ml-2 text-xs text-primary-text/50">(locked - tournament has started)</span>
+            )}
+            <p className="text-xs text-primary-text/60 mt-0.5">
+              Players who lose in the winners bracket get a second chance in the losers bracket. The winner of the
+              losers bracket plays the winners bracket champion in the grand final
+            </p>
+          </div>
+        </label>
       </div>
 
       <button
