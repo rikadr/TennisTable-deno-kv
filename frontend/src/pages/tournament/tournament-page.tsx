@@ -1,6 +1,7 @@
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { classNames } from "../../common/class-names";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useTennisParams } from "../../hooks/use-tennis-params";
 import { TournamentSignup } from "./tournament-signup";
 import { TournamentGroupPlayComponent } from "./tournament-group-play";
@@ -16,6 +17,7 @@ type TabType = "grand-final" | "finals" | "losers" | "group-play" | "signup" | "
 
 export const TournamentPage: React.FC = () => {
   const { tournament: tournamentId, player1, player2 } = useTennisParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const context = useEventDbContext();
   const tournament = context.tournaments.getTournament(tournamentId);
   const isAdmin = session.sessionData?.role === "admin";
@@ -60,7 +62,39 @@ export const TournamentPage: React.FC = () => {
     }
     return "info";
   };
-  const [activeTab, setActiveTab] = useState<TabType>(defaultTab);
+  const visibleTabs = tabs.filter((t) => {
+    if (!tournament) return t.id === "info";
+    switch (t.id) {
+      case "finals":
+      case "losers":
+      case "grand-final":
+        return tournament.bracket !== undefined;
+      case "group-play":
+        return tournament.groupPlay !== undefined;
+      case "signup":
+        return tournament.inSignupPeriod;
+      case "predictions":
+        return tournament.startDate < Date.now();
+      case "available":
+        return isAdmin && tournament.hasPendingGames;
+      default:
+        return true;
+    }
+  });
+
+  // The active tab lives in the url so it survives reloads and can be shared
+  const tabParam = searchParams.get("tab");
+  const activeTab: TabType = visibleTabs.some((t) => t.id === tabParam) ? (tabParam as TabType) : defaultTab();
+  const setActiveTab = (tab: TabType) => {
+    setSearchParams(
+      (previous) => {
+        const params = new URLSearchParams(previous);
+        params.set("tab", tab);
+        return params;
+      },
+      { replace: true },
+    );
+  };
 
   // ScrollTo
   const itemRefs = useRef<{ [key: string]: HTMLElement | null }>({});
@@ -91,41 +125,22 @@ export const TournamentPage: React.FC = () => {
   return (
     <div className="space-y-4 mx-1 sm:mx-2 md:mx-6">
       <div className="flex space-x-2 overflow-auto">
-        {tabs
-          .filter((t) => {
-            switch (t.id) {
-              case "finals":
-              case "losers":
-              case "grand-final":
-                return tournament.bracket !== undefined;
-              case "group-play":
-                return tournament.groupPlay !== undefined;
-              case "signup":
-                return tournament.inSignupPeriod;
-              case "predictions":
-                return tournament.startDate < Date.now();
-              case "available":
-                return isAdmin && tournament.hasPendingGames;
-              default:
-                return true;
-            }
-          })
-          .map((tab) => {
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={classNames(
-                  "flex items-center py-2 px-4 border-b-4 font-medium text-sm transition-colors",
-                  activeTab === tab.id
-                    ? "text-primary-text border-primary-text"
-                    : "text-primary-text/80 border-transparent hover:text-primary-text hover:border-primary-text border-dotted",
-                )}
-              >
-                {tab.label}
-              </button>
-            );
-          })}
+        {visibleTabs.map((tab) => {
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={classNames(
+                "flex items-center py-2 px-4 border-b-4 font-medium text-sm transition-colors",
+                activeTab === tab.id
+                  ? "text-primary-text border-primary-text"
+                  : "text-primary-text/80 border-transparent hover:text-primary-text hover:border-primary-text border-dotted",
+              )}
+            >
+              {tab.label}
+            </button>
+          );
+        })}
       </div>
       {activeTab === "grand-final" && <TournamentGrandFinal tournament={tournament} itemRefs={itemRefs} />}
       {activeTab === "finals" && <TournamentBracket tournament={tournament} itemRefs={itemRefs} />}
