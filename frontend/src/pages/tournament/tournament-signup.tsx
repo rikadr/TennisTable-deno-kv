@@ -91,7 +91,7 @@ export const TournamentSignup = ({ tournament }: { tournament: Tournament }) => 
             </option>
           )}
           {context.players
-            .filter((p) => !tournament.signedUp.some((s) => s.player === p.name))
+            .filter((p) => !tournament.signedUp.some((s) => s.player === p.id))
             .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" }))
             .map((player) => (
               <option value={player.id} key={player.name}>
