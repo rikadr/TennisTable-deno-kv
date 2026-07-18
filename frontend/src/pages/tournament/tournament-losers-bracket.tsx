@@ -42,15 +42,42 @@ export const TournamentLosersBracket = ({
       </p>
       <TreeListToggle showAsList={showAsList} setShowAsList={setShowAsList} />
       {showAsList === false && (
-        <div className="w-fit m-auto bg-primary-background rounded-lg p-4">
-          <GameTriangle
-            tournament={tournament}
-            layerIndex={0}
-            gameIndex={0}
-            itemRefs={itemRefs}
-            section="losers"
-            depth={0}
-          />
+        <div className="flex gap-6 items-stretch w-fit max-w-full m-auto bg-primary-background rounded-lg p-4 overflow-x-auto">
+          {/* Rounds as columns, first round on the left, losers final on the right.
+              Not a recursive tree: consecutive losers rounds can have the same game count */}
+          {losersBracket
+            .map((layer, layerIndex) => ({ layer, layerIndex }))
+            .toReversed()
+            .map(({ layer, layerIndex }) => {
+              const { title, subtitle } = losersRoundLabel(layerIndex, losersBracket.length);
+              return (
+                <div key={layerIndex} className="flex flex-col gap-2">
+                  <div className="h-10 flex flex-col justify-end">
+                    <h3 className="text-center text-sm text-primary-text whitespace-nowrap">{title}</h3>
+                    <p className="text-center text-xs font-light text-primary-text/60 whitespace-nowrap">
+                      {subtitle ?? " "}
+                    </p>
+                  </div>
+                  <div className="flex flex-col justify-around grow gap-2">
+                    {layer.map((game, gameIndex) => {
+                      // Structural bye slots are never played
+                      if (game.isBye) return null;
+                      return (
+                        <GameTriangle
+                          key={gameIndex}
+                          tournament={tournament}
+                          layerIndex={layerIndex}
+                          gameIndex={gameIndex}
+                          itemRefs={itemRefs}
+                          section="losers"
+                          depth={layerIndex}
+                        />
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
         </div>
       )}
       {showAsList && (

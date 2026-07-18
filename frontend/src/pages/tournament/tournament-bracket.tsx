@@ -4,7 +4,7 @@ import { useSessionStorage } from "usehooks-ts";
 import { classNames } from "../../common/class-names";
 import { useTennisParams } from "../../hooks/use-tennis-params";
 import { useEventDbContext } from "../../wrappers/event-db-context";
-import { layerIndexToTournamentRound, losersRoundLabel } from "../leaderboard/tournament-pending-games";
+import { layerIndexToTournamentRound } from "../leaderboard/tournament-pending-games";
 import { ProfilePicture } from "../player/profile-picture";
 import { getGameKeyFromPlayers } from "./tournament-page";
 import { Link } from "react-router-dom";
@@ -314,34 +314,10 @@ export const GameTriangle: React.FC<GameTriangleProps> = ({
 
   const isParamSelectedGame = gameKey === getGameKeyFromPlayers(player1, player2, "bracket");
 
-  const roundTitle =
-    section === "losers" ? losersRoundLabel(layerIndex, layers.length).title : layerIndexToTournamentRound(layerIndex);
-
-  // The losers bracket is not a plain binary tree: some slots are filled by winners bracket
-  // dropouts instead of a feeder game. Find the actual feeder games via their advance pointers
-  const feeders: { layerIndex: number; gameIndex: number; role: "player1" | "player2" }[] = [];
-  if (section === "losers") {
-    layers.forEach((layer, feederLayerIndex) => {
-      if (feederLayerIndex <= layerIndex) return;
-      layer.forEach((feeder, feederGameIndex) => {
-        const target = feeder.advanceTo;
-        if (
-          !feeder.isBye &&
-          target?.section === "losers" &&
-          target.layerIndex === layerIndex &&
-          target.gameIndex === gameIndex
-        ) {
-          feeders.push({ layerIndex: feederLayerIndex, gameIndex: feederGameIndex, role: target.role });
-        }
-      });
-    });
-    feeders.sort((a, b) => (a.role === b.role ? 0 : a.role === "player1" ? -1 : 1));
-  }
-
   return (
     <div className="w-fit space-y-2">
-      {visualDepth < 3 ? (
-        <h2 className="font-light text-sm text-center text-primary-text">{roundTitle}</h2>
+      {section === "winners" && visualDepth < 3 ? (
+        <h2 className="font-light text-sm text-center text-primary-text">{layerIndexToTournamentRound(layerIndex)}</h2>
       ) : (
         <div className="h-0" />
       )}
@@ -438,21 +414,6 @@ export const GameTriangle: React.FC<GameTriangleProps> = ({
             gameIndex={gameIndex * 2 + 1}
             itemRefs={itemRefs}
           />
-        </div>
-      )}
-      {section === "losers" && feeders.length > 0 && (
-        <div className="flex gap-2">
-          {feeders.map((feeder) => (
-            <GameTriangle
-              key={`${feeder.layerIndex}-${feeder.gameIndex}`}
-              tournament={tournament}
-              layerIndex={feeder.layerIndex}
-              gameIndex={feeder.gameIndex}
-              itemRefs={itemRefs}
-              section="losers"
-              depth={visualDepth + 1}
-            />
-          ))}
         </div>
       )}
     </div>
