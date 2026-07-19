@@ -27,6 +27,8 @@ export type TournamentGame = {
   loserAdvanceTo?: TournamentGameTarget;
   /** Double elimination: structural slot that will never be played (bye). Hidden in the UI */
   isBye?: boolean;
+  /** Double elimination: which bracket structure this game belongs to. Undefined in single elimination */
+  section?: TournamentBracketSection;
 };
 
 export class Tournament {

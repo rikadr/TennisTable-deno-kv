@@ -84,6 +84,8 @@ export const TournamentLosersBracket = ({
       {showAsList && (
       <div className="flex flex-col items-center lg:flex-row-reverse lg:justify-end lg:items-start gap-2 bg-primary-background rounded-lg py-4">
         {losersBracket.map((layer, layerIndex) => {
+          // Rounds consisting only of collapsed bye slots are never played
+          if (layer.every((game) => game.isBye)) return null;
           const { title, subtitle } = losersRoundLabel(layerIndex, losersBracket.length);
           return (
           <div key={layerIndex} className="flex flex-col gap-1 w-full min-w-[22rem] max-w-[27rem]">

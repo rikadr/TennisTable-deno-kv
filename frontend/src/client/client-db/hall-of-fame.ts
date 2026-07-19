@@ -1,6 +1,7 @@
 import { Elo } from "./elo";
 import { EventTypeEnum } from "./event-store/event-types";
 import { TennisTable } from "./tennis-table";
+import { TournamentBracket } from "./tournaments/bracket";
 
 export type SeasonDetail = { rank: number; points: number };
 export type TournamentDetail = { name: string; placement: string; points: number };
@@ -298,7 +299,7 @@ export class HallOfFame {
       }
 
       if (tournament.bracket) {
-        const { points, placement } = this.#getBracketResult(tournament.bracket.bracket, playerId);
+        const { points, placement } = this.#getBracketResult(tournament.bracket, playerId);
         score += points;
         tournamentDetails.push({ name: tournament.name, placement, points });
       } else {
@@ -310,11 +311,33 @@ export class HallOfFame {
     return { score, tournaments: tournamentDetails };
   }
 
-  #getBracketResult(bracket: Partial<{ player1: string; player2: string; winner?: string }>[][], playerId: string): { points: number; placement: string } {
+  #getBracketResult(bracket: TournamentBracket, playerId: string): { points: number; placement: string } {
+    if (bracket.doubleElimination) {
+      // Reaching the grand final means finishing 1st or 2nd regardless of the path taken
+      const grandFinal = bracket.grandFinal;
+      if (grandFinal && (grandFinal.player1 === playerId || grandFinal.player2 === playerId)) {
+        return { points: 200, placement: "Grand Final" };
+      }
+      // Everyone else is eliminated in (or drops into) the losers bracket, so how deep they got
+      // there is the real placement — the winners bracket depth alone undervalues losers runs
+      let bestLosersLayer = -1;
+      bracket.losersBracket?.forEach((layer, layerIndex) => {
+        if (bestLosersLayer !== -1) return;
+        if (layer.some((game) => game.player1 === playerId || game.player2 === playerId)) {
+          bestLosersLayer = layerIndex;
+        }
+      });
+      if (bestLosersLayer === 0) return { points: 100, placement: "Losers Final" };
+      if (bestLosersLayer !== -1) {
+        return { points: bestLosersLayer <= 2 ? 75 : 50, placement: "Losers Bracket" };
+      }
+      // Not in the losers bracket (e.g. tournament still in progress): fall back to winners depth
+    }
+
     let bestLayer = -1;
 
-    for (let layerIndex = 0; layerIndex < bracket.length; layerIndex++) {
-      for (const match of bracket[layerIndex]) {
+    for (let layerIndex = 0; layerIndex < bracket.bracket.length; layerIndex++) {
+      for (const match of bracket.bracket[layerIndex]) {
         if (match.player1 === playerId || match.player2 === playerId) {
           if (bestLayer === -1 || layerIndex < bestLayer) {
             bestLayer = layerIndex;

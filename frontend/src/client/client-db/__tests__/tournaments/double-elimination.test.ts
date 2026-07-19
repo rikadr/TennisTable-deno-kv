@@ -355,6 +355,82 @@ describe("Double elimination simulation", () => {
   });
 });
 
+describe("Double elimination with 16 players (cross-seeding)", () => {
+  const players = Array.from({ length: 16 }, (_, i) => `P${i + 1}`);
+  // Seeded winners round 1: (P1,P16) (P8,P9) (P4,P13) (P5,P12) (P2,P15) (P7,P10) (P3,P14) (P6,P11)
+  // Quarterfinals: (P1,P8) (P4,P5) (P2,P7) (P3,P6); Semifinals: (P1,P4) (P2,P3)
+
+  function playedUpToSemis(): EventType[] {
+    return [
+      ...baseEvents(players),
+      // Winners round 1: higher seed wins
+      gameEvent("P1", "P16"),
+      gameEvent("P8", "P9"),
+      gameEvent("P4", "P13"),
+      gameEvent("P5", "P12"),
+      gameEvent("P2", "P15"),
+      gameEvent("P7", "P10"),
+      gameEvent("P3", "P14"),
+      gameEvent("P6", "P11"),
+      // Quarterfinals: higher seed wins
+      gameEvent("P1", "P8"),
+      gameEvent("P4", "P5"),
+      gameEvent("P2", "P7"),
+      gameEvent("P3", "P6"),
+      // Losers round 1
+      gameEvent("P16", "P9"),
+      gameEvent("P13", "P12"),
+      gameEvent("P15", "P10"),
+      gameEvent("P14", "P11"),
+      // Losers round 2: quarterfinal losers enter (partner-swapped)
+      gameEvent("P5", "P16"),
+      gameEvent("P8", "P13"),
+      gameEvent("P6", "P15"),
+      gameEvent("P7", "P14"),
+      // Losers round 3: losers only
+      gameEvent("P8", "P5"),
+      gameEvent("P7", "P6"),
+    ];
+  }
+
+  it("does not give a semifinal loser an immediate rematch against the opponent they just beat", () => {
+    const events = [
+      ...playedUpToSemis(),
+      gameEvent("P4", "P1"), // Semifinal 1: P1 (who beat P16 and P8) drops into the losers bracket
+      gameEvent("P2", "P3"), // Semifinal 2: P3 (who beat P14 and P6) drops
+    ];
+    const tournament = getTournament(events);
+    const pending = pendingPairs(tournament);
+
+    // P1 must drop into the half fed by the OTHER semifinal's quarterfinals: opponent P7,
+    // never P8 or P16 (the players P1 already eliminated). Same cross-bracket rule for P3
+    expect(pending).toContain("P7 vs P1");
+    expect(pending).toContain("P8 vs P3");
+    expect(pending).not.toContain("P8 vs P1");
+    expect(pending).not.toContain("P16 vs P1");
+    expect(pending).not.toContain("P6 vs P3");
+    expect(pending).not.toContain("P14 vs P3");
+  });
+
+  it("plays a full 16 player tournament to completion in 2n-2 games", () => {
+    const events = [
+      ...playedUpToSemis(),
+      gameEvent("P4", "P1"), // Semifinals
+      gameEvent("P2", "P3"),
+      gameEvent("P1", "P7"), // Losers round 4
+      gameEvent("P8", "P3"),
+      gameEvent("P4", "P2"), // Winners final
+      gameEvent("P1", "P8"), // Losers round 5 (losers only) — the earliest possible rematch point
+      gameEvent("P1", "P2"), // Losers final: winners final loser enters
+      gameEvent("P4", "P1"), // Grand final: winners champion stays undefeated
+    ];
+    const tournament = getTournament(events);
+    expect(tournament.winner).toBe("P4");
+    expect(tournament.hasPendingGames).toBe(false);
+    expect(tournament.bracket!.getCompletedGames()).toHaveLength(30); // 2n - 2
+  });
+});
+
 describe("findGameByPlayers (used for tab selection after registering a game)", () => {
   it("locates a just-completed losers bracket game in the losers section", () => {
     const events = [

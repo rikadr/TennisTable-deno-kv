@@ -1,6 +1,6 @@
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { classNames } from "../../common/class-names";
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useTennisParams } from "../../hooks/use-tennis-params";
 import { TournamentSignup } from "./tournament-signup";
@@ -23,68 +23,68 @@ export const TournamentPage: React.FC = () => {
   const isAdmin = session.sessionData?.role === "admin";
   const isDoubleElimination = tournament?.tournamentConfig.doubleElimination === true;
 
-  const tabs: { id: TabType; label: string }[] = [
+  // Single source of tab visibility, shared by the tab bar and the default-tab fallback
+  const bracketVisible = tournament?.bracket !== undefined;
+  const tabs: { id: TabType; label: string; visible: boolean }[] = [
     ...(isDoubleElimination
       ? ([
-          { id: "grand-final", label: "Grand Final" },
-          { id: "finals", label: "Winners bracket" },
-          { id: "losers", label: "Losers bracket" },
-        ] as { id: TabType; label: string }[])
-      : [{ id: "finals" as TabType, label: "Finals" }]),
-    { id: "group-play", label: "Group play" },
-    { id: "signup", label: "Signup" },
-    { id: "info", label: "Info" },
-    { id: "predictions", label: "Predictions" },
-    { id: "available", label: "Available today" },
+          { id: "grand-final", label: "Grand Final", visible: bracketVisible },
+          { id: "finals", label: "Winners bracket", visible: bracketVisible },
+          { id: "losers", label: "Losers bracket", visible: bracketVisible },
+        ] as { id: TabType; label: string; visible: boolean }[])
+      : [{ id: "finals" as TabType, label: "Finals", visible: bracketVisible }]),
+    { id: "group-play", label: "Group play", visible: tournament?.groupPlay !== undefined },
+    { id: "signup", label: "Signup", visible: tournament?.inSignupPeriod === true },
+    { id: "info", label: "Info", visible: true },
+    {
+      id: "predictions",
+      label: "Predictions",
+      visible: tournament !== undefined && tournament.startDate < Date.now(),
+    },
+    { id: "available", label: "Available today", visible: isAdmin && tournament?.hasPendingGames === true },
   ];
+  const visibleTabs = tabs.filter((t) => t.visible);
+  const isVisibleTab = (id: string | null | undefined): id is TabType => visibleTabs.some((t) => t.id === id);
 
   const defaultTab = (): TabType => {
-    if (!tournament) return "info";
-    if (tournament.inSignupPeriod) return "signup";
-    if (tournament.groupPlay && tournament.groupPlay.groupPlayEnded === undefined)
-      return "group-play";
-    if (tournament.bracket !== undefined) {
-      if (isDoubleElimination) {
-        // When arriving via a game link (pending, or just registered), open the tab the game is in
-        if (player1 && player2) {
-          const game = tournament.bracket.findGameByPlayers(player1, player2);
-          if (game?.section === "losers") return "losers";
-          if (game?.section === "grandFinal" || game?.section === "bracketReset") {
-            return "grand-final";
+    const candidate = ((): TabType => {
+      if (!tournament) return "info";
+      if (tournament.inSignupPeriod) return "signup";
+      if (tournament.groupPlay && tournament.groupPlay.groupPlayEnded === undefined)
+        return "group-play";
+      if (tournament.bracket !== undefined) {
+        if (isDoubleElimination) {
+          // When arriving via a game link (pending, or just registered), open the tab the game is in
+          if (player1 && player2) {
+            const game = tournament.bracket.findGameByPlayers(player1, player2);
+            if (game?.section === "losers") return "losers";
+            if (game?.section === "grandFinal" || game?.section === "bracketReset") {
+              return "grand-final";
+            }
+            return "finals";
           }
-          return "finals";
+          const grandFinalReady =
+            (tournament.bracket.grandFinalGames?.pending.length ?? 0) > 0 || tournament.winner !== undefined;
+          return grandFinalReady ? "grand-final" : "finals";
         }
-        const grandFinalReady =
-          (tournament.bracket.grandFinalGames?.pending.length ?? 0) > 0 || tournament.winner !== undefined;
-        return grandFinalReady ? "grand-final" : "finals";
+        return "finals";
       }
-      return "finals";
-    }
-    return "info";
+      return "info";
+    })();
+    return isVisibleTab(candidate) ? candidate : visibleTabs[0]?.id ?? "info";
   };
-  const visibleTabs = tabs.filter((t) => {
-    if (!tournament) return t.id === "info";
-    switch (t.id) {
-      case "finals":
-      case "losers":
-      case "grand-final":
-        return tournament.bracket !== undefined;
-      case "group-play":
-        return tournament.groupPlay !== undefined;
-      case "signup":
-        return tournament.inSignupPeriod;
-      case "predictions":
-        return tournament.startDate < Date.now();
-      case "available":
-        return isAdmin && tournament.hasPendingGames;
-      default:
-        return true;
-    }
-  });
+  // Resolve the fallback tab once per navigation target, not on every render — otherwise live
+  // data updates (e.g. a game registered on another device) would switch the tab under the user
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const initialTab = useMemo(defaultTab, [tournamentId, player1, player2]);
 
   // The active tab lives in the url so it survives reloads and can be shared
   const tabParam = searchParams.get("tab");
-  const activeTab: TabType = visibleTabs.some((t) => t.id === tabParam) ? (tabParam as TabType) : defaultTab();
+  const activeTab: TabType = isVisibleTab(tabParam)
+    ? tabParam
+    : isVisibleTab(initialTab)
+      ? initialTab
+      : visibleTabs[0]?.id ?? "info";
   const setActiveTab = (tab: TabType) => {
     setSearchParams(
       (previous) => {

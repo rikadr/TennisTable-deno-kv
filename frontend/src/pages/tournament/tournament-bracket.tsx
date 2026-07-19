@@ -133,6 +133,14 @@ type TournamentGameListCardProps = {
   fallbackKey: string;
   /** "lg" renders a bigger, more substantial card (used for the grand final) */
   size?: "md" | "lg";
+  /**
+   * Register under fallbackKey even when both players are known. Used when another card with the
+   * same player pair on the same screen should own the players-based scroll/highlight key
+   * (the grand final and the bracket reset always share a pair)
+   */
+  useFallbackKey?: boolean;
+  /** Render as a faded, non-interactive preview of a game that may happen */
+  ghost?: boolean;
 };
 export const TournamentGameListCard: React.FC<TournamentGameListCardProps> = ({
   tournament,
@@ -140,24 +148,40 @@ export const TournamentGameListCard: React.FC<TournamentGameListCardProps> = ({
   itemRefs,
   fallbackKey,
   size = "md",
+  useFallbackKey = false,
+  ghost = false,
 }) => {
   const context = useEventDbContext();
   const { player1, player2 } = useTennisParams();
 
   const isLarge = size === "lg";
 
-  const { isPending, p1IsWinner, p2IsWinner, p1IsLoser, p2IsLoser, showMenu, ...states } = getGameStates(
-    tournament,
-    game,
-  );
+  const rawStates = getGameStates(tournament, game);
+  const { isPending, p1IsWinner, p2IsWinner, p1IsLoser, p2IsLoser, showMenu, ...states } = ghost
+    ? {
+        ...rawStates,
+        isPending: false,
+        showMenu: false,
+        showCompareOption: false,
+        showRegisterResultOption: false,
+        showSkipGameOption: false,
+        showUndoSkipOption: false,
+      }
+    : rawStates;
 
   const gameKey =
-    game.player1 && game.player2 ? getGameKeyFromPlayers(game.player1, game.player2, "bracket") : fallbackKey;
+    !ghost && !useFallbackKey && game.player1 && game.player2
+      ? getGameKeyFromPlayers(game.player1, game.player2, "bracket")
+      : fallbackKey;
 
-  const isParamSelectedGame = gameKey === getGameKeyFromPlayers(player1, player2, "bracket");
+  const isParamSelectedGame = !ghost && gameKey === getGameKeyFromPlayers(player1, player2, "bracket");
 
   return (
-    <Menu ref={(el) => (itemRefs.current[gameKey] = el)}>
+    <Menu
+      ref={(el) => {
+        if (!ghost) itemRefs.current[gameKey] = el;
+      }}
+    >
       <div>
         <MenuButton
           disabled={!showMenu}
@@ -167,6 +191,7 @@ export const TournamentGameListCard: React.FC<TournamentGameListCardProps> = ({
             isPending ? "bg-secondary-background ring-2 ring-secondary-text" : "bg-secondary-background/60",
             showMenu && "hover:bg-secondary-background/70",
             isParamSelectedGame && "animate-wiggle",
+            ghost && "opacity-50 select-none pointer-events-none",
           )}
         >
           <h2
@@ -335,7 +360,11 @@ export const GameTriangle: React.FC<GameTriangleProps> = ({
 
   const game = layers[layerIndex]?.[gameIndex];
 
-  if (!game || game.isBye || (layerIndex === layers.length - 1 && !game.player1 && !game.player2)) {
+  // Empty deepest-layer games are structural byes only in the winners bracket; in the losers
+  // bracket the deepest layer holds real games that are simply waiting for their players
+  const isEmptyQualifier =
+    section === "winners" && layerIndex === layers.length - 1 && !game?.player1 && !game?.player2;
+  if (!game || game.isBye || isEmptyQualifier) {
     return size === "xs" || size === "xxs" ? null : <div className="grow" />;
   }
 
@@ -475,7 +504,7 @@ export function getGameStates(tournament: Tournament, game: Partial<TournamentGa
   const bracket = tournament.bracket;
   const advanceToGame = game.advanceTo ? bracket?.getGame(game.advanceTo) : undefined;
   const loserAdvanceToGame = game.loserAdvanceTo ? bracket?.getGame(game.loserAdvanceTo) : undefined;
-  const grandFinalFollowUpGame = game === bracket?.grandFinal ? bracket?.bracketReset : undefined;
+  const grandFinalFollowUpGame = game.section === "grandFinal" ? bracket?.bracketReset : undefined;
   const downstreamGameCompleted = [advanceToGame, loserAdvanceToGame, grandFinalFollowUpGame].some(
     (downstream) => downstream !== undefined && (downstream.winner !== undefined || downstream.skipped !== undefined),
   );

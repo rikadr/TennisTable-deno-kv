@@ -95,19 +95,37 @@ export class TournamentBracket {
     return this.bracketReset;
   }
 
+  /** This bracket's structures in the shape shared with the simulation engine */
+  get #structures(): SimulationStructures {
+    return {
+      winners: this.bracket,
+      losers: this.losersBracket,
+      grandFinal: this.grandFinal,
+      bracketReset: this.bracketReset,
+      doubleElimination: this.doubleElimination,
+    };
+  }
+
   getGame(
+    target: Pick<TournamentGameTarget, "section" | "layerIndex" | "gameIndex">,
+  ): Partial<TournamentGame> | undefined {
+    return TournamentBracket.#getGameIn(this.#structures, target);
+  }
+
+  static #getGameIn(
+    structures: SimulationStructures,
     target: Pick<TournamentGameTarget, "section" | "layerIndex" | "gameIndex">,
   ): Partial<TournamentGame> | undefined {
     switch (target.section) {
       case "losers":
-        return this.losersBracket?.[target.layerIndex]?.[target.gameIndex];
+        return structures.losers?.[target.layerIndex]?.[target.gameIndex];
       case "grandFinal":
-        return this.grandFinal;
+        return structures.grandFinal;
       case "bracketReset":
-        return this.bracketReset;
+        return structures.bracketReset;
       case "winners":
       case undefined:
-        return this.bracket[target.layerIndex]?.[target.gameIndex];
+        return structures.winners[target.layerIndex]?.[target.gameIndex];
     }
   }
 
@@ -123,7 +141,7 @@ export class TournamentBracket {
     this.grandFinalGames?.pending.forEach((game) =>
       pending.push({
         game,
-        section: (game as Partial<TournamentGame>) === this.bracketReset ? "bracketReset" : "grandFinal",
+        section: game.section === "bracketReset" ? "bracketReset" : "grandFinal",
         layerIndex: 0,
       }),
     );
@@ -231,8 +249,9 @@ export class TournamentBracket {
   static getStartingDoubleElimination(playerOrder: string[]): DoubleEliminationStructures {
     const winners = TournamentBracket.getStartingBracket(playerOrder);
     const losers: Bracket = [];
-    const grandFinal: Partial<TournamentGame> = {};
-    const bracketReset: Partial<TournamentGame> = {};
+    const grandFinal: Partial<TournamentGame> = { section: "grandFinal" };
+    const bracketReset: Partial<TournamentGame> = { section: "bracketReset" };
+    winners.forEach((layer) => layer.forEach((game) => (game.section = "winners")));
 
     const layerCount = winners.length;
     if (layerCount === 0) {
@@ -294,6 +313,7 @@ export class TournamentBracket {
     for (let round = 1; round <= totalRounds; round++) {
       const layerIndex = totalRounds - round;
       losers[layerIndex] = Array.from({ length: gamesInRound(round) }, (_, gameIndex) => ({
+        section: "losers" as const,
         advanceTo: advanceTargetFromRound(round, gameIndex),
       }));
     }
@@ -311,13 +331,16 @@ export class TournamentBracket {
             role: gameIndex % 2 === 0 ? "player1" : "player2",
           };
         } else {
-          // Later winners rounds: losers drop into the matching major round, cross-seeded to
-          // delay rematches against players coming from their own half of the bracket
+          // Later winners rounds: losers drop into the matching major round, cross-seeded with a
+          // partner swap (gameIndex ^ 1). The losers bracket survivor arriving at major-round
+          // game j descends exactly from winners game j of this layer, so swapping within each
+          // pair guarantees a dropout never immediately meets a player from their own feeder
+          // games — a rematch is only possible from the losers final onwards, where the pools
+          // have fully merged and rematches are unavoidable
           const majorIndex = layerCount - 1 - layerIndex;
           const round = 2 * majorIndex;
           const games = gamesInRound(round);
-          const crossSeededIndex =
-            games <= 1 ? 0 : majorIndex % 2 === 1 ? games - 1 - gameIndex : (gameIndex + games / 2) % games;
+          const crossSeededIndex = games <= 1 ? 0 : gameIndex ^ 1;
           game.loserAdvanceTo = {
             section: "losers",
             layerIndex: totalRounds - round,
@@ -400,7 +423,7 @@ export class TournamentBracket {
     const games = this.#orderedGames();
 
     entries.forEach((entry) => {
-      for (const { game, section } of games) {
+      for (const { game } of games) {
         if (game.winner || game.player1 === undefined || game.player2 === undefined) {
           // Won (or skipped), or incomplete players
           continue;
@@ -415,7 +438,7 @@ export class TournamentBracket {
         game.winner = entry.game ? entry.game.winner : entry.skip.winner;
         game.completedAt = entry.time; // Not sure how that would affect select item options for skipped games.....
         game.skipped = entry.skip;
-        this.#advancePlayers(game, section);
+        TournamentBracket.#advancePlayersIn(this.#structures, game);
         // In double elimination the same pair can meet again in a later game, so one entry
         // must only ever fill one game
         break;
@@ -423,33 +446,37 @@ export class TournamentBracket {
     });
   }
 
-  #advancePlayers(game: Partial<TournamentGame>, section: TournamentBracketSection) {
+  /**
+   * Route a completed game's winner (and loser, in double elimination) onwards.
+   * Shared by the real event fill and the prediction simulation so the two can never diverge
+   */
+  static #advancePlayersIn(structures: SimulationStructures, game: Partial<TournamentGame>) {
     if (game.winner === undefined) throw new Error("Cannot advance players from a game without a winner");
 
-    if (section === "grandFinal") {
+    if (game.section === "grandFinal") {
       // Winners bracket champion (player1) wins: tournament decided.
       // Losers bracket champion (player2) wins: both players now have one loss, so the
       // bracket reset match is activated to decide the champion
-      if (game.winner === game.player2 && this.bracketReset) {
-        this.bracketReset.player1 = game.player1;
-        this.bracketReset.player2 = game.player2;
+      if (game.winner === game.player2 && structures.bracketReset && structures.bracketReset.player1 === undefined) {
+        structures.bracketReset.player1 = game.player1;
+        structures.bracketReset.player2 = game.player2;
       }
       return;
     }
-    if (section === "bracketReset") return;
+    if (game.section === "bracketReset") return;
 
     if (game.advanceTo) {
-      this.#assignPlayer(game.advanceTo, game.winner);
+      TournamentBracket.#assignPlayerIn(structures, game.advanceTo, game.winner);
     }
     if (game.loserAdvanceTo) {
       const loser = game.player1 === game.winner ? game.player2 : game.player1;
       if (loser === undefined) throw new Error("Cannot determine loser of completed game");
-      this.#assignPlayer(game.loserAdvanceTo, loser);
+      TournamentBracket.#assignPlayerIn(structures, game.loserAdvanceTo, loser);
     }
   }
 
-  #assignPlayer(target: TournamentGameTarget, player: string) {
-    const targetGame = this.getGame(target);
+  static #assignPlayerIn(structures: SimulationStructures, target: TournamentGameTarget, player: string) {
+    const targetGame = TournamentBracket.#getGameIn(structures, target);
     if (!targetGame) throw new Error("Advance target game does not exist");
     if (targetGame[target.role] !== undefined) throw new Error("Advance target slot is already taken");
     targetGame[target.role] = player;
@@ -480,17 +507,10 @@ export class TournamentBracket {
   }
 
   #calculateGrandFinalGames(): LayerGames {
-    const played: TournamentGame[] = [];
-    const pending: TournamentGame[] = [];
-    for (const game of [this.grandFinal, this.bracketReset]) {
-      if (!game || !game.player1 || !game.player2) continue;
-      if (game.winner || game.skipped) {
-        played.push(game as TournamentGame);
-      } else {
-        pending.push(game as TournamentGame);
-      }
-    }
-    return { played, pending };
+    const games = [this.grandFinal, this.bracketReset].filter(
+      (game): game is Partial<TournamentGame> => game !== undefined,
+    );
+    return this.#calculateLayerGames([games])[0];
   }
 
   simulateWinnerFromExisting(simulateGameFn: SimulateGameFn, time: number): SimulationResult {
@@ -535,20 +555,6 @@ export class TournamentBracket {
     let gamesSimulatedCount = 0;
     let totalConfidenceSum = 0;
 
-    const getGame = (target: TournamentGameTarget): Partial<TournamentGame> | undefined => {
-      switch (target.section) {
-        case "losers":
-          return losers?.[target.layerIndex]?.[target.gameIndex];
-        case "grandFinal":
-          return grandFinal;
-        case "bracketReset":
-          return bracketReset;
-        case "winners":
-        case undefined:
-          return winners[target.layerIndex]?.[target.gameIndex];
-      }
-    };
-
     // Simulates a game if it is pending. Returns true if the game was simulated now
     const simulateGame = (game: Partial<TournamentGame>): boolean => {
       if (game.winner || !game.player1 || !game.player2) return false;
@@ -560,33 +566,10 @@ export class TournamentBracket {
       return true;
     };
 
-    const advancePlayers = (game: Partial<TournamentGame>) => {
-      if (!game.winner) return;
-      if (game.advanceTo) {
-        const nextGame = getGame(game.advanceTo);
-        if (!nextGame) {
-          throw new Error(
-            `Next game not found at layer ${game.advanceTo.layerIndex}, game ${game.advanceTo.gameIndex}`,
-          );
-        }
-        nextGame[game.advanceTo.role] = game.winner;
-      }
-      if (game.loserAdvanceTo) {
-        const loser = game.player1 === game.winner ? game.player2 : game.player1;
-        const nextGame = getGame(game.loserAdvanceTo);
-        if (!nextGame) {
-          throw new Error(
-            `Loser game not found at layer ${game.loserAdvanceTo.layerIndex}, game ${game.loserAdvanceTo.gameIndex}`,
-          );
-        }
-        nextGame[game.loserAdvanceTo.role] = loser;
-      }
-    };
-
     // Winners bracket: process layers from last to first (bottom-up through the bracket)
     for (let layerIndex = winners.length - 1; layerIndex >= 0; layerIndex--) {
       for (const game of winners[layerIndex]) {
-        if (simulateGame(game)) advancePlayers(game);
+        if (simulateGame(game)) TournamentBracket.#advancePlayersIn(structures, game);
       }
     }
 
@@ -602,13 +585,13 @@ export class TournamentBracket {
     if (losers) {
       for (let layerIndex = losers.length - 1; layerIndex >= 0; layerIndex--) {
         for (const game of losers[layerIndex]) {
-          if (simulateGame(game)) advancePlayers(game);
+          if (simulateGame(game)) TournamentBracket.#advancePlayersIn(structures, game);
         }
       }
     }
 
     if (!grandFinal || !bracketReset) throw new Error("Missing grand final structures in double elimination");
-    simulateGame(grandFinal);
+    if (simulateGame(grandFinal)) TournamentBracket.#advancePlayersIn(structures, grandFinal);
     if (!grandFinal.winner) {
       throw new Error("Simulation failed to produce a grand final winner");
     }
@@ -617,10 +600,6 @@ export class TournamentBracket {
       return { winner: grandFinal.winner, gamesSimulatedCount, totalConfidenceSum };
     }
     // The losers bracket champion won the grand final: the bracket reset decides
-    if (!bracketReset.player1) {
-      bracketReset.player1 = grandFinal.player1;
-      bracketReset.player2 = grandFinal.player2;
-    }
     simulateGame(bracketReset);
     if (!bracketReset.winner) {
       throw new Error("Simulation failed to produce a bracket reset winner");

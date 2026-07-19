@@ -1,8 +1,7 @@
 import { Tournament } from "../../client/client-db/tournaments/tournament";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { WinnerBox } from "../leaderboard/tournament-pending-games";
-import { ProfilePicture } from "../player/profile-picture";
-import { QuestionMark, TournamentGameListCard } from "./tournament-bracket";
+import { TournamentGameListCard } from "./tournament-bracket";
 
 export const TournamentGrandFinal = ({
   tournament,
@@ -47,6 +46,9 @@ export const TournamentGrandFinal = ({
           itemRefs={itemRefs}
           fallbackKey="GRAND-FINAL"
           size="lg"
+          // The bracket reset has the same player pair; once it is activated it owns the
+          // players-based scroll/highlight key (it is the pending game of the two)
+          useFallbackKey={bracketResetActivated}
         />
         <div className="flex justify-between text-xs text-primary-text/60 px-2">
           <span>Winners bracket champion</span>
@@ -81,7 +83,14 @@ export const TournamentGrandFinal = ({
           <p className="text-center text-sm text-primary-text">If {losersChampionName} wins the grand final</p>
           <p className="text-center text-lg text-primary-text leading-none">↓</p>
           <h3 className="text-center text-sm text-primary-text">The Final Decider</h3>
-          <GhostGameCard player1={grandFinal.player1} player2={grandFinal.player2} />
+          <TournamentGameListCard
+            tournament={tournament}
+            game={{ player1: grandFinal.player1, player2: grandFinal.player2 }}
+            itemRefs={itemRefs}
+            fallbackKey="BRACKET-RESET-PREVIEW"
+            size="lg"
+            ghost
+          />
           <p className="text-center text-xs text-primary-text/60">
             If {winnersChampionName} wins the grand final, the tournament is over. If {losersChampionName} wins,
             both players have one loss each — and this match decides everything.
@@ -99,34 +108,3 @@ export const TournamentGrandFinal = ({
   );
 };
 
-/** Preview of a game that may happen: looks like a game card, but faded and not interactive */
-const GhostGameCard = ({ player1, player2 }: { player1?: string; player2?: string }) => {
-  const context = useEventDbContext();
-  return (
-    <div
-      aria-disabled
-      className="relative w-full px-5 py-4 rounded-xl flex items-center gap-x-4 h-24 text-secondary-text bg-secondary-background/60 opacity-50 select-none pointer-events-none"
-    >
-      <h2 className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 text-xl font-bold italic">
-        VS
-      </h2>
-      <div className="flex gap-3 items-center justify-center">
-        {player1 ? (
-          <ProfilePicture playerId={player1} size={60} shape="circle" clickToEdit={false} border={4} />
-        ) : (
-          <QuestionMark size={64} />
-        )}
-        <h3 className="text-xl md:text-2xl font-semibold">{player1 && context.playerName(player1)}</h3>
-      </div>
-      <div className="grow" />
-      <div className="flex gap-3 items-center justify-center">
-        <h3 className="text-xl md:text-2xl font-semibold">{player2 && context.playerName(player2)}</h3>
-        {player2 ? (
-          <ProfilePicture playerId={player2} size={60} shape="circle" clickToEdit={false} border={4} />
-        ) : (
-          <QuestionMark size={64} />
-        )}
-      </div>
-    </div>
-  );
-};
