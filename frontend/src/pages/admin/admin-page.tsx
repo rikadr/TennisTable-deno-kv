@@ -17,6 +17,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { GamesPerMonthChart } from "./games-per-month";
 import { GamesPerWeekChart } from "./games-per-week";
 import { TopGamingDays } from "./top-days";
+import { TopPlayerPairings } from "./top-player-pairings";
 import { GamesPerWeekdayChart } from "./games-weekdays";
 import { GamesPerTimeChart } from "./hour-of-the-day";
 import { LocalAdminControls } from "./local-admin-controls";
@@ -202,6 +203,7 @@ export const AdminPage: React.FC = () => {
           <GamesPerWeekdayChart />
           <GamesPerTimeChart />
           <TopGamingDays />
+          <TopPlayerPairings />
           <PlayerDiversityChart />
           <h2>Total distribution of games played</h2>
           <AllPlayerGamesDistrubution />
