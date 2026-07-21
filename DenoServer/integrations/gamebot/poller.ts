@@ -4,8 +4,8 @@ import { processMatchesResponse } from "./process-matches.ts";
 const config = getClientConfig();
 
 if (config.enabled && config.gameBotChannelId) {
-  // Poll every hour
-  Deno.cron("Gamebot Poller", "0 * * * *", async () => {
+  // Poll once an hour, only between 07:00 and 17:00
+  Deno.cron("Gamebot Poller", "0 7-17 * * *", async () => {
     try {
       const headers = new Headers();
       if (config.apiToken) {
