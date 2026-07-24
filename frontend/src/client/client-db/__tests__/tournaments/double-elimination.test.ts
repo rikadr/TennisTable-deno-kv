@@ -491,6 +491,37 @@ describe("Double elimination with winners bracket byes (non power-of-two fields)
   });
 });
 
+describe("getSlotFillCandidates (labelling '?' slots with who could arrive)", () => {
+  it("names the two players who could fill a losers slot once the deciding game is set", () => {
+    // Winners semifinals P1 vs P4 and P2 vs P3 are known but unplayed; their losers feed the two
+    // slots of the first losers bracket game
+    const bracket = getTournament(baseEvents(["P1", "P2", "P3", "P4"])).bracket!;
+    const losersRound1 = bracket.losersBracket![1][0];
+    expect(bracket.getSlotFillCandidates(losersRound1, "player1")!.sort()).toEqual(["P1", "P4"]);
+    expect(bracket.getSlotFillCandidates(losersRound1, "player2")!.sort()).toEqual(["P2", "P3"]);
+  });
+
+  it("returns undefined while the deciding game is not fully determined", () => {
+    // The losers final's player2 is the winners final loser, but the winners final only has P1 so
+    // far (P2/P3 winner is undecided), so its candidates are not yet knowable
+    const bracket = getTournament(baseEvents(["P1", "P2", "P3"])).bracket!;
+    const losersFinal = bracket.losersBracket![0][0];
+    expect(bracket.getSlotFillCandidates(losersFinal, "player2")).toBeUndefined();
+  });
+
+  it("follows a walkover through to the real deciding game", () => {
+    // 3 players: the P2 vs P3 loser passes through a losers round 1 walkover into the losers final
+    const bracket = getTournament(baseEvents(["P1", "P2", "P3"])).bracket!;
+    const walkover = bracket.losersBracket![1][0];
+    expect(walkover.walkover).toBe(true);
+    const walkoverCandidates =
+      bracket.getSlotFillCandidates(walkover, "player1") ?? bracket.getSlotFillCandidates(walkover, "player2");
+    expect(walkoverCandidates!.sort()).toEqual(["P2", "P3"]);
+    // The losers final slot beyond the walkover names the same two, followed through the bye
+    expect(bracket.getSlotFillCandidates(bracket.losersBracket![0][0], "player1")!.sort()).toEqual(["P2", "P3"]);
+  });
+});
+
 describe("findGameByPlayers (used for tab selection after registering a game)", () => {
   it("locates a just-completed losers bracket game in the losers section", () => {
     const events = [

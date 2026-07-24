@@ -41,6 +41,9 @@ export class TournamentBracket {
   bracketStarted: number;
   bracketEnded?: number;
 
+  // Lazily built reverse index: for each game, which game feeds each of its player slots
+  #slotFeeders?: Map<Partial<TournamentGame>, { player1?: Partial<TournamentGame>; player2?: Partial<TournamentGame> }>;
+
   constructor(tournament: Tournament) {
     // Assumes no group play, or that group play has ended
     this.#tournament = tournament;
@@ -146,6 +149,67 @@ export class TournamentBracket {
       }),
     );
     return pending;
+  }
+
+  /**
+   * The two players who could still fill an empty slot, once the game that decides it already has
+   * both participants known. Walkovers are followed through (they just forward whoever arrives),
+   * so e.g. a pending winners bracket game surfaces its two players on the losers bracket slot its
+   * loser will drop into. Returns undefined while the deciding game is not yet fully determined.
+   */
+  getSlotFillCandidates(
+    game: Partial<TournamentGame>,
+    role: "player1" | "player2",
+  ): [string, string] | undefined {
+    return this.#candidatesFilling(game, role, new Set());
+  }
+
+  #candidatesFilling(
+    game: Partial<TournamentGame>,
+    role: "player1" | "player2",
+    visitedWalkovers: Set<Partial<TournamentGame>>,
+  ): [string, string] | undefined {
+    const feeder = this.#getSlotFeeders().get(game)?.[role];
+    if (!feeder) return undefined;
+    if (feeder.player1 && feeder.player2) return [feeder.player1, feeder.player2];
+    // A walkover forwards its single arrival, so the real deciding game is one step further up
+    if (feeder.walkover && !visitedWalkovers.has(feeder)) {
+      visitedWalkovers.add(feeder);
+      return (
+        this.#candidatesFilling(feeder, "player1", visitedWalkovers) ??
+        this.#candidatesFilling(feeder, "player2", visitedWalkovers)
+      );
+    }
+    return undefined;
+  }
+
+  /** Reverse index from each game to the game(s) that feed its two player slots */
+  #getSlotFeeders() {
+    if (this.#slotFeeders) return this.#slotFeeders;
+    const feeders = new Map<
+      Partial<TournamentGame>,
+      { player1?: Partial<TournamentGame>; player2?: Partial<TournamentGame> }
+    >();
+    const register = (source: Partial<TournamentGame>, target?: TournamentGameTarget) => {
+      if (!target) return;
+      const targetGame = TournamentBracket.#getGameIn(this.#structures, target);
+      if (!targetGame) return;
+      const entry = feeders.get(targetGame) ?? {};
+      entry[target.role] = source;
+      feeders.set(targetGame, entry);
+    };
+    const allGames: Partial<TournamentGame>[] = [
+      ...this.bracket.flat(),
+      ...(this.losersBracket?.flat() ?? []),
+      ...(this.grandFinal ? [this.grandFinal] : []),
+      ...(this.bracketReset ? [this.bracketReset] : []),
+    ];
+    for (const game of allGames) {
+      register(game, game.advanceTo);
+      register(game, game.loserAdvanceTo);
+    }
+    this.#slotFeeders = feeders;
+    return feeders;
   }
 
   /**
