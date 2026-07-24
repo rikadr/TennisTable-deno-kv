@@ -60,11 +60,14 @@ export const TournamentHighlightsAndPendingGames: React.FC = () => {
               )}
             {hasPendingGames &&
               bracket &&
-              // Bracket games
+              // Bracket games (winners bracket)
               bracket.bracketGames.map((layer, layerIndex) => (
                 <div key={layerIndex} className="space-y-1">
                   {layerIndexToTournamentRound(layerIndex) && layer.pending.length > 0 && (
-                    <h3 className="text-center text-sm text-primary-text">{layerIndexToTournamentRound(layerIndex)}</h3>
+                    <h3 className="text-center text-sm text-primary-text">
+                      {bracket.doubleElimination && "Winners "}
+                      {layerIndexToTournamentRound(layerIndex)}
+                    </h3>
                   )}
                   {layer.pending.map((game) => (
                     <PendingGame
@@ -74,6 +77,37 @@ export const TournamentHighlightsAndPendingGames: React.FC = () => {
                       tournamentId={id}
                     />
                   ))}
+                </div>
+              ))}
+            {hasPendingGames &&
+              bracket?.losersBracketGames &&
+              // Losers bracket games (double elimination)
+              bracket.losersBracketGames.map((layer, layerIndex) => (
+                <div key={layerIndex} className="space-y-1">
+                  {layer.pending.length > 0 && (
+                    <h3 className="text-center text-sm text-primary-text">
+                      {losersLayerIndexToTournamentRound(layerIndex, bracket.losersBracketGames!.length)}
+                    </h3>
+                  )}
+                  {layer.pending.map((game) => (
+                    <PendingGame
+                      key={game.player1 + game.player2}
+                      player1={game.player1}
+                      player2={game.player2}
+                      tournamentId={id}
+                    />
+                  ))}
+                </div>
+              ))}
+            {hasPendingGames &&
+              bracket?.grandFinalGames &&
+              // Grand final and bracket reset games (double elimination)
+              bracket.grandFinalGames.pending.map((game) => (
+                <div key={game.player1 + game.player2} className="space-y-1">
+                  <h3 className="text-center text-sm text-primary-text">
+                    {game.section === "bracketReset" ? "The Final Decider" : "Grand Final"}
+                  </h3>
+                  <PendingGame player1={game.player1} player2={game.player2} tournamentId={id} />
                 </div>
               ))}
           </div>
@@ -207,6 +241,38 @@ export const WinnerBox: React.FC<WinnerBoxProps> = ({ winner }) => {
     </Link>
   );
 };
+
+/**
+ * Names a losers bracket round after how it is filled: even ("major") rounds receive fresh
+ * losers dropping in from a winners bracket round, odd ("minor") rounds are played among losers
+ * bracket survivors only, to reduce the field for the next drop-in round.
+ */
+export function losersRoundLabel(layerIndex: number, totalLayers: number): { title: string; subtitle?: string } {
+  const round = totalLayers - layerIndex; // Forward round number: 1 is played first
+  const winnersLayerCount = totalLayers / 2 + 1;
+
+  if (layerIndex === 0) return { title: "Losers Final", subtitle: "Loser of the Winners Final enters" };
+  if (round === 1) {
+    const winnersRound = layerIndexToTournamentRound(winnersLayerCount - 1);
+    return {
+      title: "Losers Round 1",
+      subtitle: winnersRound ? `Losers from Winners ${winnersRound}` : undefined,
+    };
+  }
+  if (round % 2 === 0) {
+    const winnersRound = layerIndexToTournamentRound(winnersLayerCount - 1 - round / 2);
+    return {
+      title: `Losers Round ${round}`,
+      subtitle: winnersRound ? `Losers from Winners ${winnersRound} enter` : undefined,
+    };
+  }
+  return { title: `Losers Round ${round}`, subtitle: "Losers only" };
+}
+
+export function losersLayerIndexToTournamentRound(layerIndex: number, totalLayers: number): string {
+  const { title, subtitle } = losersRoundLabel(layerIndex, totalLayers);
+  return subtitle ? `${title} — ${subtitle}` : title;
+}
 
 export function layerIndexToTournamentRound(index: number): string | undefined {
   switch (index) {

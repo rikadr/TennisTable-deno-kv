@@ -41,32 +41,7 @@ export const TournamentBracket = ({
   }
   return (
     <>
-      <Switch
-        checked={showAsList}
-        onChange={setShowAsList}
-        className="group relative flex h-10 w-36 cursor-pointer rounded-full bg-secondary-background p-1 transition-colors duration-200 ease-in-out focus:outline-none data-[focus]:outline-1 data-[focus]:outline-white"
-      >
-        <div
-          className={classNames(
-            "absolute top-1/2 transform -translate-y-1/2 left-5 z-10",
-            showAsList ? "text-secondary-text" : "text-primary-text",
-          )}
-        >
-          Tree {!showAsList && "🌲"}
-        </div>
-        <div
-          className={classNames(
-            "absolute top-1/2 transform -translate-y-1/2 right-5 z-10",
-            showAsList ? "text-primary-text" : "text-secondary-text",
-          )}
-        >
-          {showAsList && "🟰"} List{" "}
-        </div>
-        <span
-          aria-hidden="true"
-          className="pointer-events-none inline-block h-8 w-[5rem] translate-x-0 rounded-full bg-primary-background ring-0 shadow-lg transition duration-200 ease-in-out group-data-[checked]:translate-x-[3.5rem]"
-        />
-      </Switch>
+      <TreeListToggle showAsList={showAsList} setShowAsList={setShowAsList} />
       {showAsList ? (
         <GamesList tournament={tournament} itemRefs={itemRefs} />
       ) : (
@@ -78,6 +53,43 @@ export const TournamentBracket = ({
   );
 };
 
+export const TreeListToggle = ({
+  showAsList,
+  setShowAsList,
+}: {
+  showAsList: boolean;
+  setShowAsList: (value: boolean) => void;
+}) => {
+  return (
+    <Switch
+      checked={showAsList}
+      onChange={setShowAsList}
+      className="group relative flex h-10 w-36 cursor-pointer rounded-full bg-secondary-background p-1 transition-colors duration-200 ease-in-out focus:outline-none data-[focus]:outline-1 data-[focus]:outline-white"
+    >
+      <div
+        className={classNames(
+          "absolute top-1/2 transform -translate-y-1/2 left-5 z-10",
+          showAsList ? "text-secondary-text" : "text-primary-text",
+        )}
+      >
+        Tree {!showAsList && "🌲"}
+      </div>
+      <div
+        className={classNames(
+          "absolute top-1/2 transform -translate-y-1/2 right-5 z-10",
+          showAsList ? "text-primary-text" : "text-secondary-text",
+        )}
+      >
+        {showAsList && "🟰"} List{" "}
+      </div>
+      <span
+        aria-hidden="true"
+        className="pointer-events-none inline-block h-8 w-[5rem] translate-x-0 rounded-full bg-primary-background ring-0 shadow-lg transition duration-200 ease-in-out group-data-[checked]:translate-x-[3.5rem]"
+      />
+    </Switch>
+  );
+};
+
 type GamesListProps = {
   tournament: Tournament;
   itemRefs: React.MutableRefObject<{
@@ -85,9 +97,6 @@ type GamesListProps = {
   }>;
 };
 const GamesList: React.FC<GamesListProps> = ({ tournament, itemRefs }) => {
-  const context = useEventDbContext();
-  const { player1, player2 } = useTennisParams();
-
   return (
     <div className="flex flex-col items-center lg:flex-row-reverse lg:justify-end lg:items-start gap-2 bg-primary-background rounded-lg py-4">
       {tournament.bracket &&
@@ -97,87 +106,227 @@ const GamesList: React.FC<GamesListProps> = ({ tournament, itemRefs }) => {
             {layer.map((game, gameIndex) => {
               // Skip empty qualifier games
               if (layerIndex === tournament.bracket!.bracket.length - 1 && !game.player1 && !game.player2) return null;
-              const { isPending, p1IsWinner, p2IsWinner, p1IsLoser, p2IsLoser, showMenu, ...states } = getGameStates(
-                tournament,
-                game,
-              );
-
-              const gameKey =
-                game.player1 && game.player2
-                  ? getGameKeyFromPlayers(game.player1, game.player2, "bracket")
-                  : "L" + layerIndex + "G+" + gameIndex;
-
-              const isParamSelectedGame = gameKey === getGameKeyFromPlayers(player1, player2, "bracket");
-
+              const fallbackKey = "L" + layerIndex + "G+" + gameIndex;
               return (
-                <Menu key={gameKey} ref={(el) => (itemRefs.current[gameKey] = el)}>
-                  <div>
-                    <MenuButton
-                      disabled={!showMenu}
-                      className={classNames(
-                        "relative w-full px-4 py-2 rounded-lg flex items-center gap-x-4 h-12 text-secondary-text",
-                        isPending ? "bg-secondary-background ring-2 ring-secondary-text" : "bg-secondary-background/60",
-                        showMenu && "hover:bg-secondary-background/70",
-                        isParamSelectedGame && "animate-wiggle",
-                      )}
-                    >
-                      <h2 className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2">VS</h2>
-                      <div className="flex gap-3 items-center justify-center">
-                        {game.player1 ? (
-                          <ProfilePicture
-                            playerId={game.player1}
-                            size={35}
-                            shape="circle"
-                            clickToEdit={false}
-                            border={3}
-                          />
-                        ) : (
-                          <QuestionMark size={38} />
-                        )}
-                        <h3
-                          className={classNames(p1IsWinner && "font-semibold", p1IsLoser && "line-through font-thin")}
-                        >
-                          {game.player1 && context.playerName(game.player1)} {winStateEmoji(p1IsWinner, game.skipped)}
-                        </h3>
-                      </div>
-                      <div className="grow" />
-                      <div className="flex gap-3 items-center justify-center">
-                        <h3
-                          className={classNames(p2IsWinner && "font-semibold", p2IsLoser && "line-through font-thin")}
-                        >
-                          {winStateEmoji(p2IsWinner, game.skipped)} {game.player2 && context.playerName(game.player2)}
-                        </h3>
-                        {game.player2 ? (
-                          <ProfilePicture
-                            playerId={game.player2}
-                            size={35}
-                            shape="circle"
-                            clickToEdit={false}
-                            border={3}
-                          />
-                        ) : (
-                          <QuestionMark size={38} />
-                        )}
-                      </div>
-                    </MenuButton>
-                    <GameMenuItems
-                      player1={game.player1}
-                      player2={game.player2}
-                      showCompare={states.showCompareOption}
-                      showRegisterResult={states.showRegisterResultOption}
-                      showSkipGame={{ show: states.showSkipGameOption, tournamentId: tournament.id }}
-                      showUndoSkip={{
-                        show: states.showUndoSkipOption,
-                        skipId: game.skipped?.skipId || "",
-                        tournamentId: tournament.id,
-                      }}
-                    />
-                  </div>
-                </Menu>
+                <TournamentGameListCard
+                  key={game.player1 && game.player2 ? getGameKeyFromPlayers(game.player1, game.player2, "bracket") : fallbackKey}
+                  tournament={tournament}
+                  game={game}
+                  itemRefs={itemRefs}
+                  fallbackKey={fallbackKey}
+                />
               );
             })}
           </div>
         ))}
+    </div>
+  );
+};
+
+type TournamentGameListCardProps = {
+  tournament: Tournament;
+  game: Partial<TournamentGame>;
+  itemRefs: React.MutableRefObject<{
+    [key: string]: HTMLElement | null;
+  }>;
+  /** Key used for scroll-to registration when both players are not known yet */
+  fallbackKey: string;
+  /** "lg" renders a bigger, more substantial card (used for the grand final) */
+  size?: "md" | "lg";
+  /**
+   * Register under fallbackKey even when both players are known. Used when another card with the
+   * same player pair on the same screen should own the players-based scroll/highlight key
+   * (the grand final and the bracket reset always share a pair)
+   */
+  useFallbackKey?: boolean;
+  /** Render as a faded, non-interactive preview of a game that may happen */
+  ghost?: boolean;
+};
+export const TournamentGameListCard: React.FC<TournamentGameListCardProps> = ({
+  tournament,
+  game,
+  itemRefs,
+  fallbackKey,
+  size = "md",
+  useFallbackKey = false,
+  ghost = false,
+}) => {
+  const context = useEventDbContext();
+  const { player1, player2 } = useTennisParams();
+
+  const isLarge = size === "lg";
+  // A walkover holds a single player who advances with no opponent (see GameTriangle): shown on
+  // the left with a "bye" on the right, regardless of the player's underlying role
+  const isWalkover = !!game.walkover;
+  const walkoverPlayer = isWalkover ? game.player1 ?? game.player2 : undefined;
+
+  // For empty losers bracket slots, name who could still arrive once the deciding game is set
+  const inLosers = game.section === "losers";
+  const player1Candidates =
+    inLosers && !ghost && !isWalkover && !game.player1
+      ? tournament.bracket?.getSlotFillCandidates(game, "player1")
+      : undefined;
+  const player2Candidates =
+    inLosers && !ghost && !isWalkover && !game.player2
+      ? tournament.bracket?.getSlotFillCandidates(game, "player2")
+      : undefined;
+  const walkoverCandidates =
+    inLosers && !ghost && isWalkover && !walkoverPlayer
+      ? tournament.bracket?.getSlotFillCandidates(game, "player1") ??
+        tournament.bracket?.getSlotFillCandidates(game, "player2")
+      : undefined;
+
+  const rawStates = getGameStates(tournament, game);
+  const { isPending, p1IsWinner, p2IsWinner, p1IsLoser, p2IsLoser, showMenu, ...states } = ghost
+    ? {
+        ...rawStates,
+        isPending: false,
+        showMenu: false,
+        showCompareOption: false,
+        showRegisterResultOption: false,
+        showSkipGameOption: false,
+        showUndoSkipOption: false,
+      }
+    : rawStates;
+
+  const gameKey =
+    !ghost && !useFallbackKey && game.player1 && game.player2
+      ? getGameKeyFromPlayers(game.player1, game.player2, "bracket")
+      : fallbackKey;
+
+  const isParamSelectedGame = !ghost && gameKey === getGameKeyFromPlayers(player1, player2, "bracket");
+
+  const cardClassName = classNames(
+    "relative w-full rounded-lg flex items-center gap-x-4 text-secondary-text",
+    isLarge ? "px-5 py-4 h-24 rounded-xl" : "px-4 py-2 h-12",
+    isPending ? "bg-secondary-background ring-2 ring-secondary-text" : "bg-secondary-background/60",
+    isWalkover && "border border-dashed border-secondary-text/40",
+    showMenu && "hover:bg-secondary-background/70",
+    isParamSelectedGame && "animate-wiggle",
+    ghost && "opacity-50 select-none pointer-events-none",
+  );
+
+  // Rendered inside a MenuButton when the game has a menu, otherwise a plain div so the
+  // CandidateHint deep-links stay clickable (a disabled button swallows their clicks)
+  const cardBody = (
+    <>
+      <h2
+            className={classNames(
+              "absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2",
+              isLarge && "text-xl font-bold italic",
+            )}
+          >
+            {isWalkover ? <span className="text-xs font-thin italic">advances</span> : "VS"}
+          </h2>
+          <div className="flex gap-3 items-center justify-center">
+            {isWalkover ? (
+              walkoverPlayer ? (
+                <ProfilePicture
+                  playerId={walkoverPlayer}
+                  size={isLarge ? 60 : 35}
+                  shape="circle"
+                  clickToEdit={false}
+                  border={isLarge ? 4 : 3}
+                />
+              ) : (
+                <QuestionMark size={isLarge ? 64 : 38} />
+              )
+            ) : game.player1 ? (
+              <ProfilePicture
+                playerId={game.player1}
+                size={isLarge ? 60 : 35}
+                shape="circle"
+                clickToEdit={false}
+                border={isLarge ? 4 : 3}
+              />
+            ) : (
+              <QuestionMark size={isLarge ? 64 : 38} />
+            )}
+            {(isWalkover ? !walkoverPlayer && walkoverCandidates : !game.player1 && player1Candidates) ? (
+              <CandidateHint
+                candidates={(isWalkover ? walkoverCandidates : player1Candidates)!}
+                tournamentId={tournament.id}
+                align="left"
+              />
+            ) : (
+              <h3
+                className={classNames(
+                  isLarge && "text-xl md:text-2xl font-semibold",
+                  !isWalkover && p1IsWinner && "font-semibold",
+                  !isWalkover && p1IsLoser && "line-through font-thin",
+                )}
+              >
+                {isWalkover
+                  ? walkoverPlayer && context.playerName(walkoverPlayer)
+                  : game.player1 && context.playerName(game.player1)}{" "}
+                {!isWalkover && game.player1 && winStateEmoji(p1IsWinner, game.skipped)}
+              </h3>
+            )}
+          </div>
+          <div className="grow" />
+          <div className="flex gap-3 items-center justify-center">
+            {!isWalkover && !game.player2 && player2Candidates ? (
+              <CandidateHint candidates={player2Candidates} tournamentId={tournament.id} align="right" />
+            ) : (
+              <h3
+                className={classNames(
+                  isLarge && "text-xl md:text-2xl font-semibold",
+                  isWalkover && "italic opacity-60",
+                  !isWalkover && p2IsWinner && "font-semibold",
+                  !isWalkover && p2IsLoser && "line-through font-thin",
+                )}
+              >
+                {!isWalkover && game.player2 && winStateEmoji(p2IsWinner, game.skipped)}{" "}
+                {isWalkover ? "bye" : game.player2 && context.playerName(game.player2)}
+              </h3>
+            )}
+            {isWalkover ? (
+              <ByeAvatar size={isLarge ? 64 : 38} />
+            ) : game.player2 ? (
+              <ProfilePicture
+                playerId={game.player2}
+                size={isLarge ? 60 : 35}
+                shape="circle"
+                clickToEdit={false}
+                border={isLarge ? 4 : 3}
+              />
+            ) : (
+              <QuestionMark size={isLarge ? 64 : 38} />
+            )}
+          </div>
+    </>
+  );
+
+  return showMenu ? (
+    <Menu
+      ref={(el) => {
+        if (!ghost) itemRefs.current[gameKey] = el;
+      }}
+    >
+      <div>
+        <MenuButton className={cardClassName}>{cardBody}</MenuButton>
+        <GameMenuItems
+          player1={game.player1}
+          player2={game.player2}
+          showCompare={states.showCompareOption}
+          showRegisterResult={states.showRegisterResultOption}
+          showSkipGame={{ show: states.showSkipGameOption, tournamentId: tournament.id }}
+          showUndoSkip={{
+            show: states.showUndoSkipOption,
+            skipId: game.skipped?.skipId || "",
+            tournamentId: tournament.id,
+          }}
+        />
+      </div>
+    </Menu>
+  ) : (
+    <div
+      ref={(el) => {
+        if (!ghost) itemRefs.current[gameKey] = el;
+      }}
+      className={cardClassName}
+    >
+      {cardBody}
     </div>
   );
 };
@@ -191,13 +340,25 @@ type GameTriangleProps = {
   itemRefs: React.MutableRefObject<{
     [key: string]: HTMLElement | null;
   }>;
+  /** Which bracket to render from. Defaults to the winners bracket */
+  section?: "winners" | "losers";
+  /** Visual depth used for sizing. Defaults to layerIndex (correct for the winners bracket) */
+  depth?: number;
 };
-const GameTriangle: React.FC<GameTriangleProps> = ({ tournament, layerIndex, gameIndex, itemRefs }) => {
+export const GameTriangle: React.FC<GameTriangleProps> = ({
+  tournament,
+  layerIndex,
+  gameIndex,
+  itemRefs,
+  section = "winners",
+  depth,
+}) => {
   const context = useEventDbContext();
   const { player1, player2 } = useTennisParams();
 
+  const visualDepth = depth ?? layerIndex;
   let size: Size = "xxs";
-  switch (layerIndex) {
+  switch (visualDepth) {
     case 0:
       size = "lg";
       break;
@@ -260,9 +421,16 @@ const GameTriangle: React.FC<GameTriangleProps> = ({ tournament, layerIndex, gam
     return null;
   }
 
-  const game = tournament.bracket.bracket[layerIndex]?.[gameIndex];
+  const layers = section === "losers" ? tournament.bracket.losersBracket : tournament.bracket.bracket;
+  if (!layers) return null;
 
-  if (!game || (layerIndex === tournament.bracket.bracket.length - 1 && !game.player1 && !game.player2)) {
+  const game = layers[layerIndex]?.[gameIndex];
+
+  // Empty deepest-layer games are structural byes only in the winners bracket; in the losers
+  // bracket the deepest layer holds real games that are simply waiting for their players
+  const isEmptyQualifier =
+    section === "winners" && layerIndex === layers.length - 1 && !game?.player1 && !game?.player2;
+  if (!game || game.isBye || isEmptyQualifier) {
     return size === "xs" || size === "xxs" ? null : <div className="grow" />;
   }
 
@@ -270,6 +438,27 @@ const GameTriangle: React.FC<GameTriangleProps> = ({ tournament, layerIndex, gam
     tournament,
     game,
   );
+  // A walkover holds a single player who advances with no opponent. Rendered like a normal game
+  // card (so it lines up with its neighbours) but with the lone player on the left, a "bye" in
+  // the right slot, and no trophy. The player may occupy either underlying role
+  const isWalkover = !!game.walkover;
+  const walkoverPlayer = isWalkover ? game.player1 ?? game.player2 : undefined;
+
+  // For empty losers bracket slots, name the two players who could still arrive once the game that
+  // decides the slot has both its participants (e.g. "John or Jane"), so the "?" is easier to follow
+  const player1Candidates =
+    section === "losers" && !isWalkover && !game.player1
+      ? tournament.bracket.getSlotFillCandidates(game, "player1")
+      : undefined;
+  const player2Candidates =
+    section === "losers" && !isWalkover && !game.player2
+      ? tournament.bracket.getSlotFillCandidates(game, "player2")
+      : undefined;
+  const walkoverCandidates =
+    section === "losers" && isWalkover && !walkoverPlayer
+      ? tournament.bracket.getSlotFillCandidates(game, "player1") ??
+        tournament.bracket.getSlotFillCandidates(game, "player2")
+      : undefined;
 
   const gameKey =
     game.player1 && game.player2
@@ -278,30 +467,36 @@ const GameTriangle: React.FC<GameTriangleProps> = ({ tournament, layerIndex, gam
 
   const isParamSelectedGame = gameKey === getGameKeyFromPlayers(player1, player2, "bracket");
 
-  return (
-    <div className="w-fit space-y-2">
-      {layerIndex < 3 ? (
-        <h2 className="font-light text-sm text-center text-primary-text">{layerIndexToTournamentRound(layerIndex)}</h2>
-      ) : (
-        <div className="h-0" />
-      )}
-      <Menu key={gameKey} ref={(el) => (itemRefs.current[gameKey] = el)}>
-        <div className="w-full flex">
-          <MenuButton
-            disabled={!showMenu}
-            className={classNames(
-              wrapperStyles[size],
-              "rounded-lg mx-auto text-secondary-text",
-              game.winner || game.skipped || !isPending ? "bg-secondary-background/60" : "bg-secondary-background",
-              isPending && "bg-secondary-background ring-2 ring-secondary-text",
-              showMenu && "hover:bg-secondary-background/70",
-              isParamSelectedGame && "animate-wiggle",
-            )}
-          >
-            <div
-              className={classNames("flex", playerWrapperStyles[size], size === "lg" ? "items-center" : "items-start")}
-            >
-              {game.player1 ? (
+  const cardClassName = classNames(
+    wrapperStyles[size],
+    "rounded-lg mx-auto text-secondary-text",
+    game.winner || game.skipped || !isPending ? "bg-secondary-background/60" : "bg-secondary-background",
+    isPending && "bg-secondary-background ring-2 ring-secondary-text",
+    isWalkover && "border border-dashed border-secondary-text/40",
+    showMenu && "hover:bg-secondary-background/70",
+    isParamSelectedGame && "animate-wiggle",
+  );
+
+  // The card content. Rendered inside a MenuButton when the game has a menu (both players known),
+  // otherwise inside a plain div so the CandidateHint deep-links stay clickable (a disabled button
+  // would swallow their clicks)
+  const cardBody = (
+    <>
+      <div
+        className={classNames("flex", playerWrapperStyles[size], size === "lg" ? "items-center" : "items-start")}
+      >
+              {isWalkover ? (
+                walkoverPlayer ? (
+                  <ProfilePicture
+                    playerId={walkoverPlayer}
+                    border={playerPictureBorder[size]}
+                    shape="circle"
+                    size={playerPictureSize[size]}
+                  />
+                ) : (
+                  <QuestionMark size={playerPictureSize[size] + playerPictureBorder[size]} />
+                )
+              ) : game.player1 ? (
                 <ProfilePicture
                   playerId={game.player1}
                   border={playerPictureBorder[size]}
@@ -311,33 +506,54 @@ const GameTriangle: React.FC<GameTriangleProps> = ({ tournament, layerIndex, gam
               ) : (
                 <QuestionMark size={playerPictureSize[size] + playerPictureBorder[size]} />
               )}
-              <div
-                className={classNames(
-                  "whitespace-nowrap",
-                  playerTextStyles[size],
-                  p1IsWinner && "font-semibold",
-                  p1IsLoser && "line-through font-thin",
-                )}
-              >
-                {game.player1 && context.playerName(game.player1)} {winStateEmoji(p1IsWinner, game.skipped)}
-              </div>
+              {(isWalkover ? !walkoverPlayer && walkoverCandidates : !game.player1 && player1Candidates) ? (
+                <CandidateHint
+                candidates={(isWalkover ? walkoverCandidates : player1Candidates)!}
+                tournamentId={tournament.id}
+                align="left"
+              />
+              ) : (
+                <div
+                  className={classNames(
+                    "whitespace-nowrap",
+                    playerTextStyles[size],
+                    !isWalkover && p1IsWinner && "font-semibold",
+                    !isWalkover && p1IsLoser && "line-through font-thin",
+                  )}
+                >
+                  {isWalkover
+                    ? walkoverPlayer && context.playerName(walkoverPlayer)
+                    : game.player1 && context.playerName(game.player1)}{" "}
+                  {!isWalkover && game.player1 && winStateEmoji(p1IsWinner, game.skipped)}
+                </div>
+              )}
             </div>
-            {size !== "xxs" && <div className="w-full text-center font-thin italic text-xs">vs</div>}
+            {size !== "xxs" && (
+              <div className="w-full text-center font-thin italic text-xs">{isWalkover ? "advances" : "vs"}</div>
+            )}
             <div
               className={classNames("flex", playerWrapperStyles[size], size === "lg" ? "items-center" : "items-end")}
             >
               <div className="grow" />
-              <div
-                className={classNames(
-                  "whitespace-nowrap",
-                  playerTextStyles[size],
-                  p2IsWinner && "font-semibold",
-                  p2IsLoser && "line-through font-thin",
-                )}
-              >
-                {winStateEmoji(p2IsWinner, game.skipped)} {game.player2 && context.playerName(game.player2)}
-              </div>
-              {game.player2 ? (
+              {!isWalkover && !game.player2 && player2Candidates ? (
+                <CandidateHint candidates={player2Candidates} tournamentId={tournament.id} align="right" />
+              ) : (
+                <div
+                  className={classNames(
+                    "whitespace-nowrap",
+                    playerTextStyles[size],
+                    isWalkover && "italic opacity-60",
+                    !isWalkover && p2IsWinner && "font-semibold",
+                    !isWalkover && p2IsLoser && "line-through font-thin",
+                  )}
+                >
+                  {!isWalkover && game.player2 && winStateEmoji(p2IsWinner, game.skipped)}{" "}
+                  {isWalkover ? "bye" : game.player2 && context.playerName(game.player2)}
+                </div>
+              )}
+              {isWalkover ? (
+                <ByeAvatar size={playerPictureSize[size] + playerPictureBorder[size]} />
+              ) : game.player2 ? (
                 <ProfilePicture
                   playerId={game.player2}
                   border={playerPictureBorder[size]}
@@ -348,23 +564,41 @@ const GameTriangle: React.FC<GameTriangleProps> = ({ tournament, layerIndex, gam
                 <QuestionMark size={playerPictureSize[size] + playerPictureBorder[size]} />
               )}
             </div>
-          </MenuButton>
-          <GameMenuItems
-            player1={game.player1}
-            player2={game.player2}
-            showCompare={states.showCompareOption}
-            showRegisterResult={states.showRegisterResultOption}
-            showSkipGame={{ show: states.showSkipGameOption, tournamentId: tournament.id }}
-            showUndoSkip={{
-              show: states.showUndoSkipOption,
-              skipId: game.skipped?.skipId || "",
-              tournamentId: tournament.id,
-            }}
-          />
-        </div>
-      </Menu>
+    </>
+  );
 
-      {layerIndex < tournament.bracket.bracket.length && (
+  return (
+    <div className="w-fit space-y-2">
+      {section === "winners" && visualDepth < 3 ? (
+        <h2 className="font-light text-sm text-center text-primary-text">{layerIndexToTournamentRound(layerIndex)}</h2>
+      ) : (
+        <div className="h-0" />
+      )}
+      {showMenu ? (
+        <Menu key={gameKey} ref={(el) => (itemRefs.current[gameKey] = el)}>
+          <div className="w-full flex">
+            <MenuButton className={cardClassName}>{cardBody}</MenuButton>
+            <GameMenuItems
+              player1={game.player1}
+              player2={game.player2}
+              showCompare={states.showCompareOption}
+              showRegisterResult={states.showRegisterResultOption}
+              showSkipGame={{ show: states.showSkipGameOption, tournamentId: tournament.id }}
+              showUndoSkip={{
+                show: states.showUndoSkipOption,
+                skipId: game.skipped?.skipId || "",
+                tournamentId: tournament.id,
+              }}
+            />
+          </div>
+        </Menu>
+      ) : (
+        <div ref={(el) => (itemRefs.current[gameKey] = el)} className="w-full flex">
+          <div className={cardClassName}>{cardBody}</div>
+        </div>
+      )}
+
+      {section === "winners" && layerIndex < layers.length && (
         <div className="flex gap-2">
           <GameTriangle
             tournament={tournament}
@@ -384,7 +618,7 @@ const GameTriangle: React.FC<GameTriangleProps> = ({ tournament, layerIndex, gam
   );
 };
 
-function getGameStates(tournament: Tournament, game: Partial<TournamentGame>) {
+export function getGameStates(tournament: Tournament, game: Partial<TournamentGame>) {
   const isPending = !!game.player1 && !!game.player2 && !game.winner && !game.skipped;
 
   const p1IsWinner = !!game.winner && game.winner === game.player1;
@@ -398,11 +632,24 @@ function getGameStates(tournament: Tournament, game: Partial<TournamentGame>) {
     !!game.player1 && !!game.player2 && game.winner === undefined && game.skipped === undefined;
   const showSkipGameOption =
     !!game.player1 && !!game.player2 && game.winner === undefined && game.skipped === undefined;
-  const advanceToGame = game.advanceTo
-    ? tournament.bracket!.bracket[game.advanceTo.layerIndex]?.[game.advanceTo.gameIndex]
-    : undefined;
-  const showUndoSkipOption =
-    !!game.skipped && advanceToGame?.winner === undefined && advanceToGame?.skipped === undefined;
+  // A skip can only be undone while none of the games downstream of this one have been completed.
+  // Walkover slots auto-complete the moment their lone player arrives but are not real games, so
+  // look through them to the first real downstream game.
+  const bracket = tournament.bracket;
+  const resolveDownstream = (target?: TournamentGame["advanceTo"]) => {
+    let downstream = target ? bracket?.getGame(target) : undefined;
+    while (downstream?.walkover && downstream.advanceTo) {
+      downstream = bracket?.getGame(downstream.advanceTo);
+    }
+    return downstream;
+  };
+  const advanceToGame = resolveDownstream(game.advanceTo);
+  const loserAdvanceToGame = resolveDownstream(game.loserAdvanceTo);
+  const grandFinalFollowUpGame = game.section === "grandFinal" ? bracket?.bracketReset : undefined;
+  const downstreamGameCompleted = [advanceToGame, loserAdvanceToGame, grandFinalFollowUpGame].some(
+    (downstream) => downstream !== undefined && (downstream.winner !== undefined || downstream.skipped !== undefined),
+  );
+  const showUndoSkipOption = !!game.skipped && downstreamGameCompleted === false;
 
   const showMenu = showCompareOption || showRegisterResultOption || showSkipGameOption || showUndoSkipOption;
   return {
@@ -495,5 +742,45 @@ export const QuestionMark: React.FC<{ size: number }> = ({ size }) => {
     >
       <div className={classNames("w-full h-full text-center")}>?</div>
     </div>
+  );
+};
+
+/**
+ * Two-line hint naming who could still fill a "?" slot once the game that decides it is set:
+ * line 1 is player A, line 2 is "or player B". Small and muted so it reads as a hint, not a result.
+ * Clicking it deep-links to the deciding game (that pending A-vs-B match).
+ */
+export const CandidateHint: React.FC<{ candidates: [string, string]; tournamentId: string; align?: "left" | "right" }> = ({
+  candidates,
+  tournamentId,
+  align = "left",
+}) => {
+  const context = useEventDbContext();
+  const a = context.playerName(candidates[0]);
+  const b = context.playerName(candidates[1]);
+  return (
+    <Link
+      to={`?tournament=${tournamentId}&player1=${candidates[0]}&player2=${candidates[1]}`}
+      onClick={(e) => e.stopPropagation()}
+      title={`Go to ${a} vs ${b}`}
+      className={classNames(
+        "flex flex-col min-w-0 max-w-full italic font-light opacity-60 hover:opacity-100 hover:underline text-[0.65rem] leading-none gap-y-px",
+        align === "right" ? "items-end text-right" : "items-start text-left",
+      )}
+    >
+      <span className="truncate max-w-full">{a} or</span>
+      <span className="truncate max-w-full">{b}</span>
+    </Link>
+  );
+};
+
+/** Placeholder shown in a walkover's empty opponent slot: a muted, dashed "no opponent" circle */
+export const ByeAvatar: React.FC<{ size: number }> = ({ size }) => {
+  size = size * 0.95;
+  return (
+    <div
+      className="shrink-0 rounded-full border border-dashed border-secondary-text/40 bg-primary-background/40"
+      style={{ height: size, width: size }}
+    />
   );
 };

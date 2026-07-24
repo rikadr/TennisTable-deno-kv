@@ -80,7 +80,7 @@ export const TournamentInfo = ({ tournament }: { tournament: Tournament }) => {
               </>
             )}
             <span className="px-2 py-1 rounded text-xs font-medium bg-secondary-background text-secondary-text">
-              Direct Elimination
+              {tournament.tournamentConfig.doubleElimination ? "Double Elimination" : "Direct Elimination"}
             </span>
           </div>
         </InfoRow>

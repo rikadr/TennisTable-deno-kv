@@ -16,6 +16,7 @@ export type TournamentConfig = {
   description?: string;
   startDate: number;
   groupPlay: boolean;
+  doubleElimination: boolean;
   deleted: boolean;
   playerOrder?: string[];
   overridePreferredGroupSize?: number;
@@ -67,7 +68,7 @@ export class TournamentsProjector {
     }
     this.#tournamentsMap.set(tournamentId, {
       id: tournamentId,
-      config: { id: tournamentId, name: "", startDate: 0, groupPlay: false, deleted: false },
+      config: { id: tournamentId, name: "", startDate: 0, groupPlay: false, doubleElimination: false, deleted: false },
       signups: new Map(),
       skippedGames: new Map(),
     });
@@ -84,6 +85,7 @@ export class TournamentsProjector {
       description: event.data.description,
       startDate: event.data.startDate,
       groupPlay: event.data.groupPlay,
+      doubleElimination: event.data.doubleElimination ?? false,
       overridePreferredGroupSize: event.data.overridePreferredGroupSize,
       deleted: false,
     };
@@ -111,6 +113,7 @@ export class TournamentsProjector {
     if (event.data.description !== undefined) tournament.config.description = event.data.description;
     if (event.data.startDate !== undefined) tournament.config.startDate = event.data.startDate;
     if (event.data.groupPlay !== undefined) tournament.config.groupPlay = event.data.groupPlay;
+    if (event.data.doubleElimination !== undefined) tournament.config.doubleElimination = event.data.doubleElimination;
     if (event.data.overridePreferredGroupSize !== undefined)
       tournament.config.overridePreferredGroupSize = event.data.overridePreferredGroupSize;
   }
@@ -125,6 +128,9 @@ export class TournamentsProjector {
     }
     if (hasStarted && event.data.groupPlay !== undefined) {
       return { valid: false, message: "Cannot change group play setting after tournament has started" };
+    }
+    if (hasStarted && event.data.doubleElimination !== undefined) {
+      return { valid: false, message: "Cannot change double elimination setting after tournament has started" };
     }
     if (event.data.name !== undefined && !event.data.name.trim()) {
       return { valid: false, message: "Tournament name cannot be empty" };

@@ -1,39 +1,100 @@
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { classNames } from "../../common/class-names";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useTennisParams } from "../../hooks/use-tennis-params";
 import { TournamentSignup } from "./tournament-signup";
 import { TournamentGroupPlayComponent } from "./tournament-group-play";
 import { TournamentInfo } from "./tournament-into";
 import { TournamentPredictions } from "./tournament-predictions";
 import { TournamentBracket } from "./tournament-bracket";
+import { TournamentLosersBracket } from "./tournament-losers-bracket";
+import { TournamentGrandFinal } from "./tournament-grand-final";
 import { TournamentAvailablePlayers } from "./tournament-available-players";
 import { session } from "../../services/auth/session";
 
-type TabType = "finals" | "group-play" | "signup" | "info" | "predictions" | "available";
-const tabs: { id: TabType; label: string }[] = [
-  { id: "finals", label: "Finals" },
-  { id: "group-play", label: "Group play" },
-  { id: "signup", label: "Signup" },
-  { id: "info", label: "Info" },
-  { id: "predictions", label: "Predictions" },
-  { id: "available", label: "Available today" },
-];
+type TabType = "grand-final" | "finals" | "losers" | "group-play" | "signup" | "info" | "predictions" | "available";
 
 export const TournamentPage: React.FC = () => {
   const { tournament: tournamentId, player1, player2 } = useTennisParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const context = useEventDbContext();
   const tournament = context.tournaments.getTournament(tournamentId);
   const isAdmin = session.sessionData?.role === "admin";
+  const isDoubleElimination = tournament?.tournamentConfig.doubleElimination === true;
+
+  // Single source of tab visibility, shared by the tab bar and the default-tab fallback
+  const bracketVisible = tournament?.bracket !== undefined;
+  const tabs: { id: TabType; label: string; visible: boolean }[] = [
+    ...(isDoubleElimination
+      ? ([
+          { id: "grand-final", label: "Grand Final", visible: bracketVisible },
+          { id: "finals", label: "Winners bracket", visible: bracketVisible },
+          { id: "losers", label: "Losers bracket", visible: bracketVisible },
+        ] as { id: TabType; label: string; visible: boolean }[])
+      : [{ id: "finals" as TabType, label: "Finals", visible: bracketVisible }]),
+    { id: "group-play", label: "Group play", visible: tournament?.groupPlay !== undefined },
+    { id: "signup", label: "Signup", visible: tournament?.inSignupPeriod === true },
+    { id: "info", label: "Info", visible: true },
+    {
+      id: "predictions",
+      label: "Predictions",
+      visible: tournament !== undefined && tournament.startDate < Date.now(),
+    },
+    { id: "available", label: "Available today", visible: isAdmin && tournament?.hasPendingGames === true },
+  ];
+  const visibleTabs = tabs.filter((t) => t.visible);
+  const isVisibleTab = (id: string | null | undefined): id is TabType => visibleTabs.some((t) => t.id === id);
+
   const defaultTab = (): TabType => {
-    if (!tournament) return "info";
-    if (tournament.inSignupPeriod) return "signup";
-    if (tournament.groupPlay && tournament.groupPlay.groupPlayEnded === undefined)
-      return "group-play";
-    if (tournament.bracket !== undefined) return "finals";
-    return "info";
+    const candidate = ((): TabType => {
+      if (!tournament) return "info";
+      if (tournament.inSignupPeriod) return "signup";
+      if (tournament.groupPlay && tournament.groupPlay.groupPlayEnded === undefined)
+        return "group-play";
+      if (tournament.bracket !== undefined) {
+        if (isDoubleElimination) {
+          // When arriving via a game link (pending, or just registered), open the tab the game is in
+          if (player1 && player2) {
+            const game = tournament.bracket.findGameByPlayers(player1, player2);
+            if (game?.section === "losers") return "losers";
+            if (game?.section === "grandFinal" || game?.section === "bracketReset") {
+              return "grand-final";
+            }
+            return "finals";
+          }
+          const grandFinalReady =
+            (tournament.bracket.grandFinalGames?.pending.length ?? 0) > 0 || tournament.winner !== undefined;
+          return grandFinalReady ? "grand-final" : "finals";
+        }
+        return "finals";
+      }
+      return "info";
+    })();
+    return isVisibleTab(candidate) ? candidate : visibleTabs[0]?.id ?? "info";
   };
-  const [activeTab, setActiveTab] = useState<TabType>(defaultTab);
+  // Resolve the fallback tab once per navigation target, not on every render — otherwise live
+  // data updates (e.g. a game registered on another device) would switch the tab under the user
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const initialTab = useMemo(defaultTab, [tournamentId, player1, player2]);
+
+  // The active tab lives in the url so it survives reloads and can be shared
+  const tabParam = searchParams.get("tab");
+  const activeTab: TabType = isVisibleTab(tabParam)
+    ? tabParam
+    : isVisibleTab(initialTab)
+      ? initialTab
+      : visibleTabs[0]?.id ?? "info";
+  const setActiveTab = (tab: TabType) => {
+    setSearchParams(
+      (previous) => {
+        const params = new URLSearchParams(previous);
+        params.set("tab", tab);
+        return params;
+      },
+      { replace: true },
+    );
+  };
 
   // ScrollTo
   const itemRefs = useRef<{ [key: string]: HTMLElement | null }>({});
@@ -64,41 +125,26 @@ export const TournamentPage: React.FC = () => {
   return (
     <div className="space-y-4 mx-1 sm:mx-2 md:mx-6">
       <div className="flex space-x-2 overflow-auto">
-        {tabs
-          .filter((t) => {
-            switch (t.id) {
-              case "finals":
-                return tournament.bracket !== undefined;
-              case "group-play":
-                return tournament.groupPlay !== undefined;
-              case "signup":
-                return tournament.inSignupPeriod;
-              case "predictions":
-                return tournament.startDate < Date.now();
-              case "available":
-                return isAdmin && tournament.hasPendingGames;
-              default:
-                return true;
-            }
-          })
-          .map((tab) => {
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={classNames(
-                  "flex items-center py-2 px-4 border-b-4 font-medium text-sm transition-colors",
-                  activeTab === tab.id
-                    ? "text-primary-text border-primary-text"
-                    : "text-primary-text/80 border-transparent hover:text-primary-text hover:border-primary-text border-dotted",
-                )}
-              >
-                {tab.label}
-              </button>
-            );
-          })}
+        {visibleTabs.map((tab) => {
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={classNames(
+                "flex items-center py-2 px-4 border-b-4 font-medium text-sm transition-colors",
+                activeTab === tab.id
+                  ? "text-primary-text border-primary-text"
+                  : "text-primary-text/80 border-transparent hover:text-primary-text hover:border-primary-text border-dotted",
+              )}
+            >
+              {tab.label}
+            </button>
+          );
+        })}
       </div>
+      {activeTab === "grand-final" && <TournamentGrandFinal tournament={tournament} itemRefs={itemRefs} />}
       {activeTab === "finals" && <TournamentBracket tournament={tournament} itemRefs={itemRefs} />}
+      {activeTab === "losers" && <TournamentLosersBracket tournament={tournament} itemRefs={itemRefs} />}
       {activeTab === "group-play" && <TournamentGroupPlayComponent tournament={tournament} itemRefs={itemRefs} />}
       {activeTab === "info" && <TournamentInfo tournament={tournament} />}
       {activeTab === "signup" && <TournamentSignup tournament={tournament} />}
