@@ -27,6 +27,12 @@ export type TournamentGame = {
   loserAdvanceTo?: TournamentGameTarget;
   /** Double elimination: structural slot that will never be played (bye). Hidden in the UI */
   isBye?: boolean;
+  /**
+   * Double elimination: a losers bracket slot that will only ever receive one player (no
+   * opponent). The lone player takes a walkover and is advanced automatically, continuing as a
+   * losers bracket survivor. Shown in the UI as a walkover card, not as a playable game.
+   */
+  walkover?: boolean;
   /** Double elimination: which bracket structure this game belongs to. Undefined in single elimination */
   section?: TournamentBracketSection;
 };

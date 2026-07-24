@@ -47,12 +47,14 @@ export const TournamentLosersBracket = ({
               at the bottom. Not a recursive tree: consecutive losers rounds can have the same
               number of games */}
           {losersBracket.map((layer, layerIndex) => {
-            const playableGamesInRound = layer.filter((game) => !game.isBye).length;
-            if (playableGamesInRound === 0) return null; // Round consists only of bye slots
+            // Walkover slots (a lone player who advances with no opponent) are shown as cards too;
+            // only empty bye slots are hidden
+            const visibleGamesInRound = layer.filter((game) => !game.isBye).length;
+            if (visibleGamesInRound === 0) return null; // Round consists only of empty bye slots
             const { title, subtitle } = losersRoundLabel(layerIndex, losersBracket.length);
-            // Card size follows how many games are in the round (like the winners tree, where
-            // a layer of 2^depth games renders at that depth's size), not how deep the round is
-            const sizeDepth = Math.max(0, Math.ceil(Math.log2(playableGamesInRound)));
+            // Card size follows how many cards are in the round (like the winners tree, where a
+            // layer of 2^depth games renders at that depth's size), not how deep the round is
+            const sizeDepth = Math.max(0, Math.ceil(Math.log2(visibleGamesInRound)));
             return (
               <div key={layerIndex} className="space-y-1">
                 <h3 className="text-center text-sm text-primary-text">{title}</h3>
@@ -61,7 +63,8 @@ export const TournamentLosersBracket = ({
                 )}
                 <div className="flex justify-around items-start gap-2">
                   {layer.map((game, gameIndex) => {
-                    // Structural bye slots are never played
+                    // Empty bye slots are never shown; walkovers render as normal cards (with a
+                    // "bye" in the empty slot) so they line up with the real games
                     if (game.isBye) return null;
                     return (
                       <GameTriangle
@@ -95,7 +98,8 @@ export const TournamentLosersBracket = ({
               <p className="text-center text-xs font-light text-primary-text/60 whitespace-nowrap">{subtitle ?? " "}</p>
             </div>
             {layer.map((game, gameIndex) => {
-              // Structural bye slots are never played
+              // Empty bye slots are never shown; walkovers render as normal cards (with a "bye"
+              // in the empty slot)
               if (game.isBye) return null;
               const fallbackKey = "LOSERS-L" + layerIndex + "G+" + gameIndex;
               return (

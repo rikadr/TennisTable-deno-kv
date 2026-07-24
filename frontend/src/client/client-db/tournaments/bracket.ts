@@ -361,12 +361,16 @@ export class TournamentBracket {
         if (target?.section === "losers") slotAlive[target.layerIndex][target.gameIndex][target.role] = true;
       }),
     );
+    // A slot pair where both slots can fill is a real game; exactly one slot is a walkover
+    // (one player, no opponent); neither slot is an empty bye that no one ever reaches.
     const losersWillBePlayed: boolean[][] = losers.map((layer) => layer.map(() => false));
+    const losersProducesPlayer: boolean[][] = losers.map((layer) => layer.map(() => false));
     for (let layerIndex = losers.length - 1; layerIndex >= 0; layerIndex--) {
       losers[layerIndex].forEach((game, gameIndex) => {
         const alive = slotAlive[layerIndex][gameIndex];
         losersWillBePlayed[layerIndex][gameIndex] = alive.player1 && alive.player2;
         const producesPlayer = alive.player1 || alive.player2;
+        losersProducesPlayer[layerIndex][gameIndex] = producesPlayer;
         const target = game.advanceTo;
         if (producesPlayer && target?.section === "losers") {
           slotAlive[target.layerIndex][target.gameIndex][target.role] = true;
@@ -374,13 +378,20 @@ export class TournamentBracket {
       });
     }
 
-    // Collapse byes: a losers bracket game where only one slot can ever be filled is never
-    // played, so pointers into it are redirected to where its lone player would advance
+    // Resolve advance targets past *empty* bye games only (games no player ever reaches). A game
+    // that receives exactly one player is a walkover, not an empty bye: the lone player has no
+    // opponent and is advanced automatically at fill time, so it is a real, visible slot and
+    // pointers into it are NOT redirected. This keeps a winners bracket loser dropping into its
+    // proper (round 1 or major/drop-in) round even when no opponent is there yet — they take the
+    // walkover and continue as a losers bracket survivor, so minor ("losers only") rounds never
+    // receive fresh drop-ins. Reads the original advance targets so it is independent of the
+    // order in which we rewrite them below.
+    const originalAdvanceTo = losers.map((layer) => layer.map((game) => game.advanceTo));
     const resolveTarget = (target: TournamentGameTarget): TournamentGameTarget => {
       if (target.section !== "losers") return target;
-      if (losersWillBePlayed[target.layerIndex][target.gameIndex]) return target;
-      const passthrough = losers[target.layerIndex][target.gameIndex].advanceTo;
-      if (!passthrough) throw new Error("Bye losers bracket game has no advance target");
+      if (losersProducesPlayer[target.layerIndex][target.gameIndex]) return target; // real game or walkover
+      const passthrough = originalAdvanceTo[target.layerIndex][target.gameIndex];
+      if (!passthrough) throw new Error("Empty bye losers bracket game has no advance target");
       return resolveTarget(passthrough);
     };
     winners.forEach((layer) =>
@@ -392,7 +403,12 @@ export class TournamentBracket {
       layer.forEach((game, gameIndex) => {
         if (losersWillBePlayed[layerIndex][gameIndex]) {
           game.advanceTo = resolveTarget(game.advanceTo!);
+        } else if (losersProducesPlayer[layerIndex][gameIndex]) {
+          // Walkover: exactly one player will ever arrive and is advanced automatically at fill time
+          game.walkover = true;
+          game.advanceTo = resolveTarget(game.advanceTo!);
         } else {
+          // Empty bye: no player ever arrives here
           game.advanceTo = undefined;
           game.isBye = true;
         }
@@ -480,6 +496,13 @@ export class TournamentBracket {
     if (!targetGame) throw new Error("Advance target game does not exist");
     if (targetGame[target.role] !== undefined) throw new Error("Advance target slot is already taken");
     targetGame[target.role] = player;
+    // A walkover has no opponent: the lone player wins automatically and advances onward. This is
+    // how a winners bracket loser dropping into a round with no opponent continues as a losers
+    // bracket survivor. Chained walkovers resolve recursively.
+    if (targetGame.walkover) {
+      targetGame.winner = player;
+      TournamentBracket.#advancePlayersIn(structures, targetGame);
+    }
   }
 
   #calculateLayerGames(bracket: Bracket): LayerGames[] {

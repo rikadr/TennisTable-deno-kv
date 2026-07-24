@@ -227,11 +227,13 @@ describe("Double elimination with byes (3 players)", () => {
   const players = ["P1", "P2", "P3"];
   // P1 has a bye to the winners final; P2 vs P3 is the only first round game
 
-  it("collapses bye games and passes players through", () => {
+  it("routes the lone first-round loser through a walkover, not a hidden bye", () => {
     const tournament = getTournament(baseEvents(players));
     const bracket = tournament.bracket!;
-    // Losers round 1 can never be played: only one winners first-round game produces a loser
-    expect(bracket.losersBracket![1][0].isBye).toBe(true);
+    // Losers round 1 can never be a real game: only one winners first-round game produces a loser.
+    // That loser takes a walkover here (a visible bye) and advances to the losers final as a survivor
+    expect(bracket.losersBracket![1][0].walkover).toBe(true);
+    expect(bracket.losersBracket![1][0].isBye).toBeFalsy();
     expect(pendingPairs(tournament)).toEqual(["P2 vs P3"]);
   });
 
@@ -428,6 +430,64 @@ describe("Double elimination with 16 players (cross-seeding)", () => {
     expect(tournament.winner).toBe("P4");
     expect(tournament.hasPendingGames).toBe(false);
     expect(tournament.bracket!.getCompletedGames()).toHaveLength(30); // 2n - 2
+  });
+});
+
+describe("Double elimination with winners bracket byes (non power-of-two fields)", () => {
+  // Sizes that are NOT clean powers of two, including ones (5, 11, 40, 42) that used to spill a
+  // fresh winners bracket loser into a "losers only" minor round
+  const sizes = [5, 6, 7, 11, 12, 24, 40, 42, 48, 63];
+  const p1AlwaysWins = (player1: string, player2: string) => ({ winner: player1, loser: player2, confidence: 1 });
+
+  it.each(sizes)("never routes a fresh winners bracket loser into a minor round (%i players)", (n) => {
+    const players = Array.from({ length: n }, (_, i) => `P${i + 1}`);
+    const { winners, losers } = TournamentBracket.getStartingDoubleElimination(players);
+    const totalRounds = losers.length;
+
+    winners.forEach((layer) =>
+      layer.forEach((game) => {
+        const target = game.loserAdvanceTo;
+        if (target?.section !== "losers") return;
+        const forwardRound = totalRounds - target.layerIndex;
+        // Fresh drop-ins may only enter round 1 or an even ("major") round. Odd rounds after
+        // round 1 are minor rounds fed only by losers bracket survivors (incl. walkovers)
+        const isMinorRound = forwardRound !== 1 && forwardRound % 2 === 1;
+        expect(isMinorRound).toBe(false);
+      }),
+    );
+  });
+
+  it.each(sizes)("a walkover slot always holds exactly one player and advances them (%i players)", (n) => {
+    const players = Array.from({ length: n }, (_, i) => `P${i + 1}`);
+    const { losers } = TournamentBracket.getStartingDoubleElimination(players);
+    const allGames = losers.flat();
+    const walkovers = allGames.filter((game) => game.walkover);
+    const emptyByes = allGames.filter((game) => game.isBye);
+    // Walkover and empty-bye are mutually exclusive
+    expect(walkovers.every((game) => !game.isBye)).toBe(true);
+    expect(emptyByes.every((game) => !game.walkover)).toBe(true);
+    // A walkover keeps its advance target so the lone player is routed onward
+    expect(walkovers.every((game) => game.advanceTo !== undefined)).toBe(true);
+  });
+
+  it.each(sizes)("still completes in exactly 2n-2 games with a single champion (%i players)", (n) => {
+    const players = Array.from({ length: n }, (_, i) => `P${i + 1}`);
+    const result = TournamentBracket.simulateWinnerFromStatic(p1AlwaysWins, 500_000, players, true);
+    // The top seed wins every game, so no bracket reset: exactly 2n - 2 real games are played.
+    // Walkovers are not real games and must not be counted
+    expect(result.winner).toBe("P1");
+    expect(result.gamesSimulatedCount).toBe(2 * n - 2);
+  });
+
+  it("shows a lone first-round loser taking a visible walkover instead of vanishing", () => {
+    // 5 players: P4 vs P5 is the only winners round 1 game, so its loser has no losers round 1
+    // opponent and must take a walkover
+    const players = ["P1", "P2", "P3", "P4", "P5"];
+    const bracket = getTournament([...baseEvents(players), gameEvent("P4", "P5")]).bracket!;
+    const walkovers = bracket.losersBracket!.flat().filter((game) => game.walkover);
+    expect(walkovers.length).toBeGreaterThan(0);
+    // P5 (the lone first-round loser) sits in a walkover slot, visible in the bracket
+    expect(walkovers.some((game) => game.player1 === "P5" || game.player2 === "P5")).toBe(true);
   });
 });
 

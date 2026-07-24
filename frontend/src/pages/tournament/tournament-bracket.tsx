@@ -155,6 +155,10 @@ export const TournamentGameListCard: React.FC<TournamentGameListCardProps> = ({
   const { player1, player2 } = useTennisParams();
 
   const isLarge = size === "lg";
+  // A walkover holds a single player who advances with no opponent (see GameTriangle): shown on
+  // the left with a "bye" on the right, regardless of the player's underlying role
+  const isWalkover = !!game.walkover;
+  const walkoverPlayer = isWalkover ? game.player1 ?? game.player2 : undefined;
 
   const rawStates = getGameStates(tournament, game);
   const { isPending, p1IsWinner, p2IsWinner, p1IsLoser, p2IsLoser, showMenu, ...states } = ghost
@@ -189,6 +193,7 @@ export const TournamentGameListCard: React.FC<TournamentGameListCardProps> = ({
             "relative w-full rounded-lg flex items-center gap-x-4 text-secondary-text",
             isLarge ? "px-5 py-4 h-24 rounded-xl" : "px-4 py-2 h-12",
             isPending ? "bg-secondary-background ring-2 ring-secondary-text" : "bg-secondary-background/60",
+            isWalkover && "border border-dashed border-secondary-text/40",
             showMenu && "hover:bg-secondary-background/70",
             isParamSelectedGame && "animate-wiggle",
             ghost && "opacity-50 select-none pointer-events-none",
@@ -200,10 +205,22 @@ export const TournamentGameListCard: React.FC<TournamentGameListCardProps> = ({
               isLarge && "text-xl font-bold italic",
             )}
           >
-            VS
+            {isWalkover ? <span className="text-xs font-thin italic">advances</span> : "VS"}
           </h2>
           <div className="flex gap-3 items-center justify-center">
-            {game.player1 ? (
+            {isWalkover ? (
+              walkoverPlayer ? (
+                <ProfilePicture
+                  playerId={walkoverPlayer}
+                  size={isLarge ? 60 : 35}
+                  shape="circle"
+                  clickToEdit={false}
+                  border={isLarge ? 4 : 3}
+                />
+              ) : (
+                <QuestionMark size={isLarge ? 64 : 38} />
+              )
+            ) : game.player1 ? (
               <ProfilePicture
                 playerId={game.player1}
                 size={isLarge ? 60 : 35}
@@ -217,11 +234,14 @@ export const TournamentGameListCard: React.FC<TournamentGameListCardProps> = ({
             <h3
               className={classNames(
                 isLarge && "text-xl md:text-2xl font-semibold",
-                p1IsWinner && "font-semibold",
-                p1IsLoser && "line-through font-thin",
+                !isWalkover && p1IsWinner && "font-semibold",
+                !isWalkover && p1IsLoser && "line-through font-thin",
               )}
             >
-              {game.player1 && context.playerName(game.player1)} {winStateEmoji(p1IsWinner, game.skipped)}
+              {isWalkover
+                ? walkoverPlayer && context.playerName(walkoverPlayer)
+                : game.player1 && context.playerName(game.player1)}{" "}
+              {!isWalkover && winStateEmoji(p1IsWinner, game.skipped)}
             </h3>
           </div>
           <div className="grow" />
@@ -229,13 +249,17 @@ export const TournamentGameListCard: React.FC<TournamentGameListCardProps> = ({
             <h3
               className={classNames(
                 isLarge && "text-xl md:text-2xl font-semibold",
-                p2IsWinner && "font-semibold",
-                p2IsLoser && "line-through font-thin",
+                isWalkover && "italic opacity-60",
+                !isWalkover && p2IsWinner && "font-semibold",
+                !isWalkover && p2IsLoser && "line-through font-thin",
               )}
             >
-              {winStateEmoji(p2IsWinner, game.skipped)} {game.player2 && context.playerName(game.player2)}
+              {isWalkover ? "bye" : winStateEmoji(p2IsWinner, game.skipped)}{" "}
+              {!isWalkover && game.player2 && context.playerName(game.player2)}
             </h3>
-            {game.player2 ? (
+            {isWalkover ? (
+              <ByeAvatar size={isLarge ? 64 : 38} />
+            ) : game.player2 ? (
               <ProfilePicture
                 playerId={game.player2}
                 size={isLarge ? 60 : 35}
@@ -372,6 +396,11 @@ export const GameTriangle: React.FC<GameTriangleProps> = ({
     tournament,
     game,
   );
+  // A walkover holds a single player who advances with no opponent. Rendered like a normal game
+  // card (so it lines up with its neighbours) but with the lone player on the left, a "bye" in
+  // the right slot, and no trophy. The player may occupy either underlying role
+  const isWalkover = !!game.walkover;
+  const walkoverPlayer = isWalkover ? game.player1 ?? game.player2 : undefined;
 
   const gameKey =
     game.player1 && game.player2
@@ -396,6 +425,7 @@ export const GameTriangle: React.FC<GameTriangleProps> = ({
               "rounded-lg mx-auto text-secondary-text",
               game.winner || game.skipped || !isPending ? "bg-secondary-background/60" : "bg-secondary-background",
               isPending && "bg-secondary-background ring-2 ring-secondary-text",
+              isWalkover && "border border-dashed border-secondary-text/40",
               showMenu && "hover:bg-secondary-background/70",
               isParamSelectedGame && "animate-wiggle",
             )}
@@ -403,7 +433,18 @@ export const GameTriangle: React.FC<GameTriangleProps> = ({
             <div
               className={classNames("flex", playerWrapperStyles[size], size === "lg" ? "items-center" : "items-start")}
             >
-              {game.player1 ? (
+              {isWalkover ? (
+                walkoverPlayer ? (
+                  <ProfilePicture
+                    playerId={walkoverPlayer}
+                    border={playerPictureBorder[size]}
+                    shape="circle"
+                    size={playerPictureSize[size]}
+                  />
+                ) : (
+                  <QuestionMark size={playerPictureSize[size] + playerPictureBorder[size]} />
+                )
+              ) : game.player1 ? (
                 <ProfilePicture
                   playerId={game.player1}
                   border={playerPictureBorder[size]}
@@ -417,14 +458,19 @@ export const GameTriangle: React.FC<GameTriangleProps> = ({
                 className={classNames(
                   "whitespace-nowrap",
                   playerTextStyles[size],
-                  p1IsWinner && "font-semibold",
-                  p1IsLoser && "line-through font-thin",
+                  !isWalkover && p1IsWinner && "font-semibold",
+                  !isWalkover && p1IsLoser && "line-through font-thin",
                 )}
               >
-                {game.player1 && context.playerName(game.player1)} {winStateEmoji(p1IsWinner, game.skipped)}
+                {isWalkover
+                  ? walkoverPlayer && context.playerName(walkoverPlayer)
+                  : game.player1 && context.playerName(game.player1)}{" "}
+                {!isWalkover && winStateEmoji(p1IsWinner, game.skipped)}
               </div>
             </div>
-            {size !== "xxs" && <div className="w-full text-center font-thin italic text-xs">vs</div>}
+            {size !== "xxs" && (
+              <div className="w-full text-center font-thin italic text-xs">{isWalkover ? "advances" : "vs"}</div>
+            )}
             <div
               className={classNames("flex", playerWrapperStyles[size], size === "lg" ? "items-center" : "items-end")}
             >
@@ -433,13 +479,17 @@ export const GameTriangle: React.FC<GameTriangleProps> = ({
                 className={classNames(
                   "whitespace-nowrap",
                   playerTextStyles[size],
-                  p2IsWinner && "font-semibold",
-                  p2IsLoser && "line-through font-thin",
+                  isWalkover && "italic opacity-60",
+                  !isWalkover && p2IsWinner && "font-semibold",
+                  !isWalkover && p2IsLoser && "line-through font-thin",
                 )}
               >
-                {winStateEmoji(p2IsWinner, game.skipped)} {game.player2 && context.playerName(game.player2)}
+                {isWalkover ? "bye" : winStateEmoji(p2IsWinner, game.skipped)}{" "}
+                {!isWalkover && game.player2 && context.playerName(game.player2)}
               </div>
-              {game.player2 ? (
+              {isWalkover ? (
+                <ByeAvatar size={playerPictureSize[size] + playerPictureBorder[size]} />
+              ) : game.player2 ? (
                 <ProfilePicture
                   playerId={game.player2}
                   border={playerPictureBorder[size]}
@@ -500,10 +550,19 @@ export function getGameStates(tournament: Tournament, game: Partial<TournamentGa
     !!game.player1 && !!game.player2 && game.winner === undefined && game.skipped === undefined;
   const showSkipGameOption =
     !!game.player1 && !!game.player2 && game.winner === undefined && game.skipped === undefined;
-  // A skip can only be undone while none of the games downstream of this one have been completed
+  // A skip can only be undone while none of the games downstream of this one have been completed.
+  // Walkover slots auto-complete the moment their lone player arrives but are not real games, so
+  // look through them to the first real downstream game.
   const bracket = tournament.bracket;
-  const advanceToGame = game.advanceTo ? bracket?.getGame(game.advanceTo) : undefined;
-  const loserAdvanceToGame = game.loserAdvanceTo ? bracket?.getGame(game.loserAdvanceTo) : undefined;
+  const resolveDownstream = (target?: TournamentGame["advanceTo"]) => {
+    let downstream = target ? bracket?.getGame(target) : undefined;
+    while (downstream?.walkover && downstream.advanceTo) {
+      downstream = bracket?.getGame(downstream.advanceTo);
+    }
+    return downstream;
+  };
+  const advanceToGame = resolveDownstream(game.advanceTo);
+  const loserAdvanceToGame = resolveDownstream(game.loserAdvanceTo);
   const grandFinalFollowUpGame = game.section === "grandFinal" ? bracket?.bracketReset : undefined;
   const downstreamGameCompleted = [advanceToGame, loserAdvanceToGame, grandFinalFollowUpGame].some(
     (downstream) => downstream !== undefined && (downstream.winner !== undefined || downstream.skipped !== undefined),
@@ -601,5 +660,16 @@ export const QuestionMark: React.FC<{ size: number }> = ({ size }) => {
     >
       <div className={classNames("w-full h-full text-center")}>?</div>
     </div>
+  );
+};
+
+/** Placeholder shown in a walkover's empty opponent slot: a muted, dashed "no opponent" circle */
+export const ByeAvatar: React.FC<{ size: number }> = ({ size }) => {
+  size = size * 0.95;
+  return (
+    <div
+      className="shrink-0 rounded-full border border-dashed border-secondary-text/40 bg-primary-background/40"
+      style={{ height: size, width: size }}
+    />
   );
 };
