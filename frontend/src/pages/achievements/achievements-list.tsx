@@ -68,6 +68,9 @@ export const AchievementsList: React.FC<AchievementsListProps> = ({ achievements
                       vs {context.playerName(achievement.data.opponent)}
                     </span>
                   )}
+                  {achievement.data && "time" in achievement.data && (
+                    <span className="text-[11px] opacity-80">🕒 {achievement.data.time}</span>
+                  )}
                   {achievement.data && "tournamentId" in achievement.data && (
                     <span className="text-[11px] opacity-80">
                       🏆 {context.tournaments.getTournament(

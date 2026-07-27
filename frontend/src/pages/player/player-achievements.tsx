@@ -253,6 +253,16 @@ export const ACHIEVEMENT_LABELS: Record<string, { title: string; description: st
     description: "Lose to every currently ranked player at least once",
     icon: "🙇",
   },
+  "earliest-game": {
+    title: "Earliest Game",
+    description: "Play the earliest game of the day on record",
+    icon: "🌅",
+  },
+  "latest-game": {
+    title: "Latest Game",
+    description: "Play the latest game of the day on record",
+    icon: "🌙",
+  },
 };
 
 // Resolves the display label for an achievement type, filling in any
