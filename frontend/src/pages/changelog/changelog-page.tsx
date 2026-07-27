@@ -24,8 +24,8 @@ export const ChangelogPage: React.FC = () => {
       <div className="w-full max-w-3xl bg-primary-background text-primary-text border border-primary-text/10 rounded-lg p-4 sm:p-6">
         <h1 className="text-2xl sm:text-3xl font-bold">Changelog</h1>
         <p className="text-sm opacity-70 mt-1">
-          What has been built, why, and the occasional thing that got deleted again. Backfilled from the commit history
-          all the way to the first commit in May 2024.
+          What is new, what changed under the hood, and the occasional thing that got removed again. Going back to the
+          first version in May 2024.
         </p>
 
         <div className="mt-5 flex flex-wrap gap-2">

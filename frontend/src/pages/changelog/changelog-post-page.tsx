@@ -51,20 +51,6 @@ export const ChangelogPostPage: React.FC = () => {
             <Block key={blockIndex} block={block} />
           ))}
         </div>
-
-        <div className="mt-8 pt-5 border-t border-primary-text/20">
-          <h2 className="text-sm font-semibold uppercase tracking-wide opacity-60">
-            Commit{post.commits.length !== 1 && "s"}
-          </h2>
-          <ul className="mt-3 flex flex-col gap-1.5">
-            {post.commits.map((commit) => (
-              <li key={commit.hash} className="flex gap-3 text-sm">
-                <code className="opacity-60 shrink-0">{commit.hash}</code>
-                <span className="opacity-90 break-words">{commit.subject}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
       </article>
 
       <nav className="w-full max-w-2xl flex flex-col xs:flex-row gap-3">
@@ -103,15 +89,6 @@ const Block: React.FC<{ block: ChangelogBlock }> = ({ block }) => {
           </li>
         ))}
       </ul>
-    );
-  }
-
-  if (block.kind === "quote") {
-    return (
-      <blockquote className="bg-secondary-background text-secondary-text rounded-lg px-4 py-3">
-        <p className="whitespace-pre-line font-mono text-sm">{block.text}</p>
-        {block.source && <footer className="text-xs opacity-70 mt-2">— {block.source}</footer>}
-      </blockquote>
     );
   }
 

@@ -46,13 +46,15 @@ describe("changelog posts", () => {
     });
   });
 
-  it("references short commit hashes", () => {
+  it("keeps summaries short enough for the list view", () => {
     CHANGELOG_POSTS.forEach((post) => {
-      expect(post.commits.length).toBeGreaterThan(0);
-      post.commits.forEach((commit) => {
-        expect(commit.hash).toMatch(/^[0-9a-f]{7,40}$/);
-        expect(commit.subject.length).toBeGreaterThan(0);
-      });
+      expect(post.summary.length).toBeLessThanOrEqual(200);
+    });
+  });
+
+  it("carries at most two tags per post", () => {
+    CHANGELOG_POSTS.forEach((post) => {
+      expect(post.tags.length).toBeLessThanOrEqual(2);
     });
   });
 
