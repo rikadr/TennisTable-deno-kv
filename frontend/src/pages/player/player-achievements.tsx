@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Achievement, AchievementProgression } from "../../client/client-db/achievements";
 import { Link } from "react-router-dom";
 import { fmtNum } from "../../common/number-utils";
+import { achievementProgressPercentage } from "../../common/achievement-progress";
 
 type Props = {
   playerId?: string;
@@ -612,7 +613,7 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
       {progressItems.map(({ type, label, data }) => {
         const hasTarget = "target" in data && !!data.target;
         const hasCurrent = "current" in data && !!data.current;
-        const percentage = hasTarget && hasCurrent ? Math.min((data.current! / data.target!) * 100, 100) : 0;
+        const percentage = hasTarget && hasCurrent ? achievementProgressPercentage(type, data.current, data.target) : 0;
         const hasEarned = data.earned > 0;
         const isTimePeriod =
           type.startsWith("active-") || type.startsWith("back-after-") || type === "anniversary";
