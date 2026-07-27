@@ -114,6 +114,19 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
     ],
   },
   {
+    slug: "stealth-theme",
+    title: "New theme: Stealth",
+    date: "2026-06-24",
+    tags: ["new-feature"],
+    summary: "Black on dark greyscale, for when you would rather the leaderboard did not glow.",
+    body: [
+      text("No colour at all - black backgrounds, greyscale text."),
+      text(
+        "Unlike the seasonal themes it is not tied to a date, and unlike the per-organisation themes it is not tied to where you work. Pick it in settings as a theme override and it stays until you change it back.",
+      ),
+    ],
+  },
+  {
     slug: "deno-kv-to-sql",
     title: "Deno KV → SQL",
     date: "2026-06-20",
@@ -388,6 +401,31 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
     ],
   },
   {
+    slug: "simulations-moved-to-a-web-worker",
+    title: "Simulations moved to a web worker",
+    date: "2025-06-04",
+    tags: ["technical"],
+    summary:
+      "The first web worker in the app. Heavy simulations run on a background thread, so the page stays responsive while they work.",
+    body: [
+      text(
+        "Monte Carlo simulation is the kind of work a browser is bad at hosting: tens of thousands of simulated games, all pure arithmetic, all in one go. Run it where the UI lives and the page simply stops - no scrolling, no button presses, and eventually a browser warning that the tab is unresponsive.",
+      ),
+      text(
+        "The worst part is that a loading spinner cannot help you, because the thread that would animate it is the one doing the work.",
+      ),
+      text(
+        "Moving the simulation to a web worker put it on a background thread. The page stays interactive while it runs, and the progress bar actually moves, because progress is posted back from the worker as it goes. How often it reports is a real trade-off - too chatty and the messages cost more than the work, too quiet and the bar jumps in steps.",
+      ),
+      text(
+        "The payoff came the next day: with the main thread free, the iteration count went up. Work that had to be kept small to avoid freezing the page could now be as expensive as it needed to be.",
+      ),
+      text(
+        "This became the pattern for everything heavy since. Elo simulation, tournament win predictions and prediction history all run in workers now, and it is what makes a browser-side rating engine practical at all.",
+      ),
+    ],
+  },
+  {
     slug: "player-page-rebuilt",
     title: "Player page rebuilt with tabs",
     date: "2025-06-03",
@@ -437,6 +475,19 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
     ],
   },
   {
+    slug: "easter-theme",
+    title: "New theme: Easter",
+    date: "2025-03-30",
+    tags: ["new-feature"],
+    summary: "Spring colours and an Easter logo, including a matching pass over the admin page.",
+    body: [
+      text("The second seasonal theme. Easter colours, a themed logo, and a debug easter bunny that lasted one day."),
+      text(
+        "Unlike Halloween, this one was switched back off three weeks later once the season had passed - a seasonal theme is turned on for the season rather than left to linger until someone notices.",
+      ),
+    ],
+  },
+  {
     slug: "event-sourcing",
     title: "Event sourcing",
     date: "2025-03-29",
@@ -471,7 +522,9 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
       text(
         "Themes are now CSS variables exposed through Tailwind as primary, secondary and tertiary text and background colours. Components never learn which theme is active. The detail that made it work is opacity support, so modifiers like `/50` still work on a themed colour.",
       ),
-      text("There are now per-organisation themes, Halloween, Easter, Christmas snowfall and a stealth mode."),
+      text(
+        "There are now four per-organisation themes plus Halloween, Easter and Stealth, and any of them can be picked as an override in settings.",
+      ),
     ],
   },
   {
@@ -554,6 +607,20 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
       text(
         "Pending tournament games show up in the add-game page so you do not have to remember who you owe a match, and the game you just entered scrolls into view and wiggles.",
       ),
+    ],
+  },
+  {
+    slug: "halloween-theme",
+    title: "New theme: Halloween",
+    date: "2024-10-29",
+    tags: ["new-feature"],
+    summary: "The first theme the app ever had - pumpkin colours and a pumpkin logo for October.",
+    body: [
+      text("Orange and dark colours throughout, and the logo swapped for a pumpkin version in the nav menu."),
+      text(
+        "It was built the direct way: conditionals inside components and hardcoded colours. That works for exactly one theme, and it is the reason the theming had to be rebuilt properly a few months later.",
+      ),
+      text("It comes back every October."),
     ],
   },
   {
