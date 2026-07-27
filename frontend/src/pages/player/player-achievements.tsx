@@ -253,6 +253,16 @@ export const ACHIEVEMENT_LABELS: Record<string, { title: string; description: st
     description: "Lose to every currently ranked player at least once",
     icon: "🙇",
   },
+  "earliest-game": {
+    title: "Earliest Game",
+    description: "Play the earliest game of the day on record",
+    icon: "🌅",
+  },
+  "latest-game": {
+    title: "Latest Game",
+    description: "Play the latest game of the day on record",
+    icon: "🌙",
+  },
 };
 
 // Resolves the display label for an achievement type, filling in any
@@ -366,6 +376,10 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
                   <p className="text-xs text-secondary-text/70 mt-2">
                     vs {context.playerName(achievement.data.opponent)}
                   </p>
+                )}
+
+                {achievement.data && "time" in achievement.data && (
+                  <p className="text-xs text-secondary-text/70 mt-2">🕒 {achievement.data.time}</p>
                 )}
 
                 {achievement.type === "david" && achievement.data && (
@@ -567,6 +581,13 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
 
 function daysBetween(from: number, to: number): number {
   return Math.round((to - from) / (24 * 60 * 60 * 1000));
+}
+
+// Formats minutes past midnight (0–1439) as a "HH:MM" clock time.
+function minutesToTimeString(minutes: number): string {
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  return `${String(hours).padStart(2, "0")}:${String(mins).padStart(2, "0")}`;
 }
 
 type ProgressTabProps = {
@@ -843,6 +864,25 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                   ) : type === "leap-frog" ? (
                     <div className="mt-2 text-xs text-secondary-text/70">
                       No league record yet — jump 2 or more ranks in a single game to set the first record.
+                    </div>
+                  ) : type === "earliest-game" || type === "latest-game" ? (
+                    <div className="mt-2 text-xs text-secondary-text/70 space-y-1">
+                      {"recordMinutes" in data && data.recordMinutes !== undefined ? (
+                        <>
+                          <p>
+                            {type === "earliest-game" ? "Earliest" : "Latest"} game on record:{" "}
+                            <span className="font-medium">{minutesToTimeString(data.recordMinutes)}</span>
+                          </p>
+                          {"playerMinutes" in data && data.playerMinutes !== undefined && (
+                            <p>
+                              Your {type === "earliest-game" ? "earliest" : "latest"} game:{" "}
+                              <span className="font-medium">{minutesToTimeString(data.playerMinutes)}</span>
+                            </p>
+                          )}
+                        </>
+                      ) : (
+                        <p>No games played yet.</p>
+                      )}
                     </div>
                   ) : (
                     // Fallback for achievements without targets (like tournament achievements)

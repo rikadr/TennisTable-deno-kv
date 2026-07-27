@@ -40,6 +40,13 @@ export class Achievements {
   // Each player's own largest single-game leaderboard jump (ranked before
   // and after). Used for Leap Frog progression.
   bestRankJump: Map<string, number> = new Map();
+  // League-wide running records for the Earliest / Latest Game achievements:
+  // the earliest and latest time-of-day (minutes past local midnight, in the
+  // browser's timezone) any game has been played to date. Undefined until the
+  // first game seeds them — that first game does not award, since there is no
+  // prior record to break.
+  earliestGameRecord: { minutesIntoDay: number | undefined } = { minutesIntoDay: undefined };
+  latestGameRecord: { minutesIntoDay: number | undefined } = { minutesIntoDay: undefined };
 
   constructor(parent: TennisTable) {
     this.parent = parent;
@@ -57,6 +64,8 @@ export class Achievements {
     this.marathonSetRecord = { score: undefined, holder: undefined };
     this.leapFrogRecord = { ranksJumped: undefined, holder: undefined };
     this.bestRankJump.clear();
+    this.earliestGameRecord = { minutesIntoDay: undefined };
+    this.latestGameRecord = { minutesIntoDay: undefined };
 
     const playerTracker = new Map<
       string,
@@ -172,6 +181,9 @@ export class Achievements {
           }),
         );
       }
+
+      // Check for "Earliest Game" / "Latest Game" record-breaking achievements
+      this.#checkTimeOfDayAchievements(game);
 
       // Check for Welcome Committee achievement
       // If this is the loser's first game ever, the winner is their first opponent
@@ -1778,6 +1790,67 @@ export class Achievements {
     return { type, earnedBy, earnedAt, data };
   }
 
+  // Awards the "Earliest Game" and "Latest Game" record-breaking achievements.
+  // The time-of-day is derived in the browser's local timezone: 00:00 is the
+  // earliest possible and 23:59 the latest. When a game strictly beats the
+  // running earliest / latest record it is awarded to BOTH players. The very
+  // first game only seeds the records (no prior record exists to break).
+  #checkTimeOfDayAchievements(game: Game) {
+    const playedDate = new Date(game.playedAt);
+    const minutesIntoDay = playedDate.getHours() * 60 + playedDate.getMinutes();
+    const time = `${String(playedDate.getHours()).padStart(2, "0")}:${String(playedDate.getMinutes()).padStart(2, "0")}`;
+
+    // Earliest Game
+    if (this.earliestGameRecord.minutesIntoDay === undefined) {
+      this.earliestGameRecord.minutesIntoDay = minutesIntoDay;
+    } else if (minutesIntoDay < this.earliestGameRecord.minutesIntoDay) {
+      this.earliestGameRecord.minutesIntoDay = minutesIntoDay;
+      this.#addAchievement(
+        game.winner,
+        this.#createAchievement("earliest-game", game.winner, game.playedAt, {
+          gameId: game.id,
+          opponent: game.loser,
+          time,
+          minutesIntoDay,
+        }),
+      );
+      this.#addAchievement(
+        game.loser,
+        this.#createAchievement("earliest-game", game.loser, game.playedAt, {
+          gameId: game.id,
+          opponent: game.winner,
+          time,
+          minutesIntoDay,
+        }),
+      );
+    }
+
+    // Latest Game
+    if (this.latestGameRecord.minutesIntoDay === undefined) {
+      this.latestGameRecord.minutesIntoDay = minutesIntoDay;
+    } else if (minutesIntoDay > this.latestGameRecord.minutesIntoDay) {
+      this.latestGameRecord.minutesIntoDay = minutesIntoDay;
+      this.#addAchievement(
+        game.winner,
+        this.#createAchievement("latest-game", game.winner, game.playedAt, {
+          gameId: game.id,
+          opponent: game.loser,
+          time,
+          minutesIntoDay,
+        }),
+      );
+      this.#addAchievement(
+        game.loser,
+        this.#createAchievement("latest-game", game.loser, game.playedAt, {
+          gameId: game.id,
+          opponent: game.winner,
+          time,
+          minutesIntoDay,
+        }),
+      );
+    }
+  }
+
   // Helper method to get achievements for a player
   getAchievements(playerId: string): Achievement[] {
     return this.achievementMap.get(playerId) || [];
@@ -1860,6 +1933,10 @@ export class Achievements {
         target: this.marathonSetRecord.score,
         recordHolder: this.marathonSetRecord.holder,
       },
+      // Record-breaking, no progress bar. recordMinutes is the current league
+      // record; playerMinutes (the player's own best) is filled in below.
+      "earliest-game": { earned: 0, recordMinutes: this.earliestGameRecord.minutesIntoDay },
+      "latest-game": { earned: 0, recordMinutes: this.latestGameRecord.minutesIntoDay },
 
       // Social
       "variety-player": { current: 0, target: 10, opponents: new Set(), earned: 0 },
@@ -1910,6 +1987,12 @@ export class Achievements {
     // Track first games for each player to determine who was their first opponent
     const playerFirstGames = new Map<string, { opponent: string; timestamp: number }>();
 
+    // This player's own earliest / latest time-of-day (minutes past local
+    // midnight, browser timezone) across all their games — used to show how
+    // far they are from the Earliest / Latest Game league records.
+    let playerEarliestMinutes: number | undefined = undefined;
+    let playerLatestMinutes: number | undefined = undefined;
+
     this.parent.games.forEach((game) => {
       // Track first opponent for each player
       if (!playerFirstGames.has(game.winner)) {
@@ -1918,7 +2001,22 @@ export class Achievements {
       if (!playerFirstGames.has(game.loser)) {
         playerFirstGames.set(game.loser, { opponent: game.winner, timestamp: game.playedAt });
       }
+
+      // Track this player's own earliest / latest time-of-day.
+      if (game.winner === playerId || game.loser === playerId) {
+        const playedDate = new Date(game.playedAt);
+        const minutesIntoDay = playedDate.getHours() * 60 + playedDate.getMinutes();
+        if (playerEarliestMinutes === undefined || minutesIntoDay < playerEarliestMinutes) {
+          playerEarliestMinutes = minutesIntoDay;
+        }
+        if (playerLatestMinutes === undefined || minutesIntoDay > playerLatestMinutes) {
+          playerLatestMinutes = minutesIntoDay;
+        }
+      }
     });
+
+    progression["earliest-game"].playerMinutes = playerEarliestMinutes;
+    progression["latest-game"].playerMinutes = playerLatestMinutes;
 
     // Count how many players have this playerId as their first opponent
     playerFirstGames.forEach((firstGame, player) => {
@@ -2347,8 +2445,10 @@ export class Achievements {
     const achievements = this.getAchievements(playerId);
     achievements.forEach((achievement) => {
       const type = achievement.type;
+      // Some achievement types (e.g. the record-breaking Earliest / Latest
+      // Game) have no progression entry — the `in` guard skips those.
       if (type in progression) {
-        progression[type].earned++;
+        progression[type as keyof AchievementProgression].earned++;
       }
     });
 
@@ -2430,6 +2530,12 @@ type AchievementDefinitions = {
   "group-stage-star": { tournamentId: string; wins: number };
   "full-house": { count: number; firstGameAt: number };
   "humbled": { count: number; firstGameAt: number };
+  // Record-breaking time-of-day achievements. Awarded to both players of
+  // the game that sets a new league-wide earliest / latest time-of-day
+  // record. `time` is the "HH:MM" the game was played and `minutesIntoDay`
+  // the minutes past local midnight — both in the browser's timezone.
+  "earliest-game": { gameId: string; opponent: string; time: string; minutesIntoDay: number };
+  "latest-game": { gameId: string; opponent: string; time: string; minutesIntoDay: number };
 };
 
 type AchievementType = keyof AchievementDefinitions;
@@ -2511,6 +2617,18 @@ type MarathonSetProgression = BaseProgression & {
   recordHolder?: string;
 };
 
+// Earliest / Latest Game are record-breaking achievements with no numeric
+// progress bar — you either hold the record or you don't. Instead of a
+// percentage, the progress view shows the current league record and the
+// player's own best so they can gauge how far off they are. Both values are
+// minutes past local midnight (browser timezone); undefined when unknown.
+type TimeOfDayRecordProgression = BaseProgression & {
+  // The current league-wide record time-of-day — the mark to beat.
+  recordMinutes?: number;
+  // The player's own best (earliest / latest) time-of-day.
+  playerMinutes?: number;
+};
+
 export type AchievementProgression = {
   "first-game": ProgressionWithTarget;
   "ranked": ProgressionWithTarget;
@@ -2560,4 +2678,6 @@ export type AchievementProgression = {
   "group-stage-star": BaseProgression;
   "full-house": MissingPlayersProgression;
   "humbled": MissingPlayersProgression;
+  "earliest-game": TimeOfDayRecordProgression;
+  "latest-game": TimeOfDayRecordProgression;
 };
