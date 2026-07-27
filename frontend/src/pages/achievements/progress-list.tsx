@@ -5,6 +5,7 @@ import { ACHIEVEMENT_LABELS, getAchievementLabel } from "../player/player-achiev
 import { ProfilePicture } from "../player/profile-picture";
 import { fmtNum } from "../../common/number-utils";
 import { classNames } from "../../common/class-names";
+import { achievementProgressPercentage } from "../../common/achievement-progress";
 
 interface ProgressListProps {
   selectedType: string;
@@ -57,7 +58,7 @@ export const ProgressList: React.FC<ProgressListProps> = ({ selectedType }) => {
         }
 
         if (target > 0) {
-          percent = Math.min(100, Math.round((current / target) * 100));
+          percent = Math.round(achievementProgressPercentage(selectedType, current, target));
         }
 
         return {
