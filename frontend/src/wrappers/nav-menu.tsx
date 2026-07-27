@@ -34,6 +34,7 @@ export const NavMenu: React.FC = () => {
       { name: "🎖️ Achievements", to: "/achievements" },
       { name: "🏛️ Hall of Fame", to: "/hall-of-fame" },
       { name: "🤖 Simulations", to: "/simulations" },
+      { name: "📰 Changelog", to: "/changelog" },
       { name: "🔧 Settings", to: "/settings" },
     ];
     if (session.isAuthenticated && session.sessionData?.role === "admin") {
