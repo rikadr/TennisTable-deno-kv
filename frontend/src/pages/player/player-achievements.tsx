@@ -378,6 +378,10 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
                   </p>
                 )}
 
+                {achievement.data && "time" in achievement.data && (
+                  <p className="text-xs text-secondary-text/70 mt-2">🕒 {achievement.data.time}</p>
+                )}
+
                 {achievement.type === "david" && achievement.data && (
                   <p className="text-xs text-secondary-text/70 mt-2">
                     Gained {fmtNum(achievement.data.eloGain, { digits: 1, signedPositive: true })} Score
