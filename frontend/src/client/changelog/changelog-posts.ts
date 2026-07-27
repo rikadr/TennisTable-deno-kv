@@ -99,17 +99,28 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
     ],
   },
   {
-    slug: "predictions-rebuilt",
-    title: "Predictions rebuilt and moved to a web worker",
+    slug: "major-performance-improvements-to-predictions",
+    title: "Major performance improvements to predictions",
     date: "2026-06-24",
     tags: ["technical"],
-    summary: "Player pages no longer freeze while the prediction engine runs.",
+    summary:
+      "The prediction engine was rebuilt around pre-computed lookups and memoisation, and its slowest part moved to a background thread.",
     body: [
       text(
-        "The old prediction module recomputed its full set of results synchronously every time a player page opened, and the UI simply stopped until it finished. It was replaced with a version that computes the expensive parts once and shares them between consumers.",
+        "Predictions had become the slowest thing in the app. The old module walked every game in the league to answer a single question about two players, and it did that work again from scratch every time a page asked - synchronously, so the UI stopped until it finished.",
+      ),
+      text("The rebuild attacked it from four directions:"),
+      list(
+        "Stats for every pair of players are accumulated once up front, so looking up how two people have done against each other is a direct map lookup instead of a pass over the full game list.",
+        "A map of who has played whom is built lazily and reused. Predictions that have to route through a shared opponent - because the two players have never met - use it to find the overlap instead of searching.",
+        "One-layer and two-layer results are memoised, and each result is written under both player orderings, so A against B and B against A share the same entry.",
+        "Converting point odds into set odds into game odds comes from pre-computed probability tables rather than being derived on each call.",
       ),
       text(
-        "Prediction history also moved into a web worker, joining the tournament and Elo simulations that were already there. Graphs now fill in while you scroll instead of blocking the page.",
+        "The remaining expensive piece - the prediction history timeline - moved into a web worker, joining the tournament and Elo simulations already there. Graphs now fill in while you scroll instead of blocking the page.",
+      ),
+      text(
+        "Anything cached has to be invalidated, and a single new game changes every prediction involving those two players, so the engine has an explicit cache clear rather than hoping the numbers drift back into agreement.",
       ),
     ],
   },
