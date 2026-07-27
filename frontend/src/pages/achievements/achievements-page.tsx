@@ -1,4 +1,5 @@
-import { useState, useMemo } from "react";
+import { useMemo } from "react";
+import { useSearchParams } from "react-router-dom";
 import { classNames } from "../../common/class-names";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { Achievement } from "../../client/client-db/achievements";
@@ -6,9 +7,47 @@ import { ACHIEVEMENT_LABELS } from "../player/player-achievements";
 import { AchievementsList } from "./achievements-list";
 import { ProgressList } from "./progress-list";
 
+const FILTER_PARAM = "filter";
+const VIEW_PARAM = "view";
+const PROGRESS_VIEW = "progress";
+
 export const AchievementsPage: React.FC = () => {
   const context = useEventDbContext();
-  const [selectedType, setSelectedType] = useState<string>("all");
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Filter and view live in the url so they survive reloads and can be shared
+  const selectedType = searchParams.get(FILTER_PARAM) ?? "all";
+  const showProgress = searchParams.get(VIEW_PARAM) === PROGRESS_VIEW;
+
+  const setSelectedType = (type: string) => {
+    setSearchParams(
+      (previous) => {
+        const params = new URLSearchParams(previous);
+        if (type === "all") {
+          params.delete(FILTER_PARAM);
+        } else {
+          params.set(FILTER_PARAM, type);
+        }
+        return params;
+      },
+      { replace: true },
+    );
+  };
+
+  const setShowProgress = (progress: boolean) => {
+    setSearchParams(
+      (previous) => {
+        const params = new URLSearchParams(previous);
+        if (progress) {
+          params.set(VIEW_PARAM, PROGRESS_VIEW);
+        } else {
+          params.delete(VIEW_PARAM);
+        }
+        return params;
+      },
+      { replace: true },
+    );
+  };
 
   context.achievements.calculateAchievements();
 
@@ -39,9 +78,6 @@ export const AchievementsPage: React.FC = () => {
       return countB - countA; // Sort by count descending
     });
   }, [achievementCounts]);
-
-  // State for toggling the progress view
-  const [showProgress, setShowProgress] = useState(false);
 
   // Filter and sort achievements
   const filteredAchievements = useMemo(() => {
@@ -102,6 +138,7 @@ export const AchievementsPage: React.FC = () => {
 
           <button
             onClick={() => setShowProgress(!showProgress)}
+            type="button"
             className={classNames(
               "px-4 py-2 rounded text-sm font-medium border transition-colors",
               showProgress
