@@ -153,18 +153,58 @@ describe("Earliest / Latest Game Achievements", () => {
     expect(bobEarliest).toHaveLength(3);
   });
 
-  it("does not create progression entries for these achievements", () => {
+  it("exposes progression with the league record and the player's own best (no target/bar)", () => {
     const events: EventType[] = [
       ...players(),
-      game("g1", at(1, 12, 0), "alice", "bob"),
-      game("g2", at(2, 9, 0), "alice", "bob"),
+      game("g1", at(1, 12, 0), "alice", "bob"), // seeds record at 12:00
+      game("g2", at(2, 9, 0), "alice", "bob"), // earliest -> 09:00
+      game("g3", at(3, 20, 30), "alice", "bob"), // latest -> 20:30
     ];
 
     const tt = new TennisTable({ events });
     tt.achievements.calculateAchievements();
 
-    const progression = tt.achievements.getPlayerProgression("alice");
-    expect("earliest-game" in progression).toBe(false);
-    expect("latest-game" in progression).toBe(false);
+    const alice = tt.achievements.getPlayerProgression("alice");
+
+    // Present in the progression map so they render in the progress list.
+    expect("earliest-game" in alice).toBe(true);
+    expect("latest-game" in alice).toBe(true);
+
+    // No numeric progress bar — these have no target.
+    expect("target" in alice["earliest-game"]).toBe(false);
+    expect("target" in alice["latest-game"]).toBe(false);
+
+    // League record + the player's own best (minutes past local midnight).
+    expect(alice["earliest-game"].recordMinutes).toBe(9 * 60);
+    expect(alice["earliest-game"].playerMinutes).toBe(9 * 60);
+    expect(alice["latest-game"].recordMinutes).toBe(20 * 60 + 30);
+    expect(alice["latest-game"].playerMinutes).toBe(20 * 60 + 30);
+
+    // earned counts the times the record was broken.
+    expect(alice["earliest-game"].earned).toBe(1);
+    expect(alice["latest-game"].earned).toBe(1);
+  });
+
+  it("reports a player's own best independent of the league record", () => {
+    // Carol only plays a midday game; the league records are set by others.
+    const events: EventType[] = [
+      ...players(),
+      { time: 3, stream: "carol", type: EventTypeEnum.PLAYER_CREATED, data: { name: "Carol" } },
+      game("g1", at(1, 6, 0), "alice", "bob"), // seeds league record 06:00
+      game("g2", at(2, 23, 0), "alice", "bob"), // league latest -> 23:00
+      game("g3", at(3, 13, 0), "carol", "alice"), // carol's only game, 13:00
+    ];
+
+    const tt = new TennisTable({ events });
+    tt.achievements.calculateAchievements();
+
+    const carol = tt.achievements.getPlayerProgression("carol");
+    expect(carol["earliest-game"].recordMinutes).toBe(6 * 60);
+    expect(carol["earliest-game"].playerMinutes).toBe(13 * 60);
+    expect(carol["latest-game"].recordMinutes).toBe(23 * 60);
+    expect(carol["latest-game"].playerMinutes).toBe(13 * 60);
+    // Carol never broke a record.
+    expect(carol["earliest-game"].earned).toBe(0);
+    expect(carol["latest-game"].earned).toBe(0);
   });
 });
