@@ -14,6 +14,7 @@ import { session } from "../../services/auth";
 import { PlayerAchievements } from "./player-achievements";
 import { PlayerPredictionsPage } from "./player-predictions-page";
 import { PlayerSeasonStats } from "./player-season-stats";
+import { PlayerPairings } from "./player-pairings";
 
 type TabType = "overview" | "games" | "statistics" | "achievements" | "predictions" | "season";
 const tabs: { id: TabType; label: string }[] = [
@@ -362,6 +363,12 @@ export const PlayerPage: React.FC = () => {
               {playerId && (
                 <ContentCard title="Oponent scores" description="Relative score of oponents you play">
                   <OponentsScores playerId={playerId} />
+                </ContentCard>
+              )}
+
+              {playerId && (
+                <ContentCard title="Player pairings" description="How many players it takes to connect you">
+                  <PlayerPairings playerId={playerId} />
                 </ContentCard>
               )}
             </div>
