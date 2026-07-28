@@ -1,5 +1,5 @@
-import { Link } from "react-router-dom";
-import { useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { stringToColor } from "../../common/string-to-color";
 import { classNames } from "../../common/class-names";
@@ -35,17 +35,19 @@ type TagProps = {
   playerId: string;
   title?: string;
   dimmed: boolean;
+  /** Query string to keep, so clicking through lands on the tab you are already on. */
+  search: string;
   onRef: (playerId: string, element: HTMLAnchorElement | null) => void;
   onHighlight: (playerId: string | undefined) => void;
 };
 
-const PlayerTag: React.FC<TagProps> = ({ playerId, title, dimmed, onRef, onHighlight }) => {
+const PlayerTag: React.FC<TagProps> = ({ playerId, title, dimmed, search, onRef, onHighlight }) => {
   const context = useEventDbContext();
   const background = stringToColor(playerId);
   return (
     <Link
       ref={(element) => onRef(playerId, element)}
-      to={`/player/${playerId}`}
+      to={{ pathname: `/player/${playerId}`, search }}
       title={title}
       onMouseEnter={() => onHighlight(playerId)}
       onMouseLeave={() => onHighlight(undefined)}
@@ -80,6 +82,10 @@ const PairingsColumn: React.FC<{ title: string; count: number; children: React.R
 
 export const PlayerPairings: React.FC<Props> = ({ playerId }) => {
   const context = useEventDbContext();
+  const [searchParams] = useSearchParams();
+  const tab = searchParams.get("tab");
+  const search = tab ? `?tab=${tab}` : "";
+
   const { columns, unreachable } = useMemo(
     () => context.playerPairings.get(playerId),
     [context.playerPairings, playerId],
@@ -104,6 +110,10 @@ export const PlayerPairings: React.FC<Props> = ({ playerId }) => {
     if (element) tagRefs.current.set(id, element);
     else tagRefs.current.delete(id);
   }, []);
+
+  // Clicking a tag keeps this widget mounted on the next player's page, where a highlight left
+  // over from the tag under the cursor would belong to the wrong path.
+  useEffect(() => setHighlighted(undefined), [playerId]);
 
   /** The hovered player and every player between them and you. Empty unless there is a hop to draw. */
   const path = useMemo(() => {
@@ -160,6 +170,7 @@ export const PlayerPairings: React.FC<Props> = ({ playerId }) => {
                 key={player.playerId}
                 playerId={player.playerId}
                 dimmed={dimmed(player.playerId)}
+                search={search}
                 onRef={registerTag}
                 onHighlight={setHighlighted}
                 title={
@@ -181,6 +192,7 @@ export const PlayerPairings: React.FC<Props> = ({ playerId }) => {
                 key={id}
                 playerId={id}
                 dimmed={dimmed(id)}
+                search={search}
                 onRef={registerTag}
                 onHighlight={setHighlighted}
               />
