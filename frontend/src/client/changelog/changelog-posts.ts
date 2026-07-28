@@ -210,19 +210,27 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
     ],
   },
   {
-    slug: "deactivated-players-no-longer-rewrite-history",
-    title: "Deactivated players no longer rewrite everyone's history",
+    slug: "elo-scores-are-now-static-over-time",
+    title: "Elo scores are now static over time",
     date: "2026-05-14",
-    tags: ["bug-fix"],
-    summary:
-      "Removing a player from the leaderboard also removed their games from every Elo calculation, retroactively changing the ratings of everyone they had played.",
+    tags: ["feature-update"],
+    summary: "Your rating and your history only change when you play. Nothing else moves them.",
     body: [
       text(
-        "Elo is path-dependent - your rating is the result of replaying every game in order. The projection only counted games where both players were in the active list, so deactivating someone did not just hide them, it deleted their games from the replay.",
+        "Elo is path-dependent: your rating is what you get by replaying every game in order. Deactivating a player used to pull their games out of that replay, which recalculated everyone they had ever played against. A rating you earned in March could shift in May because a colleague left.",
       ),
       text(
-        "The symptom was a player page graph that changed shape retroactively: a rating you earned in March could move in May because an opponent left the office. Deactivated players are now kept in the calculation and only filtered out of the standings, so history stops moving.",
+        "Retired players now stay in the calculation. They are filtered out of the standings, but their games remain part of history, so your score and your graph move when you play and at no other time.",
       ),
+      text("Two reasons that is worth more than it sounds:"),
+      list(
+        "Ownership. Your score and your history are yours. If they change without you playing, they are worth less to you.",
+        "It lets other features depend on a score. Achievements tied to your Elo or your leaderboard rank, and Hall of Fame scoring built on peak rating and time on the podium, all need numbers that do not move underneath them.",
+      ),
+      text(
+        "There is a real cost. Elo is zero-sum, so when a high-ranked player retires, their points stay out of play for good rather than being redistributed. That is a genuine downside - it is just rare enough to be worth paying for what it buys, and a pile of achievements plus a career score players can trust is worth considerably more than the occasional pocket of points sitting out of circulation.",
+      ),
+      text("This is a call that went back and forth a few times before it settled here."),
     ],
   },
   {
