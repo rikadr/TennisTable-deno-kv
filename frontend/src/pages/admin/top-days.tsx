@@ -205,7 +205,8 @@ export const TopGamingDays: React.FC = () => {
           count: data.count,
           timestamp: data.timestamp,
         }))
-        .sort((a, b) => b.count - a.count || b.timestamp - a.timestamp);
+        // Highest count first, ties broken in favour of the earlier period.
+        .sort((a, b) => b.count - a.count || a.timestamp - b.timestamp);
 
       const currentIndex = sorted.findIndex((entry) => entry.key === currentKey);
       const current: CurrentEntry | null =
