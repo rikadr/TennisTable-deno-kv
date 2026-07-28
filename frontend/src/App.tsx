@@ -51,6 +51,8 @@ import { HallOfFameLeaderboardPage } from "./pages/hall-of-fame/hall-of-fame-lea
 import { LiveGamePage } from "./pages/live-game/live-game-page";
 import { LiveGameAdminPage } from "./pages/live-game/live-game-admin-page";
 import { LiveGameOverlay } from "./pages/live-game/live-game-overlay";
+import { ChangelogPage } from "./pages/changelog/changelog-page";
+import { ChangelogPostPage } from "./pages/changelog/changelog-post-page";
 
 const RequireAuth: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   if (!session.isAuthenticated) {
@@ -110,6 +112,10 @@ function App() {
                         />
                         <Route path="/recent-games" element={<RecentGamesPage />} />
                         <Route path="/achievements" element={<AchievementsPage />} />
+                        <Route path="/changelog">
+                          <Route index element={<ChangelogPage />} />
+                          <Route path=":slug" element={<ChangelogPostPage />} />
+                        </Route>
                         <Route path="/hall-of-fame">
                           <Route index element={<HallOfFamePage />} />
                           <Route path="leaderboard" element={<HallOfFameLeaderboardPage />} />

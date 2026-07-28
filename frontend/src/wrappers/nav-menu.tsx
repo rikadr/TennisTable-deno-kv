@@ -34,6 +34,8 @@ export const NavMenu: React.FC = () => {
       { name: "🎖️ Achievements", to: "/achievements" },
       { name: "🏛️ Hall of Fame", to: "/hall-of-fame" },
       { name: "🤖 Simulations", to: "/simulations" },
+      // Changelog (/changelog) is deliberately left out until the navigation
+      // structure is reworked. Reachable by direct url in the meantime.
       { name: "🔧 Settings", to: "/settings" },
     ];
     if (session.isAuthenticated && session.sessionData?.role === "admin") {
