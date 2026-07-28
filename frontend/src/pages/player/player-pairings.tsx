@@ -1,11 +1,17 @@
 import { Link } from "react-router-dom";
-import { useMemo } from "react";
+import { useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { stringToColor } from "../../common/string-to-color";
+import { classNames } from "../../common/class-names";
 
 type Props = {
   playerId: string;
 };
+
+/** A line drawn across one hop of a highlighted path, pointing towards the player. */
+type PathLine = { key: string; x1: number; y1: number; x2: number; y2: number };
+
+const ARROW_MARKER_ID = "player-pairings-arrow";
 
 function columnTitle(degree: number): string {
   if (degree === 1) return "Played";
@@ -25,14 +31,30 @@ function textColor(background: string): string {
   return luminance > 0.6 ? "#000000" : "#ffffff";
 }
 
-const PlayerTag: React.FC<{ playerId: string; title?: string }> = ({ playerId, title }) => {
+type TagProps = {
+  playerId: string;
+  title?: string;
+  dimmed: boolean;
+  onRef: (playerId: string, element: HTMLAnchorElement | null) => void;
+  onHighlight: (playerId: string | undefined) => void;
+};
+
+const PlayerTag: React.FC<TagProps> = ({ playerId, title, dimmed, onRef, onHighlight }) => {
   const context = useEventDbContext();
   const background = stringToColor(playerId);
   return (
     <Link
+      ref={(element) => onRef(playerId, element)}
       to={`/player/${playerId}`}
       title={title}
-      className="block rounded-full px-3 py-1 text-sm font-medium whitespace-nowrap hover:brightness-110 transition-all"
+      onMouseEnter={() => onHighlight(playerId)}
+      onMouseLeave={() => onHighlight(undefined)}
+      onFocus={() => onHighlight(playerId)}
+      onBlur={() => onHighlight(undefined)}
+      className={classNames(
+        "block rounded-full px-3 py-1 text-sm font-medium whitespace-nowrap hover:brightness-110 transition-all",
+        dimmed && "opacity-25",
+      )}
       style={{ backgroundColor: background, color: textColor(background) }}
     >
       {context.playerName(playerId)}
@@ -63,19 +85,83 @@ export const PlayerPairings: React.FC<Props> = ({ playerId }) => {
     [context.playerPairings, playerId],
   );
 
+  const paths = useMemo(() => {
+    const map = new Map<string, string[]>();
+    for (const column of columns) {
+      for (const player of column.players) {
+        map.set(player.playerId, player.path);
+      }
+    }
+    return map;
+  }, [columns]);
+
+  const contentRef = useRef<HTMLDivElement>(null);
+  const tagRefs = useRef(new Map<string, HTMLAnchorElement>());
+  const [highlighted, setHighlighted] = useState<string>();
+  const [lines, setLines] = useState<PathLine[]>([]);
+
+  const registerTag = useCallback((id: string, element: HTMLAnchorElement | null) => {
+    if (element) tagRefs.current.set(id, element);
+    else tagRefs.current.delete(id);
+  }, []);
+
+  /** The hovered player and every player between them and you. Empty unless there is a hop to draw. */
+  const path = useMemo(() => {
+    const found = highlighted ? paths.get(highlighted) : undefined;
+    return found && found.length > 1 ? found : [];
+  }, [highlighted, paths]);
+
+  useLayoutEffect(() => {
+    if (path.length < 2) {
+      setLines([]);
+      return;
+    }
+    const measure = () => {
+      const content = contentRef.current;
+      if (!content) return;
+      const origin = content.getBoundingClientRect();
+      const drawn: PathLine[] = [];
+      // Walk from the hovered player back towards you, one column at a time.
+      for (let index = path.length - 1; index > 0; index--) {
+        const from = tagRefs.current.get(path[index]);
+        const towards = tagRefs.current.get(path[index - 1]);
+        if (!from || !towards) continue;
+        const fromRect = from.getBoundingClientRect();
+        const towardsRect = towards.getBoundingClientRect();
+        drawn.push({
+          key: `${path[index - 1]}-${path[index]}`,
+          x1: fromRect.left - origin.left,
+          y1: fromRect.top - origin.top + fromRect.height / 2,
+          x2: towardsRect.right - origin.left,
+          y2: towardsRect.top - origin.top + towardsRect.height / 2,
+        });
+      }
+      setLines(drawn);
+    };
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, [path]);
+
   if (columns.length === 0 && unreachable.length === 0) {
     return <p className="text-sm opacity-70">No other players to connect to.</p>;
   }
 
+  const onPath = new Set(path);
+  const dimmed = (id: string) => path.length > 0 && !onPath.has(id);
+
   return (
     <div className="overflow-x-auto -mx-1 px-1">
-      <div className="flex gap-4 items-start w-max">
+      <div ref={contentRef} className="relative flex gap-6 items-start w-max">
         {columns.map((column) => (
           <PairingsColumn key={column.degree} title={columnTitle(column.degree)} count={column.players.length}>
             {column.players.map((player) => (
               <PlayerTag
                 key={player.playerId}
                 playerId={player.playerId}
+                dimmed={dimmed(player.playerId)}
+                onRef={registerTag}
+                onHighlight={setHighlighted}
                 title={
                   column.degree === 1
                     ? `${player.games} game${player.games === 1 ? "" : "s"} together`
@@ -91,9 +177,45 @@ export const PlayerPairings: React.FC<Props> = ({ playerId }) => {
         {unreachable.length > 0 && (
           <PairingsColumn title="No connection" count={unreachable.length}>
             {unreachable.map((id) => (
-              <PlayerTag key={id} playerId={id} />
+              <PlayerTag
+                key={id}
+                playerId={id}
+                dimmed={dimmed(id)}
+                onRef={registerTag}
+                onHighlight={setHighlighted}
+              />
             ))}
           </PairingsColumn>
+        )}
+        {lines.length > 0 && (
+          <svg className="absolute inset-0 w-full h-full overflow-visible pointer-events-none">
+            <defs>
+              <marker
+                id={ARROW_MARKER_ID}
+                markerWidth={5}
+                markerHeight={5}
+                refX={4}
+                refY={2}
+                orient="auto"
+                fill="rgb(var(--color-primary-text))"
+              >
+                <path d="M 0 0 L 4 2 L 0 4 z" />
+              </marker>
+            </defs>
+            {lines.map((line) => (
+              <line
+                key={line.key}
+                x1={line.x1}
+                y1={line.y1}
+                x2={line.x2}
+                y2={line.y2}
+                stroke="rgb(var(--color-primary-text))"
+                strokeWidth={2}
+                strokeLinecap="round"
+                markerEnd={`url(#${ARROW_MARKER_ID})`}
+              />
+            ))}
+          </svg>
         )}
       </div>
     </div>

@@ -42,7 +42,10 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
         "The first column is the players you have played, most games first. The next column is the players you have not played but share an opponent with, then the ones two steps away, and so on. A final column collects anyone with no chain of games leading to you at all.",
       ),
       text(
-        "Where several equally short chains exist, the one with the most games on its last hop wins, and that count is what orders the column. Hover a tag to see the route.",
+        "Hover anyone in an in-between column and the widget draws the chain back to the player you have actually played, arrows pointing your way, with everybody else faded out.",
+      ),
+      text(
+        "Where several equally short chains exist, the one with the most games on its last hop wins - picked hop by hop working back from the player you hover. That same count is what orders each column.",
       ),
       text(
         "Only games between two active players count as links, so a retired player does not keep bridging the people who used to play through them.",
