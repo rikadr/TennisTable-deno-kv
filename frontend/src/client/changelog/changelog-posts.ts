@@ -31,6 +31,28 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
+    slug: "player-pairings-widget",
+    title: "Player pairings on the player page",
+    date: "2026-07-28",
+    tags: ["new-feature"],
+    summary:
+      "A widget in the Statistics tab that groups everyone else by how many players it takes to connect you through games played.",
+    body: [
+      text(
+        "The first column is the players you have played, most games first. The next column is the players you have not played but share an opponent with, then the ones two steps away, and so on. A final column collects anyone with no chain of games leading to you at all.",
+      ),
+      text(
+        "Hover anyone in an in-between column and the widget draws the chain back to the player you have actually played, arrows pointing your way, with everybody else faded out.",
+      ),
+      text(
+        "Where several equally short chains exist, the one with the most games on its last hop wins - picked hop by hop working back from the player you hover. That same count is what orders each column.",
+      ),
+      text(
+        "Only games between two active players count as links, so a retired player does not keep bridging the people who used to play through them.",
+      ),
+    ],
+  },
+  {
     slug: "earliest-and-latest-game-achievements",
     title: "2 new achievements: Earliest and Latest Game",
     date: "2026-07-27",

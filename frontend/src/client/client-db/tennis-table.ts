@@ -8,6 +8,7 @@ import { EventStore } from "./event-store/event-store";
 import { IndividualPoints } from "./individual-points";
 import { LeaderboardChanges } from "./leaderboard-changes";
 import { PlayerOponentDistribution } from "./playerOponentDistribution";
+import { PlayerPairings } from "./player-pairings";
 import { Achievements } from "./achievements";
 import { Seasons } from "./seasons/seasons";
 import { PredictionsHistory } from "./predictions-history";
@@ -41,6 +42,7 @@ export class TennisTable {
   simulations: Simulations;
   individualPoints: IndividualPoints;
   playerOponentDistribution: PlayerOponentDistribution;
+  playerPairings: PlayerPairings;
   achievements: Achievements;
   seasons: Seasons;
   predictions: Predictions;
@@ -61,6 +63,7 @@ export class TennisTable {
     this.simulations = new Simulations(this);
     this.individualPoints = new IndividualPoints(this);
     this.playerOponentDistribution = new PlayerOponentDistribution(this);
+    this.playerPairings = new PlayerPairings(this);
     this.achievements = new Achievements(this);
     this.seasons = new Seasons(this);
     this.predictions = new Predictions(this, data.referenceTime);
