@@ -1,8 +1,9 @@
-import { Link, useSearchParams } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { stringToColor } from "../../common/string-to-color";
 import { classNames } from "../../common/class-names";
+import { usePlayerLinkSearch } from "../../hooks/use-player-link-search";
 
 type Props = {
   playerId: string;
@@ -82,9 +83,7 @@ const PairingsColumn: React.FC<{ title: string; count: number; children: React.R
 
 export const PlayerPairings: React.FC<Props> = ({ playerId }) => {
   const context = useEventDbContext();
-  const [searchParams] = useSearchParams();
-  const tab = searchParams.get("tab");
-  const search = tab ? `?tab=${tab}` : "";
+  const search = usePlayerLinkSearch();
 
   const { columns, unreachable } = useMemo(
     () => context.playerPairings.get(playerId),

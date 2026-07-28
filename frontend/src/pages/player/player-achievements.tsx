@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Achievement, AchievementProgression } from "../../client/client-db/achievements";
 import { Link } from "react-router-dom";
 import { fmtNum } from "../../common/number-utils";
+import { usePlayerLinkSearch } from "../../hooks/use-player-link-search";
 import { achievementProgressPercentage } from "../../common/achievement-progress";
 
 type Props = {
@@ -598,6 +599,7 @@ type ProgressTabProps = {
 
 const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
   const context = useEventDbContext();
+  const search = usePlayerLinkSearch();
   const progressItems = Object.entries(progression).map(([type, data]) => {
     const label = getAchievementLabel(type, context.client.gameLimitForRanked);
 
@@ -720,7 +722,7 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                                       streak >= data.target && "line-through",
                                     )}
                                   >
-                                    <Link to={"/player/" + opponent}>
+                                    <Link to={{ pathname: "/player/" + opponent, search }}>
                                       <span className="text-secondary-text">{context.playerName(opponent)}</span>
                                     </Link>
                                     <span className="font-medium ml-2">
@@ -767,7 +769,7 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                                         alreadyEarned && "line-through",
                                       )}
                                     >
-                                      <Link to={"/player/" + opponent}>
+                                      <Link to={{ pathname: "/player/" + opponent, search }}>
                                         <span className="text-secondary-text">{context.playerName(opponent)}</span>
                                       </Link>
                                       <span className="font-medium">
@@ -789,7 +791,7 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                             <p className="text-xs text-secondary-text/70 mb-2">First opponent for:</p>
                             <div className="flex flex-wrap gap-1">
                               {Array.from(data.newPlayers).map((player: string) => (
-                                <Link to={"/player/" + player} key={player}>
+                                <Link to={{ pathname: "/player/" + player, search }} key={player}>
                                   <span className="text-xs bg-background px-2 py-1 rounded text-secondary-text">
                                     {context.playerName(player)}
                                   </span>
@@ -810,7 +812,7 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                             </p>
                             <div className="flex flex-wrap gap-1">
                               {Array.from(data.missing).map((player: string) => (
-                                <Link to={"/player/" + player} key={player}>
+                                <Link to={{ pathname: "/player/" + player, search }} key={player}>
                                   <span className="text-xs bg-background px-2 py-1 rounded text-secondary-text">
                                     {context.playerName(player)}
                                   </span>
@@ -826,7 +828,7 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                           {data.recordHolder ? (
                             <>
                               League record held by{" "}
-                              <Link to={"/player/" + data.recordHolder}>
+                              <Link to={{ pathname: "/player/" + data.recordHolder, search }}>
                                 <span className="text-secondary-text underline">
                                   {context.playerName(data.recordHolder)}
                                 </span>
@@ -845,7 +847,7 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                           {data.recordHolder ? (
                             <>
                               League record held by{" "}
-                              <Link to={"/player/" + data.recordHolder}>
+                              <Link to={{ pathname: "/player/" + data.recordHolder, search }}>
                                 <span className="text-secondary-text underline">
                                   {context.playerName(data.recordHolder)}
                                 </span>

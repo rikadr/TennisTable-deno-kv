@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { classNames } from "../../common/class-names";
 import { stringToColor } from "../../common/string-to-color";
+import { usePlayerLinkSearch } from "../../hooks/use-player-link-search";
 
 type Props = {
   playerId?: string;
@@ -9,6 +10,7 @@ type Props = {
 
 export const PlayerGamesDistrubution: React.FC<Props> = ({ playerId }) => {
   const context = useEventDbContext();
+  const search = usePlayerLinkSearch();
   const summary = context.leaderboard.getPlayerSummary(playerId || "");
   const mostGames = summary?.gamesDistribution[0]?.games || 0;
 
@@ -17,7 +19,7 @@ export const PlayerGamesDistrubution: React.FC<Props> = ({ playerId }) => {
       {summary?.gamesDistribution.map(({ oponentId, games }, index) => {
         const fraction = games / mostGames;
         return (
-          <Link to={`/player/${oponentId}`} className="group" key={index}>
+          <Link to={{ pathname: `/player/${oponentId}`, search }} className="group" key={index}>
             <div className="relative w-full h-6 group-hover:bg-primary-text/5">
               <div
                 className={classNames(

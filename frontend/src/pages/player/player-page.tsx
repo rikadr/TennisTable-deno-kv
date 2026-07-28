@@ -15,6 +15,7 @@ import { PlayerAchievements } from "./player-achievements";
 import { PlayerPredictionsPage } from "./player-predictions-page";
 import { PlayerSeasonStats } from "./player-season-stats";
 import { PlayerPairings } from "./player-pairings";
+import { usePlayerLinkSearch } from "../../hooks/use-player-link-search";
 
 type TabType = "overview" | "games" | "statistics" | "achievements" | "predictions" | "season";
 const tabs: { id: TabType; label: string }[] = [
@@ -49,6 +50,7 @@ export const PlayerPage: React.FC = () => {
   const hasParticipatedInAnySeason = seasons.some((s) => s.getLeaderboard().some((p) => p.playerId === playerId));
 
   const activeTab = (searchParams.get("tab") as TabType) || "overview";
+  const playerLinkSearch = usePlayerLinkSearch();
 
   const setActiveTab = (tab: TabType) => {
     setSearchParams((prev) => {
@@ -282,7 +284,7 @@ export const PlayerPage: React.FC = () => {
                   .map((game) => (
                     <tr key={game.time} className="border-b border-primary-text hover:brightness-110 transition-colors">
                       <td className="py-1 px-1 md:px-4">
-                        <Link to={"/player/" + game.oponent}>
+                        <Link to={{ pathname: "/player/" + game.oponent, search: playerLinkSearch }}>
                           <span className="font-medium truncate max-w-[70px] md:max-w-none inline-block">{context.playerName(game.oponent)}</span>
                         </Link>
                       </td>
