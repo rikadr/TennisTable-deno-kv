@@ -24,6 +24,10 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  * The bar for a post: it changes something players can see or try, or it is a
  * significant change under the hood. Small fixes, admin-only tweaks and
  * internal plumbing are left out.
+ *
+ * Write about what is new. Describe how it used to work only where that is
+ * needed to make the new thing land - the reader is here for what changed to,
+ * not for what it changed from.
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
@@ -34,8 +38,9 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
     summary: "Records for the earliest and latest game ever played, which move when someone beats them.",
     body: [
       text(
-        "League-wide rather than personal. Play at 06:12 and you take the Earliest Game record from whoever held it; the same goes for the last game of the evening.",
+        "Two league-wide records rather than personal ones. Play at 06:12 and you take the Earliest Game record from whoever held it; stay late enough and the same goes for the last game of the day.",
       ),
+      text("They keep moving, so neither is ever settled for good."),
     ],
   },
   {
@@ -46,10 +51,10 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
     summary: "Lose once and you drop into a losers bracket instead of going home.",
     body: [
       text(
-        "Single elimination gives half the field exactly one game. In a double elimination tournament everyone who loses drops into a losers bracket and keeps playing, and the winners-bracket champion meets the losers-bracket survivor in a grand final.",
+        "Tournaments can now be run as double elimination. Everyone who loses drops into a losers bracket and keeps playing, and the winners-bracket champion meets the losers-bracket survivor in a grand final. Losing once no longer ends your evening.",
       ),
       text(
-        "It is a choice on the tournament form, so both formats are available. The bracket view, the pending games list and signup all handle the extra structure.",
+        "It is a choice on the tournament form, alongside the original single elimination format. The bracket view, the pending games list and signup all handle the extra structure.",
       ),
     ],
   },
@@ -65,7 +70,7 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
         "Full House - beat a wide slice of the league.",
         "Humbled - the mirror of Full House, for the day nothing went your way.",
       ),
-      text("These reward the shape of a run rather than a single result."),
+      text("These reward the shape of a run rather than any single result."),
     ],
   },
   {
@@ -76,10 +81,10 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
     summary: "Tracked and live games now show each player's win probability while you play.",
     body: [
       text(
-        "The live game pages and the TV overlay show a win percentage for each player, from the same model as the 1v1 comparison. It updates as the score changes.",
+        "The live game pages and the TV overlay show a win percentage for each player, updating as the score changes. It comes from the same model as the 1v1 comparison.",
       ),
       text(
-        "It is the first place predictions turn up without you going looking for them, which turns out to be a much better way to start an argument about whether the rating system is fair.",
+        "It is the first place predictions turn up without you going looking for them, which turns out to be a very effective way to start an argument about whether the rating system is fair.",
       ),
     ],
   },
@@ -91,10 +96,10 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
     summary: "The app works out whose serve it is and shows it next to the score.",
     body: [
       text(
-        "Serve alternates every two points, and every point at deuce. This is trivially simple and universally forgotten mid-rally.",
+        "Whose serve it is now appears in the game tracker, the live game pages, the TV overlay and the live game card on the leaderboard. No need to remember it.",
       ),
       text(
-        "The score is enough to derive it, so it now appears in the game tracker, the live game pages, the TV overlay and the live game card on the leaderboard.",
+        "Serve alternates every two points, and every point at deuce - trivially simple, universally forgotten mid-rally, and entirely derivable from the score.",
       ),
     ],
   },
@@ -107,20 +112,19 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
       "The prediction engine was rebuilt around pre-computed lookups and memoisation, and its slowest part moved to a background thread.",
     body: [
       text(
-        "Predictions had become the slowest thing in the app. The old module walked every game in the league to answer a single question about two players, and it did that work again from scratch every time a page asked - synchronously, so the UI stopped until it finished.",
+        "Predictions are dramatically faster, and pages that show them no longer freeze while they are worked out. Four changes got it there:",
       ),
-      text("The rebuild attacked it from four directions:"),
       list(
-        "Stats for every pair of players are accumulated once up front, so looking up how two people have done against each other is a direct map lookup instead of a pass over the full game list.",
-        "A map of who has played whom is built lazily and reused. Predictions that have to route through a shared opponent - because the two players have never met - use it to find the overlap instead of searching.",
-        "One-layer and two-layer results are memoised, and each result is written under both player orderings, so A against B and B against A share the same entry.",
-        "Converting point odds into set odds into game odds comes from pre-computed probability tables rather than being derived on each call.",
+        "Stats for every pair of players are accumulated once up front, so looking up how two people have done against each other is a direct map lookup rather than a pass over the full game list.",
+        "A map of who has played whom is built lazily and reused. Predictions that have to route through a shared opponent - because the two players have never met - use it to find the overlap instead of searching for it.",
+        "One-layer and two-layer results are memoised, and each result is stored under both player orderings, so A against B and B against A share an entry.",
+        "Converting point odds into set odds into game odds reads from pre-computed probability tables instead of being derived on every call.",
       ),
       text(
-        "The remaining expensive piece - the prediction history timeline - moved into a web worker, joining the tournament and Elo simulations already there. Graphs now fill in while you scroll instead of blocking the page.",
+        "The slowest remaining piece, the prediction history timeline, moved into a web worker alongside the tournament and Elo simulations. Graphs now fill in while you scroll.",
       ),
       text(
-        "Anything cached has to be invalidated, and a single new game changes every prediction involving those two players, so the engine has an explicit cache clear rather than hoping the numbers drift back into agreement.",
+        "For context on the size of the problem: the old engine walked every game in the league to answer a single question about two players, and did it again from scratch on every request, synchronously. Anything cached needs invalidating, and one new game changes every prediction involving those two players, so the engine has an explicit cache clear.",
       ),
     ],
   },
@@ -143,18 +147,18 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
     date: "2026-06-20",
     tags: ["technical"],
     summary:
-      "The event store moved off Deno KV to SQL, which also changed where the database is hosted and how the server is deployed.",
+      "The event store now runs on SQL, which also changed where the database is hosted and how the server is deployed.",
     body: [
-      text(
-        "Deno KV is a good place to start - no schema, no connection string - but the event store had outgrown it. Reading the full log meant paging through a key-value list, a single value was capped at 64 KiB, and there was no way to ask the store anything more specific than 'give me everything'.",
-      ),
-      text("Events now live in SQL behind a database interface with two implementations:"),
+      text("Events live in SQL behind a database interface with two implementations:"),
       list(
         "SQLite for local development, so the server runs with no external service at all.",
-        "A hosted Postgres in production, which moved the database to a different provider.",
+        "A hosted Postgres in production, on a new database provider.",
       ),
       text(
-        "The schema is a single file. The old inline migrations that ran on server startup were a Deno KV coping mechanism and went away with it.",
+        "The schema is a single file, which replaced the inline migrations that used to run on server startup.",
+      ),
+      text(
+        "The store it replaced was Deno KV - a fine place to start, with no schema and no connection string, but reading the full event log meant paging through a key-value list, a single value was capped at 64 KiB, and there was no way to ask it anything more specific than 'give me everything'. SQL answers questions.",
       ),
     ],
   },
@@ -165,17 +169,17 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
     tags: ["feature-update"],
     summary: "Peak Elo, podium time and a games won/lost split, plus a leaderboard of everyone who has ever played.",
     body: [
-      text("How do you rank careers that never overlapped? The score gained three factors:"),
+      text("The career score now weighs three more things:"),
       list(
-        "All-time high Elo rather than your final rating - retiring after a bad run should not erase a good year.",
+        "All-time high Elo rather than final rating, so retiring after a bad run does not erase a good year.",
         "Podium time - how long you spent in the top three, measured over time rather than counted.",
-        "Experience split into games won and games lost, so showing up a lot counts for something even when it did not go well.",
+        "Experience split into games won and games lost, so showing up counts for something even when it did not go well.",
       ),
       text(
-        "Peak Elo was also wrong for players who never crossed the ranked threshold: they had no leaderboard entries to read a peak from and were scoring zero instead of their actual best.",
+        "Peak Elo is now also correct for players who never crossed the ranked threshold. They have no leaderboard entries to read a peak from, and used to score zero rather than their actual best.",
       ),
       text(
-        "The new leaderboard page ranks every player who has ever played, active and retired, together. It is not a real standing, and it is the most argued-about screen in the app.",
+        "There is a new page too: a leaderboard ranking every player who has ever played, active and retired, together. It is not a real standing, and it is the most argued-about screen in the app.",
       ),
     ],
   },
@@ -187,7 +191,7 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
     summary: "A playable pong game, under the simulations page.",
     body: [
       text(
-        "Self-contained, with no connection to the event store, the leaderboard or anything else. It does not affect your Elo. It is on its fourth version.",
+        "Entirely self-contained, with no connection to the event store, the leaderboard or anything else. It does not affect your Elo. It is on its fourth version.",
       ),
     ],
   },
@@ -205,7 +209,7 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
         "Marathon Set is league-wide rather than personal - it belongs to whoever played the longest deuce battle on record, and moves when someone plays a longer one.",
       ),
       text(
-        "Achievement cards also started carrying context, so a card can say who you beat and by how much instead of only when you earned it.",
+        "Achievement cards also carry context now, so a card can tell you who you beat and by how much rather than only when you earned it.",
       ),
     ],
   },
@@ -217,10 +221,7 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
     summary: "Your rating and your history only change when you play. Nothing else moves them.",
     body: [
       text(
-        "Elo is path-dependent: your rating is what you get by replaying every game in order. Deactivating a player used to pull their games out of that replay, which recalculated everyone they had ever played against. A rating you earned in March could shift in May because a colleague left.",
-      ),
-      text(
-        "Retired players now stay in the calculation. They are filtered out of the standings, but their games remain part of history, so your score and your graph move when you play and at no other time.",
+        "Retired players stay in the Elo calculation. They are filtered out of the standings, but their games remain part of history, so your score and your graph move when you play and at no other time. Previously, deactivating a player pulled their games out of the replay and recalculated everyone they had ever played - a rating you earned in March could shift in May because a colleague left.",
       ),
       text("Two reasons that is worth more than it sounds:"),
       list(
@@ -228,7 +229,7 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
         "It lets other features depend on a score. Achievements tied to your Elo or your leaderboard rank, and Hall of Fame scoring built on peak rating and time on the podium, all need numbers that do not move underneath them.",
       ),
       text(
-        "There is a real cost. Elo is zero-sum, so when a high-ranked player retires, their points stay out of play for good rather than being redistributed. That is a genuine downside - it is just rare enough to be worth paying for what it buys, and a pile of achievements plus a career score players can trust is worth considerably more than the occasional pocket of points sitting out of circulation.",
+        "There is a real cost. Elo is zero-sum, so when a high-ranked player retires their points stay out of play for good rather than being redistributed. That is a genuine downside - it is just rare enough to be worth paying for what it buys, and a pile of achievements plus a career score players can trust is worth considerably more than the occasional pocket of points sitting out of circulation.",
       ),
       text("This is a call that went back and forth a few times before it settled here."),
     ],
@@ -242,7 +243,7 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
       "A public and an admin page for a game in progress, plus a chrome-free overlay for putting the score on a screen next to the table.",
     body: [
       text(
-        "One page for whoever is running the score and one for everyone watching. Live game state lives on the server and is pushed to viewers over the existing WebSocket connection, so the public page does not poll.",
+        "One page for whoever is running the score, one for everyone watching. State lives on the server and is pushed to viewers over the existing WebSocket connection, so the public page never polls.",
       ),
       text(
         "The overlay is a separate route that renders with no menu, header or padding, so it can be captured and shown on a TV. It has a zoom option for different screen sizes and a fallback refetch for when the connection drops mid-match.",
@@ -257,10 +258,10 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
     summary: "A place for players who have left, so the leaderboard can be about the people still playing.",
     body: [
       text(
-        "Until now, someone who left had two options: sit on the leaderboard forever slowly sinking, or be deactivated and disappear as though they had never played.",
+        "Retired players get their own page, ranked by a career score built from what they did while they were active, with a page for each of them.",
       ),
       text(
-        "The Hall of Fame is the third option - a separate page ranking retired players by a career score, with a page for each of them. It also made deactivating someone a reasonable thing to do, which it had not been before.",
+        "It gives leaving a third option. Before, someone who left could either sit on the leaderboard forever slowly sinking, or be deactivated and disappear as though they had never played - which is why nobody was ever deactivated.",
       ),
     ],
   },
@@ -269,13 +270,13 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
     title: "Admins can create tournaments without a deploy",
     date: "2026-02-22",
     tags: ["feature-update"],
-    summary: "Tournaments are created and edited in the app. Until now every tournament was a code change.",
+    summary: "Tournaments are created and edited in the app.",
     body: [
       text(
-        "The history is full of commits like 'start optio tournament', '2025 year end tournament' and 'remove vlad from tournament'. Every tournament, signup change and start-date adjustment meant editing code and deploying. That works right up until the person who wants the tournament is not the person who wrote the app.",
+        "There is a form now: create a tournament, edit it, set the start date, adjust the players. The Finals and Group Play tabs also stay hidden until a tournament has actually started.",
       ),
       text(
-        "There is now a form: create a tournament, edit it, set the start date, adjust the players. The Finals and Group Play tabs also stay hidden until a tournament has actually started.",
+        "Every tournament used to be a code change and a deploy - the history is full of commits like 'start optio tournament' and 'remove vlad from tournament'. That works right up until the person who wants the tournament is not the person who wrote the app.",
       ),
     ],
   },
@@ -284,13 +285,16 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
     title: "Recent games page",
     date: "2026-02-20",
     tags: ["new-feature"],
-    summary: "Recent results moved from a box on the leaderboard to a page with scores and an overall/season toggle.",
+    summary: "A page for recent results, with scores and an overall/season toggle.",
     body: [
-      text(
-        "Recent games had been a widget showing the last handful of results. It is the most-looked-at thing in the app and it kept outgrowing its box.",
+      text("Recent results have a page of their own, showing:"),
+      list(
+        "Actual scores, not just winner and loser.",
+        "A toggle between overall and season points - the same game is worth different amounts in each.",
+        "Profile pictures, and column headers.",
       ),
       text(
-        "The page shows actual scores rather than just winner and loser, profile pictures, column headers, and a toggle between overall and season points - the same game is worth different amounts in each.",
+        "It had been a small widget on the leaderboard showing the last handful of results. That widget is the most-looked-at thing in the app, and it kept outgrowing its box.",
       ),
     ],
   },
@@ -302,10 +306,10 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
     summary: "A leaderboard that resets, so joining late does not mean you can never win anything.",
     body: [
       text(
-        "The problem with an all-time rating is that the top of it is settled. If you joined last month you are not catching someone with 600 games no matter how well you play, and 'you cannot win' is a poor reason to keep playing.",
+        "Seasons run on a schedule, each with its own leaderboard, podium, graph and per-player page, plus an achievement for winning one. Finish level on points and the player who played more games takes it - turnout beats protecting a rating.",
       ),
       text(
-        "Seasons run on a schedule with their own leaderboard, podium, graph and per-player page, plus an achievement for winning one. If two players finish level on points, the one who played more games takes it - turnout beats protecting a rating.",
+        "It exists because an all-time rating settles at the top. If you joined last month you are not catching someone with 600 games no matter how well you play, and 'you cannot win' is a poor reason to keep playing. A season is short enough to be worth entering.",
       ),
       text(
         "It spent two months visible only to logged-in players while the edges were worked out: what happens to games played right on a boundary, and how a season interacts with achievements. There is a FAQ page, which is the tell for a feature people have opinions about.",
@@ -317,14 +321,15 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
     title: "Events cached in your browser",
     date: "2025-11-25",
     tags: ["technical"],
-    summary: "The client stores the event log locally and only asks the server for what happened since its last event.",
+    summary: "The app stores the event log locally and only fetches what happened since your last visit.",
     body: [
       text(
-        "A client that projects the full event log has to download the full event log. That was fine at a few hundred events and less fine at tens of thousands.",
+        "Your browser keeps the event log. On startup the app reads its cache, finds the newest event it already has, and asks the server only for what came after it - so on a warm cache a page load fetches almost nothing and starts almost immediately.",
       ),
       text(
-        "Events are now persisted locally. On startup the client reads its cache, finds the newest event it has, and asks the server only for what came after that. On a warm cache a page load fetches almost nothing. Settings has a button to clear it, because every cache eventually needs a manual escape hatch.",
+        "It is the fix for the cost of a thick client: projecting the full event log means downloading the full event log, which was fine at a few hundred events and less fine at tens of thousands.",
       ),
+      text("Settings has a button to clear the cache, because every cache eventually needs a manual escape hatch."),
     ],
   },
   {
@@ -332,16 +337,16 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
     title: "Tournament win predictions",
     date: "2025-11-15",
     tags: ["new-feature"],
-    summary: "Simulating a whole bracket thousands of times to show who is likely to take it.",
+    summary: "Who is likely to take the whole tournament, from simulating the bracket thousands of times.",
     body: [
       text(
-        "Predicting one game is a single probability. Predicting a tournament means playing the bracket out thousands of times and counting who ends up with the trophy - accounting for the games already played, and the ones that were skipped.",
+        "Tournaments show each player's chance of winning the whole thing. It plays the bracket out thousands of times and counts who ends up with the trophy, accounting for the games already played and the ones that were skipped. It runs in a web worker, so the page stays responsive while it works.",
       ),
       text(
-        "Skips had been a mutable flag on a tournament. To replay a bracket the simulation needs to know when a game was skipped, not just that it was, so skips became part of the event log. That also made undoing a skip possible.",
+        "Skips had to become part of the event log for this: replaying a bracket needs to know when a game was skipped, not just that it was. That also made undoing a skip possible.",
       ),
       text(
-        "The simulation runs in a web worker, so the page stays responsive. The tournament page was split into tabs at the same time, since a bracket, a group table, a signup list and a prediction chart do not fit on one phone screen.",
+        "The tournament page was split into tabs in the same stretch, since a bracket, a group table, a signup list and a prediction chart do not fit on one phone screen.",
       ),
     ],
   },
@@ -353,13 +358,10 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
     summary: "Two dozen achievements with progress tracking, on player pages and a page of their own.",
     body: [
       text(
-        "This started as a small list of badges and was rewritten within two days into something closer to a rules engine: each achievement is evaluated against your projected history, and the ones you have not earned yet show how far along you are.",
+        "Achievements are rules evaluated against your history, and the ones you have not earned show how far along you are. The first batch included Nice Game, Close Calls, Edge Lord, Consistency Is Key, Variety Player, Best Friends, Welcome Committee, Community Builder and a set of tournament achievements.",
       ),
       text(
-        "The first batch included Nice Game, Close Calls, Edge Lord, Consistency Is Key, Variety Player, Best Friends, Welcome Committee, Community Builder and a set of tournament achievements.",
-      ),
-      text(
-        "Deciding what counts as 'active' turned out to be the hard part, and rules that read like 'win 5 in a row without dropping a set' are very easy to get subtly wrong - there are now over 30 test files covering them.",
+        "Deciding what counts as 'active' turned out to be the hard part, and rules like 'win 5 in a row without dropping a set' are very easy to get subtly wrong - there are now over 30 test files covering them.",
       ),
     ],
   },
@@ -371,9 +373,9 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
     summary: "Put a phone on the table, tap points as they happen, and save the finished game.",
     body: [
       text(
-        "Adding a game afterwards means remembering the score, which people are bad at. The tracker records it as you play and hands the result straight to the add-game flow.",
+        "The tracker records a game while you play it and hands the result straight to the add-game flow, so nothing has to be remembered afterwards.",
       ),
-      text("Because there are now two ways in, adding a game starts with a choice: a finished game, or a live one."),
+      text("Adding a game now starts with a choice: a finished game you type in, or a live one you track."),
     ],
   },
   {
@@ -384,9 +386,11 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
     summary: "A graph of who plays whom, with thicker connections where two people play each other more.",
     body: [
       text(
-        "The leaderboard tells you who is good. The network tells you that half the league has never played the other half, which is the thing that actually undermines a rating system.",
+        "Players are nodes, games are the connections between them. It shows you the shape of the league: who plays whom, who plays everyone, and which parts of the office have never met across a table.",
       ),
-      text("It lives under the simulations page and shows active players."),
+      text(
+        "That last one matters more than it looks - two clusters that never play each other cannot be meaningfully ranked against each other, which is the thing that quietly undermines any rating system. Lives under the simulations page, showing active players.",
+      ),
     ],
   },
   {
@@ -397,10 +401,10 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
     summary: "How many points your opponents actually score against you, not just whether they won.",
     body: [
       text(
-        "Win/loss records flatten everything. Beating someone 11-9 five times is a very different relationship from beating them 11-2 five times, and the leaderboard cannot tell you which one you have.",
+        "The graph shows the spread of scores your opponents put up against you, so you can see whether your wins are comfortable or narrow. Bars span only the real minimum and maximum, since a bar starting at zero would imply you have conceded every score below it.",
       ),
       text(
-        "The graph shows the spread of scores your opponents put up against you. Bars span only the real minimum and maximum, since a bar starting at zero implies you have conceded every score below it.",
+        "It answers something a win/loss record cannot: beating someone 11-9 five times is a very different relationship from beating them 11-2 five times.",
       ),
     ],
   },
@@ -412,10 +416,10 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
     summary: "What the standings would look like if everyone played everyone the same number of times.",
     body: [
       text(
-        "The real leaderboard is partly a ranking of skill and partly a ranking of who you happened to play. Beat the same three people forty times and your rating says something quite narrow.",
+        "It simulates the games that never happened - every player against every other player, using the prediction model for each matchup - and ranks the results. A leaderboard with the schedule taken out of it.",
       ),
       text(
-        "The expected leaderboard simulates the games that never happened: every player against every other player, using the prediction model for each matchup. It is not the real leaderboard and is not meant to replace it - it is the answer to 'yes, but'.",
+        "Useful because the real standings are partly a ranking of skill and partly a ranking of who you happened to play: beat the same three people forty times and your rating says something quite narrow. This is not the real leaderboard and is not meant to replace it. It is the answer to 'yes, but'.",
       ),
     ],
   },
@@ -428,19 +432,16 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
       "The first web worker in the app. Heavy simulations run on a background thread, so the page stays responsive while they work.",
     body: [
       text(
-        "Monte Carlo simulation is the kind of work a browser is bad at hosting: tens of thousands of simulated games, all pure arithmetic, all in one go. Run it where the UI lives and the page simply stops - no scrolling, no button presses, and eventually a browser warning that the tab is unresponsive.",
+        "Simulations run on a background thread. The page stays interactive while they work, and the progress bar actually moves, because the worker posts progress back as it goes.",
       ),
       text(
-        "The worst part is that a loading spinner cannot help you, because the thread that would animate it is the one doing the work.",
+        "On the main thread, tens of thousands of simulated games meant the page simply stopped - no scrolling, no button presses, eventually a browser warning that the tab was unresponsive. A loading spinner could not help, because the thread that would animate it was the one doing the work.",
       ),
       text(
-        "Moving the simulation to a web worker put it on a background thread. The page stays interactive while it runs, and the progress bar actually moves, because progress is posted back from the worker as it goes. How often it reports is a real trade-off - too chatty and the messages cost more than the work, too quiet and the bar jumps in steps.",
+        "The payoff arrived the next day: with the main thread free, the iteration count went up. Work that had been kept small to avoid freezing the page could be as expensive as it needed to be.",
       ),
       text(
-        "The payoff came the next day: with the main thread free, the iteration count went up. Work that had to be kept small to avoid freezing the page could now be as expensive as it needed to be.",
-      ),
-      text(
-        "This became the pattern for everything heavy since. Elo simulation, tournament win predictions and prediction history all run in workers now, and it is what makes a browser-side rating engine practical at all.",
+        "This became the pattern for everything heavy since. Elo simulation, tournament win predictions and prediction history all run in workers, and it is what makes a browser-side rating engine practical at all.",
       ),
     ],
   },
@@ -452,10 +453,13 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
     summary: "Elo history, games, stats and achievements split into tabs instead of one very long scroll.",
     body: [
       text(
-        "Every addition to the player page was reasonable on its own and the result was enormous. It was rebuilt as a parallel page and swapped in once it was ready, so the old one kept working while the two could be compared.",
+        "The player page is organised into tabs, with an overview that leads on graphs. The Elo timeline has a range slider, so you can zoom into a month instead of squinting at two years of history.",
       ),
       text(
-        "The Elo timeline also got a range slider, so you can zoom into a month instead of squinting at two years of history. Mobile padding was reduced throughout - on a phone held next to the table, every wasted pixel costs a row of data.",
+        "Mobile padding was cut throughout at the same time - on a phone held next to the table, every wasted pixel costs a row of data.",
+      ),
+      text(
+        "It was built as a parallel page and swapped in once ready, so the old one kept working and the two could be compared side by side.",
       ),
     ],
   },
@@ -467,13 +471,13 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
     summary: "Games record 11-9, 11-7, 9-11 instead of just who won, and can be corrected afterwards.",
     body: [
       text(
-        "The original data model was two players and a winner. That is all Elo needs, and it threw away the thing everyone talks about afterwards.",
+        "Games carry their scores. Set points are optional, so a game played to one set records cleanly, and a score can be edited after the fact for when you typo.",
       ),
       text(
-        "Most of the work went into the input: entering four or six numbers on a phone while standing next to a table, with optional set points that have to stay optional without letting nonsense through. Scores can also be edited after the fact, for when you typo.",
+        "Most of the work went into the input: entering four or six numbers on a phone, standing up, next to a table.",
       ),
       text(
-        "Scores made a lot of later work possible - the opponent score graph, close-call achievements, Marathon Set, the serve tracker, and predictions that can reason about points and sets rather than just wins.",
+        "Scores made a lot of later work possible - the opponent score graph, close-call achievements, Marathon Set, the serve tracker, and predictions that reason about points and sets rather than just wins. The original model was two players and a winner, which is all Elo needs and throws away everything people actually talk about afterwards.",
       ),
     ],
   },
@@ -482,13 +486,16 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
     title: "K-factor decay tried and reverted",
     date: "2025-04-10",
     tags: ["removed-feature", "technical"],
-    summary: "Reducing how much a single game moves an experienced player's rating ran for two months and was removed.",
+    summary: "A game moves your rating by the same amount no matter how many you have played.",
     body: [
       text(
-        "In Elo, K controls how much one game moves your rating. Chess federations lower it for established players so that one bad Tuesday does not undo a year. Here, past 200 games, K decayed from 32 towards a floor of 10.",
+        "K, the factor controlling how much a single game moves your rating, is a constant again. It is the same for a player with 20 games and one with 500.",
       ),
       text(
-        "An office league is not a chess federation. A decaying K freezes the top of the table: the players with the most games become the hardest to move, so a newcomer who is genuinely better has to grind through games that barely register. It made the leaderboard more stable and less true.",
+        "For two months it decayed: past 200 games it fell from 32 towards a floor of 10, copying chess federations, where lowering K for established players stops one bad Tuesday undoing a year.",
+      ),
+      text(
+        "An office league is not a chess federation. A decaying K freezes the top of the table - the players with the most games become the hardest to move, so a newcomer who is genuinely better has to grind through games that barely register. It made the leaderboard more stable and less true.",
       ),
       text("The parameters are still in the function signature, ignored, in case the idea ever comes back."),
     ],
@@ -500,9 +507,11 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
     tags: ["new-feature"],
     summary: "Spring colours and an Easter logo, including a matching pass over the admin page.",
     body: [
-      text("The second seasonal theme. Easter colours, a themed logo, and a debug easter bunny that lasted one day."),
       text(
-        "Unlike Halloween, this one was switched back off three weeks later once the season had passed - a seasonal theme is turned on for the season rather than left to linger until someone notices.",
+        "The second seasonal theme: Easter colours, a themed logo, and a debug easter bunny that lasted exactly one day.",
+      ),
+      text(
+        "It gets switched off again once the season passes, rather than lingering until somebody notices it is June.",
       ),
     ],
   },
@@ -512,19 +521,19 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
     date: "2025-03-29",
     tags: ["technical"],
     summary:
-      "Tables of players and games became an append-only event log, projected into state in the browser. The biggest change the project has had.",
+      "The database is an append-only log of events, projected into state in the browser. The biggest change the project has had.",
     body: [
       text(
-        "Before: deleting a game deleted a row, and renaming a player rewrote a name and quietly broke every game that referenced the old one. There was no way to ask what the leaderboard looked like in November, because November was gone.",
-      ),
-      text(
-        "Now the database stores events - player created, game created, tournament signup - appended and never updated. State is what you get when you replay them.",
-      ),
-      text(
-        "The painful part was that player names had been primary keys since the first commit, and every reference had to move to an id while existing data was translated in place. With the server reduced to storing opaque payloads, validation moved to the client that creates them.",
+        "Everything is an event - player created, game created, tournament signup - appended and never updated. State is what you get by replaying them, and the full history is always there to be asked about.",
       ),
       text(
         "Almost everything since depends on it: seasons replay a date window, achievements are evaluated against history, prediction timelines walk it, and the event backup is just the log.",
+      ),
+      text(
+        "What it replaced was tables of players and games, where deleting a game deleted a row and renaming a player rewrote a name and quietly broke every game referencing the old one. There was no way to ask what the leaderboard looked like in November, because November was gone.",
+      ),
+      text(
+        "The painful part of getting here was that player names had been primary keys since the first commit, so every reference had to move to an id while existing data was translated in place. With the server reduced to storing opaque payloads, validation moved to the client that creates them.",
       ),
     ],
   },
@@ -533,16 +542,16 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
     title: "Theme system",
     date: "2025-03-19",
     tags: ["technical"],
-    summary: "Colours moved into CSS variables, so a theme is a list of values rather than conditionals in components.",
+    summary: "Themes are CSS variables, so adding one is a list of colours rather than a pass through every component.",
     body: [
       text(
-        "There were three themes, each implemented by branching inside components, and adding a fourth was going to be worse than adding the third.",
+        "Colours come from CSS variables exposed through Tailwind as primary, secondary and tertiary text and background pairs. Components never learn which theme is active.",
       ),
       text(
-        "Themes are now CSS variables exposed through Tailwind as primary, secondary and tertiary text and background colours. Components never learn which theme is active. The detail that made it work is opacity support, so modifiers like `/50` still work on a themed colour.",
+        "The detail that makes it usable is opacity support, so modifiers like `/50` still work on a themed colour - without it every border and divider in the app would have needed a hardcoded value.",
       ),
       text(
-        "There are now four per-organisation themes plus Halloween, Easter and Stealth, and any of them can be picked as an override in settings.",
+        "There are now four per-organisation themes plus Halloween, Easter and Stealth, and any of them can be picked as an override in settings. The previous approach branched inside components, which was survivable for three themes and would not have survived a fourth.",
       ),
     ],
   },
@@ -551,17 +560,15 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
     title: "One app, several organisations",
     date: "2025-03-15",
     tags: ["technical"],
-    summary: "A client config layer gives each organisation its own theme, logo, tournaments and ranked threshold.",
+    summary: "Each organisation gets its own theme, logo, tournaments and ranked threshold from a config layer.",
     body: [
       text(
-        "The app was built for one office. Then a second one wanted it, and the difference between 'our tool' and 'a tool' turned out to be a config object.",
+        "A client config gives each organisation its own theme and logo, page title and favicon, its own tournaments, and its own threshold for how many games you must play to be ranked. There are six of them now, plus one for local development.",
       ),
       text(
-        "Each client gets a theme and logo, its own page title and favicon, its own tournaments, and its own threshold for how many games you must play to be ranked. There are six of them now, plus one for local development.",
+        "The ranked threshold is the setting that moves most - anywhere between 5 and 30 games, depending on how much the office actually plays.",
       ),
-      text(
-        "The ranked threshold is the setting that moves most - it has been anywhere between 5 and 30 games depending on how much the office actually plays.",
-      ),
+      text("Before this the app was built for one office. The difference between 'our tool' and 'a tool' was a config object."),
     ],
   },
   {
@@ -572,7 +579,7 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
     summary: "A group stage before the bracket, so a tournament is worth turning up to even if you lose early.",
     body: [
       text(
-        "A pure knockout gives half the field exactly one game. In group play everyone plays several games in a group, and the group results seed the bracket.",
+        "Everyone plays several games in a group, and the group results seed the bracket. A knockout on its own gives half the field exactly one game.",
       ),
       text(
         "The hard part is distribution: near-equal groups from an arbitrary number of signups, seeded so the strong players do not all land together, and still sensible when someone drops out an hour before.",
@@ -584,16 +591,13 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
     title: "Future Elo predictions",
     date: "2025-02-05",
     tags: ["new-feature"],
-    summary: "A simulation of where your rating is heading, shown as a range with a confidence that grows as you play.",
+    summary: "Where your rating is heading, as a range with a confidence that grows as you play.",
     body: [
       text(
-        "Take your recent results, simulate forward, and show where your rating is likely to end up as a band rather than a single number.",
+        "Your recent results are simulated forward to show where your rating is likely to end up - as a band rather than a single number, with the confidence shown alongside it and visibly tightening the more you play.",
       ),
       text(
-        "The interesting problem is confidence. A prediction built on your last three games should be held loosely; one built on two hundred should not. Recent games also matter more than old ones, so the weighting has to decay - and how fast it decays is a judgement call dressed up as a parameter.",
-      ),
-      text(
-        "It has been retuned repeatedly since, and now runs off a half-life and an exponent that can be reasoned about rather than a set of hard-coded weights.",
+        "Confidence is the interesting problem. A prediction built on your last three games should be held loosely; one built on two hundred should not. Recent games matter more than old ones, so the weighting decays, and how fast it decays is a judgement call dressed up as a parameter. It now runs off a half-life and an exponent that can be reasoned about rather than a set of hardcoded weights.",
       ),
     ],
   },
@@ -602,10 +606,10 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
     title: "Simulations page",
     date: "2025-01-29",
     tags: ["new-feature"],
-    summary: "The speculative tools got their own section, away from the standings.",
+    summary: "A section of the app for the speculative tools, away from the standings.",
     body: [
       text(
-        "Monte Carlo charts and expected-wins calculations do not belong next to the leaderboard. The standings are a fact; a simulation is an argument.",
+        "Monte Carlo charts, expected wins and the other what-if tools have their own section, separate from the leaderboard. The standings are a fact; a simulation is an argument, and the two read better apart.",
       ),
       text(
         "It has since become the app's back room - expected leaderboard, individual points, win/loss, the player network and a playable pong game all live there. If something is interesting but not authoritative, that is where it goes.",
@@ -619,13 +623,13 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
     tags: ["new-feature"],
     summary: "Brackets with seeding and signup, skips for no-shows, and a list view for small screens.",
     body: [
-      text("A leaderboard measures the long run. A tournament produces an evening."),
       text(
-        "Seeding keeps the top two from meeting in round one. Skips handle people who do not turn up, and are reversible. The bracket has a list view as well as a tree, because a bracket on a phone is mostly horizontal scrolling.",
+        "Tournaments have a signup flow and a bracket with seeding, so the top two do not meet in round one. Skips handle people who do not turn up, and are reversible. There is a list view as well as a tree, because a bracket on a phone is mostly horizontal scrolling.",
       ),
       text(
         "Pending tournament games show up in the add-game page so you do not have to remember who you owe a match, and the game you just entered scrolls into view and wiggles.",
       ),
+      text("A leaderboard measures the long run. A tournament produces an evening."),
     ],
   },
   {
@@ -633,30 +637,29 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
     title: "New theme: Halloween",
     date: "2024-10-29",
     tags: ["new-feature"],
-    summary: "The first theme the app ever had - pumpkin colours and a pumpkin logo for October.",
+    summary: "Pumpkin colours and a pumpkin logo for October. The first theme the app had.",
     body: [
-      text("Orange and dark colours throughout, and the logo swapped for a pumpkin version in the nav menu."),
       text(
-        "It was built the direct way: conditionals inside components and hardcoded colours. That works for exactly one theme, and it is the reason the theming had to be rebuilt properly a few months later.",
+        "Orange and dark colours throughout, with a pumpkin version of the logo in the nav menu. It comes back every October.",
       ),
-      text("It comes back every October."),
+      text(
+        "Being the first theme, it was built the direct way - conditionals inside components and hardcoded colours. That works for exactly one theme, and it is why the theming was rebuilt properly a few months later.",
+      ),
     ],
   },
   {
     slug: "farmer-score-removed",
-    title: "Farmer score added and removed",
+    title: "Farmer score removed",
     date: "2024-10-28",
     tags: ["removed-feature"],
-    summary: "A metric for how much you were farming easy opponents. It lasted four days.",
+    summary: "The metric measuring how much you farmed easy opponents is gone, four days after it arrived.",
     body: [
+      text("The farmer score column and its page are gone. Nothing on the leaderboard grades who you choose to play."),
       text(
-        "Elo has a known exploit in a small league: find someone below you, beat them repeatedly, bank the points. So the app measured it, first as a column on the leaderboard and eventually as its own page.",
+        "It measured a real thing - Elo has a known exploit in a small league, where you find someone below you, beat them repeatedly and bank the points. The metric worked. The problem was social: a public number labelling colleagues as farmers turns a friendly leaderboard into an accusation.",
       ),
       text(
-        "The metric worked. The problem was social - a public number labelling colleagues as farmers turns a friendly leaderboard into an accusation.",
-      ),
-      text(
-        "The underlying question was real, and it came back in better forms: the player network, the player diversity chart, the Variety Player and Community Builder achievements, and the expected leaderboard. Same concern, reframed from 'you are farming' to 'play more people, it is more fun'. That framing stayed.",
+        "The underlying question survived in better forms: the player network, the player diversity chart, the Variety Player and Community Builder achievements, and the expected leaderboard. Same concern, reframed from 'you are farming' to 'play more people, it is more fun'.",
       ),
     ],
   },
@@ -667,10 +670,10 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
     tags: ["new-feature"],
     summary: "Take a photo and crop it in the app, instead of uploading a file.",
     body: [
+      text("Point your camera at yourself, crop, done. Faces appeared on the leaderboard within a day."),
       text(
         "Profile pictures had existed for months and almost nobody had one, because uploading a photo of yourself from a work laptop starts with finding a photo of yourself on a work laptop.",
       ),
-      text("Faces appeared on the leaderboard within a day."),
     ],
   },
   {
@@ -678,20 +681,16 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
     title: "Leaderboard calculation moved to the browser",
     date: "2024-10-14",
     tags: ["technical"],
-    summary:
-      "The server stopped computing the leaderboard and started shipping raw data, with all projection happening client-side.",
+    summary: "The server ships raw data and the browser does the projection. The decision the whole app now rests on.",
     body: [
       text(
-        "For the first five months the server loaded every player and game, replayed the Elo and returned a ranked list. Every page that wanted a slightly different cut of the data needed a new endpoint.",
+        "One endpoint returns everything, and the client projects it into leaderboards, stats and everything else. The backend stopped calculating standings entirely.",
       ),
       text(
-        "That inverted: one endpoint returns everything, and the client projects it. The backend leaderboard module was deleted in the same change.",
+        "It works because the data is small, the derived views are many and varied, and the calculations are pure. Ship the data once and the client can answer any question about it without a round trip - seasons, achievements, the expected leaderboard and the player network needed no backend work at all.",
       ),
       text(
-        "It works because the data is small, the derived views are many and varied, and the calculations are pure - ship the data once and the client can answer any question about it without a round trip. Seasons, achievements, the expected leaderboard and the player network all needed no backend work at all.",
-      ),
-      text(
-        "The cost is a real startup wait on a cold cache. Most of the caching and web-worker work since exists to pay for this decision.",
+        "The cost is a real startup wait on a cold cache, and most of the caching and web-worker work since exists to pay for it. Before, the server replayed every game on every request and returned a ranked list, which meant every page wanting a slightly different cut of the data needed a new endpoint.",
       ),
     ],
   },
@@ -703,13 +702,13 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
     summary: "A game entered on one phone shows up on every other screen immediately, with no refresh.",
     body: [
       text(
-        "Several people stand around the same table. Someone enters a result and everyone else is looking at a stale leaderboard until they think to refresh.",
-      ),
-      text(
-        "New events are now broadcast to every connected client. Keeping a long-lived connection honest to a browser tab that might be asleep, on a laptop that might be in a bag, took considerably longer than opening it in the first place - heartbeats, retries and shutdown cleanup.",
+        "New events are broadcast to every connected client, so the leaderboard updates itself while you are standing around the table looking at it.",
       ),
       text(
         "The same channel now carries cache invalidation when an admin edits an event, and it is what lets the live game page and the TV overlay work without polling.",
+      ),
+      text(
+        "Keeping a long-lived connection honest to a browser tab that might be asleep, on a laptop that might be in a bag, took considerably longer than opening it in the first place - heartbeats, retries and shutdown cleanup.",
       ),
     ],
   },
@@ -718,14 +717,15 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
     title: "Accounts and profile pictures",
     date: "2024-06-10",
     tags: ["new-feature"],
-    summary: "Sign-up, sessions that expire, and permission checks instead of everyone being able to do everything.",
+    summary: "Sign-up, sessions that expire, and permissions - plus the first profile pictures.",
     body: [
       text(
-        "Before this, anyone could do anything, including deleting players. Accounts brought sign-up, sessions with automatic logout when the token expires, and per-resource permission checks rather than one admin flag.",
+        "You can sign up, and what you are allowed to do depends on your role rather than being open to everyone. Sessions log you out when the token expires, and permissions are checked per resource rather than behind one admin flag.",
       ),
       text(
         "Including the check that stops an admin from removing their own access, which is the kind of thing you add immediately after doing it once.",
       ),
+      text("Profile pictures arrived in the same batch."),
     ],
   },
   {
@@ -733,14 +733,16 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
     title: "Unranked players and the ranked threshold",
     date: "2024-05-23",
     tags: ["new-feature"],
-    summary:
-      "New players are listed as unranked with a games-played count, instead of appearing last on the leaderboard on day one.",
+    summary: "New players are listed as unranked with a games-played count until they have played enough to be ranked.",
     body: [
       text(
-        "A fresh rating is 1000, and your first game against a decent player takes points off it. So a new player's experience was: join, lose, appear at the bottom of a public leaderboard with your name and your face on it.",
+        "Play a handful of games and you appear on the leaderboard. Before that you are listed separately as unranked, with a count so you can see how close you are.",
       ),
       text(
-        "Play a handful of games and you are on the leaderboard; before that you are listed separately with a count, so you can see how close you are. The threshold is per-organisation, and there is now a Ranked achievement for crossing it - same mechanic, better framing.",
+        "It exists because a fresh rating is 1000 and your first game against a decent player takes points off it - so a new player used to join, lose, and land at the bottom of a public leaderboard with their name and face on it.",
+      ),
+      text(
+        "The threshold is per-organisation, and there is now a Ranked achievement for crossing it. Same mechanic, better framing.",
       ),
     ],
   },
@@ -752,10 +754,10 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
     summary: "Day one: a Deno server, a key-value store, players, games and fifty lines of Elo.",
     body: [
       text(
-        "The first commit was a server with routes for players and games. Later the same day, Elo: seed everyone at 1000, replay every game in order, sort the result. Recomputed on the server on every request, keyed by player name.",
+        "A server with routes for players and games, and by the end of the day, Elo: seed everyone at 1000, replay every game in order, sort the result.",
       ),
       text(
-        "Almost every decision visible there has since been reversed. The calculation moved to the browser, names became ids, the tables became an event log, and the key-value store became SQL.",
+        "Almost every decision visible in it has since been reversed. The calculation moved to the browser, names became ids, the tables became an event log, and the key-value store became SQL.",
       ),
       text(
         "What survived is `K = 32`, a starting rating of 1000, and the shape of the Elo update - expected score from the rating difference, then a K-weighted correction. The arithmetic is still line for line the same.",
