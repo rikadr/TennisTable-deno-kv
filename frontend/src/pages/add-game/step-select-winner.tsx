@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { Elo } from "../../client/client-db/elo";
 import { classNames } from "../../common/class-names";
 import { fmtNum } from "../../common/number-utils";
@@ -43,6 +44,17 @@ export const StepSelectWinner: React.FC<{
           }
         />
       </div>
+
+      {/* Escape hatch for when the game has not actually been played yet. */}
+      <Link
+        to={`/add-game-track?player1=${encodeURIComponent(player1)}&player2=${encodeURIComponent(player2)}`}
+        className="block w-full py-3 px-4 rounded-lg text-center bg-secondary-background text-secondary-text hover:opacity-80 transition-opacity"
+      >
+        <div className="font-semibold">🏓 Track as live game instead</div>
+        <div className="text-sm opacity-80 mt-0.5">
+          Score {context.playerName(player1)} vs {context.playerName(player2)} point by point
+        </div>
+      </Link>
     </div>
   );
 };

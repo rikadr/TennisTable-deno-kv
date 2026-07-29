@@ -15,6 +15,8 @@ import { stringToColor } from "../../common/string-to-color";
 import { getServeInfo, Server } from "../../common/serve-tracker";
 import { ServeTrackerDisplay } from "../../common/serve-tracker-display";
 import { LiveGamePredictionCard } from "../live-game/live-game-prediction-card";
+import { session } from "../../services/auth";
+import { useLiveGameQuery, useUpdateLiveGameMutation } from "../live-game/use-live-game";
 
 interface SetPoint {
   player1: number;
@@ -51,6 +53,11 @@ export const TrackGamePage: React.FC = () => {
   const [firstServer, setFirstServer] = useState<Server>(1);
   const [validationError, setValidationError] = useState<string>("");
   const [gameSuccessfullyAdded, setGameSuccessfullyAdded] = useState(false);
+
+  const isAdmin = session.isAuthenticated && session.sessionData?.role === "admin";
+  // Only fetched to warn before overwriting a broadcast that is already running.
+  const liveGameQuery = useLiveGameQuery({ enabled: isAdmin });
+  const updateLiveGame = useUpdateLiveGameMutation();
 
   const addPoint = (player: number) => {
     setCurrentSetScore((prev) => ({
@@ -180,6 +187,48 @@ export const TrackGamePage: React.FC = () => {
 
     submitGame(winner, loser);
   };
+
+  /**
+   * Hands the match over to the broadcasted live game, keeping the score so far.
+   * From there the admin page is in charge of scoring, the public /live-game page
+   * follows along, and the game is saved from that flow instead of this one.
+   */
+  async function convertToBroadcastedLiveGame() {
+    if (!player1 || !player2) return;
+    setValidationError("");
+
+    const running = liveGameQuery.data;
+    const isRunning = !!running?.player1Id && !!running?.player2Id && running.startedAt !== null && !running.finishedAt;
+    if (
+      isRunning &&
+      !window.confirm(
+        `${context.playerName(running.player1Id)} vs ${context.playerName(
+          running.player2Id,
+        )} is being broadcasted right now. Replace it with this match?`,
+      )
+    ) {
+      return;
+    }
+
+    const now = Date.now();
+    try {
+      await updateLiveGame.mutateAsync({
+        player1Id: player1,
+        player2Id: player2,
+        setsWon: { ...matchData.setsWon },
+        currentSet: { ...currentSetScore },
+        completedSets: matchData.setPoints ?? [],
+        firstServer,
+        startedAt: now,
+        finishedAt: null,
+        updatedAt: now,
+      });
+    } catch (error) {
+      setValidationError(error instanceof Error ? error.message : "Could not start the broadcasted live game");
+      return;
+    }
+    navigate("/live-game/admin");
+  }
 
   const cancelMatch = () => {
     setStage("player-selection");
@@ -402,6 +451,12 @@ export const TrackGamePage: React.FC = () => {
             />
           </div>
 
+          {validationError && (
+            <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg text-sm">
+              {validationError}
+            </div>
+          )}
+
           {/* Sets History */}
           {matchData.setPoints && matchData.setPoints.length > 0 && (
             <div className="bg-white rounded-xl shadow-lg p-4">
@@ -434,6 +489,22 @@ export const TrackGamePage: React.FC = () => {
                 })}
               </div>
             </div>
+          )}
+
+          {/* Hand the match over to the broadcasted live game */}
+          {isAdmin && (
+            <button
+              onClick={convertToBroadcastedLiveGame}
+              disabled={updateLiveGame.isPending}
+              className="w-full mt-4 py-3 px-4 rounded-lg bg-secondary-background text-secondary-text hover:opacity-80 transition-opacity disabled:opacity-50"
+            >
+              <div className="font-semibold">
+                {updateLiveGame.isPending ? "Starting broadcast…" : "📺 Convert to broadcasted live game"}
+              </div>
+              <div className="text-sm opacity-80 mt-0.5">
+                Keeps the score so far and continues on the live game admin page
+              </div>
+            </button>
           )}
         </div>
       </div>

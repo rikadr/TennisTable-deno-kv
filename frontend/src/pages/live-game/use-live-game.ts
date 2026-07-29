@@ -5,8 +5,9 @@ import { queryClient } from "../../common/query-client";
 
 const LIVE_GAME_QUERY_KEY = ["live-game"];
 
-export function useLiveGameQuery(options?: { refetchIntervalMs?: number | false }) {
+export function useLiveGameQuery(options?: { refetchIntervalMs?: number | false; enabled?: boolean }) {
   return useQuery<LiveGameState | null>({
+    enabled: options?.enabled ?? true,
     queryKey: LIVE_GAME_QUERY_KEY,
     queryFn: async () => {
       const res = await fetch(`${process.env.REACT_APP_API_BASE_URL}/live-game`);

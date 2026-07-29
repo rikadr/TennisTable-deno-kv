@@ -31,6 +31,22 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
+    slug: "switch-to-live-tracking-mid-flow",
+    title: "Switch to live tracking without starting over",
+    date: "2026-07-29",
+    tags: ["feature-update"],
+    summary:
+      "The Choose Winner step of Add Finished Game now offers to track the match point by point instead, with both players carried over.",
+    body: [
+      text(
+        "Picking the two players and then realising the game has not been played yet no longer means backing out and picking them again. The button under Choose Winner takes you straight to live tracking with the same two players selected.",
+      ),
+      text(
+        "Admins get the same shortcut one step further along: while tracking a match, a button at the bottom hands it over to the broadcasted live game, keeping the sets and the current score. Scoring continues on the live game admin page and the match shows up on the public live game page and the TV overlay.",
+      ),
+    ],
+  },
+  {
     slug: "player-pairings-widget",
     title: "Player pairings on the player page",
     date: "2026-07-28",
