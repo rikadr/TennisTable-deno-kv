@@ -3,6 +3,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { stringToColor } from "../../common/string-to-color";
 import { classNames } from "../../common/class-names";
+import { readableTextColor } from "../../common/color-utils";
 import { usePlayerLinkSearch } from "../../hooks/use-player-link-search";
 
 type Props = {
@@ -18,18 +19,6 @@ function columnTitle(degree: number): string {
   if (degree === 1) return "Played";
   if (degree === 2) return "1 in between";
   return `${degree - 1} in between`;
-}
-
-/**
- * Reads a `#rrggbb` colour and picks black or white text for it, so names stay legible on both
- * the dark and the light player colours.
- */
-function textColor(background: string): string {
-  const hex = background.replace("#", "");
-  if (hex.length !== 6) return "#ffffff";
-  const [r, g, b] = [0, 2, 4].map((offset) => parseInt(hex.slice(offset, offset + 2), 16));
-  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-  return luminance > 0.6 ? "#000000" : "#ffffff";
 }
 
 type TagProps = {
@@ -58,7 +47,7 @@ const PlayerTag: React.FC<TagProps> = ({ playerId, title, dimmed, search, onRef,
         "block rounded-full px-3 py-1 text-sm font-medium whitespace-nowrap hover:brightness-110 transition-all",
         dimmed && "opacity-25",
       )}
-      style={{ backgroundColor: background, color: textColor(background) }}
+      style={{ backgroundColor: background, color: readableTextColor(background) }}
     >
       {context.playerName(playerId)}
     </Link>

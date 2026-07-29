@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { Predictions } from "../../client/client-db/predictions";
+import { classNames } from "../../common/class-names";
+import { readableOn, readableTextColor } from "../../common/color-utils";
 import { fmtNum } from "../../common/number-utils";
 import { stringToColor } from "../../common/string-to-color";
 import { LiveGameSetPoint } from "./live-game-types";
@@ -14,7 +16,15 @@ type Props = {
   setsWon: { player1: number; player2: number };
   currentSet: LiveGameSetPoint;
   completedSets: LiveGameSetPoint[];
+  /**
+   * Colour the win-chance bars with the players' own colours instead of the
+   * generic blue/purple pair.
+   */
+  usePlayerColors?: boolean;
 };
+
+/** The card's own background, so player-coloured text on it can be kept readable. */
+const CARD_SURFACE = "#ffffff";
 
 export const LiveGamePredictionCard: React.FC<Props> = ({
   player1Id,
@@ -24,8 +34,12 @@ export const LiveGamePredictionCard: React.FC<Props> = ({
   setsWon,
   currentSet,
   completedSets,
+  usePlayerColors = false,
 }) => {
   const context = useEventDbContext();
+
+  const player1Color = stringToColor(player1Id);
+  const player2Color = stringToColor(player2Id);
 
   // Mirror the player-page predictions tab: when at least one player is unranked
   // the prediction is gated behind a warning the user must acknowledge before it
@@ -130,30 +144,52 @@ export const LiveGamePredictionCard: React.FC<Props> = ({
       {hasPrediction ? (
         <>
           <div className="flex items-baseline justify-between text-sm font-semibold mb-1">
-            <span className="truncate max-w-[45%]" style={{ color: stringToColor(player1Id) }}>
+            <span className="truncate max-w-[45%]" style={{ color: player1Color }}>
               {player1Name}
             </span>
-            <span className="truncate max-w-[45%] text-right" style={{ color: stringToColor(player2Id) }}>
+            <span className="truncate max-w-[45%] text-right" style={{ color: player2Color }}>
               {player2Name}
             </span>
           </div>
           <div className="flex h-8 w-full overflow-hidden rounded-full bg-gray-100">
             <div
-              className="flex items-center justify-start bg-blue-500 px-2 text-xs font-bold text-white transition-all duration-500"
-              style={{ width: `${player1WinChance * 100}%` }}
+              className={classNames(
+                "flex items-center justify-start px-2 text-xs font-bold transition-all duration-500",
+                !usePlayerColors && "bg-blue-500 text-white",
+              )}
+              style={{
+                width: `${player1WinChance * 100}%`,
+                ...(usePlayerColors && { backgroundColor: player1Color, color: readableTextColor(player1Color) }),
+              }}
             >
               {player1WinChance >= 0.12 && `${fmtNum(player1WinChance * 100)}%`}
             </div>
             <div
-              className="flex items-center justify-end bg-purple-500 px-2 text-xs font-bold text-white transition-all duration-500"
-              style={{ width: `${player2WinChance * 100}%` }}
+              className={classNames(
+                "flex items-center justify-end px-2 text-xs font-bold transition-all duration-500",
+                !usePlayerColors && "bg-purple-500 text-white",
+              )}
+              style={{
+                width: `${player2WinChance * 100}%`,
+                ...(usePlayerColors && { backgroundColor: player2Color, color: readableTextColor(player2Color) }),
+              }}
             >
               {player2WinChance >= 0.12 && `${fmtNum(player2WinChance * 100)}%`}
             </div>
           </div>
           <div className="mt-1 flex justify-between text-xs font-semibold">
-            <span className="text-blue-600">{fmtNum(player1WinChance * 100)}% win chance</span>
-            <span className="text-purple-600">{fmtNum(player2WinChance * 100)}% win chance</span>
+            <span
+              className={classNames(!usePlayerColors && "text-blue-600")}
+              style={usePlayerColors ? { color: readableOn(player1Color, CARD_SURFACE) } : undefined}
+            >
+              {fmtNum(player1WinChance * 100)}% win chance
+            </span>
+            <span
+              className={classNames(!usePlayerColors && "text-purple-600")}
+              style={usePlayerColors ? { color: readableOn(player2Color, CARD_SURFACE) } : undefined}
+            >
+              {fmtNum(player2WinChance * 100)}% win chance
+            </span>
           </div>
           <div className="mt-3 text-center text-xs text-gray-500">{fmtNum(confidence * 100)}% confidence</div>
         </>

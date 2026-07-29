@@ -12,6 +12,7 @@ import { useTennisParams } from "../../hooks/use-tennis-params";
 import { classNames } from "../../common/class-names";
 import { ProfilePicture } from "../player/profile-picture";
 import { stringToColor } from "../../common/string-to-color";
+import { lighten, readableOn, readableTextColor } from "../../common/color-utils";
 import { getServeInfo, Server } from "../../common/serve-tracker";
 import { ServeTrackerDisplay } from "../../common/serve-tracker-display";
 import { LiveGamePredictionCard } from "../live-game/live-game-prediction-card";
@@ -33,6 +34,28 @@ interface MatchData {
 
 type Stage = "player-selection" | "scoring" | "summary";
 
+/** The surfaces the player colours are drawn on, so scores can be kept readable against them. */
+const CARD_SURFACE = "#ffffff";
+const ROW_SURFACE = "#f9fafb"; // bg-gray-50
+
+/** How much white is mixed into a player colour for their side of the score display. */
+const PANEL_TINT = 0.85;
+
+/** A surface filled with a player's colour, with the text colour that reads best on it. */
+function fill(color: string): React.CSSProperties {
+  return { backgroundColor: color, color: readableTextColor(color) };
+}
+
+/** The same, but lightened - for the secondary action next to a filled one. */
+function softFill(color: string): React.CSSProperties {
+  return fill(lighten(color, 0.35));
+}
+
+/** A player's colour as text on a surface, darkened where the raw colour is too pale to read. */
+function textOn(color: string, surface: string): React.CSSProperties {
+  return { color: readableOn(color, surface) };
+}
+
 export const TrackGamePage: React.FC = () => {
   const context = useEventDbContext();
   const addEventMutation = useEventMutation();
@@ -53,6 +76,11 @@ export const TrackGamePage: React.FC = () => {
   const [firstServer, setFirstServer] = useState<Server>(1);
   const [validationError, setValidationError] = useState<string>("");
   const [gameSuccessfullyAdded, setGameSuccessfullyAdded] = useState(false);
+
+  // The scoring and summary screens are colour coded per player instead of a fixed
+  // blue/purple pair, so each side matches the colour the player has everywhere else.
+  const player1Color = stringToColor(player1 || "");
+  const player2Color = stringToColor(player2 || "");
 
   const isAdmin = session.isAuthenticated && session.sessionData?.role === "admin";
   // Only fetched to warn before overwriting a broadcast that is already running.
@@ -247,7 +275,9 @@ export const TrackGamePage: React.FC = () => {
   if (stage === "player-selection") {
     return (
       <div className="p-4 max-w-xl m-auto">
-        {player1 && player2 && <PendingTournamentGame key={`${player1}-${player2}`} player1={player1} player2={player2} />}
+        {player1 && player2 && (
+          <PendingTournamentGame key={`${player1}-${player2}`} player1={player1} player2={player2} />
+        )}
 
         <div className="max-w-sm mx-auto pt-8 space-y-4">
           <StepSelectPlayers player1={{ id: player1, set: setPlayer1 }} player2={{ id: player2, set: setPlayer2 }} />
@@ -275,6 +305,9 @@ export const TrackGamePage: React.FC = () => {
     // Serve tracker: each player serves 2 points in a row, then it switches.
     const { server: currentServer } = getServeInfo(currentSetScore, firstServer);
 
+    const panel1Tint = lighten(player1Color, PANEL_TINT);
+    const panel2Tint = lighten(player2Color, PANEL_TINT);
+
     return (
       <div className="text-black p-4 pt-0">
         <div className="max-w-sm mx-auto">
@@ -284,7 +317,7 @@ export const TrackGamePage: React.FC = () => {
               <div className="flex justify-center items-center gap-6 mb-2">
                 <div className="flex flex-col items-center gap-1">
                   <ProfilePicture playerId={player1} size={50} border={2} />
-                  <span className="font-bold text-sm" style={{ color: stringToColor(player1 || "") }}>
+                  <span className="font-bold text-sm" style={textOn(player1Color, CARD_SURFACE)}>
                     {context.playerName(player1)}
                   </span>
                 </div>
@@ -297,7 +330,7 @@ export const TrackGamePage: React.FC = () => {
 
                 <div className="flex flex-col items-center gap-1">
                   <ProfilePicture playerId={player2} size={50} border={2} />
-                  <span className="font-bold text-sm" style={{ color: stringToColor(player2 || "") }}>
+                  <span className="font-bold text-sm" style={textOn(player2Color, CARD_SURFACE)}>
                     {context.playerName(player2)}
                   </span>
                 </div>
@@ -313,6 +346,8 @@ export const TrackGamePage: React.FC = () => {
                   firstServer={firstServer}
                   player1Name={context.playerName(player1)}
                   player2Name={context.playerName(player2)}
+                  player1Color={player1Color}
+                  player2Color={player2Color}
                   onSelectFirstServer={setFirstServer}
                 />
               </div>
@@ -322,19 +357,20 @@ export const TrackGamePage: React.FC = () => {
             {/* Score Display */}
             <div className="grid grid-cols-2 gap-2 mb-4">
               {/* Player 1 */}
-              <div className="bg-blue-50 rounded-lg p-2">
+              <div className="rounded-lg p-2" style={{ backgroundColor: panel1Tint }}>
                 <h3 className="text-sm font-semibold text-gray-700 mb-1 text-center truncate">
                   {currentServer === 1 && <span className="mr-1">🏓</span>}
                   {context.playerName(player1)}
                 </h3>
                 <div className="flex flex-col items-center justify-center gap-2">
-                  <div className="text-5xl font-bold text-blue-600 text-center">
+                  <div className="text-5xl font-bold text-center" style={textOn(player1Color, panel1Tint)}>
                     {currentSetScore.player1}
                   </div>
                   <div className="flex flex-col gap-2 w-full items-center">
                     <button
                       onClick={() => addPoint(1)}
-                      className="w-full max-w-28 aspect-square text-center bg-blue-600 text-white text-4xl font-bold rounded-lg hover:bg-blue-700 transition"
+                      className="w-full max-w-28 aspect-square text-center text-4xl font-bold rounded-lg hover:brightness-95 transition"
+                      style={fill(player1Color)}
                     >
                       +
                     </button>
@@ -345,8 +381,9 @@ export const TrackGamePage: React.FC = () => {
                         "w-full max-w-28 h-12 text-center rounded-lg transition text-2xl font-bold",
                         currentSetScore.player1 === 0
                           ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                          : "bg-blue-400 text-white hover:bg-blue-500",
+                          : "hover:brightness-95",
                       )}
+                      style={currentSetScore.player1 === 0 ? undefined : softFill(player1Color)}
                     >
                       -
                     </button>
@@ -355,19 +392,20 @@ export const TrackGamePage: React.FC = () => {
               </div>
 
               {/* Player 2 */}
-              <div className="bg-purple-50 rounded-lg p-2">
+              <div className="rounded-lg p-2" style={{ backgroundColor: panel2Tint }}>
                 <h3 className="text-sm font-semibold text-gray-700 mb-1 text-center truncate">
                   {currentServer === 2 && <span className="mr-1">🏓</span>}
                   {context.playerName(player2)}
                 </h3>
                 <div className="flex flex-col items-center justify-center gap-2">
-                  <div className="text-5xl font-bold text-purple-600 text-center">
+                  <div className="text-5xl font-bold text-center" style={textOn(player2Color, panel2Tint)}>
                     {currentSetScore.player2}
                   </div>
                   <div className="flex flex-col gap-2 w-full items-center">
                     <button
                       onClick={() => addPoint(2)}
-                      className="w-full max-w-28 aspect-square text-center bg-purple-600 text-white text-4xl font-bold rounded-lg hover:bg-purple-700 transition"
+                      className="w-full max-w-28 aspect-square text-center text-4xl font-bold rounded-lg hover:brightness-95 transition"
+                      style={fill(player2Color)}
                     >
                       +
                     </button>
@@ -378,8 +416,9 @@ export const TrackGamePage: React.FC = () => {
                         "w-full max-w-28 h-12 text-center rounded-lg transition text-2xl font-bold",
                         currentSetScore.player2 === 0
                           ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                          : "bg-purple-400 text-white hover:bg-purple-500",
+                          : "hover:brightness-95",
                       )}
+                      style={currentSetScore.player2 === 0 ? undefined : softFill(player2Color)}
                     >
                       -
                     </button>
@@ -395,10 +434,9 @@ export const TrackGamePage: React.FC = () => {
                 disabled={!player1Leading}
                 className={classNames(
                   "w-full py-3 rounded-lg font-semibold transition text-base",
-                  player1Leading
-                    ? "bg-blue-500 text-white hover:bg-blue-600"
-                    : "bg-gray-300 text-gray-500 cursor-not-allowed",
+                  player1Leading ? "hover:brightness-95" : "bg-gray-300 text-gray-500 cursor-not-allowed",
                 )}
+                style={player1Leading ? fill(player1Color) : undefined}
               >
                 Set Won by {context.playerName(player1)}
               </button>
@@ -407,10 +445,9 @@ export const TrackGamePage: React.FC = () => {
                 disabled={!player2Leading}
                 className={classNames(
                   "w-full py-3 rounded-lg font-semibold transition text-base",
-                  player2Leading
-                    ? "bg-purple-500 text-white hover:bg-purple-600"
-                    : "bg-gray-300 text-gray-500 cursor-not-allowed",
+                  player2Leading ? "hover:brightness-95" : "bg-gray-300 text-gray-500 cursor-not-allowed",
                 )}
+                style={player2Leading ? fill(player2Color) : undefined}
               >
                 Set Won by {context.playerName(player2)}
               </button>
@@ -448,6 +485,7 @@ export const TrackGamePage: React.FC = () => {
               setsWon={matchData.setsWon}
               currentSet={currentSetScore}
               completedSets={matchData.setPoints ?? []}
+              usePlayerColors
             />
           </div>
 
@@ -471,13 +509,15 @@ export const TrackGamePage: React.FC = () => {
                         <div className="w-5">{setWinner === 1 && "🏆"}</div>
                         <div className="w-16 flex items-center justify-between text-lg">
                           <span
-                            className={classNames("font-bold", setWinner === 1 ? "text-blue-600" : "text-gray-400")}
+                            className={classNames("font-bold", setWinner !== 1 && "text-gray-400")}
+                            style={setWinner === 1 ? textOn(player1Color, ROW_SURFACE) : undefined}
                           >
                             {set.player1}
                           </span>
                           <span className="text-gray-400">-</span>
                           <span
-                            className={classNames("font-bold", setWinner === 2 ? "text-purple-600" : "text-gray-400")}
+                            className={classNames("font-bold", setWinner !== 2 && "text-gray-400")}
+                            style={setWinner === 2 ? textOn(player2Color, ROW_SURFACE) : undefined}
                           >
                             {set.player2}
                           </span>
@@ -528,7 +568,13 @@ export const TrackGamePage: React.FC = () => {
               🏆
               <h1 className="text-2xl font-bold text-gray-800 mb-2">Match Complete!</h1>
               <p className="text-lg text-gray-600 text-center">
-                Winner: <span className="font-bold text-indigo-600">{context.playerName(winner)}</span>
+                Winner:{" "}
+                <span
+                  className="font-bold"
+                  style={textOn(winner === player1 ? player1Color : player2Color, CARD_SURFACE)}
+                >
+                  {context.playerName(winner)}
+                </span>
               </p>
               <div className="m-auto w-fit">
                 <ProfilePicture playerId={winner} border={12} shape="rounded" />
@@ -540,12 +586,16 @@ export const TrackGamePage: React.FC = () => {
               <div className="grid grid-cols-3 items-center text-center">
                 <div>
                   <h3 className="font-semibold text-gray-700 mb-2 text-sm">{context.playerName(player1)}</h3>
-                  <div className="text-4xl font-bold text-blue-600">{matchData.setsWon.player1}</div>
+                  <div className="text-4xl font-bold" style={textOn(player1Color, ROW_SURFACE)}>
+                    {matchData.setsWon.player1}
+                  </div>
                 </div>
                 <div className="text-2xl font-bold text-gray-400">-</div>
                 <div>
                   <h3 className="font-semibold text-gray-700 mb-2 text-sm">{context.playerName(player2)}</h3>
-                  <div className="text-4xl font-bold text-purple-600">{matchData.setsWon.player2}</div>
+                  <div className="text-4xl font-bold" style={textOn(player2Color, ROW_SURFACE)}>
+                    {matchData.setsWon.player2}
+                  </div>
                 </div>
               </div>
             </div>
@@ -564,13 +614,15 @@ export const TrackGamePage: React.FC = () => {
                           <div className="w-5">{setWinner === 1 && "🏆"}</div>
                           <div className="w-16 flex items-center justify-between text-lg">
                             <span
-                              className={classNames("font-bold", setWinner === 1 ? "text-blue-600" : "text-gray-400")}
+                              className={classNames("font-bold", setWinner !== 1 && "text-gray-400")}
+                              style={setWinner === 1 ? textOn(player1Color, ROW_SURFACE) : undefined}
                             >
                               {set.player1}
                             </span>
                             <span className="text-gray-400">-</span>
                             <span
-                              className={classNames("font-bold", setWinner === 2 ? "text-purple-600" : "text-gray-400")}
+                              className={classNames("font-bold", setWinner !== 2 && "text-gray-400")}
+                              style={setWinner === 2 ? textOn(player2Color, ROW_SURFACE) : undefined}
                             >
                               {set.player2}
                             </span>
