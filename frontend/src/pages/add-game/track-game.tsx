@@ -12,7 +12,7 @@ import { useTennisParams } from "../../hooks/use-tennis-params";
 import { classNames } from "../../common/class-names";
 import { ProfilePicture } from "../player/profile-picture";
 import { stringToColor } from "../../common/string-to-color";
-import { lighten, readableOn, readableTextColor } from "../../common/color-utils";
+import { CARD_SURFACE, fill, panelTint, ROW_SURFACE, softFill, textOn } from "../../common/player-color-styles";
 import { getServeInfo, Server } from "../../common/serve-tracker";
 import { ServeTrackerDisplay } from "../../common/serve-tracker-display";
 import { LiveGamePredictionCard } from "../live-game/live-game-prediction-card";
@@ -33,28 +33,6 @@ interface MatchData {
 }
 
 type Stage = "player-selection" | "scoring" | "summary";
-
-/** The surfaces the player colours are drawn on, so scores can be kept readable against them. */
-const CARD_SURFACE = "#ffffff";
-const ROW_SURFACE = "#f9fafb"; // bg-gray-50
-
-/** How much white is mixed into a player colour for their side of the score display. */
-const PANEL_TINT = 0.85;
-
-/** A surface filled with a player's colour, with the text colour that reads best on it. */
-function fill(color: string): React.CSSProperties {
-  return { backgroundColor: color, color: readableTextColor(color) };
-}
-
-/** The same, but lightened - for the secondary action next to a filled one. */
-function softFill(color: string): React.CSSProperties {
-  return fill(lighten(color, 0.35));
-}
-
-/** A player's colour as text on a surface, darkened where the raw colour is too pale to read. */
-function textOn(color: string, surface: string): React.CSSProperties {
-  return { color: readableOn(color, surface) };
-}
 
 export const TrackGamePage: React.FC = () => {
   const context = useEventDbContext();
@@ -305,8 +283,8 @@ export const TrackGamePage: React.FC = () => {
     // Serve tracker: each player serves 2 points in a row, then it switches.
     const { server: currentServer } = getServeInfo(currentSetScore, firstServer);
 
-    const panel1Tint = lighten(player1Color, PANEL_TINT);
-    const panel2Tint = lighten(player2Color, PANEL_TINT);
+    const panel1Tint = panelTint(player1Color);
+    const panel2Tint = panelTint(player2Color);
 
     return (
       <div className="text-black p-4 pt-0">
@@ -485,7 +463,6 @@ export const TrackGamePage: React.FC = () => {
               setsWon={matchData.setsWon}
               currentSet={currentSetScore}
               completedSets={matchData.setPoints ?? []}
-              usePlayerColors
             />
           </div>
 

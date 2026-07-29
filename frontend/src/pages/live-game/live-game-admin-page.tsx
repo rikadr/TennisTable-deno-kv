@@ -13,6 +13,7 @@ import { newId } from "../../common/nani-id";
 import { classNames } from "../../common/class-names";
 import { ProfilePicture } from "../player/profile-picture";
 import { stringToColor } from "../../common/string-to-color";
+import { CARD_SURFACE, fill, panelTint, ROW_SURFACE, softFill, textOn } from "../../common/player-color-styles";
 import { session } from "../../services/auth";
 import {
   useClearLiveGameMutation,
@@ -62,6 +63,11 @@ export const LiveGameAdminPage: React.FC = () => {
   const isSubmitting = addEventMutation.isPending || clearLiveGame.isPending;
   const isActive = localState.startedAt !== null && !localState.finishedAt;
   const hasPlayers = !!localState.player1Id && !!localState.player2Id;
+
+  // Each side of the score is built from the player's own colour, the same one their
+  // name gets everywhere else.
+  const player1Color = stringToColor(localState.player1Id || "");
+  const player2Color = stringToColor(localState.player2Id || "");
 
   function pushState(next: LiveGameState) {
     setLocalState(next);
@@ -265,7 +271,7 @@ export const LiveGameAdminPage: React.FC = () => {
                 <ProfilePicture playerId={localState.player1Id} size={50} border={2} />
                 <span
                   className="font-bold text-sm"
-                  style={{ color: stringToColor(localState.player1Id || "") }}
+                  style={textOn(player1Color, CARD_SURFACE)}
                 >
                   {context.playerName(localState.player1Id)}
                 </span>
@@ -279,7 +285,7 @@ export const LiveGameAdminPage: React.FC = () => {
                 <ProfilePicture playerId={localState.player2Id} size={50} border={2} />
                 <span
                   className="font-bold text-sm"
-                  style={{ color: stringToColor(localState.player2Id || "") }}
+                  style={textOn(player2Color, CARD_SURFACE)}
                 >
                   {context.playerName(localState.player2Id)}
                 </span>
@@ -295,6 +301,8 @@ export const LiveGameAdminPage: React.FC = () => {
                 firstServer={localState.firstServer}
                 player1Name={context.playerName(localState.player1Id)}
                 player2Name={context.playerName(localState.player2Id)}
+                player1Color={player1Color}
+                player2Color={player2Color}
                 onSelectFirstServer={setFirstServer}
               />
             </div>
@@ -307,14 +315,14 @@ export const LiveGameAdminPage: React.FC = () => {
                 score={localState.currentSet.player1}
                 onAdd={() => addPoint(1)}
                 onRemove={() => removePoint(1)}
-                variant="player1"
+                color={player1Color}
               />
               <PlayerScoreControls
                 name={context.playerName(localState.player2Id)}
                 score={localState.currentSet.player2}
                 onAdd={() => addPoint(2)}
                 onRemove={() => removePoint(2)}
-                variant="player2"
+                color={player2Color}
               />
             </div>
 
@@ -325,9 +333,14 @@ export const LiveGameAdminPage: React.FC = () => {
                 className={classNames(
                   "w-full py-3 rounded-lg font-semibold text-base",
                   localState.currentSet.player1 > localState.currentSet.player2
-                    ? "bg-blue-500 text-white hover:bg-blue-600"
+                    ? "hover:brightness-95"
                     : "bg-gray-300 text-gray-500 cursor-not-allowed",
                 )}
+                style={
+                  localState.currentSet.player1 > localState.currentSet.player2
+                    ? fill(player1Color)
+                    : undefined
+                }
               >
                 Set won by {context.playerName(localState.player1Id)}
               </button>
@@ -337,9 +350,14 @@ export const LiveGameAdminPage: React.FC = () => {
                 className={classNames(
                   "w-full py-3 rounded-lg font-semibold text-base",
                   localState.currentSet.player2 > localState.currentSet.player1
-                    ? "bg-purple-500 text-white hover:bg-purple-600"
+                    ? "hover:brightness-95"
                     : "bg-gray-300 text-gray-500 cursor-not-allowed",
                 )}
+                style={
+                  localState.currentSet.player2 > localState.currentSet.player1
+                    ? fill(player2Color)
+                    : undefined
+                }
               >
                 Set won by {context.playerName(localState.player2Id)}
               </button>
@@ -356,7 +374,11 @@ export const LiveGameAdminPage: React.FC = () => {
             completedSets={localState.completedSets}
           />
 
-          <CompletedSetsList sets={localState.completedSets} />
+          <CompletedSetsList
+            sets={localState.completedSets}
+            player1Color={player1Color}
+            player2Color={player2Color}
+          />
 
           {validationError && (
             <div className="p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg text-sm">
@@ -410,41 +432,27 @@ export const LiveGameAdminPage: React.FC = () => {
   );
 };
 
-const VARIANT_STYLES = {
-  player1: {
-    bg: "bg-blue-50",
-    score: "text-blue-600",
-    addBtn: "bg-blue-600 hover:bg-blue-700",
-    removeBtn: "bg-blue-400 hover:bg-blue-500",
-  },
-  player2: {
-    bg: "bg-purple-50",
-    score: "text-purple-600",
-    addBtn: "bg-purple-600 hover:bg-purple-700",
-    removeBtn: "bg-purple-400 hover:bg-purple-500",
-  },
-} as const;
-
 const PlayerScoreControls: React.FC<{
   name: string;
   score: number;
   onAdd: () => void;
   onRemove: () => void;
-  variant: "player1" | "player2";
-}> = ({ name, score, onAdd, onRemove, variant }) => {
-  const styles = VARIANT_STYLES[variant];
+  /** The player's own colour (`#rrggbb`), which this side of the score is built from. */
+  color: string;
+}> = ({ name, score, onAdd, onRemove, color }) => {
+  const tint = panelTint(color);
   return (
-    <div className={classNames("rounded-lg p-2", styles.bg)}>
+    <div className="rounded-lg p-2" style={{ backgroundColor: tint }}>
       <h3 className="text-sm font-semibold text-gray-700 mb-1 text-center truncate">{name}</h3>
       <div className="flex flex-col items-center justify-center gap-2">
-        <div className={classNames("text-5xl font-bold text-center", styles.score)}>{score}</div>
+        <div className="text-5xl font-bold text-center" style={textOn(color, tint)}>
+          {score}
+        </div>
         <div className="flex flex-col gap-2 w-full items-center">
           <button
             onClick={onAdd}
-            className={classNames(
-              "w-full max-w-28 aspect-square text-center text-white text-4xl font-bold rounded-lg transition",
-              styles.addBtn,
-            )}
+            className="w-full max-w-28 aspect-square text-center text-4xl font-bold rounded-lg hover:brightness-95 transition"
+            style={fill(color)}
           >
             +
           </button>
@@ -453,10 +461,9 @@ const PlayerScoreControls: React.FC<{
             disabled={score === 0}
             className={classNames(
               "w-full max-w-28 h-12 text-center rounded-lg transition text-2xl font-bold",
-              score === 0
-                ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                : classNames("text-white", styles.removeBtn),
+              score === 0 ? "bg-gray-300 text-gray-500 cursor-not-allowed" : "hover:brightness-95",
             )}
+            style={score === 0 ? undefined : softFill(color)}
           >
             -
           </button>
@@ -475,8 +482,11 @@ const ConfirmView: React.FC<{
   onConfirm: () => void;
   onBack: () => void;
 }> = ({ localState, context, validationError, isSubmitting, gameSuccessfullyAdded, onConfirm, onBack }) => {
+  const player1Color = stringToColor(localState.player1Id || "");
+  const player2Color = stringToColor(localState.player2Id || "");
   const player1Won = localState.setsWon.player1 > localState.setsWon.player2;
   const winnerId = player1Won ? localState.player1Id : localState.player2Id;
+  const winnerColor = player1Won ? player1Color : player2Color;
 
   return (
     <div className="space-y-4">
@@ -490,7 +500,10 @@ const ConfirmView: React.FC<{
           🏆
           <h1 className="text-2xl font-bold text-gray-800 mb-2">Match Complete!</h1>
           <p className="text-lg text-gray-600">
-            Winner: <span className="font-bold text-indigo-600">{context.playerName(winnerId)}</span>
+            Winner:{" "}
+            <span className="font-bold" style={textOn(winnerColor, CARD_SURFACE)}>
+              {context.playerName(winnerId)}
+            </span>
           </p>
           <div className="m-auto w-fit mt-2">
             <ProfilePicture playerId={winnerId} border={12} shape="rounded" />
@@ -501,12 +514,16 @@ const ConfirmView: React.FC<{
           <div className="grid grid-cols-3 items-center text-center">
             <div>
               <h3 className="font-semibold text-gray-700 mb-2 text-sm">{context.playerName(localState.player1Id)}</h3>
-              <div className="text-4xl font-bold text-blue-600">{localState.setsWon.player1}</div>
+              <div className="text-4xl font-bold" style={textOn(player1Color, ROW_SURFACE)}>
+                {localState.setsWon.player1}
+              </div>
             </div>
             <div className="text-2xl font-bold text-gray-400">-</div>
             <div>
               <h3 className="font-semibold text-gray-700 mb-2 text-sm">{context.playerName(localState.player2Id)}</h3>
-              <div className="text-4xl font-bold text-purple-600">{localState.setsWon.player2}</div>
+              <div className="text-4xl font-bold" style={textOn(player2Color, ROW_SURFACE)}>
+                {localState.setsWon.player2}
+              </div>
             </div>
           </div>
         </div>
@@ -523,11 +540,17 @@ const ConfirmView: React.FC<{
                     <div className="flex items-center gap-3">
                       <div className="w-5">{setWinner === 1 && "🏆"}</div>
                       <div className="w-16 flex items-center justify-between text-lg">
-                        <span className={classNames("font-bold", setWinner === 1 ? "text-blue-600" : "text-gray-400")}>
+                        <span
+                          className={classNames("font-bold", setWinner !== 1 && "text-gray-400")}
+                          style={setWinner === 1 ? textOn(player1Color, ROW_SURFACE) : undefined}
+                        >
                           {set.player1}
                         </span>
                         <span className="text-gray-400">-</span>
-                        <span className={classNames("font-bold", setWinner === 2 ? "text-purple-600" : "text-gray-400")}>
+                        <span
+                          className={classNames("font-bold", setWinner !== 2 && "text-gray-400")}
+                          style={setWinner === 2 ? textOn(player2Color, ROW_SURFACE) : undefined}
+                        >
                           {set.player2}
                         </span>
                       </div>

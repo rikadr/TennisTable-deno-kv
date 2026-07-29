@@ -1,4 +1,4 @@
-import { lighten, readableOn, readableTextColor } from "./color-utils";
+import { lighten, mixColors, readableOn, readableTextColor } from "./color-utils";
 
 /** WCAG contrast ratio, reimplemented here so the assertions do not lean on the code under test. */
 function contrastRatio(a: string, b: string): number {
@@ -58,6 +58,22 @@ describe("lighten", () => {
     expect(lighten("#3366cc", -1)).toBe("#3366cc");
     expect(lighten("#3366cc", 5)).toBe("#ffffff");
     expect(lighten("not-a-colour", 0.5)).toBe("not-a-colour");
+  });
+});
+
+describe("mixColors", () => {
+  it("returns either end at the extremes", () => {
+    expect(mixColors("#000000", "#ffffff", 0)).toBe("#000000");
+    expect(mixColors("#000000", "#ffffff", 1)).toBe("#ffffff");
+  });
+
+  it("blends channel by channel", () => {
+    expect(mixColors("#ff0000", "#0000ff", 0.5)).toBe("#800080");
+  });
+
+  it("passes through when either colour is unparseable", () => {
+    expect(mixColors("not-a-colour", "#ffffff", 0.5)).toBe("not-a-colour");
+    expect(mixColors("#ff0000", "not-a-colour", 0.5)).toBe("#ff0000");
   });
 });
 

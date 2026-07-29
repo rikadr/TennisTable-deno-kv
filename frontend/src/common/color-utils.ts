@@ -73,6 +73,17 @@ export function lighten(color: string, amount: number): string {
 }
 
 /**
+ * Mixes two colours. `amount` is the share of `to`: 0 gives `from`, 1 gives `to`. Useful for
+ * sampling a gradient, where the colour behind a given point is a blend of its two ends.
+ */
+export function mixColors(from: string, to: string, amount: number): string {
+  const fromRgb = parseHex(from);
+  const toRgb = parseHex(to);
+  if (!fromRgb || !toRgb) return from;
+  return toHex(mix(fromRgb, toRgb, amount));
+}
+
+/**
  * Darkens or lightens `color` - whichever moves it away from `background` - until the two clear
  * `minimumRatio` (WCAG AA by default). For coloured text on a coloured surface, where
  * `readableTextColor` would answer with black or white and throw the colour away.
