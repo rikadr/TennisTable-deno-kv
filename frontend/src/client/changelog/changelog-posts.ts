@@ -31,6 +31,28 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
+    slug: "tournament-statistics-timeline",
+    title: "Tournament timeline in a new Statistics tab",
+    date: "2026-07-29",
+    tags: ["new-feature"],
+    summary:
+      "A chart on the tournament page showing how many days each part of the tournament took, from group play through to the grand final.",
+    body: [
+      text(
+        "The Statistics tab sits alongside the bracket and info tabs. Its first widget is a timeline: one bar per part of the tournament, laid out over the days since it started.",
+      ),
+      list(
+        "Group play, with a bar per group",
+        "The bracket, with a bar per round",
+        "For double elimination: the winners bracket, the losers bracket and the grand final as their own sections",
+      ),
+      text(
+        "A round's clock starts when it became possible to play - the round feeding it finished, and for a losers bracket round also the winners bracket round dropping players into it - and ends at its last game. Waiting for people to show up is therefore part of how long a round took, which is usually the more interesting number. Group play is the exception: its groups run side by side from the tournament start.",
+      ),
+      text("Rounds still being played run up against now, and rounds nobody has reached yet read as not started."),
+    ],
+  },
+  {
     slug: "switch-to-live-tracking-mid-flow",
     title: "Switch to live tracking without starting over",
     date: "2026-07-29",

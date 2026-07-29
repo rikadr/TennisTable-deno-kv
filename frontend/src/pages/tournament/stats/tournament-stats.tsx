@@ -2,7 +2,7 @@ import { Tournament } from "../../../client/client-db/tournaments/tournament";
 import { TournamentTimelineWidget } from "./timeline-widget";
 
 /**
- * Admin only stats tab. One widget per stat, stacked. Currently only the timeline
+ * The statistics tab. One widget per stat, stacked. Currently only the timeline
  */
 export const TournamentStats: React.FC<{ tournament: Tournament }> = ({ tournament }) => {
   return (

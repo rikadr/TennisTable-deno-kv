@@ -58,9 +58,8 @@ export const TournamentTimelineWidget: React.FC<{ tournament: Tournament }> = ({
   if (!timeline) {
     return (
       <WidgetFrame>
-        <p className="text-sm text-primary-text/70">
-          The tournament has not started yet, so there is nothing on the timeline.
-        </p>
+        <Header />
+        <p className="text-sm font-light">The tournament has not started yet, so there is nothing on the timeline.</p>
       </WidgetFrame>
     );
   }
@@ -102,14 +101,11 @@ export const TournamentTimelineWidget: React.FC<{ tournament: Tournament }> = ({
 
   return (
     <WidgetFrame>
-      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 mb-6">
-        <h2 className="text-xl font-bold">Timeline</h2>
-        <p className="text-sm text-primary-text/70">
-          {timeline.completed ? "Ran for" : "Running for"} <span className="font-semibold">{formatSpan(total)}</span>
-          {" · "}
-          {fmtNum(timeline.gamesPlayed)} of {fmtNum(timeline.gamesTotal)} games played
-        </p>
-      </div>
+      <Header>
+        {timeline.completed ? "Ran for" : "Running for"} <span className="font-bold">{formatSpan(total)}</span>
+        {" · "}
+        {fmtNum(timeline.gamesPlayed)} of {fmtNum(timeline.gamesTotal)} games played
+      </Header>
 
       <div className="overflow-x-auto pb-1">
         <div className={classNames("space-y-1", CHART_MIN_WIDTH)}>
@@ -121,7 +117,7 @@ export const TournamentTimelineWidget: React.FC<{ tournament: Tournament }> = ({
               {ticks.map((tick) => (
                 <div
                   key={tick.at}
-                  className="absolute bottom-0 text-[0.6rem] leading-none text-primary-text/50 -translate-x-1/2"
+                  className="absolute bottom-0 text-[0.65rem] leading-none font-light -translate-x-1/2"
                   style={{ left: `${(tick.at / total) * 100}%` }}
                 >
                   {tick.label}
@@ -143,7 +139,7 @@ export const TournamentTimelineWidget: React.FC<{ tournament: Tournament }> = ({
         </div>
       </div>
 
-      <p className="mt-6 text-xs text-primary-text/50 leading-relaxed">
+      <p className="mt-6 text-xs font-light leading-relaxed">
         A round's clock starts when it became possible to play - when the round feeding it finished - and ends at its
         last game, so the waiting counts towards how long it took. The groups of the group play all start together at
         the tournament start.
@@ -155,6 +151,13 @@ export const TournamentTimelineWidget: React.FC<{ tournament: Tournament }> = ({
 const WidgetFrame: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <div className="ring-1 ring-secondary-background w-full max-w-4xl mx-auto px-4 md:px-6 py-6 text-primary-text bg-primary-background rounded-lg shadow-sm">
     {children}
+  </div>
+);
+
+const Header: React.FC<{ children?: React.ReactNode }> = ({ children }) => (
+  <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 mb-6">
+    <h2 className="text-xl font-bold">Timeline</h2>
+    {children && <p className="text-sm">{children}</p>}
   </div>
 );
 
@@ -184,48 +187,47 @@ const TimelineRow: React.FC<{
       }
     >
       <div className={classNames(LABEL_COLUMN, "shrink-0", isSection ? "" : "pl-3")}>
-        <p
-          className={classNames(
-            "truncate",
-            isSection ? "text-sm font-semibold" : "text-xs text-primary-text/80",
-            notStarted && "text-primary-text/40",
-          )}
-        >
+        <p className={classNames("truncate", isSection ? "text-sm font-semibold" : "text-xs font-normal")}>
           {row.label}
         </p>
-        {row.sublabel && <p className="truncate text-[0.6rem] font-light text-primary-text/50">{row.sublabel}</p>}
+        {row.sublabel && <p className="truncate text-[0.65rem] font-light">{row.sublabel}</p>}
       </div>
 
       {/* Kept left of the bar so the durations stay readable when the chart scrolls sideways */}
       <div className={classNames(DURATION_COLUMN, "shrink-0 text-right")}>
-        <p className={classNames(isSection ? "text-sm font-medium" : "text-xs", notStarted && "text-primary-text/40")}>
+        <p
+          className={classNames(
+            isSection ? "text-sm font-medium" : "text-xs",
+            notStarted && "font-light italic",
+            ongoing && !notStarted && "italic",
+          )}
+        >
           {notStarted ? "not started" : formatSpan(span)}
         </p>
-        <p className="text-[0.6rem] font-light text-primary-text/50">
+        <p className="text-[0.65rem] font-light">
           {fmtNum(row.gamesPlayed)}/{fmtNum(row.gamesTotal)} games
         </p>
       </div>
 
-      <div
-        className={classNames(
-          "relative grow overflow-hidden rounded bg-secondary-background/15",
-          isSection ? "h-5" : "h-3.5",
-        )}
-      >
+      {/* Everything here is the secondary background on the widget's primary one - the contrast
+          every card in the app already relies on, so it holds up in every theme. The lane is only a
+          hairline and the axis grid thin ticks, leaving the played span as the one solid block */}
+      <div className={classNames("relative grow", isSection ? "h-5" : "h-3")}>
+        <div className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-secondary-background" />
         {gridLines.map((at) => (
           <div
             key={at}
-            className="absolute inset-y-0 w-px bg-primary-text/10"
+            className="absolute inset-y-0 w-px bg-secondary-background"
             style={{ left: `${(at / total) * 100}%` }}
           />
         ))}
-        {/* A round with no games played has no span to draw: the empty track says it all */}
+        {/* A round with no games played has no span to draw: the bare lane says it all */}
         {notStarted === false && (
           <div
             className={classNames(
-              "absolute inset-y-0 rounded",
-              isSection ? "bg-secondary-background" : "bg-secondary-background/60",
-              ongoing && "ring-1 ring-tertiary-background",
+              "absolute inset-y-0 rounded bg-secondary-background",
+              // An unfinished span runs up against now rather than a game, marked with a torn edge
+              ongoing && "border-r-2 border-dashed border-primary-background",
             )}
             style={{ left: `${leftPercent}%`, width: `max(${widthPercent}%, 3px)` }}
           />

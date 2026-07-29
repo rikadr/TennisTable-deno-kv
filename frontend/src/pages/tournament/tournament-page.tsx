@@ -52,7 +52,7 @@ export const TournamentPage: React.FC = () => {
       visible: tournament !== undefined && tournament.startDate < Date.now(),
     },
     { id: "available", label: "Available today", visible: isAdmin && tournament?.hasPendingGames === true },
-    { id: "stats", label: "Stats", visible: isAdmin },
+    { id: "stats", label: "Statistics", visible: true },
   ];
   const visibleTabs = tabs.filter((t) => t.visible);
   const isVisibleTab = (id: string | null | undefined): id is TabType => visibleTabs.some((t) => t.id === id);
