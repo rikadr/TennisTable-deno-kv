@@ -11,9 +11,19 @@ import { TournamentBracket } from "./tournament-bracket";
 import { TournamentLosersBracket } from "./tournament-losers-bracket";
 import { TournamentGrandFinal } from "./tournament-grand-final";
 import { TournamentAvailablePlayers } from "./tournament-available-players";
+import { TournamentStats } from "./stats/tournament-stats";
 import { session } from "../../services/auth/session";
 
-type TabType = "grand-final" | "finals" | "losers" | "group-play" | "signup" | "info" | "predictions" | "available";
+type TabType =
+  | "grand-final"
+  | "finals"
+  | "losers"
+  | "group-play"
+  | "signup"
+  | "info"
+  | "predictions"
+  | "available"
+  | "stats";
 
 export const TournamentPage: React.FC = () => {
   const { tournament: tournamentId, player1, player2 } = useTennisParams();
@@ -42,6 +52,7 @@ export const TournamentPage: React.FC = () => {
       visible: tournament !== undefined && tournament.startDate < Date.now(),
     },
     { id: "available", label: "Available today", visible: isAdmin && tournament?.hasPendingGames === true },
+    { id: "stats", label: "Statistics", visible: true },
   ];
   const visibleTabs = tabs.filter((t) => t.visible);
   const isVisibleTab = (id: string | null | undefined): id is TabType => visibleTabs.some((t) => t.id === id);
@@ -150,6 +161,7 @@ export const TournamentPage: React.FC = () => {
       {activeTab === "signup" && <TournamentSignup tournament={tournament} />}
       {activeTab === "predictions" && <TournamentPredictions tournament={tournament} />}
       {activeTab === "available" && <TournamentAvailablePlayers tournament={tournament} />}
+      {activeTab === "stats" && <TournamentStats tournament={tournament} />}
     </div>
   );
 };
