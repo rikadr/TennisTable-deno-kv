@@ -3,6 +3,7 @@ import { useLiveGameQuery } from "./use-live-game";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { ProfilePicture } from "../player/profile-picture";
 import { stringToColor } from "../../common/string-to-color";
+import { CARD_SURFACE, panelTint, textOn } from "../../common/player-color-styles";
 import { Link } from "react-router-dom";
 import { session } from "../../services/auth";
 import { CompletedSetsList } from "./completed-sets-list";
@@ -109,6 +110,9 @@ const LiveScoreboard: React.FC<ScoreboardProps> = ({
   player1Name,
   player2Name,
 }) => {
+  const player1Color = stringToColor(player1Id);
+  const player2Color = stringToColor(player2Id);
+
   return (
     <div className="space-y-4">
       <div className="bg-white rounded-xl shadow-lg p-4 text-black">
@@ -120,7 +124,7 @@ const LiveScoreboard: React.FC<ScoreboardProps> = ({
             <ProfilePicture playerId={player1Id} size={80} border={3} />
             <span
               className="font-bold text-base text-center truncate max-w-full"
-              style={{ color: stringToColor(player1Id) }}
+              style={textOn(player1Color, CARD_SURFACE)}
             >
               {player1Name}
             </span>
@@ -134,7 +138,7 @@ const LiveScoreboard: React.FC<ScoreboardProps> = ({
             <ProfilePicture playerId={player2Id} size={80} border={3} />
             <span
               className="font-bold text-base text-center truncate max-w-full"
-              style={{ color: stringToColor(player2Id) }}
+              style={textOn(player2Color, CARD_SURFACE)}
             >
               {player2Name}
             </span>
@@ -147,13 +151,17 @@ const LiveScoreboard: React.FC<ScoreboardProps> = ({
           Current Set {completedSets.length + 1}
         </h2>
         <div className="grid grid-cols-2 gap-4">
-          <div className="bg-blue-50 rounded-lg p-4 text-center">
+          <div className="rounded-lg p-4 text-center" style={{ backgroundColor: panelTint(player1Color) }}>
             <h3 className="text-sm font-semibold text-gray-700 mb-1 truncate">{player1Name}</h3>
-            <div className="text-7xl font-bold text-blue-600">{currentSet.player1}</div>
+            <div className="text-7xl font-bold" style={textOn(player1Color, panelTint(player1Color))}>
+              {currentSet.player1}
+            </div>
           </div>
-          <div className="bg-purple-50 rounded-lg p-4 text-center">
+          <div className="rounded-lg p-4 text-center" style={{ backgroundColor: panelTint(player2Color) }}>
             <h3 className="text-sm font-semibold text-gray-700 mb-1 truncate">{player2Name}</h3>
-            <div className="text-7xl font-bold text-purple-600">{currentSet.player2}</div>
+            <div className="text-7xl font-bold" style={textOn(player2Color, panelTint(player2Color))}>
+              {currentSet.player2}
+            </div>
           </div>
         </div>
         <div className="mt-4 flex justify-center">
@@ -162,6 +170,8 @@ const LiveScoreboard: React.FC<ScoreboardProps> = ({
             firstServer={firstServer}
             player1Name={player1Name}
             player2Name={player2Name}
+            player1Color={player1Color}
+            player2Color={player2Color}
           />
         </div>
       </div>
@@ -176,7 +186,7 @@ const LiveScoreboard: React.FC<ScoreboardProps> = ({
         completedSets={completedSets}
       />
 
-      <CompletedSetsList sets={completedSets} />
+      <CompletedSetsList sets={completedSets} player1Color={player1Color} player2Color={player2Color} />
     </div>
   );
 };
@@ -198,9 +208,12 @@ const FinishedScoreboard: React.FC<FinishedScoreboardProps> = ({
   player1Name,
   player2Name,
 }) => {
+  const player1Color = stringToColor(player1Id);
+  const player2Color = stringToColor(player2Id);
   const player1Won = setsWon.player1 > setsWon.player2;
   const winnerId = player1Won ? player1Id : player2Id;
   const winnerName = player1Won ? player1Name : player2Name;
+  const winnerColor = player1Won ? player1Color : player2Color;
 
   return (
     <div className="space-y-4">
@@ -208,7 +221,10 @@ const FinishedScoreboard: React.FC<FinishedScoreboardProps> = ({
         <div className="text-center mb-4">
           <h2 className="text-gray-400 text-xs uppercase tracking-widest font-bold mb-2">Final Score</h2>
           <p className="text-lg text-gray-600">
-            Winner: <span className="font-bold text-indigo-600">{winnerName}</span>
+            Winner:{" "}
+            <span className="font-bold" style={textOn(winnerColor, CARD_SURFACE)}>
+              {winnerName}
+            </span>
           </p>
           <div className="m-auto w-fit mt-2 mb-4">
             <ProfilePicture playerId={winnerId} size={80} border={4} />
@@ -219,7 +235,7 @@ const FinishedScoreboard: React.FC<FinishedScoreboardProps> = ({
             <ProfilePicture playerId={player1Id} size={60} border={3} />
             <span
               className="font-bold text-base text-center truncate max-w-full"
-              style={{ color: stringToColor(player1Id) }}
+              style={textOn(player1Color, CARD_SURFACE)}
             >
               {player1Name}
             </span>
@@ -233,7 +249,7 @@ const FinishedScoreboard: React.FC<FinishedScoreboardProps> = ({
             <ProfilePicture playerId={player2Id} size={60} border={3} />
             <span
               className="font-bold text-base text-center truncate max-w-full"
-              style={{ color: stringToColor(player2Id) }}
+              style={textOn(player2Color, CARD_SURFACE)}
             >
               {player2Name}
             </span>
@@ -241,7 +257,7 @@ const FinishedScoreboard: React.FC<FinishedScoreboardProps> = ({
         </div>
       </div>
 
-      <CompletedSetsList sets={completedSets} />
+      <CompletedSetsList sets={completedSets} player1Color={player1Color} player2Color={player2Color} />
     </div>
   );
 };

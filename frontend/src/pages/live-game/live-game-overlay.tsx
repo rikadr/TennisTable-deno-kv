@@ -3,6 +3,8 @@ import { useSearchParams } from "react-router-dom";
 import { useLiveGameQuery } from "./use-live-game";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { getServeInfo } from "../../common/serve-tracker";
+import { mixColors, readableTextColor } from "../../common/color-utils";
+import { stringToColor } from "../../common/string-to-color";
 
 const POLL_FALLBACK_MS = 1_000;
 const CHROMA_GREEN = "#00b140";
@@ -28,6 +30,15 @@ export const LiveGameOverlay: React.FC = () => {
   const p2Name = context.playerName(state.player2Id);
   const { server } = getServeInfo(state.currentSet, state.firstServer ?? 1);
 
+  // The sets bar runs from one player's colour to the other's. Each digit sits near its own
+  // end of the gradient, so its text colour is picked against the blend at that point rather
+  // than against either end.
+  const p1Color = stringToColor(state.player1Id!);
+  const p2Color = stringToColor(state.player2Id!);
+  const p1DigitColor = readableTextColor(mixColors(p1Color, p2Color, 0.2));
+  const dashColor = readableTextColor(mixColors(p1Color, p2Color, 0.5));
+  const p2DigitColor = readableTextColor(mixColors(p1Color, p2Color, 0.8));
+
   return (
     <div
       className="min-h-screen flex items-center justify-center"
@@ -41,12 +52,21 @@ export const LiveGameOverlay: React.FC = () => {
             <span className="text-sm font-semibold truncate">{p1Name}</span>
           </div>
           <div
-            className="text-white py-2 flex items-center justify-center"
-            style={{ background: "linear-gradient(to right, #3b82f6, #a855f7)", width: `${SCORE_WIDTH}px` }}
+            className="py-2 flex items-center justify-center"
+            style={{
+              background: `linear-gradient(to right, ${p1Color}, ${p2Color})`,
+              width: `${SCORE_WIDTH}px`,
+            }}
           >
-            <span className={`text-2xl font-black ${DIGIT_W} text-right`}>{state.setsWon.player1}</span>
-            <span className={`text-sm font-bold opacity-70 ${DASH_W} text-center`}>-</span>
-            <span className={`text-2xl font-black ${DIGIT_W} text-left`}>{state.setsWon.player2}</span>
+            <span className={`text-2xl font-black ${DIGIT_W} text-right`} style={{ color: p1DigitColor }}>
+              {state.setsWon.player1}
+            </span>
+            <span className={`text-sm font-bold opacity-70 ${DASH_W} text-center`} style={{ color: dashColor }}>
+              -
+            </span>
+            <span className={`text-2xl font-black ${DIGIT_W} text-left`} style={{ color: p2DigitColor }}>
+              {state.setsWon.player2}
+            </span>
           </div>
           <div className="bg-white text-gray-800 px-4 py-2 flex items-center min-w-[90px] justify-end gap-1">
             <span className="text-sm font-semibold truncate">{p2Name}</span>
