@@ -98,8 +98,8 @@ const PairingsSettings: React.FC<SettingsProps> = ({
   minGamesPerLink,
   onMinGamesPerLinkChange,
 }) => (
-  <div className="w-full bg-secondary-background text-secondary-text rounded-lg p-3 mb-3 space-y-3">
-    <label className="flex items-center gap-2 py-1 text-sm cursor-pointer">
+  <div className="w-full bg-secondary-background text-secondary-text rounded-lg p-3 mb-3 flex flex-col gap-3 sm:flex-row sm:gap-6">
+    <label className="flex items-center gap-2 py-1 text-sm cursor-pointer sm:w-52 sm:shrink-0 sm:self-start">
       <input
         type="checkbox"
         className="w-4 h-4 cursor-pointer accent-secondary-text"
@@ -108,7 +108,7 @@ const PairingsSettings: React.FC<SettingsProps> = ({
       />
       Include retired players
     </label>
-    <div>
+    <div className="sm:flex-1 sm:min-w-0">
       <label className="flex items-baseline justify-between gap-2 text-sm" htmlFor="pairings-min-games">
         Games per link
         <span className="font-semibold">
@@ -124,9 +124,7 @@ const PairingsSettings: React.FC<SettingsProps> = ({
         onChange={(event) => onMinGamesPerLinkChange(Number(event.target.value))}
         className="w-full mt-1 cursor-pointer accent-secondary-text"
       />
-      <p className="text-xs opacity-70">
-        Two players are only linked once they have played each other this many times.
-      </p>
+      <p className="text-xs opacity-70">Games two players need against each other to count as a link.</p>
     </div>
   </div>
 );
