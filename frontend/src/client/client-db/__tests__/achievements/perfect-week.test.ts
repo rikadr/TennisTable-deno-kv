@@ -140,6 +140,32 @@ describe("Perfect Week Achievement Tests", () => {
     expect(perfectWeeks).toHaveLength(0);
   });
 
+  it("awards immediately on the Friday win, without waiting for the week to end", () => {
+    // "now" is Friday afternoon, right after the fifth weekday win. Unlike
+    // Perfect Day, nothing later in the week can disqualify it — losses do not
+    // count against a perfect week — so it is awarded on the spot.
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date(2024, 0, 19, 13));
+
+    const events: EventType[] = [
+      ...baseEvents,
+      win(2024, 0, 15, "player-1", "player-2", "mon"),
+      win(2024, 0, 16, "player-1", "player-2", "tue"),
+      win(2024, 0, 17, "player-1", "player-2", "wed"),
+      win(2024, 0, 18, "player-1", "player-2", "thu"),
+      win(2024, 0, 19, "player-1", "player-2", "fri"),
+    ];
+
+    const tennisTable = new TennisTable({ events });
+    tennisTable.achievements.calculateAchievements();
+
+    const perfectWeeks = tennisTable.achievements.getAchievements("player-1").filter((a) => a.type === "perfect-week");
+    expect(perfectWeeks).toHaveLength(1);
+    expect(perfectWeeks[0].earnedAt).toBe(new Date(2024, 0, 19, 12).getTime());
+
+    jest.useRealTimers();
+  });
+
   describe("Progression (live, resets on a missed weekday)", () => {
     afterEach(() => {
       jest.useRealTimers();

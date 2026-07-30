@@ -111,6 +111,87 @@ describe("Perfect Day Achievement Tests", () => {
     expect(perfectDays).toHaveLength(2);
   });
 
+  describe("Only awarded once the day is over", () => {
+    afterEach(() => {
+      jest.useRealTimers();
+    });
+
+    it("does NOT award while the undefeated day is still in progress", () => {
+      // "now" is the evening of the winning day — a loss could still come.
+      jest.useFakeTimers();
+      jest.setSystemTime(new Date(2024, 0, 15, 20));
+
+      const events: EventType[] = [
+        ...baseEvents,
+        ...winsOnDay(2024, 0, 15, "player-1", ["player-2", "player-3", "player-2", "player-3", "player-2"], "g"),
+      ];
+
+      const tennisTable = new TennisTable({ events });
+      tennisTable.achievements.calculateAchievements();
+
+      const perfectDays = tennisTable.achievements.getAchievements("player-1").filter((a) => a.type === "perfect-day");
+      expect(perfectDays).toHaveLength(0);
+      // The attempt is complete but pending the end of the day.
+      const progression = tennisTable.achievements.getPlayerProgression("player-1");
+      expect(progression["perfect-day"].current).toBe(5);
+      expect(progression["perfect-day"].earned).toBe(0);
+    });
+
+    it("awards it once the next day has started", () => {
+      // Same games, but "now" is just past midnight into the next day.
+      jest.useFakeTimers();
+      jest.setSystemTime(new Date(2024, 0, 16, 0, 1));
+
+      const events: EventType[] = [
+        ...baseEvents,
+        ...winsOnDay(2024, 0, 15, "player-1", ["player-2", "player-3", "player-2", "player-3", "player-2"], "g"),
+      ];
+
+      const tennisTable = new TennisTable({ events });
+      tennisTable.achievements.calculateAchievements();
+
+      const perfectDays = tennisTable.achievements.getAchievements("player-1").filter((a) => a.type === "perfect-day");
+      expect(perfectDays).toHaveLength(1);
+      expect(perfectDays[0].earnedAt).toBe(new Date(2024, 0, 15, 13).getTime());
+    });
+
+    it("still awards earlier completed days while today is in progress", () => {
+      jest.useFakeTimers();
+      jest.setSystemTime(new Date(2024, 0, 16, 20));
+
+      const events: EventType[] = [
+        ...baseEvents,
+        // Yesterday: a completed perfect day.
+        ...winsOnDay(2024, 0, 15, "player-1", ["player-2", "player-3", "player-2", "player-3", "player-2"], "d1"),
+        // Today: undefeated so far, but the day is not over.
+        ...winsOnDay(2024, 0, 16, "player-1", ["player-3", "player-2", "player-3", "player-2", "player-3"], "d2"),
+      ];
+
+      const tennisTable = new TennisTable({ events });
+      tennisTable.achievements.calculateAchievements();
+
+      const perfectDays = tennisTable.achievements.getAchievements("player-1").filter((a) => a.type === "perfect-day");
+      expect(perfectDays).toHaveLength(1);
+      expect(perfectDays[0].data.day).toBe(new Date(2024, 0, 15).getTime());
+    });
+
+    it("does NOT award for games dated in the future", () => {
+      jest.useFakeTimers();
+      jest.setSystemTime(new Date(2024, 0, 15, 12));
+
+      const events: EventType[] = [
+        ...baseEvents,
+        ...winsOnDay(2024, 0, 20, "player-1", ["player-2", "player-3", "player-2", "player-3", "player-2"], "g"),
+      ];
+
+      const tennisTable = new TennisTable({ events });
+      tennisTable.achievements.calculateAchievements();
+
+      const perfectDays = tennisTable.achievements.getAchievements("player-1").filter((a) => a.type === "perfect-day");
+      expect(perfectDays).toHaveLength(0);
+    });
+  });
+
   describe("Progression (live, resets each day)", () => {
     afterEach(() => {
       jest.useRealTimers();

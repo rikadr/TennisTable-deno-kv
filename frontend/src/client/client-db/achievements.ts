@@ -554,12 +554,17 @@ export class Achievements {
   //
   // Perfect Day: for every calendar day (local time) on which a player
   // played 5 or more games and won every single one of them (zero losses
-  // that day). Stamped at the day's last (winning) game.
+  // that day). Stamped at the day's last (winning) game. Only awarded once
+  // the day is OVER — a loss later the same day would disqualify it, so an
+  // undefeated day still in progress stays a pending attempt (tracked by
+  // progression) until local midnight passes.
   //
   // Perfect Week: for every working week (Monday–Friday, local time) in
   // which a player won at least one game on each of the five weekdays.
   // Wins on Saturday / Sunday do not count. Stamped at the game that
-  // completed the fifth distinct weekday.
+  // completed the fifth distinct weekday. Unlike Perfect Day this is awarded
+  // immediately: losses never disqualify a week, so nothing later in the week
+  // can take it away.
   //
   // Both are earnable multiple times — once per qualifying day / week.
   // Games are already time-ordered, so the completing win's timestamp is
@@ -633,10 +638,14 @@ export class Achievements {
       }
     });
 
-    // Award Perfect Day for each undefeated 5+ game day, in day order.
+    // Award Perfect Day for each undefeated 5+ game day, in day order. Days
+    // that have not fully elapsed are skipped: more games can still be played,
+    // and a single loss would nullify the day.
+    const todayStart = dayStartOf(Date.now());
     for (const [playerId, days] of perDay) {
       const sortedDays = Array.from(days.entries()).sort((a, b) => a[0] - b[0]);
       for (const [day, stats] of sortedDays) {
+        if (day >= todayStart) continue;
         if (stats.losses === 0 && stats.wins >= 5) {
           this.#addAchievement(
             playerId,
@@ -2173,7 +2182,8 @@ export class Achievements {
     // Perfect Day progression tracks TODAY's live attempt: the number of
     // games won today with zero losses so far. A single loss today nullifies
     // it — progress drops to 0 and the player must try again tomorrow. No
-    // games today → 0.
+    // games today → 0. A full 5/5 today reads as complete but is not yet
+    // earned: the achievement lands when the day ends still undefeated.
     const nowMs = Date.now();
     const todayStart = new Date(nowMs);
     todayStart.setHours(0, 0, 0, 0);

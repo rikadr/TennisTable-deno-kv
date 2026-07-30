@@ -31,6 +31,25 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
+    slug: "perfect-day-awarded-when-the-day-ends",
+    title: "Perfect Day is awarded once the day is over",
+    date: "2026-07-30",
+    tags: ["bug-fix"],
+    summary:
+      "Five undefeated games no longer earns Perfect Day on the spot - it lands after midnight, once the day can no longer be spoilt by a loss.",
+    body: [
+      text(
+        "An undefeated day now shows as a complete 5/5 attempt until the day ends, and the achievement is granted when the next day starts.",
+      ),
+      text(
+        "Previously the fifth win awarded it immediately, which was wrong: a loss later the same afternoon disqualifies the day, so the achievement would appear and then vanish from your profile. If you saw a Perfect Day you later lost, that is why.",
+      ),
+      text(
+        "Perfect Week is unaffected and is still awarded the moment you win on the Friday. Losses never count against a perfect week, so nothing later in the week can take it back.",
+      ),
+    ],
+  },
+  {
     slug: "tournament-statistics-timeline",
     title: "A Statistics tab on tournaments",
     date: "2026-07-30",
