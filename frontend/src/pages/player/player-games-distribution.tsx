@@ -14,6 +14,10 @@ export const PlayerGamesDistrubution: React.FC<Props> = ({ playerId }) => {
   const summary = context.leaderboard.getPlayerSummary(playerId || "");
   const mostGames = summary?.gamesDistribution[0]?.games || 0;
 
+  if (!summary?.gamesDistribution.length) {
+    return <p className="text-sm opacity-70">No games played yet.</p>;
+  }
+
   return (
     <div className="flex flex-col w-full divide-y divide-primary-text/50">
       {summary?.gamesDistribution.map(({ oponentId, games }, index) => {

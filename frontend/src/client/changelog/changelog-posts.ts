@@ -31,6 +31,22 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
+    slug: "statistics-tab-without-games",
+    title: "The Statistics tab works before your first game",
+    date: "2026-07-30",
+    tags: ["bug-fix"],
+    summary:
+      "Opening the Statistics tab on a player with no games loaded a blank page. The widgets now say there are no games yet.",
+    body: [
+      text(
+        "A player page's Statistics tab now opens for everyone, including a player who has not played a game yet. The three widgets that need games to say anything - points exchanged, opponent frequency and opponent scores - say so instead of rendering an empty box, and Player pairings keeps listing everyone you have no connection to.",
+      ),
+      text(
+        "The crash came from averaging the score difference of your opponents: with no opponents there was nothing to average, and that threw rather than returning zero. It took the whole page down with it, so a newly added player could not open their own statistics.",
+      ),
+    ],
+  },
+  {
     slug: "tournament-statistics-timeline",
     title: "A Statistics tab on tournaments",
     date: "2026-07-30",

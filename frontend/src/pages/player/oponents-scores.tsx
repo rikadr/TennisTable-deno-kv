@@ -14,6 +14,10 @@ export const OponentsScores: React.FC<Props> = ({ playerId }) => {
 
   const { avgDiff, diffGraphData } = context.playerOponentDistribution.get(playerId);
 
+  if (diffGraphData.length === 0) {
+    return <p className="text-sm opacity-70">No games played yet.</p>;
+  }
+
   // Find the maximum count for scaling
   const maxCount = Math.max(...diffGraphData.map((entry) => entry.count));
 
