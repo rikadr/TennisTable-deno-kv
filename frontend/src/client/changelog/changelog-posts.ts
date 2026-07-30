@@ -31,6 +31,31 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
+    slug: "longest-win-and-lose-streak-achievements",
+    title: "2 new achievements: Longest Win Streak and Longest Lose Streak",
+    date: "2026-07-30",
+    tags: ["new-feature"],
+    summary:
+      "Two league records, one for consecutive wins and one for consecutive losses. Whoever holds a record keeps the award, and it grows as the streak does.",
+    body: [
+      text(
+        "Longest Win Streak goes to whoever has strung together the most wins in a row, and Longest Lose Streak to whoever has managed the opposite. Both are league records: you take one by beating the streak that stands, and the award records how long your streak was.",
+      ),
+      text(
+        "Extending a streak you already hold the record with does not hand you a second award - the one you have grows instead. Win your 11th in a row while your 10 is still the record and you have one award worth 11, not two.",
+      ),
+      text(
+        "It can be earned more than once, in two ways. A new streak that beats the record earns its own award, so a run of 10, a loss, and then 11 is two awards. So is being overtaken mid-streak: if somebody else reaches 11 while your 10-streak is alive, passing them again earns a second award, and the first keeps the 10 it was worth while it was the record.",
+      ),
+      text(
+        "The first record in either direction needs 3 in a row. After that only the record matters - and ties do not count, you have to beat it.",
+      ),
+      text(
+        "Your Progress tab shows the streak you are on, your longest ever, and who holds the record. Note that the progress bar tracks the streak you are on now: a long run in the past does not bring you closer to the record, only a live streak can grow into it.",
+      ),
+    ],
+  },
+  {
     slug: "tournament-predictions-stream-running-tallies",
     title: "Tournament predictions update while they run",
     date: "2026-07-30",
