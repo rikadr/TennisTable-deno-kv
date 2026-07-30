@@ -31,6 +31,30 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
+    slug: "tournament-new-connections",
+    title: "New connections in the tournament statistics",
+    date: "2026-07-30",
+    tags: ["new-feature"],
+    summary:
+      "A widget showing which pairs met for the first time, who had not played each other in months, and which players the tournament brought back or brought in.",
+    body: [
+      text(
+        "New connections sits under the timeline on the Statistics tab. It answers the thing a bracket cannot: who did this tournament put in front of each other that an ordinary week never would.",
+      ),
+      list(
+        "First-ever meetings - pairs who had never played each other before, with how many games each of them had behind them",
+        "Reunions - pairs who had not met in 90 days or more, and how long it had been",
+        "New faces - players whose first ever game came in the tournament, players back after 90 days away, and players in their first tournament",
+      ),
+      text(
+        "Everything is measured against the club as it stood the moment the tournament started. That single baseline is what keeps the numbers steady: a pair meeting twice, in group play and then again in the bracket, is one first meeting rather than a meeting followed by a rematch. Skipped games, byes and walkovers are left out, since nobody met over them.",
+      ),
+      text(
+        "A tournament between regulars will show little, and saying so is the point of it: the widget reports that everyone here already plays each other, and gives the longest anyone had gone without meeting anyway.",
+      ),
+    ],
+  },
+  {
     slug: "tournament-statistics-timeline",
     title: "Tournament timeline in a new Statistics tab",
     date: "2026-07-29",
