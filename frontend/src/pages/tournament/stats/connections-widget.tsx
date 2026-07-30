@@ -41,11 +41,13 @@ export const TournamentConnectionsWidget: React.FC<{ tournament: Tournament }> =
         {fmtNum(playersPlayed)} players · {fmtNum(gamesPlayed)} games · {fmtNum(pairs.length)} pairings
       </Header>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-6">
+      {/* Pairs first, then players, in the same order as the sections below */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mb-6">
         <Tile value={firstMeetings.length} label="First-ever meetings" of={pairs.length} />
         <Tile value={reunions.length} label="Reunions" of={pairs.length} />
         <Tile value={debuts.length} label="First games ever" of={playersPlayed} />
         <Tile value={returning.length} label="Back after a break" of={playersPlayed} />
+        <Tile value={firstTimers.length} label="First tournament" of={playersPlayed} />
       </div>
 
       {nothingNew && (
