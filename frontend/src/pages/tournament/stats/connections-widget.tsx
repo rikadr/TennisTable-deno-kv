@@ -77,10 +77,7 @@ export const TournamentConnectionsWidget: React.FC<{ tournament: Tournament }> =
       )}
 
       {reunions.length > 0 && (
-        <Section
-          title="Reunions"
-          subtitle={`Pairs who had not met in ${fmtNum(LONG_ABSENCE / ONE_DAY)} days or more`}
-        >
+        <Section title="Reunions" subtitle={`Pairs who had not met in ${formatGap(LONG_ABSENCE)} or more`}>
           {reunions.map((pair) => (
             <PairRow key={pair.key} pair={pair}>
               First meeting in <span className="font-medium">{formatGap(pair.gap ?? 0)}</span> ·{" "}

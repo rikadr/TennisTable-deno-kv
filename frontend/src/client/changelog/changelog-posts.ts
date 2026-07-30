@@ -43,8 +43,8 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
       ),
       list(
         "First-ever meetings - pairs who had never played each other before, with how many games each of them had behind them",
-        "Reunions - pairs who had not met in 90 days or more, and how long it had been",
-        "New faces - players whose first ever game came in the tournament, players back after 90 days away, and players in their first tournament",
+        "Reunions - pairs who had not met in six months or more, and how long it had been",
+        "New faces - players whose first ever game came in the tournament, players back after six months away, and players in their first tournament, longest absence first",
       ),
       text(
         "Everything is measured against the club as it stood the moment the tournament started. That single baseline is what keeps the numbers steady: a pair meeting twice, in group play and then again in the bracket, is one first meeting rather than a meeting followed by a rematch. Skipped games, byes and walkovers are left out, since nobody met over them.",

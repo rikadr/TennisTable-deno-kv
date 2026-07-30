@@ -144,7 +144,7 @@ describe("Tournament connections", () => {
       ...baseEvents(["P1", "P2", "P3", "P4"], undefined, ["H1"]),
       ...recentHistory,
       gameEvent("P1", "P2", before(9)), // Met recently
-      gameEvent("P1", "P4", before(200)), // Met, but a long time ago
+      gameEvent("P1", "P4", before(300)), // Met, but a long time ago
       ...bracketGames,
     ])!;
 
@@ -157,9 +157,9 @@ describe("Tournament connections", () => {
     expect(pair(result, "P2", "P3").gamesBefore).toBe(0);
     expect(pair(result, "P2", "P3").gap).toBeUndefined();
 
-    // P1 and P4 had met, 200 days before the tournament started
+    // P1 and P4 had met, 300 days before the tournament started
     expect(result.reunions.map((meeting) => meeting.key)).toEqual(["P1|P4"]);
-    expect(pair(result, "P1", "P4").gap).toBe(200 * ONE_DAY);
+    expect(pair(result, "P1", "P4").gap).toBe(300 * ONE_DAY);
     expect(pair(result, "P1", "P4").gamesBefore).toBe(1);
 
     // P1 and P2 play each other regularly, so the tournament brought them nothing new
@@ -247,15 +247,36 @@ describe("Tournament connections", () => {
     expect(arrival(result, "P1").returning).toBe(false);
   });
 
-  it("keeps a short break out of the returning list", () => {
+  it("keeps a break shorter than six months out of the returning list", () => {
     const result = connections([
       ...baseEvents(["P1", "P2", "P3", "P4"], undefined, ["H1"]),
       ...recentHistory.filter((event) => event.stream.includes("P4") === false),
-      gameEvent("P4", "H1", before(60)), // Away, but not for long enough to count
+      gameEvent("P4", "H1", before(150)), // Away, but not for long enough to count
       ...bracketGames,
     ])!;
 
     expect(arrival(result, "P4").returning).toBe(false);
+  });
+
+  it("sorts the new faces by how long they had been away", () => {
+    const result = connections([
+      ...baseEvents(["P1", "P2", "P3", "P4"], undefined, ["H1", "H2"]),
+      // P1 and P2 have a tournament behind them, so only their absence is new
+      ...earlierTournament(["P1", "P2", "H1", "H2"], before(700)),
+      gameEvent("P1", "H1", before(400)), // Away for over a year
+      gameEvent("P2", "H1", before(250)), // Away for eight months
+      gameEvent("P3", "H1", before(5)), // Playing as usual, but never in a tournament
+      // P4 is left out of the history entirely: they had never played at all
+      ...bracketGames,
+    ])!;
+
+    // A debut had never played, which outranks any absence. The player who never left comes last
+    expect(result.arrivals.map((candidate) => candidate.playerId)).toEqual(["P4", "P1", "P2", "P3"]);
+    expect(arrival(result, "P4").debut).toBe(true);
+    expect(arrival(result, "P1").awayFor).toBe(400 * ONE_DAY);
+    expect(arrival(result, "P2").awayFor).toBe(250 * ONE_DAY);
+    expect(arrival(result, "P3").returning).toBe(false);
+    expect(arrival(result, "P3").firstTournament).toBe(true);
   });
 
   it("marks the players who had never been in a tournament before", () => {

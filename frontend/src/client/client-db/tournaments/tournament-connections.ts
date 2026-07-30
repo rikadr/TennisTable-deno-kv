@@ -1,4 +1,4 @@
-import { ONE_DAY } from "../../../common/time-in-ms";
+import { ONE_MONTH } from "../../../common/time-in-ms";
 import { TennisTable } from "../tennis-table";
 import { Tournament, TournamentGame } from "./tournament";
 
@@ -12,7 +12,7 @@ import { Tournament, TournamentGame } from "./tournament";
  */
 
 /** A pair, or a player, counts as away once this long has passed since they last played */
-export const LONG_ABSENCE = 90 * ONE_DAY;
+export const LONG_ABSENCE = 6 * ONE_MONTH;
 
 export type PairKind =
   /** These two had never played each other before */
@@ -77,7 +77,7 @@ export type TournamentConnections = {
    * to each other
    */
   longestGap?: PairMeeting;
-  /** Only players the tournament brought something new to. Debuts first, then longest away */
+  /** Only players the tournament brought something new to. Longest away first */
   arrivals: PlayerArrival[];
   /** Players who played at least one real game in the tournament */
   playersPlayed: number;
@@ -233,12 +233,10 @@ export function buildTournamentConnections(
     });
   }
 
-  // Debuts first, then whoever had been away longest, then the first timers
-  arrivals.sort((a, b) => {
-    const rank = (arrival: PlayerArrival) => (arrival.debut ? 0 : arrival.returning ? 1 : 2);
-    if (rank(a) !== rank(b)) return rank(a) - rank(b);
-    return (a.lastPlayedAt ?? 0) - (b.lastPlayedAt ?? 0);
-  });
+  // Longest away first. A debut had never played at all, which is as long as an absence gets, so
+  // the debuts come out on top and the first timers - who have been playing all along - at the bottom
+  const awayFor = (arrival: PlayerArrival) => arrival.awayFor ?? Number.MAX_SAFE_INTEGER;
+  arrivals.sort((a, b) => awayFor(b) - awayFor(a));
 
   return {
     baseline,
