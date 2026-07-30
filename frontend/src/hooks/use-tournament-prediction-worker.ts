@@ -27,10 +27,20 @@ export function useTournamentPredictionWorker() {
             setSimulationProgress(message.data.progress);
             break;
 
-          case "tournament-prediction-data":
-            setPredictionResults((prev) => [...prev, message.data.result]);
+          case "tournament-prediction-data": {
+            const result = message.data.result;
+            setPredictionResults((prev) => {
+              // A time point delivers running tallies while it simulates, then a final one.
+              // Replace the previous tally for that time instead of appending a duplicate.
+              const index = prev.findIndex((r) => r.time === result.time);
+              if (index === -1) return [...prev, result];
+              const next = [...prev];
+              next[index] = result;
+              return next;
+            });
             setSimulationProgress(message.data.progress);
             break;
+          }
 
           case "tournament-prediction-complete":
             setSimulationIsDone(true);

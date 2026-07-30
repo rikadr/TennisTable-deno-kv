@@ -31,6 +31,25 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
+    slug: "tournament-predictions-stream-running-tallies",
+    title: "Tournament predictions update while they run",
+    date: "2026-07-30",
+    tags: ["feature-update"],
+    summary:
+      "The heavier simulation settings now draw a running tally every 10,000 simulations, so the graph fills in as it goes instead of after.",
+    body: [
+      text(
+        "The prediction graph and the table under it now redraw while a time point is still simulating. The numbers are the tally so far, based on however many simulations have finished, and they settle as the count climbs. The table says how far along it is, for example 40,000 of 50,000 simulations.",
+      ),
+      text(
+        "Previously nothing appeared for a time point until all of its simulations were done, which on Extreme or Melt your pc meant a long wait with an empty graph and no way to tell whether it was working. The estimates are usable well before the run finishes, so there was no reason to hold them back.",
+      ),
+      text(
+        "The progress bar moves within a time point too, rather than only stepping when one completes. Normal and Heavy runs are quick enough that little changes for them.",
+      ),
+    ],
+  },
+  {
     slug: "perfect-day-awarded-when-the-day-ends",
     title: "Perfect Day is awarded once the day is over",
     date: "2026-07-30",
