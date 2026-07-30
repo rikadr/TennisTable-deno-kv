@@ -107,11 +107,6 @@ export const TournamentConnectionsWidget: React.FC<{ tournament: Tournament }> =
           ))}
         </Section>
       )}
-
-      <p className="mt-6 text-xs font-light leading-relaxed">
-        Measured against the club as it stood when the tournament started. Skipped games, byes and walkovers are left
-        out: nobody met over them.
-      </p>
     </WidgetFrame>
   );
 };
