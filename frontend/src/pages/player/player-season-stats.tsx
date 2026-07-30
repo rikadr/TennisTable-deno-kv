@@ -2,7 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { fmtNum } from "../../common/number-utils";
-import { ContentCard } from "./player-page";
+import { ContentCard } from "./content-card";
 import { Season } from "../../client/client-db/seasons/season";
 import { dateString } from "./player-achievements";
 import { SeasonPlayerScoreGraph } from "./season-player-score-graph";

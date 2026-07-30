@@ -5,6 +5,7 @@ import { stringToColor } from "../../common/string-to-color";
 import { classNames } from "../../common/class-names";
 import { readableTextColor } from "../../common/color-utils";
 import { usePlayerLinkSearch } from "../../hooks/use-player-link-search";
+import { ContentCard } from "./content-card";
 
 type Props = {
   playerId: string;
@@ -97,7 +98,7 @@ const PairingsSettings: React.FC<SettingsProps> = ({
   minGamesPerLink,
   onMinGamesPerLinkChange,
 }) => (
-  <div className="w-full sm:w-72 bg-secondary-background text-secondary-text rounded-lg p-3 space-y-3">
+  <div className="w-full bg-secondary-background text-secondary-text rounded-lg p-3 mb-3 space-y-3">
     <label className="flex items-center gap-2 py-1 text-sm cursor-pointer">
       <input
         type="checkbox"
@@ -210,8 +211,10 @@ export const PlayerPairings: React.FC<Props> = ({ playerId }) => {
   const isEmpty = columns.length === 0 && unreachable.length === 0;
 
   return (
-    <div className="flex flex-col gap-2">
-      <div className="flex flex-col items-end gap-2">
+    <ContentCard
+      title="Player pairings"
+      description="How many players it takes to connect you"
+      action={
         <button
           type="button"
           aria-label="Pairing settings"
@@ -224,15 +227,16 @@ export const PlayerPairings: React.FC<Props> = ({ playerId }) => {
         >
           <CogIcon />
         </button>
-        {settingsOpen && (
-          <PairingsSettings
-            includeRetired={includeRetired}
-            onIncludeRetiredChange={setIncludeRetired}
-            minGamesPerLink={minGamesPerLink}
-            onMinGamesPerLinkChange={setMinGamesPerLink}
-          />
-        )}
-      </div>
+      }
+    >
+      {settingsOpen && (
+        <PairingsSettings
+          includeRetired={includeRetired}
+          onIncludeRetiredChange={setIncludeRetired}
+          minGamesPerLink={minGamesPerLink}
+          onMinGamesPerLinkChange={setMinGamesPerLink}
+        />
+      )}
       {isEmpty ? (
         <p className="text-sm opacity-70">No other players to connect to.</p>
       ) : (
@@ -307,6 +311,6 @@ export const PlayerPairings: React.FC<Props> = ({ playerId }) => {
           </div>
         </div>
       )}
-    </div>
+    </ContentCard>
   );
 };
