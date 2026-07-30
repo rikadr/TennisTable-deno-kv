@@ -16,14 +16,21 @@ export type PlayerPairingsColumn = {
 
 export type PlayerPairingsDTO = {
   columns: PlayerPairingsColumn[];
-  /** Active players with no path of games connecting them to the player. */
+  /** Included players with no path of games connecting them to the player. */
   unreachable: string[];
 };
 
+export type PlayerPairingsOptions = {
+  /** Let retired players be reached, and be routed through. Defaults to false. */
+  includeRetired?: boolean;
+  /** Games two players need against each other before that counts as a link. Defaults to 1. */
+  minGamesPerLink?: number;
+};
+
 /**
- * Groups every other active player by how many intermediaries it takes to connect them to a
- * player through games played. Only games between two active players count as connections, so
- * retiring a player breaks the paths that ran through them.
+ * Groups every other player by how many intermediaries it takes to connect them to a player
+ * through games played. Retired players are left out of the graph by default, so retiring a
+ * player breaks the paths that ran through them.
  */
 export class PlayerPairings {
   private parent: TennisTable;
@@ -32,9 +39,13 @@ export class PlayerPairings {
     this.parent = parent;
   }
 
-  get(playerId: string): PlayerPairingsDTO {
+  get(playerId: string, options: PlayerPairingsOptions = {}): PlayerPairingsDTO {
+    const includeRetired = options.includeRetired ?? false;
+    const minGamesPerLink = Math.max(1, options.minGamesPerLink ?? 1);
+
+    const included = includeRetired ? this.parent.allPlayers : this.parent.players;
     // The player themselves may be retired, but their own games still connect them to the graph.
-    const nodes = new Set<string>(this.parent.players.map((player) => player.id));
+    const nodes = new Set<string>(included.map((player) => player.id));
     nodes.add(playerId);
 
     const games = new Map<string, Map<string, number>>();
@@ -59,6 +70,7 @@ export class PlayerPairings {
 
       for (const from of previous) {
         for (const [to, gamesPlayed] of games.get(from.playerId) ?? []) {
+          if (gamesPlayed < minGamesPerLink) continue; // Too few games together to count as a link
           if (degrees.has(to)) continue; // Already reached on a shorter path
           const existing = found.get(to);
           // Multiple paths of the same length: keep the one with the most games on the last hop.
@@ -81,7 +93,7 @@ export class PlayerPairings {
       }
     }
 
-    const unreachable = this.parent.players
+    const unreachable = included
       .filter((player) => !degrees.has(player.id))
       .map((player) => player.id)
       .sort((a, b) => this.parent.playerName(a).localeCompare(this.parent.playerName(b)));

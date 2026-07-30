@@ -167,7 +167,14 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
         "Where several equally short chains exist, the one with the most games on its last hop wins - picked hop by hop working back from the player you hover. That same count is what orders each column.",
       ),
       text(
-        "Only games between two active players count as links, so a retired player does not keep bridging the people who used to play through them.",
+        "A cog in the widget's top right opens two settings, both recalculating the chains as you change them, so the columns, their counts and the paths on hover all follow along.",
+      ),
+      list(
+        "Include retired players - off by default. Left off, only games between two active players count as links, so a retired player does not keep bridging the people who used to play through them. Turn it on and they reappear in the columns and start bridging again.",
+        "Games per link - anywhere from 1 to 10. At 1 a single game between two players connects them; higher up, only pairs who play each other that often count.",
+      ),
+      text(
+        "Games per link is the more interesting of the two: it strips out the one-off games that make almost everyone look two steps apart, leaving the chains that run through opponents people actually play. Pushed far enough it will route you around someone you have only met once, and drop players into the no-connection column entirely.",
       ),
     ],
   },

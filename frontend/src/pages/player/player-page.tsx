@@ -15,6 +15,7 @@ import { PlayerAchievements } from "./player-achievements";
 import { PlayerPredictionsPage } from "./player-predictions-page";
 import { PlayerSeasonStats } from "./player-season-stats";
 import { PlayerPairings } from "./player-pairings";
+import { ContentCard } from "./content-card";
 import { usePlayerLinkSearch } from "../../hooks/use-player-link-search";
 
 type TabType = "overview" | "games" | "statistics" | "achievements" | "predictions" | "season";
@@ -368,11 +369,7 @@ export const PlayerPage: React.FC = () => {
                 </ContentCard>
               )}
 
-              {playerId && (
-                <ContentCard title="Player pairings" description="How many players it takes to connect you">
-                  <PlayerPairings playerId={playerId} />
-                </ContentCard>
-              )}
+              {playerId && <PlayerPairings playerId={playerId} />}
             </div>
           </div>
         )}
@@ -386,18 +383,3 @@ export const PlayerPage: React.FC = () => {
   );
 };
 
-export const ContentCard: React.FC<{ title: string; description?: string; children: React.ReactNode }> = ({
-  title,
-  description,
-  children,
-}) => {
-  return (
-    <div className="bg-primary-background text-primary-text rounded-xl p-3 md:p-6 pt-2 md:pt-3">
-      <section className="flex flex-col gap-x-6 md:flex-row items-baseline mb-2 md:mb-4">
-        <h3 className="text-base md:text-lg font-semibold">{title}</h3>
-        <p className="text-sm md:text-base">{description}</p>
-      </section>
-      {children}
-    </div>
-  );
-};
