@@ -4,7 +4,7 @@ import { Tournament } from "./tournament";
 
 export const NUM_SIMULATIONS = 5_000; // 10_000 at least. 1_000 for higher performance
 const SIMULATION_TIME_BUFFER = 10_000; // Buffer added to simulation times (except Date.now())
-const PARTIAL_RESULT_INTERVAL = 10_000; // Emit a running tally every this many simulations
+const PARTIAL_RESULT_INTERVAL = 2_000; // Emit a running tally every this many simulations
 
 export class TournamentPrediction {
   private readonly parent: TennisTable;
