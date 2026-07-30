@@ -2,7 +2,7 @@ import { useEventDbContext } from "../../wrappers/event-db-context";
 import { relativeTimeString } from "../../common/date-utils";
 import { classNames } from "../../common/class-names";
 import { useState } from "react";
-import { Achievement, AchievementProgression } from "../../client/client-db/achievements";
+import { Achievement, AchievementProgression, STREAK_RECORD_FLOOR } from "../../client/client-db/achievements";
 import { Link } from "react-router-dom";
 import { fmtNum } from "../../common/number-utils";
 import { usePlayerLinkSearch } from "../../hooks/use-player-link-search";
@@ -50,6 +50,11 @@ export const ACHIEVEMENT_LABELS: Record<string, { title: string; description: st
     description: "Won 20 games in a row against the same opponent",
     icon: "👹",
   },
+  "longest-win-streak": {
+    title: "Longest Win Streak",
+    description: "Put together the longest run of consecutive wins in league history",
+    icon: "🌋",
+  },
   "punching-bag": {
     title: "Punching Bag",
     description: "Lose 10 games in a row",
@@ -59,6 +64,11 @@ export const ACHIEVEMENT_LABELS: Record<string, { title: string; description: st
     title: "Never Give Up",
     description: "Lose 20 games in a row",
     icon: "🫠",
+  },
+  "longest-lose-streak": {
+    title: "Longest Lose Streak",
+    description: "Suffer the longest run of consecutive losses in league history",
+    icon: "🕳️",
   },
   "comeback-kid": {
     title: "Comeback Kid",
@@ -512,6 +522,17 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
                   </p>
                 )}
 
+                {(achievement.type === "longest-win-streak" || achievement.type === "longest-lose-streak") &&
+                  achievement.data && (
+                    <p className="text-xs text-secondary-text/70 mt-2">
+                      {achievement.data.streakLength}{" "}
+                      {achievement.type === "longest-win-streak" ? "wins" : "losses"} in a row
+                      {achievement.data.previousRecord !== undefined
+                        ? ` (previous record: ${achievement.data.previousRecord})`
+                        : " (first league record!)"}
+                    </p>
+                  )}
+
                 {achievement.type === "perfect-day" && achievement.data && (
                   <p className="text-xs text-secondary-text/70 mt-2">
                     {achievement.data.wins} wins, 0 losses on {dateString(achievement.data.day)}
@@ -859,6 +880,41 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                           )}
                         </div>
                       )}
+
+                      {/* Record holder and personal best for the streak records.
+                          The bar tracks the live streak, so the player's longest
+                          ever run is spelt out separately. */}
+                      {(type === "longest-win-streak" || type === "longest-lose-streak") &&
+                        "recordHolder" in data && (
+                          <div className="mt-2 text-xs text-secondary-text/70 space-y-1">
+                            {"personalBest" in data && (
+                              <p>
+                                Your longest ever: {data.personalBest}{" "}
+                                {type === "longest-win-streak" ? "wins" : "losses"} in a row
+                              </p>
+                            )}
+                            <p>
+                              {data.recordHolder ? (
+                                <>
+                                  League record held by{" "}
+                                  <Link to={{ pathname: "/player/" + data.recordHolder, search }}>
+                                    <span className="text-secondary-text underline">
+                                      {context.playerName(data.recordHolder)}
+                                    </span>
+                                  </Link>
+                                  . {type === "longest-win-streak" ? "Win" : "Lose"} {(data.target ?? 0) + 1} in a
+                                  row to take it.
+                                </>
+                              ) : (
+                                <>
+                                  No record set yet —{" "}
+                                  {type === "longest-win-streak" ? "win" : "lose"} {STREAK_RECORD_FLOOR} in a row to
+                                  start the record.
+                                </>
+                              )}
+                            </p>
+                          </div>
+                        )}
                     </>
                   ) : type === "marathon-set" ? (
                     <div className="mt-2 text-xs text-secondary-text/70">
@@ -867,6 +923,11 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                   ) : type === "leap-frog" ? (
                     <div className="mt-2 text-xs text-secondary-text/70">
                       No league record yet — jump 2 or more ranks in a single game to set the first record.
+                    </div>
+                  ) : type === "longest-win-streak" || type === "longest-lose-streak" ? (
+                    <div className="mt-2 text-xs text-secondary-text/70">
+                      No league record yet — {type === "longest-win-streak" ? "win" : "lose"}{" "}
+                      {STREAK_RECORD_FLOOR} in a row to set the first record.
                     </div>
                   ) : type === "earliest-game" || type === "latest-game" ? (
                     <div className="mt-2 text-xs text-secondary-text/70 space-y-1">

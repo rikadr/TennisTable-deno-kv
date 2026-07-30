@@ -3,6 +3,11 @@ import { EventTypeEnum } from "./event-store/event-types";
 import { Game } from "./event-store/projectors/games-projector";
 import { TennisTable } from "./tennis-table";
 
+// Shortest streak that can establish the very first Longest Win / Lose Streak
+// record. Below this a run is too ordinary to be a record worth holding. Once
+// a record exists the floor is irrelevant — only beating the record counts.
+export const STREAK_RECORD_FLOOR = 3;
+
 export class Achievements {
   private parent: TennisTable;
   private hasCalculated = false;
@@ -47,6 +52,19 @@ export class Achievements {
   // prior record to break.
   earliestGameRecord: { minutesIntoDay: number | undefined } = { minutesIntoDay: undefined };
   latestGameRecord: { minutesIntoDay: number | undefined } = { minutesIntoDay: undefined };
+  // League-wide running records for the Longest Win Streak / Longest Lose
+  // Streak achievements: the longest run of consecutive wins / losses any
+  // player has put together to date. Undefined until a streak reaches
+  // STREAK_RECORD_FLOOR and establishes the first record. Used by the
+  // progression view so players can see the mark they need to beat.
+  winStreakRecord: { length: number | undefined; holder: string | undefined } = {
+    length: undefined,
+    holder: undefined,
+  };
+  loseStreakRecord: { length: number | undefined; holder: string | undefined } = {
+    length: undefined,
+    holder: undefined,
+  };
 
   constructor(parent: TennisTable) {
     this.parent = parent;
@@ -66,6 +84,8 @@ export class Achievements {
     this.bestRankJump.clear();
     this.earliestGameRecord = { minutesIntoDay: undefined };
     this.latestGameRecord = { minutesIntoDay: undefined };
+    this.winStreakRecord = { length: undefined, holder: undefined };
+    this.loseStreakRecord = { length: undefined, holder: undefined };
 
     const playerTracker = new Map<
       string,
@@ -77,6 +97,13 @@ export class Achievements {
         loseStreakAll: number;
         loseStreakAllStartedAt: number;
         winStreakPlayer: Map<string, { count: number; startedAt: number }>;
+        // The Longest Win / Lose Streak achievement earned by the streak
+        // that is running right now, while this player still holds the
+        // record with it — the one that grows as the streak grows. Cleared
+        // when the streak breaks, and left in place (but no longer grown)
+        // once another player takes the record over.
+        openWinStreakRecord: StreakRecordAchievement | undefined;
+        openLoseStreakRecord: StreakRecordAchievement | undefined;
         donutCount: number;
         closeCallsCount: number;
         edgeLordCount: number;
@@ -102,6 +129,8 @@ export class Achievements {
           loseStreakAll: 0,
           loseStreakAllStartedAt: game.playedAt,
           winStreakPlayer: new Map(),
+          openWinStreakRecord: undefined,
+          openLoseStreakRecord: undefined,
           donutCount: 0,
           closeCallsCount: 0,
           edgeLordCount: 0,
@@ -122,6 +151,8 @@ export class Achievements {
           loseStreakAll: 0,
           loseStreakAllStartedAt: game.playedAt,
           winStreakPlayer: new Map(),
+          openWinStreakRecord: undefined,
+          openLoseStreakRecord: undefined,
           donutCount: 0,
           closeCallsCount: 0,
           edgeLordCount: 0,
@@ -317,6 +348,17 @@ export class Achievements {
       }
       winner.winStreakAll++;
 
+      // Longest Win Streak: the league-wide record for consecutive wins.
+      winner.openWinStreakRecord = this.#checkStreakRecordAchievement(
+        "longest-win-streak",
+        this.winStreakRecord,
+        game.winner,
+        winner.winStreakAll,
+        winner.winStreakAllStartedAt,
+        game.playedAt,
+        winner.openWinStreakRecord,
+      );
+
       // Check if winner just broke a lose streak
       if (winner.loseStreakAll >= 20) {
         this.#addAchievement(
@@ -334,9 +376,11 @@ export class Achievements {
         );
       }
 
-      // Winner resets their lose streak
+      // Winner resets their lose streak. Any Longest Lose Streak award it
+      // earned stops growing here — a later losing run is a new streak.
       winner.loseStreakAll = 0;
       winner.loseStreakAllStartedAt = game.playedAt;
+      winner.openLoseStreakRecord = undefined;
 
       // Update player-specific win streak
       if (!winner.winStreakPlayer.has(game.loser)) {
@@ -361,17 +405,30 @@ export class Achievements {
         );
       }
 
-      // Update loser stats
+      // Update loser stats. Any Longest Win Streak award their broken streak
+      // earned stops growing here — a later winning run is a new streak.
       loser.lastActiveAt = game.playedAt;
       loser.winStreakAll = 0;
       loser.winStreakAllStartedAt = game.playedAt;
       loser.winStreakPlayer.set(game.winner, { count: 0, startedAt: game.playedAt });
+      loser.openWinStreakRecord = undefined;
 
       // Start or continue lose streak for loser
       if (loser.loseStreakAll === 0) {
         loser.loseStreakAllStartedAt = game.playedAt;
       }
       loser.loseStreakAll++;
+
+      // Longest Lose Streak: the league-wide record for consecutive losses.
+      loser.openLoseStreakRecord = this.#checkStreakRecordAchievement(
+        "longest-lose-streak",
+        this.loseStreakRecord,
+        game.loser,
+        loser.loseStreakAll,
+        loser.loseStreakAllStartedAt,
+        game.playedAt,
+        loser.openLoseStreakRecord,
+      );
 
       // Check for lose streak achievements for loser
       if (loser.loseStreakAll === 10) {
@@ -1553,6 +1610,60 @@ export class Achievements {
     }
   }
 
+  // Awards "Longest Win Streak" / "Longest Lose Streak" — the league-wide
+  // records for consecutive wins and consecutive losses. Called with the
+  // player's streak as it stands after the game just played.
+  //
+  // A streak takes the record the moment it passes the standing one (or
+  // reaches STREAK_RECORD_FLOOR, when nobody holds it yet). Extending that
+  // same streak while still holding the record does not award again — the
+  // achievement already earned grows with the streak instead, so an
+  // 11th straight win reads as one award worth 11 rather than two worth
+  // 10 and 11. Its `earnedAt` moves to the game that extended it, so the
+  // award always spans the whole of the record streak.
+  //
+  // Being overtaken mid-streak resets that: once another player holds the
+  // record, passing them again earns a second award, and the first keeps
+  // the length it had while it was the record. A streak that has been
+  // broken always earns its own award when it takes the record back.
+  //
+  // Returns the award this streak now owns, to be stored on the player's
+  // tracker and passed back in on their next game.
+  #checkStreakRecordAchievement(
+    type: "longest-win-streak" | "longest-lose-streak",
+    record: { length: number | undefined; holder: string | undefined },
+    playerId: string,
+    streakLength: number,
+    startedAt: number,
+    playedAt: number,
+    openRecord: StreakRecordAchievement | undefined,
+  ): StreakRecordAchievement | undefined {
+    const beatsRecord =
+      record.length === undefined ? streakLength >= STREAK_RECORD_FLOOR : streakLength > record.length;
+    if (!beatsRecord) {
+      return openRecord;
+    }
+
+    // Same streak, still the record holder: grow the award instead of
+    // handing out another one.
+    if (openRecord !== undefined && record.holder === playerId) {
+      openRecord.data.streakLength = streakLength;
+      openRecord.earnedAt = playedAt;
+      record.length = streakLength;
+      return openRecord;
+    }
+
+    const data = { streakLength, startedAt, previousRecord: record.length };
+    const achievement: StreakRecordAchievement =
+      type === "longest-win-streak"
+        ? this.#createAchievement("longest-win-streak", playerId, playedAt, data)
+        : this.#createAchievement("longest-lose-streak", playerId, playedAt, data);
+    this.#addAchievement(playerId, achievement);
+    record.length = streakLength;
+    record.holder = playerId;
+    return achievement;
+  }
+
   #checkBackAfterAchievement(playerId: string, lastActiveAt: number, currentGameAt: number) {
     const timeDiff = currentGameAt - lastActiveAt;
     const SIX_MONTHS = 6 * 30 * 24 * 60 * 60 * 1000;
@@ -1903,12 +2014,26 @@ export class Achievements {
       "perfect-day": { current: 0, target: 5, earned: 0 },
       "perfect-week": { current: 0, target: 5, earned: 0 },
       "streak-ender": { earned: 0 },
+      "longest-win-streak": {
+        earned: 0,
+        current: 0,
+        personalBest: 0,
+        target: this.winStreakRecord.length,
+        recordHolder: this.winStreakRecord.holder,
+      },
 
       // Resilience
       "punching-bag": { current: 0, target: 10, earned: 0 },
       "never-give-up": { current: 0, target: 20, earned: 0 },
       "comeback-kid": { earned: 0 },
       "unbreakable-spirit": { earned: 0 },
+      "longest-lose-streak": {
+        earned: 0,
+        current: 0,
+        personalBest: 0,
+        target: this.loseStreakRecord.length,
+        recordHolder: this.loseStreakRecord.holder,
+      },
 
       // Rank & Score
       "on-the-podium": { earned: 0 },
@@ -1979,6 +2104,10 @@ export class Achievements {
     let gamesPlayedCount = 0;
     let currentWinStreakAll = 0;
     let currentLoseStreakAll = 0;
+    // Longest runs the player has ever put together, which may be longer than
+    // the streak they are on now. Shown alongside the league streak records.
+    let longestWinStreakAll = 0;
+    let longestLoseStreakAll = 0;
     let donutCount = 0;
     let closeCallsCount = 0;
     let edgeLordCount = 0;
@@ -2106,6 +2235,7 @@ export class Achievements {
         // Track win streak against all
         currentWinStreakAll++;
         currentLoseStreakAll = 0;
+        longestWinStreakAll = Math.max(longestWinStreakAll, currentWinStreakAll);
 
         // Track win streak against specific opponent
         streaksPerOpponent.set(opponent, (streaksPerOpponent.get(opponent) || 0) + 1);
@@ -2122,6 +2252,7 @@ export class Achievements {
         // Lost a game - reset win streak and increment lose streak
         currentWinStreakAll = 0;
         currentLoseStreakAll++;
+        longestLoseStreakAll = Math.max(longestLoseStreakAll, currentLoseStreakAll);
 
         // Reset streak against this specific opponent
         if (isLoser) {
@@ -2178,6 +2309,14 @@ export class Achievements {
     progression["global-player"].opponents = opponentsPlayed;
     progression["punching-bag"].current = currentLoseStreakAll;
     progression["never-give-up"].current = currentLoseStreakAll;
+
+    // Longest Win / Lose Streak: the live streak is what can still grow into
+    // the league record, so that is the progress. The player's longest ever
+    // run is reported alongside it.
+    progression["longest-win-streak"].current = currentWinStreakAll;
+    progression["longest-win-streak"].personalBest = longestWinStreakAll;
+    progression["longest-lose-streak"].current = currentLoseStreakAll;
+    progression["longest-lose-streak"].personalBest = longestLoseStreakAll;
 
     // Perfect Day progression tracks TODAY's live attempt: the number of
     // games won today with zero losses so far. A single loss today nullifies
@@ -2467,6 +2606,13 @@ export class Achievements {
 }
 
 // Type Definitions
+type StreakRecordAchievementData = {
+  streakLength: number;
+  startedAt: number;
+  // Undefined when this streak is the first to establish the league record.
+  previousRecord?: number;
+};
+
 type AchievementDefinitions = {
   "first-game": { gameId: string; opponent: string };
   "ranked": { gameId: string; opponent: string };
@@ -2537,6 +2683,12 @@ type AchievementDefinitions = {
     previousRecord?: number;
   };
   "streak-ender": { opponent: string; gameId: string; streakLength: number };
+  // Record-breaking streak achievements. `streakLength` is how long the
+  // streak was when it last held the league record — it grows while the
+  // streak keeps extending the record — and `startedAt` is the first game
+  // of the streak, so startedAt → earnedAt spans the record run.
+  "longest-win-streak": StreakRecordAchievementData;
+  "longest-lose-streak": StreakRecordAchievementData;
   "group-stage-star": { tournamentId: string; wins: number };
   "full-house": { count: number; firstGameAt: number };
   "humbled": { count: number; firstGameAt: number };
@@ -2560,6 +2712,13 @@ type GenericAchievement<T extends AchievementType = AchievementType> = {
 export type Achievement = {
   [K in AchievementType]: GenericAchievement<K>;
 }[AchievementType];
+
+// The award for holding a streak record — either direction. The two share a
+// data shape, so the code that grows one as the streak grows can treat them
+// interchangeably.
+type StreakRecordAchievement =
+  | GenericAchievement<"longest-win-streak">
+  | GenericAchievement<"longest-lose-streak">;
 
 // Progression Types
 type BaseProgression = {
@@ -2627,6 +2786,22 @@ type MarathonSetProgression = BaseProgression & {
   recordHolder?: string;
 };
 
+type StreakRecordProgression = BaseProgression & {
+  // The player's streak as it stands right now (0 if their last game went
+  // the other way). Only a live streak can grow into the record, so this is
+  // what the progress bar measures.
+  current: number;
+  // The league record — the streak this player must strictly exceed to take
+  // it. Undefined while nobody holds it (a streak of STREAK_RECORD_FLOOR
+  // takes it outright).
+  target?: number;
+  // Player who currently holds the league record, if any.
+  recordHolder?: string;
+  // The player's own longest streak ever, which may be longer than the one
+  // they are on now. Shown so they can see how their best compares.
+  personalBest: number;
+};
+
 // Earliest / Latest Game are record-breaking achievements with no numeric
 // progress bar — you either hold the record or you don't. Instead of a
 // percentage, the progress view shows the current league record and the
@@ -2685,6 +2860,8 @@ export type AchievementProgression = {
   "climber": ProgressionWithTarget;
   "marathon-set": MarathonSetProgression;
   "streak-ender": BaseProgression;
+  "longest-win-streak": StreakRecordProgression;
+  "longest-lose-streak": StreakRecordProgression;
   "group-stage-star": BaseProgression;
   "full-house": MissingPlayersProgression;
   "humbled": MissingPlayersProgression;
