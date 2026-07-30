@@ -5,7 +5,7 @@ import { NameType, ValueType } from "recharts/types/component/DefaultTooltipCont
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { stringToColor } from "../../common/string-to-color";
 import { relativeTimeString } from "../../common/date-utils";
-import { NUM_SIMULATIONS } from "../../client/client-db/tournaments/prediction";
+import { NUM_SIMULATIONS, TournamentPredictionResult } from "../../client/client-db/tournaments/prediction";
 import { Tournament } from "../../client/client-db/tournaments/tournament";
 import { useTournamentPredictionWorker } from "../../hooks/use-tournament-prediction-worker";
 import { ProgressBar } from "../player/player-elo-graph";
@@ -68,16 +68,17 @@ export const TournamentPredictions = ({ tournament }: { tournament: Tournament }
         dataPoint[playerId] = 0;
       });
 
-      // If we have data for this time, fill in the player percentages
+      // If we have data for this time, fill in the player percentages.
+      // Divide by the result's own simulation count, it may still be a running tally.
       if (result) {
         Object.keys(result.players).forEach((playerId) => {
-          dataPoint[playerId] = (result.players[playerId].wins / runNumSimulations) * 100;
+          dataPoint[playerId] = (result.players[playerId].wins / Math.max(1, result.simulations)) * 100;
         });
       }
 
       return dataPoint;
     });
-  }, [simulationTimes, predictionResults, runNumSimulations]);
+  }, [simulationTimes, predictionResults]);
 
   const [graphDataToSee, setGraphDataToSee] = useState<Record<string, number | string>[]>(graphData);
 
@@ -261,7 +262,7 @@ const LatestPredictionTable = ({
   predictionResults,
   numSimulations,
 }: {
-  predictionResults: { time: number; players: Record<string, { wins: number }>; confidence: number }[];
+  predictionResults: TournamentPredictionResult[];
   numSimulations: number;
 }) => {
   const context = useEventDbContext();
@@ -275,7 +276,7 @@ const LatestPredictionTable = ({
       playerId,
       name: context.playerName(playerId),
       wins,
-      winPct: (wins / numSimulations) * 100,
+      winPct: (wins / Math.max(1, latest.simulations)) * 100,
     }))
     .sort((a, b) => b.winPct - a.winPct);
 
@@ -335,7 +336,10 @@ const LatestPredictionTable = ({
         </table>
       </div>
       <p className="text-xs md:text-sm text-primary-text/50 mt-2">
-        Confidence: {(latest.confidence * 100).toFixed(1)}% &middot; {numSimulations.toLocaleString()} simulations
+        Confidence: {(latest.confidence * 100).toFixed(1)}% &middot;{" "}
+        {latest.simulations < numSimulations
+          ? `${latest.simulations.toLocaleString()} of ${numSimulations.toLocaleString()} simulations`
+          : `${latest.simulations.toLocaleString()} simulations`}
       </p>
     </section>
   );
