@@ -46,12 +46,12 @@ export const TournamentConnectionsWidget: React.FC<{ tournament: Tournament }> =
         <Tile value={firstMeetings.length} label="First-ever meetings" of={pairs.length} />
         <Tile value={reunions.length} label="Reunions" of={pairs.length} />
         <Tile value={debuts.length} label="First games ever" of={playersPlayed} />
-        <Tile value={returning.length + firstTimers.length} label="Back or new to tournaments" of={playersPlayed} />
+        <Tile value={returning.length} label="Back after a break" of={playersPlayed} />
       </div>
 
       {nothingNew && (
         <p className="text-sm font-light mb-6">
-          Everyone here already plays each other regularly - the tournament put no new pairings on the table.
+          Everyone here already plays each other regularly.
           {longestGap && (
             <>
               {" "}
@@ -64,14 +64,9 @@ export const TournamentConnectionsWidget: React.FC<{ tournament: Tournament }> =
       )}
 
       {firstMeetings.length > 0 && (
-        <Section
-          title="First-ever meetings"
-          subtitle="These two had never played each other before the tournament"
-        >
+        <Section title="First-ever meetings" subtitle="They had never played each other before">
           {firstMeetings.map((pair) => (
-            <PairRow key={pair.key} pair={pair}>
-              {experienceLine(pair.experience)}
-            </PairRow>
+            <PairRow key={pair.key} pair={pair} />
           ))}
         </Section>
       )}
@@ -80,25 +75,41 @@ export const TournamentConnectionsWidget: React.FC<{ tournament: Tournament }> =
         <Section title="Reunions" subtitle={`Pairs who had not met in ${formatGap(LONG_ABSENCE)} or more`}>
           {reunions.map((pair) => (
             <PairRow key={pair.key} pair={pair}>
-              First meeting in <span className="font-medium">{formatGap(pair.gap ?? 0)}</span> ·{" "}
-              {fmtNum(pair.gamesBefore)} earlier {pair.gamesBefore === 1 ? "game" : "games"}
+              First meeting in <span className="font-medium">{formatGap(pair.gap ?? 0)}</span>
             </PairRow>
           ))}
         </Section>
       )}
 
-      {arrivals.length > 0 && (
-        <Section title="New faces" subtitle="Players the tournament brought to the table">
-          {arrivals.map((arrival) => (
+      {debuts.length > 0 && (
+        <Section title="First game ever" subtitle="The tournament was their first game in the club">
+          {debuts.map((arrival) => (
+            <PlayerRow key={arrival.playerId} arrival={arrival} />
+          ))}
+        </Section>
+      )}
+
+      {returning.length > 0 && (
+        <Section title="Back after a break" subtitle={`They had not played in ${formatGap(LONG_ABSENCE)} or more`}>
+          {returning.map((arrival) => (
+            <PlayerRow key={arrival.playerId} arrival={arrival}>
+              Away for <span className="font-medium">{formatGap(arrival.awayFor ?? 0)}</span>
+            </PlayerRow>
+          ))}
+        </Section>
+      )}
+
+      {firstTimers.length > 0 && (
+        <Section title="First tournament" subtitle="They had been playing, but never in a tournament">
+          {firstTimers.map((arrival) => (
             <PlayerRow key={arrival.playerId} arrival={arrival} />
           ))}
         </Section>
       )}
 
       <p className="mt-6 text-xs font-light leading-relaxed">
-        Everything is measured against the club as it stood when the tournament started, so a pair meeting twice - in
-        group play and again in the bracket - still counts as one first meeting. Skipped games, byes and walkovers are
-        left out: nobody met over them.
+        Measured against the club as it stood when the tournament started. Skipped games, byes and walkovers are left
+        out: nobody met over them.
       </p>
     </WidgetFrame>
   );
@@ -142,7 +153,7 @@ const Section: React.FC<{ title: string; subtitle: string; children: React.React
   </div>
 );
 
-const PairRow: React.FC<{ pair: PairMeeting; children: React.ReactNode }> = ({ pair, children }) => {
+const PairRow: React.FC<{ pair: PairMeeting; children?: React.ReactNode }> = ({ pair, children }) => {
   return (
     <div className="flex items-center gap-3 rounded-lg px-3 py-2 ring-1 ring-secondary-background">
       <div className="flex -space-x-2 shrink-0">
@@ -154,7 +165,7 @@ const PairRow: React.FC<{ pair: PairMeeting; children: React.ReactNode }> = ({ p
           <PlayerLink playerId={pair.players[0]} /> <span className="font-light">vs</span>{" "}
           <PlayerLink playerId={pair.players[1]} />
         </p>
-        <p className="text-xs font-light">{children}</p>
+        {children && <p className="text-xs font-light">{children}</p>}
       </div>
       {pair.gamesInTournament > 1 && (
         <p className="shrink-0 text-xs font-light" title={`They met ${pair.gamesInTournament} times in this tournament`}>
@@ -165,7 +176,7 @@ const PairRow: React.FC<{ pair: PairMeeting; children: React.ReactNode }> = ({ p
   );
 };
 
-const PlayerRow: React.FC<{ arrival: PlayerArrival }> = ({ arrival }) => {
+const PlayerRow: React.FC<{ arrival: PlayerArrival; children?: React.ReactNode }> = ({ arrival, children }) => {
   return (
     <div className="flex items-center gap-3 rounded-lg px-3 py-2 ring-1 ring-secondary-background">
       <div className="shrink-0">
@@ -175,21 +186,8 @@ const PlayerRow: React.FC<{ arrival: PlayerArrival }> = ({ arrival }) => {
         <p className="text-sm truncate">
           <PlayerLink playerId={arrival.playerId} />
         </p>
-        <p className="text-xs font-light">
-          {arrival.debut && "Played their first ever game in this tournament"}
-          {arrival.returning && arrival.awayFor !== undefined && (
-            <>
-              Back after <span className="font-medium">{formatGap(arrival.awayFor)}</span> away ·{" "}
-              {fmtNum(arrival.gamesBefore)} games before that
-              {arrival.firstTournament && " · first tournament"}
-            </>
-          )}
-          {!arrival.debut && !arrival.returning && arrival.firstTournament && "First tournament, after playing casually"}
-        </p>
+        {children && <p className="text-xs font-light">{children}</p>}
       </div>
-      <p className="shrink-0 text-xs font-light">
-        {fmtNum(arrival.gamesInTournament)} {arrival.gamesInTournament === 1 ? "game" : "games"}
-      </p>
     </div>
   );
 };
@@ -202,17 +200,6 @@ const PlayerLink: React.FC<{ playerId: string }> = ({ playerId }) => {
     </Link>
   );
 };
-
-/**
- * What makes a first meeting worth reading about: two players with long histories who had somehow
- * never met says more than two players who had barely played at all
- */
-function experienceLine([first, second]: [number, number]): string {
-  const [fewest, most] = [Math.min(first, second), Math.max(first, second)];
-  if (most === 0) return "Neither of them had played in the club before";
-  if (fewest === 0) return "One of them was new to the club";
-  return `${fmtNum(fewest)} and ${fmtNum(most)} games played, and never against each other`;
-}
 
 /** Gaps are read in months and years. Anything shorter is a curiosity, not a reunion */
 function formatGap(ms: number): string {

@@ -42,9 +42,11 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
         "New connections sits under the timeline on the Statistics tab. It answers the thing a bracket cannot: who did this tournament put in front of each other that an ordinary week never would.",
       ),
       list(
-        "First-ever meetings - pairs who had never played each other before, with how many games each of them had behind them",
+        "First-ever meetings - pairs who had never played each other before",
         "Reunions - pairs who had not met in six months or more, and how long it had been",
-        "New faces - players whose first ever game came in the tournament, players back after six months away, and players in their first tournament, longest absence first",
+        "First game ever - players who had never played in the club until this tournament",
+        "Back after a break - players returning after six months or more away, longest absence first",
+        "First tournament - players who had been playing all along, but never in a tournament",
       ),
       text(
         "Everything is measured against the club as it stood the moment the tournament started. That single baseline is what keeps the numbers steady: a pair meeting twice, in group play and then again in the bracket, is one first meeting rather than a meeting followed by a rematch. Skipped games, byes and walkovers are left out, since nobody met over them.",

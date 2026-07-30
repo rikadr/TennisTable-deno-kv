@@ -218,7 +218,6 @@ describe("Tournament connections", () => {
 
     const debut = arrival(result, "P4");
     expect(debut.debut).toBe(true);
-    expect(debut.gamesBefore).toBe(0);
     expect(debut.lastPlayedAt).toBeUndefined();
     expect(debut.awayFor).toBeUndefined();
     expect(debut.gamesInTournament).toBe(1);
@@ -242,7 +241,7 @@ describe("Tournament connections", () => {
     expect(returning.returning).toBe(true);
     expect(returning.debut).toBe(false);
     expect(returning.awayFor).toBe(300 * ONE_DAY);
-    expect(returning.gamesBefore).toBe(1);
+    expect(returning.lastPlayedAt).toBe(before(300));
 
     expect(arrival(result, "P1").returning).toBe(false);
   });

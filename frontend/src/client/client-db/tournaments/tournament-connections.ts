@@ -38,8 +38,6 @@ export type PairMeeting = {
   lastMetAt?: number;
   /** How long they had gone without meeting when the tournament started. Undefined for a first meeting */
   gap?: number;
-  /** Games each of them had played in the club before the tournament, in the same order as `players` */
-  experience: [number, number];
 };
 
 export type PlayerArrival = {
@@ -54,8 +52,6 @@ export type PlayerArrival = {
    */
   firstTournament: boolean;
   gamesInTournament: number;
-  /** Games they had played in the club before the tournament started */
-  gamesBefore: number;
   /** Their most recent game before the tournament. Undefined for a debut */
   lastPlayedAt?: number;
   /** How long they had been away when the tournament started. Undefined for a debut */
@@ -191,18 +187,13 @@ export function buildTournamentConnections(
       gamesBefore: before?.games ?? 0,
       lastMetAt: before?.lastPlayedAt,
       gap,
-      experience: [
-        history.players.get(pair.players[0])?.games ?? 0,
-        history.players.get(pair.players[1])?.games ?? 0,
-      ],
     };
   });
 
-  // Two players with a long history who had still never met is the striking case, so the pair whose
-  // less experienced half has played the most goes first
+  // Nothing separates one first meeting from another, so they read in the order they happened
   const firstMeetings = pairs
     .filter((pair) => pair.kind === "first-meeting")
-    .sort((a, b) => Math.min(...b.experience) - Math.min(...a.experience) || a.firstMetAt - b.firstMetAt);
+    .sort((a, b) => a.firstMetAt - b.firstMetAt);
 
   const reunions = pairs.filter((pair) => pair.kind === "reunion").sort((a, b) => (b.gap ?? 0) - (a.gap ?? 0));
 
@@ -227,7 +218,6 @@ export function buildTournamentConnections(
       returning,
       firstTournament,
       gamesInTournament,
-      gamesBefore: before?.games ?? 0,
       lastPlayedAt: before?.lastPlayedAt,
       awayFor: before === undefined ? undefined : baseline - before.lastPlayedAt,
     });
