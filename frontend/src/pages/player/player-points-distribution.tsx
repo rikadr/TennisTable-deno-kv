@@ -16,6 +16,10 @@ export const PlayerPointsDistrubution: React.FC<Props> = ({ playerId }) => {
   const lowestPoints = summary?.pointsDistrubution[summary.pointsDistrubution.length - 1]?.points || 0;
   const range = Math.max(Math.abs(highestPoints), Math.abs(lowestPoints));
 
+  if (!summary?.pointsDistrubution.length) {
+    return <p className="text-sm opacity-70">No games played yet.</p>;
+  }
+
   return (
     <div className="flex flex-col w-full divide-y divide-primary-text/50">
       {summary?.pointsDistrubution.map(({ oponentId, points }, index) => {

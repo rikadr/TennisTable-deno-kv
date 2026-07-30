@@ -30,9 +30,17 @@ This repository contains the **Tennis Table** application.
 Posts live in `frontend/src/client/changelog/changelog-posts.ts`. Add one when a
 change clears the bar; skip it when it does not, rather than padding the list.
 
+The test is whether a reader gets something out of reading it: a capability they
+did not have, a behaviour they need to know changed, or a correction to numbers
+they may have believed. If there is nothing for them to take away, there is no
+post - a short list of things worth reading beats a complete one.
+
 **Add a post when the change is either:**
-- Something players can see or try - a new feature, a meaningful update to one, a
-  removed feature, or a bug fix that affected their scores or history.
+- Something players can see or try - a new feature, a meaningful update to one,
+  or a removed feature.
+- A bug fix that showed players something *wrong* - an elo, a leaderboard
+  position, a stat or a history they may have acted on. The post exists so they
+  can revise what they believed.
 - A significant change under the hood. The audience is mostly engineers, so
   architecture, performance and data-model work is worth reading about even when
   it changes nothing for a player.
@@ -41,6 +49,15 @@ change clears the bar; skip it when it does not, rather than padding the list.
 most readers never see those screens), internal plumbing, config and cron
 changes, dependency bumps, and refactors with no visible or architectural
 consequence.
+
+**Also skip fixes that just restore intended behaviour**, however player-facing
+the symptom was: crashes, blank or broken pages, empty states, layout and
+rendering bugs, a control that did not respond. Being able to reach a page that
+was broken is not news to the reader - either they never saw it and have nothing
+to learn, or they did and already know it was broken. "You can now open X again"
+and "X no longer crashes" are not worth a post. That a fix is user-visible, or
+that the bug was embarrassing, does not by itself clear the bar; the reader has
+to end up knowing something useful. When it is a close call, skip it.
 
 **Writing a post:**
 - **Lead with what is new.** The reader is here for what it changed *to*.

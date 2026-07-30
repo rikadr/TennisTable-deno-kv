@@ -71,9 +71,10 @@ export class PlayerOponentDistribution {
   }
 }
 
+/** 0 for a player with no games, so a player without opponents gets an empty distribution. */
 function average(values: number[]): number {
   if (values.length === 0) {
-    throw new Error("Input array is empty");
+    return 0;
   }
   const sum = values.reduce((sum, value) => sum + value, 0);
   return sum / values.length;
