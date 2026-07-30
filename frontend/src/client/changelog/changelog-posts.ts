@@ -32,14 +32,17 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
     slug: "tournament-statistics-timeline",
-    title: "Tournament timeline in a new Statistics tab",
-    date: "2026-07-29",
+    title: "A Statistics tab on tournaments",
+    date: "2026-07-30",
     tags: ["new-feature"],
     summary:
-      "A chart on the tournament page showing how many days each part of the tournament took, from group play through to the grand final.",
+      "Two widgets alongside the bracket and info tabs: a timeline of how long each part of the tournament took, and the pairs and players the tournament brought together.",
     body: [
       text(
-        "The Statistics tab sits alongside the bracket and info tabs. Its first widget is a timeline: one bar per part of the tournament, laid out over the days since it started.",
+        "The Statistics tab sits alongside the bracket and info tabs, and holds one widget per stat.",
+      ),
+      text(
+        "The timeline draws one bar per part of the tournament, laid out over the days since it started.",
       ),
       list(
         "Group play, with a bar per group",
@@ -47,9 +50,24 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
         "For double elimination: the winners bracket, the losers bracket and the grand final as their own sections",
       ),
       text(
-        "A round's clock starts when it became possible to play - the round feeding it finished, and for a losers bracket round also the winners bracket round dropping players into it - and ends at its last game. Waiting for people to show up is therefore part of how long a round took, which is usually the more interesting number. Group play is the exception: its groups run side by side from the tournament start.",
+        "A round's clock starts when it became possible to play - the round feeding it finished, and for a losers bracket round also the winners bracket round dropping players into it - and ends at its last game. Waiting for people to show up is therefore part of how long a round took, which is usually the more interesting number. Group play is the exception: its groups run side by side from the tournament start. Rounds still being played run up against now, and rounds nobody has reached yet read as not started.",
       ),
-      text("Rounds still being played run up against now, and rounds nobody has reached yet read as not started."),
+      text(
+        "New connections sits under it, and answers the thing a bracket cannot: who did this tournament put in front of each other that an ordinary week never would.",
+      ),
+      list(
+        "First-ever meetings - pairs who had never played each other before",
+        "Reunions - pairs who had not met in six months or more, and how long it had been",
+        "First game ever - players who had never played in the club until this tournament",
+        "Back after a break - players returning after six months or more away, longest absence first",
+        "First tournament - players who had been playing all along, but never in a tournament",
+      ),
+      text(
+        "Those are measured against the club as it stood the moment the tournament started. That single baseline is what keeps the numbers steady: a pair meeting twice, in group play and then again in the bracket, is one first meeting rather than a meeting followed by a rematch. Skipped games, byes and walkovers are left out, since nobody met over them.",
+      ),
+      text(
+        "A tournament between regulars will show little there, and saying so is the point of it: the widget reports that everyone already plays each other, and gives the longest anyone had gone without meeting anyway.",
+      ),
     ],
   },
   {
