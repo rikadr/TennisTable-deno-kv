@@ -1,5 +1,6 @@
 import { TennisTable } from "../tennis-table";
 import { EventType, EventTypeEnum } from "../event-store/event-types";
+import { PlayerPairingsOptions } from "../player-pairings";
 
 let time = 0;
 const nextTime = () => ++time;
@@ -24,8 +25,8 @@ function games(winner: string, loser: string, count = 1): EventType[] {
   });
 }
 
-function pairings(events: EventType[], playerId: string) {
-  const result = new TennisTable({ events }).playerPairings.get(playerId);
+function pairings(events: EventType[], playerId: string, options?: PlayerPairingsOptions) {
+  const result = new TennisTable({ events }).playerPairings.get(playerId, options);
   return {
     columns: result.columns.map((column) => ({
       degree: column.degree,
@@ -159,6 +160,70 @@ describe("PlayerPairings", () => {
       columns: [
         { degree: 1, players: ["a"] },
         { degree: 2, players: ["b"] },
+      ],
+      unreachable: [],
+    });
+  });
+
+  it("includes retired players and routes paths through them when asked to", () => {
+    const events = [
+      player("me"),
+      player("retired"),
+      player("behind-retired"),
+      ...games("me", "retired"),
+      ...games("retired", "behind-retired"),
+      deactivate("retired"),
+    ];
+
+    expect(pairings(events, "me", { includeRetired: true })).toEqual({
+      columns: [
+        { degree: 1, players: ["retired"] },
+        { degree: 2, players: ["behind-retired"] },
+      ],
+      unreachable: [],
+    });
+  });
+
+  it("lists a retired player with no connecting games as unreachable when included", () => {
+    const events = [player("me"), player("a"), player("gone"), ...games("me", "a"), deactivate("gone")];
+
+    expect(pairings(events, "me", { includeRetired: true })).toEqual({
+      columns: [{ degree: 1, players: ["a"] }],
+      unreachable: ["gone"],
+    });
+  });
+
+  it("only links players who have played each other the required number of times", () => {
+    const events = [
+      player("me"),
+      player("often"),
+      player("once"),
+      player("behind-once"),
+      ...games("me", "often", 3),
+      ...games("me", "once", 1),
+      ...games("once", "behind-once", 4),
+    ];
+
+    expect(pairings(events, "me", { minGamesPerLink: 3 })).toEqual({
+      columns: [{ degree: 1, players: ["often"] }],
+      unreachable: ["behind-once", "once"],
+    });
+  });
+
+  it("reaches players through a longer route when the short one is below the threshold", () => {
+    const events = [
+      player("me"),
+      player("hub"),
+      player("target"),
+      ...games("me", "hub", 5),
+      ...games("hub", "target", 5),
+      ...games("me", "target", 1),
+    ];
+
+    expect(pairings(events, "me", { minGamesPerLink: 2 })).toEqual({
+      columns: [
+        { degree: 1, players: ["hub"] },
+        { degree: 2, players: ["target"] },
       ],
       unreachable: [],
     });
