@@ -2,7 +2,6 @@ import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import {
   buildTournamentConnections,
-  LONG_ABSENCE,
   PairMeeting,
   PlayerArrival,
 } from "../../../client/client-db/tournaments/tournament-connections";
@@ -64,7 +63,7 @@ export const TournamentConnectionsWidget: React.FC<{ tournament: Tournament }> =
       )}
 
       {firstMeetings.length > 0 && (
-        <Section title="First-ever meetings" subtitle="They had never played each other before">
+        <Section title="First-ever meetings">
           {firstMeetings.map((pair) => (
             <PairRow key={pair.key} pair={pair} />
           ))}
@@ -72,7 +71,7 @@ export const TournamentConnectionsWidget: React.FC<{ tournament: Tournament }> =
       )}
 
       {reunions.length > 0 && (
-        <Section title="Reunions" subtitle={`Pairs who had not met in ${formatGap(LONG_ABSENCE)} or more`}>
+        <Section title="Reunions">
           {reunions.map((pair) => (
             <PairRow key={pair.key} pair={pair}>
               First meeting in <span className="font-medium">{formatGap(pair.gap ?? 0)}</span>
@@ -82,7 +81,7 @@ export const TournamentConnectionsWidget: React.FC<{ tournament: Tournament }> =
       )}
 
       {debuts.length > 0 && (
-        <Section title="First game ever" subtitle="The tournament was their first game in the club">
+        <Section title="First game ever">
           {debuts.map((arrival) => (
             <PlayerRow key={arrival.playerId} arrival={arrival} />
           ))}
@@ -90,7 +89,7 @@ export const TournamentConnectionsWidget: React.FC<{ tournament: Tournament }> =
       )}
 
       {returning.length > 0 && (
-        <Section title="Back after a break" subtitle={`They had not played in ${formatGap(LONG_ABSENCE)} or more`}>
+        <Section title="Back after a break">
           {returning.map((arrival) => (
             <PlayerRow key={arrival.playerId} arrival={arrival}>
               Away for <span className="font-medium">{formatGap(arrival.awayFor ?? 0)}</span>
@@ -100,7 +99,7 @@ export const TournamentConnectionsWidget: React.FC<{ tournament: Tournament }> =
       )}
 
       {firstTimers.length > 0 && (
-        <Section title="First tournament" subtitle="They had been playing, but never in a tournament">
+        <Section title="First tournament">
           {firstTimers.map((arrival) => (
             <PlayerRow key={arrival.playerId} arrival={arrival} />
           ))}
@@ -141,14 +140,9 @@ const Tile: React.FC<{ value: number; label: string; of: number }> = ({ value, l
   </div>
 );
 
-const Section: React.FC<{ title: string; subtitle: string; children: React.ReactNode }> = ({
-  title,
-  subtitle,
-  children,
-}) => (
+const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
   <div className="mb-6">
-    <h3 className="text-sm font-semibold">{title}</h3>
-    <p className="text-xs font-light mb-2">{subtitle}</p>
+    <h3 className="text-sm font-semibold mb-2">{title}</h3>
     <div className="space-y-1">{children}</div>
   </div>
 );
