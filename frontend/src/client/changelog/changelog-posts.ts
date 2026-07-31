@@ -31,13 +31,16 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
-    slug: "win-chance-predictions-for-unranked-comparisons",
-    title: "Win chance predictions for unranked players on Compare 1v1",
+    slug: "win-chance-predictions-for-unranked-and-retired-players",
+    title: "Win chance predictions for unranked and retired players on Compare 1v1",
     date: "2026-07-31",
     tags: ["feature-update"],
     summary:
-      "Compare 1v1 now offers the win chance prediction even when a player is unranked, behind a warning you have to acknowledge. A matchup where somebody has no games at all still gets none.",
+      "Compare 1v1 predicts retired matchups outright, and offers the prediction for unranked players behind a warning you have to acknowledge. A player with no games at all still gets none.",
     body: [
+      text(
+        "Retired players get a prediction like anybody else now. Their game history is still there, and that is all the model needs - retirement says nothing about how the games went.",
+      ),
       text(
         "Pick a matchup where one or both players are unranked and the prediction card offers to show it anyway. Acknowledge the warning and you get the same numbers as any other pairing, with a banner above them as a standing reminder that the data behind them is thin. It works the way the predictions tab on a player page does.",
       ),
@@ -45,7 +48,7 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
         "A player with zero games is the one case that is not offered: there is nothing at all to predict from, so the card says so and stops there. The same goes for a matchup where no chain of games connects the two players - the model has no path between them, and it now says that instead of quietly showing 0% at 0% confidence.",
       ),
       text(
-        "Previously the card said both players had to be ranked, which was more caution than the situation called for. An unreliable estimate you have been warned about is more useful than no estimate.",
+        "Previously the card refused a retired matchup, and said both players had to be ranked otherwise. That was more caution than either situation called for. An unreliable estimate you have been warned about is more useful than no estimate.",
       ),
     ],
   },

@@ -152,24 +152,10 @@ const WinChancePrediction: React.FC<{
   const p2IsRanked = !!p2Summary?.isRanked;
   const p1HasGames = (p1Summary?.games.length ?? 0) > 0;
   const p2HasGames = (p2Summary?.games.length ?? 0) > 0;
-  const p1IsActive = context.eventStore.playersProjector.getPlayer(player1)?.active ?? true;
-  const p2IsActive = context.eventStore.playersProjector.getPlayer(player2)?.active ?? true;
 
+  // Retirement is not a reason to withhold a prediction — a retired player's game
+  // history is still there, and that is all the model needs.
   const prediction = context.predictions.getPredictedFraction(player1, player2);
-
-  if (!p1IsActive || !p2IsActive) {
-    return (
-      <PredictionCard>
-        <p className="text-center text-primary-text/70 mt-2">
-          🏛️ Cannot predict win chance —{" "}
-          {!p1IsActive && !p2IsActive
-            ? `${player1Name} and ${player2Name} are`
-            : `${!p1IsActive ? player1Name : player2Name} is`}{" "}
-          retired
-        </p>
-      </PredictionCard>
-    );
-  }
 
   // A player without a single game has nothing to predict from, so the unranked
   // gate is not offered at all for that matchup.
