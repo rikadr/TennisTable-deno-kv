@@ -221,8 +221,8 @@ describe("Tournament connections", () => {
     expect(debut.lastPlayedAt).toBeUndefined();
     expect(debut.awayFor).toBeUndefined();
     expect(debut.gamesInTournament).toBe(1);
-    // A debut already says it was their first tournament
-    expect(debut.firstTournament).toBe(false);
+    // A debut is a first tournament too, so they show up in both lists
+    expect(debut.firstTournament).toBe(true);
 
     expect(arrival(result, "P1").debut).toBe(false);
     // Debuts are listed first
@@ -296,5 +296,50 @@ describe("Tournament connections", () => {
     expect(arrival(result, "P6").firstTournament).toBe(true);
     // P1 and P2 played the earlier tournament, and nothing else about them is new
     expect(result.arrivals.map((candidate) => candidate.playerId).sort()).toEqual(["P5", "P6"]);
+  });
+
+  it("points every pair and every player at the game they turned up in", () => {
+    const result = connections([
+      ...baseEvents(["P1", "P2", "P3", "P4"], { doubleElimination: true }, ["H1"]),
+      ...recentHistory,
+      gameEvent("P1", "P4", day(1)), // Winners semifinal
+      gameEvent("P2", "P3", day(2)), // Winners semifinal
+      gameEvent("P4", "P3", day(3)), // Losers round 1
+      gameEvent("P1", "P2", day(4)), // Winners final
+      gameEvent("P2", "P4", day(5)), // Losers final
+      gameEvent("P1", "P2", day(6)), // Grand final
+    ])!;
+
+    // The players read in the order the bracket stores them, not the order they won in
+    const semifinal = pair(result, "P1", "P4").firstGame;
+    expect(semifinal.where).toBe("bracket");
+    expect(semifinal.section).toBe("winners");
+    expect([semifinal.player1, semifinal.player2].sort()).toEqual(["P1", "P4"]);
+
+    expect(pair(result, "P3", "P4").firstGame.section).toBe("losers");
+
+    // P1 and P2 met twice. The first of the two is the winners final, not the grand final
+    expect(pair(result, "P1", "P2").firstGame.section).toBe("winners");
+  });
+
+  it("points a debut at their very first game of the tournament", () => {
+    const result = connections([
+      ...baseEvents(["P1", "P2", "P3", "P4"], undefined, ["H1"]),
+      // P4 is left out of the history: the tournament is their first ever game
+      gameEvent("P1", "H1", before(5)),
+      gameEvent("P2", "H1", before(6)),
+      gameEvent("P3", "H1", before(7)),
+      ...bracketGames,
+    ])!;
+
+    const firstGame = arrival(result, "P4").firstGame;
+    expect(firstGame.where).toBe("bracket");
+    expect([firstGame.player1, firstGame.player2].sort()).toEqual(["P1", "P4"]);
+
+    // P1 played the semifinal before the final, so that is the game they are pointed at
+    expect([arrival(result, "P1").firstGame.player1, arrival(result, "P1").firstGame.player2].sort()).toEqual([
+      "P1",
+      "P4",
+    ]);
   });
 });

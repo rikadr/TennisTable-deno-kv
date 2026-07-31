@@ -31,6 +31,25 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
+    slug: "new-connections-view-match",
+    title: "Follow a New connections entry back to the match",
+    date: "2026-07-31",
+    tags: ["feature-update"],
+    summary:
+      "Every entry in the New connections widget links to the game behind it, and First tournament now counts everyone whose first tournament it was, debuts included.",
+    body: [
+      text(
+        "Every entry in New connections carries a View match button. It opens the tab the game is on - group play, either bracket, or the grand final - scrolls that game's card into view and wiggles it. A pair points at the game they first met over, a player at their first game of the tournament.",
+      ),
+      text(
+        "First tournament now lists everyone this was a first tournament for. That includes players making their club debut and players back from a long break, both of which it used to leave out to stop the lists repeating each other. The count read lower than the number of people it was true of, so if you read a debut as someone who had been to a tournament before, that is why. A player can now turn up in two lists, which is the honest answer to each.",
+      ),
+      text(
+        "The lists run in two columns from tablet width up. One column left most of the width empty, and these entries are short.",
+      ),
+    ],
+  },
+  {
     slug: "win-chance-predictions-for-unranked-and-retired-players",
     title: "Win chance predictions for unranked and retired players on Compare 1v1",
     date: "2026-07-31",

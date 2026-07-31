@@ -1,6 +1,6 @@
 import { ONE_MONTH } from "../../../common/time-in-ms";
 import { TennisTable } from "../tennis-table";
-import { Tournament, TournamentGame } from "./tournament";
+import { Tournament, TournamentBracketSection, TournamentGame } from "./tournament";
 
 /**
  * What a tournament does to the club beyond crowning a winner: it puts people in front of each
@@ -22,6 +22,18 @@ export type PairKind =
   /** They play each other regularly enough that the tournament brought them nothing new */
   | "regular";
 
+/**
+ * Enough to point at a game's card on the tournament page. The players are kept in the order the
+ * game itself stores them, since that is what the page's deep link matches on
+ */
+export type GameLocation = {
+  player1: string;
+  player2: string;
+  where: "group" | "bracket";
+  /** Which bracket the game belongs to. Undefined for group play and single elimination */
+  section?: TournamentBracketSection;
+};
+
 export type PairMeeting = {
   /** Stable identity, used as the react key */
   key: string;
@@ -32,6 +44,8 @@ export type PairMeeting = {
   gamesInTournament: number;
   /** When they first met in the tournament */
   firstMetAt: number;
+  /** The game they first met over, so the pair can be followed back to the bracket or group */
+  firstGame: GameLocation;
   /** Games between the two before the tournament started */
   gamesBefore: number;
   /** Their most recent game before the tournament. Undefined when they had never met */
@@ -47,11 +61,13 @@ export type PlayerArrival = {
   /** They had played before, but not within LONG_ABSENCE of the tournament start */
   returning: boolean;
   /**
-   * They had played before but never in a tournament. Always false for a debut, where it would
-   * only repeat what `debut` already says
+   * This was their first tournament. True for a debut too - the sections answer different questions,
+   * and a player showing up in both is the honest answer to each
    */
   firstTournament: boolean;
   gamesInTournament: number;
+  /** Their first game of the tournament, so they can be followed back to the bracket or group */
+  firstGame: GameLocation;
   /** Their most recent game before the tournament. Undefined for a debut */
   lastPlayedAt?: number;
   /** How long they had been away when the tournament started. Undefined for a debut */
@@ -80,7 +96,7 @@ export type TournamentConnections = {
   gamesPlayed: number;
 };
 
-type PlayedGame = { player1: string; player2: string; completedAt: number };
+type PlayedGame = GameLocation & { completedAt: number };
 
 type History = { games: number; firstPlayedAt: number; lastPlayedAt: number };
 
@@ -94,14 +110,24 @@ function pairKey(player1: string, player2: string): string {
  */
 function playedGames(tournament: Tournament): PlayedGame[] {
   const games: PlayedGame[] = [];
-  const add = (game: Partial<TournamentGame>) => {
+  const add = (where: PlayedGame["where"]) => (game: Partial<TournamentGame>) => {
     if (game.skipped !== undefined) return;
     if (game.player1 === undefined || game.player2 === undefined || game.completedAt === undefined) return;
-    games.push({ player1: game.player1, player2: game.player2, completedAt: game.completedAt });
+    games.push({
+      player1: game.player1,
+      player2: game.player2,
+      completedAt: game.completedAt,
+      where,
+      section: game.section,
+    });
   };
-  tournament.groupPlay?.groups.forEach((group) => group.played.forEach(add));
-  tournament.bracket?.getCompletedGames().forEach(add);
+  tournament.groupPlay?.groups.forEach((group) => group.played.forEach(add("group")));
+  tournament.bracket?.getCompletedGames().forEach(add("bracket"));
   return games.sort((a, b) => a.completedAt - b.completedAt);
+}
+
+function gameLocation(game: PlayedGame): GameLocation {
+  return { player1: game.player1, player2: game.player2, where: game.where, section: game.section };
 }
 
 /** Everyone who played a game in a tournament that had already started before this one */
@@ -156,22 +182,30 @@ export function buildTournamentConnections(
 
   // ---- Pairs ----
 
-  type Met = { players: [string, string]; games: number; firstMetAt: number };
+  type Met = { players: [string, string]; games: number; firstMetAt: number; firstGame: GameLocation };
   const met = new Map<string, Met>();
-  const participants = new Map<string, number>();
+  type Participation = { games: number; firstGame: GameLocation };
+  const participants = new Map<string, Participation>();
 
+  // The games arrive oldest first, so the first one a pair or a player turns up in is their first
   for (const game of games) {
     const key = pairKey(game.player1, game.player2);
     const found = met.get(key);
     if (found === undefined) {
       // Sorted so the pair reads the same however the games went
       const players = [game.player1, game.player2].sort() as [string, string];
-      met.set(key, { players, games: 1, firstMetAt: game.completedAt });
+      met.set(key, { players, games: 1, firstMetAt: game.completedAt, firstGame: gameLocation(game) });
     } else {
       found.games++;
     }
-    participants.set(game.player1, (participants.get(game.player1) ?? 0) + 1);
-    participants.set(game.player2, (participants.get(game.player2) ?? 0) + 1);
+    for (const playerId of [game.player1, game.player2]) {
+      const participation = participants.get(playerId);
+      if (participation === undefined) {
+        participants.set(playerId, { games: 1, firstGame: gameLocation(game) });
+      } else {
+        participation.games++;
+      }
+    }
   }
 
   const pairs: PairMeeting[] = Array.from(met, ([key, pair]) => {
@@ -184,6 +218,7 @@ export function buildTournamentConnections(
       kind,
       gamesInTournament: pair.games,
       firstMetAt: pair.firstMetAt,
+      firstGame: pair.firstGame,
       gamesBefore: before?.games ?? 0,
       lastMetAt: before?.lastPlayedAt,
       gap,
@@ -206,18 +241,19 @@ export function buildTournamentConnections(
   const earlierTournamentPlayers = playersOfEarlierTournaments(tournament, context);
 
   const arrivals: PlayerArrival[] = [];
-  for (const [playerId, gamesInTournament] of participants) {
+  for (const [playerId, participation] of participants) {
     const before = history.players.get(playerId);
     const debut = before === undefined;
     const returning = before !== undefined && baseline - before.lastPlayedAt >= LONG_ABSENCE;
-    const firstTournament = !debut && !earlierTournamentPlayers.has(playerId);
+    const firstTournament = !earlierTournamentPlayers.has(playerId);
     if (!debut && !returning && !firstTournament) continue; // The tournament was business as usual for them
     arrivals.push({
       playerId,
       debut,
       returning,
       firstTournament,
-      gamesInTournament,
+      gamesInTournament: participation.games,
+      firstGame: participation.firstGame,
       lastPlayedAt: before?.lastPlayedAt,
       awayFor: before === undefined ? undefined : baseline - before.lastPlayedAt,
     });
