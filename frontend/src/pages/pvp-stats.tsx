@@ -3,8 +3,7 @@ import { classNames } from "../common/class-names";
 import { Link } from "react-router-dom";
 import { relativeTimeString } from "../common/date-utils";
 import { fmtNum } from "../common/number-utils";
-import { useState } from "react";
-import { Predictions } from "../client/client-db/predictions";
+import { useEffect, useState } from "react";
 
 type Props = {
   player1?: string;
@@ -22,23 +21,7 @@ export const PvPStats: React.FC<Props> = ({ player1, player2 }) => {
     );
   }
 
-  const directPrediction = context.predictions.getDirectFraction(player1, player2);
-  const oneLayerPrediction = context.predictions.getOneLayerFraction(player1, player2);
-  const twoLayerPrediction = context.predictions.getTwoLayerFraction(player1, player2);
-
-  const combinedPrediction = Predictions.combinePrioritizedFractions([
-    directPrediction,
-    oneLayerPrediction,
-    twoLayerPrediction,
-  ]);
-
   const { player1: p1, player2: p2, games } = context.pvp.compare(player1, player2);
-
-  const p1IsRanked = !!context.leaderboard.getPlayerSummary(player1)?.isRanked;
-  const p2IsRanked = !!context.leaderboard.getPlayerSummary(player2)?.isRanked;
-  const p1IsActive = context.eventStore.playersProjector.getPlayer(player1)?.active ?? true;
-  const p2IsActive = context.eventStore.playersProjector.getPlayer(player2)?.active ?? true;
-  const bothActive = p1IsActive && p2IsActive;
 
   return (
     <div className="space-y-6 text-primary-text">
@@ -49,60 +32,7 @@ export const PvPStats: React.FC<Props> = ({ player1, player2 }) => {
       </div>
 
       {/* Prediction Section */}
-      {combinedPrediction !== undefined && (
-        <div className="bg-secondary-background/20 rounded-lg p-4 border border-secondary-background/30">
-          <h3 className="text-lg font-semibold text-center">Win Chanse Prediction</h3>
-          {!bothActive ? (
-            <p className="text-center text-primary-text/70 mt-2">
-              🏛️ Cannot predict win chance — {!p1IsActive && !p2IsActive
-                ? `${p1.name} and ${p2.name} are`
-                : `${!p1IsActive ? p1.name : p2.name} is`} retired
-            </p>
-          ) : p1IsRanked && p2IsRanked ? (
-            <>
-              <div className="flex items-center gap-4">
-                {/* Player 1 Probability */}
-                <div className="flex-1 text-center">
-                  <div className="text-3xl font-bold text-primary-text">
-                    {fmtNum(combinedPrediction.fraction * 100)}%
-                  </div>
-                  <div className="text-sm text-primary-text/70 mt-1">{p1.name}</div>
-                </div>
-
-                {/* Visual Bar */}
-                <div className="flex-[3] h-8 bg-secondary-background/30 rounded-full overflow-hidden relative">
-                  <div
-                    className="h-full bg-secondary-background transition-all duration-500"
-                    style={{ width: `${combinedPrediction.fraction * 100}%` }}
-                  />
-                  <div className="absolute inset-0 flex items-center justify-center text-xs font-semibold text-secondary-text">
-                    VS
-                  </div>
-                </div>
-
-                {/* Player 2 Probability */}
-                <div className="flex-1 text-center">
-                  <div className="text-3xl font-bold text-primary-text">
-                    {fmtNum((1 - combinedPrediction.fraction) * 100)}%
-                  </div>
-                  <div className="text-sm text-primary-text/70 mt-1">{p2.name}</div>
-                </div>
-              </div>
-              <p className="text-center text-primary-text/50">
-                At {fmtNum(combinedPrediction.confidence * 100)}% confidence
-              </p>
-              <Link
-                to={`/player/${player1}?tab=predictions&predictionTab=history&compareWith=${player2}`}
-                className="block w-fit mx-auto mt-3 text-xs text-tertiary-text bg-tertiary-background hover:bg-tertiary-background/50 px-3 py-1.5 rounded-full transition-colors"
-              >
-                See prediction history
-              </Link>
-            </>
-          ) : (
-            <p className="text-center">Both players must be ranked to generate a predicion</p>
-          )}
-        </div>
-      )}
+      <WinChancePrediction player1={player1} player2={player2} player1Name={p1.name} player2Name={p2.name} />
 
       {/* Stats Grid */}
       <CombinedStatCard player1={p1} player2={p2} />
@@ -190,6 +120,149 @@ export const PvPStats: React.FC<Props> = ({ player1, player2 }) => {
         </div>
       </div>
     </div>
+  );
+};
+
+const PredictionCard: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <div className="bg-secondary-background/20 rounded-lg p-4 border border-secondary-background/30">
+    <h3 className="text-lg font-semibold text-center">Win Chanse Prediction</h3>
+    {children}
+  </div>
+);
+
+const WinChancePrediction: React.FC<{
+  player1: string;
+  player2: string;
+  player1Name: string;
+  player2Name: string;
+}> = ({ player1, player2, player1Name, player2Name }) => {
+  const context = useEventDbContext();
+
+  // Mirror the player-page predictions tab: when at least one player is unranked
+  // the prediction is gated behind a warning the user must acknowledge before it
+  // is shown. Reset the acknowledgement whenever the matchup changes.
+  const [revealed, setRevealed] = useState(false);
+  useEffect(() => {
+    setRevealed(false);
+  }, [player1, player2]);
+
+  const p1Summary = context.leaderboard.getPlayerSummary(player1);
+  const p2Summary = context.leaderboard.getPlayerSummary(player2);
+  const p1IsRanked = !!p1Summary?.isRanked;
+  const p2IsRanked = !!p2Summary?.isRanked;
+  const p1HasGames = (p1Summary?.games.length ?? 0) > 0;
+  const p2HasGames = (p2Summary?.games.length ?? 0) > 0;
+  const p1IsActive = context.eventStore.playersProjector.getPlayer(player1)?.active ?? true;
+  const p2IsActive = context.eventStore.playersProjector.getPlayer(player2)?.active ?? true;
+
+  const prediction = context.predictions.getPredictedFraction(player1, player2);
+
+  if (!p1IsActive || !p2IsActive) {
+    return (
+      <PredictionCard>
+        <p className="text-center text-primary-text/70 mt-2">
+          🏛️ Cannot predict win chance —{" "}
+          {!p1IsActive && !p2IsActive
+            ? `${player1Name} and ${player2Name} are`
+            : `${!p1IsActive ? player1Name : player2Name} is`}{" "}
+          retired
+        </p>
+      </PredictionCard>
+    );
+  }
+
+  // A player without a single game has nothing to predict from, so the unranked
+  // gate is not offered at all for that matchup.
+  if (!p1HasGames || !p2HasGames) {
+    return (
+      <PredictionCard>
+        <p className="text-center text-primary-text/70 mt-2">
+          Cannot predict win chance —{" "}
+          {!p1HasGames && !p2HasGames
+            ? `${player1Name} and ${player2Name} have`
+            : `${!p1HasGames ? player1Name : player2Name} has`}{" "}
+          no games played
+        </p>
+      </PredictionCard>
+    );
+  }
+
+  if (prediction === undefined) {
+    return (
+      <PredictionCard>
+        <p className="text-center text-primary-text/70 mt-2">
+          Cannot predict win chance — no games connect {player1Name} and {player2Name}
+        </p>
+      </PredictionCard>
+    );
+  }
+
+  const bothRanked = p1IsRanked && p2IsRanked;
+  const unrankedLabel =
+    !p1IsRanked && !p2IsRanked
+      ? `${player1Name} and ${player2Name} are not ranked`
+      : `${!p1IsRanked ? player1Name : player2Name} is not ranked`;
+
+  if (!bothRanked && !revealed) {
+    return (
+      <PredictionCard>
+        <div className="mx-auto mt-3 max-w-md rounded-xl border border-yellow-500/40 bg-yellow-500/10 p-6 text-center">
+          <div className="text-3xl mb-2">⚠️</div>
+          <p className="text-lg font-semibold mb-1">{unrankedLabel}</p>
+          <p className="text-sm text-primary-text/70 mb-4">
+            The prediction is based on insufficient data and may be unreliable.
+          </p>
+          <button
+            onClick={() => setRevealed(true)}
+            className="rounded-md bg-tertiary-background px-4 py-2 text-sm font-medium text-tertiary-text hover:bg-tertiary-background/70 transition-colors"
+          >
+            Show prediction anyway
+          </button>
+        </div>
+      </PredictionCard>
+    );
+  }
+
+  return (
+    <PredictionCard>
+      {!bothRanked && (
+        <div className="mt-3 mb-1 flex items-center gap-2 rounded-lg border border-yellow-500/40 bg-yellow-500/10 px-4 py-2 text-sm">
+          <span>⚠️</span>
+          <span>{unrankedLabel} — the prediction is based on insufficient data and may be unreliable.</span>
+        </div>
+      )}
+      <div className="flex items-center gap-4">
+        {/* Player 1 Probability */}
+        <div className="flex-1 text-center">
+          <div className="text-3xl font-bold text-primary-text">{fmtNum(prediction.fraction * 100)}%</div>
+          <div className="text-sm text-primary-text/70 mt-1">{player1Name}</div>
+        </div>
+
+        {/* Visual Bar */}
+        <div className="flex-[3] h-8 bg-secondary-background/30 rounded-full overflow-hidden relative">
+          <div
+            className="h-full bg-secondary-background transition-all duration-500"
+            style={{ width: `${prediction.fraction * 100}%` }}
+          />
+          <div className="absolute inset-0 flex items-center justify-center text-xs font-semibold text-secondary-text">
+            VS
+          </div>
+        </div>
+
+        {/* Player 2 Probability */}
+        <div className="flex-1 text-center">
+          <div className="text-3xl font-bold text-primary-text">{fmtNum((1 - prediction.fraction) * 100)}%</div>
+          <div className="text-sm text-primary-text/70 mt-1">{player2Name}</div>
+        </div>
+      </div>
+      <p className="text-center text-primary-text/50">At {fmtNum(prediction.confidence * 100)}% confidence</p>
+      <Link
+        to={`/player/${player1}?tab=predictions&predictionTab=history&compareWith=${player2}`}
+        className="block w-fit mx-auto mt-3 text-xs text-tertiary-text bg-tertiary-background hover:bg-tertiary-background/50 px-3 py-1.5 rounded-full transition-colors"
+      >
+        See prediction history
+      </Link>
+    </PredictionCard>
   );
 };
 
