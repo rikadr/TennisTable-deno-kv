@@ -1,4 +1,5 @@
 import React, { useMemo } from "react";
+import { Link } from "react-router-dom";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 
 interface PairingData {
@@ -58,7 +59,9 @@ export const TopPlayerPairings: React.FC = () => {
                     {index + 1}
                   </td>
                   <td className="px-2 py-1 border border-primary-text/20 whitespace-nowrap">
-                    {context.playerName(pairing.player1)} &amp; {context.playerName(pairing.player2)}
+                    <Link to={`/1v1?player1=${pairing.player1}&player2=${pairing.player2}`} className="hover:underline">
+                      {context.playerName(pairing.player1)} &amp; {context.playerName(pairing.player2)}
+                    </Link>
                   </td>
                   <td className="px-2 py-1 border border-primary-text/20 text-right font-bold relative overflow-hidden">
                     {pairing.count}
