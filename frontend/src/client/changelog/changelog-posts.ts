@@ -31,6 +31,23 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
+    slug: "tournament-timeline-whole-days",
+    title: "The tournament timeline counts whole days",
+    date: "2026-07-31",
+    tags: ["feature-update"],
+    summary:
+      "Every duration on the timeline is now a count of calendar days, inclusive at both ends: same day is one day, into the next day is two.",
+    body: [
+      text(
+        "A round's duration is the number of calendar days it touched. A round that started and finished on the same day took one day. One that started in the afternoon and finished the next morning took two, even though only a few hours passed. The bars and the axis are drawn in the same unit, so a bar covers whole day cells and the tournament total is the number of days it spanned.",
+      ),
+      text(
+        "It used to be a straight clock difference, reported as minutes, hours or fractional days - a round could read 4.5 hours and the one after it 1.2 days. Tournaments here are played out over days, not measured to the minute, and the mixed units made two rounds hard to compare at a glance. Sub-day precision was never the interesting number. If you read a round as taking half a day, it now reads as the one or two days it actually spanned.",
+      ),
+      text("Hovering a bar still gives the dates it ran between."),
+    ],
+  },
+  {
     slug: "new-connections-view-match",
     title: "Follow a New connections entry back to the match",
     date: "2026-07-31",
