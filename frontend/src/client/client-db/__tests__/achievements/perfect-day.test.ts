@@ -240,6 +240,72 @@ describe("Perfect Day Achievement Tests", () => {
       expect(progression["perfect-day"].current).toBe(0);
     });
 
+    it("counts today's win even though a loss came less than 24 hours ago", () => {
+      // Lost yesterday evening, won this morning: the loss is inside the last
+      // 24 hours but belongs to yesterday, so today's attempt is untouched.
+      jest.useFakeTimers();
+      jest.setSystemTime(new Date(2024, 0, 16, 9));
+
+      const lossAt = new Date(2024, 0, 15, 17).getTime();
+      const winAt = new Date(2024, 0, 16, 8).getTime();
+      const events: EventType[] = [
+        ...baseEvents,
+        {
+          time: lossAt,
+          stream: "g-loss",
+          type: EventTypeEnum.GAME_CREATED,
+          data: { playedAt: lossAt, winner: "player-2", loser: "player-1" },
+        },
+        {
+          time: winAt,
+          stream: "g-win",
+          type: EventTypeEnum.GAME_CREATED,
+          data: { playedAt: winAt, winner: "player-1", loser: "player-2" },
+        },
+      ];
+
+      const tennisTable = new TennisTable({ events });
+      tennisTable.achievements.calculateAchievements();
+
+      const progression = tennisTable.achievements.getPlayerProgression("player-1");
+      expect(progression["perfect-day"].current).toBe(1);
+      expect(progression["perfect-day"].winsToday).toBe(1);
+      expect(progression["perfect-day"].lossesToday).toBe(0);
+    });
+
+    it("reports today's tally so a spoilt day differs from an empty one", () => {
+      jest.useFakeTimers();
+      jest.setSystemTime(new Date(2024, 0, 15, 20));
+
+      const wins = winsOnDay(2024, 0, 15, "player-1", ["player-2", "player-2"], "g");
+      const lossAt = new Date(2024, 0, 15, 15).getTime();
+      const events: EventType[] = [
+        ...baseEvents,
+        ...wins,
+        {
+          time: lossAt,
+          stream: "g-loss",
+          type: EventTypeEnum.GAME_CREATED,
+          data: { playedAt: lossAt, winner: "player-2", loser: "player-1" },
+        },
+      ];
+
+      const tennisTable = new TennisTable({ events });
+      tennisTable.achievements.calculateAchievements();
+
+      // Spoilt day: no progress, but the two wins are still reported.
+      const spoilt = tennisTable.achievements.getPlayerProgression("player-1")["perfect-day"];
+      expect(spoilt.current).toBe(0);
+      expect(spoilt.winsToday).toBe(2);
+      expect(spoilt.lossesToday).toBe(1);
+
+      // A player who has not played today reads 0 across the board.
+      const idle = tennisTable.achievements.getPlayerProgression("player-3")["perfect-day"];
+      expect(idle.current).toBe(0);
+      expect(idle.winsToday).toBe(0);
+      expect(idle.lossesToday).toBe(0);
+    });
+
     it("resets to 0 the next day (yesterday's wins do not carry over)", () => {
       // "now" is the day AFTER the winning day.
       jest.useFakeTimers();

@@ -613,6 +613,27 @@ function minutesToTimeString(minutes: number): string {
   return `${String(hours).padStart(2, "0")}:${String(mins).padStart(2, "0")}`;
 }
 
+// Explains where a Perfect Day attempt stands today. The attempt is measured
+// over the local calendar day only — yesterday's games never count against it
+// — and it is dead the moment a game is lost, which is why progress can read 0
+// on a day the player has won games.
+function perfectDayNote(winsToday: number, lossesToday: number, target: number): string {
+  const games = (count: number) => `${count} game${count === 1 ? "" : "s"}`;
+
+  if (lossesToday > 0) {
+    const result =
+      winsToday > 0 ? `Won ${games(winsToday)}, but lost ${games(lossesToday)}` : `Lost ${games(lossesToday)}`;
+    return `${result} today, so today's attempt is gone. A fresh one starts at midnight.`;
+  }
+  if (winsToday >= target) {
+    return `Undefeated in ${games(winsToday)} today. It lands as earned at midnight if the day stays clean.`;
+  }
+  if (winsToday > 0) {
+    return `Undefeated in ${games(winsToday)} today. Only today's games count — the tally starts fresh at midnight.`;
+  }
+  return "No games played today. The tally starts fresh at midnight every day.";
+}
+
 type ProgressTabProps = {
   progression: AchievementProgression;
   playerId: string;
@@ -721,6 +742,15 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                       {type === "anniversary" && "firstGameAt" in data && !!data.firstGameAt && (
                         <div className="mt-2 text-xs text-secondary-text/70">
                           Anniversary date: {dateString(data.firstGameAt)}
+                        </div>
+                      )}
+
+                      {/* Today's tally for perfect-day. Progress is 0 both
+                          when nothing has been played today and when a loss
+                          has spoilt the day, so spell out which it is. */}
+                      {type === "perfect-day" && "lossesToday" in data && (
+                        <div className="mt-2 text-xs text-secondary-text/70">
+                          {perfectDayNote(data.winsToday, data.lossesToday, data.target)}
                         </div>
                       )}
 

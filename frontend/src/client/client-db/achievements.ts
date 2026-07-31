@@ -2011,7 +2011,7 @@ export class Achievements {
       "streak-player-10": { current: 0, target: 10, perOpponent: new Map(), earned: 0 },
       "streak-player-20": { current: 0, target: 20, perOpponent: new Map(), earned: 0 },
       "hat-trick": { current: 0, target: 3, earned: 0 },
-      "perfect-day": { current: 0, target: 5, earned: 0 },
+      "perfect-day": { current: 0, target: 5, earned: 0, winsToday: 0, lossesToday: 0 },
       "perfect-week": { current: 0, target: 5, earned: 0 },
       "streak-ender": { earned: 0 },
       "longest-win-streak": {
@@ -2323,12 +2323,19 @@ export class Achievements {
     // it — progress drops to 0 and the player must try again tomorrow. No
     // games today → 0. A full 5/5 today reads as complete but is not yet
     // earned: the achievement lands when the day ends still undefeated.
+    //
+    // Today's raw tally is reported alongside it. A 0 covers two very
+    // different situations — no games played yet, or a day already spoilt by
+    // a loss — and without the tally the player cannot tell which, nor that
+    // yesterday's games have no say in it.
     const nowMs = Date.now();
     const todayStart = new Date(nowMs);
     todayStart.setHours(0, 0, 0, 0);
     const todayStat = perfectDayStats.get(todayStart.getTime());
     progression["perfect-day"].current =
       todayStat && todayStat.losses === 0 ? Math.min(todayStat.wins, 5) : 0;
+    progression["perfect-day"].winsToday = todayStat?.wins ?? 0;
+    progression["perfect-day"].lossesToday = todayStat?.losses ?? 0;
 
     // Perfect Week progression tracks THIS working week's live attempt: the
     // run of consecutive weekdays from Monday, each with at least one win.
@@ -2756,6 +2763,15 @@ type WelcomeCommitteeProgression = ProgressionWithTarget & {
   newPlayers?: Set<string>; // List of new players this person was first opponent for
 };
 
+type PerfectDayProgression = ProgressionWithTarget & {
+  // Games won / lost today (local calendar day), which is the only day the
+  // attempt is measured over. `current` is 0 both when nothing has been
+  // played today and when a loss has already spoilt the day, so these spell
+  // out which of the two it is.
+  winsToday: number;
+  lossesToday: number;
+};
+
 type MissingPlayersProgression = ProgressionWithTarget & {
   // Currently ranked players the player has not yet beaten (Full House) /
   // not yet lost to (Humbled) — i.e. what's left to complete the set.
@@ -2847,7 +2863,7 @@ export type AchievementProgression = {
   "comeback-kid": BaseProgression;
   "unbreakable-spirit": BaseProgression;
   "hat-trick": ProgressionWithTarget;
-  "perfect-day": ProgressionWithTarget;
+  "perfect-day": PerfectDayProgression;
   "perfect-week": ProgressionWithTarget;
   "kingslayer": BaseProgression;
   "king-maker": BaseProgression;
