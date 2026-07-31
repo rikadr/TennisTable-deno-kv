@@ -4,6 +4,8 @@ import { relativeTimeString } from "../../common/date-utils";
 
 type Period = "day" | "week" | "month" | "year";
 
+type Metric = "games" | "activePlayers" | "pairings";
+
 interface PeriodData {
   key: string;
   count: number;
@@ -20,6 +22,12 @@ interface TopPeriodsResult {
   top: PeriodData[];
   current: CurrentEntry | null;
 }
+
+const METRIC_LABELS: Record<Metric, { option: string; column: string }> = {
+  games: { option: "Games played", column: "Games" },
+  activePlayers: { option: "Active players", column: "Players" },
+  pairings: { option: "Player pairings", column: "Pairings" },
+};
 
 const PERIOD_LABELS: Record<Period, { singular: string; plural: string }> = {
   day: { singular: "Day", plural: "Days" },
@@ -135,9 +143,59 @@ const formatPeriod = (timestamp: number, period: Period): string => {
   }
 };
 
+/**
+ * Everything needed to count any of the metrics for one period. Games are a running total,
+ * while the two "unique" metrics need the members themselves so repeats are not counted twice.
+ */
+interface PeriodBucket {
+  timestamp: number;
+  games: number;
+  players: Set<string>;
+  pairings: Set<string>;
+}
+
+const emptyBucket = (timestamp: number): PeriodBucket => ({
+  timestamp,
+  games: 0,
+  players: new Set(),
+  pairings: new Set(),
+});
+
+const pairingKey = (playerA: string, playerB: string): string => [playerA, playerB].sort().join("|");
+
+const addGameToBucket = (
+  map: Map<string, PeriodBucket>,
+  key: string,
+  timestamp: number,
+  winner: string,
+  loser: string,
+) => {
+  let bucket = map.get(key);
+  if (!bucket) {
+    bucket = emptyBucket(timestamp);
+    map.set(key, bucket);
+  }
+  bucket.games++;
+  bucket.players.add(winner);
+  bucket.players.add(loser);
+  bucket.pairings.add(pairingKey(winner, loser));
+};
+
+const bucketCount = (bucket: PeriodBucket, metric: Metric): number => {
+  switch (metric) {
+    case "games":
+      return bucket.games;
+    case "activePlayers":
+      return bucket.players.size;
+    case "pairings":
+      return bucket.pairings.size;
+  }
+};
+
 export const TopGamingDays: React.FC = () => {
   const context = useEventDbContext();
   const [period, setPeriod] = useState<Period>("day");
+  const [metric, setMetric] = useState<Metric>("games");
 
   const recentCutoff = useMemo(() => Date.now() - RECENT_WINDOW_MS[period], [period]);
 
@@ -149,12 +207,12 @@ export const TopGamingDays: React.FC = () => {
       return { topAllTime: empty, topRecent: empty };
     }
 
-    const allTimeCounts = new Map<string, { count: number; timestamp: number }>();
-    const recentCounts = new Map<string, { count: number; timestamp: number }>();
+    const allTimeBuckets = new Map<string, PeriodBucket>();
+    const recentBuckets = new Map<string, PeriodBucket>();
 
     let earliestPlayedAt = Infinity;
 
-    context.games.forEach(({ playedAt }) => {
+    context.games.forEach(({ playedAt, winner, loser }) => {
       if (playedAt < earliestPlayedAt) {
         earliestPlayedAt = playedAt;
       }
@@ -163,67 +221,56 @@ export const TopGamingDays: React.FC = () => {
       const key = getPeriodKey(date, period);
       const timestamp = getPeriodTimestamp(date, period);
 
-      const existingAll = allTimeCounts.get(key);
-      if (existingAll) {
-        existingAll.count++;
-      } else {
-        allTimeCounts.set(key, { count: 1, timestamp });
-      }
+      addGameToBucket(allTimeBuckets, key, timestamp, winner, loser);
 
       if (playedAt >= recentCutoff) {
-        const existingRecent = recentCounts.get(key);
-        if (existingRecent) {
-          existingRecent.count++;
-        } else {
-          recentCounts.set(key, { count: 1, timestamp });
-        }
+        addGameToBucket(recentBuckets, key, timestamp, winner, loser);
       }
     });
 
-    // Seed every calendar period in the range with a 0-count entry so that periods
+    // Seed every calendar period in the range with an empty bucket so that periods
     // with no games are still considered (including the current, possibly empty, period).
     const now = new Date();
-    const seedRange = (map: Map<string, { count: number; timestamp: number }>, rangeStart: number) => {
+    const seedRange = (map: Map<string, PeriodBucket>, rangeStart: number) => {
       let cursor = getPeriodStart(new Date(rangeStart), period);
       const endTimestamp = getPeriodTimestamp(now, period);
       while (cursor.getTime() <= endTimestamp) {
         const key = getPeriodKey(cursor, period);
         if (!map.has(key)) {
-          map.set(key, { count: 0, timestamp: getPeriodTimestamp(cursor, period) });
+          map.set(key, emptyBucket(getPeriodTimestamp(cursor, period)));
         }
         cursor = advancePeriod(cursor, period);
       }
     };
 
-    seedRange(allTimeCounts, earliestPlayedAt);
-    seedRange(recentCounts, Math.max(earliestPlayedAt, recentCutoff));
+    seedRange(allTimeBuckets, earliestPlayedAt);
+    seedRange(recentBuckets, Math.max(earliestPlayedAt, recentCutoff));
 
-    const buildResult = (map: Map<string, { count: number; timestamp: number }>): TopPeriodsResult => {
+    const buildResult = (map: Map<string, PeriodBucket>): TopPeriodsResult => {
       const sorted = Array.from(map.entries())
-        .map(([key, data]) => ({
+        .map(([key, bucket]) => ({
           key,
-          count: data.count,
-          timestamp: data.timestamp,
+          count: bucketCount(bucket, metric),
+          timestamp: bucket.timestamp,
         }))
         // Highest count first, ties broken in favour of the earlier period.
         .sort((a, b) => b.count - a.count || a.timestamp - b.timestamp);
 
       const currentIndex = sorted.findIndex((entry) => entry.key === currentKey);
       const current: CurrentEntry | null =
-        currentIndex >= 0
-          ? { rank: currentIndex + 1, total: sorted.length, entry: sorted[currentIndex] }
-          : null;
+        currentIndex >= 0 ? { rank: currentIndex + 1, total: sorted.length, entry: sorted[currentIndex] } : null;
 
       return { top: sorted.slice(0, 10), current };
     };
 
     return {
-      topAllTime: buildResult(allTimeCounts),
-      topRecent: buildResult(recentCounts),
+      topAllTime: buildResult(allTimeBuckets),
+      topRecent: buildResult(recentBuckets),
     };
-  }, [context.games, period, recentCutoff, currentKey]);
+  }, [context.games, period, metric, recentCutoff, currentKey]);
 
   const periodLabel = PERIOD_LABELS[period];
+  const metricLabel = METRIC_LABELS[metric];
 
   if (context.games.length === 0) {
     return (
@@ -251,9 +298,7 @@ export const TopGamingDays: React.FC = () => {
       return (
         <tr
           key={entry.key}
-          className={
-            isCurrent ? "bg-tertiary-background text-tertiary-text" : "hover:bg-secondary-background/50"
-          }
+          className={isCurrent ? "bg-tertiary-background text-tertiary-text" : "hover:bg-secondary-background/50"}
         >
           <td className="px-2 py-1 border border-primary-text/20 font-medium whitespace-nowrap">
             {total !== null ? `${rank} / ${total}` : rank}
@@ -293,7 +338,7 @@ export const TopGamingDays: React.FC = () => {
                 <th className="px-2 py-1 text-left border border-primary-text/20">#</th>
                 <th className="px-2 py-1 text-left border border-primary-text/20">{periodLabel.singular}</th>
                 <th className="px-2 py-1 text-left border border-primary-text/20">When</th>
-                <th className="px-2 py-1 text-right border border-primary-text/20">Games</th>
+                <th className="px-2 py-1 text-right border border-primary-text/20">{metricLabel.column}</th>
               </tr>
             </thead>
             <tbody>
@@ -310,23 +355,37 @@ export const TopGamingDays: React.FC = () => {
     <div className="bg-primary-background text-primary-text rounded-lg p-4">
       <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
         <h2 className="text-lg font-semibold">Top Gaming {periodLabel.plural}</h2>
-        <div className="flex gap-1" role="tablist" aria-label="Group by period">
-          {(Object.keys(PERIOD_LABELS) as Period[]).map((p) => (
-            <button
-              key={p}
-              type="button"
-              role="tab"
-              aria-selected={period === p}
-              onClick={() => setPeriod(p)}
-              className={`px-3 py-1 text-xs rounded border border-primary-text/20 transition-colors ${
-                period === p
-                  ? "bg-secondary-background text-secondary-text font-semibold"
-                  : "bg-primary-background hover:bg-secondary-background/50"
-              }`}
-            >
-              {PERIOD_LABELS[p].plural}
-            </button>
-          ))}
+        <div className="flex flex-wrap items-center gap-2">
+          <select
+            value={metric}
+            onChange={(e) => setMetric(e.target.value as Metric)}
+            aria-label="Metric to count"
+            className="px-2 py-1 text-xs border rounded border-primary-text/20 bg-primary-background"
+          >
+            {(Object.keys(METRIC_LABELS) as Metric[]).map((m) => (
+              <option key={m} value={m}>
+                {METRIC_LABELS[m].option}
+              </option>
+            ))}
+          </select>
+          <div className="flex gap-1" role="tablist" aria-label="Group by period">
+            {(Object.keys(PERIOD_LABELS) as Period[]).map((p) => (
+              <button
+                key={p}
+                type="button"
+                role="tab"
+                aria-selected={period === p}
+                onClick={() => setPeriod(p)}
+                className={`px-3 py-1 text-xs rounded border border-primary-text/20 transition-colors ${
+                  period === p
+                    ? "bg-secondary-background text-secondary-text font-semibold"
+                    : "bg-primary-background hover:bg-secondary-background/50"
+                }`}
+              >
+                {PERIOD_LABELS[p].plural}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
       <div className="flex flex-col md:flex-row gap-4">
