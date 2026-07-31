@@ -7,7 +7,7 @@ import {
 } from "../../../client/client-db/tournaments/tournament-timeline";
 import { classNames } from "../../../common/class-names";
 import { fmtNum } from "../../../common/number-utils";
-import { ONE_DAY, ONE_HOUR, ONE_MINUTE } from "../../../common/time-in-ms";
+import { ONE_DAY } from "../../../common/time-in-ms";
 import { layerIndexToTournamentRound, losersRoundLabel } from "../../leaderboard/tournament-pending-games";
 
 type Row = {
@@ -31,23 +31,33 @@ const LABEL_COLUMN = "w-52";
 const DURATION_COLUMN = "w-24";
 const CHART_MIN_WIDTH = "min-w-[35rem]";
 
-const DAY_STEPS = [0.5, 1, 2, 3, 5, 7, 14, 30, 60, 90, 180, 365];
-const HOUR_STEPS = [1, 2, 3, 6, 12];
+const DAY_STEPS = [1, 2, 3, 5, 7, 14, 30, 60, 90, 180, 365];
 
-/** Axis ticks measured from the tournament start, in days unless the whole thing fits in a day */
-function buildTicks(total: number): { at: number; label: string }[] {
+/** Axis ticks measured in whole days from the tournament start */
+function buildTicks(totalDays: number): { at: number; label: string }[] {
   const ticks: { at: number; label: string }[] = [];
-  const unit = total < ONE_DAY ? ONE_HOUR : ONE_DAY;
-  const suffix = unit === ONE_HOUR ? "h" : "d";
-  const steps = unit === ONE_HOUR ? HOUR_STEPS : DAY_STEPS;
-  const totalUnits = total / unit;
-  const step = steps.find((candidate) => totalUnits / candidate <= 6) ?? Math.ceil(totalUnits / 6);
-  for (let value = 0; value <= totalUnits + 1e-9; value += step) {
+  const step = DAY_STEPS.find((candidate) => totalDays / candidate <= 6) ?? Math.ceil(totalDays / 6);
+  for (let day = 0; day <= totalDays; day += step) {
     // A tick right at the end would be cut off by the edge of the chart
-    if (value / totalUnits > 0.96) break;
-    ticks.push({ at: value * unit, label: `${fmtNum(value, { digits: step < 1 ? 1 : 0 })}${suffix}` });
+    if (day / totalDays > 0.96) break;
+    ticks.push({ at: day, label: `${fmtNum(day)}d` });
   }
   return ticks;
+}
+
+/** Local midnight of the calendar day holding `time` */
+function startOfDay(time: number): number {
+  const date = new Date(time);
+  date.setHours(0, 0, 0, 0);
+  return date.getTime();
+}
+
+/**
+ * Whole calendar days from the day of `from` to the day of `time`, so a same day pair is 0 and the
+ * next day is 1. Math.round absorbs the 23 and 25 hour days daylight saving hands out
+ */
+function dayIndex(time: number, from: number): number {
+  return Math.round((startOfDay(time) - startOfDay(from)) / ONE_DAY);
 }
 
 export const TournamentTimelineWidget: React.FC<{ tournament: Tournament }> = ({ tournament }) => {
@@ -95,14 +105,15 @@ export const TournamentTimelineWidget: React.FC<{ tournament: Tournament }> = ({
 
   const start = timeline.start;
   const end = timeline.completed ? timeline.lastGameAt ?? start : now;
-  const total = Math.max(end - start, ONE_MINUTE); // Never divide by zero on a same-minute tournament
+  // Days are counted inclusively, so a tournament played out in one afternoon is a single day wide
+  const totalDays = dayIndex(end, start) + 1;
 
-  const ticks = buildTicks(total);
+  const ticks = buildTicks(totalDays);
 
   return (
     <WidgetFrame>
       <Header>
-        {timeline.completed ? "Ran for" : "Running for"} <span className="font-bold">{formatSpan(total)}</span>
+        {timeline.completed ? "Ran for" : "Running for"} <span className="font-bold">{formatDays(totalDays)}</span>
         {" · "}
         {fmtNum(timeline.gamesPlayed)} of {fmtNum(timeline.gamesTotal)} games played
       </Header>
@@ -118,7 +129,7 @@ export const TournamentTimelineWidget: React.FC<{ tournament: Tournament }> = ({
                 <div
                   key={tick.at}
                   className="absolute bottom-0 text-[0.65rem] leading-none font-light -translate-x-1/2"
-                  style={{ left: `${(tick.at / total) * 100}%` }}
+                  style={{ left: `${(tick.at / totalDays) * 100}%` }}
                 >
                   {tick.label}
                 </div>
@@ -131,7 +142,7 @@ export const TournamentTimelineWidget: React.FC<{ tournament: Tournament }> = ({
               key={row.key}
               row={row}
               timelineStart={start}
-              total={total}
+              totalDays={totalDays}
               now={now}
               gridLines={ticks.map((tick) => tick.at)}
             />
@@ -142,7 +153,8 @@ export const TournamentTimelineWidget: React.FC<{ tournament: Tournament }> = ({
       <p className="mt-6 text-xs font-light leading-relaxed">
         A round's clock starts when it became possible to play - when the round feeding it finished - and ends at its
         last game, so the waiting counts towards how long it took. The groups of the group play all start together at
-        the tournament start.
+        the tournament start. Time is counted in whole calendar days: a round that starts and finishes on the same day
+        took one day, and one that runs into the next day took two.
       </p>
     </WidgetFrame>
   );
@@ -164,26 +176,28 @@ const Header: React.FC<{ children?: React.ReactNode }> = ({ children }) => (
 const TimelineRow: React.FC<{
   row: Row;
   timelineStart: number;
-  total: number;
+  totalDays: number;
   now: number;
+  /** Day indexes, measured from the tournament start */
   gridLines: number[];
-}> = ({ row, timelineStart, total, now, gridLines }) => {
+}> = ({ row, timelineStart, totalDays, now, gridLines }) => {
   const isSection = row.depth === 0;
   const ongoing = row.end === undefined;
   const notStarted = ongoing && row.gamesPlayed === 0;
   const barEnd = row.end ?? now;
-  const span = Math.max(0, barEnd - row.start);
 
-  const leftPercent = ((row.start - timelineStart) / total) * 100;
-  const widthPercent = (span / total) * 100;
+  // The bar covers whole days, from the first day of the row through its last one
+  const firstDay = dayIndex(row.start, timelineStart);
+  const days = Math.max(1, dayIndex(barEnd, timelineStart) - firstDay + 1);
+
+  const leftPercent = (firstDay / totalDays) * 100;
+  const widthPercent = (days / totalDays) * 100;
 
   return (
     <div
       className={classNames("flex items-center gap-2", isSection && "pt-2")}
       title={
-        notStarted
-          ? "No games played yet"
-          : `${formatDateTime(row.start)} → ${ongoing ? "ongoing" : formatDateTime(barEnd)}`
+        notStarted ? "No games played yet" : `${formatDate(row.start)} → ${ongoing ? "ongoing" : formatDate(barEnd)}`
       }
     >
       <div className={classNames(LABEL_COLUMN, "shrink-0", isSection ? "" : "pl-3")}>
@@ -202,7 +216,7 @@ const TimelineRow: React.FC<{
             ongoing && !notStarted && "italic",
           )}
         >
-          {notStarted ? "not started" : formatSpan(span)}
+          {notStarted ? "not started" : formatDays(days)}
         </p>
         <p className="text-[0.65rem] font-light">
           {fmtNum(row.gamesPlayed)}/{fmtNum(row.gamesTotal)} games
@@ -218,7 +232,7 @@ const TimelineRow: React.FC<{
           <div
             key={at}
             className="absolute inset-y-0 w-px bg-secondary-background"
-            style={{ left: `${(at / total) * 100}%` }}
+            style={{ left: `${(at / totalDays) * 100}%` }}
           />
         ))}
         {/* A round with no games played has no span to draw: the bare lane says it all */}
@@ -267,21 +281,11 @@ function refLabel(ref: TimelineRef): { label: string; sublabel?: string } {
   }
 }
 
-/** Durations are read in days, but sub-day spans would all collapse to "0 days" */
-function formatSpan(ms: number): string {
-  if (ms < ONE_MINUTE) return "< 1 min";
-  if (ms < ONE_HOUR) return `${fmtNum(ms / ONE_MINUTE)} min`;
-  if (ms < ONE_DAY) return `${fmtNum(ms / ONE_HOUR, { digits: 1 })} hours`;
-  const days = ms / ONE_DAY;
-  return `${fmtNum(days, { digits: days < 10 ? 1 : 0 })} days`;
+/** Whole calendar days, counting both the first and the last day */
+function formatDays(days: number): string {
+  return `${fmtNum(days)} ${days === 1 ? "day" : "days"}`;
 }
 
-function formatDateTime(time: number): string {
-  return new Intl.DateTimeFormat("en-US", {
-    minute: "numeric",
-    hour: "numeric",
-    hour12: false,
-    day: "numeric",
-    month: "short",
-  }).format(new Date(time));
+function formatDate(time: number): string {
+  return new Intl.DateTimeFormat("en-US", { day: "numeric", month: "short" }).format(new Date(time));
 }
