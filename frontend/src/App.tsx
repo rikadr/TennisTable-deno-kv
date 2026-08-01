@@ -53,6 +53,7 @@ import { LiveGameAdminPage } from "./pages/live-game/live-game-admin-page";
 import { LiveGameOverlay } from "./pages/live-game/live-game-overlay";
 import { ChangelogPage } from "./pages/changelog/changelog-page";
 import { ChangelogPostPage } from "./pages/changelog/changelog-post-page";
+import { NotFoundPage } from "./pages/not-found-page";
 
 const RequireAuth: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   if (!session.isAuthenticated) {
@@ -154,6 +155,7 @@ function App() {
                             </RequireAuth>
                           }
                         />
+                        <Route path="*" element={<NotFoundPage />} />
                       </Route>
                     </Routes>
                   </BrowserRouter>

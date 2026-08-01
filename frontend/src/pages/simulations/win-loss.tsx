@@ -6,29 +6,40 @@ export const WinLoss: React.FC = () => {
     simulations: { expectedWinLoss },
   } = useEventDbContext();
   return (
-    <div className="flex flex-col items-center text-primary-text bg-primary-background rounded-lg p-4 w-fit m-auto">
-      <h1 className="mb-6 text-2xl">Expected winn/loss rate</h1>
-      <p>Points difference ----- Expected win rate ----- % win chanse</p>
-      {[...Array(61).keys()].map((diff) => {
-        const result = expectedWinLoss(-diff * 10);
-        return (
-          <div key={diff} className="flex border-b-[0.5px] border-primary-text/50 hover:bg-secondary-background/30">
-            <div className="w-10 text-right">{diff * 10}</div>
-            <div className="w-16 text-right">
-              {result.toLocaleString("no-NO", {
-                maximumFractionDigits: 1,
-              })}{" "}
-              : 1
-            </div>
-            <div className="w-16 text-right">
-              {((result / (1 + result)) * 100).toLocaleString("no-NO", {
-                maximumFractionDigits: 0,
-              })}{" "}
-              %
-            </div>
-          </div>
-        );
-      })}
+    <div className="text-primary-text bg-primary-background rounded-lg p-4 w-full max-w-sm mx-auto">
+      <h1 className="mb-6 text-2xl text-center">Expected win/loss rate</h1>
+      <table className="w-full text-primary-text border-collapse">
+        <thead className="border-b border-primary-text/50">
+          <tr className="text-xs xs:text-sm md:text-base text-primary-text">
+            <th className="py-1 px-1 xs:px-2 md:px-3 text-right font-normal whitespace-nowrap">Points difference</th>
+            <th className="py-1 px-1 xs:px-2 md:px-3 text-right font-normal whitespace-nowrap">Expected win rate</th>
+            <th className="py-1 px-1 xs:px-2 md:px-3 text-right font-normal whitespace-nowrap">Win chance</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-primary-text/50">
+          {[...Array(101).keys()].map((diff) => {
+            const result = expectedWinLoss(-diff * 10);
+            const winChance = (result / (1 + result)) * 100;
+            return (
+              <tr key={diff} className="hover:bg-secondary-background/30 text-xs xs:text-sm md:text-base">
+                <td className="py-1 px-1 xs:px-2 md:px-3 text-right w-[1%] whitespace-nowrap">{diff * 10}</td>
+                <td className="py-1 px-1 xs:px-2 md:px-3 text-right whitespace-nowrap">
+                  {result.toLocaleString("no-NO", {
+                    maximumFractionDigits: result > 10 ? 0 : 1,
+                  })}{" "}
+                  : 1
+                </td>
+                <td className="py-1 px-1 xs:px-2 md:px-3 text-right whitespace-nowrap">
+                  {winChance.toLocaleString("no-NO", {
+                    maximumFractionDigits: winChance > 90 ? 1 : 0,
+                  })}{" "}
+                  %
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
     </div>
   );
 };

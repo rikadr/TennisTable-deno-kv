@@ -21,13 +21,13 @@ export const HallOfFamePage: React.FC = () => {
         {entries.length === 0 ? (
           <p className="text-secondary-background text-sm text-center pb-4">No retired players yet.</p>
         ) : (
-          <table className="w-full text-primary-text">
-            <thead>
-              <tr className="text-base">
-                <th className="text-left py-2 px-2 font-normal w-8">#</th>
-                <th className="text-left py-2 px-2 font-normal">Name</th>
-                <th className="text-center py-2 px-2 font-normal whitespace-nowrap">Hall of Fame Score</th>
-                <th className="text-right py-2 px-2 font-normal">Retired</th>
+          <table className="w-full text-primary-text border-collapse">
+            <thead className="border-b border-primary-text/50">
+              <tr className="text-sm xs:text-lg md:text-xl text-primary-text">
+                <th className="py-1 px-2 text-left font-light">#</th>
+                <th className="py-1 px-2 text-left font-normal">Player</th>
+                <th className="py-1 px-2 text-right font-light whitespace-nowrap">HOF Score</th>
+                <th className="py-1 px-2 text-right font-light text-xs xs:text-sm md:text-base">Retired</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-primary-text/50">
@@ -37,18 +37,18 @@ export const HallOfFamePage: React.FC = () => {
                   <tr
                     key={entry.playerId}
                     onClick={() => navigate(`/hall-of-fame/${entry.playerId}`)}
-                    className="cursor-pointer hover:bg-secondary-background hover:text-secondary-text text-xl font-light"
+                    className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text cursor-pointer transition-colors text-sm xs:text-lg md:text-xl font-light"
                   >
-                    <td className="py-2 px-2 italic">{index + 1}</td>
-                    <td className="py-2 px-2">
-                      <div className="flex items-center gap-3 font-normal whitespace-nowrap">
+                    <td className="py-1 px-2 italic w-[1%] whitespace-nowrap">{index + 1}</td>
+                    <td className="py-1 px-2 w-full max-w-0">
+                      <div className="flex items-center gap-2 min-w-0">
                         <ProfilePicture playerId={entry.playerId} size={28} border={2} />
-                        {entry.playerName}
+                        <span className="font-normal truncate">{entry.playerName}</span>
                       </div>
                     </td>
-                    <td className="py-2 px-2 text-center">{fmtNum(entry.score.total)}</td>
-                    <td className="py-2 px-2 text-right text-sm whitespace-nowrap">
-                      {player?.updatedAt && <RelativeTime date={new Date(player.updatedAt)} />}
+                    <td className="py-1 px-2 text-right w-[1%] whitespace-nowrap">{fmtNum(entry.score.total)}</td>
+                    <td className="py-1 px-2 text-right text-xs xs:text-sm md:text-base w-[1%] whitespace-nowrap">
+                      {player?.updatedAt && <RelativeTime date={new Date(player.updatedAt)} variant="auto" />}
                     </td>
                   </tr>
                 );

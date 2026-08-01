@@ -1,7 +1,7 @@
 import { useEventDbContext } from "../wrappers/event-db-context";
 import { classNames } from "../common/class-names";
-import { Link } from "react-router-dom";
-import { relativeTimeString } from "../common/date-utils";
+import { Link, useNavigate } from "react-router-dom";
+import { RelativeTime } from "../common/date-utils";
 import { fmtNum } from "../common/number-utils";
 import { useEffect, useState } from "react";
 
@@ -12,6 +12,7 @@ type Props = {
 
 export const PvPStats: React.FC<Props> = ({ player1, player2 }) => {
   const context = useEventDbContext();
+  const navigate = useNavigate();
 
   if (!player1 || !player2) {
     return (
@@ -38,86 +39,103 @@ export const PvPStats: React.FC<Props> = ({ player1, player2 }) => {
       <CombinedStatCard player1={p1} player2={p2} />
 
       {/* Games History */}
-      <div className="bg-primary-background rounded-lg p-5 border border-secondary-background/30">
+      <div className="bg-primary-background rounded-lg p-3 xs:p-5 border border-secondary-background/30">
         <h3 className="text-xl font-semibold mb-4">Match History</h3>
-        <div className="overflow-x-auto">
-          <div className="min-w-[450px]">
-            {/* Table Header */}
-            <div className="flex text-sm font-semibold text-primary-text mb-3">
-              <div className="w-40 pl-2">Winner</div>
-              <div className="w-16 text-center">Points</div>
-              <div className="w-24 text-center">Score</div>
-              <div className="flex-1 text-right pr-2">Time</div>
-            </div>
+        {games.length === 0 ? (
+          <div className="text-center py-8 text-primary-text/60">No games played yet</div>
+        ) : (
+          <div className="max-w-xl mx-auto">
+          <table className="w-full text-primary-text border-collapse">
+            <thead className="border-b border-primary-text/50">
+              <tr className="text-xs xs:text-sm md:text-base text-primary-text">
+                <th className="py-1 px-1 xs:px-2 md:px-3 text-center font-medium">Winner</th>
+                <th className="py-1 px-1 xs:px-2 md:px-3 text-right font-light">Pts</th>
+                <th className="py-1 px-1 xs:px-2 md:px-3 text-center font-semibold">Score</th>
+                <th className="py-1 px-1 xs:px-2 md:px-3 text-right font-normal">Time</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-primary-text/50">
+              {games.map((_, index, list) => {
+                const game = list[list.length - 1 - index];
+                const isPlayer1Win = game.result === "win";
+                const winner = isPlayer1Win ? p1 : p2;
+                const setStrings =
+                  game.score?.setPoints?.map((set) =>
+                    isPlayer1Win ? `${set.gameWinner}-${set.gameLoser}` : `${set.gameLoser}-${set.gameWinner}`,
+                  ) ?? [];
+                // Max 3 sets per line on tiny screens
+                const setLines = Array.from({ length: Math.ceil(setStrings.length / 3) }, (_, i) =>
+                  setStrings.slice(i * 3, i * 3 + 3).join(", "),
+                );
 
-            {/* Games List */}
-            <div>
-              {games.length === 0 ? (
-                <div className="text-center py-8 text-primary-text/60">No games played yet</div>
-              ) : (
-                games.map((_, index, list) => {
-                  const game = list[list.length - 1 - index];
-                  const isPlayer1Win = game.result === "win";
-                  const winner = isPlayer1Win ? p1 : p2;
-
-                  return (
-                    <Link
-                      key={`${p1.playerId}-${p2.playerId}-${index}`}
-                      to={`/player/${winner.playerId}`}
-                      className="flex gap-4 px-2 rounded-lg border-t-[0.5px] border-primary-text/50 bg-primary-background hover:bg-primary-text/10 transition-colors group"
-                    >
-                      {/* Winner Name with Trophy */}
-                      <div className="w-36 font-medium flex items-center gap-0">
-                        {/* Left side trophy (for player 1 wins) */}
-                        <span className="text-lg w-6 flex-shrink-0 text-center">{isPlayer1Win && "🏆"}</span>
-                        {/* Name (centered, truncates if too long) */}
-                        <span className="truncate group-hover:text-primary-text transition-colors flex-1 text-center">
-                          {winner.name}
+                return (
+                  <tr
+                    key={`${p1.playerId}-${p2.playerId}-${index}`}
+                    onClick={() => navigate(`/player/${winner.playerId}`)}
+                    className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text cursor-pointer transition-colors text-xs xs:text-sm md:text-base"
+                  >
+                    {/* Three slots: player 1's trophy | winner name | player 2's trophy.
+                        Below xs the trophy shrinks and the empty opposite slot collapses. */}
+                    <td className="py-1 px-1 xs:px-2 md:px-3 w-full max-w-0">
+                      <div className="flex items-center min-w-0">
+                        <span
+                          className={classNames(
+                            "shrink-0 text-center text-sm xs:text-lg w-4 xs:w-6",
+                            !isPlayer1Win && "hidden xs:block",
+                          )}
+                        >
+                          {isPlayer1Win && "🏆"}
                         </span>
-                        {/* Right side trophy (for player 2 wins) */}
-                        <span className="text-lg w-6 flex-shrink-0 text-center">{!isPlayer1Win && "🏆"}</span>
-                      </div>
-
-                      {/* Points Difference */}
-                      <div className="w-10 text-center flex items-center justify-center">
-                        <span className="text-md font-light italic">
-                          {fmtNum(Math.abs(game.pointsDiff), { signedPositive: true })}
+                        <span className="font-medium truncate flex-1 text-center">{winner.name}</span>
+                        <span
+                          className={classNames(
+                            "shrink-0 text-center text-sm xs:text-lg w-4 xs:w-6",
+                            isPlayer1Win && "hidden xs:block",
+                          )}
+                        >
+                          {!isPlayer1Win && "🏆"}
                         </span>
                       </div>
-
-                      {/* Score */}
-                      <div className="w-24 flex flex-col items-center justify-center">
+                    </td>
+                    <td className="py-1 px-1 xs:px-2 md:px-3 text-right font-light italic w-[1%] whitespace-nowrap">
+                      {fmtNum(Math.abs(game.pointsDiff), { signedPositive: true })}
+                    </td>
+                    <td className="py-1 px-1 xs:px-2 md:px-3 text-center w-[1%] whitespace-nowrap">
+                      {/* Tiny screens: sets on top, per-set points below (max 3 per line). xs+: inline. */}
+                      <div className="flex flex-col xs:flex-row xs:flex-nowrap xs:items-baseline xs:justify-center xs:gap-x-2">
                         {game.score && (
+                          <span className="font-semibold text-[11px] xs:text-sm md:text-base">
+                            {isPlayer1Win
+                              ? `${game.score.setsWon.gameWinner} - ${game.score.setsWon.gameLoser}`
+                              : `${game.score.setsWon.gameLoser} - ${game.score.setsWon.gameWinner}`}
+                          </span>
+                        )}
+                        {setStrings.length > 0 && (
                           <>
-                            <div className="text-sm font-semibold">
-                              {isPlayer1Win
-                                ? `${game.score.setsWon.gameWinner} - ${game.score.setsWon.gameLoser}`
-                                : `${game.score.setsWon.gameLoser} - ${game.score.setsWon.gameWinner}`}
-                            </div>
-                            {game.score.setPoints && (
-                              <div className="text-xs text-primary-text/60 italic whitespace-nowrap">
-                                (
-                                {isPlayer1Win
-                                  ? game.score.setPoints.map((set) => `${set.gameWinner}-${set.gameLoser}`).join(", ")
-                                  : game.score.setPoints.map((set) => `${set.gameLoser}-${set.gameWinner}`).join(", ")}
-                                )
-                              </div>
-                            )}
+                            <span className="xs:hidden text-[10px] opacity-60 italic">
+                              {setLines.map((line, lineIndex) => (
+                                <span key={lineIndex} className="block whitespace-nowrap">
+                                  {line}
+                                </span>
+                              ))}
+                            </span>
+                            <span className="hidden xs:inline text-xs opacity-60 italic whitespace-nowrap">
+                              {setStrings.join(", ")}
+                            </span>
                           </>
                         )}
                       </div>
-
-                      {/* Time */}
-                      <div className="flex-1 text-right text-sm text-primary-text/70 flex items-center justify-end pr-2 whitespace-nowrap">
-                        {relativeTimeString(new Date(game.time))}
-                      </div>
-                    </Link>
-                  );
-                })
-              )}
-            </div>
+                    </td>
+                    <td className="py-1 px-1 xs:px-2 md:px-3 text-right text-xs md:text-sm opacity-70 w-[1%] whitespace-nowrap">
+                      <RelativeTime date={new Date(game.time)} variant="auto" />
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

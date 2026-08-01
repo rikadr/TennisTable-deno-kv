@@ -1,4 +1,4 @@
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useState } from "react";
 import { classNames } from "../../common/class-names";
 import { ProfilePicture } from "../player/profile-picture";
@@ -26,6 +26,7 @@ const tabs: { id: TabType; label: string }[] = [
 
 export function SeasonPage() {
   const context = useEventDbContext();
+  const navigate = useNavigate();
   const [sortKey, setSortKey] = useState<SortKey>("score");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [searchParams, setSearchParams] = useSearchParams();
@@ -137,72 +138,69 @@ export function SeasonPage() {
       {activeTab === "leaderboard" && (
         <div className="mt-4">
           <SeasonPodium leaderboard={leaderboard} seasonStart={Number(seasonStart)} isOngoing={isOngoing} />
-          <div className="bg-secondary-background rounded-lg overflow-hidden">
-            <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="bg-secondary-background border-b border-secondary-text/20 text-xs md:text-base">
-                  <th className="text-left px-1 md:px-4 text-secondary-text font-semibold">#</th>
-                  <th className="text-left px-1 md:px-4 text-secondary-text font-semibold">Player</th>
+          <div className="bg-secondary-background rounded-lg overflow-hidden max-w-md mx-auto">
+            <table className="w-full text-secondary-text border-collapse">
+              <thead className="border-b border-secondary-text/50">
+                <tr className="text-xs xs:text-sm sm:text-base text-secondary-text">
+                  <th className="py-1 px-1 xs:px-2 md:px-3 text-left font-normal">#</th>
+                  <th className="py-1 px-1 xs:px-2 md:px-3 text-left font-medium">Player</th>
                   <th
-                    className="text-left px-1 md:px-4 text-secondary-text font-semibold cursor-pointer hover:text-secondary-text/80 whitespace-nowrap"
+                    className="py-1 px-1 xs:px-2 md:px-3 text-right font-medium cursor-pointer hover:text-secondary-text/80 whitespace-nowrap"
                     onClick={() => handleSort("score")}
                   >
-                    <span className="md:hidden">Score</span>
-                    <span className="hidden md:inline">Season Score</span>
+                    Score
                     {getSortIndicator("score")}
                   </th>
                   <th
-                    className="text-left px-1 md:px-4 text-secondary-text font-semibold cursor-pointer hover:text-secondary-text/80 whitespace-nowrap"
+                    className="py-1 px-1 xs:px-2 md:px-3 text-right font-normal cursor-pointer hover:text-secondary-text/80 whitespace-nowrap"
                     onClick={() => handleSort("playerPairings")}
                   >
-                    <span className="md:hidden">Pairs</span>
-                    <span className="hidden md:inline">Player Pairings</span>
+                    Pairs
                     {getSortIndicator("playerPairings")}
                   </th>
                   <th
-                    className="text-left px-1 md:px-4 text-secondary-text font-semibold cursor-pointer hover:text-secondary-text/80 whitespace-nowrap"
+                    className="py-1 px-1 xs:px-2 md:px-3 text-right font-normal cursor-pointer hover:text-secondary-text/80 whitespace-nowrap"
                     onClick={() => handleSort("avgPerformance")}
                   >
-                    <span className="md:hidden">Avg</span>
-                    <span className="hidden md:inline">Avg. Performance</span>
+                    Avg
                     {getSortIndicator("avgPerformance")}
                   </th>
                 </tr>
               </thead>
-              <tbody>
-                {sortedLeaderboard.map((player, i) => {
+              <tbody className="divide-y divide-secondary-text/50">
+                {sortedLeaderboard.map((player) => {
                   const rank = leaderboard.findIndex((p) => p.playerId === player.playerId);
                   return (
                     <tr
                       key={player.playerId}
-                      className="border-b border-secondary-text/10 text-secondary-text hover:bg-primary-background/50 text-xs md:text-base"
+                      onClick={() => navigate(`/season/player?seasonStart=${seasonStart}&playerId=${player.playerId}`)}
+                      className="text-secondary-text hover:bg-primary-background/50 cursor-pointer transition-colors text-xs xs:text-sm sm:text-base"
                     >
-                      <td className="px-1 md:px-4">{rank + 1}</td>
-                      <td className="px-1 md:px-4">
-                        <Link
-                          to={`/season/player?seasonStart=${seasonStart}&playerId=${player.playerId}`}
-                          className="font-medium"
-                        >
-                          <div className="flex items-center gap-1 md:gap-3">
-                            <div className="md:hidden shrink-0"><ProfilePicture playerId={player.playerId} size={22} border={2} shape="rounded" /></div>
-                            <div className="hidden md:block shrink-0"><ProfilePicture playerId={player.playerId} size={35} border={3} shape="rounded" /></div>
-                            {!isOngoing && rank === 0 && "🥇 "}
-                            {!isOngoing && rank === 1 && "🥈 "}
-                            {!isOngoing && rank === 2 && "🥉 "}
-                            <span className="truncate max-w-[80px] md:max-w-none">{context.playerName(player.playerId)}</span>
-                          </div>
-                        </Link>
+                      <td className="py-1 px-1 xs:px-2 md:px-3 w-[1%] whitespace-nowrap">{rank + 1}</td>
+                      <td className="py-1 px-1 xs:px-2 md:px-3 w-full max-w-0">
+                        <div className="flex items-center gap-1 md:gap-3 min-w-0">
+                          <div className="md:hidden shrink-0"><ProfilePicture playerId={player.playerId} size={22} border={2} shape="rounded" /></div>
+                          <div className="hidden md:block shrink-0"><ProfilePicture playerId={player.playerId} size={35} border={3} shape="rounded" /></div>
+                          {!isOngoing && rank === 0 && "🥇 "}
+                          {!isOngoing && rank === 1 && "🥈 "}
+                          {!isOngoing && rank === 2 && "🥉 "}
+                          <span className="font-medium truncate">{context.playerName(player.playerId)}</span>
+                        </div>
                       </td>
-                      <td className="px-1 md:px-4 font-medium">{fmtNum(player.seasonScore)}</td>
-                      <td className="px-1 md:px-4">{fmtNum(player.matchups.size)}</td>
-                      <td className="px-1 md:px-4">{fmtNum(player.seasonScore / player.matchups.size)}</td>
+                      <td className="py-1 px-1 xs:px-2 md:px-3 text-right font-medium w-[1%] whitespace-nowrap">
+                        {fmtNum(player.seasonScore)}
+                      </td>
+                      <td className="py-1 px-1 xs:px-2 md:px-3 text-right w-[1%] whitespace-nowrap">
+                        {fmtNum(player.matchups.size)}
+                      </td>
+                      <td className="py-1 px-1 xs:px-2 md:px-3 text-right w-[1%] whitespace-nowrap">
+                        {fmtNum(player.seasonScore / player.matchups.size)}
+                      </td>
                     </tr>
                   );
                 })}
               </tbody>
             </table>
-            </div>
           </div>
         </div>
       )}

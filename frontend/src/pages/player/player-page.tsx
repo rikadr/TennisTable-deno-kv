@@ -8,7 +8,7 @@ import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom"
 import { PlayerEloGraph } from "./player-elo-graph";
 import { PlayerPointsDistrubution } from "./player-points-distribution";
 import { PlayerGamesDistrubution } from "./player-games-distribution";
-import { relativeTimeString } from "../../common/date-utils";
+import { RelativeTime } from "../../common/date-utils";
 import { OponentsScores } from "./oponents-scores";
 import { session } from "../../services/auth";
 import { PlayerAchievements } from "./player-achievements";
@@ -266,39 +266,42 @@ export const PlayerPage: React.FC = () => {
 
         {/* Recent Games Tab */}
         {activeTab === "games" && (
-          <div className="overflow-x-auto bg-primary-background text-primary-text rounded-xl px-1">
-            <table className="w-full min-w-[450px]">
-              <thead>
-                <tr className="border-b border-gray-200 text-xs md:text-sm lg:text-base xl:text-lg">
-                  <th className="text-left py-2 md:py-3 px-1 md:px-4 font-medium">Opponent</th>
-                  <th className="text-left py-2 md:py-3 px-1 font-medium"></th>
-                  <th className="text-left py-2 md:py-3 px-1 font-medium">Pts</th>
-                  <th className="text-left py-2 md:py-3 px-1 md:px-4 font-medium">Score</th>
-                  <th className="text-left py-2 md:py-3 px-1 md:px-4 font-medium">Time</th>
-                  <th className="text-left py-2 md:py-3 px-1 md:px-4 font-medium">Actions</th>
+          <div className="bg-primary-background text-primary-text rounded-xl px-1">
+            <table className="w-full text-primary-text border-collapse">
+              <thead className="border-b border-primary-text/50">
+                <tr className="text-xs xs:text-sm md:text-base text-primary-text">
+                  <th className="py-1 px-1 xs:px-2 md:px-3 text-left font-medium">Opponent</th>
+                  <th className="py-1 px-1"></th>
+                  <th className="py-1 px-1 xs:px-2 text-right font-medium">Pts</th>
+                  <th className="py-1 px-1 xs:px-2 md:px-3 text-left font-medium">Score</th>
+                  <th className="py-1 px-1 xs:px-2 md:px-3 text-left font-normal">Time</th>
+                  <th className="py-1 px-1 xs:px-2 md:px-3 text-left font-normal">Actions</th>
                 </tr>
               </thead>
-              <tbody className="text-xs md:text-sm lg:text-base xl:text-lg">
+              <tbody className="divide-y divide-primary-text/50 text-xs xs:text-sm md:text-base">
                 {summary.games
                   .toReversed()
                   .slice(0, isAdmin ? undefined : 10)
                   .map((game) => (
-                    <tr key={game.time} className="border-b border-primary-text hover:brightness-110 transition-colors">
-                      <td className="py-1 px-1 md:px-4">
-                        <Link to={{ pathname: "/player/" + game.oponent, search: playerLinkSearch }}>
-                          <span className="font-medium truncate max-w-[70px] md:max-w-none inline-block">{context.playerName(game.oponent)}</span>
+                    <tr key={game.time}>
+                      <td className="py-1 px-1 xs:px-2 md:px-3 w-full max-w-0">
+                        <Link
+                          to={{ pathname: "/player/" + game.oponent, search: playerLinkSearch }}
+                          className="block truncate font-medium hover:underline"
+                        >
+                          {context.playerName(game.oponent)}
                         </Link>
                       </td>
-                      <td className="py-1 px-1">
-                        <span className="text-base md:text-2xl lg:text-3xl">{game.result === "win" ? "🏆" : "💔"}</span>
+                      <td className="py-1 px-1 w-[1%] whitespace-nowrap">
+                        <span className="text-base xs:text-2xl md:text-3xl">{game.result === "win" ? "🏆" : "💔"}</span>
                       </td>
-                      <td className="py-1 px-1">
+                      <td className="py-1 px-1 xs:px-2 text-right w-[1%] whitespace-nowrap">
                         <span className="font-medium">
                           {game.result === "win" ? "+" : ""}
                           {fmtNum(game.pointsDiff)}
                         </span>
                       </td>
-                      <td className="py-1 px-1 md:px-4">
+                      <td className="py-1 px-1 xs:px-2 md:px-3 w-[1%] whitespace-nowrap">
                         {game.score && (
                           <div className="font-medium">
                             {game.result === "win"
@@ -307,17 +310,17 @@ export const PlayerPage: React.FC = () => {
                           </div>
                         )}
                         {game.score?.setPoints && (
-                          <div className="font-light italic text-xs lg:text-sm whitespace-nowrap">
+                          <div className="font-light italic text-xs md:text-sm whitespace-nowrap">
                             {game.result === "win"
                               ? game.score.setPoints.map((set) => `${set.gameWinner}-${set.gameLoser}`).join(", ")
                               : game.score.setPoints.map((set) => `${set.gameLoser}-${set.gameWinner}`).join(", ")}
                           </div>
                         )}
                       </td>
-                      <td className="py-1 px-1 md:px-4 whitespace-nowrap">
-                        <span className="text-primary-text">{relativeTimeString(new Date(game.time))}</span>
+                      <td className="py-1 px-1 xs:px-2 md:px-3 w-[1%] whitespace-nowrap">
+                        <RelativeTime date={new Date(game.time)} variant="auto" />
                       </td>
-                      <td className="py-1 px-1 md:px-4">
+                      <td className="py-1 px-1 xs:px-2 md:px-3 w-[1%] whitespace-nowrap">
                         <div className="flex gap-1 md:gap-2">
                           <button
                             className="text-xs text-tertiary-text bg-tertiary-background hover:bg-tertiary-background/50 px-1.5 md:px-2 py-0.5 md:py-1 rounded-md whitespace-nowrap"

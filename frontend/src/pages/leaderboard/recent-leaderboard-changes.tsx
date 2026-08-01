@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { ProfilePicture } from "../player/profile-picture";
 import { fmtNum } from "../../common/number-utils";
@@ -11,6 +11,7 @@ type Props = {
 
 export const RecentLeaderBoardChanges: React.FC<Props> = ({ view }) => {
   const context = useEventDbContext();
+  const navigate = useNavigate();
 
   const leaderboardChanges = useMemo(() => {
     if (view === "overall") {
@@ -115,38 +116,62 @@ export const RecentLeaderBoardChanges: React.FC<Props> = ({ view }) => {
   }
 
   return (
-    <div className="bg-primary-background rounded-lg ">
+    <div className="bg-primary-background rounded-lg w-full overflow-hidden">
       <h1 className="text-2xl text-center mb-4 mt-[27.5px] text-primary-text">Leaderboard changes last 2 days</h1>
-      <div className="flex flex-col divide-y divide-primary-text/50 text-primary-text">
-        <div className="flex gap-4 text-base text-center mb-2">
-          <div className="w-20 pl-5">Player</div>
-          <div className="w-24 whitespace-nowrap pl-5">Current place</div>
-          <div className="w-32 text-center pl-5">Changes</div>
-        </div>
-        {leaderboardChanges.map((player) => (
-          <Link
-            key={player.playerId}
-            to={view === "season"
-              ? `/player/${player.playerId}?tab=season`
-              : `/player/${player.playerId}`
-            }
-            className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text py-1 px-2 flex gap-4 text-xl font-light"
-          >
-            <ProfilePicture playerId={player.playerId} size={28} border={2} />
-            <div className="w-24 font-normal whitespace-nowrap">{context.playerName(player.playerId)}</div>
-            <div className="w-10  text-right font-normal whitespace-nowrap">{fmtNum(player.currentPosition)}</div>
-            <div className="w-10  text-right font-normal whitespace-nowrap">
-              {fmtNum(player.netChange, { signedPositive: true })}
-            </div>
-            {player.allChanges.length > 1 && (
-              <div className="w-24 h-fit mt-2 text-xs font-light whitespace-nowrap">
-                {player.allChanges.map((c) => fmtNum(c.change, { signedPositive: true })).join(", ")}
+      <table className="w-full text-primary-text border-collapse">
+        <thead>
+          <tr className="text-sm xs:text-lg md:text-xl text-primary-text">
+            <th className="py-1 px-2 text-left font-normal">Player</th>
+            <th className="py-1 pl-1 pr-3 font-normal w-[1%]">
+              {/* Zero-width so the label doesn't widen the hug column; overflows leftward */}
+              <div className="w-0 ml-auto whitespace-nowrap" dir="rtl">
+                <bdi dir="ltr">Place</bdi>
               </div>
-            )}
-          </Link>
-        ))}
-      </div>
-      { }
+            </th>
+            <th className="py-1 px-1 font-normal w-[1%]">
+              {/* Overflows rightward into the empty detail header */}
+              <div className="w-0 whitespace-nowrap">Changes</div>
+            </th>
+            <th className="py-1 px-2"></th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-primary-text/50">
+          {leaderboardChanges.map((player) => (
+            <tr
+              key={player.playerId}
+              onClick={() =>
+                navigate(view === "season" ? `/player/${player.playerId}?tab=season` : `/player/${player.playerId}`)
+              }
+              className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text cursor-pointer transition-colors text-sm xs:text-lg md:text-xl font-light"
+            >
+              <td className="py-1 px-2 w-[55%] max-w-0">
+                <div className="flex items-center gap-2 min-w-0">
+                  <ProfilePicture playerId={player.playerId} size={28} border={2} />
+                  <span className="font-normal truncate">{context.playerName(player.playerId)}</span>
+                </div>
+              </td>
+              <td className="py-1 pl-1 pr-3 text-right font-normal w-[1%] whitespace-nowrap">
+                {fmtNum(player.currentPosition)}
+              </td>
+              <td className="py-1 px-1 text-right font-normal w-[1%] whitespace-nowrap">
+                {fmtNum(player.netChange, { signedPositive: true })}
+              </td>
+              <td className="py-1 px-2 w-[45%] max-w-0 text-xs xs:text-sm md:text-base">
+                {player.allChanges.length > 1 && (
+                  // dir="rtl" puts the ellipsis on the left so the most recent
+                  // (last) entries stay readable; <bdi dir="ltr"> keeps the
+                  // characters themselves in normal order.
+                  <div className="truncate" dir="rtl">
+                    <bdi dir="ltr">
+                      {player.allChanges.map((c) => fmtNum(c.change, { signedPositive: true })).join(", ")}
+                    </bdi>
+                  </div>
+                )}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 };

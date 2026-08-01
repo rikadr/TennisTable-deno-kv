@@ -15,9 +15,16 @@ export class Simulations {
     let player2Elo = player1Elo + diffElo;
     let wins = 0;
     let loss = 0;
+    let diffSum = 0;
 
     for (let i = 1; i <= gamesToSimulate; i++) {
-      const player1mustWin = player2Elo - player1Elo > diffElo;
+      // Steer on the running AVERAGE gap, not the instantaneous gap: the result
+      // is the win rate of matchups whose average elo difference is diffElo.
+      // Average slightly over the target -> the game is a win pulling it down,
+      // under -> a loss pushing it up.
+      diffSum += player2Elo - player1Elo;
+      const avgDiff = diffSum / i;
+      const player1mustWin = avgDiff > diffElo;
       if (player1mustWin) {
         wins++;
         const { winnersNewElo, losersNewElo } = Elo.calculateELO(player1Elo, player2Elo, i, i);
@@ -30,7 +37,7 @@ export class Simulations {
         player2Elo = winnersNewElo;
       }
     }
-    return wins / (loss ?? 1);
+    return wins / (loss || 1);
   }
 
   expectedLeaderBoard(): {

@@ -1,12 +1,17 @@
 import { useEffect, useState } from "react";
 
-export const RelativeTime: React.FC<{ date: Date }> = ({ date }) => {
-  const [timeString, setTimeString] = useState(() => relativeTimeString(date));
+type RelativeTimeVariant = "long" | "short" | "auto";
+
+/**
+ * variant:
+ * - "long" (default): "21 hours ago"
+ * - "short": "21h ago" — for tight table columns
+ * - "auto": short below the md breakpoint, long from md up
+ */
+export const RelativeTime: React.FC<{ date: Date; variant?: RelativeTimeVariant }> = ({ date, variant = "long" }) => {
+  const [, setTick] = useState(0);
 
   useEffect(() => {
-    const update = () => setTimeString(relativeTimeString(date));
-    update();
-
     // Update more frequently for recent times, less for old times
     const diff = Math.abs(Date.now() - date.getTime());
     const interval =
@@ -16,11 +21,22 @@ export const RelativeTime: React.FC<{ date: Date }> = ({ date }) => {
         ? 60_000 // < 1 hour: every minute
         : 300_000; // > 1 hour: every 5 minutes
 
-    const timer = setInterval(update, interval);
+    const timer = setInterval(() => setTick((tick) => tick + 1), interval);
     return () => clearInterval(timer);
   }, [date]);
 
-  return <>{timeString}</>;
+  if (variant === "short") {
+    return <>{relativeTimeStringShort(date)}</>;
+  }
+  if (variant === "auto") {
+    return (
+      <>
+        <span className="md:hidden">{relativeTimeStringShort(date)}</span>
+        <span className="hidden md:inline">{relativeTimeString(date)}</span>
+      </>
+    );
+  }
+  return <>{relativeTimeString(date)}</>;
 };
 
 export function relativeTimeString(date?: Date): string {
@@ -29,6 +45,35 @@ export function relativeTimeString(date?: Date): string {
   }
   const now = new Date();
   return formatDistance(date, now, { addSuffix: true });
+}
+
+export function relativeTimeStringShort(date?: Date): string {
+  if (!date || date instanceof Date === false) {
+    return "";
+  }
+  const comparison = date.getTime() - Date.now();
+  const isPast = comparison < 0;
+  const minutes = Math.round(Math.abs(comparison) / 60_000);
+
+  if (minutes < 1) {
+    return isPast ? "just now" : "soon";
+  }
+
+  // Thresholds mirror formatDistance below so long and short agree on the unit
+  let result: string;
+  if (minutes < 45) {
+    result = `${minutes}m`;
+  } else if (minutes < 1440) {
+    result = `${Math.max(1, Math.round(minutes / 60))}h`;
+  } else if (minutes < 43200) {
+    result = `${Math.round(minutes / 1440)}d`;
+  } else if (minutes < 43200 * 12) {
+    result = `${Math.round(minutes / 43200)}mo`;
+  } else {
+    result = `${Math.floor(minutes / (43200 * 12))}y`;
+  }
+
+  return isPast ? `${result} ago` : `in ${result}`;
 }
 
 interface FormatDistanceOptions {

@@ -1,5 +1,5 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { PodiumPlace } from "./podium-place";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { ProfilePicture } from "../player/profile-picture";
@@ -58,6 +58,7 @@ const LeaderboardToggle = ({
 
 export const LeaderBoard: React.FC = () => {
   const context = useEventDbContext();
+  const navigate = useNavigate();
   const liveGameQuery = useLiveGameQuery();
   const leaderboard = context.leaderboard.getLeaderboard();
   const [viewString, setViewString] = useLocalStorage("leaderboard_view", "overall");
@@ -225,7 +226,7 @@ export const LeaderBoard: React.FC = () => {
         {theme === Theme.EASTER && <img src={easterBunny} alt="Easter bunny chick" />}
       </div>
 
-      <div className="bg-primary-background rounded-lg">
+      <div className="bg-primary-background rounded-lg w-full max-w-md md:w-[450px]">
         {/* Toggle (Desktop) */}
         <LeaderboardToggle
           className="hidden md:flex border-b border-primary-text/20"
@@ -236,132 +237,174 @@ export const LeaderBoard: React.FC = () => {
         {view === "overall" ? (
           <>
             {/* Overall Leaderboard */}
-            <div className="flex flex-col divide-y divide-primary-text/50">
-              <div className="flex gap-4 text-base text-center mb-2 text-primary-text">
-                <div className="w-5">#</div>
-                <div className="w-40 text-left pl-2">Name</div>
-                <div className="w-12 text-right">Score</div>
-                <div className="w-10 pl-1">Interval</div>
-                <div className="w-14 text-right">🏆:💔</div>
-              </div>
-              {leaderboard.rankedPlayers.map((player, index, list) => (
-                <Link
-                  key={index}
-                  to={`/player/${player.id}`}
-                  className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text py-1 px-2 flex items-center gap-4 text-xl font-light text-primary-text"
-                >
-                  <div className="w-5 italic">{themedPlaceNumber(player.rank) ?? player.rank}</div>
-                  <ProfilePicture playerId={player.id} size={28} border={2} />
-                  <div className="w-28 font-normal whitespace-nowrap">{player.name}</div>
-                  <div className="w-12 text-right">
-                    {player.elo.toLocaleString("no-NO", {
-                      maximumFractionDigits: 0,
-                    })}
-                  </div>
-                  <div className="w-10 text-right text-base">
-                    {list[index - 1]
-                      ? (player.elo - list[index - 1].elo).toLocaleString("no-NO", {
-                          maximumFractionDigits: 0,
-                        })
-                      : "-"}
-                  </div>
-                  <div className="w-10 text-right text-base">
-                    {(player.wins / player.loss).toLocaleString("no-NO", {
-                      maximumFractionDigits: 1,
-                    })}
-                  </div>
-                </Link>
-              ))}
-            </div>
+            <table className="w-full text-primary-text border-collapse">
+              <thead>
+                <tr className="text-sm xs:text-lg md:text-xl text-primary-text">
+                  <th className="py-1 px-1 xs:px-2 text-left font-light">#</th>
+                  <th className="py-1 px-1 xs:px-2 text-left font-normal">Player</th>
+                  <th className="py-1 px-1 xs:px-2 text-right font-light">Score</th>
+                  <th className="py-1 px-1 xs:px-2 text-right font-light text-xs xs:text-sm md:text-base">Interval</th>
+                  <th className="py-1 px-1 xs:px-2 text-right font-light text-xs xs:text-sm md:text-base whitespace-nowrap">
+                    🏆:💔
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-primary-text/50">
+                {leaderboard.rankedPlayers.map((player, index, list) => (
+                  <tr
+                    key={index}
+                    onClick={() => navigate(`/player/${player.id}`)}
+                    className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text cursor-pointer transition-colors text-sm xs:text-lg md:text-xl font-light"
+                  >
+                    <td className="py-1 px-1 xs:px-2 italic w-[1%] whitespace-nowrap">
+                      {themedPlaceNumber(player.rank) ?? player.rank}
+                    </td>
+                    <td className="py-1 px-1 xs:px-2 w-full max-w-0">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <ProfilePicture playerId={player.id} size={28} border={2} />
+                        <span className="font-normal truncate">{player.name}</span>
+                      </div>
+                    </td>
+                    <td className="py-1 px-1 xs:px-2 text-right w-[1%] whitespace-nowrap">
+                      {player.elo.toLocaleString("no-NO", {
+                        maximumFractionDigits: 0,
+                      })}
+                    </td>
+                    <td className="py-1 px-1 xs:px-2 text-right w-[1%] whitespace-nowrap text-xs xs:text-sm md:text-base">
+                      {list[index - 1]
+                        ? (player.elo - list[index - 1].elo).toLocaleString("no-NO", {
+                            maximumFractionDigits: 0,
+                          })
+                        : "-"}
+                    </td>
+                    <td className="py-1 px-1 xs:px-2 text-right w-[1%] whitespace-nowrap text-xs xs:text-sm md:text-base">
+                      {(player.wins / player.loss).toLocaleString("no-NO", {
+                        maximumFractionDigits: 1,
+                      })}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
 
             <h1 className="text-2xl text-center text-primary-text mt-10">Unranked players</h1>
             <p className="w-full text-center text-primary-text mb-4">
               Play {context.client.gameLimitForRanked} or more games to get ranked
             </p>
-            <div className="flex flex-col divide-y divide-primary-text/50">
-              <div className="flex gap-4 text-base text-center text-primary-text mb-2">
-                <div className="w-40 text-left pl-2">Name</div>
-                <div className="w-12 text-right">Elo</div>
-                <div className="w-12 text-right">Games</div>
-              </div>
-              {leaderboard.unrankedPlayers.map((player, index) => (
-                <Link
-                  key={index}
-                  to={`/player/${player.id}`}
-                  className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text py-1 px-2 flex items-center gap-4 text-xl text-primary-text font-light"
-                >
-                  <ProfilePicture playerId={player.id} size={28} border={2} />
-                  <div className="w-28 font-normal whitespace-nowrap">{player.name}</div>
-                  <div className="w-12 text-right">
-                    {player.elo.toLocaleString("no-NO", {
-                      maximumFractionDigits: 0,
-                    })}
-                  </div>
-                  <div className="w-12 text-right">{player.games.length}</div>
-                </Link>
-              ))}
-              {playersWithNoMatches.map((player, index) => (
-                <Link
-                  key={index}
-                  to={`/player/${player.id}`}
-                  className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text py-1 px-2 flex items-center gap-4 text-xl text-primary-text font-light"
-                >
-                  <ProfilePicture playerId={player.id} size={28} border={2} />
-                  <div className="w-28 font-normal whitespace-nowrap">{player.name}</div>
-                  <div className="w-12 text-right">-</div>
-                  <div className="w-12 text-right">0</div>
-                </Link>
-              ))}
-            </div>
+            <table className="w-full text-primary-text border-collapse">
+              <thead>
+                <tr className="text-sm xs:text-lg md:text-xl text-primary-text">
+                  <th className="py-1 px-1 xs:px-2 text-left font-normal">Player</th>
+                  <th className="py-1 px-1 xs:px-2 text-right font-light">Elo</th>
+                  <th className="py-1 px-1 xs:px-2 text-right font-light">Games</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-primary-text/50">
+                {leaderboard.unrankedPlayers.map((player, index) => (
+                  <tr
+                    key={index}
+                    onClick={() => navigate(`/player/${player.id}`)}
+                    className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text cursor-pointer transition-colors text-sm xs:text-lg md:text-xl font-light"
+                  >
+                    <td className="py-1 px-1 xs:px-2 w-full max-w-0">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <ProfilePicture playerId={player.id} size={28} border={2} />
+                        <span className="font-normal truncate">{player.name}</span>
+                      </div>
+                    </td>
+                    <td className="py-1 px-1 xs:px-2 text-right w-[1%] whitespace-nowrap">
+                      {player.elo.toLocaleString("no-NO", {
+                        maximumFractionDigits: 0,
+                      })}
+                    </td>
+                    <td className="py-1 px-1 xs:px-2 text-right w-[1%] whitespace-nowrap">{player.games.length}</td>
+                  </tr>
+                ))}
+                {playersWithNoMatches.map((player, index) => (
+                  <tr
+                    key={index}
+                    onClick={() => navigate(`/player/${player.id}`)}
+                    className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text cursor-pointer transition-colors text-sm xs:text-lg md:text-xl font-light"
+                  >
+                    <td className="py-1 px-1 xs:px-2 w-full max-w-0">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <ProfilePicture playerId={player.id} size={28} border={2} />
+                        <span className="font-normal truncate">{player.name}</span>
+                      </div>
+                    </td>
+                    <td className="py-1 px-1 xs:px-2 text-right w-[1%] whitespace-nowrap">-</td>
+                    <td className="py-1 px-1 xs:px-2 text-right w-[1%] whitespace-nowrap">0</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </>
         ) : (
           <>
             {/* Season Leaderboard */}
             {currentSeason ? (
               <>
-                <div className="flex flex-col divide-y divide-primary-text/50">
-                  <div className="flex gap-4 text-base text-center mb-2 text-primary-text">
-                    <div className="w-5">#</div>
-                    <div className="w-40 text-left pl-2">Name</div>
-                    <div className="w-12 text-right">Score</div>
-                    <div className="w-16 pl-1">Interval</div>
-                  </div>
-                  {seasonLeaderboard.map((player, index, list) => (
-                    <Link
-                      key={player.playerId}
-                      to={`/player/${player.playerId}?tab=season`}
-                      className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text py-1 px-2 flex items-center gap-4 text-xl font-light text-primary-text"
-                    >
-                      <div className="w-5 italic">{themedPlaceNumber(index + 1) ?? index + 1}</div>
-                      <ProfilePicture playerId={player.playerId} size={28} border={2} />
-                      <div className="w-28 font-normal whitespace-nowrap">{context.playerName(player.playerId)}</div>
-                      <div className="w-12 text-right">{fmtNum(player.seasonScore)}</div>
-                      <div className="w-10 text-right text-base">
-                        {list[index - 1] ? fmtNum(player.seasonScore - list[index - 1].seasonScore) : "-"}
-                      </div>
-                    </Link>
-                  ))}
-                </div>
+                <table className="w-full text-primary-text border-collapse">
+                  <thead>
+                    <tr className="text-sm xs:text-lg md:text-xl text-primary-text">
+                      <th className="py-1 px-1 xs:px-2 text-left font-light">#</th>
+                      <th className="py-1 px-1 xs:px-2 text-left font-normal">Player</th>
+                      <th className="py-1 px-1 xs:px-2 text-right font-light">Score</th>
+                      <th className="py-1 px-1 xs:px-2 text-right font-light text-xs xs:text-sm md:text-base">Interval</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-primary-text/50">
+                    {seasonLeaderboard.map((player, index, list) => (
+                      <tr
+                        key={player.playerId}
+                        onClick={() => navigate(`/player/${player.playerId}?tab=season`)}
+                        className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text cursor-pointer transition-colors text-sm xs:text-lg md:text-xl font-light"
+                      >
+                        <td className="py-1 px-1 xs:px-2 italic w-[1%] whitespace-nowrap">
+                          {themedPlaceNumber(index + 1) ?? index + 1}
+                        </td>
+                        <td className="py-1 px-1 xs:px-2 w-full max-w-0">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <ProfilePicture playerId={player.playerId} size={28} border={2} />
+                            <span className="font-normal truncate">{context.playerName(player.playerId)}</span>
+                          </div>
+                        </td>
+                        <td className="py-1 px-1 xs:px-2 text-right w-[1%] whitespace-nowrap">{fmtNum(player.seasonScore)}</td>
+                        <td className="py-1 px-1 xs:px-2 text-right w-[1%] whitespace-nowrap text-xs xs:text-sm md:text-base">
+                          {list[index - 1] ? fmtNum(player.seasonScore - list[index - 1].seasonScore) : "-"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
 
                 <h1 className="text-2xl text-center text-primary-text mt-10">Not yet participated</h1>
                 <p className="w-full text-center text-primary-text mb-4">
                   Play a game this season to join the leaderboard
                 </p>
-                <div className="flex flex-col divide-y divide-primary-text/50">
-                  <div className="flex gap-4 text-base text-center text-primary-text mb-2">
-                    <div className="w-40 text-left pl-2">Name</div>
-                  </div>
-                  {playersNotInSeason.map((player) => (
-                    <Link
-                      key={player.id}
-                      to={`/player/${player.id}?tab=season`}
-                      className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text py-1 px-2 flex items-center gap-4 text-xl text-primary-text font-light"
-                    >
-                      <ProfilePicture playerId={player.id} size={28} border={2} />
-                      <div className="w-28 font-normal whitespace-nowrap">{player.name}</div>
-                    </Link>
-                  ))}
-                </div>
+                <table className="w-full text-primary-text border-collapse">
+                  <thead>
+                    <tr className="text-sm xs:text-lg md:text-xl text-primary-text">
+                      <th className="py-1 px-1 xs:px-2 text-left font-normal">Player</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-primary-text/50">
+                    {playersNotInSeason.map((player) => (
+                      <tr
+                        key={player.id}
+                        onClick={() => navigate(`/player/${player.id}?tab=season`)}
+                        className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text cursor-pointer transition-colors text-sm xs:text-lg md:text-xl font-light"
+                      >
+                        <td className="py-1 px-1 xs:px-2 max-w-0">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <ProfilePicture playerId={player.id} size={28} border={2} />
+                            <span className="font-normal truncate">{player.name}</span>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </>
             ) : (
               <div className="p-8 text-center text-secondary-text">

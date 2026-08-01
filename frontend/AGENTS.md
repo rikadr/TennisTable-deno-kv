@@ -41,6 +41,13 @@ the app defines a custom `xs` breakpoint:
 Use `xs:` for layouts that should switch earlier than the default `sm` (640px).
 Example: `xs:flex-row` to go horizontal at 470px instead of 640px.
 
+### Data Tables
+
+All data tables follow the shared ruleset in [`TABLES.md`](./TABLES.md) —
+structure, column sizing, breakpoints/text sizes, headers, relative times,
+hover/click behaviour, and a verification checklist. When touching or adding a
+table, conform it to those rules.
+
 ## Architecture
 
 ### The `TennisTable` Class

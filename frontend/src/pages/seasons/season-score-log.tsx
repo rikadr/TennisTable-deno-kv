@@ -4,7 +4,7 @@ import { Season } from "../../client/client-db/seasons/season";
 import { ProfilePicture } from "../player/profile-picture";
 import { fmtNum } from "../../common/number-utils";
 import { dateString } from "../player/player-achievements";
-import { relativeTimeString } from "../../common/date-utils";
+import { RelativeTime } from "../../common/date-utils";
 import { useMemo } from "react";
 
 type Props = {
@@ -76,7 +76,7 @@ export const SeasonScoreLog = ({ season }: Props) => {
   }, [improvements, playerFilter, opponentFilter]);
 
   return (
-    <div className="bg-secondary-background rounded-lg overflow-hidden mt-4">
+    <div className="bg-secondary-background rounded-lg overflow-hidden mt-4 max-w-3xl mx-auto">
       {/* Filter Controls */}
       <div className="p-4 border-b border-secondary-text/20">
         <div className="flex flex-wrap gap-4">
@@ -137,78 +137,97 @@ export const SeasonScoreLog = ({ season }: Props) => {
         </div>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full text-secondary-text">
-          <thead>
-            <tr className="bg-secondary-background border-b border-secondary-text/20 text-xs md:text-base">
-              <th className="text-left px-1 md:px-4 py-2 font-semibold">Player</th>
-              <th className="text-left pl-1 md:pl-4 pr-0 py-2 font-semibold max-w-16">
-                <span className="md:hidden">+</span>
-                <span className="hidden md:inline">Increase</span>
-              </th>
-              <th className="text-left pl-2 md:pl-8 pr-1 md:pr-4 py-2 font-semibold">Opponent</th>
-              <th className="text-left px-1 md:px-4 py-2 font-semibold whitespace-nowrap">
-                <span className="md:hidden">Result</span>
-                <span className="hidden md:inline">Game Result</span>
-              </th>
-              <th className="text-left px-1 md:px-4 py-2 font-semibold">Time</th>
+      <table className="w-full text-secondary-text border-collapse">
+        <thead className="border-b border-secondary-text/50">
+          <tr className="text-xs xs:text-sm md:text-base text-secondary-text">
+            <th className="py-1 px-1 xs:px-2 md:px-3 text-left font-medium">Player</th>
+            <th className="py-1 px-1 xs:px-2 md:px-3 font-bold w-[1%]">
+              {/* Zero-width so the label doesn't widen the hug column; overflows leftward */}
+              <div className="w-0 ml-auto whitespace-nowrap" dir="rtl">
+                <bdi dir="ltr">Increase</bdi>
+              </div>
+            </th>
+            <th className="py-1 px-1 xs:px-2 md:px-3 text-left font-normal">Opponent</th>
+            <th className="py-1 px-1 xs:px-2 md:px-3 text-left font-medium whitespace-nowrap">Result</th>
+            <th className="py-1 px-1 xs:px-2 md:px-3 text-left font-normal">Time</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-secondary-text/50">
+          {filteredImprovements.map((imp, idx) => {
+            const setStrings =
+              imp.game.score?.setPoints?.map((set) =>
+                imp.game.winner === imp.playerId
+                  ? `${set.gameWinner}-${set.gameLoser}`
+                  : `${set.gameLoser}-${set.gameWinner}`,
+              ) ?? [];
+            // Max 3 sets per line on tiny screens
+            const setLines = Array.from({ length: Math.ceil(setStrings.length / 3) }, (_, i) =>
+              setStrings.slice(i * 3, i * 3 + 3).join(", "),
+            );
+            return (
+            <tr key={idx} className="text-xs xs:text-sm md:text-base">
+              <td className="py-1 px-1 xs:px-2 md:px-3 w-[35%] max-w-0">
+                <Link
+                  to={`/season/player?seasonStart=${season.start}&playerId=${imp.playerId}`}
+                  className="flex items-center gap-1 md:gap-2 font-medium hover:underline min-w-0"
+                >
+                  <div className="md:hidden shrink-0"><ProfilePicture playerId={imp.playerId} size={18} border={1} shape="rounded" /></div>
+                  <div className="hidden md:block shrink-0"><ProfilePicture playerId={imp.playerId} size={30} border={2} shape="rounded" /></div>
+                  <span className="truncate">{context.playerName(imp.playerId)}</span>
+                </Link>
+              </td>
+              <td className="py-1 px-1 xs:px-2 md:px-3 text-right font-bold w-[1%] whitespace-nowrap">
+                +{fmtNum(imp.improvement)}
+              </td>
+              <td className="py-1 px-1 xs:px-2 md:px-3 w-[35%] max-w-0">
+                <Link
+                  to={`/season/player?seasonStart=${season.start}&playerId=${imp.opponentId}`}
+                  className="flex items-center gap-1 md:gap-2 hover:underline min-w-0"
+                >
+                  <div className="md:hidden shrink-0"><ProfilePicture playerId={imp.opponentId} size={18} border={1} shape="rounded" /></div>
+                  <div className="hidden md:block shrink-0"><ProfilePicture playerId={imp.opponentId} size={30} border={2} shape="rounded" /></div>
+                  <span className="truncate">{context.playerName(imp.opponentId)}</span>
+                </Link>
+              </td>
+              <td className="py-1 px-1 xs:px-2 md:px-3 w-[1%] whitespace-nowrap">
+                {/* Tiny screens: sets on top, per-set points below (max 3 sets per line). xs+: inline. */}
+                <div className="flex flex-col xs:flex-row xs:flex-wrap xs:items-baseline xs:gap-x-2">
+                  {imp.game.score && (
+                    <span className="font-medium">
+                      {imp.game.winner === imp.playerId
+                        ? `${imp.game.score?.setsWon.gameWinner} - ${imp.game.score?.setsWon.gameLoser}`
+                        : `${imp.game.score?.setsWon.gameLoser} - ${imp.game.score?.setsWon.gameWinner}`}
+                    </span>
+                  )}
+                  {setStrings.length > 0 && (
+                    <>
+                      <span className="xs:hidden text-xs opacity-70">
+                        {setLines.map((line, lineIndex) => (
+                          <span key={lineIndex} className="block whitespace-nowrap">
+                            {line}
+                          </span>
+                        ))}
+                      </span>
+                      <span className="hidden xs:inline text-xs opacity-70 whitespace-nowrap">
+                        {setStrings.join(", ")}
+                      </span>
+                    </>
+                  )}
+                </div>
+              </td>
+              <td className="py-1 px-1 xs:px-2 md:px-3 text-xs md:text-sm opacity-70 w-[1%] whitespace-nowrap">
+                <div className="flex flex-col">
+                  <span className="whitespace-nowrap">{dateString(imp.time)}</span>
+                  <span className="opacity-50 whitespace-nowrap">
+                    <RelativeTime date={new Date(imp.time)} variant="auto" />
+                  </span>
+                </div>
+              </td>
             </tr>
-          </thead>
-          <tbody>
-            {filteredImprovements.map((imp, idx) => (
-              <tr key={idx} className="border-b border-secondary-text/10 hover:bg-primary-background/50 text-xs md:text-base">
-                <td className="px-1 md:px-4 py-1">
-                  <Link
-                    to={`/season/player?seasonStart=${season.start}&playerId=${imp.playerId}`}
-                    className="flex items-center gap-1 md:gap-2 font-medium hover:underline text-xs md:text-base"
-                  >
-                    <div className="md:hidden shrink-0"><ProfilePicture playerId={imp.playerId} size={18} border={1} shape="rounded" /></div>
-                    <div className="hidden md:block shrink-0"><ProfilePicture playerId={imp.playerId} size={30} border={2} shape="rounded" /></div>
-                    <span className="truncate max-w-[70px] md:max-w-none">{context.playerName(imp.playerId)}</span>
-                  </Link>
-                </td>
-                <td className="px-1 md:px-4 py-1 font-bold text-secondary-text max-w-16 text-xs md:text-base">
-                  +{fmtNum(imp.improvement)}
-                </td>
-                <td className="px-1 md:px-4 py-1">
-                  <Link
-                    to={`/season/player?seasonStart=${season.start}&playerId=${imp.opponentId}`}
-                    className="flex items-center gap-1 md:gap-2 hover:underline text-xs md:text-base"
-                  >
-                    <div className="md:hidden shrink-0"><ProfilePicture playerId={imp.opponentId} size={18} border={1} shape="rounded" /></div>
-                    <div className="hidden md:block shrink-0"><ProfilePicture playerId={imp.opponentId} size={30} border={2} shape="rounded" /></div>
-                    <span className="truncate max-w-[70px] md:max-w-none">{context.playerName(imp.opponentId)}</span>
-                  </Link>
-                </td>
-                <td className="px-1 md:px-4 py-1 text-xs md:text-base">
-                   <div className="flex flex-wrap items-baseline gap-x-1 md:gap-x-2">
-                    {imp.game.score && (
-                      <span className="font-medium">
-                        {imp.game.winner === imp.playerId
-                          ? `${imp.game.score?.setsWon.gameWinner} - ${imp.game.score?.setsWon.gameLoser}`
-                          : `${imp.game.score?.setsWon.gameLoser} - ${imp.game.score?.setsWon.gameWinner}`}
-                      </span>
-                    )}
-                     {imp.game.score?.setPoints && (
-                      <span className="text-xs opacity-70 whitespace-nowrap">
-                        {imp.game.winner === imp.playerId
-                          ? imp.game.score.setPoints.map((set) => `${set.gameWinner}-${set.gameLoser}`).join(", ")
-                          : imp.game.score.setPoints.map((set) => `${set.gameLoser}-${set.gameWinner}`).join(", ")}
-                      </span>
-                    )}
-                   </div>
-                </td>
-                <td className="px-1 md:px-4 py-1 text-xs md:text-sm opacity-70">
-                  <div className="flex flex-col md:flex-row md:flex-wrap md:items-baseline gap-x-2">
-                    <span className="whitespace-nowrap">{dateString(imp.time)}</span>
-                    <span className="opacity-50">{relativeTimeString(new Date(imp.time))}</span>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            );
+          })}
+        </tbody>
+      </table>
     </div>
   );
 };

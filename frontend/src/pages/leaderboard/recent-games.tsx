@@ -74,23 +74,23 @@ export const RecentGames: React.FC<Props> = ({ view = "overall" }) => {
       <table className="w-full text-primary-text border-collapse">
         <thead>
           {view === "season" ? (
-            <tr className="text-[9px] xs:text-sm md:text-base font-medium text-primary-text/70">
-              <th className="py-1 px-2 text-left font-medium">Winner</th>
-              <th className="py-1 px-1 text-right font-medium">Winner's points</th>
-              <th className="py-1 px-2 text-right font-medium">Loser</th>
-              <th className="py-1 px-1 text-right font-medium">Loser's points</th>
+            <tr className="text-sm xs:text-lg md:text-xl text-primary-text">
+              <th className="py-1 px-2 text-left font-normal">Winner</th>
+              <th className="py-1 px-1 text-right font-medium">Pts</th>
+              <th className="py-1 px-2 text-right font-normal">Loser</th>
+              <th className="py-1 px-1 text-right font-light">Pts</th>
               <th className="py-1 px-2"></th>
             </tr>
           ) : (
-            <tr className="text-[9px] xs:text-sm md:text-base font-medium text-primary-text/70">
-              <th className="py-1 px-2 text-left font-medium">Winner</th>
-              <th className="py-1 px-2 text-right font-medium">Loser</th>
-              <th className="py-1 px-2 text-right font-medium">Points won</th>
+            <tr className="text-sm xs:text-lg md:text-xl text-primary-text">
+              <th className="py-1 px-2 text-left font-normal">Winner</th>
+              <th className="py-1 px-2 text-right font-normal">Loser</th>
+              <th className="py-1 px-2 text-right font-medium">Pts</th>
               <th className="py-1 px-2"></th>
             </tr>
           )}
         </thead>
-        <tbody className="divide-y divide-primary-text/20">
+        <tbody className="divide-y divide-primary-text/50">
           {processedGames.map((game, index) => {
             const rowClick = () => navigate(`/1v1?player1=${game.winner}&player2=${game.loser}`);
             
@@ -99,22 +99,22 @@ export const RecentGames: React.FC<Props> = ({ view = "overall" }) => {
                 <tr 
                   key={index} 
                   onClick={rowClick}
-                  className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text cursor-pointer transition-colors text-[10px] xs:text-lg md:text-xl font-light"
+                  className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text cursor-pointer transition-colors text-sm xs:text-lg md:text-xl font-light"
                 >
-                  <td className="py-1 px-2 whitespace-nowrap">
-                    <span className="font-normal">🏆 {context.playerName(game.winner)}</span>
+                  <td className="py-1 px-2 w-[30%] max-w-0">
+                    <div className="truncate font-normal">🏆 {context.playerName(game.winner)}</div>
                   </td>
-                  <td className="py-1 px-1 text-right font-medium">
+                  <td className="py-1 px-1 text-right font-medium w-[1%] whitespace-nowrap">
                     {fmtNum(game.pointsDiff, { digits: 1 })}
                   </td>
-                  <td className="py-1 px-2 text-right whitespace-nowrap">
-                    <span className="font-normal">{context.playerName(game.loser)} 💔</span>
+                  <td className="py-1 px-2 w-[30%] max-w-0">
+                    <div className="truncate font-normal text-right">{context.playerName(game.loser)} 💔</div>
                   </td>
-                  <td className="py-1 px-1 text-right">
+                  <td className="py-1 px-1 text-right w-[1%] whitespace-nowrap">
                     {game.loserPointsDiff !== undefined ? fmtNum(game.loserPointsDiff, { digits: 1 }) : ""}
                   </td>
-                  <td className="py-1 px-2 text-right text-[9px] xs:text-sm md:text-base whitespace-nowrap">
-                    <RelativeTime date={new Date(game.playedAt)} />
+                  <td className="py-1 px-2 text-right text-xs xs:text-sm md:text-base whitespace-nowrap w-[1%]">
+                    <RelativeTime date={new Date(game.playedAt)} variant="short" />
                   </td>
                 </tr>
               );
@@ -124,19 +124,19 @@ export const RecentGames: React.FC<Props> = ({ view = "overall" }) => {
               <tr 
                 key={index} 
                 onClick={rowClick}
-                className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text cursor-pointer transition-colors text-[10px] xs:text-lg md:text-xl font-light"
+                className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text cursor-pointer transition-colors text-sm xs:text-lg md:text-xl font-light"
               >
-                <td className="py-1 px-2 whitespace-nowrap">
-                  <span className="font-normal">🏆 {context.playerName(game.winner)}</span>
+                <td className="py-1 px-2 w-[35%] max-w-0">
+                  <div className="truncate font-normal">🏆 {context.playerName(game.winner)}</div>
                 </td>
-                <td className="py-1 px-2 text-right whitespace-nowrap">
-                  <span className="font-normal">{context.playerName(game.loser)} 💔</span>
+                <td className="py-1 px-2 w-[35%] max-w-0">
+                  <div className="truncate font-normal text-right">{context.playerName(game.loser)} 💔</div>
                 </td>
-                <td className="py-1 px-2 text-right font-medium">
+                <td className="py-1 px-2 text-right font-medium w-[1%] whitespace-nowrap">
                   +{fmtNum(game.pointsDiff, { digits: 0 })}
                 </td>
-                <td className="py-1 px-2 text-right text-[9px] xs:text-sm md:text-base whitespace-nowrap">
-                  <RelativeTime date={new Date(game.playedAt)} />
+                <td className="py-1 px-2 text-right text-xs xs:text-sm md:text-base whitespace-nowrap w-[1%]">
+                  <RelativeTime date={new Date(game.playedAt)} variant="short" />
                 </td>
               </tr>
             );

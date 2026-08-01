@@ -109,13 +109,13 @@ export const HallOfFameLeaderboardPage: React.FC = () => {
         {sortedEntries.length === 0 ? (
           <p className="text-secondary-background text-sm text-center pb-4">No players yet.</p>
         ) : (
-          <table className="w-full text-primary-text">
-            <thead>
-              <tr className="text-base">
-                <th className="text-left py-2 px-2 font-normal w-8">#</th>
-                <th className="text-left py-2 px-2 font-normal">Name</th>
-                <th className="text-right py-2 px-2 font-normal whitespace-nowrap">
-                  {isCategory ? `${selectedFactor?.emoji ?? ""} ${selectedFactor?.name ?? "Score"}` : "Hall of Fame Score"}
+          <table className="w-full text-primary-text border-collapse">
+            <thead className="border-b border-primary-text/50">
+              <tr className="text-sm xs:text-lg md:text-xl text-primary-text">
+                <th className="py-1 px-2 text-left font-light">#</th>
+                <th className="py-1 px-2 text-left font-normal">Player</th>
+                <th className="py-1 px-2 text-right font-light whitespace-nowrap">
+                  {isCategory ? `${selectedFactor?.emoji ?? ""} ${selectedFactor?.name ?? "Score"}` : "HOF Score"}
                 </th>
               </tr>
             </thead>
@@ -129,9 +129,9 @@ export const HallOfFameLeaderboardPage: React.FC = () => {
                   <tr
                     key={entry.playerId}
                     onClick={() => navigate(`/hall-of-fame/${entry.playerId}`)}
-                    className="relative cursor-pointer hover:bg-secondary-background hover:text-secondary-text text-xl font-light"
+                    className="relative bg-primary-background hover:bg-secondary-background hover:text-secondary-text cursor-pointer transition-colors text-sm xs:text-lg md:text-xl font-light"
                   >
-                    <td className="py-2 px-2 italic">
+                    <td className="py-1 px-2 italic w-[1%] whitespace-nowrap">
                       {index + 1}
                       {/* Bar spans the full row width; the row is the positioning context. */}
                       <div
@@ -139,21 +139,23 @@ export const HallOfFameLeaderboardPage: React.FC = () => {
                         style={{ width: `${relativePercent}%` }}
                       />
                     </td>
-                    <td className="py-2 px-2">
-                      <div className="flex items-center gap-3 font-normal whitespace-nowrap">
+                    <td className="py-1 px-2 w-full max-w-0">
+                      <div className="flex items-center gap-2 min-w-0">
                         <ProfilePicture playerId={entry.playerId} size={28} border={2} />
-                        {entry.playerName}
+                        <span className="font-normal truncate">{entry.playerName}</span>
                         {!isActive && (
-                          <span className="bg-secondary-background text-secondary-text text-xs px-2 py-0.5 rounded-full font-normal">
+                          <span className="bg-secondary-background text-secondary-text text-xs px-2 py-0.5 rounded-full font-normal shrink-0">
                             Retired
                           </span>
                         )}
                       </div>
                     </td>
-                    <td className="py-2 px-2 text-right">
+                    <td className="py-1 px-2 text-right w-[1%] whitespace-nowrap">
                       {fmtNum(score)}
                       {isCategory && (
-                        <span className="text-primary-text/50 text-sm ml-1.5">/ {fmtNum(entry.score.total)} total</span>
+                        <span className="text-primary-text/50 text-xs xs:text-sm ml-1.5">
+                          / {fmtNum(entry.score.total)} total
+                        </span>
                       )}
                     </td>
                   </tr>
