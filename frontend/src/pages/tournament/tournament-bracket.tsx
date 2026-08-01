@@ -160,18 +160,17 @@ export const TournamentGameListCard: React.FC<TournamentGameListCardProps> = ({
   const isWalkover = !!game.walkover;
   const walkoverPlayer = isWalkover ? game.player1 ?? game.player2 : undefined;
 
-  // For empty losers bracket slots, name who could still arrive once the deciding game is set
-  const inLosers = game.section === "losers";
+  // For empty slots, name who could still arrive once the deciding game is set
   const player1Candidates =
-    inLosers && !ghost && !isWalkover && !game.player1
+    !ghost && !isWalkover && !game.player1
       ? tournament.bracket?.getSlotFillCandidates(game, "player1")
       : undefined;
   const player2Candidates =
-    inLosers && !ghost && !isWalkover && !game.player2
+    !ghost && !isWalkover && !game.player2
       ? tournament.bracket?.getSlotFillCandidates(game, "player2")
       : undefined;
   const walkoverCandidates =
-    inLosers && !ghost && isWalkover && !walkoverPlayer
+    !ghost && isWalkover && !walkoverPlayer
       ? tournament.bracket?.getSlotFillCandidates(game, "player1") ??
         tournament.bracket?.getSlotFillCandidates(game, "player2")
       : undefined;
@@ -444,18 +443,14 @@ export const GameTriangle: React.FC<GameTriangleProps> = ({
   const isWalkover = !!game.walkover;
   const walkoverPlayer = isWalkover ? game.player1 ?? game.player2 : undefined;
 
-  // For empty losers bracket slots, name the two players who could still arrive once the game that
-  // decides the slot has both its participants (e.g. "John or Jane"), so the "?" is easier to follow
+  // For empty slots, name the two players who could still arrive once the game that decides the
+  // slot has both its participants (e.g. "John or Jane"), so the "?" is easier to follow
   const player1Candidates =
-    section === "losers" && !isWalkover && !game.player1
-      ? tournament.bracket.getSlotFillCandidates(game, "player1")
-      : undefined;
+    !isWalkover && !game.player1 ? tournament.bracket.getSlotFillCandidates(game, "player1") : undefined;
   const player2Candidates =
-    section === "losers" && !isWalkover && !game.player2
-      ? tournament.bracket.getSlotFillCandidates(game, "player2")
-      : undefined;
+    !isWalkover && !game.player2 ? tournament.bracket.getSlotFillCandidates(game, "player2") : undefined;
   const walkoverCandidates =
-    section === "losers" && isWalkover && !walkoverPlayer
+    isWalkover && !walkoverPlayer
       ? tournament.bracket.getSlotFillCandidates(game, "player1") ??
         tournament.bracket.getSlotFillCandidates(game, "player2")
       : undefined;
