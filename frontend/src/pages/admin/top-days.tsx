@@ -4,7 +4,7 @@ import { relativeTimeString } from "../../common/date-utils";
 
 type Period = "day" | "week" | "month" | "year";
 
-type Metric = "games" | "activePlayers" | "pairings";
+type Metric = "games" | "activePlayers" | "pairings" | "achievements";
 
 interface PeriodData {
   key: string;
@@ -27,6 +27,7 @@ const METRIC_LABELS: Record<Metric, { option: string; column: string }> = {
   games: { option: "Games played", column: "Games" },
   activePlayers: { option: "Active players", column: "Players" },
   pairings: { option: "Player pairings", column: "Pairings" },
+  achievements: { option: "Achievements earned", column: "Achievements" },
 };
 
 const PERIOD_LABELS: Record<Period, { singular: string; plural: string }> = {
@@ -144,14 +145,16 @@ const formatPeriod = (timestamp: number, period: Period): string => {
 };
 
 /**
- * Everything needed to count any of the metrics for one period. Games are a running total,
- * while the two "unique" metrics need the members themselves so repeats are not counted twice.
+ * Everything needed to count any of the metrics for one period. Games and achievements are
+ * running totals, while the two "unique" metrics need the members themselves so repeats are
+ * not counted twice.
  */
 interface PeriodBucket {
   timestamp: number;
   games: number;
   players: Set<string>;
   pairings: Set<string>;
+  achievements: number;
 }
 
 const emptyBucket = (timestamp: number): PeriodBucket => ({
@@ -159,9 +162,19 @@ const emptyBucket = (timestamp: number): PeriodBucket => ({
   games: 0,
   players: new Set(),
   pairings: new Set(),
+  achievements: 0,
 });
 
 const pairingKey = (playerA: string, playerB: string): string => [playerA, playerB].sort().join("|");
+
+const getBucket = (map: Map<string, PeriodBucket>, key: string, timestamp: number): PeriodBucket => {
+  let bucket = map.get(key);
+  if (!bucket) {
+    bucket = emptyBucket(timestamp);
+    map.set(key, bucket);
+  }
+  return bucket;
+};
 
 const addGameToBucket = (
   map: Map<string, PeriodBucket>,
@@ -170,15 +183,15 @@ const addGameToBucket = (
   winner: string,
   loser: string,
 ) => {
-  let bucket = map.get(key);
-  if (!bucket) {
-    bucket = emptyBucket(timestamp);
-    map.set(key, bucket);
-  }
+  const bucket = getBucket(map, key, timestamp);
   bucket.games++;
   bucket.players.add(winner);
   bucket.players.add(loser);
   bucket.pairings.add(pairingKey(winner, loser));
+};
+
+const addAchievementToBucket = (map: Map<string, PeriodBucket>, key: string, timestamp: number) => {
+  getBucket(map, key, timestamp).achievements++;
 };
 
 const bucketCount = (bucket: PeriodBucket, metric: Metric): number => {
@@ -189,6 +202,8 @@ const bucketCount = (bucket: PeriodBucket, metric: Metric): number => {
       return bucket.players.size;
     case "pairings":
       return bucket.pairings.size;
+    case "achievements":
+      return bucket.achievements;
   }
 };
 
@@ -227,6 +242,26 @@ export const TopGamingDays: React.FC = () => {
         addGameToBucket(recentBuckets, key, timestamp, winner, loser);
       }
     });
+
+    // Achievements are not derived from the game loop above — they carry their own
+    // earnedAt — so they get a second pass, and only when they are the selected metric
+    // since calculating them the first time is expensive.
+    if (metric === "achievements") {
+      context.achievements.calculateAchievements();
+      context.achievements.achievementMap.forEach((playerAchievements) => {
+        playerAchievements.forEach(({ earnedAt }) => {
+          const date = new Date(earnedAt);
+          const key = getPeriodKey(date, period);
+          const timestamp = getPeriodTimestamp(date, period);
+
+          addAchievementToBucket(allTimeBuckets, key, timestamp);
+
+          if (earnedAt >= recentCutoff) {
+            addAchievementToBucket(recentBuckets, key, timestamp);
+          }
+        });
+      });
+    }
 
     // Seed every calendar period in the range with an empty bucket so that periods
     // with no games are still considered (including the current, possibly empty, period).
@@ -267,7 +302,7 @@ export const TopGamingDays: React.FC = () => {
       topAllTime: buildResult(allTimeBuckets),
       topRecent: buildResult(recentBuckets),
     };
-  }, [context.games, period, metric, recentCutoff, currentKey]);
+  }, [context.games, context.achievements, period, metric, recentCutoff, currentKey]);
 
   const periodLabel = PERIOD_LABELS[period];
   const metricLabel = METRIC_LABELS[metric];
