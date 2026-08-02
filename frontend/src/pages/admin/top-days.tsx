@@ -324,6 +324,12 @@ export const TopGamingDays: React.FC = () => {
     const { top, current } = data;
     const maxCount = top.length > 0 ? top[0].count : 0;
 
+    // A current period outside the top 10 gets its own row below, which already spells out
+    // "rank / total". When it made the top 10 that row is absent, so the table never says how
+    // many periods it was ranked against — this summary row supplies the denominator. Pointless
+    // when every period is already listed, so it needs more than the 10 shown.
+    const showRankSummary = current !== null && current.rank <= 10 && current.total > 10;
+
     const renderRow = (entry: PeriodData, rank: number, total: number | null) => {
       const ageMs = now - entry.timestamp;
       const recencyPercent = Math.max(0, Math.min(100, (1 - ageMs / windowMs) * 100));
@@ -379,6 +385,16 @@ export const TopGamingDays: React.FC = () => {
             <tbody>
               {top.map((entry, index) => renderRow(entry, index + 1, null))}
               {current && current.rank > 10 && renderRow(current.entry, current.rank, current.total)}
+              {showRankSummary && (
+                <tr className="text-primary-text/70">
+                  <td className="px-2 py-1 border border-primary-text/20 font-medium whitespace-nowrap">
+                    {current.rank} / {current.total}
+                  </td>
+                  <td colSpan={3} className="px-2 py-1 border border-primary-text/20">
+                    Current {periodLabel.singular.toLowerCase()} rank
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         )}
