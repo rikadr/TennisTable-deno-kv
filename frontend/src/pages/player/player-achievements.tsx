@@ -2,7 +2,12 @@ import { useEventDbContext } from "../../wrappers/event-db-context";
 import { relativeTimeString } from "../../common/date-utils";
 import { classNames } from "../../common/class-names";
 import { useState } from "react";
-import { Achievement, AchievementProgression, STREAK_RECORD_FLOOR } from "../../client/client-db/achievements";
+import {
+  Achievement,
+  AchievementProgression,
+  GAMES_IN_DAY_RECORD_FLOOR,
+  STREAK_RECORD_FLOOR,
+} from "../../client/client-db/achievements";
 import { Link } from "react-router-dom";
 import { fmtNum } from "../../common/number-utils";
 import { usePlayerLinkSearch } from "../../hooks/use-player-link-search";
@@ -255,6 +260,11 @@ export const ACHIEVEMENT_LABELS: Record<string, { title: string; description: st
     description: "Win a deuce set with the highest winning score in league history",
     icon: "🏓",
   },
+  "hero-of-the-day": {
+    title: "Hero of the Day",
+    description: "Play more games in a single day than anyone in league history",
+    icon: "🦸",
+  },
   "streak-ender": {
     title: "Streak Ender",
     description: "Beat a player who was on an active 10+ game win streak",
@@ -494,6 +504,15 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
                 {achievement.type === "marathon-set" && achievement.data && (
                   <p className="text-xs text-secondary-text/70 mt-2">
                     Set score: {achievement.data.setWinnerScore}–{achievement.data.setLoserScore}
+                    {achievement.data.previousRecord !== undefined
+                      ? ` (previous record: ${achievement.data.previousRecord})`
+                      : " (first league record!)"}
+                  </p>
+                )}
+
+                {achievement.type === "hero-of-the-day" && achievement.data && (
+                  <p className="text-xs text-secondary-text/70 mt-2">
+                    {achievement.data.gamesPlayed} games on {dateString(achievement.data.day)}
                     {achievement.data.previousRecord !== undefined
                       ? ` (previous record: ${achievement.data.previousRecord})`
                       : " (first league record!)"}
@@ -898,6 +917,37 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                         </div>
                       )}
 
+                      {/* Record holder and personal best for hero-of-the-day.
+                          The bar tracks today's games, so the player's busiest
+                          day ever is spelt out separately. */}
+                      {type === "hero-of-the-day" && "recordHolder" in data && (
+                        <div className="mt-2 text-xs text-secondary-text/70 space-y-1">
+                          {"personalBest" in data && (
+                            <p>
+                              Your busiest day ever: {data.personalBest} game{data.personalBest !== 1 ? "s" : ""}
+                            </p>
+                          )}
+                          <p>
+                            {data.recordHolder ? (
+                              <>
+                                League record held by{" "}
+                                <Link to={{ pathname: "/player/" + data.recordHolder, search }}>
+                                  <span className="text-secondary-text underline">
+                                    {context.playerName(data.recordHolder)}
+                                  </span>
+                                </Link>
+                                . Play {data.target} games in one day to take it.
+                              </>
+                            ) : (
+                              <>
+                                No record set yet — play {GAMES_IN_DAY_RECORD_FLOOR} games in one day to start the
+                                record.
+                              </>
+                            )}
+                          </p>
+                        </div>
+                      )}
+
                       {/* Record holder and personal best for the streak records.
                           The bar tracks the live streak, so the player's longest
                           ever run is spelt out separately. */}
@@ -945,6 +995,11 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                     <div className="mt-2 text-xs text-secondary-text/70">
                       No league record yet — {type === "longest-win-streak" ? "win" : "lose"}{" "}
                       {STREAK_RECORD_FLOOR} in a row to set the first record.
+                    </div>
+                  ) : type === "hero-of-the-day" ? (
+                    <div className="mt-2 text-xs text-secondary-text/70">
+                      No league record yet — play {GAMES_IN_DAY_RECORD_FLOOR} games in one day to set the first
+                      record.
                     </div>
                   ) : type === "earliest-game" || type === "latest-game" ? (
                     <div className="mt-2 text-xs text-secondary-text/70 space-y-1">
