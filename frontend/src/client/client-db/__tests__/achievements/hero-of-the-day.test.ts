@@ -1,4 +1,4 @@
-import { Achievement, GAMES_IN_DAY_RECORD_FLOOR } from "../../achievements";
+import { Achievement, GAMES_IN_PERIOD_RECORD_FLOOR } from "../../achievements";
 import { EventType, EventTypeEnum } from "../../event-store/event-types";
 import { TennisTable } from "../../tennis-table";
 
@@ -55,7 +55,7 @@ function gamesOnDay(day: number, winner: string, loser: string, count: number, f
 
 describe("Hero of the Day achievement", () => {
   it("does not establish a record below the floor", () => {
-    const tt = calculate(gamesOnDay(1, "alice", "bob", GAMES_IN_DAY_RECORD_FLOOR - 1));
+    const tt = calculate(gamesOnDay(1, "alice", "bob", GAMES_IN_PERIOD_RECORD_FLOOR - 1));
 
     expect(heroAwards(tt, "alice")).toHaveLength(0);
     expect(heroAwards(tt, "bob")).toHaveLength(0);
@@ -64,23 +64,23 @@ describe("Hero of the Day achievement", () => {
 
   it("establishes the first record at the floor, tie going to the winner of the crossing game", () => {
     // Alice and Bob both reach 10 games on the same game; Alice won it.
-    const tt = calculate(gamesOnDay(1, "alice", "bob", GAMES_IN_DAY_RECORD_FLOOR));
+    const tt = calculate(gamesOnDay(1, "alice", "bob", GAMES_IN_PERIOD_RECORD_FLOOR));
 
     const aliceAwards = heroAwards(tt, "alice");
     expect(aliceAwards).toHaveLength(1);
     expect(aliceAwards[0]).toStrictEqual({
       type: "hero-of-the-day",
       earnedBy: "alice",
-      earnedAt: at(1, GAMES_IN_DAY_RECORD_FLOOR - 1),
+      earnedAt: at(1, GAMES_IN_PERIOD_RECORD_FLOOR - 1),
       data: {
         day: new Date(2024, 0, 1).getTime(),
-        gamesPlayed: GAMES_IN_DAY_RECORD_FLOOR,
+        gamesPlayed: GAMES_IN_PERIOD_RECORD_FLOOR,
         previousRecord: undefined,
       },
     });
     expect(heroAwards(tt, "bob")).toHaveLength(0);
     expect(tt.achievements.gamesInDayRecord).toStrictEqual({
-      count: GAMES_IN_DAY_RECORD_FLOOR,
+      count: GAMES_IN_PERIOD_RECORD_FLOOR,
       holder: "alice",
     });
   });
@@ -171,12 +171,12 @@ describe("Hero of the Day achievement", () => {
   });
 
   it("leaves the progression target unset until someone holds the record", () => {
-    const tt = calculate(gamesOnDay(1, "alice", "bob", GAMES_IN_DAY_RECORD_FLOOR - 1));
+    const tt = calculate(gamesOnDay(1, "alice", "bob", GAMES_IN_PERIOD_RECORD_FLOOR - 1));
 
     const progression = tt.achievements.getPlayerProgression("alice")["hero-of-the-day"];
     expect(progression.target).toBeUndefined();
     expect(progression.recordHolder).toBeUndefined();
-    expect(progression.personalBest).toBe(GAMES_IN_DAY_RECORD_FLOOR - 1);
+    expect(progression.personalBest).toBe(GAMES_IN_PERIOD_RECORD_FLOOR - 1);
     expect(progression.earned).toBe(0);
   });
 });
