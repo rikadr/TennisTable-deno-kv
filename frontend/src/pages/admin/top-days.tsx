@@ -30,6 +30,14 @@ const METRIC_LABELS: Record<Metric, { option: string; column: string }> = {
   achievements: { option: "Achievements earned", column: "Achievements" },
 };
 
+// With a single player selected, "active players" in their games means their unique
+// opponents, and "pairings" would count the exact same thing — so it is not offered.
+const PLAYER_METRIC_LABELS: Record<Exclude<Metric, "pairings">, { option: string; column: string }> = {
+  games: { option: "Games played", column: "Games" },
+  activePlayers: { option: "Unique opponents", column: "Opponents" },
+  achievements: { option: "Achievements earned", column: "Achievements" },
+};
+
 const PERIOD_LABELS: Record<Period, { singular: string; plural: string }> = {
   day: { singular: "Day", plural: "Days" },
   week: { singular: "Week", plural: "Weeks" },
@@ -182,11 +190,12 @@ const addGameToBucket = (
   timestamp: number,
   winner: string,
   loser: string,
+  excludedPlayer: string | null,
 ) => {
   const bucket = getBucket(map, key, timestamp);
   bucket.games++;
-  bucket.players.add(winner);
-  bucket.players.add(loser);
+  if (winner !== excludedPlayer) bucket.players.add(winner);
+  if (loser !== excludedPlayer) bucket.players.add(loser);
   bucket.pairings.add(pairingKey(winner, loser));
 };
 
@@ -211,6 +220,12 @@ export const TopGamingDays: React.FC = () => {
   const context = useEventDbContext();
   const [period, setPeriod] = useState<Period>("day");
   const [metric, setMetric] = useState<Metric>("games");
+  const [playerId, setPlayerId] = useState<string>("");
+
+  const players = useMemo(
+    () => [...context.allPlayers].sort((a, b) => a.name.localeCompare(b.name)),
+    [context],
+  );
 
   const recentCutoff = useMemo(() => Date.now() - RECENT_WINDOW_MS[period], [period]);
 
@@ -218,16 +233,23 @@ export const TopGamingDays: React.FC = () => {
 
   const { topAllTime, topRecent } = useMemo(() => {
     const empty: TopPeriodsResult = { top: [], current: null };
-    if (context.games.length === 0) {
+    const games = playerId
+      ? context.games.filter(({ winner, loser }) => winner === playerId || loser === playerId)
+      : context.games;
+    if (games.length === 0) {
       return { topAllTime: empty, topRecent: empty };
     }
 
     const allTimeBuckets = new Map<string, PeriodBucket>();
     const recentBuckets = new Map<string, PeriodBucket>();
 
+    // The selected player is in every one of their games, so counting them as an
+    // "active player" would only shift the opponent count by one.
+    const excludedPlayer = playerId || null;
+
     let earliestPlayedAt = Infinity;
 
-    context.games.forEach(({ playedAt, winner, loser }) => {
+    games.forEach(({ playedAt, winner, loser }) => {
       if (playedAt < earliestPlayedAt) {
         earliestPlayedAt = playedAt;
       }
@@ -236,10 +258,10 @@ export const TopGamingDays: React.FC = () => {
       const key = getPeriodKey(date, period);
       const timestamp = getPeriodTimestamp(date, period);
 
-      addGameToBucket(allTimeBuckets, key, timestamp, winner, loser);
+      addGameToBucket(allTimeBuckets, key, timestamp, winner, loser, excludedPlayer);
 
       if (playedAt >= recentCutoff) {
-        addGameToBucket(recentBuckets, key, timestamp, winner, loser);
+        addGameToBucket(recentBuckets, key, timestamp, winner, loser, excludedPlayer);
       }
     });
 
@@ -248,7 +270,10 @@ export const TopGamingDays: React.FC = () => {
     // since calculating them the first time is expensive.
     if (metric === "achievements") {
       context.achievements.calculateAchievements();
-      context.achievements.achievementMap.forEach((playerAchievements) => {
+      context.achievements.achievementMap.forEach((playerAchievements, achievementPlayerId) => {
+        if (playerId && achievementPlayerId !== playerId) {
+          return;
+        }
         playerAchievements.forEach(({ earnedAt }) => {
           const date = new Date(earnedAt);
           const key = getPeriodKey(date, period);
@@ -302,10 +327,10 @@ export const TopGamingDays: React.FC = () => {
       topAllTime: buildResult(allTimeBuckets),
       topRecent: buildResult(recentBuckets),
     };
-  }, [context.games, context.achievements, period, metric, recentCutoff, currentKey]);
+  }, [context.games, context.achievements, period, metric, playerId, recentCutoff, currentKey]);
 
   const periodLabel = PERIOD_LABELS[period];
-  const metricLabel = METRIC_LABELS[metric];
+  const metricLabel = playerId && metric !== "pairings" ? PLAYER_METRIC_LABELS[metric] : METRIC_LABELS[metric];
 
   if (context.games.length === 0) {
     return (
@@ -408,14 +433,36 @@ export const TopGamingDays: React.FC = () => {
         <h2 className="text-lg font-semibold">Top Gaming {periodLabel.plural}</h2>
         <div className="flex flex-wrap items-center gap-2">
           <select
+            value={playerId}
+            onChange={(e) => {
+              const newPlayerId = e.target.value;
+              // Pairings is not offered per player (it equals unique opponents there),
+              // so fall over to the closest metric instead of an invalid selection.
+              if (newPlayerId && metric === "pairings") {
+                setMetric("activePlayers");
+              }
+              setPlayerId(newPlayerId);
+            }}
+            aria-label="Filter by player"
+            className="px-2 py-1 text-xs border rounded border-primary-text/20 bg-primary-background max-w-40"
+          >
+            <option value="">All players</option>
+            {players.map((player) => (
+              <option key={player.id} value={player.id}>
+                {player.name}
+                {player.active ? "" : " (deactivated)"}
+              </option>
+            ))}
+          </select>
+          <select
             value={metric}
             onChange={(e) => setMetric(e.target.value as Metric)}
             aria-label="Metric to count"
             className="px-2 py-1 text-xs border rounded border-primary-text/20 bg-primary-background"
           >
-            {(Object.keys(METRIC_LABELS) as Metric[]).map((m) => (
+            {(Object.keys(playerId ? PLAYER_METRIC_LABELS : METRIC_LABELS) as Metric[]).map((m) => (
               <option key={m} value={m}>
-                {METRIC_LABELS[m].option}
+                {(playerId && m !== "pairings" ? PLAYER_METRIC_LABELS[m] : METRIC_LABELS[m]).option}
               </option>
             ))}
           </select>
