@@ -8,11 +8,13 @@ import { TennisTable } from "./tennis-table";
 // a record exists the floor is irrelevant — only beating the record counts.
 export const STREAK_RECORD_FLOOR = 3;
 
-// Fewest games in one calendar day that can establish the very first Hero of
-// the Day record. Below this a day is too ordinary to be a record worth
-// holding. Once a record exists the floor is irrelevant — only beating the
-// record counts.
+// Fewest games in one calendar day / week / month that can establish the very
+// first Hero of the Day / Week / Month record. Below these a period is too
+// ordinary to be a record worth holding. Once a record exists the floor is
+// irrelevant — only beating the record counts.
 export const GAMES_IN_DAY_RECORD_FLOOR = 3;
+export const GAMES_IN_WEEK_RECORD_FLOOR = 10;
+export const GAMES_IN_MONTH_RECORD_FLOOR = 20;
 
 export class Achievements {
   private parent: TennisTable;
@@ -71,12 +73,20 @@ export class Achievements {
     length: undefined,
     holder: undefined,
   };
-  // League-wide running record for the Hero of the Day achievement: the most
-  // games a single player has played in one local calendar day. Undefined
-  // until a day reaches GAMES_IN_DAY_RECORD_FLOOR and establishes the first
-  // record. Used by the progression view so players can see the mark they
-  // need to beat.
+  // League-wide running records for the Hero of the Day / Week / Month
+  // achievements: the most games a single player has played in one local
+  // calendar day / week (Monday-start) / month. Undefined until a period
+  // reaches its record floor and establishes the first record. Used by the
+  // progression view so players can see the mark they need to beat.
   gamesInDayRecord: { count: number | undefined; holder: string | undefined } = {
+    count: undefined,
+    holder: undefined,
+  };
+  gamesInWeekRecord: { count: number | undefined; holder: string | undefined } = {
+    count: undefined,
+    holder: undefined,
+  };
+  gamesInMonthRecord: { count: number | undefined; holder: string | undefined } = {
     count: undefined,
     holder: undefined,
   };
@@ -102,6 +112,8 @@ export class Achievements {
     this.winStreakRecord = { length: undefined, holder: undefined };
     this.loseStreakRecord = { length: undefined, holder: undefined };
     this.gamesInDayRecord = { count: undefined, holder: undefined };
+    this.gamesInWeekRecord = { count: undefined, holder: undefined };
+    this.gamesInMonthRecord = { count: undefined, holder: undefined };
 
     const playerTracker = new Map<
       string,
@@ -120,14 +132,15 @@ export class Achievements {
         // once another player takes the record over.
         openWinStreakRecord: StreakRecordAchievement | undefined;
         openLoseStreakRecord: StreakRecordAchievement | undefined;
-        // The local calendar day (its midnight timestamp) the player last
-        // played on, how many games they have played on that day so far, and
-        // the Hero of the Day award that day's run earned while the player
-        // holds the record with it — grown game by game like the streak
-        // records, cleared when the day ends.
-        currentDayStart: number;
-        gamesToday: number;
-        openHeroOfTheDayRecord: HeroOfTheDayAchievement | undefined;
+        // Per-period state for the Hero of the Day / Week / Month records:
+        // the local calendar period (its start timestamp) the player last
+        // played in, how many games they have played in it so far, and the
+        // Hero award that period's run earned while the player holds the
+        // record with it — grown game by game like the streak records,
+        // cleared when the period ends.
+        heroOfTheDay: HeroPeriodState;
+        heroOfTheWeek: HeroPeriodState;
+        heroOfTheMonth: HeroPeriodState;
         donutCount: number;
         closeCallsCount: number;
         edgeLordCount: number;
@@ -155,9 +168,9 @@ export class Achievements {
           winStreakPlayer: new Map(),
           openWinStreakRecord: undefined,
           openLoseStreakRecord: undefined,
-          currentDayStart: 0,
-          gamesToday: 0,
-          openHeroOfTheDayRecord: undefined,
+          heroOfTheDay: { periodStart: 0, gamesInPeriod: 0, openRecord: undefined },
+          heroOfTheWeek: { periodStart: 0, gamesInPeriod: 0, openRecord: undefined },
+          heroOfTheMonth: { periodStart: 0, gamesInPeriod: 0, openRecord: undefined },
           donutCount: 0,
           closeCallsCount: 0,
           edgeLordCount: 0,
@@ -180,9 +193,9 @@ export class Achievements {
           winStreakPlayer: new Map(),
           openWinStreakRecord: undefined,
           openLoseStreakRecord: undefined,
-          currentDayStart: 0,
-          gamesToday: 0,
-          openHeroOfTheDayRecord: undefined,
+          heroOfTheDay: { periodStart: 0, gamesInPeriod: 0, openRecord: undefined },
+          heroOfTheWeek: { periodStart: 0, gamesInPeriod: 0, openRecord: undefined },
+          heroOfTheMonth: { periodStart: 0, gamesInPeriod: 0, openRecord: undefined },
           donutCount: 0,
           closeCallsCount: 0,
           edgeLordCount: 0,
@@ -246,11 +259,12 @@ export class Achievements {
       // Check for "Earliest Game" / "Latest Game" record-breaking achievements
       this.#checkTimeOfDayAchievements(game);
 
-      // Check for "Hero of the Day": the record for most games by one player
-      // in a single day. Both players played this game; the winner is checked
-      // first, so when both cross the same count at once the win breaks the tie.
-      this.#checkHeroOfTheDayAchievement(game.winner, winner, game.playedAt);
-      this.#checkHeroOfTheDayAchievement(game.loser, loser, game.playedAt);
+      // Check for "Hero of the Day / Week / Month": the records for most games
+      // by one player in a single day / week / month. Both players played this
+      // game; the winner is checked first, so when both cross the same count
+      // at once the win breaks the tie.
+      this.#checkHeroAchievements(game.winner, winner, game.playedAt);
+      this.#checkHeroAchievements(game.loser, loser, game.playedAt);
 
       // Check for Welcome Committee achievement
       // If this is the loser's first game ever, the winner is their first opponent
@@ -1728,59 +1742,128 @@ export class Achievements {
     return achievement;
   }
 
-  // Hero of the Day: the league-wide record for most games by one player in a
-  // single local calendar day. Works like the streak records: the first day
-  // to reach GAMES_IN_DAY_RECORD_FLOOR games establishes the record, after
-  // that only playing more games in one day than the record takes it. While
-  // the record holder keeps playing on their record day the award grows with
-  // the day instead of handing out one per game; once the day ends (or
-  // someone else takes the record over) a later run is a fresh chase.
-  #checkHeroOfTheDayAchievement(
+  // Local midnight of the day containing `ms`.
+  #dayStartOf(ms: number): number {
+    const d = new Date(ms);
+    d.setHours(0, 0, 0, 0);
+    return d.getTime();
+  }
+
+  // Local Monday-midnight of the week containing `ms` (matching Perfect Week).
+  #weekStartOf(ms: number): number {
+    const d = new Date(ms);
+    d.setHours(0, 0, 0, 0);
+    const daysSinceMonday = (d.getDay() + 6) % 7; // getDay: 0=Sun..6=Sat
+    d.setDate(d.getDate() - daysSinceMonday);
+    return d.getTime();
+  }
+
+  // Local midnight of the 1st of the month containing `ms`.
+  #monthStartOf(ms: number): number {
+    const d = new Date(ms);
+    return new Date(d.getFullYear(), d.getMonth(), 1).getTime();
+  }
+
+  // Hero of the Day / Week / Month: the league-wide records for most games by
+  // one player in a single local calendar day / week / month. All three work
+  // like the streak records: the first period to reach the record floor
+  // establishes the record, after that only playing more games in one period
+  // than the record takes it. While the record holder keeps playing in their
+  // record period the award grows with the period instead of handing out one
+  // per game; once the period ends (or someone else takes the record over) a
+  // later run is a fresh chase. The three periods run independently — a busy
+  // record day also feeds that week's and month's counts.
+  #checkHeroAchievements(
     playerId: string,
-    tracker: {
-      currentDayStart: number;
-      gamesToday: number;
-      openHeroOfTheDayRecord: HeroOfTheDayAchievement | undefined;
-    },
+    tracker: { heroOfTheDay: HeroPeriodState; heroOfTheWeek: HeroPeriodState; heroOfTheMonth: HeroPeriodState },
     playedAt: number,
   ) {
-    const dayDate = new Date(playedAt);
-    dayDate.setHours(0, 0, 0, 0);
-    const day = dayDate.getTime();
-    if (tracker.currentDayStart !== day) {
-      tracker.currentDayStart = day;
-      tracker.gamesToday = 0;
-      tracker.openHeroOfTheDayRecord = undefined;
-    }
-    tracker.gamesToday++;
+    this.#checkHeroRecordAchievement(
+      "hero-of-the-day",
+      playerId,
+      tracker.heroOfTheDay,
+      this.gamesInDayRecord,
+      GAMES_IN_DAY_RECORD_FLOOR,
+      this.#dayStartOf(playedAt),
+      playedAt,
+    );
+    this.#checkHeroRecordAchievement(
+      "hero-of-the-week",
+      playerId,
+      tracker.heroOfTheWeek,
+      this.gamesInWeekRecord,
+      GAMES_IN_WEEK_RECORD_FLOOR,
+      this.#weekStartOf(playedAt),
+      playedAt,
+    );
+    this.#checkHeroRecordAchievement(
+      "hero-of-the-month",
+      playerId,
+      tracker.heroOfTheMonth,
+      this.gamesInMonthRecord,
+      GAMES_IN_MONTH_RECORD_FLOOR,
+      this.#monthStartOf(playedAt),
+      playedAt,
+    );
+  }
 
-    const record = this.gamesInDayRecord;
+  #checkHeroRecordAchievement(
+    type: "hero-of-the-day" | "hero-of-the-week" | "hero-of-the-month",
+    playerId: string,
+    state: HeroPeriodState,
+    record: { count: number | undefined; holder: string | undefined },
+    floor: number,
+    periodStart: number,
+    playedAt: number,
+  ) {
+    if (state.periodStart !== periodStart) {
+      state.periodStart = periodStart;
+      state.gamesInPeriod = 0;
+      state.openRecord = undefined;
+    }
+    state.gamesInPeriod++;
+
     const beatsRecord =
-      record.count === undefined
-        ? tracker.gamesToday >= GAMES_IN_DAY_RECORD_FLOOR
-        : tracker.gamesToday > record.count;
+      record.count === undefined ? state.gamesInPeriod >= floor : state.gamesInPeriod > record.count;
     if (!beatsRecord) {
       return;
     }
 
-    // Same day, still the record holder: grow the award instead of handing
+    // Same period, still the record holder: grow the award instead of handing
     // out another one.
-    if (tracker.openHeroOfTheDayRecord !== undefined && record.holder === playerId) {
-      tracker.openHeroOfTheDayRecord.data.gamesPlayed = tracker.gamesToday;
-      tracker.openHeroOfTheDayRecord.earnedAt = playedAt;
-      record.count = tracker.gamesToday;
+    if (state.openRecord !== undefined && record.holder === playerId) {
+      state.openRecord.data.gamesPlayed = state.gamesInPeriod;
+      state.openRecord.earnedAt = playedAt;
+      record.count = state.gamesInPeriod;
       return;
     }
 
-    const achievement = this.#createAchievement("hero-of-the-day", playerId, playedAt, {
-      day,
-      gamesPlayed: tracker.gamesToday,
-      previousRecord: record.count,
-    });
+    const gamesPlayed = state.gamesInPeriod;
+    const previousRecord = record.count;
+    let achievement: HeroRecordAchievement;
+    if (type === "hero-of-the-day") {
+      achievement = this.#createAchievement("hero-of-the-day", playerId, playedAt, {
+        day: periodStart,
+        gamesPlayed,
+        previousRecord,
+      });
+    } else if (type === "hero-of-the-week") {
+      achievement = this.#createAchievement("hero-of-the-week", playerId, playedAt, {
+        weekStart: periodStart,
+        gamesPlayed,
+        previousRecord,
+      });
+    } else {
+      achievement = this.#createAchievement("hero-of-the-month", playerId, playedAt, {
+        monthStart: periodStart,
+        gamesPlayed,
+        previousRecord,
+      });
+    }
     this.#addAchievement(playerId, achievement);
-    record.count = tracker.gamesToday;
+    record.count = gamesPlayed;
     record.holder = playerId;
-    tracker.openHeroOfTheDayRecord = achievement;
+    state.openRecord = achievement;
   }
 
   #checkBackAfterAchievement(playerId: string, lastActiveAt: number, currentGameAt: number) {
@@ -2196,6 +2279,20 @@ export class Achievements {
         target: this.gamesInDayRecord.count === undefined ? undefined : this.gamesInDayRecord.count + 1,
         recordHolder: this.gamesInDayRecord.holder,
       },
+      "hero-of-the-week": {
+        earned: 0,
+        current: 0,
+        personalBest: 0,
+        target: this.gamesInWeekRecord.count === undefined ? undefined : this.gamesInWeekRecord.count + 1,
+        recordHolder: this.gamesInWeekRecord.holder,
+      },
+      "hero-of-the-month": {
+        earned: 0,
+        current: 0,
+        personalBest: 0,
+        target: this.gamesInMonthRecord.count === undefined ? undefined : this.gamesInMonthRecord.count + 1,
+        recordHolder: this.gamesInMonthRecord.holder,
+      },
       // Record-breaking, no progress bar. recordMinutes is the current league
       // record; playerMinutes (the player's own best) is filled in below.
       "earliest-game": { earned: 0, recordMinutes: this.earliestGameRecord.minutesIntoDay },
@@ -2249,6 +2346,10 @@ export class Achievements {
     const streaksPerOpponent = new Map<string, number>();
     // Perfect Day progression: wins / losses grouped by local calendar day.
     const perfectDayStats = new Map<number, { wins: number; losses: number }>();
+    // Hero of the Week / Month progression: the player's games per local
+    // calendar week / month, keyed by the period's start timestamp.
+    const gamesPerWeek = new Map<number, number>();
+    const gamesPerMonth = new Map<number, number>();
     // Perfect Week progression: distinct weekdays (Mon–Fri) won per working week.
     const perfectWeekWeekdays = new Map<number, Set<number>>();
     const opponentsPlayed = new Set<string>();
@@ -2332,6 +2433,12 @@ export class Achievements {
       } else {
         dayStat.losses++;
       }
+
+      // Hero of the Week / Month progression: tally games per week / month.
+      const heroWeekKey = this.#weekStartOf(game.playedAt);
+      gamesPerWeek.set(heroWeekKey, (gamesPerWeek.get(heroWeekKey) ?? 0) + 1);
+      const heroMonthKey = this.#monthStartOf(game.playedAt);
+      gamesPerMonth.set(heroMonthKey, (gamesPerMonth.get(heroMonthKey) ?? 0) + 1);
 
       // Perfect Week progression: collect distinct Mon–Fri weekdays won.
       const weekday = new Date(game.playedAt).getDay(); // 0=Sun..6=Sat
@@ -2463,15 +2570,29 @@ export class Achievements {
     progression["perfect-day"].current =
       todayStat && todayStat.losses === 0 ? Math.min(todayStat.wins, 5) : 0;
 
-    // Hero of the Day: only today's games can still grow into the record, so
-    // that is the progress. The player's busiest day ever is reported
-    // alongside it.
+    // Hero of the Day / Week / Month: only the current period's games can
+    // still grow into the record, so that is the progress. The player's
+    // busiest period ever is reported alongside it.
     progression["hero-of-the-day"].current = todayStat ? todayStat.wins + todayStat.losses : 0;
     let busiestDay = 0;
     perfectDayStats.forEach((stats) => {
       busiestDay = Math.max(busiestDay, stats.wins + stats.losses);
     });
     progression["hero-of-the-day"].personalBest = busiestDay;
+
+    progression["hero-of-the-week"].current = gamesPerWeek.get(this.#weekStartOf(nowMs)) ?? 0;
+    let busiestWeek = 0;
+    gamesPerWeek.forEach((count) => {
+      busiestWeek = Math.max(busiestWeek, count);
+    });
+    progression["hero-of-the-week"].personalBest = busiestWeek;
+
+    progression["hero-of-the-month"].current = gamesPerMonth.get(this.#monthStartOf(nowMs)) ?? 0;
+    let busiestMonth = 0;
+    gamesPerMonth.forEach((count) => {
+      busiestMonth = Math.max(busiestMonth, count);
+    });
+    progression["hero-of-the-month"].personalBest = busiestMonth;
 
     // Perfect Week progression tracks THIS working week's live attempt: the
     // run of consecutive weekdays from Monday, each with at least one win.
@@ -2777,9 +2898,12 @@ type AchievementDefinitions = {
   "back-after-2-years": { lastGameAt: number };
   "retired": undefined;
   "back-from-the-dead": { retiredAt: number };
-  // `day` is the local midnight of the record day. Undefined previousRecord
-  // means this day established the very first league record.
+  // `day` / `weekStart` / `monthStart` is the local midnight starting the
+  // record period (weeks start on Monday, months on the 1st). Undefined
+  // previousRecord means the period established the very first league record.
   "hero-of-the-day": { day: number; gamesPlayed: number; previousRecord?: number };
+  "hero-of-the-week": { weekStart: number; gamesPlayed: number; previousRecord?: number };
+  "hero-of-the-month": { monthStart: number; gamesPlayed: number; previousRecord?: number };
   "active-6-months": { firstGameInPeriod: number };
   "active-1-year": { firstGameInPeriod: number };
   "active-2-years": { firstGameInPeriod: number };
@@ -2876,9 +3000,23 @@ type StreakRecordAchievement =
   | GenericAchievement<"longest-win-streak">
   | GenericAchievement<"longest-lose-streak">;
 
-// The award for holding the games-in-a-day record — grown through the day
-// while the player still holds the record with it.
-type HeroOfTheDayAchievement = GenericAchievement<"hero-of-the-day">;
+// The award for holding a games-in-a-period record — grown through the
+// day / week / month while the player still holds the record with it. The
+// three share `gamesPlayed`, so the code that grows one as the period
+// continues can treat them interchangeably.
+type HeroRecordAchievement =
+  | GenericAchievement<"hero-of-the-day">
+  | GenericAchievement<"hero-of-the-week">
+  | GenericAchievement<"hero-of-the-month">;
+
+// Per-player, per-period chase state for a Hero record: the period being
+// played (its start timestamp), the games in it so far, and the open award
+// still growing with it (if the player holds the record with this period).
+type HeroPeriodState = {
+  periodStart: number;
+  gamesInPeriod: number;
+  openRecord: HeroRecordAchievement | undefined;
+};
 
 // Progression Types
 type BaseProgression = {
@@ -2945,18 +3083,19 @@ type MarathonSetProgression = BaseProgression & {
   recordHolder?: string;
 };
 
-type HeroOfTheDayProgression = BaseProgression & {
-  // Games the player has played so far today — only today's total can still
-  // grow into the record, so this is what the progress bar measures.
+type HeroRecordProgression = BaseProgression & {
+  // Games the player has played so far in the current period (today / this
+  // week / this month) — only the current period's total can still grow into
+  // the record, so this is what the progress bar measures.
   current: number;
-  // One beyond the league record — the single-day games count that takes it.
-  // Undefined while nobody holds it (a GAMES_IN_DAY_RECORD_FLOOR-game day
-  // takes it outright).
+  // One beyond the league record — the single-period games count that takes
+  // it. Undefined while nobody holds it (a floor-reaching period takes it
+  // outright).
   target?: number;
   // Player who currently holds the league record, if any.
   recordHolder?: string;
-  // The player's own busiest day ever, which may be busier than today.
-  // Shown so they can see how their best compares.
+  // The player's own busiest period ever, which may be busier than the
+  // current one. Shown so they can see how their best compares.
   personalBest: number;
 };
 
@@ -3038,7 +3177,9 @@ export type AchievementProgression = {
   "streak-ender": BaseProgression;
   "longest-win-streak": StreakRecordProgression;
   "longest-lose-streak": StreakRecordProgression;
-  "hero-of-the-day": HeroOfTheDayProgression;
+  "hero-of-the-day": HeroRecordProgression;
+  "hero-of-the-week": HeroRecordProgression;
+  "hero-of-the-month": HeroRecordProgression;
   "group-stage-star": BaseProgression;
   "full-house": MissingPlayersProgression;
   "humbled": MissingPlayersProgression;

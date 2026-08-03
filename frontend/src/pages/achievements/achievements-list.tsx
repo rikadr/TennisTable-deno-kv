@@ -207,6 +207,22 @@ export const AchievementsList: React.FC<AchievementsListProps> = ({ achievements
                         : " (first league record!)"}
                     </span>
                   )}
+                  {achievement.type === "hero-of-the-week" && achievement.data && (
+                    <span className="text-[11px] opacity-80">
+                      {achievement.data.gamesPlayed} games in one week
+                      {achievement.data.previousRecord !== undefined
+                        ? ` (prev record ${achievement.data.previousRecord})`
+                        : " (first league record!)"}
+                    </span>
+                  )}
+                  {achievement.type === "hero-of-the-month" && achievement.data && (
+                    <span className="text-[11px] opacity-80">
+                      {achievement.data.gamesPlayed} games in one month
+                      {achievement.data.previousRecord !== undefined
+                        ? ` (prev record ${achievement.data.previousRecord})`
+                        : " (first league record!)"}
+                    </span>
+                  )}
                   {achievement.type === "back-from-the-dead" && achievement.data && (
                     <span className="text-[11px] opacity-80">
                       Retired for{" "}
