@@ -6,6 +6,8 @@ import {
   Achievement,
   AchievementProgression,
   GAMES_IN_DAY_RECORD_FLOOR,
+  GAMES_IN_MONTH_RECORD_FLOOR,
+  GAMES_IN_WEEK_RECORD_FLOOR,
   STREAK_RECORD_FLOOR,
 } from "../../client/client-db/achievements";
 import { Link } from "react-router-dom";
@@ -265,6 +267,16 @@ export const ACHIEVEMENT_LABELS: Record<string, { title: string; description: st
     description: "Play more games in a single day than anyone in league history",
     icon: "🦸",
   },
+  "hero-of-the-week": {
+    title: "Hero of the Week",
+    description: "Play more games in a single week than anyone in league history",
+    icon: "🦸‍♂️",
+  },
+  "hero-of-the-month": {
+    title: "Hero of the Month",
+    description: "Play more games in a single month than anyone in league history",
+    icon: "🦸‍♀️",
+  },
   "streak-ender": {
     title: "Streak Ender",
     description: "Beat a player who was on an active 10+ game win streak",
@@ -310,6 +322,14 @@ export function getAchievementLabel(
   }
   return label;
 }
+
+// Wording and record floors for the Hero of the Day / Week / Month records —
+// they share the same progression UI at different period sizes.
+const HERO_RECORD_PERIODS: Record<string, { noun: string; floor: number }> = {
+  "hero-of-the-day": { noun: "day", floor: GAMES_IN_DAY_RECORD_FLOOR },
+  "hero-of-the-week": { noun: "week", floor: GAMES_IN_WEEK_RECORD_FLOOR },
+  "hero-of-the-month": { noun: "month", floor: GAMES_IN_MONTH_RECORD_FLOOR },
+};
 
 type TabType = "earned" | "progress";
 const tabs: { id: TabType; label: string }[] = [
@@ -513,6 +533,24 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
                 {achievement.type === "hero-of-the-day" && achievement.data && (
                   <p className="text-xs text-secondary-text/70 mt-2">
                     {achievement.data.gamesPlayed} games on {dateString(achievement.data.day)}
+                    {achievement.data.previousRecord !== undefined
+                      ? ` (previous record: ${achievement.data.previousRecord})`
+                      : " (first league record!)"}
+                  </p>
+                )}
+
+                {achievement.type === "hero-of-the-week" && achievement.data && (
+                  <p className="text-xs text-secondary-text/70 mt-2">
+                    {achievement.data.gamesPlayed} games in the week of {dateString(achievement.data.weekStart)}
+                    {achievement.data.previousRecord !== undefined
+                      ? ` (previous record: ${achievement.data.previousRecord})`
+                      : " (first league record!)"}
+                  </p>
+                )}
+
+                {achievement.type === "hero-of-the-month" && achievement.data && (
+                  <p className="text-xs text-secondary-text/70 mt-2">
+                    {achievement.data.gamesPlayed} games in {monthString(achievement.data.monthStart)}
                     {achievement.data.previousRecord !== undefined
                       ? ` (previous record: ${achievement.data.previousRecord})`
                       : " (first league record!)"}
@@ -917,14 +955,16 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                         </div>
                       )}
 
-                      {/* Record holder and personal best for hero-of-the-day.
-                          The bar tracks today's games, so the player's busiest
-                          day ever is spelt out separately. */}
-                      {type === "hero-of-the-day" && "recordHolder" in data && (
+                      {/* Record holder and personal best for the Hero of the
+                          Day / Week / Month records. The bar tracks the current
+                          period's games, so the player's busiest period ever is
+                          spelt out separately. */}
+                      {type in HERO_RECORD_PERIODS && "recordHolder" in data && (
                         <div className="mt-2 text-xs text-secondary-text/70 space-y-1">
                           {"personalBest" in data && (
                             <p>
-                              Your busiest day ever: {data.personalBest} game{data.personalBest !== 1 ? "s" : ""}
+                              Your busiest {HERO_RECORD_PERIODS[type].noun} ever: {data.personalBest} game
+                              {data.personalBest !== 1 ? "s" : ""}
                             </p>
                           )}
                           <p>
@@ -936,12 +976,12 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                                     {context.playerName(data.recordHolder)}
                                   </span>
                                 </Link>
-                                . Play {data.target} games in one day to take it.
+                                . Play {data.target} games in one {HERO_RECORD_PERIODS[type].noun} to take it.
                               </>
                             ) : (
                               <>
-                                No record set yet — play {GAMES_IN_DAY_RECORD_FLOOR} games in one day to start the
-                                record.
+                                No record set yet — play {HERO_RECORD_PERIODS[type].floor} games in one{" "}
+                                {HERO_RECORD_PERIODS[type].noun} to start the record.
                               </>
                             )}
                           </p>
@@ -996,10 +1036,10 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                       No league record yet — {type === "longest-win-streak" ? "win" : "lose"}{" "}
                       {STREAK_RECORD_FLOOR} in a row to set the first record.
                     </div>
-                  ) : type === "hero-of-the-day" ? (
+                  ) : type in HERO_RECORD_PERIODS ? (
                     <div className="mt-2 text-xs text-secondary-text/70">
-                      No league record yet — play {GAMES_IN_DAY_RECORD_FLOOR} games in one day to set the first
-                      record.
+                      No league record yet — play {HERO_RECORD_PERIODS[type].floor} games in one{" "}
+                      {HERO_RECORD_PERIODS[type].noun} to set the first record.
                     </div>
                   ) : type === "earliest-game" || type === "latest-game" ? (
                     <div className="mt-2 text-xs text-secondary-text/70 space-y-1">
@@ -1048,6 +1088,15 @@ function formatTimePeriod(ms?: number): string {
 export function dateString(time: number) {
   return new Date(time).toLocaleDateString("nb-NO", {
     day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+}
+
+// Month-granularity variant of dateString, for periods that span a whole
+// calendar month (e.g. "januar 2026").
+export function monthString(time: number) {
+  return new Date(time).toLocaleDateString("nb-NO", {
     month: "long",
     year: "numeric",
   });

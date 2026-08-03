@@ -31,6 +31,26 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
+    slug: "hero-of-the-week-and-month-achievements",
+    title: "2 new achievements: Hero of the Week and Hero of the Month",
+    date: "2026-08-03",
+    tags: ["new-feature"],
+    summary:
+      "Hero of the Week 🦸‍♂️ and Hero of the Month 🦸‍♀️ extend the Hero of the Day record to bigger periods: the most games played in a single week and in a single calendar month.",
+    body: [
+      list(
+        "Hero of the Week 🦸‍♂️ - the league record for most games played in a single week (Monday to Sunday). The first week with 10 games sets the record.",
+        "Hero of the Month 🦸‍♀️ - the league record for most games played in a single calendar month. The first month with 20 games sets the record.",
+      ),
+      text(
+        "Both work exactly like Hero of the Day: they are records that are held, not just earned. Wins and losses both count, one award grows with the whole record period, and only a strictly busier week or month takes the record over. The three records run independently - a monster day feeds its week's and month's counts too.",
+      ),
+      text(
+        "The progress view shows your current week and month against the records, your busiest ever, and who holds them.",
+      ),
+    ],
+  },
+  {
     slug: "hero-of-the-day-achievement",
     title: "New achievement: Hero of the Day",
     date: "2026-08-03",

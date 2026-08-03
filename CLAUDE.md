@@ -75,8 +75,9 @@ to end up knowing something useful. When it is a close call, skip it.
 - Slugs are permalinks - do not change one once it has shipped.
 - It is a static content list and needs no tests.
 
-The page is at `/changelog` and is intentionally **not** in the nav menu yet -
-reachable by direct url only until the navigation structure is reworked.
+The page is at `/changelog`. Until the navigation structure is reworked it is
+only in the nav menu for logged-in admins - everyone else reaches it by direct
+url.
 
 ## Context Files
 - Root Instructions: `./GEMINI.md`
