@@ -9,12 +9,12 @@ import { TennisTable } from "./tennis-table";
 export const STREAK_RECORD_FLOOR = 3;
 
 // Fewest games in one calendar day / week / month that can establish the very
-// first Hero of the Day / Week / Month record. Below these a period is too
-// ordinary to be a record worth holding. Once a record exists the floor is
-// irrelevant — only beating the record counts.
-export const GAMES_IN_DAY_RECORD_FLOOR = 3;
-export const GAMES_IN_WEEK_RECORD_FLOOR = 10;
-export const GAMES_IN_MONTH_RECORD_FLOOR = 20;
+// first Hero of the Day / Week / Month record. Below this a period is too
+// ordinary to be a record worth holding. The floor is deliberately the same
+// low bar for all three periods — it only matters until the first record
+// exists; after that only beating the record counts, and the longer periods
+// naturally accumulate higher records on their own.
+export const GAMES_IN_PERIOD_RECORD_FLOOR = 3;
 
 export class Achievements {
   private parent: TennisTable;
@@ -1783,7 +1783,6 @@ export class Achievements {
       playerId,
       tracker.heroOfTheDay,
       this.gamesInDayRecord,
-      GAMES_IN_DAY_RECORD_FLOOR,
       this.#dayStartOf(playedAt),
       playedAt,
     );
@@ -1792,7 +1791,6 @@ export class Achievements {
       playerId,
       tracker.heroOfTheWeek,
       this.gamesInWeekRecord,
-      GAMES_IN_WEEK_RECORD_FLOOR,
       this.#weekStartOf(playedAt),
       playedAt,
     );
@@ -1801,7 +1799,6 @@ export class Achievements {
       playerId,
       tracker.heroOfTheMonth,
       this.gamesInMonthRecord,
-      GAMES_IN_MONTH_RECORD_FLOOR,
       this.#monthStartOf(playedAt),
       playedAt,
     );
@@ -1812,7 +1809,6 @@ export class Achievements {
     playerId: string,
     state: HeroPeriodState,
     record: { count: number | undefined; holder: string | undefined },
-    floor: number,
     periodStart: number,
     playedAt: number,
   ) {
@@ -1824,7 +1820,9 @@ export class Achievements {
     state.gamesInPeriod++;
 
     const beatsRecord =
-      record.count === undefined ? state.gamesInPeriod >= floor : state.gamesInPeriod > record.count;
+      record.count === undefined
+        ? state.gamesInPeriod >= GAMES_IN_PERIOD_RECORD_FLOOR
+        : state.gamesInPeriod > record.count;
     if (!beatsRecord) {
       return;
     }

@@ -1,4 +1,4 @@
-import { Achievement, GAMES_IN_MONTH_RECORD_FLOOR, GAMES_IN_WEEK_RECORD_FLOOR } from "../../achievements";
+import { Achievement, GAMES_IN_PERIOD_RECORD_FLOOR } from "../../achievements";
 import { EventType, EventTypeEnum } from "../../event-store/event-types";
 import { TennisTable } from "../../tennis-table";
 
@@ -65,11 +65,7 @@ function gamesOnDay(day: number, winner: string, loser: string, count: number, f
 
 describe("Hero of the Week achievement", () => {
   it("does not establish a record below the floor", () => {
-    // 9 games spread over two days of the same week — one short of the floor.
-    const tt = calculate([
-      ...gamesOnDay(1, "alice", "bob", 4),
-      ...gamesOnDay(3, "alice", "bob", GAMES_IN_WEEK_RECORD_FLOOR - 5),
-    ]);
+    const tt = calculate(gamesOnDay(1, "alice", "bob", GAMES_IN_PERIOD_RECORD_FLOOR - 1));
 
     expect(weekAwards(tt, "alice")).toHaveLength(0);
     expect(weekAwards(tt, "bob")).toHaveLength(0);
@@ -77,24 +73,27 @@ describe("Hero of the Week achievement", () => {
   });
 
   it("establishes the first record accumulated across the days of a week, tie going to the winner", () => {
-    // 5 games on Monday + 5 on Wednesday reach the floor of 10 mid-week.
-    const tt = calculate([...gamesOnDay(1, "alice", "bob", 5), ...gamesOnDay(3, "alice", "bob", 5)]);
+    // 2 games on Monday + 1 on Wednesday reach the floor of 3 mid-week.
+    const tt = calculate([
+      ...gamesOnDay(1, "alice", "bob", GAMES_IN_PERIOD_RECORD_FLOOR - 1),
+      ...gamesOnDay(3, "alice", "bob", 1),
+    ]);
 
     const aliceAwards = weekAwards(tt, "alice");
     expect(aliceAwards).toHaveLength(1);
     expect(aliceAwards[0]).toStrictEqual({
       type: "hero-of-the-week",
       earnedBy: "alice",
-      earnedAt: at(3, 4),
+      earnedAt: at(3, 0),
       data: {
         weekStart: new Date(2024, 0, 1).getTime(),
-        gamesPlayed: GAMES_IN_WEEK_RECORD_FLOOR,
+        gamesPlayed: GAMES_IN_PERIOD_RECORD_FLOOR,
         previousRecord: undefined,
       },
     });
     expect(weekAwards(tt, "bob")).toHaveLength(0);
     expect(tt.achievements.gamesInWeekRecord).toStrictEqual({
-      count: GAMES_IN_WEEK_RECORD_FLOOR,
+      count: GAMES_IN_PERIOD_RECORD_FLOOR,
       holder: "alice",
     });
   });
@@ -111,7 +110,7 @@ describe("Hero of the Week achievement", () => {
 
   it("resets the count at the week boundary and requires strictly beating the record", () => {
     const tt = calculate([
-      // Week of Jan 1: record set at 10.
+      // Week of Jan 1: record set and grown to 10.
       ...gamesOnDay(1, "alice", "bob", 10),
       // Week of Jan 8: 10 games only tie the record — no award...
       ...gamesOnDay(8, "alice", "bob", 10),
@@ -152,23 +151,19 @@ describe("Hero of the Week achievement", () => {
   });
 
   it("leaves the progression target unset until someone holds the record", () => {
-    const tt = calculate(gamesOnDay(1, "alice", "bob", GAMES_IN_WEEK_RECORD_FLOOR - 1));
+    const tt = calculate(gamesOnDay(1, "alice", "bob", GAMES_IN_PERIOD_RECORD_FLOOR - 1));
 
     const progression = tt.achievements.getPlayerProgression("alice")["hero-of-the-week"];
     expect(progression.target).toBeUndefined();
     expect(progression.recordHolder).toBeUndefined();
-    expect(progression.personalBest).toBe(GAMES_IN_WEEK_RECORD_FLOOR - 1);
+    expect(progression.personalBest).toBe(GAMES_IN_PERIOD_RECORD_FLOOR - 1);
     expect(progression.earned).toBe(0);
   });
 });
 
 describe("Hero of the Month achievement", () => {
   it("does not establish a record below the floor", () => {
-    // 19 games spread over two weeks of January — one short of the floor.
-    const tt = calculate([
-      ...gamesOnDay(1, "alice", "bob", 10),
-      ...gamesOnDay(15, "alice", "bob", GAMES_IN_MONTH_RECORD_FLOOR - 11),
-    ]);
+    const tt = calculate(gamesOnDay(1, "alice", "bob", GAMES_IN_PERIOD_RECORD_FLOOR - 1));
 
     expect(monthAwards(tt, "alice")).toHaveLength(0);
     expect(monthAwards(tt, "bob")).toHaveLength(0);
@@ -176,30 +171,44 @@ describe("Hero of the Month achievement", () => {
   });
 
   it("establishes the first record accumulated across the weeks of a month, tie going to the winner", () => {
-    const tt = calculate([...gamesOnDay(1, "alice", "bob", 10), ...gamesOnDay(15, "alice", "bob", 10)]);
+    // 2 games in the first week + 1 in the third reach the floor of 3.
+    const tt = calculate([
+      ...gamesOnDay(1, "alice", "bob", GAMES_IN_PERIOD_RECORD_FLOOR - 1),
+      ...gamesOnDay(15, "alice", "bob", 1),
+    ]);
 
     const aliceAwards = monthAwards(tt, "alice");
     expect(aliceAwards).toHaveLength(1);
     expect(aliceAwards[0]).toStrictEqual({
       type: "hero-of-the-month",
       earnedBy: "alice",
-      earnedAt: at(15, 9),
+      earnedAt: at(15, 0),
       data: {
         monthStart: new Date(2024, 0, 1).getTime(),
-        gamesPlayed: GAMES_IN_MONTH_RECORD_FLOOR,
+        gamesPlayed: GAMES_IN_PERIOD_RECORD_FLOOR,
         previousRecord: undefined,
       },
     });
     expect(monthAwards(tt, "bob")).toHaveLength(0);
     expect(tt.achievements.gamesInMonthRecord).toStrictEqual({
-      count: GAMES_IN_MONTH_RECORD_FLOOR,
+      count: GAMES_IN_PERIOD_RECORD_FLOOR,
       holder: "alice",
     });
   });
 
+  it("grows a single award as the record month continues instead of awarding per game", () => {
+    const tt = calculate([...gamesOnDay(1, "alice", "bob", 10), ...gamesOnDay(15, "alice", "bob", 10)]);
+
+    const aliceAwards = monthAwards(tt, "alice");
+    expect(aliceAwards).toHaveLength(1);
+    expect(aliceAwards[0].data.gamesPlayed).toBe(20);
+    expect(aliceAwards[0].earnedAt).toBe(at(15, 9));
+    expect(tt.achievements.gamesInMonthRecord).toStrictEqual({ count: 20, holder: "alice" });
+  });
+
   it("resets the count at the month boundary and requires strictly beating the record", () => {
     const tt = calculate([
-      // January: record set at 20.
+      // January: record set and grown to 20.
       ...gamesOnDay(1, "alice", "bob", 10),
       ...gamesOnDay(15, "alice", "bob", 10),
       // February (day 32 = Feb 1): 20 games only tie the record — no award...
@@ -243,12 +252,12 @@ describe("Hero of the Month achievement", () => {
   });
 
   it("leaves the progression target unset until someone holds the record", () => {
-    const tt = calculate(gamesOnDay(1, "alice", "bob", GAMES_IN_MONTH_RECORD_FLOOR - 1));
+    const tt = calculate(gamesOnDay(1, "alice", "bob", GAMES_IN_PERIOD_RECORD_FLOOR - 1));
 
     const progression = tt.achievements.getPlayerProgression("alice")["hero-of-the-month"];
     expect(progression.target).toBeUndefined();
     expect(progression.recordHolder).toBeUndefined();
-    expect(progression.personalBest).toBe(GAMES_IN_MONTH_RECORD_FLOOR - 1);
+    expect(progression.personalBest).toBe(GAMES_IN_PERIOD_RECORD_FLOOR - 1);
     expect(progression.earned).toBe(0);
   });
 });
