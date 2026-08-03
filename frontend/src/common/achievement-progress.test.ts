@@ -7,14 +7,15 @@ describe("achievementProgressPercentage", () => {
   });
 
   it("measures marathon-set from 11 instead of 0", () => {
-    // Best deuce set won of 13 against a league record of 15: 2 of 4 points.
-    expect(achievementProgressPercentage("marathon-set", 13, 15)).toBe(50);
-    expect(achievementProgressPercentage("marathon-set", 12, 15)).toBe(25);
-    expect(achievementProgressPercentage("marathon-set", 14, 15)).toBe(75);
+    // Best deuce set won of 13 with a target of 16 (one beyond the league
+    // record of 15): 2 of 5 points.
+    expect(achievementProgressPercentage("marathon-set", 13, 16)).toBe(40);
+    expect(achievementProgressPercentage("marathon-set", 12, 16)).toBe(20);
+    expect(achievementProgressPercentage("marathon-set", 14, 16)).toBe(60);
   });
 
-  it("gives marathon-set the record holder 100%", () => {
-    expect(achievementProgressPercentage("marathon-set", 14, 14)).toBe(100);
+  it("gives marathon-set 100% on reaching the target", () => {
+    expect(achievementProgressPercentage("marathon-set", 15, 15)).toBe(100);
   });
 
   it("gives 0% for marathon-set when the player has won no deuce set", () => {

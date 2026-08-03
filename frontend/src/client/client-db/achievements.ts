@@ -8,6 +8,12 @@ import { TennisTable } from "./tennis-table";
 // a record exists the floor is irrelevant — only beating the record counts.
 export const STREAK_RECORD_FLOOR = 3;
 
+// Fewest games in one calendar day that can establish the very first Hero of
+// the Day record. Below this a day is too ordinary to be a record worth
+// holding. Once a record exists the floor is irrelevant — only beating the
+// record counts.
+export const GAMES_IN_DAY_RECORD_FLOOR = 3;
+
 export class Achievements {
   private parent: TennisTable;
   private hasCalculated = false;
@@ -65,6 +71,15 @@ export class Achievements {
     length: undefined,
     holder: undefined,
   };
+  // League-wide running record for the Hero of the Day achievement: the most
+  // games a single player has played in one local calendar day. Undefined
+  // until a day reaches GAMES_IN_DAY_RECORD_FLOOR and establishes the first
+  // record. Used by the progression view so players can see the mark they
+  // need to beat.
+  gamesInDayRecord: { count: number | undefined; holder: string | undefined } = {
+    count: undefined,
+    holder: undefined,
+  };
 
   constructor(parent: TennisTable) {
     this.parent = parent;
@@ -86,6 +101,7 @@ export class Achievements {
     this.latestGameRecord = { minutesIntoDay: undefined };
     this.winStreakRecord = { length: undefined, holder: undefined };
     this.loseStreakRecord = { length: undefined, holder: undefined };
+    this.gamesInDayRecord = { count: undefined, holder: undefined };
 
     const playerTracker = new Map<
       string,
@@ -104,6 +120,14 @@ export class Achievements {
         // once another player takes the record over.
         openWinStreakRecord: StreakRecordAchievement | undefined;
         openLoseStreakRecord: StreakRecordAchievement | undefined;
+        // The local calendar day (its midnight timestamp) the player last
+        // played on, how many games they have played on that day so far, and
+        // the Hero of the Day award that day's run earned while the player
+        // holds the record with it — grown game by game like the streak
+        // records, cleared when the day ends.
+        currentDayStart: number;
+        gamesToday: number;
+        openHeroOfTheDayRecord: HeroOfTheDayAchievement | undefined;
         donutCount: number;
         closeCallsCount: number;
         edgeLordCount: number;
@@ -131,6 +155,9 @@ export class Achievements {
           winStreakPlayer: new Map(),
           openWinStreakRecord: undefined,
           openLoseStreakRecord: undefined,
+          currentDayStart: 0,
+          gamesToday: 0,
+          openHeroOfTheDayRecord: undefined,
           donutCount: 0,
           closeCallsCount: 0,
           edgeLordCount: 0,
@@ -153,6 +180,9 @@ export class Achievements {
           winStreakPlayer: new Map(),
           openWinStreakRecord: undefined,
           openLoseStreakRecord: undefined,
+          currentDayStart: 0,
+          gamesToday: 0,
+          openHeroOfTheDayRecord: undefined,
           donutCount: 0,
           closeCallsCount: 0,
           edgeLordCount: 0,
@@ -215,6 +245,12 @@ export class Achievements {
 
       // Check for "Earliest Game" / "Latest Game" record-breaking achievements
       this.#checkTimeOfDayAchievements(game);
+
+      // Check for "Hero of the Day": the record for most games by one player
+      // in a single day. Both players played this game; the winner is checked
+      // first, so when both cross the same count at once the win breaks the tie.
+      this.#checkHeroOfTheDayAchievement(game.winner, winner, game.playedAt);
+      this.#checkHeroOfTheDayAchievement(game.loser, loser, game.playedAt);
 
       // Check for Welcome Committee achievement
       // If this is the loser's first game ever, the winner is their first opponent
@@ -604,7 +640,35 @@ export class Achievements {
     this.#calculateEloAchievements();
     this.#checkFullHouseAndHumbledAchievements();
     this.#checkPerfectDayAndWeekAchievements();
+    this.#checkRetirementAchievements();
     this.hasCalculated = true;
+  }
+
+  // Awards "Retired" for every PLAYER_DEACTIVATED event and "Back From The
+  // Dead" for every PLAYER_REACTIVATED that follows one — both earnable once
+  // per retirement. The comeback remembers when the retirement happened so
+  // the display can show how long the player was gone. A reactivation with
+  // no recorded retirement (shouldn't happen, but events are data) awards
+  // nothing.
+  #checkRetirementAchievements() {
+    const lastRetiredAt = new Map<string, number>();
+    for (const event of this.parent.events) {
+      if (event.type === EventTypeEnum.PLAYER_DEACTIVATED) {
+        lastRetiredAt.set(event.stream, event.time);
+        this.#addAchievement(
+          event.stream,
+          this.#createAchievement("retired", event.stream, event.time, undefined),
+        );
+      } else if (event.type === EventTypeEnum.PLAYER_REACTIVATED) {
+        const retiredAt = lastRetiredAt.get(event.stream);
+        if (retiredAt === undefined) continue;
+        lastRetiredAt.delete(event.stream);
+        this.#addAchievement(
+          event.stream,
+          this.#createAchievement("back-from-the-dead", event.stream, event.time, { retiredAt }),
+        );
+      }
+    }
   }
 
   // Awards "Perfect Day" and "Perfect Week".
@@ -1664,6 +1728,61 @@ export class Achievements {
     return achievement;
   }
 
+  // Hero of the Day: the league-wide record for most games by one player in a
+  // single local calendar day. Works like the streak records: the first day
+  // to reach GAMES_IN_DAY_RECORD_FLOOR games establishes the record, after
+  // that only playing more games in one day than the record takes it. While
+  // the record holder keeps playing on their record day the award grows with
+  // the day instead of handing out one per game; once the day ends (or
+  // someone else takes the record over) a later run is a fresh chase.
+  #checkHeroOfTheDayAchievement(
+    playerId: string,
+    tracker: {
+      currentDayStart: number;
+      gamesToday: number;
+      openHeroOfTheDayRecord: HeroOfTheDayAchievement | undefined;
+    },
+    playedAt: number,
+  ) {
+    const dayDate = new Date(playedAt);
+    dayDate.setHours(0, 0, 0, 0);
+    const day = dayDate.getTime();
+    if (tracker.currentDayStart !== day) {
+      tracker.currentDayStart = day;
+      tracker.gamesToday = 0;
+      tracker.openHeroOfTheDayRecord = undefined;
+    }
+    tracker.gamesToday++;
+
+    const record = this.gamesInDayRecord;
+    const beatsRecord =
+      record.count === undefined
+        ? tracker.gamesToday >= GAMES_IN_DAY_RECORD_FLOOR
+        : tracker.gamesToday > record.count;
+    if (!beatsRecord) {
+      return;
+    }
+
+    // Same day, still the record holder: grow the award instead of handing
+    // out another one.
+    if (tracker.openHeroOfTheDayRecord !== undefined && record.holder === playerId) {
+      tracker.openHeroOfTheDayRecord.data.gamesPlayed = tracker.gamesToday;
+      tracker.openHeroOfTheDayRecord.earnedAt = playedAt;
+      record.count = tracker.gamesToday;
+      return;
+    }
+
+    const achievement = this.#createAchievement("hero-of-the-day", playerId, playedAt, {
+      day,
+      gamesPlayed: tracker.gamesToday,
+      previousRecord: record.count,
+    });
+    this.#addAchievement(playerId, achievement);
+    record.count = tracker.gamesToday;
+    record.holder = playerId;
+    tracker.openHeroOfTheDayRecord = achievement;
+  }
+
   #checkBackAfterAchievement(playerId: string, lastActiveAt: number, currentGameAt: number) {
     const timeDiff = currentGameAt - lastActiveAt;
     const SIX_MONTHS = 6 * 30 * 24 * 60 * 60 * 1000;
@@ -2014,11 +2133,14 @@ export class Achievements {
       "perfect-day": { current: 0, target: 5, earned: 0 },
       "perfect-week": { current: 0, target: 5, earned: 0 },
       "streak-ender": { earned: 0 },
+      // Record-chasing achievements are earned by strictly exceeding the
+      // league record, so their target is one beyond it — reaching the
+      // target is what earns the award, same as every other progress bar.
       "longest-win-streak": {
         earned: 0,
         current: 0,
         personalBest: 0,
-        target: this.winStreakRecord.length,
+        target: this.winStreakRecord.length === undefined ? undefined : this.winStreakRecord.length + 1,
         recordHolder: this.winStreakRecord.holder,
       },
 
@@ -2031,7 +2153,7 @@ export class Achievements {
         earned: 0,
         current: 0,
         personalBest: 0,
-        target: this.loseStreakRecord.length,
+        target: this.loseStreakRecord.length === undefined ? undefined : this.loseStreakRecord.length + 1,
         recordHolder: this.loseStreakRecord.holder,
       },
 
@@ -2043,7 +2165,7 @@ export class Achievements {
       "leap-frog": {
         earned: 0,
         current: 0,
-        target: this.leapFrogRecord.ranksJumped,
+        target: this.leapFrogRecord.ranksJumped === undefined ? undefined : this.leapFrogRecord.ranksJumped + 1,
         recordHolder: this.leapFrogRecord.holder,
       },
       "david": { current: 0, target: 30, earned: 0 },
@@ -2064,8 +2186,15 @@ export class Achievements {
       "marathon-set": {
         earned: 0,
         current: 0,
-        target: this.marathonSetRecord.score,
+        target: this.marathonSetRecord.score === undefined ? undefined : this.marathonSetRecord.score + 1,
         recordHolder: this.marathonSetRecord.holder,
+      },
+      "hero-of-the-day": {
+        earned: 0,
+        current: 0,
+        personalBest: 0,
+        target: this.gamesInDayRecord.count === undefined ? undefined : this.gamesInDayRecord.count + 1,
+        recordHolder: this.gamesInDayRecord.holder,
       },
       // Record-breaking, no progress bar. recordMinutes is the current league
       // record; playerMinutes (the player's own best) is filled in below.
@@ -2091,6 +2220,10 @@ export class Achievements {
       "back-after-6-months": { earned: 0, target: SIX_MONTHS },
       "back-after-1-year": { earned: 0, target: ONE_YEAR },
       "back-after-2-years": { earned: 0, target: TWO_YEARS },
+      "retired": { earned: 0 },
+      // A two-step chase: retire, then come back. A currently retired player
+      // is halfway there; current is filled in below.
+      "back-from-the-dead": { current: 0, target: 2, earned: 0 },
 
       // Competition
       "tournament-participated": { earned: 0 },
@@ -2330,6 +2463,16 @@ export class Achievements {
     progression["perfect-day"].current =
       todayStat && todayStat.losses === 0 ? Math.min(todayStat.wins, 5) : 0;
 
+    // Hero of the Day: only today's games can still grow into the record, so
+    // that is the progress. The player's busiest day ever is reported
+    // alongside it.
+    progression["hero-of-the-day"].current = todayStat ? todayStat.wins + todayStat.losses : 0;
+    let busiestDay = 0;
+    perfectDayStats.forEach((stats) => {
+      busiestDay = Math.max(busiestDay, stats.wins + stats.losses);
+    });
+    progression["hero-of-the-day"].personalBest = busiestDay;
+
     // Perfect Week progression tracks THIS working week's live attempt: the
     // run of consecutive weekdays from Monday, each with at least one win.
     // A weekday that has fully elapsed without a win breaks the run to 0 (try
@@ -2503,6 +2646,14 @@ export class Achievements {
       progression["anniversary"].firstGameAt = firstActiveAt;
     }
 
+    // Back From The Dead progression: a currently retired player has done
+    // step one of two — the comeback is all that's left, so they sit at 50%.
+    // An active player (back or never gone) is at the start of the chase.
+    const isCurrentlyRetired =
+      this.parent.allPlayers.some((player) => player.id === playerId) &&
+      !this.parent.players.some((player) => player.id === playerId);
+    progression["back-from-the-dead"].current = isCurrentlyRetired ? 1 : 0;
+
     // Calculate back-after progression (time since last activity)
     if (lastActiveAt !== null) {
       const now = Date.now();
@@ -2624,6 +2775,11 @@ type AchievementDefinitions = {
   "back-after-6-months": { lastGameAt: number };
   "back-after-1-year": { lastGameAt: number };
   "back-after-2-years": { lastGameAt: number };
+  "retired": undefined;
+  "back-from-the-dead": { retiredAt: number };
+  // `day` is the local midnight of the record day. Undefined previousRecord
+  // means this day established the very first league record.
+  "hero-of-the-day": { day: number; gamesPlayed: number; previousRecord?: number };
   "active-6-months": { firstGameInPeriod: number };
   "active-1-year": { firstGameInPeriod: number };
   "active-2-years": { firstGameInPeriod: number };
@@ -2720,6 +2876,10 @@ type StreakRecordAchievement =
   | GenericAchievement<"longest-win-streak">
   | GenericAchievement<"longest-lose-streak">;
 
+// The award for holding the games-in-a-day record — grown through the day
+// while the player still holds the record with it.
+type HeroOfTheDayAchievement = GenericAchievement<"hero-of-the-day">;
+
 // Progression Types
 type BaseProgression = {
   earned: number; // How many times this achievement has been earned
@@ -2765,9 +2925,9 @@ type MissingPlayersProgression = ProgressionWithTarget & {
 type LeapFrogProgression = BaseProgression & {
   // Player's own biggest single-game leaderboard jump (0 if none).
   current: number;
-  // The league record — ranks the player must strictly exceed to earn the
-  // next Leap Frog award. Undefined when no one has set a record yet (a
-  // ≥ 2-rank jump wins it outright).
+  // One rank beyond the league record — the jump that earns the next Leap
+  // Frog award. Undefined when no one has set a record yet (a ≥ 2-rank
+  // jump wins it outright).
   target?: number;
   // Player who currently holds the league record, if any.
   recordHolder?: string;
@@ -2777,13 +2937,27 @@ type MarathonSetProgression = BaseProgression & {
   // Player's own highest winning set score from a true-deuce set
   // they won (winner ≥ 12, loser ≥ 10). 0 if they have none.
   current: number;
-  // The league-wide record — the winning score this player must
-  // strictly exceed to earn the next Marathon Set award. Undefined
-  // when no one has set a record yet (next qualifying deuce set wins
-  // it outright).
+  // One point beyond the league-wide record — the winning score that
+  // earns the next Marathon Set award. Undefined when no one has set a
+  // record yet (next qualifying deuce set wins it outright).
   target?: number;
   // Player who currently holds the league record, if any.
   recordHolder?: string;
+};
+
+type HeroOfTheDayProgression = BaseProgression & {
+  // Games the player has played so far today — only today's total can still
+  // grow into the record, so this is what the progress bar measures.
+  current: number;
+  // One beyond the league record — the single-day games count that takes it.
+  // Undefined while nobody holds it (a GAMES_IN_DAY_RECORD_FLOOR-game day
+  // takes it outright).
+  target?: number;
+  // Player who currently holds the league record, if any.
+  recordHolder?: string;
+  // The player's own busiest day ever, which may be busier than today.
+  // Shown so they can see how their best compares.
+  personalBest: number;
 };
 
 type StreakRecordProgression = BaseProgression & {
@@ -2791,9 +2965,9 @@ type StreakRecordProgression = BaseProgression & {
   // the other way). Only a live streak can grow into the record, so this is
   // what the progress bar measures.
   current: number;
-  // The league record — the streak this player must strictly exceed to take
-  // it. Undefined while nobody holds it (a streak of STREAK_RECORD_FLOOR
-  // takes it outright).
+  // One beyond the league record — the streak that takes it. Undefined
+  // while nobody holds it (a streak of STREAK_RECORD_FLOOR takes it
+  // outright).
   target?: number;
   // Player who currently holds the league record, if any.
   recordHolder?: string;
@@ -2825,6 +2999,8 @@ export type AchievementProgression = {
   "back-after-6-months": BackAfterProgression;
   "back-after-1-year": BackAfterProgression;
   "back-after-2-years": BackAfterProgression;
+  "retired": BaseProgression;
+  "back-from-the-dead": ProgressionWithTarget;
   "active-6-months": ProgressionWithTarget;
   "active-1-year": ProgressionWithTarget;
   "active-2-years": ProgressionWithTarget;
@@ -2862,6 +3038,7 @@ export type AchievementProgression = {
   "streak-ender": BaseProgression;
   "longest-win-streak": StreakRecordProgression;
   "longest-lose-streak": StreakRecordProgression;
+  "hero-of-the-day": HeroOfTheDayProgression;
   "group-stage-star": BaseProgression;
   "full-house": MissingPlayersProgression;
   "humbled": MissingPlayersProgression;

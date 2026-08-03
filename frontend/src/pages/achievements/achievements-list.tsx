@@ -199,6 +199,20 @@ export const AchievementsList: React.FC<AchievementsListProps> = ({ achievements
                         : " (first league record!)"}
                     </span>
                   )}
+                  {achievement.type === "hero-of-the-day" && achievement.data && (
+                    <span className="text-[11px] opacity-80">
+                      {achievement.data.gamesPlayed} games in one day
+                      {achievement.data.previousRecord !== undefined
+                        ? ` (prev record ${achievement.data.previousRecord})`
+                        : " (first league record!)"}
+                    </span>
+                  )}
+                  {achievement.type === "back-from-the-dead" && achievement.data && (
+                    <span className="text-[11px] opacity-80">
+                      Retired for{" "}
+                      {Math.round((achievement.earnedAt - achievement.data.retiredAt) / (24 * 60 * 60 * 1000))} days
+                    </span>
+                  )}
                   {achievement.type === "king-maker" && achievement.data && (
                     <span className="text-[11px] opacity-80">
                       New king: {context.playerName(achievement.data.newKing)} (

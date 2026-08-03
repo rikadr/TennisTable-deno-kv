@@ -159,20 +159,20 @@ describe("Leap Frog Achievement", () => {
 
     const x1 = tt.achievements.getPlayerProgression("x1")["leap-frog"];
     expect(x1.current).toBe(5); // its own biggest jump
-    expect(x1.target).toBe(5); // the league record it now holds
+    expect(x1.target).toBe(6); // one beyond the record of 5 it now holds
     expect(x1.recordHolder).toBe("x1");
     expect(x1.earned).toBe(1);
 
     const x0 = tt.achievements.getPlayerProgression("x0")["leap-frog"];
     expect(x0.current).toBe(2);
-    expect(x0.target).toBe(5);
+    expect(x0.target).toBe(6);
     expect(x0.recordHolder).toBe("x1");
     expect(x0.earned).toBe(1);
 
     // A cluster member that only ever lost never jumped → no progress.
     const c0 = tt.achievements.getPlayerProgression("c0")["leap-frog"];
     expect(c0.current).toBe(0);
-    expect(c0.target).toBe(5);
+    expect(c0.target).toBe(6);
     expect(c0.recordHolder).toBe("x1");
     expect(c0.earned).toBe(0);
   });

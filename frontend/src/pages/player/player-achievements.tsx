@@ -2,7 +2,12 @@ import { useEventDbContext } from "../../wrappers/event-db-context";
 import { relativeTimeString } from "../../common/date-utils";
 import { classNames } from "../../common/class-names";
 import { useState } from "react";
-import { Achievement, AchievementProgression, STREAK_RECORD_FLOOR } from "../../client/client-db/achievements";
+import {
+  Achievement,
+  AchievementProgression,
+  GAMES_IN_DAY_RECORD_FLOOR,
+  STREAK_RECORD_FLOOR,
+} from "../../client/client-db/achievements";
 import { Link } from "react-router-dom";
 import { fmtNum } from "../../common/number-utils";
 import { usePlayerLinkSearch } from "../../hooks/use-player-link-search";
@@ -91,9 +96,19 @@ export const ACHIEVEMENT_LABELS: Record<string, { title: string; description: st
     icon: "🙈",
   },
   "back-after-2-years": {
-    title: "Back From The Dead",
+    title: "A Cinderella Story",
     description: "Return after 2 years of inactivity",
-    icon: "💀",
+    icon: "👸",
+  },
+  "retired": {
+    title: "Retired",
+    description: "Retire from the league",
+    icon: "🪦",
+  },
+  "back-from-the-dead": {
+    title: "Back From The Dead",
+    description: "Come back to the league after retiring",
+    icon: "🧟",
   },
   "active-6-months": {
     title: "Regular",
@@ -244,6 +259,11 @@ export const ACHIEVEMENT_LABELS: Record<string, { title: string; description: st
     title: "Marathon Set",
     description: "Win a deuce set with the highest winning score in league history",
     icon: "🏓",
+  },
+  "hero-of-the-day": {
+    title: "Hero of the Day",
+    description: "Play more games in a single day than anyone in league history",
+    icon: "🦸",
   },
   "streak-ender": {
     title: "Streak Ender",
@@ -490,6 +510,15 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
                   </p>
                 )}
 
+                {achievement.type === "hero-of-the-day" && achievement.data && (
+                  <p className="text-xs text-secondary-text/70 mt-2">
+                    {achievement.data.gamesPlayed} games on {dateString(achievement.data.day)}
+                    {achievement.data.previousRecord !== undefined
+                      ? ` (previous record: ${achievement.data.previousRecord})`
+                      : " (first league record!)"}
+                  </p>
+                )}
+
                 {achievement.type === "king-maker" && achievement.data && (
                   <p className="text-xs text-secondary-text/70 mt-2">
                     New king: {context.playerName(achievement.data.newKing)} (gained{" "}
@@ -532,6 +561,13 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
                         : " (first league record!)"}
                     </p>
                   )}
+
+                {achievement.type === "back-from-the-dead" && achievement.data && (
+                  <p className="text-xs text-secondary-text/70 mt-2">
+                    Retired for {daysBetween(achievement.data.retiredAt, achievement.earnedAt)} day
+                    {daysBetween(achievement.data.retiredAt, achievement.earnedAt) !== 1 ? "s" : ""}
+                  </p>
+                )}
 
                 {achievement.type === "perfect-day" && achievement.data && (
                   <p className="text-xs text-secondary-text/70 mt-2">
@@ -854,7 +890,7 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                                   {context.playerName(data.recordHolder)}
                                 </span>
                               </Link>
-                              . Beat {data.target} to take it.
+                              . Win a deuce set at {data.target} or higher to take it.
                             </>
                           ) : (
                             <>No record set yet — win a deuce set above 11 to start the record.</>
@@ -873,11 +909,42 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                                   {context.playerName(data.recordHolder)}
                                 </span>
                               </Link>
-                              . Jump more than {data.target} rank{data.target !== 1 ? "s" : ""} in one game to take it.
+                              . Jump {data.target} or more ranks in one game to take it.
                             </>
                           ) : (
                             <>No record set yet — jump 2 or more ranks in a single game to start the record.</>
                           )}
+                        </div>
+                      )}
+
+                      {/* Record holder and personal best for hero-of-the-day.
+                          The bar tracks today's games, so the player's busiest
+                          day ever is spelt out separately. */}
+                      {type === "hero-of-the-day" && "recordHolder" in data && (
+                        <div className="mt-2 text-xs text-secondary-text/70 space-y-1">
+                          {"personalBest" in data && (
+                            <p>
+                              Your busiest day ever: {data.personalBest} game{data.personalBest !== 1 ? "s" : ""}
+                            </p>
+                          )}
+                          <p>
+                            {data.recordHolder ? (
+                              <>
+                                League record held by{" "}
+                                <Link to={{ pathname: "/player/" + data.recordHolder, search }}>
+                                  <span className="text-secondary-text underline">
+                                    {context.playerName(data.recordHolder)}
+                                  </span>
+                                </Link>
+                                . Play {data.target} games in one day to take it.
+                              </>
+                            ) : (
+                              <>
+                                No record set yet — play {GAMES_IN_DAY_RECORD_FLOOR} games in one day to start the
+                                record.
+                              </>
+                            )}
+                          </p>
                         </div>
                       )}
 
@@ -902,8 +969,8 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                                       {context.playerName(data.recordHolder)}
                                     </span>
                                   </Link>
-                                  . {type === "longest-win-streak" ? "Win" : "Lose"} {(data.target ?? 0) + 1} in a
-                                  row to take it.
+                                  . {type === "longest-win-streak" ? "Win" : "Lose"} {data.target} in a row to
+                                  take it.
                                 </>
                               ) : (
                                 <>
@@ -928,6 +995,11 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                     <div className="mt-2 text-xs text-secondary-text/70">
                       No league record yet — {type === "longest-win-streak" ? "win" : "lose"}{" "}
                       {STREAK_RECORD_FLOOR} in a row to set the first record.
+                    </div>
+                  ) : type === "hero-of-the-day" ? (
+                    <div className="mt-2 text-xs text-secondary-text/70">
+                      No league record yet — play {GAMES_IN_DAY_RECORD_FLOOR} games in one day to set the first
+                      record.
                     </div>
                   ) : type === "earliest-game" || type === "latest-game" ? (
                     <div className="mt-2 text-xs text-secondary-text/70 space-y-1">

@@ -31,6 +31,55 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
+    slug: "hero-of-the-day-achievement",
+    title: "New achievement: Hero of the Day",
+    date: "2026-08-03",
+    tags: ["new-feature"],
+    summary:
+      "Hero of the Day 🦸 goes to the league record for most games played in a single day. The first day with 3 games sets the record; after that only a busier day takes it.",
+    body: [
+      text(
+        "Hero of the Day 🦸 is a league record, like Marathon Set and the streak records: it is held, not just earned. The first player to play 3 games in one calendar day establishes the record, and from then on it takes a strictly busier day to claim it. Wins and losses both count - the record is about showing up and playing.",
+      ),
+      text(
+        "One award covers the whole record day: keep playing while you hold the record and the award grows with the day instead of stacking a new one per game. The progress view shows today's games against the record, your busiest day ever, and who currently holds it.",
+      ),
+    ],
+  },
+  {
+    slug: "retirement-achievements",
+    title: "2 new achievements for retiring and coming back",
+    date: "2026-08-03",
+    tags: ["new-feature"],
+    summary:
+      "Retired 🪦 marks leaving the league, Back From The Dead 🧟 marks returning from retirement, and retired players now appear in the achievements progress list.",
+    body: [
+      list(
+        "Retired 🪦 - earned when you retire from the league. Awarded for every retirement, should you make a habit of it.",
+        "Back From The Dead 🧟 - earned when you come back after retiring. The achievement shows how long you were gone.",
+      ),
+      text(
+        "The 2-year comeback achievement previously held the Back From The Dead name; it is now called A Cinderella Story 👸. Returning from an actual retirement is the stronger claim to the title.",
+      ),
+      text(
+        "The Everyone's Progress view on the achievements page now includes retired players, tagged with a Retired badge. Their history is as real as anyone's, and their names were already on the records they hold.",
+      ),
+    ],
+  },
+  {
+    slug: "record-achievement-targets-beyond-record",
+    title: "Record achievement progress bars now aim one beyond the record",
+    date: "2026-08-03",
+    tags: ["bug-fix"],
+    summary:
+      "Progress toward Longest Win/Lose Streak, Marathon Set and Leap Frog is now measured against the value that actually takes the record, not the record itself.",
+    body: [
+      text(
+        "The four record-chasing achievements are earned by beating the league record, not by matching it. Their progress bars and targets now reflect that: with the win-streak record at 8, the bar aims at 9. Previously the target was the record itself, so tying it read as 100% without earning anything. If your progress on one of these dropped slightly, this is why - the goal moved to where it always really was.",
+      ),
+    ],
+  },
+  {
     slug: "tournament-timeline-whole-days",
     title: "The tournament timeline counts whole days",
     date: "2026-07-31",
