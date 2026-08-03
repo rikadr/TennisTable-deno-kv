@@ -171,12 +171,12 @@ describe("Hero of the Day achievement", () => {
   });
 
   it("leaves the progression target unset until someone holds the record", () => {
-    const tt = calculate(gamesOnDay(1, "alice", "bob", 3));
+    const tt = calculate(gamesOnDay(1, "alice", "bob", GAMES_IN_DAY_RECORD_FLOOR - 1));
 
     const progression = tt.achievements.getPlayerProgression("alice")["hero-of-the-day"];
     expect(progression.target).toBeUndefined();
     expect(progression.recordHolder).toBeUndefined();
-    expect(progression.personalBest).toBe(3);
+    expect(progression.personalBest).toBe(GAMES_IN_DAY_RECORD_FLOOR - 1);
     expect(progression.earned).toBe(0);
   });
 });

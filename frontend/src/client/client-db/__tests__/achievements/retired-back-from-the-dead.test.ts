@@ -23,6 +23,11 @@ describe("Retired and Back From The Dead achievements", () => {
     expect(retired).toStrictEqual([{ type: "retired", earnedBy: "alice", earnedAt: 100, data: undefined }]);
     expect(tt.achievements.getAchievements("bob").filter((a) => a.type === "retired")).toHaveLength(0);
     expect(tt.achievements.getPlayerProgression("alice")["retired"].earned).toBe(1);
+
+    // A currently retired player is halfway to Back From The Dead.
+    const comeback = tt.achievements.getPlayerProgression("alice")["back-from-the-dead"];
+    expect(comeback.current).toBe(1);
+    expect(comeback.target).toBe(2);
   });
 
   it("awards Back From The Dead on reactivation, remembering when the retirement happened", () => {
@@ -36,7 +41,10 @@ describe("Retired and Back From The Dead achievements", () => {
     expect(comebacks).toStrictEqual([
       { type: "back-from-the-dead", earnedBy: "alice", earnedAt: 500, data: { retiredAt: 100 } },
     ]);
-    expect(tt.achievements.getPlayerProgression("alice")["back-from-the-dead"].earned).toBe(1);
+    const progression = tt.achievements.getPlayerProgression("alice")["back-from-the-dead"];
+    expect(progression.earned).toBe(1);
+    // Back and active again — the next chase starts from the beginning.
+    expect(progression.current).toBe(0);
   });
 
   it("awards both once per retirement cycle", () => {
@@ -70,5 +78,6 @@ describe("Retired and Back From The Dead achievements", () => {
     const progression = tt.achievements.getPlayerProgression("alice");
     expect(progression["retired"].earned).toBe(0);
     expect(progression["back-from-the-dead"].earned).toBe(0);
+    expect(progression["back-from-the-dead"].current).toBe(0);
   });
 });

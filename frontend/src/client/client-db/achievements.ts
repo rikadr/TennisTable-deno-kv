@@ -12,7 +12,7 @@ export const STREAK_RECORD_FLOOR = 3;
 // the Day record. Below this a day is too ordinary to be a record worth
 // holding. Once a record exists the floor is irrelevant — only beating the
 // record counts.
-export const GAMES_IN_DAY_RECORD_FLOOR = 5;
+export const GAMES_IN_DAY_RECORD_FLOOR = 3;
 
 export class Achievements {
   private parent: TennisTable;
@@ -2221,7 +2221,9 @@ export class Achievements {
       "back-after-1-year": { earned: 0, target: ONE_YEAR },
       "back-after-2-years": { earned: 0, target: TWO_YEARS },
       "retired": { earned: 0 },
-      "back-from-the-dead": { earned: 0 },
+      // A two-step chase: retire, then come back. A currently retired player
+      // is halfway there; current is filled in below.
+      "back-from-the-dead": { current: 0, target: 2, earned: 0 },
 
       // Competition
       "tournament-participated": { earned: 0 },
@@ -2644,6 +2646,14 @@ export class Achievements {
       progression["anniversary"].firstGameAt = firstActiveAt;
     }
 
+    // Back From The Dead progression: a currently retired player has done
+    // step one of two — the comeback is all that's left, so they sit at 50%.
+    // An active player (back or never gone) is at the start of the chase.
+    const isCurrentlyRetired =
+      this.parent.allPlayers.some((player) => player.id === playerId) &&
+      !this.parent.players.some((player) => player.id === playerId);
+    progression["back-from-the-dead"].current = isCurrentlyRetired ? 1 : 0;
+
     // Calculate back-after progression (time since last activity)
     if (lastActiveAt !== null) {
       const now = Date.now();
@@ -2990,7 +3000,7 @@ export type AchievementProgression = {
   "back-after-1-year": BackAfterProgression;
   "back-after-2-years": BackAfterProgression;
   "retired": BaseProgression;
-  "back-from-the-dead": BaseProgression;
+  "back-from-the-dead": ProgressionWithTarget;
   "active-6-months": ProgressionWithTarget;
   "active-1-year": ProgressionWithTarget;
   "active-2-years": ProgressionWithTarget;
