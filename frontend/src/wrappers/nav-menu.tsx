@@ -34,11 +34,12 @@ export const NavMenu: React.FC = () => {
       { name: "🎖️ Achievements", to: "/achievements" },
       { name: "🏛️ Hall of Fame", to: "/hall-of-fame" },
       { name: "🤖 Simulations", to: "/simulations" },
-      // Changelog (/changelog) is deliberately left out until the navigation
-      // structure is reworked. Reachable by direct url in the meantime.
       { name: "🔧 Settings", to: "/settings" },
     ];
     if (session.isAuthenticated && session.sessionData?.role === "admin") {
+      // Changelog (/changelog) is deliberately admin-only until the navigation
+      // structure is reworked. Reachable by direct url for everyone else.
+      items.push({ name: "📜 Changelog", to: "/changelog" });
       items.push({ name: "📺 Live Game", to: "/live-game" });
       items.push({ name: "🔐 Admin Page", to: "/admin" });
     }
