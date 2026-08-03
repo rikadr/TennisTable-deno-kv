@@ -36,10 +36,10 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
     date: "2026-08-03",
     tags: ["new-feature"],
     summary:
-      "Hero of the Day 🦸 goes to the league record for most games played in a single day. The first day with 10 games sets the record; after that only a busier day takes it.",
+      "Hero of the Day 🦸 goes to the league record for most games played in a single day. The first day with 5 games sets the record; after that only a busier day takes it.",
     body: [
       text(
-        "Hero of the Day 🦸 is a league record, like Marathon Set and the streak records: it is held, not just earned. The first player to play 10 games in one calendar day establishes the record, and from then on it takes a strictly busier day to claim it. Wins and losses both count - the record is about showing up and playing.",
+        "Hero of the Day 🦸 is a league record, like Marathon Set and the streak records: it is held, not just earned. The first player to play 5 games in one calendar day establishes the record, and from then on it takes a strictly busier day to claim it. Wins and losses both count - the record is about showing up and playing.",
       ),
       text(
         "One award covers the whole record day: keep playing while you hold the record and the award grows with the day instead of stacking a new one per game. The progress view shows today's games against the record, your busiest day ever, and who currently holds it.",

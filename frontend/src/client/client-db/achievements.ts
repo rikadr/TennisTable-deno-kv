@@ -12,7 +12,7 @@ export const STREAK_RECORD_FLOOR = 3;
 // the Day record. Below this a day is too ordinary to be a record worth
 // holding. Once a record exists the floor is irrelevant — only beating the
 // record counts.
-export const GAMES_IN_DAY_RECORD_FLOOR = 10;
+export const GAMES_IN_DAY_RECORD_FLOOR = 5;
 
 export class Achievements {
   private parent: TennisTable;
