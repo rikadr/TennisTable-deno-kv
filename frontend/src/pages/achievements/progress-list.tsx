@@ -19,11 +19,14 @@ export const ProgressList: React.FC<ProgressListProps> = ({ selectedType }) => {
   const isTimePeriod =
     selectedType.startsWith("active-") || selectedType.startsWith("back-after-") || selectedType === "anniversary";
 
-  // Calculate progress for all players when a specific type is selected
+  // Calculate progress for all players when a specific type is selected.
+  // Retired players are included — their progress history is as real as
+  // anyone's — and tagged as retired in the list.
   const playersProgress = useMemo(() => {
     if (selectedType === "all") return [];
 
-    const players = context.players;
+    const activeIds = new Set(context.players.map((player) => player.id));
+    const players = context.allPlayers;
     return players
       .map((player) => {
         const progression = context.achievements.getPlayerProgression(player.id);
@@ -63,6 +66,7 @@ export const ProgressList: React.FC<ProgressListProps> = ({ selectedType }) => {
 
         return {
           player,
+          isRetired: !activeIds.has(player.id),
           current,
           target,
           percent,
@@ -75,7 +79,7 @@ export const ProgressList: React.FC<ProgressListProps> = ({ selectedType }) => {
         if (b.percent !== a.percent) return b.percent - a.percent;
         return b.current - a.current;
       });
-  }, [context.players, context.achievements, selectedType]);
+  }, [context.players, context.allPlayers, context.achievements, selectedType]);
 
   return (
     <div className="max-w-3xl mx-auto">
@@ -102,7 +106,7 @@ export const ProgressList: React.FC<ProgressListProps> = ({ selectedType }) => {
             </p>
           </div>
 
-            {playersProgress.map(({ player, current, target, percent, earned }, index) => {
+            {playersProgress.map(({ player, isRetired, current, target, percent, earned }, index) => {
               const hasEarned = earned > 0;
 
               return (
@@ -139,12 +143,19 @@ export const ProgressList: React.FC<ProgressListProps> = ({ selectedType }) => {
 
                     <div className="flex-1">
                       <div className="flex justify-between items-center mb-1">
-                        <Link
-                          to={`/player/${player.id}`}
-                          className="font-semibold hover:text-accent transition-colors"
-                        >
-                          {player.name}
-                        </Link>
+                        <div className="flex items-center gap-2">
+                          <Link
+                            to={`/player/${player.id}`}
+                            className="font-semibold hover:text-accent transition-colors"
+                          >
+                            {player.name}
+                          </Link>
+                          {isRetired && (
+                            <span className="bg-secondary-background text-secondary-text text-xs px-2 py-0.5 rounded-full font-normal shrink-0 ring-1 ring-primary-text/20">
+                              Retired
+                            </span>
+                          )}
+                        </div>
                         <span className="text-sm font-mono">
                            {isTimePeriod
                             ? `${formatTimePeriod(current)} / ${formatTimePeriod(target)}`

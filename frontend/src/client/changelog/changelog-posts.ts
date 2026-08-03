@@ -31,6 +31,39 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
+    slug: "retirement-achievements",
+    title: "2 new achievements for retiring and coming back",
+    date: "2026-08-03",
+    tags: ["new-feature"],
+    summary:
+      "Retired 🪦 marks leaving the league, Back From The Dead 🧟 marks returning from retirement, and retired players now appear in the achievements progress list.",
+    body: [
+      list(
+        "Retired 🪦 - earned when you retire from the league. Awarded for every retirement, should you make a habit of it.",
+        "Back From The Dead 🧟 - earned when you come back after retiring. The achievement shows how long you were gone.",
+      ),
+      text(
+        "The 2-year comeback achievement previously held the Back From The Dead name; it is now called A Cinderella Story 👸. Returning from an actual retirement is the stronger claim to the title.",
+      ),
+      text(
+        "The Everyone's Progress view on the achievements page now includes retired players, tagged with a Retired badge. Their history is as real as anyone's, and their names were already on the records they hold.",
+      ),
+    ],
+  },
+  {
+    slug: "record-achievement-targets-beyond-record",
+    title: "Record achievement progress bars now aim one beyond the record",
+    date: "2026-08-03",
+    tags: ["bug-fix"],
+    summary:
+      "Progress toward Longest Win/Lose Streak, Marathon Set and Leap Frog is now measured against the value that actually takes the record, not the record itself.",
+    body: [
+      text(
+        "The four record-chasing achievements are earned by beating the league record, not by matching it. Their progress bars and targets now reflect that: with the win-streak record at 8, the bar aims at 9. Previously the target was the record itself, so tying it read as 100% without earning anything. If your progress on one of these dropped slightly, this is why - the goal moved to where it always really was.",
+      ),
+    ],
+  },
+  {
     slug: "tournament-timeline-whole-days",
     title: "The tournament timeline counts whole days",
     date: "2026-07-31",

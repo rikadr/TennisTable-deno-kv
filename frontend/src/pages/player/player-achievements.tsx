@@ -91,9 +91,19 @@ export const ACHIEVEMENT_LABELS: Record<string, { title: string; description: st
     icon: "🙈",
   },
   "back-after-2-years": {
-    title: "Back From The Dead",
+    title: "A Cinderella Story",
     description: "Return after 2 years of inactivity",
-    icon: "💀",
+    icon: "👸",
+  },
+  "retired": {
+    title: "Retired",
+    description: "Retire from the league",
+    icon: "🪦",
+  },
+  "back-from-the-dead": {
+    title: "Back From The Dead",
+    description: "Come back to the league after retiring",
+    icon: "🧟",
   },
   "active-6-months": {
     title: "Regular",
@@ -533,6 +543,13 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
                     </p>
                   )}
 
+                {achievement.type === "back-from-the-dead" && achievement.data && (
+                  <p className="text-xs text-secondary-text/70 mt-2">
+                    Retired for {daysBetween(achievement.data.retiredAt, achievement.earnedAt)} day
+                    {daysBetween(achievement.data.retiredAt, achievement.earnedAt) !== 1 ? "s" : ""}
+                  </p>
+                )}
+
                 {achievement.type === "perfect-day" && achievement.data && (
                   <p className="text-xs text-secondary-text/70 mt-2">
                     {achievement.data.wins} wins, 0 losses on {dateString(achievement.data.day)}
@@ -854,7 +871,7 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                                   {context.playerName(data.recordHolder)}
                                 </span>
                               </Link>
-                              . Beat {data.target} to take it.
+                              . Win a deuce set at {data.target} or higher to take it.
                             </>
                           ) : (
                             <>No record set yet — win a deuce set above 11 to start the record.</>
@@ -873,7 +890,7 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                                   {context.playerName(data.recordHolder)}
                                 </span>
                               </Link>
-                              . Jump more than {data.target} rank{data.target !== 1 ? "s" : ""} in one game to take it.
+                              . Jump {data.target} or more ranks in one game to take it.
                             </>
                           ) : (
                             <>No record set yet — jump 2 or more ranks in a single game to start the record.</>
@@ -902,8 +919,8 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                                       {context.playerName(data.recordHolder)}
                                     </span>
                                   </Link>
-                                  . {type === "longest-win-streak" ? "Win" : "Lose"} {(data.target ?? 0) + 1} in a
-                                  row to take it.
+                                  . {type === "longest-win-streak" ? "Win" : "Lose"} {data.target} in a row to
+                                  take it.
                                 </>
                               ) : (
                                 <>

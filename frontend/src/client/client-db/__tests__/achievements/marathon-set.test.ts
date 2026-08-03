@@ -301,19 +301,20 @@ describe("Marathon Set Achievement", () => {
 
     const aliceProg = tt.achievements.getPlayerProgression("alice")["marathon-set"];
     expect(aliceProg.current).toBe(14);
-    expect(aliceProg.target).toBe(14);
+    // The record is 14, so a winning score of 15 is what takes it.
+    expect(aliceProg.target).toBe(15);
     expect(aliceProg.recordHolder).toBe("alice");
     expect(aliceProg.earned).toBe(1);
 
     const bobProg = tt.achievements.getPlayerProgression("bob")["marathon-set"];
     expect(bobProg.current).toBe(13);
-    expect(bobProg.target).toBe(14);
+    expect(bobProg.target).toBe(15);
     expect(bobProg.recordHolder).toBe("alice");
     expect(bobProg.earned).toBe(0);
 
     const carolProg = tt.achievements.getPlayerProgression("carol")["marathon-set"];
     expect(carolProg.current).toBe(0);
-    expect(carolProg.target).toBe(14);
+    expect(carolProg.target).toBe(15);
     expect(carolProg.recordHolder).toBe("alice");
     expect(carolProg.earned).toBe(0);
   });

@@ -604,7 +604,35 @@ export class Achievements {
     this.#calculateEloAchievements();
     this.#checkFullHouseAndHumbledAchievements();
     this.#checkPerfectDayAndWeekAchievements();
+    this.#checkRetirementAchievements();
     this.hasCalculated = true;
+  }
+
+  // Awards "Retired" for every PLAYER_DEACTIVATED event and "Back From The
+  // Dead" for every PLAYER_REACTIVATED that follows one — both earnable once
+  // per retirement. The comeback remembers when the retirement happened so
+  // the display can show how long the player was gone. A reactivation with
+  // no recorded retirement (shouldn't happen, but events are data) awards
+  // nothing.
+  #checkRetirementAchievements() {
+    const lastRetiredAt = new Map<string, number>();
+    for (const event of this.parent.events) {
+      if (event.type === EventTypeEnum.PLAYER_DEACTIVATED) {
+        lastRetiredAt.set(event.stream, event.time);
+        this.#addAchievement(
+          event.stream,
+          this.#createAchievement("retired", event.stream, event.time, undefined),
+        );
+      } else if (event.type === EventTypeEnum.PLAYER_REACTIVATED) {
+        const retiredAt = lastRetiredAt.get(event.stream);
+        if (retiredAt === undefined) continue;
+        lastRetiredAt.delete(event.stream);
+        this.#addAchievement(
+          event.stream,
+          this.#createAchievement("back-from-the-dead", event.stream, event.time, { retiredAt }),
+        );
+      }
+    }
   }
 
   // Awards "Perfect Day" and "Perfect Week".
@@ -2014,11 +2042,14 @@ export class Achievements {
       "perfect-day": { current: 0, target: 5, earned: 0 },
       "perfect-week": { current: 0, target: 5, earned: 0 },
       "streak-ender": { earned: 0 },
+      // Record-chasing achievements are earned by strictly exceeding the
+      // league record, so their target is one beyond it — reaching the
+      // target is what earns the award, same as every other progress bar.
       "longest-win-streak": {
         earned: 0,
         current: 0,
         personalBest: 0,
-        target: this.winStreakRecord.length,
+        target: this.winStreakRecord.length === undefined ? undefined : this.winStreakRecord.length + 1,
         recordHolder: this.winStreakRecord.holder,
       },
 
@@ -2031,7 +2062,7 @@ export class Achievements {
         earned: 0,
         current: 0,
         personalBest: 0,
-        target: this.loseStreakRecord.length,
+        target: this.loseStreakRecord.length === undefined ? undefined : this.loseStreakRecord.length + 1,
         recordHolder: this.loseStreakRecord.holder,
       },
 
@@ -2043,7 +2074,7 @@ export class Achievements {
       "leap-frog": {
         earned: 0,
         current: 0,
-        target: this.leapFrogRecord.ranksJumped,
+        target: this.leapFrogRecord.ranksJumped === undefined ? undefined : this.leapFrogRecord.ranksJumped + 1,
         recordHolder: this.leapFrogRecord.holder,
       },
       "david": { current: 0, target: 30, earned: 0 },
@@ -2064,7 +2095,7 @@ export class Achievements {
       "marathon-set": {
         earned: 0,
         current: 0,
-        target: this.marathonSetRecord.score,
+        target: this.marathonSetRecord.score === undefined ? undefined : this.marathonSetRecord.score + 1,
         recordHolder: this.marathonSetRecord.holder,
       },
       // Record-breaking, no progress bar. recordMinutes is the current league
@@ -2091,6 +2122,8 @@ export class Achievements {
       "back-after-6-months": { earned: 0, target: SIX_MONTHS },
       "back-after-1-year": { earned: 0, target: ONE_YEAR },
       "back-after-2-years": { earned: 0, target: TWO_YEARS },
+      "retired": { earned: 0 },
+      "back-from-the-dead": { earned: 0 },
 
       // Competition
       "tournament-participated": { earned: 0 },
@@ -2624,6 +2657,8 @@ type AchievementDefinitions = {
   "back-after-6-months": { lastGameAt: number };
   "back-after-1-year": { lastGameAt: number };
   "back-after-2-years": { lastGameAt: number };
+  "retired": undefined;
+  "back-from-the-dead": { retiredAt: number };
   "active-6-months": { firstGameInPeriod: number };
   "active-1-year": { firstGameInPeriod: number };
   "active-2-years": { firstGameInPeriod: number };
@@ -2765,9 +2800,9 @@ type MissingPlayersProgression = ProgressionWithTarget & {
 type LeapFrogProgression = BaseProgression & {
   // Player's own biggest single-game leaderboard jump (0 if none).
   current: number;
-  // The league record — ranks the player must strictly exceed to earn the
-  // next Leap Frog award. Undefined when no one has set a record yet (a
-  // ≥ 2-rank jump wins it outright).
+  // One rank beyond the league record — the jump that earns the next Leap
+  // Frog award. Undefined when no one has set a record yet (a ≥ 2-rank
+  // jump wins it outright).
   target?: number;
   // Player who currently holds the league record, if any.
   recordHolder?: string;
@@ -2777,10 +2812,9 @@ type MarathonSetProgression = BaseProgression & {
   // Player's own highest winning set score from a true-deuce set
   // they won (winner ≥ 12, loser ≥ 10). 0 if they have none.
   current: number;
-  // The league-wide record — the winning score this player must
-  // strictly exceed to earn the next Marathon Set award. Undefined
-  // when no one has set a record yet (next qualifying deuce set wins
-  // it outright).
+  // One point beyond the league-wide record — the winning score that
+  // earns the next Marathon Set award. Undefined when no one has set a
+  // record yet (next qualifying deuce set wins it outright).
   target?: number;
   // Player who currently holds the league record, if any.
   recordHolder?: string;
@@ -2791,9 +2825,9 @@ type StreakRecordProgression = BaseProgression & {
   // the other way). Only a live streak can grow into the record, so this is
   // what the progress bar measures.
   current: number;
-  // The league record — the streak this player must strictly exceed to take
-  // it. Undefined while nobody holds it (a streak of STREAK_RECORD_FLOOR
-  // takes it outright).
+  // One beyond the league record — the streak that takes it. Undefined
+  // while nobody holds it (a streak of STREAK_RECORD_FLOOR takes it
+  // outright).
   target?: number;
   // Player who currently holds the league record, if any.
   recordHolder?: string;
@@ -2825,6 +2859,8 @@ export type AchievementProgression = {
   "back-after-6-months": BackAfterProgression;
   "back-after-1-year": BackAfterProgression;
   "back-after-2-years": BackAfterProgression;
+  "retired": BaseProgression;
+  "back-from-the-dead": BaseProgression;
   "active-6-months": ProgressionWithTarget;
   "active-1-year": ProgressionWithTarget;
   "active-2-years": ProgressionWithTarget;
