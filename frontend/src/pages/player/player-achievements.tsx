@@ -155,7 +155,7 @@ export const ACHIEVEMENT_LABELS: Record<string, { title: string; description: st
   },
   "milestone-game": {
     title: "Milestone Game",
-    description: "Play in a league milestone game — the 100th, 500th, 1,000th and every thousandth after",
+    description: "Play in a league milestone game — every 500th game played",
     icon: "🏁",
   },
   "nice-game": {

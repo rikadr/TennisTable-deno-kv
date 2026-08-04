@@ -36,12 +36,12 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
     date: "2026-08-04",
     tags: ["new-feature", "feature-update"],
     summary:
-      "Shootout 💥 is the record for the most points in one game, Season Opener 🌱 goes to the players of a season's first game, Milestone Game 🏁 marks the league's 100th, 500th and every thousandth game, David 🪨 and Goliath 🗿 are now league records, and Perfect Week 🗓️ accepts any 5 consecutive days within a week.",
+      "Shootout 💥 is the record for the most points in one game, Season Opener 🌱 goes to the players of a season's first game, Milestone Game 🏁 marks every 500th game the league plays, David 🪨 and Goliath 🗿 are now league records, and Perfect Week 🗓️ accepts any 5 consecutive days within a week.",
     body: [
       list(
         "Shootout 💥 - the league record for the most combined points in a single game. Only the 3 highest-scoring sets count, so a best-of-5 final competes on equal terms with an ordinary best-of-3. A 60+ point game sets the first record.",
         "Season Opener 🌱 - earned by both players of a season's very first game. Awarded per season, so it comes around again every quarter.",
-        "Milestone Game 🏁 - earned by both players of the league's 100th, 500th, 1,000th and every following thousandth game. Deleted games do not count. The progress view is shared by everyone and restarts at each milestone, showing how many games remain until the next milestone game.",
+        "Milestone Game 🏁 - earned by both players of every 500th game the league plays. Deleted games do not count. The progress view is shared by everyone and restarts at each milestone, showing how many games remain until the next milestone game.",
       ),
       text(
         "David 🪨 and Goliath 🗿 are now league records rather than fixed thresholds. Previously every single-game swing of 30+ Score earned them; now the first 20+ Score swing set the record, and only a strictly bigger single-game gain (David, for the winner) or loss (Goliath, for the loser) takes it over. Score is zero-sum, so one upset always moves both records together. Because achievements are recomputed from history, some previously earned David and Goliath badges are gone - only the record-breaking upsets remain, and the progress view now shows the record and its holder.",

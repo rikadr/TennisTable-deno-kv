@@ -1,9 +1,9 @@
 import { TennisTable } from "../../tennis-table";
 import { EventType, EventTypeEnum } from "../../event-store/event-types";
 
-// Milestone Game is awarded to BOTH players of the league's 100th, 500th,
-// 1,000th and every following thousandth game. Deleted games do not count —
-// the numbering follows the games that still exist.
+// Milestone Game is awarded to BOTH players of every 500th league game
+// (the 500th, 1,000th, 1,500th, ...). Deleted games do not count — the
+// numbering follows the games that still exist.
 describe("Milestone Game Achievement", () => {
   const baseEvents: EventType[] = [
     { type: EventTypeEnum.PLAYER_CREATED, stream: "alice", time: 1, data: { name: "Alice" } },
@@ -22,8 +22,8 @@ describe("Milestone Game Achievement", () => {
   const games = (count: number): EventType[] =>
     Array.from({ length: count }, (_, i) => game(`g-${i + 1}`, 1000 + i, "alice", "bob"));
 
-  it("awards BOTH players of the 100th game — and not the games around it", () => {
-    const events: EventType[] = [...baseEvents, ...games(101)];
+  it("awards BOTH players of the 500th game — and not the games around it", () => {
+    const events: EventType[] = [...baseEvents, ...games(501)];
 
     const tt = new TennisTable({ events });
     tt.achievements.calculateAchievements();
@@ -35,14 +35,14 @@ describe("Milestone Game Achievement", () => {
     expect(alice[0]).toStrictEqual({
       type: "milestone-game",
       earnedBy: "alice",
-      earnedAt: 1000 + 99,
-      data: { gameId: "g-100", opponent: "bob", milestone: 100 },
+      earnedAt: 1000 + 499,
+      data: { gameId: "g-500", opponent: "bob", milestone: 500 },
     });
     expect(bob[0].data?.opponent).toBe("alice");
   });
 
   it("does NOT award before the first milestone", () => {
-    const events: EventType[] = [...baseEvents, ...games(99)];
+    const events: EventType[] = [...baseEvents, ...games(499)];
 
     const tt = new TennisTable({ events });
     tt.achievements.calculateAchievements();
@@ -50,25 +50,25 @@ describe("Milestone Game Achievement", () => {
     expect(tt.achievements.getAchievements("alice").filter((a) => a.type === "milestone-game")).toHaveLength(0);
   });
 
-  it("awards at 100, 500 and 1,000 — one badge per milestone", () => {
-    const events: EventType[] = [...baseEvents, ...games(1000)];
+  it("awards at every 500th game — one badge per milestone", () => {
+    const events: EventType[] = [...baseEvents, ...games(1500)];
 
     const tt = new TennisTable({ events });
     tt.achievements.calculateAchievements();
 
     const alice = tt.achievements.getAchievements("alice").filter((a) => a.type === "milestone-game");
-    expect(alice.map((a) => a.data?.milestone)).toStrictEqual([100, 500, 1000]);
+    expect(alice.map((a) => a.data?.milestone)).toStrictEqual([500, 1000, 1500]);
   });
 
   it("deleted games do not count toward the milestone numbering", () => {
-    // 100 games are created, but one early game is deleted — so the game
-    // created 100th is only league game #99, and the 101st created game
-    // becomes the real #100.
+    // 500 games are created, but one early game is deleted — so the game
+    // created 500th is only league game #499, and the 501st created game
+    // becomes the real #500.
     const events: EventType[] = [
       ...baseEvents,
-      ...games(100),
-      { type: EventTypeEnum.GAME_DELETED, stream: "g-50", time: 5000, data: null },
-      game("g-101", 6000, "carol", "alice"),
+      ...games(500),
+      { type: EventTypeEnum.GAME_DELETED, stream: "g-250", time: 5000, data: null },
+      game("g-501", 6000, "carol", "alice"),
     ];
 
     const tt = new TennisTable({ events });
@@ -76,47 +76,46 @@ describe("Milestone Game Achievement", () => {
 
     const carol = tt.achievements.getAchievements("carol").filter((a) => a.type === "milestone-game");
     expect(carol).toHaveLength(1);
-    expect(carol[0].data).toStrictEqual({ gameId: "g-101", opponent: "alice", milestone: 100 });
+    expect(carol[0].data).toStrictEqual({ gameId: "g-501", opponent: "alice", milestone: 500 });
 
-    // Alice was in every game; her only milestone badge is g-101 too — the
-    // originally-100th created game never counted as #100.
+    // Alice was in every game; her only milestone badge is g-501 too — the
+    // originally-500th created game never counted as #500.
     const alice = tt.achievements.getAchievements("alice").filter((a) => a.type === "milestone-game");
     expect(alice).toHaveLength(1);
-    expect(alice[0].data?.gameId).toBe("g-101");
+    expect(alice[0].data?.gameId).toBe("g-501");
   });
 
-  it("progression restarts at each milestone and spans to the next", () => {
-    // 120 games: the 100 milestone has passed, so the chase is 20 games into
-    // the 400-game span from 100 to 500 — 380 games until the next milestone.
-    const events: EventType[] = [...baseEvents, ...games(120)];
+  it("progression restarts at each milestone and spans the 500-game interval", () => {
+    // 620 games: 120 into the 500-game stretch toward 1,000 — 380 to go.
+    const events: EventType[] = [...baseEvents, ...games(620)];
 
     const tt = new TennisTable({ events });
     tt.achievements.calculateAchievements();
 
     const alice = tt.achievements.getPlayerProgression("alice")["milestone-game"];
-    expect(alice.current).toBe(20);
-    expect(alice.target).toBe(400);
+    expect(alice.current).toBe(120);
+    expect(alice.target).toBe(500);
     expect(alice.earned).toBe(1);
 
     // League-wide chase: a player who was in none of the games sees the
     // same progress, just nothing earned.
     const carol = tt.achievements.getPlayerProgression("carol")["milestone-game"];
-    expect(carol.current).toBe(20);
-    expect(carol.target).toBe(400);
+    expect(carol.current).toBe(120);
+    expect(carol.target).toBe(500);
     expect(carol.earned).toBe(0);
   });
 
-  it("progression starts from 0 before the first milestone and resets to 0 at one", () => {
-    const before = new TennisTable({ events: [...baseEvents, ...games(99)] });
+  it("progression starts from 0 and resets to 0 at a milestone", () => {
+    const before = new TennisTable({ events: [...baseEvents, ...games(499)] });
     before.achievements.calculateAchievements();
     const beforeProgress = before.achievements.getPlayerProgression("alice")["milestone-game"];
-    expect(beforeProgress.current).toBe(99);
-    expect(beforeProgress.target).toBe(100);
+    expect(beforeProgress.current).toBe(499);
+    expect(beforeProgress.target).toBe(500);
 
-    const at = new TennisTable({ events: [...baseEvents, ...games(100)] });
+    const at = new TennisTable({ events: [...baseEvents, ...games(500)] });
     at.achievements.calculateAchievements();
     const atProgress = at.achievements.getPlayerProgression("alice")["milestone-game"];
     expect(atProgress.current).toBe(0);
-    expect(atProgress.target).toBe(400);
+    expect(atProgress.target).toBe(500);
   });
 });

@@ -36,30 +36,19 @@ export const SHOOTOUT_SETS_COUNTED = 3;
 // record should take a genuinely point-heavy game, not just any full game.
 export const SHOOTOUT_RECORD_FLOOR = 60;
 
-// League game counts whose game awards "Milestone Game" to both players: the
-// 100th, 500th, 1,000th and every thousandth after. Deleted games do not
-// count — the numbering follows the games that still exist.
+// How often "Milestone Game" is awarded: every 500th league game (the 500th,
+// 1,000th, 1,500th, ...), to both players. Deleted games do not count — the
+// numbering follows the games that still exist.
+export const MILESTONE_GAME_INTERVAL = 500;
+
 export function isMilestoneGameNumber(gameNumber: number): boolean {
-  return gameNumber === 100 || gameNumber === 500 || (gameNumber > 0 && gameNumber % 1000 === 0);
+  return gameNumber > 0 && gameNumber % MILESTONE_GAME_INTERVAL === 0;
 }
 
 // The next milestone strictly above `gameNumber` — what the league is
 // currently counting toward. Used by the progression view.
 export function nextMilestoneGameNumber(gameNumber: number): number {
-  if (gameNumber < 100) return 100;
-  if (gameNumber < 500) return 500;
-  return (Math.floor(gameNumber / 1000) + 1) * 1000;
-}
-
-// The latest milestone at or below `gameNumber` (0 before the first one).
-// Together with nextMilestoneGameNumber it frames the current chase: the
-// progression bar restarts at each milestone and fills across the span to
-// the next.
-export function previousMilestoneGameNumber(gameNumber: number): number {
-  if (gameNumber < 100) return 0;
-  if (gameNumber < 500) return 100;
-  if (gameNumber < 1000) return 500;
-  return Math.floor(gameNumber / 1000) * 1000;
+  return (Math.floor(gameNumber / MILESTONE_GAME_INTERVAL) + 1) * MILESTONE_GAME_INTERVAL;
 }
 
 export class Achievements {
@@ -232,9 +221,9 @@ export class Achievements {
     const gameLimitForRanked = this.parent.client.gameLimitForRanked;
 
     this.parent.games.forEach((game, gameIndex) => {
-      // Check for "Milestone Game": awarded to both players of the league's
-      // 100th, 500th, 1,000th and every following thousandth game. Deleted
-      // games are already gone from parent.games, so they never count.
+      // Check for "Milestone Game": awarded to both players of every 500th
+      // league game. Deleted games are already gone from parent.games, so
+      // they never count.
       const leagueGameNumber = gameIndex + 1;
       if (isMilestoneGameNumber(leagueGameNumber)) {
         this.#addAchievement(
@@ -3080,14 +3069,12 @@ export class Achievements {
 
     // Milestone Game progression is league-wide (everyone shares it) and
     // restarts at every milestone: current is the games played since the
-    // previous milestone (0 right after one) and target is the span to the
-    // next, so the bar gauges how close the next milestone game is —
+    // previous milestone (0 right after one) and target is the 500-game
+    // interval, so the bar gauges how close the next milestone game is —
     // target - current games remain. Deleted games are already gone from
     // parent.games, so they don't count.
-    const totalLeagueGames = this.parent.games.length;
-    const previousMilestone = previousMilestoneGameNumber(totalLeagueGames);
-    progression["milestone-game"].current = totalLeagueGames - previousMilestone;
-    progression["milestone-game"].target = nextMilestoneGameNumber(totalLeagueGames) - previousMilestone;
+    progression["milestone-game"].current = this.parent.games.length % MILESTONE_GAME_INTERVAL;
+    progression["milestone-game"].target = MILESTONE_GAME_INTERVAL;
 
     // Climber progression: current Elo - all-time low Elo since the
     // player first became ranked. Players who never became ranked have
@@ -3266,8 +3253,8 @@ type AchievementDefinitions = {
   };
   // Awarded to both players of a season's very first game.
   "season-opener": { seasonStart: number; gameId: string; opponent: string };
-  // Awarded to both players of a league milestone game (the 100th, 500th,
-  // 1,000th and every thousandth after). `milestone` is that game number.
+  // Awarded to both players of every 500th league game. `milestone` is that
+  // game number.
   "milestone-game": { gameId: string; opponent: string; milestone: number };
 };
 
