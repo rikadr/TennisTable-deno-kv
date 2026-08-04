@@ -16,6 +16,35 @@ export const STREAK_RECORD_FLOOR = 3;
 // naturally accumulate higher records on their own.
 export const GAMES_IN_PERIOD_RECORD_FLOOR = 3;
 
+// Smallest single-game Elo swing that can establish the very first David /
+// Goliath record (the same game sets both — Elo is zero-sum, so the winner's
+// gain is the loser's loss). An evenly matched win moves 16 points, so 20
+// takes a real upset (the winner roughly 90+ Elo below the loser). The floor
+// only matters until the first record exists; after that only a strictly
+// bigger swing takes it.
+export const UPSET_RECORD_FLOOR = 20;
+
+// How many sets count toward a game's Shootout score. Most games are best of
+// 3, but one-set games and best-of-5 games (tournament finals) exist — summing
+// every set would hand the record to whoever plays the longest format. Only
+// the 3 highest-scoring sets count, so a best of 5 competes on equal terms
+// with a best of 3 (shorter games are naturally at a disadvantage).
+export const SHOOTOUT_SETS_COUNTED = 3;
+
+// Fewest combined points (across the counted sets) that can establish the very
+// first Shootout record. Three ordinary 11–7 sets are ~54 points; the first
+// record should take a genuinely point-heavy game, not just any full game.
+export const SHOOTOUT_RECORD_FLOOR = 60;
+
+// How often "Milestone Game" is awarded: every 500th league game (the 500th,
+// 1,000th, 1,500th, ...), to both players. Deleted games do not count — the
+// numbering follows the games that still exist.
+export const MILESTONE_GAME_INTERVAL = 500;
+
+export function isMilestoneGameNumber(gameNumber: number): boolean {
+  return gameNumber > 0 && gameNumber % MILESTONE_GAME_INTERVAL === 0;
+}
+
 export class Achievements {
   private parent: TennisTable;
   private hasCalculated = false;
@@ -27,6 +56,32 @@ export class Achievements {
   // Largest Elo loss each player has suffered from a loss where BOTH
   // players were ranked at the time. Used for Goliath progression.
   worstGoliathLoss: Map<string, number> = new Map();
+  // League-wide running records for the David / Goliath achievements: the
+  // largest single-game Elo swing between two ranked players to date. The
+  // same game always sets both (Elo is zero-sum) so the values are equal —
+  // only the holders differ (David's winner, Goliath's loser). Undefined
+  // until a swing reaches UPSET_RECORD_FLOOR and establishes the first
+  // record. Used by the progression view so players can see the mark to beat.
+  davidRecord: { eloGain: number | undefined; holder: string | undefined } = {
+    eloGain: undefined,
+    holder: undefined,
+  };
+  goliathRecord: { eloLoss: number | undefined; holder: string | undefined } = {
+    eloLoss: undefined,
+    holder: undefined,
+  };
+  // League-wide running record for the Shootout achievement: the most
+  // combined points in a single game, counting only the SHOOTOUT_SETS_COUNTED
+  // highest-scoring sets so different game formats compete fairly. Both
+  // players of the record game hold it together. Undefined until a game
+  // reaches SHOOTOUT_RECORD_FLOOR and establishes the first record.
+  shootoutRecord: { points: number | undefined; holders: string[] } = {
+    points: undefined,
+    holders: [],
+  };
+  // Each player's own highest Shootout score (top-3-sets combined points in
+  // one game). Used for Shootout progression.
+  bestShootout: Map<string, number> = new Map();
   // Lowest Elo each player has held while ranked, starting from the
   // moment they first crossed gameLimitForRanked games. Used for the
   // Climber achievement and progression. `time` is when that low was
@@ -103,6 +158,10 @@ export class Achievements {
     this.achievementMap.clear();
     this.bestDavidGain.clear();
     this.worstGoliathLoss.clear();
+    this.davidRecord = { eloGain: undefined, holder: undefined };
+    this.goliathRecord = { eloLoss: undefined, holder: undefined };
+    this.shootoutRecord = { points: undefined, holders: [] };
+    this.bestShootout.clear();
     this.climberAllTimeLow.clear();
     this.marathonSetRecord = { score: undefined, holder: undefined };
     this.leapFrogRecord = { ranksJumped: undefined, holder: undefined };
@@ -155,7 +214,30 @@ export class Achievements {
 
     const gameLimitForRanked = this.parent.client.gameLimitForRanked;
 
-    this.parent.games.forEach((game) => {
+    this.parent.games.forEach((game, gameIndex) => {
+      // Check for "Milestone Game": awarded to both players of every 500th
+      // league game. Deleted games are already gone from parent.games, so
+      // they never count.
+      const leagueGameNumber = gameIndex + 1;
+      if (isMilestoneGameNumber(leagueGameNumber)) {
+        this.#addAchievement(
+          game.winner,
+          this.#createAchievement("milestone-game", game.winner, game.playedAt, {
+            gameId: game.id,
+            opponent: game.loser,
+            milestone: leagueGameNumber,
+          }),
+        );
+        this.#addAchievement(
+          game.loser,
+          this.#createAchievement("milestone-game", game.loser, game.playedAt, {
+            gameId: game.id,
+            opponent: game.winner,
+            milestone: leagueGameNumber,
+          }),
+        );
+      }
+
       // Initialize player trackers if they don't exist
       if (!playerTracker.has(game.winner)) {
         playerTracker.set(game.winner, {
@@ -497,8 +579,9 @@ export class Achievements {
         );
       }
 
-      // Check for marathon-set achievements (each set evaluated in
-      // order against the running league-wide record).
+      // Check the set-score records: Marathon Set (each set evaluated in
+      // order against the running league-wide record) and Shootout (most
+      // combined points in one game, counting only its highest-scoring sets).
       if (game.score?.setPoints) {
         this.#checkMarathonSetAchievements(
           game.winner,
@@ -507,6 +590,7 @@ export class Achievements {
           game.score.setPoints,
           game.playedAt,
         );
+        this.#checkShootoutAchievement(game.winner, game.loser, game.id, game.score.setPoints, game.playedAt);
       }
 
       // Check for donut achievements (individual sets where loser scored 0)
@@ -694,12 +778,13 @@ export class Achievements {
   // undefeated day still in progress stays a pending attempt (tracked by
   // progression) until local midnight passes.
   //
-  // Perfect Week: for every working week (Monday–Friday, local time) in
-  // which a player won at least one game on each of the five weekdays.
-  // Wins on Saturday / Sunday do not count. Stamped at the game that
-  // completed the fifth distinct weekday. Unlike Perfect Day this is awarded
-  // immediately: losses never disqualify a week, so nothing later in the week
-  // can take it away.
+  // Perfect Week: for every week (Monday-start, local time) in which a
+  // player won at least one game on each of 5 consecutive calendar days,
+  // all within that same week — Mon–Fri, Tue–Sat or Wed–Sun. A run that
+  // crosses into the next week (e.g. Fri–Tue) does not count. Stamped at the
+  // game that completed the first such 5-day run; one award per week even if
+  // more days are won. Unlike Perfect Day this is awarded immediately:
+  // losses never disqualify a week, so nothing later can take it away.
   //
   // Both are earnable multiple times — once per qualifying day / week.
   // Games are already time-ordered, so the completing win's timestamp is
@@ -722,7 +807,10 @@ export class Achievements {
 
     type DayStats = { wins: number; losses: number; lastWinAt: number };
     const perDay = new Map<string, Map<number, DayStats>>();
-    type WeekStats = { weekdaysWon: Set<number>; completedAt: number | null };
+    // daysWon holds day offsets from the week's Monday (0=Mon..6=Sun).
+    // startOffset is the first day of the 5-day run that completed the week
+    // (only meaningful once completedAt is set).
+    type WeekStats = { daysWon: Set<number>; completedAt: number | null; startOffset: number };
     const perWeek = new Map<string, Map<number, WeekStats>>();
 
     const getDayStats = (playerId: string, day: number): DayStats => {
@@ -746,7 +834,7 @@ export class Achievements {
       }
       let stats = weeks.get(week);
       if (!stats) {
-        stats = { weekdaysWon: new Set(), completedAt: null };
+        stats = { daysWon: new Set(), completedAt: null, startOffset: 0 };
         weeks.set(week, stats);
       }
       return stats;
@@ -759,15 +847,28 @@ export class Achievements {
       winnerDay.lastWinAt = game.playedAt;
       getDayStats(game.loser, day).losses++;
 
-      // Perfect Week only counts wins on Monday–Friday.
-      const weekday = new Date(game.playedAt).getDay(); // 0=Sun..6=Sat
-      if (weekday >= 1 && weekday <= 5) {
-        const week = weekStartOf(game.playedAt);
-        const winnerWeek = getWeekStats(game.winner, week);
-        if (!winnerWeek.weekdaysWon.has(weekday)) {
-          winnerWeek.weekdaysWon.add(weekday);
-          if (winnerWeek.weekdaysWon.size === 5 && winnerWeek.completedAt === null) {
-            winnerWeek.completedAt = game.playedAt;
+      // Perfect Week counts wins on any day; what matters is completing a
+      // run of 5 consecutive won days inside the week (start offset 0, 1 or
+      // 2 — Mon–Fri, Tue–Sat or Wed–Sun).
+      const dayOffset = (new Date(game.playedAt).getDay() + 6) % 7; // 0=Mon..6=Sun
+      const week = weekStartOf(game.playedAt);
+      const winnerWeek = getWeekStats(game.winner, week);
+      if (!winnerWeek.daysWon.has(dayOffset)) {
+        winnerWeek.daysWon.add(dayOffset);
+        if (winnerWeek.completedAt === null) {
+          for (let start = 0; start <= 2; start++) {
+            let runComplete = true;
+            for (let offset = start; offset < start + 5; offset++) {
+              if (!winnerWeek.daysWon.has(offset)) {
+                runComplete = false;
+                break;
+              }
+            }
+            if (runComplete) {
+              winnerWeek.completedAt = game.playedAt;
+              winnerWeek.startOffset = start;
+              break;
+            }
           }
         }
       }
@@ -793,15 +894,20 @@ export class Achievements {
       }
     }
 
-    // Award Perfect Week for each week won on all five weekdays, in week order.
+    // Award Perfect Week for each week with a completed 5-day run, in week
+    // order. setDate keeps local midnight across DST, so the run's first day
+    // is derived from the week's Monday rather than by adding 24h multiples.
     for (const [playerId, weeks] of perWeek) {
       const sortedWeeks = Array.from(weeks.entries()).sort((a, b) => a[0] - b[0]);
       for (const [week, stats] of sortedWeeks) {
         if (stats.completedAt !== null) {
+          const startDate = new Date(week);
+          startDate.setDate(startDate.getDate() + stats.startOffset);
           this.#addAchievement(
             playerId,
             this.#createAchievement("perfect-week", playerId, stats.completedAt, {
               weekStart: week,
+              startDay: startDate.getTime(),
             }),
           );
         }
@@ -1401,12 +1507,14 @@ export class Achievements {
         }
       }
 
-      // David: ≥ 30 Elo gain from beating a much higher rated opponent.
-      // Goliath: mirror image — ≥ 30 Elo lost by the higher-rated loser.
-      // Elo is zero-sum, so the loser's loss magnitude equals the
-      // winner's gain. Both players must have been ranked at the time
-      // of playing the match (pre-match ranks non-null) for either to
-      // count.
+      // David: the league record for the biggest single-game Elo gain.
+      // Goliath: mirror image — the record for the biggest single-game Elo
+      // loss. Elo is zero-sum, so the loser's loss magnitude equals the
+      // winner's gain and one game always sets (or beats) both records at
+      // once. Both players must have been ranked at the time of playing the
+      // match (pre-match ranks non-null) for the game to count. A swing of
+      // UPSET_RECORD_FLOOR establishes the first record; after that only a
+      // strictly bigger swing takes the records over.
       if (winnerRankBefore !== null && loserRankBefore !== null) {
         const prevBest = this.bestDavidGain.get(game.winner) ?? 0;
         if (eloGain > prevBest) {
@@ -1416,13 +1524,17 @@ export class Achievements {
         if (eloGain > prevWorst) {
           this.worstGoliathLoss.set(game.loser, eloGain);
         }
-        if (eloGain >= 30) {
+        const currentUpsetRecord = this.davidRecord.eloGain;
+        const beatsUpsetRecord =
+          currentUpsetRecord === undefined ? eloGain >= UPSET_RECORD_FLOOR : eloGain > currentUpsetRecord;
+        if (beatsUpsetRecord) {
           this.#addAchievement(
             game.winner,
             this.#createAchievement("david", game.winner, game.playedAt, {
               opponent: game.loser,
               gameId: game.id,
               eloGain,
+              previousRecord: currentUpsetRecord,
             }),
           );
           this.#addAchievement(
@@ -1431,8 +1543,11 @@ export class Achievements {
               opponent: game.winner,
               gameId: game.id,
               eloLoss: eloGain,
+              previousRecord: this.goliathRecord.eloLoss,
             }),
           );
+          this.davidRecord = { eloGain, holder: game.winner };
+          this.goliathRecord = { eloLoss: eloGain, holder: game.loser };
         }
       }
 
@@ -1512,6 +1627,82 @@ export class Achievements {
 
       this.marathonSetRecord = { score: setWinnerScore, holder: setWinnerId };
     });
+  }
+
+  // The sets that count toward a game's Shootout score: its
+  // SHOOTOUT_SETS_COUNTED highest-scoring ones (all of them when the game has
+  // fewer, earlier sets winning ties), returned in the order they were
+  // played so they can be displayed as the game unfolded.
+  #shootoutSets(
+    setPoints: { gameWinner: number; gameLoser: number }[],
+  ): { gameWinner: number; gameLoser: number }[] {
+    return setPoints
+      .map((set, index) => ({ set, index, sum: set.gameWinner + set.gameLoser }))
+      .sort((a, b) => b.sum - a.sum || a.index - b.index)
+      .slice(0, SHOOTOUT_SETS_COUNTED)
+      .sort((a, b) => a.index - b.index)
+      .map(({ set }) => set);
+  }
+
+  // A legitimately completed set: first to 11 with the loser at 9 or below,
+  // or a deuce set won by exactly 2 points. Anything else — e.g. 15–12 —
+  // comes from house rules that award bonus points (edge bounces and the
+  // like), which would inflate a game's point total past what legit games
+  // can reach.
+  #isValidSetScore(set: { gameWinner: number; gameLoser: number }): boolean {
+    const winnerScore = Math.max(set.gameWinner, set.gameLoser);
+    const loserScore = Math.min(set.gameWinner, set.gameLoser);
+    return (winnerScore === 11 && loserScore <= 9) || (winnerScore > 11 && winnerScore - loserScore === 2);
+  }
+
+  // Awards "Shootout" to BOTH players of a game whose Shootout score beats
+  // the league-wide record — the points were scored together, so the record
+  // is held together. A score of SHOOTOUT_RECORD_FLOOR establishes the first
+  // record; after that only a strictly higher score takes it over.
+  #checkShootoutAchievement(
+    winner: string,
+    loser: string,
+    gameId: string,
+    setPoints: { gameWinner: number; gameLoser: number }[],
+    playedAt: number,
+  ) {
+    // Games containing any invalid set score are silently ignored — for the
+    // record AND the personal-best progression — so inflated house-rule
+    // totals can never take the record away from legit games.
+    if (!setPoints.every((set) => this.#isValidSetScore(set))) return;
+
+    const countedSets = this.#shootoutSets(setPoints);
+    const points = countedSets.reduce((sum, set) => sum + set.gameWinner + set.gameLoser, 0);
+
+    // Track personal bests for the progression view.
+    if (points > (this.bestShootout.get(winner) ?? 0)) this.bestShootout.set(winner, points);
+    if (points > (this.bestShootout.get(loser) ?? 0)) this.bestShootout.set(loser, points);
+
+    const currentRecord = this.shootoutRecord.points;
+    const beatsRecord = currentRecord === undefined ? points >= SHOOTOUT_RECORD_FLOOR : points > currentRecord;
+    if (!beatsRecord) return;
+
+    this.#addAchievement(
+      winner,
+      this.#createAchievement("shootout", winner, playedAt, {
+        gameId,
+        opponent: loser,
+        points,
+        sets: countedSets.map((set) => ({ playerPoints: set.gameWinner, opponentPoints: set.gameLoser })),
+        previousRecord: currentRecord,
+      }),
+    );
+    this.#addAchievement(
+      loser,
+      this.#createAchievement("shootout", loser, playedAt, {
+        gameId,
+        opponent: winner,
+        points,
+        sets: countedSets.map((set) => ({ playerPoints: set.gameLoser, opponentPoints: set.gameWinner })),
+        previousRecord: currentRecord,
+      }),
+    );
+    this.shootoutRecord = { points, holders: [winner, loser] };
   }
 
   #checkDonutAchievements(
@@ -2086,6 +2277,30 @@ export class Achievements {
 
       // Check participation TODO
 
+      // Season Opener: both players of the season's very first game earned
+      // it the moment they opened the season — no need to wait for the
+      // season to end. Seasons only exist once they contain a game, and
+      // their games arrive in time order, so the first entry is the opener.
+      const openingGame = s.games[0];
+      if (openingGame) {
+        this.#addAchievement(
+          openingGame.winner,
+          this.#createAchievement("season-opener", openingGame.winner, openingGame.playedAt, {
+            seasonStart: s.start,
+            gameId: openingGame.id,
+            opponent: openingGame.loser,
+          }),
+        );
+        this.#addAchievement(
+          openingGame.loser,
+          this.#createAchievement("season-opener", openingGame.loser, openingGame.playedAt, {
+            seasonStart: s.start,
+            gameId: openingGame.id,
+            opponent: openingGame.winner,
+          }),
+        );
+      }
+
       // Check for season winners
       if (Date.now() > s.end && leaderboard.length > 0) {
         const winner = leaderboard[0].playerId;
@@ -2249,8 +2464,20 @@ export class Achievements {
         target: this.leapFrogRecord.ranksJumped === undefined ? undefined : this.leapFrogRecord.ranksJumped + 1,
         recordHolder: this.leapFrogRecord.holder,
       },
-      "david": { current: 0, target: 30, earned: 0 },
-      "goliath": { current: 0, target: 30, earned: 0 },
+      // David / Goliath chase a fractional Elo record, so unlike the integer
+      // records the target IS the record — it must be strictly exceeded.
+      "david": {
+        earned: 0,
+        current: 0,
+        target: this.davidRecord.eloGain,
+        recordHolder: this.davidRecord.holder,
+      },
+      "goliath": {
+        earned: 0,
+        current: 0,
+        target: this.goliathRecord.eloLoss,
+        recordHolder: this.goliathRecord.holder,
+      },
       "climber": { current: 0, target: 300, earned: 0 },
       "full-house": { current: 0, target: 1, missing: new Set(), earned: 0 },
       "humbled": { current: 0, target: 1, missing: new Set(), earned: 0 },
@@ -2269,6 +2496,12 @@ export class Achievements {
         current: 0,
         target: this.marathonSetRecord.score === undefined ? undefined : this.marathonSetRecord.score + 1,
         recordHolder: this.marathonSetRecord.holder,
+      },
+      "shootout": {
+        earned: 0,
+        current: 0,
+        target: this.shootoutRecord.points === undefined ? undefined : this.shootoutRecord.points + 1,
+        recordHolders: this.shootoutRecord.holders,
       },
       "hero-of-the-day": {
         earned: 0,
@@ -2325,6 +2558,8 @@ export class Achievements {
       "tournament-winner": { earned: 0 },
       "group-stage-star": { earned: 0 },
       "season-winner": { current: 0, target: 1, earned: 0 },
+      "season-opener": { earned: 0 },
+      "milestone-game": { current: 0, target: MILESTONE_GAME_INTERVAL, earned: 0 },
     };
 
     let firstActiveAt: number | null = null;
@@ -2348,8 +2583,9 @@ export class Achievements {
     // calendar week / month, keyed by the period's start timestamp.
     const gamesPerWeek = new Map<number, number>();
     const gamesPerMonth = new Map<number, number>();
-    // Perfect Week progression: distinct weekdays (Mon–Fri) won per working week.
-    const perfectWeekWeekdays = new Map<number, Set<number>>();
+    // Perfect Week progression: distinct won days (offsets from Monday,
+    // 0=Mon..6=Sun) per week — any day can be part of a 5-day run.
+    const perfectWeekDaysWon = new Map<number, Set<number>>();
     const opponentsPlayed = new Set<string>();
     const gamesPerOpponent = new Map<string, { count: number; firstGame: number; lastGame: number }>();
     const firstOpponentForSet = new Set<string>();
@@ -2438,19 +2674,19 @@ export class Achievements {
       const heroMonthKey = this.#monthStartOf(game.playedAt);
       gamesPerMonth.set(heroMonthKey, (gamesPerMonth.get(heroMonthKey) ?? 0) + 1);
 
-      // Perfect Week progression: collect distinct Mon–Fri weekdays won.
-      const weekday = new Date(game.playedAt).getDay(); // 0=Sun..6=Sat
-      if (isWinner && weekday >= 1 && weekday <= 5) {
+      // Perfect Week progression: collect distinct won days per week.
+      if (isWinner) {
         const weekDate = new Date(game.playedAt);
         weekDate.setHours(0, 0, 0, 0);
-        weekDate.setDate(weekDate.getDate() - ((weekDate.getDay() + 6) % 7));
+        const wonDayOffset = (weekDate.getDay() + 6) % 7; // 0=Mon..6=Sun
+        weekDate.setDate(weekDate.getDate() - wonDayOffset);
         const weekKey = weekDate.getTime();
-        let weekdaysWon = perfectWeekWeekdays.get(weekKey);
-        if (!weekdaysWon) {
-          weekdaysWon = new Set();
-          perfectWeekWeekdays.set(weekKey, weekdaysWon);
+        let daysWon = perfectWeekDaysWon.get(weekKey);
+        if (!daysWon) {
+          daysWon = new Set();
+          perfectWeekDaysWon.set(weekKey, daysWon);
         }
-        weekdaysWon.add(weekday);
+        daysWon.add(wonDayOffset);
       }
 
       // Track opponents
@@ -2592,29 +2828,34 @@ export class Achievements {
     });
     progression["hero-of-the-month"].personalBest = busiestMonth;
 
-    // Perfect Week progression tracks THIS working week's live attempt: the
-    // run of consecutive weekdays from Monday, each with at least one win.
-    // A weekday that has fully elapsed without a win breaks the run to 0 (try
-    // again next Monday); the current weekday only counts once it has a win.
-    // E.g. a Monday win reads 1/5 all through Tuesday; if Tuesday then passes
-    // with no win, Wednesday starts the player at 0/5.
+    // Perfect Week progression tracks THIS week's live attempt: of the three
+    // possible 5-consecutive-day runs (Mon–Fri, Tue–Sat, Wed–Sun), the most
+    // won days in a run that can still be completed. A run is dead once any
+    // of its days has fully elapsed without a win; today and future days are
+    // still winnable and simply count 0 until won. E.g. a Monday win reads
+    // 1/5 all through Tuesday; if Tuesday then passes with no win, the
+    // Mon–Fri and Tue–Sat runs are dead and Wednesday starts the player on
+    // the Wed–Sun run at 0/5.
     const weekStartNow = new Date(nowMs);
     weekStartNow.setHours(0, 0, 0, 0);
     const daysSinceMonday = (weekStartNow.getDay() + 6) % 7; // 0=Mon..6=Sun
     weekStartNow.setDate(weekStartNow.getDate() - daysSinceMonday);
-    const weekdaysWonThisWeek = perfectWeekWeekdays.get(weekStartNow.getTime()) ?? new Set<number>();
-    // Weekdays (1=Mon..5=Fri) that have fully elapsed must each carry a win.
-    const passedWeekdays = Math.min(daysSinceMonday, 5);
-    let perfectWeekProgress = passedWeekdays;
-    for (let weekday = 1; weekday <= passedWeekdays; weekday++) {
-      if (!weekdaysWonThisWeek.has(weekday)) {
-        perfectWeekProgress = 0;
-        break;
+    const daysWonThisWeek = perfectWeekDaysWon.get(weekStartNow.getTime()) ?? new Set<number>();
+    let perfectWeekProgress = 0;
+    for (let start = 0; start <= 2; start++) {
+      let runIsDead = false;
+      let daysWonInRun = 0;
+      for (let offset = start; offset < start + 5; offset++) {
+        if (daysWonThisWeek.has(offset)) {
+          daysWonInRun++;
+        } else if (offset < daysSinceMonday) {
+          runIsDead = true;
+          break;
+        }
       }
-    }
-    // The current weekday (Mon–Fri) counts only once it has a win.
-    if (perfectWeekProgress !== 0 && daysSinceMonday <= 4 && weekdaysWonThisWeek.has(daysSinceMonday + 1)) {
-      perfectWeekProgress += 1;
+      if (!runIsDead) {
+        perfectWeekProgress = Math.max(perfectWeekProgress, daysWonInRun);
+      }
     }
     progression["perfect-week"].current = perfectWeekProgress;
 
@@ -2820,6 +3061,20 @@ export class Achievements {
     // progression here.
     progression["goliath"].current = this.worstGoliathLoss.get(playerId) ?? 0;
 
+    // Shootout progression: the player's own highest Shootout score (combined
+    // points of a game's highest-scoring sets), compared against the league
+    // record they must strictly exceed to earn the award.
+    progression["shootout"].current = this.bestShootout.get(playerId) ?? 0;
+
+    // Milestone Game progression is league-wide (everyone shares it) and
+    // restarts at every milestone: current is the games played since the
+    // previous milestone (0 right after one) and target is the 500-game
+    // interval, so the bar gauges how close the next milestone game is —
+    // target - current games remain. Deleted games are already gone from
+    // parent.games, so they don't count.
+    progression["milestone-game"].current = this.parent.games.length % MILESTONE_GAME_INTERVAL;
+    progression["milestone-game"].target = MILESTONE_GAME_INTERVAL;
+
     // Climber progression: current Elo - all-time low Elo since the
     // player first became ranked. Players who never became ranked have
     // no recorded low → progression stays at 0.
@@ -2925,7 +3180,9 @@ type AchievementDefinitions = {
   "unbreakable-spirit": { opponent: string };
   "hat-trick": { firstWinAt: number; thirdWinAt: number };
   "perfect-day": { day: number; wins: number };
-  "perfect-week": { weekStart: number };
+  // `startDay` is the local midnight of the first day in the 5-consecutive-day
+  // run of won days; `weekStart` the Monday of the week containing the run.
+  "perfect-week": { weekStart: number; startDay: number };
   "kingslayer": { opponent: string; gameId: string };
   "king-maker": { newKing: string; netScoreGained: number };
   "touched-the-throne": { elo: number; firstGameAt: number; dethroned?: string };
@@ -2949,8 +3206,11 @@ type AchievementDefinitions = {
     // Undefined when this jump is the first to establish the league record.
     previousRecord?: number;
   };
-  "david": { opponent: string; gameId: string; eloGain: number };
-  "goliath": { opponent: string; gameId: string; eloLoss: number };
+  // Record-breaking upset achievements — one game always sets both records
+  // (Elo is zero-sum). Undefined previousRecord means the game established
+  // the very first league record.
+  "david": { opponent: string; gameId: string; eloGain: number; previousRecord?: number };
+  "goliath": { opponent: string; gameId: string; eloLoss: number; previousRecord?: number };
   "climber": { fromElo: number; toElo: number; fromDate: number; toDate: number };
   "marathon-set": {
     gameId: string;
@@ -2976,6 +3236,23 @@ type AchievementDefinitions = {
   // the minutes past local midnight — both in the browser's timezone.
   "earliest-game": { gameId: string; opponent: string; time: string; minutesIntoDay: number };
   "latest-game": { gameId: string; opponent: string; time: string; minutesIntoDay: number };
+  // Record-breaking most-points-in-one-game achievement, awarded to both
+  // players. `sets` holds the counted sets — the game's SHOOTOUT_SETS_COUNTED
+  // highest-scoring ones, in the order played, from the badge owner's
+  // perspective — and `points` their combined score. Undefined previousRecord
+  // means the game established the very first league record.
+  "shootout": {
+    gameId: string;
+    opponent: string;
+    points: number;
+    sets: { playerPoints: number; opponentPoints: number }[];
+    previousRecord?: number;
+  };
+  // Awarded to both players of a season's very first game.
+  "season-opener": { seasonStart: number; gameId: string; opponent: string };
+  // Awarded to both players of every 500th league game. `milestone` is that
+  // game number.
+  "milestone-game": { gameId: string; opponent: string; milestone: number };
 };
 
 type AchievementType = keyof AchievementDefinitions;
@@ -3069,6 +3346,31 @@ type LeapFrogProgression = BaseProgression & {
   recordHolder?: string;
 };
 
+// David / Goliath chase the league record for the biggest single-game Elo
+// swing. The record is fractional, so unlike the integer records the target
+// is the record itself and must be strictly exceeded.
+type UpsetRecordProgression = BaseProgression & {
+  // Player's own biggest qualifying single-game gain / loss (0 if none).
+  current: number;
+  // The league record to strictly exceed. Undefined when no one has set a
+  // record yet (a swing of UPSET_RECORD_FLOOR takes it outright).
+  target?: number;
+  // Player who currently holds the league record, if any.
+  recordHolder?: string;
+};
+
+type ShootoutProgression = BaseProgression & {
+  // Player's own highest Shootout score: combined points of one game's
+  // highest-scoring sets (at most SHOOTOUT_SETS_COUNTED of them). 0 if none.
+  current: number;
+  // One point beyond the league record — the score that takes it. Undefined
+  // when no one has set a record yet (a SHOOTOUT_RECORD_FLOOR-point game
+  // takes it outright).
+  target?: number;
+  // Both players of the record game hold the record together.
+  recordHolders?: string[];
+};
+
 type MarathonSetProgression = BaseProgression & {
   // Player's own highest winning set score from a true-deuce set
   // they won (winner ≥ 12, loser ≥ 10). 0 if they have none.
@@ -3145,6 +3447,8 @@ export type AchievementProgression = {
   "tournament-participated": BaseProgression;
   "tournament-winner": BaseProgression;
   "season-winner": ProgressionWithTarget;
+  "season-opener": BaseProgression;
+  "milestone-game": ProgressionWithTarget;
   "nice-game": BaseProgression;
   "less-is-more": BaseProgression;
   "close-calls": ProgressionWithTarget;
@@ -3168,10 +3472,11 @@ export type AchievementProgression = {
   "on-the-podium": BaseProgression;
   "photo-finish": BaseProgression;
   "leap-frog": LeapFrogProgression;
-  "david": ProgressionWithTarget;
-  "goliath": ProgressionWithTarget;
+  "david": UpsetRecordProgression;
+  "goliath": UpsetRecordProgression;
   "climber": ProgressionWithTarget;
   "marathon-set": MarathonSetProgression;
+  "shootout": ShootoutProgression;
   "streak-ender": BaseProgression;
   "longest-win-streak": StreakRecordProgression;
   "longest-lose-streak": StreakRecordProgression;

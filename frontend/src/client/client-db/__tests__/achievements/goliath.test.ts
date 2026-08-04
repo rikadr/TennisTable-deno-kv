@@ -1,11 +1,13 @@
 import { TennisTable } from "../../tennis-table";
 import { EventType, EventTypeEnum } from "../../event-store/event-types";
 
-// Goliath fires when the loser drops ≥ 30 Elo from a single match, which
-// requires the winner to have been roughly 470+ Elo below the loser. Both
-// players must be ranked at the time of the match. It is the mirror of
-// David — when David fires for the winner, Goliath fires for the loser of
-// the same game.
+// Goliath is the league record for the biggest single-game Elo loss. A loss
+// of UPSET_RECORD_FLOOR (20 — requiring the winner to have been roughly 90+
+// Elo below the loser) establishes the first record; after that only a
+// strictly bigger loss takes the record over and awards again. Both players
+// must be ranked at the time of the match. It is the mirror of David — the
+// game that sets the David record sets the Goliath record too. The fixtures
+// here produce ≥30-point swings, comfortably past the floor.
 
 describe("Goliath Achievement", () => {
   const createPlayer = (id: string, time: number): EventType => ({
@@ -36,7 +38,7 @@ describe("Goliath Achievement", () => {
     return events;
   };
 
-  it("awards Goliath to the loser when they lose ≥30 Elo from a single match", () => {
+  it("awards Goliath when a loss past the record floor establishes the first league record", () => {
     // Goliath beats 200 fresh opponents → Elo well above 1500.
     // David beats 5 fresh opponents → ranked at Elo ~1073.
     // David then beats Goliath — the upset yields a ≥30 Elo swing.
@@ -59,11 +61,18 @@ describe("Goliath Achievement", () => {
     expect(goliaths).toHaveLength(1);
     expect(goliaths[0].data).toMatchObject({ opponent: "david", gameId: "upset" });
     expect(goliaths[0].data?.eloLoss).toBeGreaterThanOrEqual(30);
+    // First league record — nothing to break yet.
+    expect(goliaths[0].data?.previousRecord).toBeUndefined();
+    expect(tt.achievements.goliathRecord).toStrictEqual({
+      eloLoss: goliaths[0].data?.eloLoss,
+      holder: "goliath",
+    });
   });
 
   it("does NOT fire for a typical match with similar-rated players", () => {
-    // Standard 5-player double round-robin — Elos stay within ~200 of
-    // each other so no swing reaches 30.
+    // Standard 5-player double round-robin where the stronger player always
+    // wins — every loss is at most the evenly-matched 16 points, under the
+    // 20-point record floor.
     const events: EventType[] = [
       createPlayer("a", 1),
       createPlayer("b", 2),
@@ -112,12 +121,14 @@ describe("Goliath Achievement", () => {
     tt.achievements.calculateAchievements();
     const progression = tt.achievements.getPlayerProgression("goliath");
 
-    expect(progression.goliath.target).toBe(30);
     expect(progression.goliath.earned).toBe(1);
     expect(progression.goliath.current).toBeGreaterThanOrEqual(30);
-    // The progression value should equal the Elo loss stored on the badge.
+    // The progression value should equal the Elo loss stored on the badge,
+    // and the badge's loss is the league record to beat.
     const badge = tt.achievements.getAchievements("goliath").find((a) => a.type === "goliath");
     expect(progression.goliath.current).toBe(badge?.data?.eloLoss);
+    expect(progression.goliath.target).toBe(badge?.data?.eloLoss);
+    expect(progression.goliath.recordHolder).toBe("goliath");
   });
 
   it("progression current is 0 when the player has no losses", () => {

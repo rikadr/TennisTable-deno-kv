@@ -31,6 +31,27 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
+    slug: "shootout-season-opener-and-record-david-goliath",
+    title: "3 new achievements, and David & Goliath become league records",
+    date: "2026-08-04",
+    tags: ["new-feature", "feature-update"],
+    summary:
+      "Shootout 💥 is the record for the most points in one game, Season Opener 🌱 goes to the players of a season's first game, Milestone Game 🏁 marks every 500th game the league plays, David 🪨 and Goliath 🗿 are now league records, and Perfect Week 🗓️ accepts any 5 consecutive days within a week.",
+    body: [
+      list(
+        "Shootout 💥 - the league record for the most combined points in a single game. Only the 3 highest-scoring legal sets count, so a best-of-5 final competes on equal terms with an ordinary best-of-3. A 60+ point game sets the first record. Games containing an illegal set score (like 15-12 - above 11 a set must be won by exactly 2) do not compete at all, so house rules that award bonus points cannot inflate a total past what legitimate games can reach.",
+        "Season Opener 🌱 - earned by both players of a season's very first game. Awarded per season, so it comes around again every quarter.",
+        "Milestone Game 🏁 - earned by both players of every 500th game the league plays. Deleted games do not count. The progress view is shared by everyone and restarts at each milestone, showing how many games remain until the next milestone game.",
+      ),
+      text(
+        "David 🪨 and Goliath 🗿 are now league records rather than fixed thresholds. Previously every single-game swing of 30+ Score earned them; now the first 20+ Score swing set the record, and only a strictly bigger single-game gain (David, for the winner) or loss (Goliath, for the loser) takes it over. Score is zero-sum, so one upset always moves both records together. Because achievements are recomputed from history, some previously earned David and Goliath badges are gone - only the record-breaking upsets remain, and the progress view now shows the record and its holder.",
+      ),
+      text(
+        "Perfect Week 🗓️ no longer demands wins Monday through Friday specifically: winning on any 5 consecutive days within the same week now counts - Mon-Fri, Tue-Sat or Wed-Sun. A run that crosses into the next week does not, and losses never spoil a run - only the wins matter.",
+      ),
+    ],
+  },
+  {
     slug: "hero-of-the-week-and-month-achievements",
     title: "2 new achievements: Hero of the Week and Hero of the Month",
     date: "2026-08-03",

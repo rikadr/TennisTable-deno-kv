@@ -1,6 +1,10 @@
 import { TennisTable } from "../../tennis-table";
 import { EventType, EventTypeEnum } from "../../event-store/event-types";
 
+// Perfect Week: win a game on each of 5 consecutive calendar days, all
+// within the same Monday-start week — Mon–Fri, Tue–Sat or Wed–Sun. A run
+// crossing a week boundary does not count, and each week awards at most once.
+//
 // Jan 15 2024 is a Monday, so 15=Mon, 16=Tue, 17=Wed, 18=Thu, 19=Fri,
 // 20=Sat, 21=Sun. Jan 22 2024 is the following Monday.
 describe("Perfect Week Achievement Tests", () => {
@@ -24,7 +28,7 @@ describe("Perfect Week Achievement Tests", () => {
     };
   }
 
-  it("awards perfect-week for a win on every weekday Mon–Fri", () => {
+  it("awards perfect-week for wins on Mon–Fri", () => {
     const events: EventType[] = [
       ...baseEvents,
       win(2024, 0, 15, "player-1", "player-2", "mon"),
@@ -40,34 +44,17 @@ describe("Perfect Week Achievement Tests", () => {
     const perfectWeeks = tennisTable.achievements.getAchievements("player-1").filter((a) => a.type === "perfect-week");
     expect(perfectWeeks).toHaveLength(1);
     expect(perfectWeeks[0].data.weekStart).toBe(new Date(2024, 0, 15).getTime());
-    // Earned at the Friday win that completed the set.
+    expect(perfectWeeks[0].data.startDay).toBe(new Date(2024, 0, 15).getTime());
+    // Earned at the Friday win that completed the run.
     expect(perfectWeeks[0].earnedAt).toBe(new Date(2024, 0, 19, 12).getTime());
   });
 
-  it("does NOT award when only Mon–Thu are won", () => {
+  it("awards perfect-week for wins on Wed–Sun (weekend days count)", () => {
     const events: EventType[] = [
       ...baseEvents,
-      win(2024, 0, 15, "player-1", "player-2", "mon"),
-      win(2024, 0, 16, "player-1", "player-2", "tue"),
       win(2024, 0, 17, "player-1", "player-2", "wed"),
       win(2024, 0, 18, "player-1", "player-2", "thu"),
-    ];
-
-    const tennisTable = new TennisTable({ events });
-    tennisTable.achievements.calculateAchievements();
-
-    const perfectWeeks = tennisTable.achievements.getAchievements("player-1").filter((a) => a.type === "perfect-week");
-    expect(perfectWeeks).toHaveLength(0);
-  });
-
-  it("does NOT count weekend wins toward the working week", () => {
-    const events: EventType[] = [
-      ...baseEvents,
-      win(2024, 0, 15, "player-1", "player-2", "mon"),
-      win(2024, 0, 16, "player-1", "player-2", "tue"),
-      win(2024, 0, 17, "player-1", "player-2", "wed"),
-      win(2024, 0, 18, "player-1", "player-2", "thu"),
-      // Saturday + Sunday wins — do not substitute for Friday.
+      win(2024, 0, 19, "player-1", "player-2", "fri"),
       win(2024, 0, 20, "player-1", "player-2", "sat"),
       win(2024, 0, 21, "player-1", "player-2", "sun"),
     ];
@@ -76,19 +63,20 @@ describe("Perfect Week Achievement Tests", () => {
     tennisTable.achievements.calculateAchievements();
 
     const perfectWeeks = tennisTable.achievements.getAchievements("player-1").filter((a) => a.type === "perfect-week");
-    expect(perfectWeeks).toHaveLength(0);
+    expect(perfectWeeks).toHaveLength(1);
+    expect(perfectWeeks[0].data.weekStart).toBe(new Date(2024, 0, 15).getTime());
+    expect(perfectWeeks[0].data.startDay).toBe(new Date(2024, 0, 17).getTime());
+    expect(perfectWeeks[0].earnedAt).toBe(new Date(2024, 0, 21, 12).getTime());
   });
 
-  it("does NOT award when weekday wins are split across two different weeks", () => {
+  it("does NOT award for 5 consecutive days crossing a week boundary (Fri–Tue)", () => {
     const events: EventType[] = [
       ...baseEvents,
-      // Week 1: Mon, Tue, Wed
-      win(2024, 0, 15, "player-1", "player-2", "w1-mon"),
-      win(2024, 0, 16, "player-1", "player-2", "w1-tue"),
-      win(2024, 0, 17, "player-1", "player-2", "w1-wed"),
-      // Week 2: Thu, Fri
-      win(2024, 0, 25, "player-1", "player-2", "w2-thu"),
-      win(2024, 0, 26, "player-1", "player-2", "w2-fri"),
+      win(2024, 0, 19, "player-1", "player-2", "fri"),
+      win(2024, 0, 20, "player-1", "player-2", "sat"),
+      win(2024, 0, 21, "player-1", "player-2", "sun"),
+      win(2024, 0, 22, "player-1", "player-2", "mon"),
+      win(2024, 0, 23, "player-1", "player-2", "tue"),
     ];
 
     const tennisTable = new TennisTable({ events });
@@ -98,21 +86,77 @@ describe("Perfect Week Achievement Tests", () => {
     expect(perfectWeeks).toHaveLength(0);
   });
 
+  it("does NOT award for only 4 consecutive won days", () => {
+    const events: EventType[] = [
+      ...baseEvents,
+      win(2024, 0, 15, "player-1", "player-2", "mon"),
+      win(2024, 0, 16, "player-1", "player-2", "tue"),
+      win(2024, 0, 17, "player-1", "player-2", "wed"),
+      win(2024, 0, 18, "player-1", "player-2", "thu"),
+    ];
+
+    const tennisTable = new TennisTable({ events });
+    tennisTable.achievements.calculateAchievements();
+
+    const perfectWeeks = tennisTable.achievements.getAchievements("player-1").filter((a) => a.type === "perfect-week");
+    expect(perfectWeeks).toHaveLength(0);
+  });
+
+  it("does NOT award for 5 won days that are not consecutive", () => {
+    // Mon, Tue, Thu, Fri, Sat — Wednesday breaks every possible run.
+    const events: EventType[] = [
+      ...baseEvents,
+      win(2024, 0, 15, "player-1", "player-2", "mon"),
+      win(2024, 0, 16, "player-1", "player-2", "tue"),
+      win(2024, 0, 18, "player-1", "player-2", "thu"),
+      win(2024, 0, 19, "player-1", "player-2", "fri"),
+      win(2024, 0, 20, "player-1", "player-2", "sat"),
+    ];
+
+    const tennisTable = new TennisTable({ events });
+    tennisTable.achievements.calculateAchievements();
+
+    const perfectWeeks = tennisTable.achievements.getAchievements("player-1").filter((a) => a.type === "perfect-week");
+    expect(perfectWeeks).toHaveLength(0);
+  });
+
+  it("awards only once per week even when more than one run completes", () => {
+    // Mon–Sat won: Mon–Fri completes on Friday and Tue–Sat would complete on
+    // Saturday — one award, stamped at the Friday win.
+    const events: EventType[] = [
+      ...baseEvents,
+      win(2024, 0, 15, "player-1", "player-2", "mon"),
+      win(2024, 0, 16, "player-1", "player-2", "tue"),
+      win(2024, 0, 17, "player-1", "player-2", "wed"),
+      win(2024, 0, 18, "player-1", "player-2", "thu"),
+      win(2024, 0, 19, "player-1", "player-2", "fri"),
+      win(2024, 0, 20, "player-1", "player-2", "sat"),
+    ];
+
+    const tennisTable = new TennisTable({ events });
+    tennisTable.achievements.calculateAchievements();
+
+    const perfectWeeks = tennisTable.achievements.getAchievements("player-1").filter((a) => a.type === "perfect-week");
+    expect(perfectWeeks).toHaveLength(1);
+    expect(perfectWeeks[0].data.startDay).toBe(new Date(2024, 0, 15).getTime());
+    expect(perfectWeeks[0].earnedAt).toBe(new Date(2024, 0, 19, 12).getTime());
+  });
+
   it("awards a separate perfect-week for each qualifying week", () => {
     const events: EventType[] = [
       ...baseEvents,
-      // Week of Jan 15
+      // Week of Jan 15: Mon–Fri
       win(2024, 0, 15, "player-1", "player-2", "w1-mon"),
       win(2024, 0, 16, "player-1", "player-2", "w1-tue"),
       win(2024, 0, 17, "player-1", "player-2", "w1-wed"),
       win(2024, 0, 18, "player-1", "player-2", "w1-thu"),
       win(2024, 0, 19, "player-1", "player-2", "w1-fri"),
-      // Week of Jan 22
-      win(2024, 0, 22, "player-1", "player-2", "w2-mon"),
+      // Week of Jan 22: Tue–Sat
       win(2024, 0, 23, "player-1", "player-2", "w2-tue"),
       win(2024, 0, 24, "player-1", "player-2", "w2-wed"),
       win(2024, 0, 25, "player-1", "player-2", "w2-thu"),
       win(2024, 0, 26, "player-1", "player-2", "w2-fri"),
+      win(2024, 0, 27, "player-1", "player-2", "w2-sat"),
     ];
 
     const tennisTable = new TennisTable({ events });
@@ -120,16 +164,19 @@ describe("Perfect Week Achievement Tests", () => {
 
     const perfectWeeks = tennisTable.achievements.getAchievements("player-1").filter((a) => a.type === "perfect-week");
     expect(perfectWeeks).toHaveLength(2);
+    expect(perfectWeeks[0].data.startDay).toBe(new Date(2024, 0, 15).getTime());
+    expect(perfectWeeks[1].data.startDay).toBe(new Date(2024, 0, 23).getTime());
   });
 
-  it("only counts wins, not losses, toward a weekday", () => {
+  it("only counts wins, not losses, toward a day", () => {
     const events: EventType[] = [
       ...baseEvents,
       win(2024, 0, 15, "player-1", "player-2", "mon"),
       win(2024, 0, 16, "player-1", "player-2", "tue"),
       win(2024, 0, 17, "player-1", "player-2", "wed"),
       win(2024, 0, 18, "player-1", "player-2", "thu"),
-      // Friday: player-1 LOSES — does not count as a Friday win.
+      // Friday: player-1 LOSES — does not count as a Friday win, and no
+      // other run is completable from these days.
       win(2024, 0, 19, "player-2", "player-1", "fri"),
     ];
 
@@ -140,10 +187,28 @@ describe("Perfect Week Achievement Tests", () => {
     expect(perfectWeeks).toHaveLength(0);
   });
 
-  it("awards immediately on the Friday win, without waiting for the week to end", () => {
-    // "now" is Friday afternoon, right after the fifth weekday win. Unlike
-    // Perfect Day, nothing later in the week can disqualify it — losses do not
-    // count against a perfect week — so it is awarded on the spot.
+  it("losses on run days do not disqualify the run", () => {
+    const events: EventType[] = [
+      ...baseEvents,
+      win(2024, 0, 15, "player-1", "player-2", "mon"),
+      win(2024, 0, 16, "player-1", "player-2", "tue"),
+      // A Wednesday loss alongside the Wednesday win — still a won day.
+      win(2024, 0, 17, "player-2", "player-1", "wed-loss"),
+      win(2024, 0, 17, "player-1", "player-2", "wed"),
+      win(2024, 0, 18, "player-1", "player-2", "thu"),
+      win(2024, 0, 19, "player-1", "player-2", "fri"),
+    ];
+
+    const tennisTable = new TennisTable({ events });
+    tennisTable.achievements.calculateAchievements();
+
+    const perfectWeeks = tennisTable.achievements.getAchievements("player-1").filter((a) => a.type === "perfect-week");
+    expect(perfectWeeks).toHaveLength(1);
+  });
+
+  it("awards immediately on the completing win, without waiting for the week to end", () => {
+    // "now" is Friday afternoon, right after the fifth consecutive won day.
+    // Losses never disqualify a perfect week, so it is awarded on the spot.
     jest.useFakeTimers();
     jest.setSystemTime(new Date(2024, 0, 19, 13));
 
@@ -166,7 +231,7 @@ describe("Perfect Week Achievement Tests", () => {
     jest.useRealTimers();
   });
 
-  describe("Progression (live, resets on a missed weekday)", () => {
+  describe("Progression (best still-completable run this week)", () => {
     afterEach(() => {
       jest.useRealTimers();
     });
@@ -187,7 +252,7 @@ describe("Perfect Week Achievement Tests", () => {
       expect(progression["perfect-week"].earned).toBe(0);
     });
 
-    it("counts the current weekday once it is won (Mon+Tue on Tuesday = 2/5)", () => {
+    it("counts the current day once it is won (Mon+Tue on Tuesday = 2/5)", () => {
       jest.useFakeTimers();
       jest.setSystemTime(new Date(2024, 0, 16, 20));
 
@@ -204,8 +269,9 @@ describe("Perfect Week Achievement Tests", () => {
       expect(progression["perfect-week"].current).toBe(2);
     });
 
-    it("drops to 0 on Wednesday when Tuesday passed with no win", () => {
-      // "now" is Wednesday; Monday and Wednesday won, but Tuesday was missed.
+    it("falls back to the Wed–Sun run when Tuesday passed with no win", () => {
+      // "now" is Wednesday; Monday and Wednesday won, Tuesday missed. The
+      // Mon–Fri and Tue–Sat runs are dead, but Wed–Sun is alive at 1.
       jest.useFakeTimers();
       jest.setSystemTime(new Date(2024, 0, 17, 12));
 
@@ -219,11 +285,45 @@ describe("Perfect Week Achievement Tests", () => {
       tennisTable.achievements.calculateAchievements();
 
       const progression = tennisTable.achievements.getPlayerProgression("player-1");
+      expect(progression["perfect-week"].current).toBe(1);
+    });
+
+    it("drops to 0 on Thursday when Wednesday also passed with no win", () => {
+      // Monday won, Tuesday and Wednesday missed — every run this week is
+      // dead (Wed–Sun needs Wednesday, which has elapsed).
+      jest.useFakeTimers();
+      jest.setSystemTime(new Date(2024, 0, 18, 12));
+
+      const events: EventType[] = [...baseEvents, win(2024, 0, 15, "player-1", "player-2", "mon")];
+
+      const tennisTable = new TennisTable({ events });
+      tennisTable.achievements.calculateAchievements();
+
+      const progression = tennisTable.achievements.getPlayerProgression("player-1");
       expect(progression["perfect-week"].current).toBe(0);
     });
 
+    it("weekend wins count toward the late runs (Wed–Sat won on Saturday = 4/5)", () => {
+      jest.useFakeTimers();
+      jest.setSystemTime(new Date(2024, 0, 20, 18));
+
+      const events: EventType[] = [
+        ...baseEvents,
+        win(2024, 0, 17, "player-1", "player-2", "wed"),
+        win(2024, 0, 18, "player-1", "player-2", "thu"),
+        win(2024, 0, 19, "player-1", "player-2", "fri"),
+        win(2024, 0, 20, "player-1", "player-2", "sat"),
+      ];
+
+      const tennisTable = new TennisTable({ events });
+      tennisTable.achievements.calculateAchievements();
+
+      const progression = tennisTable.achievements.getPlayerProgression("player-1");
+      expect(progression["perfect-week"].current).toBe(4);
+    });
+
     it("resets to 0 the following week (last week's wins do not carry over)", () => {
-      // "now" is the Monday after a fully-won week — new attempt, no games yet.
+      // "now" is the Monday after a nearly-won week — new attempt, no games yet.
       jest.useFakeTimers();
       jest.setSystemTime(new Date(2024, 0, 22, 8));
 
