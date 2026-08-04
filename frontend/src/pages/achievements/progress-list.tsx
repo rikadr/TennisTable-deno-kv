@@ -17,7 +17,10 @@ export const ProgressList: React.FC<ProgressListProps> = ({ selectedType }) => {
   // Time-based achievements store current/target as raw milliseconds, which
   // would render as enormous numbers. Show them as whole days instead.
   const isTimePeriod =
-    selectedType.startsWith("active-") || selectedType.startsWith("back-after-") || selectedType === "anniversary";
+    selectedType.startsWith("active-") ||
+    selectedType.startsWith("back-after-") ||
+    selectedType === "anniversary" ||
+    selectedType === "season-opener";
 
   // Calculate progress for all players when a specific type is selected.
   // Retired players are included — their progress history is as real as

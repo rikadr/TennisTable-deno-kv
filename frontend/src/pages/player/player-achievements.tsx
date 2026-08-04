@@ -758,7 +758,10 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
         const percentage = hasTarget && hasCurrent ? achievementProgressPercentage(type, data.current, data.target) : 0;
         const hasEarned = data.earned > 0;
         const isTimePeriod =
-          type.startsWith("active-") || type.startsWith("back-after-") || type === "anniversary";
+          type.startsWith("active-") ||
+          type.startsWith("back-after-") ||
+          type === "anniversary" ||
+          type === "season-opener";
 
         return (
           <div
@@ -825,6 +828,17 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                                   milestone game)
                                 </span>
                               )}
+                            {type === "season-opener" &&
+                              typeof data.target === "number" &&
+                              typeof data.current === "number" && (
+                                <span className="text-xs text-secondary-text/70 font-normal ml-2">
+                                  (League-wide —{" "}
+                                  {data.current >= data.target
+                                    ? "the season is open, and the first game of it earns this"
+                                    : `${formatTimePeriod(data.target - data.current)} until the next season starts`}
+                                  )
+                                </span>
+                              )}
                           </span>
                         </div>
                       </div>
@@ -848,6 +862,14 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                       {type === "anniversary" && "firstGameAt" in data && !!data.firstGameAt && (
                         <div className="mt-2 text-xs text-secondary-text/70">
                           Anniversary date: {dateString(data.firstGameAt)}
+                        </div>
+                      )}
+
+                      {/* Show when the next season starts — the moment the
+                          next Season Opener is there to take. */}
+                      {type === "season-opener" && "nextSeasonStart" in data && !!data.nextSeasonStart && (
+                        <div className="mt-2 text-xs text-secondary-text/70">
+                          Next season starts: {dateString(data.nextSeasonStart)}
                         </div>
                       )}
 

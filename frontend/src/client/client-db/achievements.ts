@@ -1,6 +1,7 @@
 import { Elo } from "./elo";
 import { EventTypeEnum } from "./event-store/event-types";
 import { Game } from "./event-store/projectors/games-projector";
+import { determineNextSeason, determineSeason } from "./seasons/seasons";
 import { TennisTable } from "./tennis-table";
 
 // Shortest streak that can establish the very first Longest Win / Lose Streak
@@ -2558,7 +2559,8 @@ export class Achievements {
       "tournament-winner": { earned: 0 },
       "group-stage-star": { earned: 0 },
       "season-winner": { current: 0, target: 1, earned: 0 },
-      "season-opener": { earned: 0 },
+      // League-wide countdown to the next season start, filled in below.
+      "season-opener": { current: 0, target: 0, earned: 0 },
       "milestone-game": { current: 0, target: MILESTONE_GAME_INTERVAL, earned: 0 },
     };
 
@@ -3043,6 +3045,25 @@ export class Achievements {
       }
     }
 
+    // Season Opener progression is league-wide (everyone shares the same
+    // values) and counts down to the next season start, because that is when
+    // the next opener becomes available. Target is the span from the start of
+    // the current season — in the grace period between seasons that is the
+    // season which just ended — to the start of the next season. Current is
+    // the part of that span which has passed, so the bar shows how close the
+    // next season start is. While a season is open and still has no games the
+    // opener is there to take, so the bar holds at 100% until the first game
+    // earns it and the countdown to the next season start begins again.
+    const currentSeason = determineSeason(now);
+    const nextSeasonStart = determineNextSeason(now).start;
+    const seasonOpenerTarget = nextSeasonStart - currentSeason.start;
+    const inGracePeriod = now >= currentSeason.end;
+    const currentSeasonHasGames = seasons.some((season) => season.start === currentSeason.start);
+    progression["season-opener"].target = seasonOpenerTarget;
+    progression["season-opener"].current =
+      !inGracePeriod && !currentSeasonHasGames ? seasonOpenerTarget : now - currentSeason.start;
+    progression["season-opener"].nextSeasonStart = nextSeasonStart;
+
     // David progression: highest Elo gained from a win where both
     // players were ranked at the time of the match. Players who never
     // crossed the ranked threshold will naturally have no entries in
@@ -3329,6 +3350,16 @@ type WelcomeCommitteeProgression = ProgressionWithTarget & {
   newPlayers?: Set<string>; // List of new players this person was first opponent for
 };
 
+// Season Opener is league-wide: every player waits for the same next season
+// to start, so the progress is the same for everyone. Current and target are
+// milliseconds — how much of the span between the current season start and the
+// next season start has passed, and the whole span.
+type SeasonOpenerProgression = ProgressionWithTarget & {
+  // The moment the next season starts, which is when the next opener is there
+  // to take.
+  nextSeasonStart?: number;
+};
+
 type MissingPlayersProgression = ProgressionWithTarget & {
   // Currently ranked players the player has not yet beaten (Full House) /
   // not yet lost to (Humbled) — i.e. what's left to complete the set.
@@ -3447,7 +3478,7 @@ export type AchievementProgression = {
   "tournament-participated": BaseProgression;
   "tournament-winner": BaseProgression;
   "season-winner": ProgressionWithTarget;
-  "season-opener": BaseProgression;
+  "season-opener": SeasonOpenerProgression;
   "milestone-game": ProgressionWithTarget;
   "nice-game": BaseProgression;
   "less-is-more": BaseProgression;
