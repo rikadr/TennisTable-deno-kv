@@ -69,6 +69,13 @@ export const LiveGameAdminPage: React.FC = () => {
   const player1Color = stringToColor(localState.player1Id || "");
   const player2Color = stringToColor(localState.player2Id || "");
 
+  const setLeader: Server | null =
+    localState.currentSet.player1 > localState.currentSet.player2
+      ? 1
+      : localState.currentSet.player2 > localState.currentSet.player1
+        ? 2
+        : null;
+
   function pushState(next: LiveGameState) {
     setLocalState(next);
     updateLiveGame.mutate(next);
@@ -276,10 +283,17 @@ export const LiveGameAdminPage: React.FC = () => {
                   {context.playerName(localState.player1Id)}
                 </span>
               </div>
-              <div className="flex items-center gap-2 bg-gray-50 px-4 py-1 rounded-xl shadow-inner">
-                <span className="text-3xl font-black">{localState.setsWon.player1}</span>
-                <span className="font-bold text-xl">-</span>
-                <span className="text-3xl font-black">{localState.setsWon.player2}</span>
+              {/* Big numbers are sets, the small ones under them are the points of
+                  the set being played. */}
+              <div className="flex flex-col items-center bg-gray-50 px-4 py-1 rounded-xl shadow-inner">
+                <div className="flex items-center gap-2">
+                  <span className="text-3xl font-black">{localState.setsWon.player1}</span>
+                  <span className="font-bold text-xl">-</span>
+                  <span className="text-3xl font-black">{localState.setsWon.player2}</span>
+                </div>
+                <div className="text-xs font-bold text-gray-500 leading-none pb-0.5">
+                  ({localState.currentSet.player1}-{localState.currentSet.player2})
+                </div>
               </div>
               <div className="flex flex-col items-center gap-1">
                 <ProfilePicture playerId={localState.player2Id} size={50} border={2} />
@@ -291,11 +305,11 @@ export const LiveGameAdminPage: React.FC = () => {
                 </span>
               </div>
             </div>
-            <h2 className="text-gray-400 text-xs uppercase tracking-widest font-bold mt-4 text-center">
-              Set {localState.completedSets.length + 1}
-            </h2>
-
-            <div className="mt-3">
+            {/* Set number and serve tracker share one row to save height */}
+            <div className="mt-3 flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
+              <h2 className="text-gray-400 text-xs uppercase tracking-widest font-bold">
+                Set {localState.completedSets.length + 1}
+              </h2>
               <ServeTrackerDisplay
                 currentSet={localState.currentSet}
                 firstServer={localState.firstServer}
@@ -306,10 +320,8 @@ export const LiveGameAdminPage: React.FC = () => {
                 onSelectFirstServer={setFirstServer}
               />
             </div>
-          </div>
 
-          <div className="bg-white rounded-xl shadow-lg p-4 text-black">
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-2 mt-3">
               <PlayerScoreControls
                 name={context.playerName(localState.player1Id)}
                 score={localState.currentSet.player1}
@@ -326,42 +338,23 @@ export const LiveGameAdminPage: React.FC = () => {
               />
             </div>
 
-            <div className="space-y-2 mt-4">
-              <button
-                onClick={() => setWon(1)}
-                disabled={localState.currentSet.player1 <= localState.currentSet.player2}
-                className={classNames(
-                  "w-full py-3 rounded-lg font-semibold text-base",
-                  localState.currentSet.player1 > localState.currentSet.player2
-                    ? "hover:brightness-95"
-                    : "bg-gray-300 text-gray-500 cursor-not-allowed",
-                )}
-                style={
-                  localState.currentSet.player1 > localState.currentSet.player2
-                    ? fill(player1Color)
-                    : undefined
-                }
-              >
-                Set won by {context.playerName(localState.player1Id)}
-              </button>
-              <button
-                onClick={() => setWon(2)}
-                disabled={localState.currentSet.player2 <= localState.currentSet.player1}
-                className={classNames(
-                  "w-full py-3 rounded-lg font-semibold text-base",
-                  localState.currentSet.player2 > localState.currentSet.player1
-                    ? "hover:brightness-95"
-                    : "bg-gray-300 text-gray-500 cursor-not-allowed",
-                )}
-                style={
-                  localState.currentSet.player2 > localState.currentSet.player1
-                    ? fill(player2Color)
-                    : undefined
-                }
-              >
-                Set won by {context.playerName(localState.player2Id)}
-              </button>
-            </div>
+            {/* Whoever leads the current set is the only possible set winner, so a
+                single button covers both players. */}
+            <button
+              onClick={() => setLeader && setWon(setLeader)}
+              disabled={setLeader === null}
+              className={classNames(
+                "w-full py-3 mt-3 rounded-lg font-semibold text-base",
+                setLeader === null ? "bg-gray-300 text-gray-500 cursor-not-allowed" : "hover:brightness-95",
+              )}
+              style={setLeader === null ? undefined : fill(setLeader === 1 ? player1Color : player2Color)}
+            >
+              {setLeader === null
+                ? "Set won by leading player"
+                : `Set won by ${context.playerName(
+                    setLeader === 1 ? localState.player1Id : localState.player2Id,
+                  )}`}
+            </button>
           </div>
 
           <LiveGamePredictionCard
@@ -399,20 +392,23 @@ export const LiveGameAdminPage: React.FC = () => {
             >
               End Match & Review
             </button>
-            <button
-              onClick={resetMatch}
-              disabled={isSubmitting}
-              className="w-full py-3 rounded-lg font-semibold bg-gray-200 text-gray-700 hover:bg-gray-300 disabled:opacity-50"
-            >
-              Reset score
-            </button>
-            <button
-              onClick={endLiveGame}
-              disabled={isSubmitting}
-              className="w-full py-3 rounded-lg font-semibold bg-red-100 text-red-700 hover:bg-red-200 disabled:opacity-50"
-            >
-              ❌ End live game (discard)
-            </button>
+            {/* The two secondary actions share a row to save height */}
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={resetMatch}
+                disabled={isSubmitting}
+                className="py-3 rounded-lg font-semibold bg-gray-200 text-gray-700 hover:bg-gray-300 disabled:opacity-50"
+              >
+                Reset score
+              </button>
+              <button
+                onClick={endLiveGame}
+                disabled={isSubmitting}
+                className="py-3 rounded-lg font-semibold bg-red-100 text-red-700 hover:bg-red-200 disabled:opacity-50"
+              >
+                ❌ End live game
+              </button>
+            </div>
           </div>
         </div>
       )}

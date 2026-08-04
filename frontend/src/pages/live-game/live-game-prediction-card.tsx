@@ -120,49 +120,43 @@ export const LiveGamePredictionCard: React.FC<Props> = ({
 
   return (
     <div className="bg-white rounded-xl shadow-lg p-4 text-black">
-      <h2 className="text-gray-400 text-xs uppercase tracking-widest font-bold mb-3 text-center">
+      <h2 className="text-gray-400 text-xs uppercase tracking-widest font-bold mb-2 text-center">
         Live Win Prediction
       </h2>
 
-      {hasUnranked && (
-        <div className="mb-3 flex items-center gap-2 rounded-lg border border-yellow-500/60 bg-yellow-50 px-3 py-2 text-xs text-yellow-800">
-          <span className="text-base leading-none">⚠️</span>
-          <span>{unrankedLabel} — the prediction is based on insufficient data and may be unreliable.</span>
-        </div>
-      )}
-
       {hasPrediction ? (
         <>
-          <div className="flex items-baseline justify-between text-sm font-semibold mb-1">
-            <span className="truncate max-w-[45%]" style={textOn(player1Color, CARD_SURFACE)}>
-              {player1Name}
+          {/* Each player's win chance sits in the label row, so the bar itself
+              needs no text and can stay short. */}
+          <div className="flex items-baseline justify-between gap-2 text-sm font-semibold mb-1">
+            <span className="truncate" style={textOn(player1Color, CARD_SURFACE)}>
+              {player1Name} {fmtNum(player1WinChance * 100)}%
             </span>
-            <span className="truncate max-w-[45%] text-right" style={textOn(player2Color, CARD_SURFACE)}>
-              {player2Name}
+            <span className="truncate text-right" style={textOn(player2Color, CARD_SURFACE)}>
+              {fmtNum(player2WinChance * 100)}% {player2Name}
             </span>
           </div>
-          <div className="flex h-8 w-full overflow-hidden rounded-full bg-gray-100">
+          <div className="flex h-6 w-full overflow-hidden rounded-full bg-gray-100">
             <div
-              className="flex items-center justify-start px-2 text-xs font-bold transition-all duration-500"
+              className="transition-all duration-500"
               style={{ width: `${player1WinChance * 100}%`, ...fill(player1Color) }}
-            >
-              {player1WinChance >= 0.12 && `${fmtNum(player1WinChance * 100)}%`}
-            </div>
+            />
             <div
-              className="flex items-center justify-end px-2 text-xs font-bold transition-all duration-500"
+              className="transition-all duration-500"
               style={{ width: `${player2WinChance * 100}%`, ...fill(player2Color) }}
-            >
-              {player2WinChance >= 0.12 && `${fmtNum(player2WinChance * 100)}%`}
-            </div>
+            />
           </div>
-          <div className="mt-1 flex justify-between text-xs font-semibold">
-            <span style={textOn(player1Color, CARD_SURFACE)}>{fmtNum(player1WinChance * 100)}% win chance</span>
-            <span style={textOn(player2Color, CARD_SURFACE)}>{fmtNum(player2WinChance * 100)}% win chance</span>
-          </div>
-          <div className="mt-3 text-center text-xs text-gray-500">{fmtNum(confidence * 100)}% confidence</div>
+          <div className="mt-1 text-center text-xs text-gray-500">{fmtNum(confidence * 100)}% confidence</div>
         </>
       ) : (
         <p className="text-center text-sm text-gray-500 py-2">Not enough data to predict a winner yet.</p>
+      )}
+
+      {hasUnranked && (
+        <div className="mt-2 flex items-center gap-2 rounded-lg border border-yellow-500/60 bg-yellow-50 px-3 py-2 text-xs text-yellow-800">
+          <span className="text-base leading-none">⚠️</span>
+          <span>{unrankedLabel} — the prediction is based on insufficient data and may be unreliable.</span>
+        </div>
       )}
     </div>
   );

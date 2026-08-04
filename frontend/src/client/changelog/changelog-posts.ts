@@ -281,7 +281,7 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
         "The player who must serve appears in the game tracker, the live game pages, the TV overlay and the live game card on the leaderboard.",
       ),
       text(
-        "The serve changes after every 2 points, and after every point at deuce. The app calculates it from the score.",
+        "The serve changes after every 2 points. The house rule keeps 2 serves each for the whole set, also at 10-10. The app calculates the server from the score.",
       ),
     ],
   },
