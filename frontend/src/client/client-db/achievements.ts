@@ -45,12 +45,6 @@ export function isMilestoneGameNumber(gameNumber: number): boolean {
   return gameNumber > 0 && gameNumber % MILESTONE_GAME_INTERVAL === 0;
 }
 
-// The next milestone strictly above `gameNumber` — what the league is
-// currently counting toward. Used by the progression view.
-export function nextMilestoneGameNumber(gameNumber: number): number {
-  return (Math.floor(gameNumber / MILESTONE_GAME_INTERVAL) + 1) * MILESTONE_GAME_INTERVAL;
-}
-
 export class Achievements {
   private parent: TennisTable;
   private hasCalculated = false;
@@ -585,8 +579,9 @@ export class Achievements {
         );
       }
 
-      // Check for marathon-set achievements (each set evaluated in
-      // order against the running league-wide record).
+      // Check the set-score records: Marathon Set (each set evaluated in
+      // order against the running league-wide record) and Shootout (most
+      // combined points in one game, counting only its highest-scoring sets).
       if (game.score?.setPoints) {
         this.#checkMarathonSetAchievements(
           game.winner,
@@ -595,11 +590,6 @@ export class Achievements {
           game.score.setPoints,
           game.playedAt,
         );
-      }
-
-      // Check for the Shootout record: most combined points in a single game,
-      // counting only the highest-scoring sets.
-      if (game.score?.setPoints) {
         this.#checkShootoutAchievement(game.winner, game.loser, game.id, game.score.setPoints, game.playedAt);
       }
 
@@ -1639,16 +1629,19 @@ export class Achievements {
     });
   }
 
-  // The Shootout score of a game: combined points of its
-  // SHOOTOUT_SETS_COUNTED highest-scoring sets (all of them when the game
-  // has fewer). Shared by the awarding pass and the progression view so the
-  // two always agree.
-  #shootoutScore(setPoints: { gameWinner: number; gameLoser: number }[]): number {
+  // The sets that count toward a game's Shootout score: its
+  // SHOOTOUT_SETS_COUNTED highest-scoring ones (all of them when the game has
+  // fewer, earlier sets winning ties), returned in the order they were
+  // played so they can be displayed as the game unfolded.
+  #shootoutSets(
+    setPoints: { gameWinner: number; gameLoser: number }[],
+  ): { gameWinner: number; gameLoser: number }[] {
     return setPoints
-      .map((set) => set.gameWinner + set.gameLoser)
-      .sort((a, b) => b - a)
+      .map((set, index) => ({ set, index, sum: set.gameWinner + set.gameLoser }))
+      .sort((a, b) => b.sum - a.sum || a.index - b.index)
       .slice(0, SHOOTOUT_SETS_COUNTED)
-      .reduce((sum, points) => sum + points, 0);
+      .sort((a, b) => a.index - b.index)
+      .map(({ set }) => set);
   }
 
   // A legitimately completed set: first to 11 with the loser at 9 or below,
@@ -1678,7 +1671,8 @@ export class Achievements {
     // totals can never take the record away from legit games.
     if (!setPoints.every((set) => this.#isValidSetScore(set))) return;
 
-    const points = this.#shootoutScore(setPoints);
+    const countedSets = this.#shootoutSets(setPoints);
+    const points = countedSets.reduce((sum, set) => sum + set.gameWinner + set.gameLoser, 0);
 
     // Track personal bests for the progression view.
     if (points > (this.bestShootout.get(winner) ?? 0)) this.bestShootout.set(winner, points);
@@ -1688,22 +1682,12 @@ export class Achievements {
     const beatsRecord = currentRecord === undefined ? points >= SHOOTOUT_RECORD_FLOOR : points > currentRecord;
     if (!beatsRecord) return;
 
-    // The counted sets — the SHOOTOUT_SETS_COUNTED highest-scoring ones
-    // (earlier sets win ties), restored to game order for display.
-    const countedSets = setPoints
-      .map((set, index) => ({ set, index, sum: set.gameWinner + set.gameLoser }))
-      .sort((a, b) => b.sum - a.sum || a.index - b.index)
-      .slice(0, SHOOTOUT_SETS_COUNTED)
-      .sort((a, b) => a.index - b.index)
-      .map(({ set }) => set);
-
     this.#addAchievement(
       winner,
       this.#createAchievement("shootout", winner, playedAt, {
         gameId,
         opponent: loser,
         points,
-        setsCounted: countedSets.length,
         sets: countedSets.map((set) => ({ playerPoints: set.gameWinner, opponentPoints: set.gameLoser })),
         previousRecord: currentRecord,
       }),
@@ -1714,7 +1698,6 @@ export class Achievements {
         gameId,
         opponent: winner,
         points,
-        setsCounted: countedSets.length,
         sets: countedSets.map((set) => ({ playerPoints: set.gameLoser, opponentPoints: set.gameWinner })),
         previousRecord: currentRecord,
       }),
@@ -2576,7 +2559,7 @@ export class Achievements {
       "group-stage-star": { earned: 0 },
       "season-winner": { current: 0, target: 1, earned: 0 },
       "season-opener": { earned: 0 },
-      "milestone-game": { current: 0, target: 100, earned: 0 },
+      "milestone-game": { current: 0, target: MILESTONE_GAME_INTERVAL, earned: 0 },
     };
 
     let firstActiveAt: number | null = null;
@@ -3254,16 +3237,14 @@ type AchievementDefinitions = {
   "earliest-game": { gameId: string; opponent: string; time: string; minutesIntoDay: number };
   "latest-game": { gameId: string; opponent: string; time: string; minutesIntoDay: number };
   // Record-breaking most-points-in-one-game achievement, awarded to both
-  // players. `points` is the combined score of the game's `setsCounted`
-  // highest-scoring sets (at most SHOOTOUT_SETS_COUNTED); `sets` holds those
-  // counted sets' scores in game order, from the badge owner's perspective.
-  // Undefined previousRecord means the game established the very first
-  // league record.
+  // players. `sets` holds the counted sets — the game's SHOOTOUT_SETS_COUNTED
+  // highest-scoring ones, in the order played, from the badge owner's
+  // perspective — and `points` their combined score. Undefined previousRecord
+  // means the game established the very first league record.
   "shootout": {
     gameId: string;
     opponent: string;
     points: number;
-    setsCounted: number;
     sets: { playerPoints: number; opponentPoints: number }[];
     previousRecord?: number;
   };

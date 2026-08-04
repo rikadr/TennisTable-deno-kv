@@ -217,8 +217,8 @@ export const AchievementsList: React.FC<AchievementsListProps> = ({ achievements
                   )}
                   {achievement.type === "shootout" && achievement.data && (
                     <span className="text-[11px] opacity-80">
-                      {achievement.data.points} points in the top {achievement.data.setsCounted} set
-                      {achievement.data.setsCounted !== 1 ? "s" : ""}:{" "}
+                      {achievement.data.points} points in the top {achievement.data.sets.length} set
+                      {achievement.data.sets.length !== 1 ? "s" : ""}:{" "}
                       {achievement.data.sets.map((set) => `${set.playerPoints}–${set.opponentPoints}`).join(", ")}
                       {achievement.data.previousRecord !== undefined
                         ? ` (prev record ${achievement.data.previousRecord})`

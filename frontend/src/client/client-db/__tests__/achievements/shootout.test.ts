@@ -56,7 +56,6 @@ describe("Shootout Achievement", () => {
       gameId: "g1",
       opponent: "bob",
       points: 66,
-      setsCounted: 3,
       sets: [
         { playerPoints: 12, opponentPoints: 10 },
         { playerPoints: 13, opponentPoints: 11 },
@@ -109,7 +108,6 @@ describe("Shootout Achievement", () => {
     const alice = tt.achievements.getAchievements("alice").filter((a) => a.type === "shootout");
     expect(alice).toHaveLength(1);
     expect(alice[0].data?.points).toBe(66);
-    expect(alice[0].data?.setsCounted).toBe(3);
     // Only the counted sets are stored, kept in game order.
     expect(alice[0].data?.sets).toStrictEqual([
       { playerPoints: 12, opponentPoints: 10 },

@@ -39,7 +39,7 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
       "Shootout 💥 is the record for the most points in one game, Season Opener 🌱 goes to the players of a season's first game, Milestone Game 🏁 marks every 500th game the league plays, David 🪨 and Goliath 🗿 are now league records, and Perfect Week 🗓️ accepts any 5 consecutive days within a week.",
     body: [
       list(
-        "Shootout 💥 - the league record for the most combined points in a single game. Only the 3 highest-scoring sets count, so a best-of-5 final competes on equal terms with an ordinary best-of-3. A 60+ point game sets the first record. Games containing an invalid set score (like 15-12 - above 11 a set must be won by exactly 2) do not compete, so house rules that award bonus points cannot inflate a total past what legit games can reach.",
+        "Shootout 💥 - the league record for the most combined points in a single game. Only the 3 highest-scoring legal sets count, so a best-of-5 final competes on equal terms with an ordinary best-of-3. A 60+ point game sets the first record. Games containing an illegal set score (like 15-12 - above 11 a set must be won by exactly 2) do not compete at all, so house rules that award bonus points cannot inflate a total past what legitimate games can reach.",
         "Season Opener 🌱 - earned by both players of a season's very first game. Awarded per season, so it comes around again every quarter.",
         "Milestone Game 🏁 - earned by both players of every 500th game the league plays. Deleted games do not count. The progress view is shared by everyone and restarts at each milestone, showing how many games remain until the next milestone game.",
       ),

@@ -275,7 +275,7 @@ export const ACHIEVEMENT_LABELS: Record<string, { title: string; description: st
   },
   "shootout": {
     title: "Shootout",
-    description: "Play the highest-scoring game in league history (the 3 highest-scoring sets count)",
+    description: "Play the highest-scoring game in league history (the 3 highest-scoring legal sets count)",
     icon: "💥",
   },
   "hero-of-the-day": {
@@ -566,8 +566,8 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
 
                 {achievement.type === "shootout" && achievement.data && (
                   <p className="text-xs text-secondary-text/70 mt-2">
-                    {achievement.data.points} points across the {achievement.data.setsCounted} highest-scoring set
-                    {achievement.data.setsCounted !== 1 ? "s" : ""}:{" "}
+                    {achievement.data.points} points across the {achievement.data.sets.length} highest-scoring set
+                    {achievement.data.sets.length !== 1 ? "s" : ""}:{" "}
                     {achievement.data.sets.map((set) => `${set.playerPoints}–${set.opponentPoints}`).join(", ")}
                     {achievement.data.previousRecord !== undefined
                       ? ` (previous record: ${achievement.data.previousRecord})`
@@ -1023,7 +1023,7 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                                 </span>
                               ))}
                               . Play a {data.target}+ point game (your {SHOOTOUT_SETS_COUNTED} highest-scoring
-                              sets count) to take it.
+                              legal sets count) to take it.
                             </>
                           ) : (
                             <>
@@ -1133,7 +1133,7 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                   ) : type === "shootout" ? (
                     <div className="mt-2 text-xs text-secondary-text/70">
                       No league record yet — play a {SHOOTOUT_RECORD_FLOOR}+ point game (the{" "}
-                      {SHOOTOUT_SETS_COUNTED} highest-scoring sets count) to set the first record.
+                      {SHOOTOUT_SETS_COUNTED} highest-scoring legal sets count) to set the first record.
                     </div>
                   ) : type === "leap-frog" ? (
                     <div className="mt-2 text-xs text-secondary-text/70">
