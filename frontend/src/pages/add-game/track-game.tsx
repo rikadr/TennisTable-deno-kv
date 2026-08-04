@@ -274,8 +274,15 @@ export const TrackGamePage: React.FC = () => {
 
   // Scoring Screen
   if (stage === "scoring") {
-    const player1Leading = currentSetScore.player1 > currentSetScore.player2;
-    const player2Leading = currentSetScore.player2 > currentSetScore.player1;
+    // Whoever leads the current set is the only possible set winner, so a single
+    // button covers both players.
+    const setLeader: Server | null =
+      currentSetScore.player1 > currentSetScore.player2
+        ? 1
+        : currentSetScore.player2 > currentSetScore.player1
+          ? 2
+          : null;
+    const setLeaderColor = setLeader === 1 ? player1Color : player2Color;
     const isSetEmpty = currentSetScore.player1 === 0 && currentSetScore.player2 === 0;
     const canEndMatch =
       (matchData.setPoints?.length || 0) > 0 && isSetEmpty && matchData.setsWon.player1 !== matchData.setsWon.player2;
@@ -313,12 +320,11 @@ export const TrackGamePage: React.FC = () => {
                   </span>
                 </div>
               </div>
-              <h2 className="text-gray-400 text-xs uppercase tracking-widest font-bold mt-4">
-                Set {(matchData.setPoints?.length || 0) + 1}
-              </h2>
-
-              {/* Serve Tracker */}
-              <div className="mt-3">
+              {/* Set number and serve tracker share one row to save height */}
+              <div className="mt-3 flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
+                <h2 className="text-gray-400 text-xs uppercase tracking-widest font-bold">
+                  Set {(matchData.setPoints?.length || 0) + 1}
+                </h2>
                 <ServeTrackerDisplay
                   currentSet={currentSetScore}
                   firstServer={firstServer}
@@ -332,8 +338,7 @@ export const TrackGamePage: React.FC = () => {
             </div>
 
             {/* Score Display */}
-            {/* Score Display */}
-            <div className="grid grid-cols-2 gap-2 mb-4">
+            <div className="grid grid-cols-2 gap-2 mb-3">
               {/* Player 1 */}
               <div className="rounded-lg p-2" style={{ backgroundColor: panel1Tint }}>
                 <h3 className="text-sm font-semibold text-gray-700 mb-1 text-center truncate">
@@ -405,31 +410,20 @@ export const TrackGamePage: React.FC = () => {
               </div>
             </div>
 
-            {/* Set Won Buttons */}
-            <div className="space-y-2 mb-3">
-              <button
-                onClick={() => setWon(1)}
-                disabled={!player1Leading}
-                className={classNames(
-                  "w-full py-3 rounded-lg font-semibold transition text-base",
-                  player1Leading ? "hover:brightness-95" : "bg-gray-300 text-gray-500 cursor-not-allowed",
-                )}
-                style={player1Leading ? fill(player1Color) : undefined}
-              >
-                Set Won by {context.playerName(player1)}
-              </button>
-              <button
-                onClick={() => setWon(2)}
-                disabled={!player2Leading}
-                className={classNames(
-                  "w-full py-3 rounded-lg font-semibold transition text-base",
-                  player2Leading ? "hover:brightness-95" : "bg-gray-300 text-gray-500 cursor-not-allowed",
-                )}
-                style={player2Leading ? fill(player2Color) : undefined}
-              >
-                Set Won by {context.playerName(player2)}
-              </button>
-            </div>
+            {/* Set Won Button */}
+            <button
+              onClick={() => setLeader && setWon(setLeader)}
+              disabled={setLeader === null}
+              className={classNames(
+                "w-full py-3 mb-2 rounded-lg font-semibold transition text-base",
+                setLeader === null ? "bg-gray-300 text-gray-500 cursor-not-allowed" : "hover:brightness-95",
+              )}
+              style={setLeader === null ? undefined : fill(setLeaderColor)}
+            >
+              {setLeader === null
+                ? "Set Won by leading player"
+                : `Set Won by ${context.playerName(setLeader === 1 ? player1 : player2)}`}
+            </button>
 
             {/* End Match Button */}
             <button

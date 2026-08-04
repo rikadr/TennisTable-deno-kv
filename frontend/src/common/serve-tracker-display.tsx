@@ -12,9 +12,9 @@ type ServeTrackerProps = {
   player1Color: string;
   player2Color: string;
   /**
-   * When provided, a "Starts serving" selector is shown while the current set
-   * is still 0-0, letting the operator pick who serves first. Omit for
-   * read-only displays (e.g. the public scoreboard / TV overlay).
+   * When provided, a "Serves first" selector replaces the tracker while the
+   * current set is still 0-0, letting the operator pick who serves first. Omit
+   * for read-only displays (e.g. the public scoreboard / TV overlay).
    */
   onSelectFirstServer?: (player: Server) => void;
 };
@@ -28,50 +28,50 @@ export const ServeTrackerDisplay: React.FC<ServeTrackerProps> = ({
   player2Color,
   onSelectFirstServer,
 }) => {
-  const { server, servesRemaining, isDeuce } = getServeInfo(currentSet, firstServer);
+  const { server, servesRemaining } = getServeInfo(currentSet, firstServer);
   const serverName = server === 1 ? player1Name : player2Name;
   const isSetEmpty = currentSet.player1 === 0 && currentSet.player2 === 0;
   const serverColor = server === 1 ? player1Color : player2Color;
 
+  // At 0-0 the selector says who serves first, so the tracker pill would only
+  // repeat it. Show one or the other to keep the tracker a single row.
+  if (onSelectFirstServer && isSetEmpty) {
+    return (
+      <div className="flex flex-wrap items-center justify-center gap-2">
+        <span className="text-xs text-gray-400">🏓 Serves first:</span>
+        <button
+          onClick={() => onSelectFirstServer(1)}
+          className={classNames(
+            "text-xs px-2.5 py-1 rounded-full font-semibold transition",
+            firstServer === 1 ? "hover:brightness-95" : "bg-gray-100 text-gray-500 hover:bg-gray-200",
+          )}
+          style={firstServer === 1 ? fill(player1Color) : undefined}
+        >
+          {player1Name}
+        </button>
+        <button
+          onClick={() => onSelectFirstServer(2)}
+          className={classNames(
+            "text-xs px-2.5 py-1 rounded-full font-semibold transition",
+            firstServer === 2 ? "hover:brightness-95" : "bg-gray-100 text-gray-500 hover:bg-gray-200",
+          )}
+          style={firstServer === 2 ? fill(player2Color) : undefined}
+        >
+          {player2Name}
+        </button>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex flex-col items-center gap-1">
+    <div className="flex items-center justify-center">
       <div className="flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-semibold" style={fill(serverColor)}>
         <span>🏓</span>
         <span>{serverName} to serve</span>
-        {isDeuce ? (
-          <span className="text-xs font-normal opacity-80">(deuce)</span>
-        ) : (
-          <span className="text-xs font-normal opacity-80">
-            ({servesRemaining} serve{servesRemaining === 1 ? "" : "s"} left)
-          </span>
-        )}
+        <span className="text-xs font-normal opacity-80">
+          ({servesRemaining} serve{servesRemaining === 1 ? "" : "s"} left)
+        </span>
       </div>
-
-      {onSelectFirstServer && isSetEmpty && (
-        <div className="flex items-center gap-2 mt-1">
-          <span className="text-xs text-gray-400">Starts serving:</span>
-          <button
-            onClick={() => onSelectFirstServer(1)}
-            className={classNames(
-              "text-xs px-2 py-0.5 rounded-full font-semibold transition",
-              firstServer === 1 ? "hover:brightness-95" : "bg-gray-100 text-gray-500 hover:bg-gray-200",
-            )}
-            style={firstServer === 1 ? fill(player1Color) : undefined}
-          >
-            {player1Name}
-          </button>
-          <button
-            onClick={() => onSelectFirstServer(2)}
-            className={classNames(
-              "text-xs px-2 py-0.5 rounded-full font-semibold transition",
-              firstServer === 2 ? "hover:brightness-95" : "bg-gray-100 text-gray-500 hover:bg-gray-200",
-            )}
-            style={firstServer === 2 ? fill(player2Color) : undefined}
-          >
-            {player2Name}
-          </button>
-        </div>
-      )}
     </div>
   );
 };
