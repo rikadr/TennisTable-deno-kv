@@ -422,10 +422,10 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
       "A public page and an admin page for a game in progress, and an overlay without app chrome for a screen next to the table.",
     body: [
       text(
-        "One page is for the person who records the score. The other page is for everyone who watches. The state is on the server, and the server pushes it to viewers over the WebSocket connection, so the public page does not poll.",
+        "One page is for the person who records the score. The other page is for everyone who watches. The state is on the server, and the server pushes it to viewers over the WebSocket connection. Each viewer also polls every few seconds, so the score follows the game if the connection stops.",
       ),
       text(
-        "The overlay is a separate route with no menu, header or padding, so you can capture it and show it on a TV. It has a zoom option for different screen sizes, and it refetches the state if the connection stops.",
+        "The overlay is a separate route with no menu, header or padding, so you can capture it and show it on a TV. It has a zoom option for different screen sizes. The poll continues while the tab is in the background, which a capture on a TV is.",
       ),
     ],
   },
@@ -874,6 +874,9 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
     summary: "A game you enter on one phone appears on every other screen immediately, with no refresh.",
     body: [
       text("The server broadcasts a new event to every connected client, so the leaderboard updates itself."),
+      text(
+        "The deployment runs the server in several instances, and each instance holds its own connections. A broadcast now travels between the instances first, so it reaches every client and not only the clients of the instance that took the write.",
+      ),
       text(
         "The same channel now carries the cache invalidation when an admin edits an event. It also lets the live game page and the TV overlay work with no poll.",
       ),

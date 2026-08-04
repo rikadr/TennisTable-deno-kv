@@ -1,8 +1,8 @@
 {
   "nodeModulesDir": "auto",
-  "unstable": ["cron"],
+  "unstable": ["cron", "broadcast-channel"],
   "tasks": {
-    "dev": "deno run --allow-net --allow-env --allow-read --allow-write --allow-ffi --env --watch --unstable-cron --unstable-ffi server.ts",
+    "dev": "deno run --allow-net --allow-env --allow-read --allow-write --allow-ffi --env --watch --unstable-cron --unstable-ffi --unstable-broadcast-channel server.ts",
     "check": "deno check ."
   },
   "compilerOptions": {

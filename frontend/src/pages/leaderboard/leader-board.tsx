@@ -21,6 +21,8 @@ import { RelativeTime } from "../../common/date-utils";
 
 type LeaderboardView = "overall" | "season";
 
+const LIVE_GAME_CARD_POLL_MS = 10_000;
+
 const LeaderboardToggle = ({
   className,
   view,
@@ -59,7 +61,9 @@ const LeaderboardToggle = ({
 export const LeaderBoard: React.FC = () => {
   const context = useEventDbContext();
   const navigate = useNavigate();
-  const liveGameQuery = useLiveGameQuery();
+  // The card shows the score of a game in progress. A slow fallback poll keeps
+  // it current if the WebSocket broadcast does not arrive.
+  const liveGameQuery = useLiveGameQuery({ refetchIntervalMs: LIVE_GAME_CARD_POLL_MS });
   const leaderboard = context.leaderboard.getLeaderboard();
   const [viewString, setViewString] = useLocalStorage("leaderboard_view", "overall");
   

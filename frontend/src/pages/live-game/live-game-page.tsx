@@ -13,14 +13,15 @@ import { Server } from "../../common/serve-tracker";
 import { ServeTrackerDisplay } from "../../common/serve-tracker-display";
 
 // Fallback poll in case the WebSocket drops — primary updates come from
-// the LIVE_GAME broadcast handled in WebSocketRefetcher.
+// the LIVE_GAME broadcast handled in WebSocketRefetcher. The poll also runs
+// while the tab is in the background, for a phone that lies on the table.
 const POLL_FALLBACK_MS = 3_000;
 
 const ONE_HOUR_MS = 60 * 60 * 1000;
 
 export const LiveGamePage: React.FC = () => {
   const context = useEventDbContext();
-  const liveGameQuery = useLiveGameQuery({ refetchIntervalMs: POLL_FALLBACK_MS });
+  const liveGameQuery = useLiveGameQuery({ refetchIntervalMs: POLL_FALLBACK_MS, refetchInBackground: true });
 
   const isAdmin = session.sessionData?.role === "admin";
   const state = liveGameQuery.data;
