@@ -5,9 +5,7 @@ import { useState } from "react";
 import {
   Achievement,
   AchievementProgression,
-  GAMES_IN_DAY_RECORD_FLOOR,
-  GAMES_IN_MONTH_RECORD_FLOOR,
-  GAMES_IN_WEEK_RECORD_FLOOR,
+  GAMES_IN_PERIOD_RECORD_FLOOR,
   STREAK_RECORD_FLOOR,
 } from "../../client/client-db/achievements";
 import { Link } from "react-router-dom";
@@ -323,12 +321,12 @@ export function getAchievementLabel(
   return label;
 }
 
-// Wording and record floors for the Hero of the Day / Week / Month records —
-// they share the same progression UI at different period sizes.
-const HERO_RECORD_PERIODS: Record<string, { noun: string; floor: number }> = {
-  "hero-of-the-day": { noun: "day", floor: GAMES_IN_DAY_RECORD_FLOOR },
-  "hero-of-the-week": { noun: "week", floor: GAMES_IN_WEEK_RECORD_FLOOR },
-  "hero-of-the-month": { noun: "month", floor: GAMES_IN_MONTH_RECORD_FLOOR },
+// Wording for the Hero of the Day / Week / Month records — they share the
+// same progression UI (and record floor) at different period sizes.
+const HERO_RECORD_PERIODS: Record<string, { noun: string }> = {
+  "hero-of-the-day": { noun: "day" },
+  "hero-of-the-week": { noun: "week" },
+  "hero-of-the-month": { noun: "month" },
 };
 
 type TabType = "earned" | "progress";
@@ -980,7 +978,7 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                               </>
                             ) : (
                               <>
-                                No record set yet — play {HERO_RECORD_PERIODS[type].floor} games in one{" "}
+                                No record set yet — play {GAMES_IN_PERIOD_RECORD_FLOOR} games in one{" "}
                                 {HERO_RECORD_PERIODS[type].noun} to start the record.
                               </>
                             )}
@@ -1038,7 +1036,7 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                     </div>
                   ) : type in HERO_RECORD_PERIODS ? (
                     <div className="mt-2 text-xs text-secondary-text/70">
-                      No league record yet — play {HERO_RECORD_PERIODS[type].floor} games in one{" "}
+                      No league record yet — play {GAMES_IN_PERIOD_RECORD_FLOOR} games in one{" "}
                       {HERO_RECORD_PERIODS[type].noun} to set the first record.
                     </div>
                   ) : type === "earliest-game" || type === "latest-game" ? (
