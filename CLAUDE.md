@@ -95,7 +95,8 @@ to end up knowing something useful. When it is a close call, skip it.
   `bug-fix`, `technical`. **`new-feature` means the feature did not exist
   before.** Something added inside a feature that already shipped is a
   `feature-update`, however new it is to play with - new achievements update
-  Achievements, and a new tournament format or tab updates Tournaments. The
+  Achievements, a new tournament format or tab updates Tournaments, and a new
+  theme updates Theme support. The
   posts tagged `new-feature` should read as the list of things the app gained,
   not the list of times one of them grew.
 - Body blocks are `text` and `list` only. Backticks render as inline code.

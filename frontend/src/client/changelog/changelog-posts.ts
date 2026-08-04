@@ -31,8 +31,8 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  *
  * `new-feature` is for a feature that did not exist before. Anything added
  * inside a feature that already shipped is a `feature-update`, however new it
- * is to play with - new achievements update Achievements, and a tournament
- * format or tab updates Tournaments.
+ * is to play with - new achievements update Achievements, a tournament format
+ * or tab updates Tournaments, and a new theme updates Theme support.
  *
  * Write in ASD-STE100 Simplified Technical English: short sentences, active
  * voice, simple present tense, one idea per sentence, consistent terms, and no
@@ -312,12 +312,15 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
     slug: "stealth-theme",
     title: "New theme: Stealth",
     date: "2026-06-24",
-    tags: ["new-feature"],
-    summary: "Black backgrounds and greyscale text.",
+    tags: ["feature-update"],
+    summary: "Black backgrounds and greyscale text. Press the S key twice to switch it on and off.",
     body: [
       text("Stealth has no colour."),
       text(
         "A seasonal theme depends on the date, and an organisation theme depends on your workplace. Stealth depends on neither. Select it in settings as a theme override and it stays until you change it.",
+      ),
+      text(
+        "Stealth also has a shortcut. Press the S key twice, quickly, to switch it on. Press the S key twice again to go back to your usual theme. The shortcut does nothing while you type in a field, and it ignores a press with Ctrl, Cmd or Alt.",
       ),
     ],
   },
@@ -676,7 +679,7 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
     slug: "easter-theme",
     title: "New theme: Easter",
     date: "2025-03-30",
-    tags: ["new-feature"],
+    tags: ["feature-update"],
     summary: "Spring colours and an Easter logo.",
     body: [
       text("This is the second seasonal theme. It has Easter colours and a themed logo."),
@@ -707,19 +710,23 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
   },
   {
     slug: "theme-system",
-    title: "Theme system",
+    title: "Theme support",
     date: "2025-03-19",
-    tags: ["technical"],
-    summary: "A theme is a set of CSS variables, so a new theme is a list of colours.",
+    tags: ["new-feature", "technical"],
+    summary:
+      "The app supports themes. Each organisation has its own, a seasonal theme follows the date, and you can select any theme as an override in settings.",
     body: [
       text(
-        "The colours come from CSS variables. Tailwind exposes them as primary, secondary and tertiary pairs of text and background. A component never knows the active theme.",
+        "A theme is a set of colours and a logo. Each organisation has its own theme. A seasonal theme becomes active on its dates. You can also select any theme as an override in settings. There are 4 organisation themes, and Halloween, Easter and Stealth.",
+      ),
+      text(
+        "The colours come from CSS variables. Tailwind exposes them as primary, secondary and tertiary pairs of text and background. A component never knows the active theme, so a new theme is a list of colours.",
       ),
       text(
         "Opacity support makes this usable, so a modifier such as `/50` still works on a themed colour. Without it, every border and divider in the app needed a hardcoded value.",
       ),
       text(
-        "There are now 4 organisation themes, and Halloween, Easter and Stealth. You can select any of them as an override in settings. The approach before this used a condition inside each component, which was possible for 3 themes and not for a fourth.",
+        "The approach before this used a condition inside each component. That was possible for 3 themes, and not for a fourth.",
       ),
     ],
   },
@@ -801,14 +808,14 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
     slug: "halloween-theme",
     title: "New theme: Halloween",
     date: "2024-10-29",
-    tags: ["new-feature"],
+    tags: ["feature-update"],
     summary: "Pumpkin colours and a pumpkin logo for October. This is the first theme in the app.",
     body: [
       text(
         "The theme has orange and dark colours, and a pumpkin version of the logo in the nav menu. It returns every October.",
       ),
       text(
-        "This was the first theme, so it was built the direct way: a condition inside each component, and hardcoded colours. That works for exactly one theme, so the theming was rebuilt some months later.",
+        "This was the first theme, and it came before theme support. It was built the direct way: a condition inside each component, and hardcoded colours. That works for exactly one theme, so the theming was rebuilt 5 months later.",
       ),
     ],
   },
