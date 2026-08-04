@@ -50,6 +50,17 @@ most readers never see those screens), internal plumbing, config and cron
 changes, dependency bumps, and refactors with no visible or architectural
 consequence.
 
+**A tweak to an existing feature is an edit, not a post.** When a feature already
+has an entry, a small change to it - a refined rule, a tightened unit, a link
+added, a count corrected - belongs in that entry, where the reader meets it in
+the context of the feature itself. A new post is for an update substantial enough
+to stand on its own. This applies hardest to features that shipped days ago: the
+original post is what people will read, and it should describe the feature as it
+now works. If the tweak is not worth adding to that post either, there was
+nothing to say - cut it and change nothing. Corrections to numbers nobody was
+reading, like a progress-bar target or a duration unit, fail the test even though
+they are player-facing.
+
 **Also skip fixes that just restore intended behaviour**, however player-facing
 the symptom was: crashes, blank or broken pages, empty states, layout and
 rendering bugs, a control that did not respond. Being able to reach a page that
@@ -66,6 +77,10 @@ to end up knowing something useful. When it is a close call, skip it.
 - **Plain, descriptive titles.** "Live win% predictions on tracked games", not
   "Live odds on the wall-mounted TV". For a batch of achievements, "4 new
   achievements" beats anything clever.
+- **One post per thing, not per change.** Related work that lands together, or
+  one extending another a day later, is a single post - three period records are
+  "3 new achievements: Hero of the Day, Week and Month", not three entries. When
+  merging, keep the slug that shipped first; slugs are permalinks.
 - Be concise, and say why the change was made where the reasoning is interesting.
   Trade-offs and reverted decisions are worth stating honestly.
 - **No commit hashes or commit messages** - they are noise for this reader.
