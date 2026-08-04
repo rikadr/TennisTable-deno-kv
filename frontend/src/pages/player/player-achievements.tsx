@@ -567,7 +567,8 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
                 {achievement.type === "shootout" && achievement.data && (
                   <p className="text-xs text-secondary-text/70 mt-2">
                     {achievement.data.points} points across the {achievement.data.setsCounted} highest-scoring set
-                    {achievement.data.setsCounted !== 1 ? "s" : ""}
+                    {achievement.data.setsCounted !== 1 ? "s" : ""}:{" "}
+                    {achievement.data.sets.map((set) => `${set.playerPoints}–${set.opponentPoints}`).join(", ")}
                     {achievement.data.previousRecord !== undefined
                       ? ` (previous record: ${achievement.data.previousRecord})`
                       : " (first league record!)"}

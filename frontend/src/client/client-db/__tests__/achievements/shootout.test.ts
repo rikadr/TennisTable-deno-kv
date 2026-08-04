@@ -53,9 +53,20 @@ describe("Shootout Achievement", () => {
       opponent: "bob",
       points: 63,
       setsCounted: 3,
+      sets: [
+        { playerPoints: 12, opponentPoints: 10 },
+        { playerPoints: 11, opponentPoints: 10 },
+        { playerPoints: 11, opponentPoints: 9 },
+      ],
       previousRecord: undefined,
     });
     expect(bob[0].data?.opponent).toBe("alice");
+    // The loser's badge shows the same sets from their own perspective.
+    expect(bob[0].data?.sets).toStrictEqual([
+      { playerPoints: 10, opponentPoints: 12 },
+      { playerPoints: 10, opponentPoints: 11 },
+      { playerPoints: 9, opponentPoints: 11 },
+    ]);
     expect(tt.achievements.shootoutRecord).toStrictEqual({ points: 63, holders: ["alice", "bob"] });
   });
 
@@ -95,6 +106,12 @@ describe("Shootout Achievement", () => {
     expect(alice).toHaveLength(1);
     expect(alice[0].data?.points).toBe(63);
     expect(alice[0].data?.setsCounted).toBe(3);
+    // Only the counted sets are stored, kept in game order.
+    expect(alice[0].data?.sets).toStrictEqual([
+      { playerPoints: 12, opponentPoints: 10 },
+      { playerPoints: 10, opponentPoints: 11 },
+      { playerPoints: 11, opponentPoints: 9 },
+    ]);
   });
 
   it("only a strictly higher score takes the record, with previousRecord recorded", () => {

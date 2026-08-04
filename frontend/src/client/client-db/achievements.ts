@@ -1683,14 +1683,23 @@ export class Achievements {
     const beatsRecord = currentRecord === undefined ? points >= SHOOTOUT_RECORD_FLOOR : points > currentRecord;
     if (!beatsRecord) return;
 
-    const setsCounted = Math.min(setPoints.length, SHOOTOUT_SETS_COUNTED);
+    // The counted sets — the SHOOTOUT_SETS_COUNTED highest-scoring ones
+    // (earlier sets win ties), restored to game order for display.
+    const countedSets = setPoints
+      .map((set, index) => ({ set, index, sum: set.gameWinner + set.gameLoser }))
+      .sort((a, b) => b.sum - a.sum || a.index - b.index)
+      .slice(0, SHOOTOUT_SETS_COUNTED)
+      .sort((a, b) => a.index - b.index)
+      .map(({ set }) => set);
+
     this.#addAchievement(
       winner,
       this.#createAchievement("shootout", winner, playedAt, {
         gameId,
         opponent: loser,
         points,
-        setsCounted,
+        setsCounted: countedSets.length,
+        sets: countedSets.map((set) => ({ playerPoints: set.gameWinner, opponentPoints: set.gameLoser })),
         previousRecord: currentRecord,
       }),
     );
@@ -1700,7 +1709,8 @@ export class Achievements {
         gameId,
         opponent: winner,
         points,
-        setsCounted,
+        setsCounted: countedSets.length,
+        sets: countedSets.map((set) => ({ playerPoints: set.gameLoser, opponentPoints: set.gameWinner })),
         previousRecord: currentRecord,
       }),
     );
@@ -3242,9 +3252,18 @@ type AchievementDefinitions = {
   "latest-game": { gameId: string; opponent: string; time: string; minutesIntoDay: number };
   // Record-breaking most-points-in-one-game achievement, awarded to both
   // players. `points` is the combined score of the game's `setsCounted`
-  // highest-scoring sets (at most SHOOTOUT_SETS_COUNTED). Undefined
-  // previousRecord means the game established the very first league record.
-  "shootout": { gameId: string; opponent: string; points: number; setsCounted: number; previousRecord?: number };
+  // highest-scoring sets (at most SHOOTOUT_SETS_COUNTED); `sets` holds those
+  // counted sets' scores in game order, from the badge owner's perspective.
+  // Undefined previousRecord means the game established the very first
+  // league record.
+  "shootout": {
+    gameId: string;
+    opponent: string;
+    points: number;
+    setsCounted: number;
+    sets: { playerPoints: number; opponentPoints: number }[];
+    previousRecord?: number;
+  };
   // Awarded to both players of a season's very first game.
   "season-opener": { seasonStart: number; gameId: string; opponent: string };
   // Awarded to both players of a league milestone game (the 100th, 500th,
