@@ -51,7 +51,7 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
     body: [
       list(
         "Shootout 💥 - the league record for the most points in one game. Only the 3 legal sets with the most points count, so a best-of-5 game competes on equal terms with a best-of-3. A game with 60 points or more sets the first record. A game with an illegal set score does not compete at all. A score of 15-12 is illegal, because above 11 a player must win a set by exactly 2 points. Bonus points from house rules therefore cannot increase a total.",
-        "Season Opener 🌱 - both players of the first game of a season earn this. It returns every quarter.",
+        "Season Opener 🌱 - both players of the first game of a season earn this. It returns every quarter. All players see the same progress view, which counts down to the start of the next season. The view stays at 100% from the start of a season until the first game of it.",
         "Milestone Game 🏁 - both players of every 500th game in the league earn this. Deleted games do not count. All players see the same progress view, and it restarts at each milestone.",
       ),
       text(

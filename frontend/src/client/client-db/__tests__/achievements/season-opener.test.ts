@@ -1,6 +1,7 @@
 import { TennisTable } from "../../tennis-table";
 import { EventType, EventTypeEnum } from "../../event-store/event-types";
-import { determineSeason } from "../../seasons/seasons";
+import { determineNextSeason, determineSeason } from "../../seasons/seasons";
+import { achievementProgressPercentage } from "../../../../common/achievement-progress";
 
 // Season Opener is awarded to BOTH players of a season's very first game,
 // stamped at the game itself. Games in the grace period between seasons
@@ -97,5 +98,123 @@ describe("Season Opener Achievement", () => {
     expect(carol).toHaveLength(1);
     expect(carol[0].data?.gameId).toBe("g3");
     expect(tt.achievements.getAchievements("dave").filter((a) => a.type === "season-opener")).toHaveLength(0);
+  });
+
+  // The progress is a league-wide countdown to the next season start: the same
+  // values for every player, whether or not they ever opened a season.
+  describe("progress towards the next Season Opener", () => {
+    afterEach(() => {
+      jest.useRealTimers();
+    });
+
+    const q1 = determineSeason(q1Game1);
+    const q2Start = determineNextSeason(q1Game1).start;
+    // A game in the Q4 2023 season, so a season exists before Q1 2024 starts.
+    const q4Game = new Date(2023, 9, 10, 12).getTime();
+
+    function progressionFor(events: EventType[], playerId: string) {
+      const tt = new TennisTable({ events });
+      tt.achievements.calculateAchievements();
+      return tt.achievements.getPlayerProgression(playerId)["season-opener"];
+    }
+
+    function percentageOf(progress: { current: number; target: number }) {
+      return achievementProgressPercentage("season-opener", progress.current, progress.target);
+    }
+
+    it("counts from the season start towards the next season start, the same for everyone", () => {
+      const now = new Date(2024, 1, 1, 12).getTime(); // 1 February 2024, inside the Q1 season
+      jest.useFakeTimers();
+      jest.setSystemTime(now);
+
+      const events: EventType[] = [...baseEvents, game("g1", q1Game1, "alice", "bob")];
+
+      // Alice opened the season and Carol has never played, but the countdown
+      // is the same for both.
+      for (const player of ["alice", "carol"]) {
+        const progress = progressionFor(events, player);
+        expect(progress.target).toBe(q2Start - q1.start);
+        expect(progress.current).toBe(now - q1.start);
+        expect(progress.nextSeasonStart).toBe(q2Start);
+      }
+      expect(progressionFor(events, "alice").earned).toBe(1);
+      expect(progressionFor(events, "carol").earned).toBe(0);
+    });
+
+    it("starts at 0 at the season start", () => {
+      jest.useFakeTimers();
+      jest.setSystemTime(q1.start);
+
+      const events: EventType[] = [...baseEvents, game("g1", q1.start, "alice", "bob")];
+
+      expect(progressionFor(events, "alice").current).toBe(0);
+    });
+
+    it("holds at 100% while the season is open and has no games", () => {
+      const now = new Date(2024, 0, 2, 12).getTime(); // the day after the Q1 season started
+      jest.useFakeTimers();
+      jest.setSystemTime(now);
+
+      // The last game is in the Q4 2023 season, so the Q1 season is open and
+      // its opener is still there to take.
+      const events: EventType[] = [...baseEvents, game("g1", q4Game, "alice", "bob")];
+
+      const progress = progressionFor(events, "carol");
+      expect(progress.current).toBe(progress.target);
+      expect(percentageOf(progress)).toBe(100);
+    });
+
+    it("falls back to the countdown once the opening game is played", () => {
+      const now = new Date(2024, 0, 2, 12).getTime();
+      jest.useFakeTimers();
+      jest.setSystemTime(now);
+
+      const openingGame = new Date(2024, 0, 2, 10).getTime(); // two hours before now
+      const events: EventType[] = [
+        ...baseEvents,
+        game("g1", q4Game, "alice", "bob"),
+        game("g2", openingGame, "alice", "carol"),
+      ];
+
+      // The player who earned it and a player who did not are both back at the
+      // same small part of the way towards the next season start.
+      for (const player of ["alice", "dave"]) {
+        const progress = progressionFor(events, player);
+        expect(progress.target).toBe(q2Start - q1.start);
+        expect(progress.current).toBe(now - q1.start);
+        expect(percentageOf(progress)).toBeLessThan(5);
+      }
+    });
+
+    it("keeps counting through the grace period between seasons", () => {
+      const now = new Date(2024, 2, 25, 12).getTime(); // 25 March 2024, after the Q1 season ended
+      jest.useFakeTimers();
+      jest.setSystemTime(now);
+      expect(now).toBeGreaterThan(q1.end);
+      expect(now).toBeLessThan(q2Start);
+
+      const events: EventType[] = [...baseEvents, game("g1", q1Game1, "alice", "bob")];
+
+      // The countdown still measures from the Q1 season start, so the bar is
+      // close to full but not yet at 100%.
+      const progress = progressionFor(events, "carol");
+      expect(progress.target).toBe(q2Start - q1.start);
+      expect(progress.current).toBe(now - q1.start);
+      expect(percentageOf(progress)).toBeGreaterThan(90);
+      expect(percentageOf(progress)).toBeLessThan(100);
+    });
+
+    it("does not hold at 100% in the grace period after a season with no games", () => {
+      const now = new Date(2024, 2, 25, 12).getTime();
+      jest.useFakeTimers();
+      jest.setSystemTime(now);
+
+      // The Q1 season is over and nobody opened it, so its opener is gone.
+      const events: EventType[] = [...baseEvents, game("g1", q4Game, "alice", "bob")];
+
+      const progress = progressionFor(events, "carol");
+      expect(progress.current).toBe(now - q1.start);
+      expect(progress.current).toBeLessThan(progress.target);
+    });
   });
 });
