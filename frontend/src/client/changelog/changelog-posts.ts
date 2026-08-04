@@ -25,6 +25,10 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  * significant change under the hood. Small fixes, admin-only tweaks and
  * internal plumbing are left out.
  *
+ * A small change to a feature that already has a post is an edit to that post,
+ * not a new one - and if it is not worth the edit, it is not worth recording at
+ * all. See the Changelog section of CLAUDE.md for the full criteria.
+ *
  * Write about what is new. Describe how it used to work only where that is
  * needed to make the new thing land - the reader is here for what changed to,
  * not for what it changed from.
@@ -52,38 +56,26 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
     ],
   },
   {
-    slug: "hero-of-the-week-and-month-achievements",
-    title: "2 new achievements: Hero of the Week and Hero of the Month",
+    slug: "hero-of-the-day-achievement",
+    title: "3 new achievements: Hero of the Day, Week and Month",
     date: "2026-08-03",
     tags: ["new-feature"],
     summary:
-      "Hero of the Week 🦸‍♂️ and Hero of the Month 🦸‍♀️ extend the Hero of the Day record to bigger periods: the most games played in a single week and in a single calendar month.",
+      "Three league records for most games played in a period: a single day, a single week, and a single calendar month. The first period with 3 games sets each record; after that only a busier one takes it.",
     body: [
       list(
-        "Hero of the Week 🦸‍♂️ - the league record for most games played in a single week (Monday to Sunday).",
-        "Hero of the Month 🦸‍♀️ - the league record for most games played in a single calendar month.",
+        "Hero of the Day 🦸 - most games played in one calendar day.",
+        "Hero of the Week 🦸‍♂️ - most games played in a single week, Monday to Sunday.",
+        "Hero of the Month 🦸‍♀️ - most games played in a single calendar month.",
       ),
       text(
-        "Both work exactly like Hero of the Day: they are records that are held, not just earned. The first week or month with 3 games sets its record, wins and losses both count, one award grows with the whole record period, and only a strictly busier week or month takes the record over. The three records run independently - a monster day feeds its week's and month's counts too.",
+        "All three are league records, like Marathon Set and the streak records: they are held, not just earned. The first player to play 3 games in a period establishes its record, and from then on it takes a strictly busier period to claim it. Wins and losses both count - these are about showing up and playing.",
       ),
       text(
-        "The progress view shows your current week and month against the records, your busiest ever, and who holds them.",
-      ),
-    ],
-  },
-  {
-    slug: "hero-of-the-day-achievement",
-    title: "New achievement: Hero of the Day",
-    date: "2026-08-03",
-    tags: ["new-feature"],
-    summary:
-      "Hero of the Day 🦸 goes to the league record for most games played in a single day. The first day with 3 games sets the record; after that only a busier day takes it.",
-    body: [
-      text(
-        "Hero of the Day 🦸 is a league record, like Marathon Set and the streak records: it is held, not just earned. The first player to play 3 games in one calendar day establishes the record, and from then on it takes a strictly busier day to claim it. Wins and losses both count - the record is about showing up and playing.",
+        "One award covers the whole record period: keep playing while you hold the record and the award grows with the day, week or month instead of stacking a new one per game. The three run independently, so a monster day feeds its week's and month's counts too.",
       ),
       text(
-        "One award covers the whole record day: keep playing while you hold the record and the award grows with the day instead of stacking a new one per game. The progress view shows today's games against the record, your busiest day ever, and who currently holds it.",
+        "The progress view shows your current day, week and month against the records, your busiest ever, and who holds each one.",
       ),
     ],
   },
@@ -104,55 +96,6 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
       ),
       text(
         "The Everyone's Progress view on the achievements page now includes retired players, tagged with a Retired badge. Their history is as real as anyone's, and their names were already on the records they hold.",
-      ),
-    ],
-  },
-  {
-    slug: "record-achievement-targets-beyond-record",
-    title: "Record achievement progress bars now aim one beyond the record",
-    date: "2026-08-03",
-    tags: ["bug-fix"],
-    summary:
-      "Progress toward Longest Win/Lose Streak, Marathon Set and Leap Frog is now measured against the value that actually takes the record, not the record itself.",
-    body: [
-      text(
-        "The four record-chasing achievements are earned by beating the league record, not by matching it. Their progress bars and targets now reflect that: with the win-streak record at 8, the bar aims at 9. Previously the target was the record itself, so tying it read as 100% without earning anything. If your progress on one of these dropped slightly, this is why - the goal moved to where it always really was.",
-      ),
-    ],
-  },
-  {
-    slug: "tournament-timeline-whole-days",
-    title: "The tournament timeline counts whole days",
-    date: "2026-07-31",
-    tags: ["feature-update"],
-    summary:
-      "Every duration on the timeline is now a count of calendar days, inclusive at both ends: same day is one day, into the next day is two.",
-    body: [
-      text(
-        "A round's duration is the number of calendar days it touched. A round that started and finished on the same day took one day. One that started in the afternoon and finished the next morning took two, even though only a few hours passed. The bars and the axis are drawn in the same unit, so a bar covers whole day cells and the tournament total is the number of days it spanned.",
-      ),
-      text(
-        "It used to be a straight clock difference, reported as minutes, hours or fractional days - a round could read 4.5 hours and the one after it 1.2 days. Tournaments here are played out over days, not measured to the minute, and the mixed units made two rounds hard to compare at a glance. Sub-day precision was never the interesting number. If you read a round as taking half a day, it now reads as the one or two days it actually spanned.",
-      ),
-      text("Hovering a bar still gives the dates it ran between."),
-    ],
-  },
-  {
-    slug: "new-connections-view-match",
-    title: "Follow a New connections entry back to the match",
-    date: "2026-07-31",
-    tags: ["feature-update"],
-    summary:
-      "Every entry in the New connections widget links to the game behind it, and First tournament now counts everyone whose first tournament it was, debuts included.",
-    body: [
-      text(
-        "Every entry in New connections carries a View match button. It opens the tab the game is on - group play, either bracket, or the grand final - scrolls that game's card into view and wiggles it. A pair points at the game they first met over, a player at their first game of the tournament.",
-      ),
-      text(
-        "First tournament now lists everyone this was a first tournament for. That includes players making their club debut and players back from a long break, both of which it used to leave out to stop the lists repeating each other. The count read lower than the number of people it was true of, so if you read a debut as someone who had been to a tournament before, that is why. A player can now turn up in two lists, which is the honest answer to each.",
-      ),
-      text(
-        "The lists run in two columns from tablet width up. One column left most of the width empty, and these entries are short.",
       ),
     ],
   },
@@ -223,25 +166,6 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
     ],
   },
   {
-    slug: "perfect-day-awarded-when-the-day-ends",
-    title: "Perfect Day is awarded once the day is over",
-    date: "2026-07-30",
-    tags: ["bug-fix"],
-    summary:
-      "Five undefeated games no longer earns Perfect Day on the spot - it lands after midnight, once the day can no longer be spoilt by a loss.",
-    body: [
-      text(
-        "An undefeated day now shows as a complete 5/5 attempt until the day ends, and the achievement is granted when the next day starts.",
-      ),
-      text(
-        "Previously the fifth win awarded it immediately, which was wrong: a loss later the same afternoon disqualifies the day, so the achievement would appear and then vanish from your profile. If you saw a Perfect Day you later lost, that is why.",
-      ),
-      text(
-        "Perfect Week is unaffected and is still awarded the moment you win on the Friday. Losses never count against a perfect week, so nothing later in the week can take it back.",
-      ),
-    ],
-  },
-  {
     slug: "tournament-statistics-timeline",
     title: "A Statistics tab on tournaments",
     date: "2026-07-30",
@@ -271,29 +195,13 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
         "Reunions - pairs who had not met in six months or more, and how long it had been",
         "First game ever - players who had never played in the club until this tournament",
         "Back after a break - players returning after six months or more away, longest absence first",
-        "First tournament - players who had been playing all along, but never in a tournament",
+        "First tournament - everyone this was a first tournament for, including club debuts and players back from a long break, so a player can appear here and in a list above",
       ),
       text(
         "Those are measured against the club as it stood the moment the tournament started. That single baseline is what keeps the numbers steady: a pair meeting twice, in group play and then again in the bracket, is one first meeting rather than a meeting followed by a rematch. Skipped games, byes and walkovers are left out, since nobody met over them.",
       ),
       text(
         "A tournament between regulars will show little there, and saying so is the point of it: the widget reports that everyone already plays each other, and gives the longest anyone had gone without meeting anyway.",
-      ),
-    ],
-  },
-  {
-    slug: "switch-to-live-tracking-mid-flow",
-    title: "Switch to live tracking without starting over",
-    date: "2026-07-29",
-    tags: ["feature-update"],
-    summary:
-      "The Choose Winner step of Add Finished Game now offers to track the match point by point instead, with both players carried over.",
-    body: [
-      text(
-        "Picking the two players and then realising the game has not been played yet no longer means backing out and picking them again. The button under Choose Winner takes you straight to live tracking with the same two players selected.",
-      ),
-      text(
-        "Admins get the same shortcut one step further along: while tracking a match, a button at the bottom hands it over to the broadcasted live game, keeping the sets and the current score. Scoring continues on the live game admin page and the match shows up on the public live game page and the TV overlay.",
       ),
     ],
   },
