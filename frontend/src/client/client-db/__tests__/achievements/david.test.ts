@@ -2,10 +2,11 @@ import { TennisTable } from "../../tennis-table";
 import { EventType, EventTypeEnum } from "../../event-store/event-types";
 
 // David is the league record for the biggest single-game Elo gain. A gain of
-// UPSET_RECORD_FLOOR (30 — requiring the loser to have been roughly 470+ Elo
+// UPSET_RECORD_FLOOR (20 — requiring the loser to have been roughly 90+ Elo
 // above the winner) establishes the first record; after that only a strictly
 // bigger gain takes the record over and awards again. Both players must be
-// ranked at the time of the match.
+// ranked at the time of the match. The fixtures here produce ≥30-point
+// swings, comfortably past the floor.
 
 describe("David Achievement", () => {
   const createPlayer = (id: string, time: number): EventType => ({
@@ -36,7 +37,7 @@ describe("David Achievement", () => {
     return events;
   };
 
-  it("awards David when a ≥30 Elo gain establishes the first league record", () => {
+  it("awards David when a gain past the record floor establishes the first league record", () => {
     // Goliath beats 200 fresh opponents → Elo well above 1500.
     // David beats 5 fresh opponents → ranked at Elo ~1073.
     // David then beats Goliath — the upset yields a ≥30 Elo swing.
@@ -137,8 +138,9 @@ describe("David Achievement", () => {
   });
 
   it("does NOT fire for a typical match with similar-rated players", () => {
-    // Standard 5-player double round-robin — Elos stay within ~200 of
-    // each other so no swing reaches 30.
+    // Standard 5-player double round-robin where the stronger player always
+    // wins — every gain is at most the evenly-matched 16 points, under the
+    // 20-point record floor.
     const events: EventType[] = [
       createPlayer("a", 1),
       createPlayer("b", 2),

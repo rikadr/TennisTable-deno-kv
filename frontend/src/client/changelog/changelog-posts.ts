@@ -32,21 +32,22 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
     slug: "shootout-season-opener-and-record-david-goliath",
-    title: "2 new achievements, and David & Goliath become league records",
+    title: "3 new achievements, and David & Goliath become league records",
     date: "2026-08-04",
     tags: ["new-feature", "feature-update"],
     summary:
-      "Shootout 💥 is the record for the most points in one game, Season Opener 🌱 goes to the players of a season's first game, David 🪨 and Goliath 🗿 are now league records instead of fixed thresholds, and Perfect Week 🗓️ accepts any 5 consecutive days within a week.",
+      "Shootout 💥 is the record for the most points in one game, Season Opener 🌱 goes to the players of a season's first game, Milestone Game 🏁 marks the league's 100th, 500th and every thousandth game, David 🪨 and Goliath 🗿 are now league records, and Perfect Week 🗓️ accepts any 5 consecutive days within a week.",
     body: [
       list(
         "Shootout 💥 - the league record for the most combined points in a single game. Only the 3 highest-scoring sets count, so a best-of-5 final competes on equal terms with an ordinary best-of-3. A 60+ point game sets the first record.",
         "Season Opener 🌱 - earned by both players of a season's very first game. Awarded per season, so it comes around again every quarter.",
+        "Milestone Game 🏁 - earned by both players of the league's 100th, 500th, 1,000th and every following thousandth game. Deleted games do not count. The progress view shows the league's shared count toward the next milestone.",
       ),
       text(
-        "David 🪨 and Goliath 🗿 are now league records rather than fixed thresholds. Previously every single-game swing of 30+ Score earned them; now the first such swing set the record, and only a strictly bigger single-game gain (David, for the winner) or loss (Goliath, for the loser) takes it over. Score is zero-sum, so one upset always moves both records together. Because achievements are recomputed from history, some previously earned David and Goliath badges are gone - only the record-breaking upsets remain, and the progress view now shows the record and its holder.",
+        "David 🪨 and Goliath 🗿 are now league records rather than fixed thresholds. Previously every single-game swing of 30+ Score earned them; now the first 20+ Score swing set the record, and only a strictly bigger single-game gain (David, for the winner) or loss (Goliath, for the loser) takes it over. Score is zero-sum, so one upset always moves both records together. Because achievements are recomputed from history, some previously earned David and Goliath badges are gone - only the record-breaking upsets remain, and the progress view now shows the record and its holder.",
       ),
       text(
-        "Perfect Week 🗓️ no longer demands wins Monday through Friday specifically: winning on any 5 consecutive days within the same week now counts - Mon-Fri, Tue-Sat or Wed-Sun. A run that crosses into the next week does not.",
+        "Perfect Week 🗓️ no longer demands wins Monday through Friday specifically: winning on any 5 consecutive days within the same week now counts - Mon-Fri, Tue-Sat or Wed-Sun. A run that crosses into the next week does not, and losses never spoil a run - only the wins matter.",
       ),
     ],
   },

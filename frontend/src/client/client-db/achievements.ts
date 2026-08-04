@@ -18,11 +18,11 @@ export const GAMES_IN_PERIOD_RECORD_FLOOR = 3;
 
 // Smallest single-game Elo swing that can establish the very first David /
 // Goliath record (the same game sets both — Elo is zero-sum, so the winner's
-// gain is the loser's loss). 30 was the old fixed threshold for the
-// achievements, so history is preserved: the first upset that would have
-// earned the old badge is the one that seeds the record. After that only a
-// strictly bigger swing takes it.
-export const UPSET_RECORD_FLOOR = 30;
+// gain is the loser's loss). An evenly matched win moves 16 points, so 20
+// takes a real upset (the winner roughly 90+ Elo below the loser). The floor
+// only matters until the first record exists; after that only a strictly
+// bigger swing takes it.
+export const UPSET_RECORD_FLOOR = 20;
 
 // How many sets count toward a game's Shootout score. Most games are best of
 // 3, but one-set games and best-of-5 games (tournament finals) exist — summing
@@ -35,6 +35,21 @@ export const SHOOTOUT_SETS_COUNTED = 3;
 // first Shootout record. Three ordinary 11–7 sets are ~54 points; the first
 // record should take a genuinely point-heavy game, not just any full game.
 export const SHOOTOUT_RECORD_FLOOR = 60;
+
+// League game counts whose game awards "Milestone Game" to both players: the
+// 100th, 500th, 1,000th and every thousandth after. Deleted games do not
+// count — the numbering follows the games that still exist.
+export function isMilestoneGameNumber(gameNumber: number): boolean {
+  return gameNumber === 100 || gameNumber === 500 || (gameNumber > 0 && gameNumber % 1000 === 0);
+}
+
+// The next milestone strictly above `gameNumber` — what the league is
+// currently counting toward. Used by the progression view.
+export function nextMilestoneGameNumber(gameNumber: number): number {
+  if (gameNumber < 100) return 100;
+  if (gameNumber < 500) return 500;
+  return (Math.floor(gameNumber / 1000) + 1) * 1000;
+}
 
 export class Achievements {
   private parent: TennisTable;
@@ -205,7 +220,30 @@ export class Achievements {
 
     const gameLimitForRanked = this.parent.client.gameLimitForRanked;
 
-    this.parent.games.forEach((game) => {
+    this.parent.games.forEach((game, gameIndex) => {
+      // Check for "Milestone Game": awarded to both players of the league's
+      // 100th, 500th, 1,000th and every following thousandth game. Deleted
+      // games are already gone from parent.games, so they never count.
+      const leagueGameNumber = gameIndex + 1;
+      if (isMilestoneGameNumber(leagueGameNumber)) {
+        this.#addAchievement(
+          game.winner,
+          this.#createAchievement("milestone-game", game.winner, game.playedAt, {
+            gameId: game.id,
+            opponent: game.loser,
+            milestone: leagueGameNumber,
+          }),
+        );
+        this.#addAchievement(
+          game.loser,
+          this.#createAchievement("milestone-game", game.loser, game.playedAt, {
+            gameId: game.id,
+            opponent: game.winner,
+            milestone: leagueGameNumber,
+          }),
+        );
+      }
+
       // Initialize player trackers if they don't exist
       if (!playerTracker.has(game.winner)) {
         playerTracker.set(game.winner, {
@@ -2512,6 +2550,7 @@ export class Achievements {
       "group-stage-star": { earned: 0 },
       "season-winner": { current: 0, target: 1, earned: 0 },
       "season-opener": { earned: 0 },
+      "milestone-game": { current: 0, target: 100, earned: 0 },
     };
 
     let firstActiveAt: number | null = null;
@@ -3018,6 +3057,13 @@ export class Achievements {
     // record they must strictly exceed to earn the award.
     progression["shootout"].current = this.bestShootout.get(playerId) ?? 0;
 
+    // Milestone Game progression is league-wide: everyone shares the same
+    // count of existing games and the same next milestone to play toward.
+    // Deleted games are already gone from parent.games, so they don't count.
+    const totalLeagueGames = this.parent.games.length;
+    progression["milestone-game"].current = totalLeagueGames;
+    progression["milestone-game"].target = nextMilestoneGameNumber(totalLeagueGames);
+
     // Climber progression: current Elo - all-time low Elo since the
     // player first became ranked. Players who never became ranked have
     // no recorded low → progression stays at 0.
@@ -3186,6 +3232,9 @@ type AchievementDefinitions = {
   "shootout": { gameId: string; opponent: string; points: number; setsCounted: number; previousRecord?: number };
   // Awarded to both players of a season's very first game.
   "season-opener": { seasonStart: number; gameId: string; opponent: string };
+  // Awarded to both players of a league milestone game (the 100th, 500th,
+  // 1,000th and every thousandth after). `milestone` is that game number.
+  "milestone-game": { gameId: string; opponent: string; milestone: number };
 };
 
 type AchievementType = keyof AchievementDefinitions;
@@ -3381,6 +3430,7 @@ export type AchievementProgression = {
   "tournament-winner": BaseProgression;
   "season-winner": ProgressionWithTarget;
   "season-opener": BaseProgression;
+  "milestone-game": ProgressionWithTarget;
   "nice-game": BaseProgression;
   "less-is-more": BaseProgression;
   "close-calls": ProgressionWithTarget;

@@ -153,6 +153,11 @@ export const ACHIEVEMENT_LABELS: Record<string, { title: string; description: st
     description: "Play in the first game of a new season",
     icon: "🌱",
   },
+  "milestone-game": {
+    title: "Milestone Game",
+    description: "Play in a league milestone game — the 100th, 500th, 1,000th and every thousandth after",
+    icon: "🏁",
+  },
   "nice-game": {
     title: "Nice Game",
     description: "Play a game where total points scored is 69",
@@ -507,6 +512,12 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
                   </p>
                 )}
 
+                {achievement.type === "milestone-game" && achievement.data && (
+                  <p className="text-xs text-secondary-text/70 mt-2">
+                    Played in league game #{fmtNum(achievement.data.milestone)}
+                  </p>
+                )}
+
                 {achievement.data && "firstWinAt" in achievement.data && "thirdWinAt" in achievement.data && (
                   <p className="text-xs text-secondary-text/70 mt-2">
                     From {dateString(achievement.data.firstWinAt)} to {dateString(achievement.data.thirdWinAt)}
@@ -803,6 +814,11 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                             {type === "season-winner" && (
                               <span className="text-xs text-secondary-text/70 font-normal ml-2">
                                 (Current leader's points)
+                              </span>
+                            )}
+                            {type === "milestone-game" && (
+                              <span className="text-xs text-secondary-text/70 font-normal ml-2">
+                                (The league's total games — everyone counts toward it together)
                               </span>
                             )}
                           </span>

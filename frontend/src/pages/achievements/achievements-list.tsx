@@ -108,6 +108,11 @@ export const AchievementsList: React.FC<AchievementsListProps> = ({ achievements
                       Season starting {dateString(achievement.data.seasonStart)}
                     </span>
                   )}
+                  {achievement.type === "milestone-game" && achievement.data && (
+                    <span className="text-[11px] opacity-80">
+                      League game #{fmtNum(achievement.data.milestone)}
+                    </span>
+                  )}
                   {achievement.data && "lastGameAt" in achievement.data && (
                     <span className="text-[11px] opacity-80">
                       {dateString(achievement.data.lastGameAt)} – {dateString(achievement.earnedAt)}
