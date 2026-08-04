@@ -10,7 +10,7 @@ The system follows a strict **Event Sourcing** architecture with a clear separat
 
 ## Directory Structure
 - `/frontend`: The React application. Contains all business logic and UI.
-- `/DenoServer`: The Deno backend. Handles API, WebSockets, and DB (Deno KV).
+- `/DenoServer`: The Deno backend. Handles API, WebSockets, and DB (Supabase Postgres, SQLite locally).
 
 ## General Philosophies
 1.  **Event Driven:** The state is a derivative of events. To change state, you emit an event.

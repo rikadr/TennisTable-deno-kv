@@ -17,7 +17,9 @@ export const LiveGameOverlay: React.FC = () => {
   const [searchParams] = useSearchParams();
   const zoom = parseFloat(searchParams.get("zoom") || "1") || 1;
   const context = useEventDbContext();
-  const liveGameQuery = useLiveGameQuery({ refetchIntervalMs: POLL_FALLBACK_MS });
+  // The overlay is captured on a screen next to the table, where the tab counts
+  // as a background tab. It must keep the poll running.
+  const liveGameQuery = useLiveGameQuery({ refetchIntervalMs: POLL_FALLBACK_MS, refetchInBackground: true });
 
   const state = liveGameQuery.data;
   const isActive = !!state && !!state.player1Id && !!state.player2Id && state.startedAt !== null && !state.finishedAt;

@@ -5,7 +5,16 @@ import { queryClient } from "../../common/query-client";
 
 const LIVE_GAME_QUERY_KEY = ["live-game"];
 
-export function useLiveGameQuery(options?: { refetchIntervalMs?: number | false; enabled?: boolean }) {
+export function useLiveGameQuery(options?: {
+  refetchIntervalMs?: number | false;
+  enabled?: boolean;
+  /**
+   * React Query stops an interval refetch while the tab is in the background. A
+   * screen that shows the score is often in the background: a TV capture, or a
+   * phone that lies on the table. Set this to keep the poll running.
+   */
+  refetchInBackground?: boolean;
+}) {
   return useQuery<LiveGameState | null>({
     enabled: options?.enabled ?? true,
     queryKey: LIVE_GAME_QUERY_KEY,
@@ -19,6 +28,7 @@ export function useLiveGameQuery(options?: { refetchIntervalMs?: number | false;
       return JSON.parse(text) as LiveGameState;
     },
     refetchInterval: options?.refetchIntervalMs ?? false,
+    refetchIntervalInBackground: options?.refetchInBackground ?? false,
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
   });
