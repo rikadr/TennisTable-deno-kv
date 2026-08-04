@@ -149,13 +149,6 @@ export const TournamentTimelineWidget: React.FC<{ tournament: Tournament }> = ({
           ))}
         </div>
       </div>
-
-      <p className="mt-6 text-xs font-light leading-relaxed">
-        A round's clock starts when it became possible to play - when the round feeding it finished - and ends at its
-        last game, so the waiting counts towards how long it took. The groups of the group play all start together at
-        the tournament start. Time is counted in whole calendar days: a round that starts and finishes on the same day
-        took one day, and one that runs into the next day took two.
-      </p>
     </WidgetFrame>
   );
 };
