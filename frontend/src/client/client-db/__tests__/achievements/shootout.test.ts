@@ -6,6 +6,10 @@ import { EventType, EventTypeEnum } from "../../event-store/event-types";
 // best-of-5 finals compete on equal terms. A 60-point game establishes the
 // first record; after that only a strictly higher score takes it. Both
 // players of the record game are awarded — the points were scored together.
+//
+// Only games where every set has a valid score count: first to 11 (loser at
+// 9 or below) or a deuce set won by exactly 2. House-rule scores like 15–12
+// are silently ignored so inflated totals can't take the record.
 describe("Shootout Achievement", () => {
   const baseEvents: EventType[] = [
     { type: EventTypeEnum.PLAYER_CREATED, stream: "alice", time: 1, data: { name: "Alice" } },
@@ -31,12 +35,12 @@ describe("Shootout Achievement", () => {
   };
 
   it("awards BOTH players with undefined previousRecord when first establishing the record", () => {
-    // 22 + 21 + 20 = 63 points ≥ the 60-point floor.
+    // 22 + 24 + 20 = 66 points ≥ the 60-point floor.
     const events: EventType[] = [
       ...baseEvents,
       ...scoredGame("g1", 100, "alice", "bob", [
         { gameWinner: 12, gameLoser: 10 },
-        { gameWinner: 11, gameLoser: 10 },
+        { gameWinner: 13, gameLoser: 11 },
         { gameWinner: 11, gameLoser: 9 },
       ]),
     ];
@@ -51,11 +55,11 @@ describe("Shootout Achievement", () => {
     expect(alice[0].data).toStrictEqual({
       gameId: "g1",
       opponent: "bob",
-      points: 63,
+      points: 66,
       setsCounted: 3,
       sets: [
         { playerPoints: 12, opponentPoints: 10 },
-        { playerPoints: 11, opponentPoints: 10 },
+        { playerPoints: 13, opponentPoints: 11 },
         { playerPoints: 11, opponentPoints: 9 },
       ],
       previousRecord: undefined,
@@ -64,10 +68,10 @@ describe("Shootout Achievement", () => {
     // The loser's badge shows the same sets from their own perspective.
     expect(bob[0].data?.sets).toStrictEqual([
       { playerPoints: 10, opponentPoints: 12 },
-      { playerPoints: 10, opponentPoints: 11 },
+      { playerPoints: 11, opponentPoints: 13 },
       { playerPoints: 9, opponentPoints: 11 },
     ]);
-    expect(tt.achievements.shootoutRecord).toStrictEqual({ points: 63, holders: ["alice", "bob"] });
+    expect(tt.achievements.shootoutRecord).toStrictEqual({ points: 66, holders: ["alice", "bob"] });
   });
 
   it("does NOT award below the 60-point floor", () => {
@@ -87,13 +91,13 @@ describe("Shootout Achievement", () => {
   });
 
   it("counts only the 3 highest-scoring sets of a best-of-5 game", () => {
-    // Set sums: 22, 21, 20, 11, 11 — top 3 give 63, not the 85 total.
+    // Set sums: 22, 20, 24, 11, 11 — top 3 give 66, not the 88 total.
     const events: EventType[] = [
       ...baseEvents,
       ...scoredGame("g1", 100, "alice", "bob", [
         { gameWinner: 12, gameLoser: 10 },
-        { gameWinner: 10, gameLoser: 11 },
-        { gameWinner: 11, gameLoser: 9 },
+        { gameWinner: 9, gameLoser: 11 },
+        { gameWinner: 13, gameLoser: 11 },
         { gameWinner: 11, gameLoser: 0 },
         { gameWinner: 11, gameLoser: 0 },
       ]),
@@ -104,35 +108,35 @@ describe("Shootout Achievement", () => {
 
     const alice = tt.achievements.getAchievements("alice").filter((a) => a.type === "shootout");
     expect(alice).toHaveLength(1);
-    expect(alice[0].data?.points).toBe(63);
+    expect(alice[0].data?.points).toBe(66);
     expect(alice[0].data?.setsCounted).toBe(3);
     // Only the counted sets are stored, kept in game order.
     expect(alice[0].data?.sets).toStrictEqual([
       { playerPoints: 12, opponentPoints: 10 },
-      { playerPoints: 10, opponentPoints: 11 },
-      { playerPoints: 11, opponentPoints: 9 },
+      { playerPoints: 9, opponentPoints: 11 },
+      { playerPoints: 13, opponentPoints: 11 },
     ]);
   });
 
   it("only a strictly higher score takes the record, with previousRecord recorded", () => {
     const events: EventType[] = [
       ...baseEvents,
-      // Establishes the record at 63.
+      // Establishes the record at 66.
       ...scoredGame("g1", 100, "alice", "bob", [
         { gameWinner: 12, gameLoser: 10 },
-        { gameWinner: 11, gameLoser: 10 },
+        { gameWinner: 13, gameLoser: 11 },
         { gameWinner: 11, gameLoser: 9 },
       ]),
       // Equal score — does not take the record.
       ...scoredGame("g2", 200, "alice", "carol", [
         { gameWinner: 12, gameLoser: 10 },
-        { gameWinner: 11, gameLoser: 10 },
+        { gameWinner: 13, gameLoser: 11 },
         { gameWinner: 11, gameLoser: 9 },
       ]),
-      // 24 + 21 + 20 = 65 — takes the record.
+      // 26 + 24 + 20 = 70 — takes the record.
       ...scoredGame("g3", 300, "carol", "bob", [
+        { gameWinner: 14, gameLoser: 12 },
         { gameWinner: 13, gameLoser: 11 },
-        { gameWinner: 11, gameLoser: 10 },
         { gameWinner: 11, gameLoser: 9 },
       ]),
     ];
@@ -145,19 +149,57 @@ describe("Shootout Achievement", () => {
     // Carol: the g3 record only.
     const carol = tt.achievements.getAchievements("carol").filter((a) => a.type === "shootout");
     expect(carol).toHaveLength(1);
-    expect(carol[0].data).toMatchObject({ gameId: "g3", points: 65, previousRecord: 63 });
+    expect(carol[0].data).toMatchObject({ gameId: "g3", points: 70, previousRecord: 66 });
     // Bob was in both record games.
     expect(tt.achievements.getAchievements("bob").filter((a) => a.type === "shootout")).toHaveLength(2);
-    expect(tt.achievements.shootoutRecord).toStrictEqual({ points: 65, holders: ["carol", "bob"] });
+    expect(tt.achievements.shootoutRecord).toStrictEqual({ points: 70, holders: ["carol", "bob"] });
+  });
+
+  it("silently ignores games containing an invalid set score", () => {
+    const events: EventType[] = [
+      ...baseEvents,
+      // 27 + 24 + 22 = 73 points, but 15–12 is not a valid set score
+      // (above 11 the set must be won by exactly 2).
+      ...scoredGame("g1", 100, "alice", "bob", [
+        { gameWinner: 15, gameLoser: 12 },
+        { gameWinner: 13, gameLoser: 11 },
+        { gameWinner: 12, gameLoser: 10 },
+      ]),
+      // 11–10 is impossible too — at 10–10 the set continues to +2.
+      ...scoredGame("g2", 200, "alice", "carol", [
+        { gameWinner: 11, gameLoser: 10 },
+        { gameWinner: 11, gameLoser: 0 },
+        { gameWinner: 11, gameLoser: 0 },
+      ]),
+      // A legit game afterwards still establishes the FIRST record —
+      // the invalid games never became a record to beat.
+      ...scoredGame("g3", 300, "carol", "bob", [
+        { gameWinner: 12, gameLoser: 10 },
+        { gameWinner: 13, gameLoser: 11 },
+        { gameWinner: 11, gameLoser: 9 },
+      ]),
+    ];
+
+    const tt = new TennisTable({ events });
+    tt.achievements.calculateAchievements();
+
+    expect(tt.achievements.getAchievements("alice").filter((a) => a.type === "shootout")).toHaveLength(0);
+    const carol = tt.achievements.getAchievements("carol").filter((a) => a.type === "shootout");
+    expect(carol).toHaveLength(1);
+    expect(carol[0].data).toMatchObject({ gameId: "g3", points: 66, previousRecord: undefined });
+    expect(tt.achievements.shootoutRecord).toStrictEqual({ points: 66, holders: ["carol", "bob"] });
+
+    // Invalid games do not feed the personal-best progression either.
+    expect(tt.achievements.getPlayerProgression("alice")["shootout"].current).toBe(0);
   });
 
   it("tracks personal best and the record target in progression", () => {
     const events: EventType[] = [
       ...baseEvents,
-      // Alice/Bob set the record at 63.
+      // Alice/Bob set the record at 66.
       ...scoredGame("g1", 100, "alice", "bob", [
         { gameWinner: 12, gameLoser: 10 },
-        { gameWinner: 11, gameLoser: 10 },
+        { gameWinner: 13, gameLoser: 11 },
         { gameWinner: 11, gameLoser: 9 },
       ]),
       // Carol's best game is 18 + 18 + 16 = 52 — under the record.
@@ -173,12 +215,12 @@ describe("Shootout Achievement", () => {
 
     const carol = tt.achievements.getPlayerProgression("carol")["shootout"];
     expect(carol.current).toBe(52);
-    expect(carol.target).toBe(64); // one beyond the record
+    expect(carol.target).toBe(67); // one beyond the record
     expect(carol.recordHolders).toStrictEqual(["alice", "bob"]);
     expect(carol.earned).toBe(0);
 
     const alice = tt.achievements.getPlayerProgression("alice")["shootout"];
-    expect(alice.current).toBe(63);
+    expect(alice.current).toBe(66);
     expect(alice.earned).toBe(1);
   });
 

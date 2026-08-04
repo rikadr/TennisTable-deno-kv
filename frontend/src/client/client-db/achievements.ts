@@ -1651,6 +1651,17 @@ export class Achievements {
       .reduce((sum, points) => sum + points, 0);
   }
 
+  // A legitimately completed set: first to 11 with the loser at 9 or below,
+  // or a deuce set won by exactly 2 points. Anything else — e.g. 15–12 —
+  // comes from house rules that award bonus points (edge bounces and the
+  // like), which would inflate a game's point total past what legit games
+  // can reach.
+  #isValidSetScore(set: { gameWinner: number; gameLoser: number }): boolean {
+    const winnerScore = Math.max(set.gameWinner, set.gameLoser);
+    const loserScore = Math.min(set.gameWinner, set.gameLoser);
+    return (winnerScore === 11 && loserScore <= 9) || (winnerScore > 11 && winnerScore - loserScore === 2);
+  }
+
   // Awards "Shootout" to BOTH players of a game whose Shootout score beats
   // the league-wide record — the points were scored together, so the record
   // is held together. A score of SHOOTOUT_RECORD_FLOOR establishes the first
@@ -1662,6 +1673,11 @@ export class Achievements {
     setPoints: { gameWinner: number; gameLoser: number }[],
     playedAt: number,
   ) {
+    // Games containing any invalid set score are silently ignored — for the
+    // record AND the personal-best progression — so inflated house-rule
+    // totals can never take the record away from legit games.
+    if (!setPoints.every((set) => this.#isValidSetScore(set))) return;
+
     const points = this.#shootoutScore(setPoints);
 
     // Track personal bests for the progression view.
