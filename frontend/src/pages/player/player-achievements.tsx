@@ -6,7 +6,10 @@ import {
   Achievement,
   AchievementProgression,
   GAMES_IN_PERIOD_RECORD_FLOOR,
+  SHOOTOUT_RECORD_FLOOR,
+  SHOOTOUT_SETS_COUNTED,
   STREAK_RECORD_FLOOR,
+  UPSET_RECORD_FLOOR,
 } from "../../client/client-db/achievements";
 import { Link } from "react-router-dom";
 import { fmtNum } from "../../common/number-utils";
@@ -145,6 +148,11 @@ export const ACHIEVEMENT_LABELS: Record<string, { title: string; description: st
     description: "Finished 1st in a season",
     icon: "🍁",
   },
+  "season-opener": {
+    title: "Season Opener",
+    description: "Play in the first game of a new season",
+    icon: "🌱",
+  },
   "nice-game": {
     title: "Nice Game",
     description: "Play a game where total points scored is 69",
@@ -207,7 +215,7 @@ export const ACHIEVEMENT_LABELS: Record<string, { title: string; description: st
   },
   "perfect-week": {
     title: "Perfect Week",
-    description: "Win a game on every day of a working week (Mon–Fri)",
+    description: "Win a game on each of 5 consecutive days within one week (Mon–Sun)",
     icon: "🗓️",
   },
   "kingslayer": {
@@ -242,12 +250,12 @@ export const ACHIEVEMENT_LABELS: Record<string, { title: string; description: st
   },
   "david": {
     title: "David",
-    description: "Take down a much higher rated opponent (gain 30+ Score from a single game)",
+    description: "Gain more Score from a single win than anyone in league history",
     icon: "🪨",
   },
   "goliath": {
     title: "Goliath",
-    description: "Got upset by a much lower rated opponent (lose 30+ Score from a single game)",
+    description: "Lose more Score from a single game than anyone in league history",
     icon: "🗿",
   },
   "climber": {
@@ -259,6 +267,11 @@ export const ACHIEVEMENT_LABELS: Record<string, { title: string; description: st
     title: "Marathon Set",
     description: "Win a deuce set with the highest winning score in league history",
     icon: "🏓",
+  },
+  "shootout": {
+    title: "Shootout",
+    description: "Play the highest-scoring game in league history (the 3 highest-scoring sets count)",
+    icon: "💥",
   },
   "hero-of-the-day": {
     title: "Hero of the Day",
@@ -435,12 +448,18 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
                 {achievement.type === "david" && achievement.data && (
                   <p className="text-xs text-secondary-text/70 mt-2">
                     Gained {fmtNum(achievement.data.eloGain, { digits: 1, signedPositive: true })} Score
+                    {achievement.data.previousRecord !== undefined
+                      ? ` (previous record: ${fmtNum(achievement.data.previousRecord, { digits: 1 })})`
+                      : " (first league record!)"}
                   </p>
                 )}
 
                 {achievement.type === "goliath" && achievement.data && (
                   <p className="text-xs text-secondary-text/70 mt-2">
                     Lost {fmtNum(-achievement.data.eloLoss, { digits: 1 })} Score
+                    {achievement.data.previousRecord !== undefined
+                      ? ` (previous record: ${fmtNum(-achievement.data.previousRecord, { digits: 1 })})`
+                      : " (first league record!)"}
                   </p>
                 )}
 
@@ -476,9 +495,15 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
                   </p>
                 )}
 
-                {achievement.data && "seasonStart" in achievement.data && (
+                {achievement.data && "seasonStart" in achievement.data && achievement.type !== "season-opener" && (
                   <p className="text-xs text-secondary-text/70 mt-2">
                     Season from {dateString(achievement.data.seasonStart)} to {dateString(achievement.earnedAt)}
+                  </p>
+                )}
+
+                {achievement.type === "season-opener" && achievement.data && (
+                  <p className="text-xs text-secondary-text/70 mt-2">
+                    Opened the season starting {dateString(achievement.data.seasonStart)}
                   </p>
                 )}
 
@@ -522,6 +547,16 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
                 {achievement.type === "marathon-set" && achievement.data && (
                   <p className="text-xs text-secondary-text/70 mt-2">
                     Set score: {achievement.data.setWinnerScore}–{achievement.data.setLoserScore}
+                    {achievement.data.previousRecord !== undefined
+                      ? ` (previous record: ${achievement.data.previousRecord})`
+                      : " (first league record!)"}
+                  </p>
+                )}
+
+                {achievement.type === "shootout" && achievement.data && (
+                  <p className="text-xs text-secondary-text/70 mt-2">
+                    {achievement.data.points} points across the {achievement.data.setsCounted} highest-scoring set
+                    {achievement.data.setsCounted !== 1 ? "s" : ""}
                     {achievement.data.previousRecord !== undefined
                       ? ` (previous record: ${achievement.data.previousRecord})`
                       : " (first league record!)"}
@@ -613,7 +648,7 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
 
                 {achievement.type === "perfect-week" && achievement.data && (
                   <p className="text-xs text-secondary-text/70 mt-2">
-                    Working week of {dateString(achievement.data.weekStart)}
+                    Won on 5 consecutive days from {dateString(achievement.data.startDay)}
                   </p>
                 )}
 
@@ -934,6 +969,51 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                         </div>
                       )}
 
+                      {/* Record holder for david / goliath. The record is a
+                          fractional Elo swing, so the target must be strictly
+                          exceeded rather than reached. */}
+                      {(type === "david" || type === "goliath") && "recordHolder" in data && data.recordHolder && (
+                        <div className="mt-2 text-xs text-secondary-text/70">
+                          League record held by{" "}
+                          <Link to={{ pathname: "/player/" + data.recordHolder, search }}>
+                            <span className="text-secondary-text underline">
+                              {context.playerName(data.recordHolder)}
+                            </span>
+                          </Link>
+                          . {type === "david" ? "Gain" : "Lose"} more than{" "}
+                          {fmtNum(data.target, { digits: 1 })} Score in one game to take it.
+                        </div>
+                      )}
+
+                      {/* Record holders for shootout — both players of the
+                          record game hold it together. */}
+                      {type === "shootout" && "recordHolders" in data && (
+                        <div className="mt-2 text-xs text-secondary-text/70">
+                          {data.recordHolders && data.recordHolders.length > 0 ? (
+                            <>
+                              League record held by{" "}
+                              {data.recordHolders.map((holder, i) => (
+                                <span key={holder}>
+                                  {i > 0 && " and "}
+                                  <Link to={{ pathname: "/player/" + holder, search }}>
+                                    <span className="text-secondary-text underline">
+                                      {context.playerName(holder)}
+                                    </span>
+                                  </Link>
+                                </span>
+                              ))}
+                              . Play a {data.target}+ point game (your {SHOOTOUT_SETS_COUNTED} highest-scoring
+                              sets count) to take it.
+                            </>
+                          ) : (
+                            <>
+                              No record set yet — play a {SHOOTOUT_RECORD_FLOOR}+ point game to start the
+                              record.
+                            </>
+                          )}
+                        </div>
+                      )}
+
                       {/* Record holder for leap-frog */}
                       {type === "leap-frog" && "recordHolder" in data && (
                         <div className="mt-2 text-xs text-secondary-text/70">
@@ -1024,6 +1104,16 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                   ) : type === "marathon-set" ? (
                     <div className="mt-2 text-xs text-secondary-text/70">
                       No league record yet — win a deuce set with the winning score at 12 or above to set the first record.
+                    </div>
+                  ) : type === "david" || type === "goliath" ? (
+                    <div className="mt-2 text-xs text-secondary-text/70">
+                      No league record yet — {type === "david" ? "gain" : "lose"} {UPSET_RECORD_FLOOR}+ Score in a
+                      single game (both players ranked) to set the first record.
+                    </div>
+                  ) : type === "shootout" ? (
+                    <div className="mt-2 text-xs text-secondary-text/70">
+                      No league record yet — play a {SHOOTOUT_RECORD_FLOOR}+ point game (the{" "}
+                      {SHOOTOUT_SETS_COUNTED} highest-scoring sets count) to set the first record.
                     </div>
                   ) : type === "leap-frog" ? (
                     <div className="mt-2 text-xs text-secondary-text/70">

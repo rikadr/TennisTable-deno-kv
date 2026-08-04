@@ -6,8 +6,12 @@
 // set win, and the chase only begins at 12. A player whose best deuce set was
 // 13, needing 16 to beat the league record of 15, is 2 points into a 5-point
 // gap — 40%, not 13/16 = 81%. So the bar measures from 11 instead of 0.
+// Shootout sums the 3 highest-scoring sets of a game: three 11–0 sets (33
+// points) is the least any full-length game can score, so the chase toward a
+// point-heavy record only begins above that.
 const PROGRESS_BASELINES: Record<string, number> = {
   "marathon-set": 11,
+  "shootout": 33,
 };
 
 /**

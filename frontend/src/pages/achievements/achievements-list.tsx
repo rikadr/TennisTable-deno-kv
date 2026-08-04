@@ -98,9 +98,14 @@ export const AchievementsList: React.FC<AchievementsListProps> = ({ achievements
                       {dateString(achievement.data.startedAt)} – {dateString(achievement.earnedAt)}
                     </span>
                   )}
-                  {achievement.data && "seasonStart" in achievement.data && (
+                  {achievement.data && "seasonStart" in achievement.data && achievement.type !== "season-opener" && (
                     <span className="text-[11px] opacity-80">
                       Season: {dateString(achievement.data.seasonStart)} – {dateString(achievement.earnedAt)}
+                    </span>
+                  )}
+                  {achievement.type === "season-opener" && achievement.data && (
+                    <span className="text-[11px] opacity-80">
+                      Season starting {dateString(achievement.data.seasonStart)}
                     </span>
                   )}
                   {achievement.data && "lastGameAt" in achievement.data && (
@@ -118,11 +123,17 @@ export const AchievementsList: React.FC<AchievementsListProps> = ({ achievements
                   {achievement.type === "david" && achievement.data && (
                     <span className="text-[11px] opacity-80">
                       {fmtNum(achievement.data.eloGain, { digits: 1, signedPositive: true })} Score
+                      {achievement.data.previousRecord !== undefined
+                        ? ` (prev record ${fmtNum(achievement.data.previousRecord, { digits: 1 })})`
+                        : " (first league record!)"}
                     </span>
                   )}
                   {achievement.type === "goliath" && achievement.data && (
                     <span className="text-[11px] opacity-80">
                       {fmtNum(-achievement.data.eloLoss, { digits: 1 })} Score
+                      {achievement.data.previousRecord !== undefined
+                        ? ` (prev record ${fmtNum(-achievement.data.previousRecord, { digits: 1 })})`
+                        : " (first league record!)"}
                     </span>
                   )}
                   {achievement.type === "best-friends" && achievement.data && (
@@ -199,6 +210,15 @@ export const AchievementsList: React.FC<AchievementsListProps> = ({ achievements
                         : " (first league record!)"}
                     </span>
                   )}
+                  {achievement.type === "shootout" && achievement.data && (
+                    <span className="text-[11px] opacity-80">
+                      {achievement.data.points} points in the top {achievement.data.setsCounted} set
+                      {achievement.data.setsCounted !== 1 ? "s" : ""}
+                      {achievement.data.previousRecord !== undefined
+                        ? ` (prev record ${achievement.data.previousRecord})`
+                        : " (first league record!)"}
+                    </span>
+                  )}
                   {achievement.type === "hero-of-the-day" && achievement.data && (
                     <span className="text-[11px] opacity-80">
                       {achievement.data.gamesPlayed} games in one day
@@ -258,7 +278,7 @@ export const AchievementsList: React.FC<AchievementsListProps> = ({ achievements
                   )}
                   {achievement.type === "perfect-week" && achievement.data && (
                     <span className="text-[11px] opacity-80">
-                      Week of {dateString(achievement.data.weekStart)}
+                      Won 5 days in a row from {dateString(achievement.data.startDay)}
                     </span>
                   )}
                   {achievement.type === "group-stage-star" && achievement.data && (
