@@ -85,22 +85,38 @@ describe("Milestone Game Achievement", () => {
     expect(alice[0].data?.gameId).toBe("g-101");
   });
 
-  it("progression counts the league's games toward the next milestone", () => {
+  it("progression restarts at each milestone and spans to the next", () => {
+    // 120 games: the 100 milestone has passed, so the chase is 20 games into
+    // the 400-game span from 100 to 500 — 380 games until the next milestone.
     const events: EventType[] = [...baseEvents, ...games(120)];
 
     const tt = new TennisTable({ events });
     tt.achievements.calculateAchievements();
 
     const alice = tt.achievements.getPlayerProgression("alice")["milestone-game"];
-    expect(alice.current).toBe(120);
-    expect(alice.target).toBe(500);
+    expect(alice.current).toBe(20);
+    expect(alice.target).toBe(400);
     expect(alice.earned).toBe(1);
 
     // League-wide chase: a player who was in none of the games sees the
     // same progress, just nothing earned.
     const carol = tt.achievements.getPlayerProgression("carol")["milestone-game"];
-    expect(carol.current).toBe(120);
-    expect(carol.target).toBe(500);
+    expect(carol.current).toBe(20);
+    expect(carol.target).toBe(400);
     expect(carol.earned).toBe(0);
+  });
+
+  it("progression starts from 0 before the first milestone and resets to 0 at one", () => {
+    const before = new TennisTable({ events: [...baseEvents, ...games(99)] });
+    before.achievements.calculateAchievements();
+    const beforeProgress = before.achievements.getPlayerProgression("alice")["milestone-game"];
+    expect(beforeProgress.current).toBe(99);
+    expect(beforeProgress.target).toBe(100);
+
+    const at = new TennisTable({ events: [...baseEvents, ...games(100)] });
+    at.achievements.calculateAchievements();
+    const atProgress = at.achievements.getPlayerProgression("alice")["milestone-game"];
+    expect(atProgress.current).toBe(0);
+    expect(atProgress.target).toBe(400);
   });
 });

@@ -51,6 +51,17 @@ export function nextMilestoneGameNumber(gameNumber: number): number {
   return (Math.floor(gameNumber / 1000) + 1) * 1000;
 }
 
+// The latest milestone at or below `gameNumber` (0 before the first one).
+// Together with nextMilestoneGameNumber it frames the current chase: the
+// progression bar restarts at each milestone and fills across the span to
+// the next.
+export function previousMilestoneGameNumber(gameNumber: number): number {
+  if (gameNumber < 100) return 0;
+  if (gameNumber < 500) return 100;
+  if (gameNumber < 1000) return 500;
+  return Math.floor(gameNumber / 1000) * 1000;
+}
+
 export class Achievements {
   private parent: TennisTable;
   private hasCalculated = false;
@@ -3057,12 +3068,16 @@ export class Achievements {
     // record they must strictly exceed to earn the award.
     progression["shootout"].current = this.bestShootout.get(playerId) ?? 0;
 
-    // Milestone Game progression is league-wide: everyone shares the same
-    // count of existing games and the same next milestone to play toward.
-    // Deleted games are already gone from parent.games, so they don't count.
+    // Milestone Game progression is league-wide (everyone shares it) and
+    // restarts at every milestone: current is the games played since the
+    // previous milestone (0 right after one) and target is the span to the
+    // next, so the bar gauges how close the next milestone game is —
+    // target - current games remain. Deleted games are already gone from
+    // parent.games, so they don't count.
     const totalLeagueGames = this.parent.games.length;
-    progression["milestone-game"].current = totalLeagueGames;
-    progression["milestone-game"].target = nextMilestoneGameNumber(totalLeagueGames);
+    const previousMilestone = previousMilestoneGameNumber(totalLeagueGames);
+    progression["milestone-game"].current = totalLeagueGames - previousMilestone;
+    progression["milestone-game"].target = nextMilestoneGameNumber(totalLeagueGames) - previousMilestone;
 
     // Climber progression: current Elo - all-time low Elo since the
     // player first became ranked. Players who never became ranked have

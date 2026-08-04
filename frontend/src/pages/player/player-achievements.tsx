@@ -816,11 +816,14 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                                 (Current leader's points)
                               </span>
                             )}
-                            {type === "milestone-game" && (
-                              <span className="text-xs text-secondary-text/70 font-normal ml-2">
-                                (The league's total games — everyone counts toward it together)
-                              </span>
-                            )}
+                            {type === "milestone-game" &&
+                              typeof data.target === "number" &&
+                              typeof data.current === "number" && (
+                                <span className="text-xs text-secondary-text/70 font-normal ml-2">
+                                  (League-wide — {fmtNum(data.target - data.current)} games until the next
+                                  milestone game)
+                                </span>
+                              )}
                           </span>
                         </div>
                       </div>
