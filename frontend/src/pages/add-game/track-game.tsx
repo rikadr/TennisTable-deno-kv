@@ -307,10 +307,17 @@ export const TrackGamePage: React.FC = () => {
                   </span>
                 </div>
 
-                <div className="flex items-center gap-2 bg-gray-50 px-4 py-1 rounded-xl shadow-inner">
-                  <span className="text-3xl font-black">{matchData.setsWon.player1}</span>
-                  <span className="font-bold text-xl">-</span>
-                  <span className="text-3xl font-black">{matchData.setsWon.player2}</span>
+                {/* Big numbers are sets, the small ones under them are the points
+                    of the set being played. */}
+                <div className="flex flex-col items-center bg-gray-50 px-4 py-1 rounded-xl shadow-inner">
+                  <div className="flex items-center gap-2">
+                    <span className="text-3xl font-black">{matchData.setsWon.player1}</span>
+                    <span className="font-bold text-xl">-</span>
+                    <span className="text-3xl font-black">{matchData.setsWon.player2}</span>
+                  </div>
+                  <div className="text-xs font-bold text-gray-500 leading-none pb-0.5">
+                    ({currentSetScore.player1}-{currentSetScore.player2})
+                  </div>
                 </div>
 
                 <div className="flex flex-col items-center gap-1">

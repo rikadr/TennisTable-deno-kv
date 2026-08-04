@@ -283,10 +283,17 @@ export const LiveGameAdminPage: React.FC = () => {
                   {context.playerName(localState.player1Id)}
                 </span>
               </div>
-              <div className="flex items-center gap-2 bg-gray-50 px-4 py-1 rounded-xl shadow-inner">
-                <span className="text-3xl font-black">{localState.setsWon.player1}</span>
-                <span className="font-bold text-xl">-</span>
-                <span className="text-3xl font-black">{localState.setsWon.player2}</span>
+              {/* Big numbers are sets, the small ones under them are the points of
+                  the set being played. */}
+              <div className="flex flex-col items-center bg-gray-50 px-4 py-1 rounded-xl shadow-inner">
+                <div className="flex items-center gap-2">
+                  <span className="text-3xl font-black">{localState.setsWon.player1}</span>
+                  <span className="font-bold text-xl">-</span>
+                  <span className="text-3xl font-black">{localState.setsWon.player2}</span>
+                </div>
+                <div className="text-xs font-bold text-gray-500 leading-none pb-0.5">
+                  ({localState.currentSet.player1}-{localState.currentSet.player2})
+                </div>
               </div>
               <div className="flex flex-col items-center gap-1">
                 <ProfilePicture playerId={localState.player2Id} size={50} border={2} />
