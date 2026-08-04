@@ -81,14 +81,51 @@ to end up knowing something useful. When it is a close call, skip it.
   one extending another a day later, is a single post - three period records are
   "3 new achievements: Hero of the Day, Week and Month", not three entries. When
   merging, keep the slug that shipped first; slugs are permalinks.
-- Be concise, and say why the change was made where the reasoning is interesting.
-  Trade-offs and reverted decisions are worth stating honestly.
+- **Keep only the most valuable and impactful content.** A post covers what the
+  change does and what the reader must know to use it or to correct what they
+  believed. Cut the rest: jokes, asides, metaphors, office anecdotes, and the
+  history of how the code got there. Give the reason for a change in one
+  sentence, and only when the reason changes what the reader does or believes.
+  State a trade-off or a reverted decision honestly, in one sentence.
+- **Short.** A summary of one or two sentences, and a body of 2 to 4 blocks. A
+  post that documents two separate widgets may need a fifth. If a sentence can
+  go without loss, it goes.
 - **No commit hashes or commit messages** - they are noise for this reader.
 - Tag with one or two of: `new-feature`, `feature-update`, `removed-feature`,
-  `bug-fix`, `technical`.
+  `bug-fix`, `technical`. **`new-feature` means the feature did not exist
+  before.** Something added inside a feature that already shipped is a
+  `feature-update`, however new it is to play with - new achievements update
+  Achievements, a new tournament format or tab updates Tournaments, and a new
+  theme updates Theme support. The
+  posts tagged `new-feature` should read as the list of things the app gained,
+  not the list of times one of them grew.
 - Body blocks are `text` and `list` only. Backticks render as inline code.
 - Slugs are permalinks - do not change one once it has shipped.
 - It is a static content list and needs no tests.
+
+**Language: ASD-STE100 Simplified Technical English.** The posts are written for
+fast and accurate comprehension by a human reader. Follow the STE writing rules:
+
+- **One short sentence, one idea.** Maximum 25 words in a sentence, and 20 in a
+  sentence inside a list item. Maximum 6 sentences in a paragraph.
+- **Active voice, simple present tense.** "The app calculates the record", not
+  "the record is calculated". Use a past tense only for what the app did before
+  the change.
+- **Simple, approved words, one meaning each.** Prefer the common word: `use`
+  not `utilise`, `start` not `commence`, `about` not `regarding`. Do not use a
+  word in a second sense - a game `starts`, it does not `kick off`.
+- **No idioms, metaphors, slang, irony or humour.** They are the largest source
+  of slow or wrong reading, and they do not translate. "A player who loses moves
+  to the losers bracket", not "losing once no longer ends your evening".
+- **Consistent terms.** One name for one thing, every time: player, game, set,
+  point, score, rating, record, achievement, leaderboard, season, tournament.
+  Never switch to a synonym for variety.
+- **Use articles.** "The bracket", not "bracket". Keep noun clusters to 3 words
+  or fewer - write "the record for the longest set", not "the longest set record
+  holder".
+- **Write positively.** No double negatives, and no "-ing" form where a simple
+  verb works.
+- Keep the emoji in an achievement name, and keep numbers as digits.
 
 The page is at `/changelog`. Until the navigation structure is reworked it is
 only in the nav menu for logged-in admins - everyone else reaches it by direct
