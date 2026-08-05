@@ -341,5 +341,27 @@ describe("Perfect Week Achievement Tests", () => {
       const progression = tennisTable.achievements.getPlayerProgression("player-1");
       expect(progression["perfect-week"].current).toBe(0);
     });
+
+    it("keeps the best run from past weeks as the best value", () => {
+      // "now" is the Monday after a Mon–Thu near-miss (4 of the 5 days of
+      // the Mon–Fri run). Current resets, the best keeps the attempt.
+      jest.useFakeTimers();
+      jest.setSystemTime(new Date(2024, 0, 22, 8));
+
+      const events: EventType[] = [
+        ...baseEvents,
+        win(2024, 0, 15, "player-1", "player-2", "mon"),
+        win(2024, 0, 16, "player-1", "player-2", "tue"),
+        win(2024, 0, 17, "player-1", "player-2", "wed"),
+        win(2024, 0, 18, "player-1", "player-2", "thu"),
+      ];
+
+      const tennisTable = new TennisTable({ events });
+      tennisTable.achievements.calculateAchievements();
+
+      const progression = tennisTable.achievements.getPlayerProgression("player-1");
+      expect(progression["perfect-week"].current).toBe(0);
+      expect(progression["perfect-week"].best).toBe(4);
+    });
   });
 });

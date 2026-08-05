@@ -138,13 +138,13 @@ describe("Hero of the Week achievement", () => {
 
     const alice = tt.achievements.getPlayerProgression("alice")["hero-of-the-week"];
     expect(alice.current).toBe(0); // no games this week
-    expect(alice.personalBest).toBe(13);
+    expect(alice.best).toBe(13);
     expect(alice.target).toBe(14); // one beyond the record of 13
     expect(alice.recordHolder).toBe("alice");
     expect(alice.earned).toBe(2);
 
     const bob = tt.achievements.getPlayerProgression("bob")["hero-of-the-week"];
-    expect(bob.personalBest).toBe(13);
+    expect(bob.best).toBe(13);
     expect(bob.target).toBe(14);
     expect(bob.recordHolder).toBe("alice");
     expect(bob.earned).toBe(0);
@@ -156,7 +156,7 @@ describe("Hero of the Week achievement", () => {
     const progression = tt.achievements.getPlayerProgression("alice")["hero-of-the-week"];
     expect(progression.target).toBeUndefined();
     expect(progression.recordHolder).toBeUndefined();
-    expect(progression.personalBest).toBe(GAMES_IN_PERIOD_RECORD_FLOOR - 1);
+    expect(progression.best).toBe(GAMES_IN_PERIOD_RECORD_FLOOR - 1);
     expect(progression.earned).toBe(0);
   });
 });
@@ -239,13 +239,13 @@ describe("Hero of the Month achievement", () => {
 
     const alice = tt.achievements.getPlayerProgression("alice")["hero-of-the-month"];
     expect(alice.current).toBe(0); // no games this month
-    expect(alice.personalBest).toBe(25);
+    expect(alice.best).toBe(25);
     expect(alice.target).toBe(26); // one beyond the record of 25
     expect(alice.recordHolder).toBe("alice");
     expect(alice.earned).toBe(2);
 
     const bob = tt.achievements.getPlayerProgression("bob")["hero-of-the-month"];
-    expect(bob.personalBest).toBe(25);
+    expect(bob.best).toBe(25);
     expect(bob.target).toBe(26);
     expect(bob.recordHolder).toBe("alice");
     expect(bob.earned).toBe(0);
@@ -257,7 +257,7 @@ describe("Hero of the Month achievement", () => {
     const progression = tt.achievements.getPlayerProgression("alice")["hero-of-the-month"];
     expect(progression.target).toBeUndefined();
     expect(progression.recordHolder).toBeUndefined();
-    expect(progression.personalBest).toBe(GAMES_IN_PERIOD_RECORD_FLOOR - 1);
+    expect(progression.best).toBe(GAMES_IN_PERIOD_RECORD_FLOOR - 1);
     expect(progression.earned).toBe(0);
   });
 });

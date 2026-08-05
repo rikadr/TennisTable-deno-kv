@@ -109,6 +109,19 @@ export class Achievements {
   // Each player's own largest single-game leaderboard jump (ranked before
   // and after). Used for Leap Frog progression.
   bestRankJump: Map<string, number> = new Map();
+  // Best (lowest) leaderboard rank each player has ever held, recorded only
+  // while the ranked cohort had ≥5 players — the same gate the On the
+  // Podium / Touched the Throne awards use, so a "best" here always means a
+  // rank those achievements would count. Used for their progression.
+  bestRankEver: Map<string, number> = new Map();
+  // Best (lowest) pre-match rank of any opponent each player has beaten,
+  // with the same ≥5 ranked cohort gate as Kingslayer. Used for Kingslayer
+  // progression — how close the player has come to beating a #1.
+  bestBeatenRank: Map<string, number> = new Map();
+  // Each player's largest climb ever reached: the most Elo they have been
+  // above their ranked-era all-time low at any point. Used for Climber
+  // progression — the chase regresses when Elo drops, so the best is kept.
+  bestClimb: Map<string, number> = new Map();
   // League-wide running records for the Earliest / Latest Game achievements:
   // the earliest and latest time-of-day (minutes past local midnight, in the
   // browser's timezone) any game has been played to date. Undefined until the
@@ -167,6 +180,9 @@ export class Achievements {
     this.marathonSetRecord = { score: undefined, holder: undefined };
     this.leapFrogRecord = { ranksJumped: undefined, holder: undefined };
     this.bestRankJump.clear();
+    this.bestRankEver.clear();
+    this.bestBeatenRank.clear();
+    this.bestClimb.clear();
     this.earliestGameRecord = { minutesIntoDay: undefined };
     this.latestGameRecord = { minutesIntoDay: undefined };
     this.winStreakRecord = { length: undefined, holder: undefined };
@@ -1235,6 +1251,10 @@ export class Achievements {
         this.climberAllTimeLow.set(playerId, { elo: currentElo, time });
       }
       const low = this.climberAllTimeLow.get(playerId)!;
+      const climb = currentElo - low.elo;
+      if (climb > (this.bestClimb.get(playerId) ?? 0)) {
+        this.bestClimb.set(playerId, climb);
+      }
       if (currentElo - low.elo >= 300 && !climber.has(playerId)) {
         climber.add(playerId);
         this.#addAchievement(
@@ -1246,6 +1266,16 @@ export class Achievements {
             toDate: time,
           }),
         );
+      }
+    };
+
+    // Record the best (lowest) rank a player has ever held. Only called with
+    // ranks observed while the cohort had ≥5 ranked players, matching the
+    // gate on the podium / throne awards.
+    const updateBestRank = (playerId: string, rank: number) => {
+      const best = this.bestRankEver.get(playerId);
+      if (best === undefined || rank < best) {
+        this.bestRankEver.set(playerId, rank);
       }
     };
 
@@ -1266,6 +1296,7 @@ export class Achievements {
         if (!isActiveAt(playerId, time)) continue;
         const rank = getRank(playerId, time);
         if (rank === null) continue;
+        updateBestRank(playerId, rank);
         if (rank === 1 && !touchedThrone.has(playerId)) {
           touchedThrone.add(playerId);
           this.#addAchievement(
@@ -1335,6 +1366,15 @@ export class Achievements {
       const loserRankBefore = getRank(game.loser, game.playedAt);
       const rankedCountBefore = countRankedAt(game.playedAt);
 
+      // Track the best (lowest) pre-match rank of an opponent the winner has
+      // beaten, for Kingslayer progression. Same ≥5 cohort gate as the award.
+      if (loserRankBefore !== null && rankedCountBefore >= 5) {
+        const bestBeaten = this.bestBeatenRank.get(game.winner);
+        if (bestBeaten === undefined || loserRankBefore < bestBeaten) {
+          this.bestBeatenRank.set(game.winner, loserRankBefore);
+        }
+      }
+
       // Kingslayer: loser was #1 going into the match. One-time per
       // player. Requires ≥5 ranked players so being "#1" actually means
       // outranking a real cohort, not a tiny pool.
@@ -1380,6 +1420,13 @@ export class Achievements {
       const winnerRankAfter = getRank(game.winner, game.playedAt);
       const loserRankAfter = getRank(game.loser, game.playedAt);
       const rankedCount = countRankedAt(game.playedAt);
+
+      // Track both participants' best rank ever (the recheck below skips
+      // them). Non-participants are covered by the recheck's own update.
+      if (rankedCount >= 5) {
+        if (winnerRankAfter !== null) updateBestRank(game.winner, winnerRankAfter);
+        if (loserRankAfter !== null) updateBestRank(game.loser, loserRankAfter);
+      }
 
       // Touched the Throne: first time the player ever sits at rank #1.
       // The player must already be ranked entering the match, and there
@@ -2252,9 +2299,9 @@ export class Achievements {
         );
       }
 
-      // Check for Group Stage Star: a player who finished their group stage
+      // Check for Group Play Star: a player who finished their group play
       // with zero losses and zero own-skips (opponent skips that gave them a
-      // free win still count). Awarded once per tournament group stage.
+      // free win still count). Awarded once per tournament's group play.
       if (t.groupPlay && t.groupPlay.groupPlayEnded !== undefined) {
         const endedAt = t.groupPlay.groupPlayEnded;
         t.groupPlay.groupScores.forEach((score, playerId) => {
@@ -2436,7 +2483,7 @@ export class Achievements {
       "longest-win-streak": {
         earned: 0,
         current: 0,
-        personalBest: 0,
+        best: 0,
         target: this.winStreakRecord.length === undefined ? undefined : this.winStreakRecord.length + 1,
         recordHolder: this.winStreakRecord.holder,
       },
@@ -2449,7 +2496,7 @@ export class Achievements {
       "longest-lose-streak": {
         earned: 0,
         current: 0,
-        personalBest: 0,
+        best: 0,
         target: this.loseStreakRecord.length === undefined ? undefined : this.loseStreakRecord.length + 1,
         recordHolder: this.loseStreakRecord.holder,
       },
@@ -2507,21 +2554,21 @@ export class Achievements {
       "hero-of-the-day": {
         earned: 0,
         current: 0,
-        personalBest: 0,
+        best: 0,
         target: this.gamesInDayRecord.count === undefined ? undefined : this.gamesInDayRecord.count + 1,
         recordHolder: this.gamesInDayRecord.holder,
       },
       "hero-of-the-week": {
         earned: 0,
         current: 0,
-        personalBest: 0,
+        best: 0,
         target: this.gamesInWeekRecord.count === undefined ? undefined : this.gamesInWeekRecord.count + 1,
         recordHolder: this.gamesInWeekRecord.holder,
       },
       "hero-of-the-month": {
         earned: 0,
         current: 0,
-        personalBest: 0,
+        best: 0,
         target: this.gamesInMonthRecord.count === undefined ? undefined : this.gamesInMonthRecord.count + 1,
         recordHolder: this.gamesInMonthRecord.holder,
       },
@@ -2579,6 +2626,16 @@ export class Achievements {
     let consistencyCount = 0;
     let bestDeuceSetWon = 0;
     const streaksPerOpponent = new Map<string, number>();
+    // Highest win streak the player has EVER held against a single opponent —
+    // streaksPerOpponent only carries live streaks, which reset when that
+    // opponent wins one back. Used as the Domination / Humiliation best.
+    let bestStreakPerOpponentEver = 0;
+    // Every game timestamp of this player, in play order. Used for the
+    // best-ever values of the window-based chases: Hat Trick (90-minute win
+    // window), the activity streaks and the longest absence.
+    const playerGameTimes: number[] = [];
+    // Timestamps of this player's wins, in play order — Hat Trick input.
+    const playerWinTimes: number[] = [];
     // Perfect Day progression: wins / losses grouped by local calendar day.
     const perfectDayStats = new Map<number, { wins: number; losses: number }>();
     // Hero of the Week / Month progression: the player's games per local
@@ -2646,6 +2703,7 @@ export class Achievements {
       if (!isWinner && !isLoser) return;
 
       gamesPlayedCount++;
+      playerGameTimes.push(game.playedAt);
 
       // Track first active time
       if (firstActiveAt === null) {
@@ -2708,13 +2766,17 @@ export class Achievements {
       opponentData.lastGame = game.playedAt;
 
       if (isWinner) {
+        playerWinTimes.push(game.playedAt);
+
         // Track win streak against all
         currentWinStreakAll++;
         currentLoseStreakAll = 0;
         longestWinStreakAll = Math.max(longestWinStreakAll, currentWinStreakAll);
 
         // Track win streak against specific opponent
-        streaksPerOpponent.set(opponent, (streaksPerOpponent.get(opponent) || 0) + 1);
+        const opponentStreak = (streaksPerOpponent.get(opponent) || 0) + 1;
+        streaksPerOpponent.set(opponent, opponentStreak);
+        bestStreakPerOpponentEver = Math.max(bestStreakPerOpponentEver, opponentStreak);
 
         // Count donuts (only for winners)
         if (game.score?.setPoints) {
@@ -2775,6 +2837,7 @@ export class Achievements {
     progression["donut-1"].current = donutCount;
     progression["donut-5"].current = donutCount;
     progression["streak-all-10"].current = currentWinStreakAll;
+    progression["streak-all-10"].best = longestWinStreakAll;
     progression["close-calls"].current = closeCallsCount;
     progression["edge-lord"].current = edgeLordCount;
     progression["consistency-is-key"].current = consistencyCount;
@@ -2784,15 +2847,17 @@ export class Achievements {
     progression["global-player"].current = opponentsPlayed.size;
     progression["global-player"].opponents = opponentsPlayed;
     progression["punching-bag"].current = currentLoseStreakAll;
+    progression["punching-bag"].best = longestLoseStreakAll;
     progression["never-give-up"].current = currentLoseStreakAll;
+    progression["never-give-up"].best = longestLoseStreakAll;
 
     // Longest Win / Lose Streak: the live streak is what can still grow into
     // the league record, so that is the progress. The player's longest ever
     // run is reported alongside it.
     progression["longest-win-streak"].current = currentWinStreakAll;
-    progression["longest-win-streak"].personalBest = longestWinStreakAll;
+    progression["longest-win-streak"].best = longestWinStreakAll;
     progression["longest-lose-streak"].current = currentLoseStreakAll;
-    progression["longest-lose-streak"].personalBest = longestLoseStreakAll;
+    progression["longest-lose-streak"].best = longestLoseStreakAll;
 
     // Perfect Day progression tracks TODAY's live attempt: the number of
     // games won today with zero losses so far. A single loss today nullifies
@@ -2806,6 +2871,16 @@ export class Achievements {
     progression["perfect-day"].current =
       todayStat && todayStat.losses === 0 ? Math.min(todayStat.wins, 5) : 0;
 
+    // Perfect Day best: the most wins on any fully undefeated day — the
+    // player's closest attempt ever, today's live attempt included.
+    let bestUndefeatedDay = 0;
+    perfectDayStats.forEach((stats) => {
+      if (stats.losses === 0) {
+        bestUndefeatedDay = Math.max(bestUndefeatedDay, stats.wins);
+      }
+    });
+    progression["perfect-day"].best = bestUndefeatedDay;
+
     // Hero of the Day / Week / Month: only the current period's games can
     // still grow into the record, so that is the progress. The player's
     // busiest period ever is reported alongside it.
@@ -2814,21 +2889,21 @@ export class Achievements {
     perfectDayStats.forEach((stats) => {
       busiestDay = Math.max(busiestDay, stats.wins + stats.losses);
     });
-    progression["hero-of-the-day"].personalBest = busiestDay;
+    progression["hero-of-the-day"].best = busiestDay;
 
     progression["hero-of-the-week"].current = gamesPerWeek.get(this.#weekStartOf(nowMs)) ?? 0;
     let busiestWeek = 0;
     gamesPerWeek.forEach((count) => {
       busiestWeek = Math.max(busiestWeek, count);
     });
-    progression["hero-of-the-week"].personalBest = busiestWeek;
+    progression["hero-of-the-week"].best = busiestWeek;
 
     progression["hero-of-the-month"].current = gamesPerMonth.get(this.#monthStartOf(nowMs)) ?? 0;
     let busiestMonth = 0;
     gamesPerMonth.forEach((count) => {
       busiestMonth = Math.max(busiestMonth, count);
     });
-    progression["hero-of-the-month"].personalBest = busiestMonth;
+    progression["hero-of-the-month"].best = busiestMonth;
 
     // Perfect Week progression tracks THIS week's live attempt: of the three
     // possible 5-consecutive-day runs (Mon–Fri, Tue–Sat, Wed–Sun), the most
@@ -2861,6 +2936,20 @@ export class Achievements {
     }
     progression["perfect-week"].current = perfectWeekProgress;
 
+    // Perfect Week best: across every week the player has played, the most
+    // won days inside one of the three 5-day runs — their closest attempt.
+    let bestPerfectWeekRun = 0;
+    perfectWeekDaysWon.forEach((daysWon) => {
+      for (let start = 0; start <= 2; start++) {
+        let daysWonInRun = 0;
+        for (let offset = start; offset < start + 5; offset++) {
+          if (daysWon.has(offset)) daysWonInRun++;
+        }
+        bestPerfectWeekRun = Math.max(bestPerfectWeekRun, daysWonInRun);
+      }
+    });
+    progression["perfect-week"].best = bestPerfectWeekRun;
+
     // Calculate hat-trick progression (wins within last 90 minutes)
     const NINETY_MINUTES = 90 * 60 * 1000;
     const currentTime = Date.now();
@@ -2881,6 +2970,18 @@ export class Achievements {
 
     progression["hat-trick"].current = recentWins.length;
 
+    // Hat Trick best: the most wins the player has ever fit inside a single
+    // 90-minute window, found with a sliding window over their win times.
+    let bestHatTrickWindow = 0;
+    let hatTrickWindowStart = 0;
+    playerWinTimes.forEach((winTime, index) => {
+      while (winTime - playerWinTimes[hatTrickWindowStart] > NINETY_MINUTES) {
+        hatTrickWindowStart++;
+      }
+      bestHatTrickWindow = Math.max(bestHatTrickWindow, index - hatTrickWindowStart + 1);
+    });
+    progression["hat-trick"].best = bestHatTrickWindow;
+
 
     // Get list of opponents we've already earned achievements with
     const earnedBestFriendsOpponents = new Set<string>();
@@ -2898,23 +2999,41 @@ export class Achievements {
     let maxGamesUnderTarget = 0; // Track highest count that hasn't reached target yet
     const opponentGamesInLastYear = new Map<string, { count: number; timespan: number }>();
 
+    // Best Friends best: the most games ever played with one opponent inside
+    // any 1-year window — the current count decays as games age out of the
+    // rolling window, so the closest attempt is kept separately.
+    let bestFriendsBest = 0;
+
     gamesPerOpponent.forEach((_, opponent) => {
       // Count games with this opponent in the last year
       let gamesInLastYear = 0;
       let firstGameInWindow: number | null = null;
+      const sharedGameTimes: number[] = [];
 
       this.parent.games.forEach((game) => {
         const isPlayerGame =
           (game.winner === playerId && game.loser === opponent) ||
           (game.loser === playerId && game.winner === opponent);
+        if (!isPlayerGame) return;
+
+        sharedGameTimes.push(game.playedAt);
 
         // Check if game is within last year from now
-        if (isPlayerGame && now - game.playedAt <= ONE_YEAR) {
+        if (now - game.playedAt <= ONE_YEAR) {
           gamesInLastYear++;
           if (firstGameInWindow === null) {
             firstGameInWindow = game.playedAt;
           }
         }
+      });
+
+      // Sliding window over this opponent's shared game times.
+      let windowStart = 0;
+      sharedGameTimes.forEach((time, index) => {
+        while (time - sharedGameTimes[windowStart] > ONE_YEAR) {
+          windowStart++;
+        }
+        bestFriendsBest = Math.max(bestFriendsBest, index - windowStart + 1);
       });
 
       if (gamesInLastYear > 0 && firstGameInWindow !== null) {
@@ -2935,6 +3054,7 @@ export class Achievements {
     // Use maxGamesUnderTarget if it exists, otherwise show maxGamesInLastYear
     // (which would be 50+ if all opponents are over the threshold)
     progression["best-friends"].current = maxGamesUnderTarget > 0 ? maxGamesUnderTarget : maxGamesInLastYear;
+    progression["best-friends"].best = bestFriendsBest;
     progression["best-friends"].perOpponent = opponentGamesInLastYear;
 
     // Track max streaks under target for streak-player achievements
@@ -2961,7 +3081,9 @@ export class Achievements {
 
     // Set current to max under target, or 0 if all are at/over the target
     progression["streak-player-10"].current = maxStreakUnder10;
+    progression["streak-player-10"].best = bestStreakPerOpponentEver;
     progression["streak-player-20"].current = maxStreakUnder20;
+    progression["streak-player-20"].best = bestStreakPerOpponentEver;
 
     // Calculate active period with 30-day reset logic
     const activityPeriod = this.#calculateActivityPeriod(playerId);
@@ -2978,6 +3100,28 @@ export class Achievements {
       progression["active-1-year"].current = ongoingPeriod;
       progression["active-2-years"].current = ongoingPeriod;
     }
+
+    // Regular / Dedicated / Veteran best: the longest activity streak the
+    // player has ever kept — their games walked with the same 30-day reset
+    // the awards use, and the live streak counted up to now while it is
+    // still alive.
+    const THIRTY_DAYS = 30 * 24 * 60 * 60 * 1000;
+    let bestActivityStreak = 0;
+    let activityStreakStart: number | null = null;
+    let previousGameAt: number | null = null;
+    for (const gameAt of playerGameTimes) {
+      if (activityStreakStart === null || gameAt - previousGameAt! >= THIRTY_DAYS) {
+        activityStreakStart = gameAt;
+      }
+      previousGameAt = gameAt;
+      bestActivityStreak = Math.max(bestActivityStreak, gameAt - activityStreakStart);
+    }
+    if (activityStreakStart !== null && previousGameAt !== null && now - previousGameAt < THIRTY_DAYS) {
+      bestActivityStreak = Math.max(bestActivityStreak, now - activityStreakStart);
+    }
+    progression["active-6-months"].best = bestActivityStreak;
+    progression["active-1-year"].best = bestActivityStreak;
+    progression["active-2-years"].best = bestActivityStreak;
 
     // Anniversary progress counts toward the next anniversary the player can
     // still earn, and resets to 0 each year. The "target year" is the earliest
@@ -3029,6 +3173,19 @@ export class Achievements {
 
       progression["back-after-2-years"].current = timeSinceLastActivity;
       progression["back-after-2-years"].lastActiveAt = lastActiveAt;
+    }
+
+    // Welcome Back / Long Time No See / A Cinderella Story best: the longest
+    // gap without a game the player has ever had, the still-open gap since
+    // their last game included.
+    if (lastActiveAt !== null) {
+      let longestAbsence = now - lastActiveAt;
+      for (let i = 1; i < playerGameTimes.length; i++) {
+        longestAbsence = Math.max(longestAbsence, playerGameTimes[i] - playerGameTimes[i - 1]);
+      }
+      progression["back-after-6-months"].best = longestAbsence;
+      progression["back-after-1-year"].best = longestAbsence;
+      progression["back-after-2-years"].best = longestAbsence;
     }
 
     // Season progress
@@ -3104,6 +3261,28 @@ export class Achievements {
       const currentElo = this.parent.leaderboard.getPlayerSummary(playerId).elo;
       progression["climber"].current = Math.max(0, currentElo - climberLow.elo);
     }
+    // Climber best: the highest the player has ever climbed above their low —
+    // the chase regresses when Elo drops, so the closest attempt is kept.
+    progression["climber"].best = this.bestClimb.get(playerId);
+
+    // On the Podium / Touched the Throne best: the best (lowest) rank the
+    // player has ever held. Kingslayer best: the best (lowest) pre-match rank
+    // of an opponent they have beaten. All recorded only while the ranked
+    // cohort had ≥5 players, matching the gates on the awards themselves.
+    progression["on-the-podium"].best = this.bestRankEver.get(playerId);
+    progression["touched-the-throne"].best = this.bestRankEver.get(playerId);
+    progression["kingslayer"].best = this.bestBeatenRank.get(playerId);
+
+    // Group Play Star best: the most wins the player has had in one
+    // tournament's group play — their strongest group play so far.
+    let bestGroupStageWins = 0;
+    this.parent.tournaments.getTournaments().forEach((tournament) => {
+      const score = tournament.groupPlay?.groupScores.get(playerId);
+      if (score) {
+        bestGroupStageWins = Math.max(bestGroupStageWins, score.wins);
+      }
+    });
+    progression["group-stage-star"].best = bestGroupStageWins;
 
     // Full House / Humbled progression: how many of the currently ranked
     // players (excluding the player themselves) this player has beaten /
@@ -3317,6 +3496,14 @@ type HeroPeriodState = {
 // Progression Types
 type BaseProgression = {
   earned: number; // How many times this achievement has been earned
+  // The player's best-ever value for chases whose progress resets or decays
+  // (streaks, calendar periods, time windows, ranks) — how close they have
+  // ever come. Undefined for cumulative chases, where `current` IS the best.
+  // Counts and Elo climbs share the unit of `current`; for the rank-based
+  // chases (On the Podium, Touched the Throne, Kingslayer) it is a leaderboard
+  // rank where LOWER is better; for the duration chases (Regular / Welcome
+  // Back families) it is milliseconds, rendered as days.
+  best?: number;
 };
 
 type ProgressionWithTarget = BaseProgression & {
@@ -3427,7 +3614,7 @@ type HeroRecordProgression = BaseProgression & {
   recordHolder?: string;
   // The player's own busiest period ever, which may be busier than the
   // current one. Shown so they can see how their best compares.
-  personalBest: number;
+  best: number;
 };
 
 type StreakRecordProgression = BaseProgression & {
@@ -3443,7 +3630,7 @@ type StreakRecordProgression = BaseProgression & {
   recordHolder?: string;
   // The player's own longest streak ever, which may be longer than the one
   // they are on now. Shown so they can see how their best compares.
-  personalBest: number;
+  best: number;
 };
 
 // Earliest / Latest Game are record-breaking achievements with no numeric

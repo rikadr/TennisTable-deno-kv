@@ -244,7 +244,7 @@ describe("Longest Win Streak / Longest Lose Streak achievements", () => {
 
     const aliceProgression = tt.achievements.getPlayerProgression("alice")["longest-win-streak"];
     expect(aliceProgression.current).toBe(2);
-    expect(aliceProgression.personalBest).toBe(5);
+    expect(aliceProgression.best).toBe(5);
     // The record is 5, so a streak of 6 is what takes it.
     expect(aliceProgression.target).toBe(6);
     expect(aliceProgression.recordHolder).toBe("alice");
@@ -252,7 +252,7 @@ describe("Longest Win Streak / Longest Lose Streak achievements", () => {
 
     const bobProgression = tt.achievements.getPlayerProgression("bob")["longest-win-streak"];
     expect(bobProgression.current).toBe(0);
-    expect(bobProgression.personalBest).toBe(1);
+    expect(bobProgression.best).toBe(1);
     expect(bobProgression.target).toBe(6);
     expect(bobProgression.recordHolder).toBe("alice");
     expect(bobProgression.earned).toBe(0);
@@ -268,9 +268,9 @@ describe("Longest Win Streak / Longest Lose Streak achievements", () => {
     expect(progression["longest-win-streak"].target).toBeUndefined();
     expect(progression["longest-win-streak"].recordHolder).toBeUndefined();
     expect(progression["longest-win-streak"].current).toBe(2);
-    expect(progression["longest-win-streak"].personalBest).toBe(2);
+    expect(progression["longest-win-streak"].best).toBe(2);
     expect(progression["longest-lose-streak"].target).toBeUndefined();
     expect(progression["longest-lose-streak"].current).toBe(0);
-    expect(progression["longest-lose-streak"].personalBest).toBe(0);
+    expect(progression["longest-lose-streak"].best).toBe(0);
   });
 });

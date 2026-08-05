@@ -42,6 +42,29 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
+    slug: "achievement-progress-best-values",
+    title: "Best values on achievement progress",
+    date: "2026-08-05",
+    tags: ["feature-update"],
+    summary:
+      "The Progress tab on the player page shows a Best value for achievements with progress that resets. The value is your closest attempt.",
+    body: [
+      text(
+        "Many achievements measure progress that resets. A loss ends a win streak, and a new day resets Perfect Day. The progress bar then shows 0 again. The new Best value keeps your closest attempt, next to the current progress.",
+      ),
+      list(
+        "Counts: Unstoppable 🔥, Punching Bag 🥊, Never Give Up 🫠, Domination Streak 🎯, Humiliation Streak 👹, Hat Trick 🎩, Perfect Day ☀️, Perfect Week 🗓️, Best Friends 💙 and Group Play Star ⭐ show your best count.",
+        "Ranks: On the Podium 🥉 and Touched the Throne 👑 show the best rank you have held. Kingslayer ⚔️ shows the best rank of a player you have beaten.",
+        "Days: Regular 📅, Dedicated 🌟 and Veteran 🎖️ show your longest activity streak. Welcome Back 👋, Long Time No See 🙈 and A Cinderella Story 👸 show your longest absence.",
+        "Score: Climber 🧗 shows the largest climb you have made above your low point.",
+      ),
+      text(
+        "The streak records and the Hero records showed a personal best before. They now use the same Best display.",
+      ),
+      text("Group Stage Star has the new name Group Play Star ⭐. It matches the group play name in tournaments."),
+    ],
+  },
+  {
     slug: "shootout-season-opener-and-record-david-goliath",
     title: "3 new achievements, and David & Goliath become league records",
     date: "2026-08-04",
@@ -383,7 +406,7 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
     date: "2026-05-17",
     tags: ["feature-update"],
     summary:
-      "David, Goliath, Marathon Set, Streak Ender, Group Stage Star, and 5 achievements from Elo and leaderboard rank.",
+      "David, Goliath, Marathon Set, Streak Ender, Group Play Star, and 5 achievements from Elo and leaderboard rank.",
     body: [
       text(
         "Some achievements are for a result against the odds. David is for a win that gains a large amount of Score, which happens when you beat a much higher-rated player. Goliath is for the loss in the same game. Streak Ender is for the end of a run of wins by another player.",

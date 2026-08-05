@@ -158,13 +158,13 @@ describe("Hero of the Day achievement", () => {
 
     const alice = tt.achievements.getPlayerProgression("alice")["hero-of-the-day"];
     expect(alice.current).toBe(0); // no games today
-    expect(alice.personalBest).toBe(13);
+    expect(alice.best).toBe(13);
     expect(alice.target).toBe(14); // one beyond the record of 13
     expect(alice.recordHolder).toBe("alice");
     expect(alice.earned).toBe(2);
 
     const bob = tt.achievements.getPlayerProgression("bob")["hero-of-the-day"];
-    expect(bob.personalBest).toBe(13);
+    expect(bob.best).toBe(13);
     expect(bob.target).toBe(14);
     expect(bob.recordHolder).toBe("alice");
     expect(bob.earned).toBe(0);
@@ -176,7 +176,7 @@ describe("Hero of the Day achievement", () => {
     const progression = tt.achievements.getPlayerProgression("alice")["hero-of-the-day"];
     expect(progression.target).toBeUndefined();
     expect(progression.recordHolder).toBeUndefined();
-    expect(progression.personalBest).toBe(GAMES_IN_PERIOD_RECORD_FLOOR - 1);
+    expect(progression.best).toBe(GAMES_IN_PERIOD_RECORD_FLOOR - 1);
     expect(progression.earned).toBe(0);
   });
 });

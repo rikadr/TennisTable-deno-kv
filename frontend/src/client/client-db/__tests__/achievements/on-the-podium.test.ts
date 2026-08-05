@@ -50,6 +50,45 @@ describe("On the Podium Achievement", () => {
     expect(tt.achievements.getAchievements("e").filter((x) => x.type === "on-the-podium")).toHaveLength(0);
   });
 
+  it("reports the best rank ever held in the podium and throne progression", () => {
+    const tt = new TennisTable({ events: fivePlayerSetup() });
+    tt.achievements.calculateAchievements();
+
+    // A holds rank #1 and E rank #5 throughout the ≥5-ranked stretch.
+    expect(tt.achievements.getPlayerProgression("a")["on-the-podium"].best).toBe(1);
+    expect(tt.achievements.getPlayerProgression("a")["touched-the-throne"].best).toBe(1);
+    expect(tt.achievements.getPlayerProgression("e")["on-the-podium"].best).toBe(5);
+    expect(tt.achievements.getPlayerProgression("e")["touched-the-throne"].best).toBe(5);
+  });
+
+  it("does NOT record a best rank while fewer than 5 players are ranked", () => {
+    // 4-player double round-robin: everyone is ranked but the cohort never
+    // reaches 5, matching the gate on the award itself.
+    const events: EventType[] = [
+      { time: 1, stream: "a", type: EventTypeEnum.PLAYER_CREATED, data: { name: "A" } },
+      { time: 2, stream: "b", type: EventTypeEnum.PLAYER_CREATED, data: { name: "B" } },
+      { time: 3, stream: "c", type: EventTypeEnum.PLAYER_CREATED, data: { name: "C" } },
+      { time: 4, stream: "d", type: EventTypeEnum.PLAYER_CREATED, data: { name: "D" } },
+    ];
+    const pairs: [string, string][] = [
+      ["a", "b"], ["a", "c"], ["a", "d"],
+      ["b", "c"], ["b", "d"],
+      ["c", "d"],
+    ];
+    let t = 100;
+    for (let round = 0; round < 2; round++) {
+      for (const [winner, loser] of pairs) {
+        events.push(game(`g-${round}-${winner}-${loser}`, t++, winner, loser));
+      }
+    }
+
+    const tt = new TennisTable({ events });
+    tt.achievements.calculateAchievements();
+
+    expect(tt.achievements.getPlayerProgression("a")["on-the-podium"].best).toBeUndefined();
+    expect(tt.achievements.getPlayerProgression("a")["touched-the-throne"].best).toBeUndefined();
+  });
+
   it("does NOT award when fewer than 5 players are ranked", () => {
     // 4-player double round-robin (12 games). All 4 ranked but
     // rankedCount = 4 < 5, so no badge is awarded.
