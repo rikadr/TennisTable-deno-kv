@@ -81,12 +81,12 @@ export const TournamentHighlightsAndPendingGames: React.FC = () => {
               ))}
             {hasPendingGames &&
               bracket?.losersBracketGames &&
-              // Losers bracket games (double elimination)
+              // Second chance bracket games (double elimination)
               bracket.losersBracketGames.map((layer, layerIndex) => (
                 <div key={layerIndex} className="space-y-1">
                   {layer.pending.length > 0 && (
                     <h3 className="text-center text-sm text-primary-text">
-                      {losersLayerIndexToTournamentRound(layerIndex, bracket.losersBracketGames!.length)}
+                      {secondChanceLayerIndexToTournamentRound(layerIndex, bracket.losersBracketGames!.length)}
                     </h3>
                   )}
                   {layer.pending.map((game) => (
@@ -243,34 +243,34 @@ export const WinnerBox: React.FC<WinnerBoxProps> = ({ winner }) => {
 };
 
 /**
- * Names a losers bracket round after how it is filled: even ("major") rounds receive fresh
- * losers dropping in from a winners bracket round, odd ("minor") rounds are played among losers
- * bracket survivors only, to reduce the field for the next drop-in round.
+ * Names a second chance bracket round after how it is filled: even ("major") rounds receive fresh
+ * losers dropping in from a winners bracket round, odd ("minor") rounds are played among second
+ * chance survivors only, to reduce the field for the next drop-in round.
  */
-export function losersRoundLabel(layerIndex: number, totalLayers: number): { title: string; subtitle?: string } {
+export function secondChanceRoundLabel(layerIndex: number, totalLayers: number): { title: string; subtitle?: string } {
   const round = totalLayers - layerIndex; // Forward round number: 1 is played first
   const winnersLayerCount = totalLayers / 2 + 1;
 
-  if (layerIndex === 0) return { title: "Losers Final", subtitle: "Loser of the Winners Final enters" };
+  if (layerIndex === 0) return { title: "Second Chance Final", subtitle: "Loser of the Winners Final enters" };
   if (round === 1) {
     const winnersRound = layerIndexToTournamentRound(winnersLayerCount - 1);
     return {
-      title: "Losers Round 1",
+      title: "Second Chance Round 1",
       subtitle: winnersRound ? `Losers from Winners ${winnersRound}` : undefined,
     };
   }
   if (round % 2 === 0) {
     const winnersRound = layerIndexToTournamentRound(winnersLayerCount - 1 - round / 2);
     return {
-      title: `Losers Round ${round}`,
+      title: `Second Chance Round ${round}`,
       subtitle: winnersRound ? `Losers from Winners ${winnersRound} enter` : undefined,
     };
   }
-  return { title: `Losers Round ${round}`, subtitle: "Losers only" };
+  return { title: `Second Chance Round ${round}`, subtitle: "Second chance survivors only" };
 }
 
-export function losersLayerIndexToTournamentRound(layerIndex: number, totalLayers: number): string {
-  const { title, subtitle } = losersRoundLabel(layerIndex, totalLayers);
+export function secondChanceLayerIndexToTournamentRound(layerIndex: number, totalLayers: number): string {
+  const { title, subtitle } = secondChanceRoundLabel(layerIndex, totalLayers);
   return subtitle ? `${title} — ${subtitle}` : title;
 }
 

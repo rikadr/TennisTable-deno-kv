@@ -8,7 +8,7 @@ import {
 import { classNames } from "../../../common/class-names";
 import { fmtNum } from "../../../common/number-utils";
 import { ONE_DAY } from "../../../common/time-in-ms";
-import { layerIndexToTournamentRound, losersRoundLabel } from "../../leaderboard/tournament-pending-games";
+import { layerIndexToTournamentRound, secondChanceRoundLabel } from "../../leaderboard/tournament-pending-games";
 
 type Row = {
   key: string;
@@ -251,7 +251,7 @@ function sectionLabel(section: TimelineSection, doubleElimination: boolean): str
     case "winners":
       return doubleElimination ? "Winners bracket" : "Bracket";
     case "losers":
-      return "Losers bracket";
+      return "Second chance bracket";
     case "grand-final":
       return "Grand Final";
   }
@@ -264,7 +264,7 @@ function refLabel(ref: TimelineRef): { label: string; sublabel?: string } {
     case "winners-layer":
       return { label: layerIndexToTournamentRound(ref.layerIndex) ?? `Layer ${ref.layerIndex}` };
     case "losers-layer": {
-      const { title, subtitle } = losersRoundLabel(ref.layerIndex, ref.totalLayers);
+      const { title, subtitle } = secondChanceRoundLabel(ref.layerIndex, ref.totalLayers);
       return { label: title, sublabel: subtitle };
     }
     case "grand-final-game":

@@ -206,7 +206,7 @@ const ViewMatch: React.FC<{ tournamentId: string; game: GameLocation }> = ({ tou
 function gameLink(tournamentId: string, game: GameLocation): string {
   const tab = (() => {
     if (game.where === "group") return "group-play";
-    if (game.section === "losers") return "losers";
+    if (game.section === "losers") return "second-chance";
     if (game.section === "grandFinal" || game.section === "bracketReset") return "grand-final";
     return "finals";
   })();

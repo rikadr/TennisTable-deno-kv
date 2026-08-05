@@ -8,7 +8,7 @@ function pendingGameRoundLabel(pendingGame: {
 }): string | undefined {
   switch (pendingGame.bracketSection) {
     case "losers":
-      return "Losers bracket";
+      return "Second chance bracket";
     case "grandFinal":
       return "Grand Final";
     case "bracketReset":

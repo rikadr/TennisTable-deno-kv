@@ -29,13 +29,13 @@ export const TournamentGrandFinal = ({
     : "the winners bracket champion";
   const losersChampionName = bothFinalistsKnown
     ? context.playerName(grandFinal.player2!)
-    : "the losers bracket champion";
+    : "the second chance champion";
 
   return (
     <div className="space-y-6 max-w-2xl">
       <p className="text-sm text-primary-text/70">
-        The winners bracket champion meets the losers bracket champion in the grand final. If the losers bracket
-        champion wins the grand final, both players have one loss each — the final decider is played.
+        The winners bracket champion meets the second chance bracket champion in the grand final. If the second
+        chance champion wins the grand final, both players have one loss each — the final decider is played.
       </p>
 
       <div className="space-y-1">
@@ -52,7 +52,7 @@ export const TournamentGrandFinal = ({
         />
         <div className="flex justify-between text-xs text-primary-text/60 px-2">
           <span>Winners bracket champion</span>
-          <span>Losers bracket champion</span>
+          <span>Second chance champion</span>
         </div>
       </div>
 
