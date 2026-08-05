@@ -301,7 +301,15 @@ describe("Group Stage Star Achievement", () => {
     const tt = new TennisTable({ events });
     tt.achievements.calculateAchievements();
 
-    expect(tt.achievements.getPlayerProgression("alice")["group-stage-star"]).toStrictEqual({ earned: 1, best: 3 });
-    expect(tt.achievements.getPlayerProgression("bob")["group-stage-star"]).toStrictEqual({ earned: 0, best: 2 });
+    expect(tt.achievements.getPlayerProgression("alice")["group-stage-star"]).toStrictEqual({
+      earned: 1,
+      best: 3,
+      bestOutOf: 3,
+    });
+    expect(tt.achievements.getPlayerProgression("bob")["group-stage-star"]).toStrictEqual({
+      earned: 0,
+      best: 2,
+      bestOutOf: 3,
+    });
   });
 });

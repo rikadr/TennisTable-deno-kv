@@ -54,9 +54,10 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
       ),
       list(
         "Counts: Unstoppable 🔥, Punching Bag 🥊, Never Give Up 🫠, Domination Streak 🎯, Humiliation Streak 👹, Hat Trick 🎩, Perfect Day ☀️, Perfect Week 🗓️, Best Friends 💙 and Group Play Star ⭐ show your best count.",
-        "Ranks: On the Podium 🥉 and Touched the Throne 👑 show the best rank you have held. Kingslayer ⚔️ shows the best rank of a player you have beaten.",
+        "Best Friends, Domination Streak and Humiliation Streak also name the opponent. Group Play Star shows the size of the group play, for example 3 of 4.",
+        "Ranks: On the Podium 🥉 and Touched the Throne 👑 show the best rank you have held. Kingslayer ⚔️ shows the best rank of a player you have beaten, and names the player. Season's Champion 🍁 shows your best rank in a finished season.",
         "Days: Regular 📅, Dedicated 🌟 and Veteran 🎖️ show your longest activity streak. Welcome Back 👋, Long Time No See 🙈 and A Cinderella Story 👸 show your longest absence.",
-        "Score: Climber 🧗 shows the largest climb you have made above your low point.",
+        "Score: Climber 🧗 shows the largest climb you have made above your low point, with the start and end Score.",
       ),
       text(
         "The streak records and the Hero records showed a personal best before. They now use the same Best display.",

@@ -143,6 +143,7 @@ describe("Kingslayer Achievement", () => {
     tt.achievements.calculateAchievements();
 
     expect(tt.achievements.getPlayerProgression("c")["kingslayer"].best).toBe(2);
+    expect(tt.achievements.getPlayerProgression("c")["kingslayer"].bestOpponent).toBe("b");
     expect(tt.achievements.getPlayerProgression("c")["kingslayer"].earned).toBe(0);
     // E never won a game — no beaten rank to report.
     expect(tt.achievements.getPlayerProgression("e")["kingslayer"].best).toBeUndefined();

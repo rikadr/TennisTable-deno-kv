@@ -114,14 +114,16 @@ export class Achievements {
   // Podium / Touched the Throne awards use, so a "best" here always means a
   // rank those achievements would count. Used for their progression.
   bestRankEver: Map<string, number> = new Map();
-  // Best (lowest) pre-match rank of any opponent each player has beaten,
-  // with the same ≥5 ranked cohort gate as Kingslayer. Used for Kingslayer
-  // progression — how close the player has come to beating a #1.
-  bestBeatenRank: Map<string, number> = new Map();
+  // Best (lowest) pre-match rank of any opponent each player has beaten —
+  // and who that opponent was — with the same ≥5 ranked cohort gate as
+  // Kingslayer. Used for Kingslayer progression: how close the player has
+  // come to beating a #1.
+  bestBeatenRank: Map<string, { rank: number; opponent: string }> = new Map();
   // Each player's largest climb ever reached: the most Elo they have been
-  // above their ranked-era all-time low at any point. Used for Climber
-  // progression — the chase regresses when Elo drops, so the best is kept.
-  bestClimb: Map<string, number> = new Map();
+  // above their ranked-era all-time low at any point, with the low and the
+  // peak behind it. Used for Climber progression — the chase regresses when
+  // Elo drops, so the best is kept.
+  bestClimb: Map<string, { climb: number; fromElo: number; toElo: number }> = new Map();
   // League-wide running records for the Earliest / Latest Game achievements:
   // the earliest and latest time-of-day (minutes past local midnight, in the
   // browser's timezone) any game has been played to date. Undefined until the
@@ -1252,8 +1254,9 @@ export class Achievements {
       }
       const low = this.climberAllTimeLow.get(playerId)!;
       const climb = currentElo - low.elo;
-      if (climb > (this.bestClimb.get(playerId) ?? 0)) {
-        this.bestClimb.set(playerId, climb);
+      const prevBestClimb = this.bestClimb.get(playerId);
+      if (climb > 0 && (prevBestClimb === undefined || climb > prevBestClimb.climb)) {
+        this.bestClimb.set(playerId, { climb, fromElo: low.elo, toElo: currentElo });
       }
       if (currentElo - low.elo >= 300 && !climber.has(playerId)) {
         climber.add(playerId);
@@ -1370,8 +1373,8 @@ export class Achievements {
       // beaten, for Kingslayer progression. Same ≥5 cohort gate as the award.
       if (loserRankBefore !== null && rankedCountBefore >= 5) {
         const bestBeaten = this.bestBeatenRank.get(game.winner);
-        if (bestBeaten === undefined || loserRankBefore < bestBeaten) {
-          this.bestBeatenRank.set(game.winner, loserRankBefore);
+        if (bestBeaten === undefined || loserRankBefore < bestBeaten.rank) {
+          this.bestBeatenRank.set(game.winner, { rank: loserRankBefore, opponent: game.loser });
         }
       }
 
@@ -2628,8 +2631,10 @@ export class Achievements {
     const streaksPerOpponent = new Map<string, number>();
     // Highest win streak the player has EVER held against a single opponent —
     // streaksPerOpponent only carries live streaks, which reset when that
-    // opponent wins one back. Used as the Domination / Humiliation best.
+    // opponent wins one back. Used as the Domination / Humiliation best,
+    // together with who the streak was against.
     let bestStreakPerOpponentEver = 0;
+    let bestStreakOpponentEver: string | undefined = undefined;
     // Every game timestamp of this player, in play order. Used for the
     // best-ever values of the window-based chases: Hat Trick (90-minute win
     // window), the activity streaks and the longest absence.
@@ -2776,7 +2781,10 @@ export class Achievements {
         // Track win streak against specific opponent
         const opponentStreak = (streaksPerOpponent.get(opponent) || 0) + 1;
         streaksPerOpponent.set(opponent, opponentStreak);
-        bestStreakPerOpponentEver = Math.max(bestStreakPerOpponentEver, opponentStreak);
+        if (opponentStreak > bestStreakPerOpponentEver) {
+          bestStreakPerOpponentEver = opponentStreak;
+          bestStreakOpponentEver = opponent;
+        }
 
         // Count donuts (only for winners)
         if (game.score?.setPoints) {
@@ -3001,8 +3009,10 @@ export class Achievements {
 
     // Best Friends best: the most games ever played with one opponent inside
     // any 1-year window — the current count decays as games age out of the
-    // rolling window, so the closest attempt is kept separately.
+    // rolling window, so the closest attempt is kept separately, together
+    // with who it was played with.
     let bestFriendsBest = 0;
+    let bestFriendsOpponent: string | undefined = undefined;
 
     gamesPerOpponent.forEach((_, opponent) => {
       // Count games with this opponent in the last year
@@ -3033,7 +3043,11 @@ export class Achievements {
         while (time - sharedGameTimes[windowStart] > ONE_YEAR) {
           windowStart++;
         }
-        bestFriendsBest = Math.max(bestFriendsBest, index - windowStart + 1);
+        const gamesInWindow = index - windowStart + 1;
+        if (gamesInWindow > bestFriendsBest) {
+          bestFriendsBest = gamesInWindow;
+          bestFriendsOpponent = opponent;
+        }
       });
 
       if (gamesInLastYear > 0 && firstGameInWindow !== null) {
@@ -3055,6 +3069,7 @@ export class Achievements {
     // (which would be 50+ if all opponents are over the threshold)
     progression["best-friends"].current = maxGamesUnderTarget > 0 ? maxGamesUnderTarget : maxGamesInLastYear;
     progression["best-friends"].best = bestFriendsBest;
+    progression["best-friends"].bestOpponent = bestFriendsOpponent;
     progression["best-friends"].perOpponent = opponentGamesInLastYear;
 
     // Track max streaks under target for streak-player achievements
@@ -3082,8 +3097,10 @@ export class Achievements {
     // Set current to max under target, or 0 if all are at/over the target
     progression["streak-player-10"].current = maxStreakUnder10;
     progression["streak-player-10"].best = bestStreakPerOpponentEver;
+    progression["streak-player-10"].bestOpponent = bestStreakOpponentEver;
     progression["streak-player-20"].current = maxStreakUnder20;
     progression["streak-player-20"].best = bestStreakPerOpponentEver;
+    progression["streak-player-20"].bestOpponent = bestStreakOpponentEver;
 
     // Calculate active period with 30-day reset logic
     const activityPeriod = this.#calculateActivityPeriod(playerId);
@@ -3202,6 +3219,20 @@ export class Achievements {
       }
     }
 
+    // Season's Champion best: the best final rank in a finished season the
+    // player took part in. The season leaderboard is sorted best-first, so
+    // the rank is the index + 1. Undefined when they never finished a season.
+    let bestSeasonRank: number | undefined = undefined;
+    for (const season of seasons) {
+      if (now <= season.end) continue;
+      const rankIndex = season.getLeaderboard().findIndex((entry) => entry.playerId === playerId);
+      if (rankIndex === -1) continue;
+      if (bestSeasonRank === undefined || rankIndex + 1 < bestSeasonRank) {
+        bestSeasonRank = rankIndex + 1;
+      }
+    }
+    progression["season-winner"].best = bestSeasonRank;
+
     // Season Opener progression is league-wide (everyone shares the same
     // values) and counts down to the next season start, because that is when
     // the next opener becomes available. Target is the span from the start of
@@ -3262,27 +3293,47 @@ export class Achievements {
       progression["climber"].current = Math.max(0, currentElo - climberLow.elo);
     }
     // Climber best: the highest the player has ever climbed above their low —
-    // the chase regresses when Elo drops, so the closest attempt is kept.
-    progression["climber"].best = this.bestClimb.get(playerId);
+    // the chase regresses when Elo drops, so the closest attempt is kept,
+    // with the low and the peak behind it.
+    const bestClimbEntry = this.bestClimb.get(playerId);
+    progression["climber"].best = bestClimbEntry?.climb;
+    progression["climber"].bestFromElo = bestClimbEntry?.fromElo;
+    progression["climber"].bestToElo = bestClimbEntry?.toElo;
 
     // On the Podium / Touched the Throne best: the best (lowest) rank the
     // player has ever held. Kingslayer best: the best (lowest) pre-match rank
-    // of an opponent they have beaten. All recorded only while the ranked
-    // cohort had ≥5 players, matching the gates on the awards themselves.
+    // of an opponent they have beaten, and who it was. All recorded only
+    // while the ranked cohort had ≥5 players, matching the awards' gates.
     progression["on-the-podium"].best = this.bestRankEver.get(playerId);
     progression["touched-the-throne"].best = this.bestRankEver.get(playerId);
-    progression["kingslayer"].best = this.bestBeatenRank.get(playerId);
+    const bestBeatenEntry = this.bestBeatenRank.get(playerId);
+    progression["kingslayer"].best = bestBeatenEntry?.rank;
+    progression["kingslayer"].bestOpponent = bestBeatenEntry?.opponent;
 
-    // Group Play Star best: the most wins the player has had in one
-    // tournament's group play — their strongest group play so far.
-    let bestGroupStageWins = 0;
+    // Group Play Star best: the player's group play that came closest to
+    // perfect — the highest share of games won, ties broken by more wins, so
+    // 3 of 4 beats 3 of 6 and a perfect 3 of 3 beats both. Both numbers are
+    // kept so the view can show "Best: 3 of 4". The share comparison uses
+    // cross-multiplication to stay in integers.
+    let bestGroupPlay: { wins: number; games: number } | undefined = undefined;
     this.parent.tournaments.getTournaments().forEach((tournament) => {
       const score = tournament.groupPlay?.groupScores.get(playerId);
-      if (score) {
-        bestGroupStageWins = Math.max(bestGroupStageWins, score.wins);
+      if (!score) return;
+      const games = score.wins + score.loss + score.skips;
+      if (games === 0) return;
+      const beatsBest =
+        bestGroupPlay === undefined ||
+        score.wins * bestGroupPlay.games > bestGroupPlay.wins * games ||
+        (score.wins * bestGroupPlay.games === bestGroupPlay.wins * games && score.wins > bestGroupPlay.wins);
+      if (beatsBest) {
+        bestGroupPlay = { wins: score.wins, games };
       }
     });
-    progression["group-stage-star"].best = bestGroupStageWins;
+    if (bestGroupPlay !== undefined) {
+      const { wins, games } = bestGroupPlay;
+      progression["group-stage-star"].best = wins;
+      progression["group-stage-star"].bestOutOf = games;
+    }
 
     // Full House / Humbled progression: how many of the currently ranked
     // players (excluding the player themselves) this player has beaten /
@@ -3523,6 +3574,8 @@ type AnniversaryProgression = ProgressionWithTarget & {
 
 type StreakPlayerProgression = ProgressionWithTarget & {
   perOpponent?: Map<string, number>; // Breakdown of current streaks per opponent
+  // Who the best-ever streak was against, shown next to the best value.
+  bestOpponent?: string;
 };
 
 type VarietyPlayerProgression = ProgressionWithTarget & {
@@ -3531,6 +3584,8 @@ type VarietyPlayerProgression = ProgressionWithTarget & {
 
 type BestFriendsProgression = ProgressionWithTarget & {
   perOpponent?: Map<string, { count: number; timespan: number }>;
+  // Who the best 1-year window was played with, shown next to the best value.
+  bestOpponent?: string;
 };
 
 type WelcomeCommitteeProgression = ProgressionWithTarget & {
@@ -3633,6 +3688,23 @@ type StreakRecordProgression = BaseProgression & {
   best: number;
 };
 
+type GroupPlayStarProgression = BaseProgression & {
+  // Games in the group play behind `best`, so the view can show "3 of 4" —
+  // the win count alone says nothing without the size of the group.
+  bestOutOf?: number;
+};
+
+type KingslayerProgression = BaseProgression & {
+  // Who the best-ranked beaten opponent was, shown next to the best rank.
+  bestOpponent?: string;
+};
+
+type ClimberProgression = ProgressionWithTarget & {
+  // The low and the peak behind the best climb, shown as "(912 → 1162)".
+  bestFromElo?: number;
+  bestToElo?: number;
+};
+
 // Earliest / Latest Game are record-breaking achievements with no numeric
 // progress bar — you either hold the record or you don't. Instead of a
 // percentage, the progress view shows the current league record and the
@@ -3684,7 +3756,7 @@ export type AchievementProgression = {
   "hat-trick": ProgressionWithTarget;
   "perfect-day": ProgressionWithTarget;
   "perfect-week": ProgressionWithTarget;
-  "kingslayer": BaseProgression;
+  "kingslayer": KingslayerProgression;
   "king-maker": BaseProgression;
   "touched-the-throne": BaseProgression;
   "on-the-podium": BaseProgression;
@@ -3692,7 +3764,7 @@ export type AchievementProgression = {
   "leap-frog": LeapFrogProgression;
   "david": UpsetRecordProgression;
   "goliath": UpsetRecordProgression;
-  "climber": ProgressionWithTarget;
+  "climber": ClimberProgression;
   "marathon-set": MarathonSetProgression;
   "shootout": ShootoutProgression;
   "streak-ender": BaseProgression;
@@ -3701,7 +3773,7 @@ export type AchievementProgression = {
   "hero-of-the-day": HeroRecordProgression;
   "hero-of-the-week": HeroRecordProgression;
   "hero-of-the-month": HeroRecordProgression;
-  "group-stage-star": BaseProgression;
+  "group-stage-star": GroupPlayStarProgression;
   "full-house": MissingPlayersProgression;
   "humbled": MissingPlayersProgression;
   "earliest-game": TimeOfDayRecordProgression;

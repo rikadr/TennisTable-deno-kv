@@ -737,9 +737,10 @@ type ProgressTabProps = {
   playerId: string;
 };
 
-// Achievement types whose "best" is a leaderboard rank — lower is better,
-// shown as "#N".
-const RANK_BEST_TYPES = new Set(["on-the-podium", "touched-the-throne", "kingslayer"]);
+// Achievement types whose "best" is a rank — lower is better, shown as "#N".
+// The first three are leaderboard ranks; Season's Champion is the best final
+// rank in a finished season.
+const RANK_BEST_TYPES = new Set(["on-the-podium", "touched-the-throne", "kingslayer", "season-winner"]);
 
 // Renders a progression's best-ever value in the unit the chase is measured
 // in: ranks as "#N", the duration chases as days, everything else as a count.
@@ -926,10 +927,23 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                               )}
                             {/* The player's best-ever value, for chases whose
                                 progress resets or decays — how close they have
-                                ever come, next to where they stand now. */}
+                                ever come, next to where they stand now. When
+                                the number alone is thin, the opponent it was
+                                achieved with is named. */}
                             {data.best !== undefined && data.best > 0 && (
                               <span className="text-xs text-secondary-text/70 font-normal ml-2">
                                 Best: {formatBestValue(type, data.best)}
+                                {"bestOpponent" in data && data.bestOpponent && (
+                                  <> with {context.playerName(data.bestOpponent)}</>
+                                )}
+                                {"bestFromElo" in data &&
+                                  data.bestFromElo !== undefined &&
+                                  data.bestToElo !== undefined && (
+                                    <>
+                                      {" "}
+                                      ({fmtNum(data.bestFromElo)} → {fmtNum(data.bestToElo)})
+                                    </>
+                                  )}
                               </span>
                             )}
                           </span>
@@ -1274,11 +1288,18 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                   ) : (
                     // Fallback for achievements without targets (like tournament
                     // achievements). The rank chases (On the Podium, Touched the
-                    // Throne, Kingslayer) carry a best-ever rank shown here.
+                    // Throne, Kingslayer) carry a best-ever rank shown here, and
+                    // Group Play Star its best "N of M" group play.
                     <div className="mt-2 text-xs text-secondary-text/70">
                       {data.earned > 0 ? `Earned ${data.earned} time${data.earned > 1 ? "s" : ""}` : "No progress yet"}
                       {data.best !== undefined && data.best > 0 && (
-                        <span className="ml-2">Best: {formatBestValue(type, data.best)}</span>
+                        <span className="ml-2">
+                          Best: {formatBestValue(type, data.best)}
+                          {"bestOutOf" in data && data.bestOutOf !== undefined && <> of {fmtNum(data.bestOutOf)}</>}
+                          {"bestOpponent" in data && data.bestOpponent && (
+                            <> ({context.playerName(data.bestOpponent)})</>
+                          )}
+                        </span>
                       )}
                     </div>
                   )}

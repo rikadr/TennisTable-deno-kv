@@ -63,6 +63,7 @@ describe("TennisTable", () => {
       expect(progression["streak-player-20"]).toStrictEqual({
         current: 19,
         best: 19,
+        bestOpponent: "bob",
         target: 20,
         earned: 0,
         perOpponent: new Map([["bob", 19]]),
@@ -101,6 +102,7 @@ describe("TennisTable", () => {
       expect(progression["streak-player-20"]).toStrictEqual({
         current: 0, // No other streaks below 20
         best: 20,
+        bestOpponent: "bob",
         target: 20,
         earned: 1,
         perOpponent: new Map([["bob", 20]]),
@@ -139,6 +141,7 @@ describe("TennisTable", () => {
       expect(progression["streak-player-20"]).toStrictEqual({
         current: 0, // No other streaks below 20
         best: 21,
+        bestOpponent: "bob",
         target: 20,
         earned: 1,
         perOpponent: new Map([["bob", 21]]),
@@ -197,6 +200,7 @@ describe("TennisTable", () => {
       expect(progression["streak-player-20"]).toStrictEqual({
         current: 10, // Charlie's streak of 10 becomes the current (highest below 20)
         best: 20,
+        bestOpponent: "bob",
         target: 20,
         earned: 1,
         perOpponent: new Map([
@@ -257,6 +261,7 @@ describe("TennisTable", () => {
       expect(progression["streak-player-20"]).toStrictEqual({
         current: 12, // Bob's new streak of 12 is highest (Charlie has 10)
         best: 12,
+        bestOpponent: "bob",
         target: 20,
         earned: 0,
         perOpponent: new Map([
@@ -317,6 +322,7 @@ describe("TennisTable", () => {
       expect(progression["streak-player-20"]).toStrictEqual({
         current: 0, // Both opponents at 20, no streaks below 20
         best: 20,
+        bestOpponent: "bob",
         target: 20,
         earned: 2,
         perOpponent: new Map([
