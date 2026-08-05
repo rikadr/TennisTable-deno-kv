@@ -3,6 +3,11 @@ import { Game } from "./event-store/projectors/games-projector";
 import { Predictions } from "./predictions";
 import { TennisTable } from "./tennis-table";
 
+export type ExpectedLeaderboard = {
+  current: { id: string; rank: number; score: number }[];
+  expected: { id: string; rank: number; score: number }[];
+};
+
 export class Simulations {
   private parent: TennisTable;
 
@@ -40,16 +45,14 @@ export class Simulations {
     return wins / (loss || 1);
   }
 
-  expectedLeaderBoard(): {
-    current: { id: string; rank: number; score: number }[];
-    expected: { id: string; rank: number; score: number }[];
-  } {
+  expectedLeaderBoard(onProgress?: (progress: number) => void): ExpectedLeaderboard {
     const currentLeaderboard = this.parent.leaderboard.getLeaderboard();
     const predictedGames = this.parent.predictions.generateSimulatedGames();
 
     const simResultMap = new Map<string, number[]>();
 
-    for (let i = 0; i < 5_000; i++) {
+    const SIMULATIONS = 5_000;
+    for (let i = 0; i < SIMULATIONS; i++) {
       this.shuffleArray(predictedGames);
       // Casting, but its only using winner and loser inside it anyway
       const eloMap = Elo.eloCalculator(predictedGames as Game[], this.parent.allPlayers);
@@ -59,6 +62,9 @@ export class Simulations {
         }
         simResultMap.get(player.id)!.push(player.elo);
       });
+      if (onProgress && (i + 1) % 100 === 0) {
+        onProgress((i + 1) / SIMULATIONS);
+      }
     }
 
     const avgSimResult: { id: string; rank: number; score: number }[] = [];

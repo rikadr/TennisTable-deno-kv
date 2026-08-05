@@ -625,7 +625,7 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
         "The main benefit came the next day. With a free main thread, the iteration count went up, and work that was small to protect the page could become as expensive as necessary.",
       ),
       text(
-        "This is now the pattern for all heavy work. The Elo simulation, the tournament win predictions and the prediction history all run in workers.",
+        "This is now the pattern for all heavy work. The Elo simulation, the expected leaderboard, the tournament win predictions and the prediction history all run in workers.",
       ),
     ],
   },

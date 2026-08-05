@@ -1,221 +1,212 @@
-import { useEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { classNames } from "../../../common/class-names";
 import { useEventDbContext } from "../../../wrappers/event-db-context";
 import { ProfilePicture } from "../../player/profile-picture";
 import { fmtNum } from "../../../common/number-utils";
+import { useExpectedLeaderboardWorker } from "../../../hooks/use-expected-leaderboard-worker";
 
-export const SimulatedLeaderboard: React.FC = () => {
+type Entry = { id: string; rank: number; score: number };
+type Line = { id: string; y1: number; y2: number; change: number };
+
+const lineColor = (change: number): string => {
+  if (change > 0) return "#22c55e"; // green
+  if (change < 0) return "#ef4444"; // red
+  return "#9ca3af"; // gray
+};
+
+const PlayerRow: React.FC<{
+  player: Entry;
+  rankChange?: number;
+  scoreChange?: number;
+  hovered: boolean;
+  onHover: (id: string | null) => void;
+}> = ({ player, rankChange, scoreChange, hovered, onHover }) => {
   const context = useEventDbContext();
 
-  const [leaderboardData] = useState(context.simulations.expectedLeaderBoard());
-  const [playerPositions, setPlayerPositions] = useState<Map<string, { current: number; simulated: number }>>(
-    new Map(),
-  );
-
-  const currentListRef = useRef<HTMLDivElement>(null);
-  const simulatedListRef = useRef<HTMLDivElement>(null);
-  const svgRef = useRef<SVGSVGElement>(null);
-
-  // Calculate player positions for drawing lines
-  // Calculate player positions for drawing lines
-  useEffect(() => {
-    const calculatePositions = () => {
-      if (currentListRef.current && simulatedListRef.current) {
-        const positions = new Map<string, { current: number; simulated: number }>();
-
-        leaderboardData.current.forEach((player, index) => {
-          const currentElement = currentListRef.current?.children[index] as HTMLElement;
-          const simulatedPlayer = leaderboardData.expected.find((p) => p.id === player.id);
-          const simulatedIndex = leaderboardData.expected.findIndex((p) => p.id === player.id);
-          const simulatedElement = simulatedListRef.current?.children[simulatedIndex] as HTMLElement;
-
-          if (currentElement && simulatedElement && simulatedPlayer) {
-            const currentRect = currentElement.getBoundingClientRect();
-            const simulatedRect = simulatedElement.getBoundingClientRect();
-            const containerRect = currentListRef.current!.parentElement!.getBoundingClientRect();
-
-            positions.set(player.id, {
-              current: currentRect.top + currentRect.height / 2 - containerRect.top,
-              simulated: simulatedRect.top + simulatedRect.height / 2 - containerRect.top,
-            });
-          }
-        });
-
-        setPlayerPositions(positions);
-      }
-    };
-
-    const handleResize = () => {
-      // Small delay to ensure layout has settled (e.g. after orientation change)
-      setTimeout(calculatePositions, 100);
-    };
-
-    calculatePositions();
-    // Re-calculate after a short delay to ensure initial layout is fully stable
-    setTimeout(calculatePositions, 500);
-
-    window.addEventListener("resize", handleResize);
-    window.addEventListener("orientationchange", handleResize);
-
-    return () => {
-      window.removeEventListener("resize", handleResize);
-      window.removeEventListener("orientationchange", handleResize);
-    };
-  }, [leaderboardData]);
-
-  const getRankChange = (playerId: string): number => {
-    const currentPlayer = leaderboardData.current.find((p) => p.id === playerId);
-    const simulatedPlayer = leaderboardData.expected.find((p) => p.id === playerId);
-
-    if (currentPlayer && simulatedPlayer) {
-      return currentPlayer.rank - simulatedPlayer.rank; // Positive = moved up, Negative = moved down
-    }
-    return 0;
-  };
-
-  const getScoreChange = (playerId: string): number => {
-    const currentPlayer = leaderboardData.current.find((p) => p.id === playerId);
-    const simulatedPlayer = leaderboardData.expected.find((p) => p.id === playerId);
-
-    if (currentPlayer && simulatedPlayer) {
-      return simulatedPlayer.score - currentPlayer.score;
-    }
-    return 0;
-  };
-
-  const getLineColor = (change: number): string => {
-    if (change > 0) return "#10b981"; // green
-    if (change < 0) return "#ef4444"; // red
-    return "#6b7280"; // gray
-  };
-
-  const PlayerCard: React.FC<{
-    player: { id: string; rank: number; score: number };
-    type: "current" | "simulated";
-    showChanges?: boolean;
-  }> = ({ player, type, showChanges = false }) => {
-    const rankChange = getRankChange(player.id);
-    const scoreChange = getScoreChange(player.id);
-
-    return (
-      <div
-        className={classNames(
-          "h-10 md:h-24 p-1 md:p-3 rounded-lg border transition-all duration-300 flex items-center space-x-1.5 md:space-x-3",
-          type === "current"
-            ? "bg-blue-50 border-blue-200 hover:border-blue-300"
-            : "bg-green-50 border-green-200 hover:border-green-300",
-        )}
-      >
-        <div className="md:hidden shrink-0">
-          <ProfilePicture playerId={player.id} size={32} border={2} shape="rounded" linkToPlayer />
-        </div>
-        <div className="hidden md:block shrink-0">
-          <ProfilePicture playerId={player.id} size={60} border={4} shape="rounded" linkToPlayer />
-        </div>
-
-        {/* Rank */}
-        <div
-          className={classNames(
-            "shrink-0 text-xs md:text-lg font-bold min-w-[1.5rem] md:min-w-[2rem]",
-            type === "current" ? "text-blue-700" : "text-green-700",
+  return (
+    <div
+      onMouseEnter={() => onHover(player.id)}
+      onMouseLeave={() => onHover(null)}
+      className={classNames(
+        "h-12 md:h-16 px-1.5 md:px-3 rounded-lg ring-1 flex items-center gap-1.5 md:gap-3 text-primary-text transition-all duration-150",
+        hovered ? "ring-primary-text/50 bg-primary-text/5" : "ring-primary-text/15",
+      )}
+    >
+      <span className="shrink-0 w-5 md:w-8 text-xs md:text-base font-bold text-primary-text/60">#{player.rank}</span>
+      <div className="shrink-0 md:hidden">
+        <ProfilePicture playerId={player.id} size={32} border={2} shape="rounded" linkToPlayer />
+      </div>
+      <div className="shrink-0 hidden md:block">
+        <ProfilePicture playerId={player.id} size={44} border={3} shape="rounded" linkToPlayer />
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="truncate text-xs md:text-base leading-tight font-medium">{context.playerName(player.id)}</div>
+        <div className="text-[10px] md:text-sm text-primary-text/60">{fmtNum(player.score)}</div>
+      </div>
+      {(rankChange !== undefined || scoreChange !== undefined) && (
+        <div className="shrink-0 flex flex-col items-end leading-tight">
+          {rankChange !== undefined && rankChange !== 0 && (
+            <span
+              className={classNames(
+                "text-[10px] md:text-sm font-semibold",
+                rankChange > 0 ? "text-green-500" : "text-red-500",
+              )}
+            >
+              {rankChange > 0 ? "▲" : "▼"} {Math.abs(rankChange)}
+            </span>
           )}
-        >
-          #{player.rank}
+          {scoreChange !== undefined && scoreChange !== 0 && (
+            <span
+              className={classNames("text-[9px] md:text-xs", scoreChange > 0 ? "text-green-500/80" : "text-red-500/80")}
+            >
+              {fmtNum(scoreChange, { signedPositive: true })}
+            </span>
+          )}
         </div>
+      )}
+    </div>
+  );
+};
 
-        {/* Player Info */}
-        <div className="flex-1 min-w-0 flex flex-col justify-center">
-          <div className="font-medium text-gray-800 truncate text-xs md:text-base leading-tight">
-            {context.playerName(player.id)}
-          </div>
+export const SimulatedLeaderboard: React.FC = () => {
+  const { result, progress } = useExpectedLeaderboardWorker();
+
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const [lines, setLines] = useState<Line[]>([]);
+
+  const containerRef = useRef<HTMLDivElement>(null);
+  const currentListRef = useRef<HTMLDivElement>(null);
+  const expectedListRef = useRef<HTMLDivElement>(null);
+  const middleRef = useRef<HTMLDivElement>(null);
+
+  useLayoutEffect(() => {
+    if (!result) return;
+
+    const measure = () => {
+      const middle = middleRef.current;
+      const currentList = currentListRef.current;
+      const expectedList = expectedListRef.current;
+      if (!middle || !currentList || !expectedList) return;
+
+      const middleRect = middle.getBoundingClientRect();
+      const newLines: Line[] = [];
+
+      result.current.forEach((player, index) => {
+        const expectedIndex = result.expected.findIndex((p) => p.id === player.id);
+        if (expectedIndex === -1) return;
+        const currentEl = currentList.children[index] as HTMLElement | undefined;
+        const expectedEl = expectedList.children[expectedIndex] as HTMLElement | undefined;
+        if (!currentEl || !expectedEl) return;
+
+        const currentRect = currentEl.getBoundingClientRect();
+        const expectedRect = expectedEl.getBoundingClientRect();
+        newLines.push({
+          id: player.id,
+          y1: currentRect.top + currentRect.height / 2 - middleRect.top,
+          y2: expectedRect.top + expectedRect.height / 2 - middleRect.top,
+          change: player.rank - result.expected[expectedIndex].rank,
+        });
+      });
+      setLines(newLines);
+    };
+
+    measure();
+    const observer = new ResizeObserver(measure);
+    if (containerRef.current) observer.observe(containerRef.current);
+    return () => observer.disconnect();
+  }, [result]);
+
+  if (!result) {
+    return (
+      <div className="max-w-md mx-auto mt-12 p-6 bg-primary-background rounded-lg text-center">
+        <h1 className="text-xl md:text-2xl text-primary-text">Expected leaderboard</h1>
+        <p className="text-primary-text/60 text-sm mt-2 mb-6">Simulating 5 000 leaderboards…</p>
+        <div className="h-2.5 w-full rounded-full bg-primary-text/10 overflow-hidden">
           <div
-            className={classNames(
-              "text-[10px] md:text-sm font-bold",
-              type === "current" ? "text-blue-600" : "text-green-600",
-            )}
-          >
-            {fmtNum(player.score)}
-          </div>
+            className="h-full rounded-full bg-secondary-background transition-all duration-150"
+            style={{ width: `${Math.round(progress * 100)}%` }}
+          />
         </div>
-
-        {/* Changes */}
-        {showChanges && (
-          <div className="flex flex-col -space-y-2 md:space-y-0">
-            {rankChange !== 0 && (
-              <p
-                className={classNames(
-                  "text-[10px] md:text-xs font-medium",
-                  rankChange > 0 ? "text-green-600" : "text-red-600",
-                )}
-              >
-                {fmtNum(rankChange, { signedPositive: true })} rank{Math.abs(rankChange) !== 1 && "s"}
-              </p>
-            )}
-            {scoreChange !== 0 && (
-              <p className={classNames("text-[10px] md:text-xs", scoreChange > 0 ? "text-green-600" : "text-red-600")}>
-                ({fmtNum(scoreChange, { signedPositive: true })})
-              </p>
-            )}
-          </div>
-        )}
+        <p className="text-primary-text/60 text-xs mt-2">{Math.round(progress * 100)} %</p>
       </div>
     );
-  };
+  }
+
+  if (result.expected.length === 0) {
+    return (
+      <div className="max-w-md mx-auto mt-12 p-6 bg-primary-background rounded-lg text-center">
+        <h1 className="text-xl md:text-2xl text-primary-text">Expected leaderboard</h1>
+        <p className="text-primary-text/60 text-sm mt-2">Not enough ranked players to simulate a leaderboard.</p>
+      </div>
+    );
+  }
+
+  const currentById = new Map(result.current.map((player) => [player.id, player]));
+
+  // Draw the hovered line last so it sits on top
+  const orderedLines = hoveredId
+    ? [...lines.filter((l) => l.id !== hoveredId), ...lines.filter((l) => l.id === hoveredId)]
+    : lines;
 
   return (
-    <div className="max-w-7xl mx-auto bg-primary-background p-2 md:p-0">
-      {/* Comparison Visualization */}
-      <div className="grid grid-cols-[1fr_50px_1fr] xs:grid-cols-[1fr_100px_1fr] sm:grid-cols-[1fr_200px_1fr] md:grid-cols-5 relative">
-        {/* Current Leaderboard */}
-        <div className="md:col-span-2">
-          <h2 className="text-sm md:text-xl font-bold text-primary-text mb-2 md:mb-4 text-center h-12 flex items-center justify-center">
-            Current Leaderboard
-          </h2>
-          <div ref={currentListRef} className="space-y-1 md:space-y-2">
-            {leaderboardData.current.map((player) => (
-              <PlayerCard key={`current-${player.id}`} player={player} type="current" />
+    <div className="max-w-5xl mx-auto bg-primary-background rounded-lg p-2 md:p-4">
+      <h1 className="text-xl md:text-2xl text-center text-primary-text pt-2">Expected leaderboard</h1>
+      <p className="text-center text-primary-text/60 text-xs md:text-sm mt-1 mb-4 max-w-xl mx-auto">
+        The average of 5 000 simulated leaderboards where every ranked player plays every other player. The difference
+        from today shows the effect of the schedule.
+      </p>
+
+      <div ref={containerRef} className="grid grid-cols-[1fr_44px_1fr] xs:grid-cols-[1fr_90px_1fr] md:grid-cols-[1fr_150px_1fr]">
+        {/* Current leaderboard */}
+        <div>
+          <h2 className="text-sm md:text-lg font-bold text-primary-text mb-2 md:mb-3 text-center">Today</h2>
+          <div ref={currentListRef} className="space-y-1.5 md:space-y-2">
+            {result.current.map((player) => (
+              <PlayerRow key={player.id} player={player} hovered={hoveredId === player.id} onHover={setHoveredId} />
             ))}
           </div>
         </div>
 
-        {/* Connection Lines */}
-        <div className="relative flex justify-center">
-          <svg
-            ref={svgRef}
-            className="absolute inset-0 w-full h-full pointer-events-none"
-            style={{ zIndex: 1 }}
-          >
-            {Array.from(playerPositions.entries()).map(([playerName, positions]) => {
-              const rankChange = getRankChange(playerName);
+        {/* Connection lines */}
+        <div ref={middleRef} className="relative">
+          <svg className="absolute inset-0 w-full h-full pointer-events-none">
+            {orderedLines.map((line) => {
+              const isHovered = hoveredId === line.id;
+              const isDimmed = hoveredId !== null && !isHovered;
               return (
                 <line
-                  key={`line-${playerName}`}
+                  key={line.id}
                   x1="0"
-                  y1={positions.current}
+                  y1={line.y1}
                   x2="100%"
-                  y2={positions.simulated}
-                  stroke={getLineColor(rankChange)}
-                  strokeWidth="5"
+                  y2={line.y2}
+                  stroke={lineColor(line.change)}
+                  strokeWidth={isHovered ? 4 : 2.5}
+                  strokeOpacity={isHovered ? 1 : isDimmed ? 0.1 : 1}
+                  strokeLinecap="round"
                 />
               );
             })}
           </svg>
         </div>
 
-        {/* Expected Leaderboard */}
-        <div className="md:col-span-2">
-          <h2 className="text-sm md:text-xl font-bold text-primary-text mb-2 md:mb-4 text-center h-12 flex items-center justify-center">
-            Expected Leaderboard
-          </h2>
-          <div ref={simulatedListRef} className="space-y-1 md:space-y-2">
-            {leaderboardData.expected.map((player) => (
-              <PlayerCard
-                key={`simulated-${player.id}`}
-                player={player}
-                type="simulated"
-                showChanges={true}
-              />
-            ))}
+        {/* Expected leaderboard */}
+        <div>
+          <h2 className="text-sm md:text-lg font-bold text-primary-text mb-2 md:mb-3 text-center">Expected</h2>
+          <div ref={expectedListRef} className="space-y-1.5 md:space-y-2">
+            {result.expected.map((player) => {
+              const current = currentById.get(player.id);
+              return (
+                <PlayerRow
+                  key={player.id}
+                  player={player}
+                  rankChange={current ? current.rank - player.rank : undefined}
+                  scoreChange={current ? player.score - current.score : undefined}
+                  hovered={hoveredId === player.id}
+                  onHover={setHoveredId}
+                />
+              );
+            })}
           </div>
         </div>
       </div>

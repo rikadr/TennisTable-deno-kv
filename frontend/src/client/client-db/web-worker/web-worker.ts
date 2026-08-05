@@ -1,9 +1,13 @@
 import { EventType } from "../event-store/event-types";
 import { PredictionHistoryEntry } from "../predictions-history";
+import { ExpectedLeaderboard } from "../simulations";
 import { TennisTable } from "../tennis-table";
 import { TournamentPredictionResult } from "../tournaments/prediction";
 
 export type WorkerMessage =
+  | { type: "start-expected-leaderboard"; data: { events: EventType[] } }
+  | { type: "expected-leaderboard-progress"; data: { progress: number } }
+  | { type: "expected-leaderboard-result"; data: { result: ExpectedLeaderboard } }
   | { type: "start-simulating-elo-over-time"; data: { playerId: string; events: EventType[] } }
   | { type: "simulated-elo-delivery"; data: { elements: { elo: number; time: number }[]; progress: number } }
   | { type: "done-with-simulation" }
@@ -27,6 +31,15 @@ scope.addEventListener("message", (event) => {
 
 function handleWorkerMessage(message: WorkerMessage) {
   switch (message.type) {
+    case "start-expected-leaderboard": {
+      const tennisTableForLeaderboard = new TennisTable({ events: message.data.events });
+      const result = tennisTableForLeaderboard.simulations.expectedLeaderBoard((progress) =>
+        postWorkerMessage({ type: "expected-leaderboard-progress", data: { progress } }),
+      );
+      postWorkerMessage({ type: "expected-leaderboard-result", data: { result } });
+      break;
+    }
+
     case "start-simulating-elo-over-time":
       const tennisTable = new TennisTable({ events: message.data.events });
       tennisTable.simulations.expectedPlayerEloOverTime(message.data.playerId, (data) =>
