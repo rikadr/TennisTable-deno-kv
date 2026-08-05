@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { classNames } from "../../common/class-names";
+import { relativeTimeString } from "../../common/date-utils";
 import { ChangelogPost, changelogTagCounts, getChangelogPosts } from "../../client/changelog/changelog-posts";
 import { ALL_CHANGELOG_TAGS } from "../../client/changelog/changelog-tags";
 import { ChangelogTagPill } from "./changelog-tag-pill";
@@ -88,7 +89,9 @@ const PostCard: React.FC<{ post: ChangelogPost }> = ({ post }) => {
         "hover:bg-secondary-background hover:text-secondary-text hover:border-secondary-background transition-colors",
       )}
     >
-      <p className="text-xs opacity-60 tabular-nums">{formatPostDate(post.date)}</p>
+      <p className="text-xs opacity-60 tabular-nums">
+        {formatPostDate(post.date)} · {relativeTimeString(postDateAsDate(post.date))}
+      </p>
       <h3 className="text-lg sm:text-xl font-semibold mt-1">{post.title}</h3>
       <p className="text-sm opacity-80 mt-2">{post.summary}</p>
       <div className="flex flex-wrap gap-1.5 mt-3">
@@ -100,8 +103,14 @@ const PostCard: React.FC<{ post: ChangelogPost }> = ({ post }) => {
   );
 };
 
+// Post dates are day-granular; anchoring them to local noon keeps both the
+// formatted date and the relative time on the intended calendar day.
+function postDateAsDate(isoDate: string): Date {
+  return new Date(`${isoDate}T12:00:00`);
+}
+
 export function formatPostDate(isoDate: string): string {
-  const date = new Date(`${isoDate}T12:00:00`);
+  const date = postDateAsDate(isoDate);
   if (Number.isNaN(date.getTime())) return isoDate;
   return date.toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
 }
