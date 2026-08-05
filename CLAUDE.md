@@ -127,9 +127,8 @@ fast and accurate comprehension by a human reader. Follow the STE writing rules:
   verb works.
 - Keep the emoji in an achievement name, and keep numbers as digits.
 
-The page is at `/changelog`. Until the navigation structure is reworked it is
-only in the nav menu for logged-in admins - everyone else reaches it by direct
-url.
+The page is at `/changelog`. Everyone reaches it from the "Other" item in the
+nav menu.
 
 ## Context Files
 - Root Instructions: `./GEMINI.md`

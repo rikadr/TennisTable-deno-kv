@@ -53,6 +53,8 @@ import { LiveGameAdminPage } from "./pages/live-game/live-game-admin-page";
 import { LiveGameOverlay } from "./pages/live-game/live-game-overlay";
 import { ChangelogPage } from "./pages/changelog/changelog-page";
 import { ChangelogPostPage } from "./pages/changelog/changelog-post-page";
+import { ComparePage } from "./pages/compare/compare-page";
+import { OtherPage } from "./pages/other/other-page";
 import { NotFoundPage } from "./pages/not-found-page";
 
 const RequireAuth: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -86,6 +88,7 @@ function App() {
                         <Route path="/tennis-table" element={<Navigate to="/leader-board" />} />
                         <Route path="/leader-board" element={<LeaderBoard />} />
                         <Route path="/player/:name" element={<PlayerPage />} />
+                        <Route path="/compare" element={<ComparePage />} />
                         <Route path="/1v1" element={<PvPPage />} />
                         <Route path="/compare-players" element={<ComparePlayersPage />} />
                         <Route path="/player-network" element={<PlayerNetwork />} />
@@ -136,6 +139,7 @@ function App() {
                         <Route path="/add-game-track" element={<TrackGamePage />} />
                         <Route path="/game/edit/score" element={<EditGameSore />} />
                         <Route path="/camera" element={<CameraPage />} />
+                        <Route path="/other" element={<OtherPage />} />
                         <Route path="/settings" element={<SettingsPage />} />
                         <Route path="/log-in" element={<LoginPage />} />
                         <Route path="/sign-up" element={<SignupPage />} />

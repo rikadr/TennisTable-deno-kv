@@ -27,19 +27,15 @@ export const NavMenu: React.FC = () => {
       { name: "🍁 Seasons", to: "/season/list" },
       { name: "🏓  Add game", to: "/add-game" },
       { name: "👤  New player", to: "/add-player" },
-      { name: "👥🥊 Compare 1v1", to: "/1v1" },
-      { name: "📈 Compare all", to: "/compare-players" },
+      { name: "👥🥊 Compare", to: "/compare" },
 
       { name: "🏆 Tournaments", to: "/tournament/list" },
       { name: "🎖️ Achievements", to: "/achievements" },
       { name: "🏛️ Hall of Fame", to: "/hall-of-fame" },
       { name: "🤖 Simulations", to: "/simulations" },
-      { name: "🔧 Settings", to: "/settings" },
+      { name: "🗂️ Other", to: "/other" },
     ];
     if (session.isAuthenticated && session.sessionData?.role === "admin") {
-      // Changelog (/changelog) is deliberately admin-only until the navigation
-      // structure is reworked. Reachable by direct url for everyone else.
-      items.push({ name: "📜 Changelog", to: "/changelog" });
       items.push({ name: "📺 Live Game", to: "/live-game" });
       items.push({ name: "🔐 Admin Page", to: "/admin" });
     }
