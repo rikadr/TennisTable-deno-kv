@@ -1,7 +1,7 @@
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { relativeTimeString } from "../../common/date-utils";
 import { classNames } from "../../common/class-names";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Achievement,
   AchievementProgression,
@@ -737,22 +737,95 @@ type ProgressTabProps = {
   playerId: string;
 };
 
+type ProgressSort = "default" | "progress-desc" | "progress-asc";
+const progressSortOptions: { value: ProgressSort; label: string }[] = [
+  { value: "default", label: "Default" },
+  { value: "progress-desc", label: "Progress: high to low" },
+  { value: "progress-asc", label: "Progress: low to high" },
+];
+
 const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
   const context = useEventDbContext();
   const search = usePlayerLinkSearch();
-  const progressItems = Object.entries(progression).map(([type, data]) => {
-    const label = getAchievementLabel(type, context.client.gameLimitForRanked);
+  const [sort, setSort] = useState<ProgressSort>("default");
+  const [excludeAchieved, setExcludeAchieved] = useState(false);
 
-    return {
-      type,
-      label,
-      data,
-    };
-  });
+  const gameLimitForRanked = context.client.gameLimitForRanked;
+
+  const allProgressItems = useMemo(
+    () =>
+      Object.entries(progression).map(([type, data]) => {
+        const hasEarned = data.earned > 0;
+        const hasTarget = "target" in data && !!data.target;
+        const hasCurrent = "current" in data && !!data.current;
+
+        return {
+          type,
+          label: getAchievementLabel(type, gameLimitForRanked),
+          data,
+          hasEarned,
+          // The percentage the row shows. An achievement without a measurable
+          // target has no percentage, so an earned one sorts as complete and
+          // the rest sort as 0.
+          sortPercentage: hasTarget
+            ? hasCurrent
+              ? achievementProgressPercentage(type, data.current, data.target)
+              : 0
+            : hasEarned
+              ? 100
+              : 0,
+        };
+      }),
+    [progression, gameLimitForRanked],
+  );
+
+  // Sorting is stable, so items with the same progress keep the default order.
+  const progressItems = useMemo(() => {
+    const items = excludeAchieved ? allProgressItems.filter((item) => !item.hasEarned) : allProgressItems;
+    if (sort === "default") return items;
+    return [...items].sort((a, b) =>
+      sort === "progress-desc" ? b.sortPercentage - a.sortPercentage : a.sortPercentage - b.sortPercentage,
+    );
+  }, [allProgressItems, sort, excludeAchieved]);
 
   return (
     <div className="space-y-4 text-secondary-text">
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-3 rounded-lg border border-secondary-text p-3">
+        <div className="flex items-center gap-2">
+          <label htmlFor="achievement-progress-sort" className="text-sm">
+            Sort
+          </label>
+          <select
+            id="achievement-progress-sort"
+            value={sort}
+            onChange={(event) => setSort(event.target.value as ProgressSort)}
+            className="px-2 py-1 bg-secondary-background text-secondary-text border border-secondary-text rounded text-sm cursor-pointer"
+          >
+            {progressSortOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </div>
+        <label className="flex items-center gap-2 text-sm cursor-pointer">
+          <input
+            type="checkbox"
+            className="w-4 h-4 cursor-pointer accent-secondary-text"
+            checked={excludeAchieved}
+            onChange={(event) => setExcludeAchieved(event.target.checked)}
+          />
+          Exclude achieved
+        </label>
+      </div>
+
+      {progressItems.length === 0 && (
+        <p className="text-sm text-secondary-text/70">Every achievement is earned. Nothing left to show.</p>
+      )}
+
       {progressItems.map(({ type, label, data }) => {
+        // Recomputed here rather than read off the item so TypeScript narrows
+        // `data` to the progression shapes that carry current/target.
         const hasTarget = "target" in data && !!data.target;
         const hasCurrent = "current" in data && !!data.current;
         const percentage = hasTarget && hasCurrent ? achievementProgressPercentage(type, data.current, data.target) : 0;
