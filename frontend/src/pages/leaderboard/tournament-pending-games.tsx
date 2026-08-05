@@ -254,7 +254,7 @@ export function secondChanceRoundLabel(layerIndex: number, totalLayers: number):
   const winnersLayerCount = totalLayers / 2 + 1;
 
   if (layerIndex === 0) {
-    return { title: "Second Chance Final", subtitle: "Loser of the First Chance Semi Final enters" };
+    return { title: "Second Chance Semi Final", subtitle: "Loser of the First Chance Semi Final enters" };
   }
   if (round === 1) {
     const firstChanceRound = firstChanceLayerIndexToTournamentRound(winnersLayerCount - 1);

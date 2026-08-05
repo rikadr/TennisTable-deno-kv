@@ -46,7 +46,7 @@ export const TournamentSecondChanceBracket = ({
       <GrandFinalLinkCard tournament={tournament} itemRefs={itemRefs} fromSection="second-chance" />
       {showAsList === false && (
         <div className="flex flex-col gap-6 w-fit max-w-full m-auto bg-primary-background rounded-lg p-4 overflow-x-auto">
-          {/* Rounds stacked vertically like the winners tree: second chance final at the top,
+          {/* Rounds stacked vertically like the winners tree: second chance semi final at the top,
               round 1 at the bottom. Not a recursive tree: consecutive second chance rounds can
               have the same number of games */}
           {secondChanceBracket.map((layer, layerIndex) => {

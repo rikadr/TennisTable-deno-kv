@@ -327,7 +327,7 @@ export class HallOfFame {
           bestLosersLayer = layerIndex;
         }
       });
-      if (bestLosersLayer === 0) return { points: 100, placement: "Second Chance Final" };
+      if (bestLosersLayer === 0) return { points: 100, placement: "Second Chance Semi Final" };
       if (bestLosersLayer !== -1) {
         return { points: bestLosersLayer <= 2 ? 75 : 50, placement: "Second Chance Bracket" };
       }
