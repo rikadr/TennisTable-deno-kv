@@ -8,7 +8,7 @@ import { TournamentGroupPlayComponent } from "./tournament-group-play";
 import { TournamentInfo } from "./tournament-into";
 import { TournamentPredictions } from "./tournament-predictions";
 import { TournamentBracket } from "./tournament-bracket";
-import { TournamentLosersBracket } from "./tournament-losers-bracket";
+import { TournamentSecondChanceBracket } from "./tournament-second-chance-bracket";
 import { TournamentGrandFinal } from "./tournament-grand-final";
 import { TournamentAvailablePlayers } from "./tournament-available-players";
 import { TournamentStats } from "./stats/tournament-stats";
@@ -17,7 +17,7 @@ import { session } from "../../services/auth/session";
 type TabType =
   | "grand-final"
   | "finals"
-  | "losers"
+  | "second-chance"
   | "group-play"
   | "signup"
   | "info"
@@ -38,9 +38,9 @@ export const TournamentPage: React.FC = () => {
   const tabs: { id: TabType; label: string; visible: boolean }[] = [
     ...(isDoubleElimination
       ? ([
-          { id: "grand-final", label: "Grand Final", visible: bracketVisible },
-          { id: "finals", label: "Winners bracket", visible: bracketVisible },
-          { id: "losers", label: "Losers bracket", visible: bracketVisible },
+          { id: "grand-final", label: "Final", visible: bracketVisible },
+          { id: "finals", label: "First chance bracket", visible: bracketVisible },
+          { id: "second-chance", label: "Second chance bracket", visible: bracketVisible },
         ] as { id: TabType; label: string; visible: boolean }[])
       : [{ id: "finals" as TabType, label: "Finals", visible: bracketVisible }]),
     { id: "group-play", label: "Group play", visible: tournament?.groupPlay !== undefined },
@@ -68,7 +68,7 @@ export const TournamentPage: React.FC = () => {
           // When arriving via a game link (pending, or just registered), open the tab the game is in
           if (player1 && player2) {
             const game = tournament.bracket.findGameByPlayers(player1, player2);
-            if (game?.section === "losers") return "losers";
+            if (game?.section === "losers") return "second-chance";
             if (game?.section === "grandFinal" || game?.section === "bracketReset") {
               return "grand-final";
             }
@@ -89,8 +89,10 @@ export const TournamentPage: React.FC = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const initialTab = useMemo(defaultTab, [tournamentId, player1, player2]);
 
-  // The active tab lives in the url so it survives reloads and can be shared
-  const tabParam = searchParams.get("tab");
+  // The active tab lives in the url so it survives reloads and can be shared.
+  // "losers" is the old name of the second chance tab, kept so shared links stay valid
+  const rawTabParam = searchParams.get("tab");
+  const tabParam = rawTabParam === "losers" ? "second-chance" : rawTabParam;
   const activeTab: TabType = isVisibleTab(tabParam)
     ? tabParam
     : isVisibleTab(initialTab)
@@ -155,7 +157,7 @@ export const TournamentPage: React.FC = () => {
       </div>
       {activeTab === "grand-final" && <TournamentGrandFinal tournament={tournament} itemRefs={itemRefs} />}
       {activeTab === "finals" && <TournamentBracket tournament={tournament} itemRefs={itemRefs} />}
-      {activeTab === "losers" && <TournamentLosersBracket tournament={tournament} itemRefs={itemRefs} />}
+      {activeTab === "second-chance" && <TournamentSecondChanceBracket tournament={tournament} itemRefs={itemRefs} />}
       {activeTab === "group-play" && <TournamentGroupPlayComponent tournament={tournament} itemRefs={itemRefs} />}
       {activeTab === "info" && <TournamentInfo tournament={tournament} />}
       {activeTab === "signup" && <TournamentSignup tournament={tournament} />}

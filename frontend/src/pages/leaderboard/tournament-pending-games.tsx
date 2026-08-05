@@ -60,13 +60,14 @@ export const TournamentHighlightsAndPendingGames: React.FC = () => {
               )}
             {hasPendingGames &&
               bracket &&
-              // Bracket games (winners bracket)
+              // Bracket games (first chance bracket for double elimination)
               bracket.bracketGames.map((layer, layerIndex) => (
                 <div key={layerIndex} className="space-y-1">
-                  {layerIndexToTournamentRound(layerIndex) && layer.pending.length > 0 && (
+                  {bracketLayerIndexToTournamentRound(layerIndex, bracket.doubleElimination) &&
+                    layer.pending.length > 0 && (
                     <h3 className="text-center text-sm text-primary-text">
-                      {bracket.doubleElimination && "Winners "}
-                      {layerIndexToTournamentRound(layerIndex)}
+                      {bracket.doubleElimination && "First Chance "}
+                      {bracketLayerIndexToTournamentRound(layerIndex, bracket.doubleElimination)}
                     </h3>
                   )}
                   {layer.pending.map((game) => (
@@ -81,12 +82,13 @@ export const TournamentHighlightsAndPendingGames: React.FC = () => {
               ))}
             {hasPendingGames &&
               bracket?.losersBracketGames &&
-              // Losers bracket games (double elimination)
+              // Second chance bracket games (double elimination)
               bracket.losersBracketGames.map((layer, layerIndex) => (
                 <div key={layerIndex} className="space-y-1">
                   {layer.pending.length > 0 && (
                     <h3 className="text-center text-sm text-primary-text">
-                      {losersLayerIndexToTournamentRound(layerIndex, bracket.losersBracketGames!.length)}
+                      {/* Title only: the subtitle explaining who enters is too long for this widget */}
+                      {secondChanceRoundLabel(layerIndex, bracket.losersBracketGames!.length).title}
                     </h3>
                   )}
                   {layer.pending.map((game) => (
@@ -105,7 +107,7 @@ export const TournamentHighlightsAndPendingGames: React.FC = () => {
               bracket.grandFinalGames.pending.map((game) => (
                 <div key={game.player1 + game.player2} className="space-y-1">
                   <h3 className="text-center text-sm text-primary-text">
-                    {game.section === "bracketReset" ? "The Final Decider" : "Grand Final"}
+                    {game.section === "bracketReset" ? "The Final Decider" : "Final"}
                   </h3>
                   <PendingGame player1={game.player1} player2={game.player2} tournamentId={id} />
                 </div>
@@ -243,35 +245,47 @@ export const WinnerBox: React.FC<WinnerBoxProps> = ({ winner }) => {
 };
 
 /**
- * Names a losers bracket round after how it is filled: even ("major") rounds receive fresh
- * losers dropping in from a winners bracket round, odd ("minor") rounds are played among losers
- * bracket survivors only, to reduce the field for the next drop-in round.
+ * Names a second chance bracket round after how it is filled: even ("major") rounds receive fresh
+ * losers dropping in from a first chance bracket round, odd ("minor") rounds are played among
+ * second chance survivors only, to reduce the field for the next drop-in round.
  */
-export function losersRoundLabel(layerIndex: number, totalLayers: number): { title: string; subtitle?: string } {
+export function secondChanceRoundLabel(layerIndex: number, totalLayers: number): { title: string; subtitle?: string } {
   const round = totalLayers - layerIndex; // Forward round number: 1 is played first
   const winnersLayerCount = totalLayers / 2 + 1;
 
-  if (layerIndex === 0) return { title: "Losers Final", subtitle: "Loser of the Winners Final enters" };
+  if (layerIndex === 0) {
+    return { title: "Second Chance Semi Final", subtitle: "Loser of the First Chance Semi Final enters" };
+  }
   if (round === 1) {
-    const winnersRound = layerIndexToTournamentRound(winnersLayerCount - 1);
+    const firstChanceRound = firstChanceLayerIndexToTournamentRound(winnersLayerCount - 1);
     return {
-      title: "Losers Round 1",
-      subtitle: winnersRound ? `Losers from Winners ${winnersRound}` : undefined,
+      title: "Second Chance Round 1",
+      subtitle: firstChanceRound ? `Losers from First Chance ${firstChanceRound}` : undefined,
     };
   }
   if (round % 2 === 0) {
-    const winnersRound = layerIndexToTournamentRound(winnersLayerCount - 1 - round / 2);
+    const firstChanceRound = firstChanceLayerIndexToTournamentRound(winnersLayerCount - 1 - round / 2);
     return {
-      title: `Losers Round ${round}`,
-      subtitle: winnersRound ? `Losers from Winners ${winnersRound} enter` : undefined,
+      title: `Second Chance Round ${round}`,
+      subtitle: firstChanceRound ? `Losers from First Chance ${firstChanceRound} enter` : undefined,
     };
   }
-  return { title: `Losers Round ${round}`, subtitle: "Losers only" };
+  return { title: `Second Chance Round ${round}`, subtitle: "Second chance survivors only" };
 }
 
-export function losersLayerIndexToTournamentRound(layerIndex: number, totalLayers: number): string {
-  const { title, subtitle } = losersRoundLabel(layerIndex, totalLayers);
-  return subtitle ? `${title} — ${subtitle}` : title;
+/**
+ * Round names for the first chance bracket in double elimination, offset by one from the single
+ * elimination names: the real Final is the grand final, and the second chance bracket holds the
+ * other route into it, so the first chance bracket's last game is a semi final.
+ */
+export function firstChanceLayerIndexToTournamentRound(index: number): string | undefined {
+  if (index === 0) return "Semi Final"; // A single game, so singular
+  return layerIndexToTournamentRound(index + 1);
+}
+
+/** Round name for a bracket layer, using the double elimination offset when it applies */
+export function bracketLayerIndexToTournamentRound(index: number, doubleElimination: boolean): string | undefined {
+  return doubleElimination ? firstChanceLayerIndexToTournamentRound(index) : layerIndexToTournamentRound(index);
 }
 
 export function layerIndexToTournamentRound(index: number): string | undefined {
@@ -294,5 +308,7 @@ export function layerIndexToTournamentRound(index: number): string | undefined {
       return "128th Finals";
     case 8:
       return "256th Finals";
+    case 9:
+      return "512th Finals";
   }
 }

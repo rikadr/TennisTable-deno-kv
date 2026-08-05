@@ -176,10 +176,10 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
       list(
         "Group play, with one bar for each group",
         "The bracket, with one bar for each round",
-        "For double elimination: the winners bracket, the losers bracket and the grand final as separate sections",
+        "For double elimination: the first chance bracket, the second chance bracket and the final as separate sections",
       ),
       text(
-        "The clock for a round starts when the round becomes possible to play, and stops at its last game. A round becomes possible when the round before it is complete. For a losers bracket round, the winners bracket round that sends players to it must also be complete. The wait for players is therefore part of the time. Group play is the exception, because its groups run together from the start of the tournament.",
+        "The clock for a round starts when the round becomes possible to play, and stops at its last game. A round becomes possible when the round before it is complete. For a second chance bracket round, the first chance bracket round that sends players to it must also be complete. The wait for players is therefore part of the time. Group play is the exception, because its groups run together from the start of the tournament.",
       ),
       text(
         "New connections is the second widget. It shows the players and pairs that the tournament brought together, measured against the club at the start of the tournament. One baseline keeps the numbers stable, so a pair that meets in group play and again in the bracket is one first meeting. Skipped games, byes and walkovers do not count.",
@@ -233,13 +233,16 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
     title: "Double elimination tournaments",
     date: "2026-07-24",
     tags: ["feature-update"],
-    summary: "A player who loses one game moves to a losers bracket and continues to play.",
+    summary: "A player who loses one game moves to the second chance bracket and continues to play.",
     body: [
       text(
-        "You can now run a tournament as double elimination. Each player who loses moves to the losers bracket and continues to play. The winner of the winners bracket plays the last player in the losers bracket in a grand final.",
+        "You can now run a tournament as double elimination. Each player who loses in the first chance bracket moves to the second chance bracket and continues to play. The winner of the second chance bracket plays the first chance champion in the final.",
       ),
       text(
         "Double elimination is an option on the tournament form, next to single elimination. The bracket view, the pending games list and the signup all support it.",
+      ),
+      text(
+        "The top of each bracket tab shows a card for the final. Click the card to open the final tab.",
       ),
     ],
   },

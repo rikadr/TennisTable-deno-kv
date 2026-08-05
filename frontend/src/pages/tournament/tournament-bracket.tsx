@@ -4,10 +4,10 @@ import { useSessionStorage } from "usehooks-ts";
 import { classNames } from "../../common/class-names";
 import { useTennisParams } from "../../hooks/use-tennis-params";
 import { useEventDbContext } from "../../wrappers/event-db-context";
-import { layerIndexToTournamentRound } from "../leaderboard/tournament-pending-games";
+import { bracketLayerIndexToTournamentRound } from "../leaderboard/tournament-pending-games";
 import { ProfilePicture } from "../player/profile-picture";
 import { getGameKeyFromPlayers } from "./tournament-page";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 export const TournamentBracket = ({
   tournament,
@@ -40,8 +40,9 @@ export const TournamentBracket = ({
     );
   }
   return (
-    <>
+    <div className="space-y-4">
       <TreeListToggle showAsList={showAsList} setShowAsList={setShowAsList} />
+      <GrandFinalLinkCard tournament={tournament} itemRefs={itemRefs} fromSection="winners" />
       {showAsList ? (
         <GamesList tournament={tournament} itemRefs={itemRefs} />
       ) : (
@@ -49,7 +50,47 @@ export const TournamentBracket = ({
           <GameTriangle tournament={tournament} layerIndex={0} gameIndex={0} itemRefs={itemRefs} />
         </div>
       )}
-    </>
+    </div>
+  );
+};
+
+/**
+ * Double elimination only: a card at the top of each bracket tab showing the final like a
+ * normal game, so it is clear where the bracket's champion goes next. Clicking it opens the
+ * Final tab.
+ */
+export const GrandFinalLinkCard = ({
+  tournament,
+  itemRefs,
+  fromSection,
+}: {
+  tournament: Tournament;
+  itemRefs: React.MutableRefObject<{
+    [key: string]: HTMLElement | null;
+  }>;
+  fromSection: "winners" | "second-chance";
+}) => {
+  const grandFinal = tournament.bracket?.grandFinal;
+  if (!grandFinal) return null;
+
+  const championLabel =
+    fromSection === "winners" ? "the first chance champion" : "the second chance champion";
+
+  return (
+    <div className="w-96 max-w-full mx-auto space-y-1">
+      <h3 className="text-center text-sm text-primary-text">Final</h3>
+      <TournamentGameListCard
+        tournament={tournament}
+        game={grandFinal}
+        itemRefs={itemRefs}
+        fallbackKey={`GRAND-FINAL-LINK-${fromSection}`}
+        useFallbackKey
+        linkTo={`/tournament?tournament=${tournament.id}&tab=grand-final`}
+      />
+      <p className="text-center text-xs font-light text-primary-text/60">
+        The winner of this bracket plays the final as {championLabel}. Click the card to open it.
+      </p>
+    </div>
   );
 };
 
@@ -102,7 +143,9 @@ const GamesList: React.FC<GamesListProps> = ({ tournament, itemRefs }) => {
       {tournament.bracket &&
         tournament.bracket.bracket.map((layer, layerIndex) => (
           <div key={layerIndex} className="flex flex-col gap-1 w-full min-w-[22rem] max-w-[27rem]">
-            <h3 className="text-center text-sm text-primary-text">{layerIndexToTournamentRound(layerIndex)}</h3>
+            <h3 className="text-center text-sm text-primary-text">
+              {bracketLayerIndexToTournamentRound(layerIndex, tournament.bracket!.doubleElimination)}
+            </h3>
             {layer.map((game, gameIndex) => {
               // Skip empty qualifier games
               if (layerIndex === tournament.bracket!.bracket.length - 1 && !game.player1 && !game.player2) return null;
@@ -141,6 +184,11 @@ type TournamentGameListCardProps = {
   useFallbackKey?: boolean;
   /** Render as a faded, non-interactive preview of a game that may happen */
   ghost?: boolean;
+  /**
+   * Navigate here when the card is clicked, instead of opening the game menu. Used for cards
+   * that represent a game living on another tab (the grand final card at the top of a bracket)
+   */
+  linkTo?: string;
 };
 export const TournamentGameListCard: React.FC<TournamentGameListCardProps> = ({
   tournament,
@@ -150,8 +198,10 @@ export const TournamentGameListCard: React.FC<TournamentGameListCardProps> = ({
   size = "md",
   useFallbackKey = false,
   ghost = false,
+  linkTo,
 }) => {
   const context = useEventDbContext();
+  const navigate = useNavigate();
   const { player1, player2 } = useTennisParams();
 
   const isLarge = size === "lg";
@@ -200,7 +250,8 @@ export const TournamentGameListCard: React.FC<TournamentGameListCardProps> = ({
     isLarge ? "px-5 py-4 h-24 rounded-xl" : "px-4 py-2 h-12",
     isPending ? "bg-secondary-background ring-2 ring-secondary-text" : "bg-secondary-background/60",
     isWalkover && "border border-dashed border-secondary-text/40",
-    showMenu && "hover:bg-secondary-background/70",
+    (showMenu || linkTo) && "hover:bg-secondary-background/70",
+    linkTo && "cursor-pointer",
     isParamSelectedGame && "animate-wiggle",
     ghost && "opacity-50 select-none pointer-events-none",
   );
@@ -295,6 +346,24 @@ export const TournamentGameListCard: React.FC<TournamentGameListCardProps> = ({
           </div>
     </>
   );
+
+  if (linkTo) {
+    // The whole card navigates (e.g. to the Final tab). A div with onClick rather than a
+    // Link, so the nested CandidateHint links stay valid and clickable
+    return (
+      <div
+        ref={(el) => {
+          if (!ghost) itemRefs.current[gameKey] = el;
+        }}
+        role="link"
+        title="Open the final"
+        onClick={() => navigate(linkTo)}
+        className={cardClassName}
+      >
+        {cardBody}
+      </div>
+    );
+  }
 
   return showMenu ? (
     <Menu
@@ -565,7 +634,9 @@ export const GameTriangle: React.FC<GameTriangleProps> = ({
   return (
     <div className="w-fit space-y-2">
       {section === "winners" && visualDepth < 3 ? (
-        <h2 className="font-light text-sm text-center text-primary-text">{layerIndexToTournamentRound(layerIndex)}</h2>
+        <h2 className="font-light text-sm text-center text-primary-text">
+          {bracketLayerIndexToTournamentRound(layerIndex, tournament.bracket.doubleElimination)}
+        </h2>
       ) : (
         <div className="h-0" />
       )}
