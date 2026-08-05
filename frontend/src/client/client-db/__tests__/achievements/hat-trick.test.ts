@@ -506,6 +506,42 @@ describe("Hat-trick Achievement Tests", () => {
       expect(progression["hat-trick"].current).toBe(2);
       expect(progression["hat-trick"].target).toBe(3);
       expect(progression["hat-trick"].earned).toBe(0);
+      expect(progression["hat-trick"].best).toBe(2);
+    });
+
+    it("should track the best-ever number of wins inside a single 90-minute window", () => {
+      const baseTime = Date.now();
+      const events: EventType[] = [
+        ...baseEvents,
+        // Two wins 50 minutes apart, then a third 100 minutes after the
+        // first — no 90-minute window ever contains all three.
+        {
+          time: baseTime,
+          stream: "game-1",
+          type: EventTypeEnum.GAME_CREATED,
+          data: { playedAt: baseTime, winner: "player-1", loser: "player-2" },
+        },
+        {
+          time: baseTime + 50 * 60 * 1000,
+          stream: "game-2",
+          type: EventTypeEnum.GAME_CREATED,
+          data: { playedAt: baseTime + 50 * 60 * 1000, winner: "player-1", loser: "player-3" },
+        },
+        {
+          time: baseTime + 100 * 60 * 1000,
+          stream: "game-3",
+          type: EventTypeEnum.GAME_CREATED,
+          data: { playedAt: baseTime + 100 * 60 * 1000, winner: "player-1", loser: "player-2" },
+        },
+      ];
+
+      const tennisTable = new TennisTable({ events });
+      tennisTable.achievements.calculateAchievements();
+
+      const progression = tennisTable.achievements.getPlayerProgression("player-1");
+
+      expect(progression["hat-trick"].best).toBe(2);
+      expect(progression["hat-trick"].earned).toBe(0);
     });
 
     it("should show earned count after completing hat-trick", () => {

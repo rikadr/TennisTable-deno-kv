@@ -132,4 +132,20 @@ describe("Kingslayer Achievement", () => {
     expect(kingslayers).toHaveLength(1);
     expect(kingslayers[0].data?.gameId).toBe("ks-1");
   });
+
+  it("reports the best-ranked beaten opponent in the progression", () => {
+    // After the setup C's best win is over D (rank 4). C then beats B
+    // (rank 2 going into the match) — the best beaten rank becomes #2,
+    // one short of a kingslay.
+    const events = [...fivePlayerSetup(), game("upset", 1000, "c", "b")];
+
+    const tt = new TennisTable({ events });
+    tt.achievements.calculateAchievements();
+
+    expect(tt.achievements.getPlayerProgression("c")["kingslayer"].best).toBe(2);
+    expect(tt.achievements.getPlayerProgression("c")["kingslayer"].bestOpponent).toBe("b");
+    expect(tt.achievements.getPlayerProgression("c")["kingslayer"].earned).toBe(0);
+    // E never won a game — no beaten rank to report.
+    expect(tt.achievements.getPlayerProgression("e")["kingslayer"].best).toBeUndefined();
+  });
 });

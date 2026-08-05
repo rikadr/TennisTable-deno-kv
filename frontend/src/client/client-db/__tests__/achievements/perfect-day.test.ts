@@ -256,5 +256,32 @@ describe("Perfect Day Achievement Tests", () => {
       const progression = tennisTable.achievements.getPlayerProgression("player-1");
       expect(progression["perfect-day"].current).toBe(0);
     });
+
+    it("keeps the best undefeated-day attempt after the day has passed", () => {
+      jest.useFakeTimers();
+      jest.setSystemTime(new Date(2024, 0, 20, 8));
+
+      // 3 undefeated wins on the 15th — the closest attempt. 4 wins on the
+      // 16th, but a loss the same day nullifies that day entirely.
+      const lossAt = new Date(2024, 0, 16, 17).getTime();
+      const events: EventType[] = [
+        ...baseEvents,
+        ...winsOnDay(2024, 0, 15, "player-1", ["player-2", "player-3", "player-2"], "g"),
+        ...winsOnDay(2024, 0, 16, "player-1", ["player-2", "player-3", "player-2", "player-3"], "h"),
+        {
+          time: lossAt,
+          stream: "loss",
+          type: EventTypeEnum.GAME_CREATED,
+          data: { playedAt: lossAt, winner: "player-2", loser: "player-1" },
+        },
+      ];
+
+      const tennisTable = new TennisTable({ events });
+      tennisTable.achievements.calculateAchievements();
+
+      const progression = tennisTable.achievements.getPlayerProgression("player-1");
+      expect(progression["perfect-day"].current).toBe(0);
+      expect(progression["perfect-day"].best).toBe(3);
+    });
   });
 });

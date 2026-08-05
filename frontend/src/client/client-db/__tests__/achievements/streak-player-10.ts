@@ -62,6 +62,8 @@ describe("TennisTable", () => {
       const progression = tennisTable.achievements.getPlayerProgression("alice");
       expect(progression["streak-player-10"]).toStrictEqual({
         current: 9,
+        best: 9,
+        bestOpponent: "bob",
         target: 10,
         earned: 0,
         perOpponent: new Map([["bob", 9]]),
@@ -99,6 +101,8 @@ describe("TennisTable", () => {
       const progression = tennisTable.achievements.getPlayerProgression("alice");
       expect(progression["streak-player-10"]).toStrictEqual({
         current: 0, // No other streaks below 10
+        best: 10,
+        bestOpponent: "bob",
         target: 10,
         earned: 1,
         perOpponent: new Map([["bob", 10]]),
@@ -136,6 +140,8 @@ describe("TennisTable", () => {
       const progression = tennisTable.achievements.getPlayerProgression("alice");
       expect(progression["streak-player-10"]).toStrictEqual({
         current: 0, // No other streaks below 10
+        best: 11,
+        bestOpponent: "bob",
         target: 10,
         earned: 1,
         perOpponent: new Map([["bob", 11]]),
@@ -193,6 +199,8 @@ describe("TennisTable", () => {
       const progression = tennisTable.achievements.getPlayerProgression("alice");
       expect(progression["streak-player-10"]).toStrictEqual({
         current: 5, // Charlie's streak of 5 becomes the current (highest below 10)
+        best: 10,
+        bestOpponent: "bob",
         target: 10,
         earned: 1,
         perOpponent: new Map([
@@ -252,6 +260,8 @@ describe("TennisTable", () => {
       const progression = tennisTable.achievements.getPlayerProgression("alice");
       expect(progression["streak-player-10"]).toStrictEqual({
         current: 6, // Bob's new streak of 6 is highest (Charlie has 5)
+        best: 6,
+        bestOpponent: "bob",
         target: 10,
         earned: 0,
         perOpponent: new Map([
@@ -311,6 +321,8 @@ describe("TennisTable", () => {
       const progression = tennisTable.achievements.getPlayerProgression("alice");
       expect(progression["streak-player-10"]).toStrictEqual({
         current: 0, // Both opponents at 10, no streaks below 10
+        best: 10,
+        bestOpponent: "bob",
         target: 10,
         earned: 2,
         perOpponent: new Map([

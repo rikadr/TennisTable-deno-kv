@@ -299,8 +299,8 @@ export const ACHIEVEMENT_LABELS: Record<string, { title: string; description: st
     icon: "🛑",
   },
   "group-stage-star": {
-    title: "Group Stage Star",
-    description: "Go undefeated in a tournament group stage",
+    title: "Group Play Star",
+    description: "Go undefeated in a tournament's group play",
     icon: "⭐",
   },
   "full-house": {
@@ -737,6 +737,19 @@ type ProgressTabProps = {
   playerId: string;
 };
 
+// Achievement types whose "best" is a rank — lower is better, shown as "#N".
+// The first three are leaderboard ranks; Season's Champion is the best final
+// rank in a finished season.
+const RANK_BEST_TYPES = new Set(["on-the-podium", "touched-the-throne", "kingslayer", "season-winner"]);
+
+// Renders a progression's best-ever value in the unit the chase is measured
+// in: ranks as "#N", the duration chases as days, everything else as a count.
+function formatBestValue(type: string, best: number): string {
+  if (RANK_BEST_TYPES.has(type)) return `#${fmtNum(best)}`;
+  if (type.startsWith("active-") || type.startsWith("back-after-")) return formatTimePeriod(best);
+  return fmtNum(best) ?? "";
+}
+
 type ProgressSort = "default" | "progress-desc" | "progress-asc";
 const progressSortOptions: { value: ProgressSort; label: string }[] = [
   { value: "default", label: "Default" },
@@ -912,6 +925,27 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                                   )
                                 </span>
                               )}
+                            {/* The player's best-ever value, for chases whose
+                                progress resets or decays — how close they have
+                                ever come, next to where they stand now. When
+                                the number alone is thin, the opponent it was
+                                achieved with is named. */}
+                            {data.best !== undefined && data.best > 0 && (
+                              <span className="text-xs text-secondary-text/70 font-normal ml-2">
+                                Best: {formatBestValue(type, data.best)}
+                                {"bestOpponent" in data && data.bestOpponent && (
+                                  <> with {context.playerName(data.bestOpponent)}</>
+                                )}
+                                {"bestFromElo" in data &&
+                                  data.bestFromElo !== undefined &&
+                                  data.bestToElo !== undefined && (
+                                    <>
+                                      {" "}
+                                      ({fmtNum(data.bestFromElo)} → {fmtNum(data.bestToElo)})
+                                    </>
+                                  )}
+                              </span>
+                            )}
                           </span>
                         </div>
                       </div>
@@ -1148,18 +1182,12 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                         </div>
                       )}
 
-                      {/* Record holder and personal best for the Hero of the
-                          Day / Week / Month records. The bar tracks the current
-                          period's games, so the player's busiest period ever is
-                          spelt out separately. */}
+                      {/* Record holder for the Hero of the Day / Week / Month
+                          records. The bar tracks the current period's games;
+                          the player's busiest period ever is the shared
+                          "Best" value next to the progress numbers. */}
                       {type in HERO_RECORD_PERIODS && "recordHolder" in data && (
                         <div className="mt-2 text-xs text-secondary-text/70 space-y-1">
-                          {"personalBest" in data && (
-                            <p>
-                              Your busiest {HERO_RECORD_PERIODS[type].noun} ever: {data.personalBest} game
-                              {data.personalBest !== 1 ? "s" : ""}
-                            </p>
-                          )}
                           <p>
                             {data.recordHolder ? (
                               <>
@@ -1181,18 +1209,12 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                         </div>
                       )}
 
-                      {/* Record holder and personal best for the streak records.
-                          The bar tracks the live streak, so the player's longest
-                          ever run is spelt out separately. */}
+                      {/* Record holder for the streak records. The bar tracks
+                          the live streak; the player's longest ever run is the
+                          shared "Best" value next to the progress numbers. */}
                       {(type === "longest-win-streak" || type === "longest-lose-streak") &&
                         "recordHolder" in data && (
                           <div className="mt-2 text-xs text-secondary-text/70 space-y-1">
-                            {"personalBest" in data && (
-                              <p>
-                                Your longest ever: {data.personalBest}{" "}
-                                {type === "longest-win-streak" ? "wins" : "losses"} in a row
-                              </p>
-                            )}
                             <p>
                               {data.recordHolder ? (
                                 <>
@@ -1264,9 +1286,21 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                       )}
                     </div>
                   ) : (
-                    // Fallback for achievements without targets (like tournament achievements)
+                    // Fallback for achievements without targets (like tournament
+                    // achievements). The rank chases (On the Podium, Touched the
+                    // Throne, Kingslayer) carry a best-ever rank shown here, and
+                    // Group Play Star its best "N of M" group play.
                     <div className="mt-2 text-xs text-secondary-text/70">
                       {data.earned > 0 ? `Earned ${data.earned} time${data.earned > 1 ? "s" : ""}` : "No progress yet"}
+                      {data.best !== undefined && data.best > 0 && (
+                        <span className="ml-2">
+                          Best: {formatBestValue(type, data.best)}
+                          {"bestOutOf" in data && data.bestOutOf !== undefined && <> of {fmtNum(data.bestOutOf)}</>}
+                          {"bestOpponent" in data && data.bestOpponent && (
+                            <> ({context.playerName(data.bestOpponent)})</>
+                          )}
+                        </span>
+                      )}
                     </div>
                   )}
                 </div>

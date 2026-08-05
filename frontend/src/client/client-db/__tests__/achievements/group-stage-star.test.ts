@@ -63,6 +63,12 @@ describe("Group Stage Star Achievement", () => {
     expect(tt.achievements.getAchievements("bob").filter((a) => a.type === "group-stage-star")).toHaveLength(0);
     expect(tt.achievements.getAchievements("carol").filter((a) => a.type === "group-stage-star")).toHaveLength(0);
     expect(tt.achievements.getAchievements("dave").filter((a) => a.type === "group-stage-star")).toHaveLength(0);
+
+    // Progression best: the most wins in one group stage. Alice went 3-0,
+    // Bob 2-1 — Bob's best shows how close he came without earning it.
+    expect(tt.achievements.getPlayerProgression("alice")["group-stage-star"].best).toBe(3);
+    expect(tt.achievements.getPlayerProgression("bob")["group-stage-star"].best).toBe(2);
+    expect(tt.achievements.getPlayerProgression("bob")["group-stage-star"].earned).toBe(0);
   });
 
   it("does NOT award while the group stage is still in progress (some games pending)", () => {
@@ -295,7 +301,15 @@ describe("Group Stage Star Achievement", () => {
     const tt = new TennisTable({ events });
     tt.achievements.calculateAchievements();
 
-    expect(tt.achievements.getPlayerProgression("alice")["group-stage-star"]).toStrictEqual({ earned: 1 });
-    expect(tt.achievements.getPlayerProgression("bob")["group-stage-star"]).toStrictEqual({ earned: 0 });
+    expect(tt.achievements.getPlayerProgression("alice")["group-stage-star"]).toStrictEqual({
+      earned: 1,
+      best: 3,
+      bestOutOf: 3,
+    });
+    expect(tt.achievements.getPlayerProgression("bob")["group-stage-star"]).toStrictEqual({
+      earned: 0,
+      best: 2,
+      bestOutOf: 3,
+    });
   });
 });

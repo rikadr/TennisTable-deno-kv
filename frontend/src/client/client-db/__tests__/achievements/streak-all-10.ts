@@ -61,7 +61,7 @@ describe("TennisTable", () => {
       expect(streakAchievements).toHaveLength(0);
 
       const progression = tennisTable.achievements.getPlayerProgression("alice");
-      expect(progression["streak-all-10"]).toStrictEqual({ current: 9, target: 10, earned: 0 });
+      expect(progression["streak-all-10"]).toStrictEqual({ current: 9, best: 9, target: 10, earned: 0 });
     });
 
     it("should earn achievement at exactly 10 consecutive wins", () => {
@@ -93,7 +93,7 @@ describe("TennisTable", () => {
       });
 
       const progression = tennisTable.achievements.getPlayerProgression("alice");
-      expect(progression["streak-all-10"]).toStrictEqual({ current: 10, target: 10, earned: 1 });
+      expect(progression["streak-all-10"]).toStrictEqual({ current: 10, best: 10, target: 10, earned: 1 });
     });
 
     it("should only earn achievement once even with 11 consecutive wins", () => {
@@ -137,7 +137,7 @@ describe("TennisTable", () => {
       });
 
       const progression = tennisTable.achievements.getPlayerProgression("alice");
-      expect(progression["streak-all-10"]).toStrictEqual({ current: 11, target: 10, earned: 1 });
+      expect(progression["streak-all-10"]).toStrictEqual({ current: 11, best: 11, target: 10, earned: 1 });
     });
 
     it("should reset progress after a loss", () => {
@@ -182,7 +182,7 @@ describe("TennisTable", () => {
       expect(streakAchievements).toHaveLength(0);
 
       const progression = tennisTable.achievements.getPlayerProgression("alice");
-      expect(progression["streak-all-10"]).toStrictEqual({ current: 6, target: 10, earned: 0 });
+      expect(progression["streak-all-10"]).toStrictEqual({ current: 6, best: 6, target: 10, earned: 0 });
     });
 
     it("should earn achievement multiple times with losses in between", () => {
@@ -243,7 +243,7 @@ describe("TennisTable", () => {
       });
 
       const progression = tennisTable.achievements.getPlayerProgression("alice");
-      expect(progression["streak-all-10"]).toStrictEqual({ current: 10, target: 10, earned: 2 });
+      expect(progression["streak-all-10"]).toStrictEqual({ current: 10, best: 10, target: 10, earned: 2 });
     });
   });
 });
