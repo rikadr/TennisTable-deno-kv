@@ -26,8 +26,8 @@ export const TournamentSecondChanceBracket = ({
         <div className="max-w-2xl mx-auto bg-secondary-background rounded-lg p-6">
           <h3 className="text-lg font-semibold text-secondary-text mb-2">No second chance rounds</h3>
           <p className="text-sm text-secondary-text">
-            With only two players there are no second chance rounds. The loser of the winners bracket final gets
-            their second chance directly in the grand final.
+            With only two players there are no second chance rounds. The loser of the first chance bracket game
+            gets their second chance directly in the final.
           </p>
         </div>
         <GrandFinalLinkCard tournament={tournament} itemRefs={itemRefs} fromSection="second-chance" />
@@ -38,9 +38,9 @@ export const TournamentSecondChanceBracket = ({
   return (
     <div className="space-y-4">
       <p className="text-sm text-primary-text/70 max-w-2xl">
-        Players who lose in the winners bracket drop down here for a second chance to fight their way back. Lose
-        again and you are out. The winner of the second chance bracket meets the winners bracket champion in the
-        grand final.
+        Players who lose in the first chance bracket drop down here for a second chance to fight their way back.
+        Lose again and you are out. The winner of the second chance bracket meets the first chance champion in
+        the final.
       </p>
       <TreeListToggle showAsList={showAsList} setShowAsList={setShowAsList} />
       <GrandFinalLinkCard tournament={tournament} itemRefs={itemRefs} fromSection="second-chance" />

@@ -156,6 +156,7 @@ export class Tournament {
       groupIndex?: number;
       layerIndex?: number;
       bracketSection?: TournamentBracketSection;
+      doubleElimination?: boolean;
     }
     | undefined {
     if (this.startDate > Date.now()) return; // Not started
@@ -193,6 +194,7 @@ export class Tournament {
         player2: pendingBracketGame.game.player2!,
         layerIndex: pendingBracketGame.layerIndex,
         bracketSection: pendingBracketGame.section,
+        doubleElimination: this.bracket.doubleElimination,
       };
     }
   }

@@ -313,10 +313,10 @@ export class HallOfFame {
 
   #getBracketResult(bracket: TournamentBracket, playerId: string): { points: number; placement: string } {
     if (bracket.doubleElimination) {
-      // Reaching the grand final means finishing 1st or 2nd regardless of the path taken
+      // Reaching the final means finishing 1st or 2nd regardless of the path taken
       const grandFinal = bracket.grandFinal;
       if (grandFinal && (grandFinal.player1 === playerId || grandFinal.player2 === playerId)) {
-        return { points: 200, placement: "Grand Final" };
+        return { points: 200, placement: "Final" };
       }
       // Everyone else is eliminated in (or drops into) the losers bracket, so how deep they got
       // there is the real placement — the winners bracket depth alone undervalues losers runs

@@ -8,7 +8,7 @@ import {
 import { classNames } from "../../../common/class-names";
 import { fmtNum } from "../../../common/number-utils";
 import { ONE_DAY } from "../../../common/time-in-ms";
-import { layerIndexToTournamentRound, secondChanceRoundLabel } from "../../leaderboard/tournament-pending-games";
+import { bracketLayerIndexToTournamentRound, secondChanceRoundLabel } from "../../leaderboard/tournament-pending-games";
 
 type Row = {
   key: string;
@@ -89,7 +89,7 @@ export const TournamentTimelineWidget: React.FC<{ tournament: Tournament }> = ({
     // A single sub section would just repeat its section
     if (section.subSections.length <= 1) continue;
     for (const sub of section.subSections) {
-      const { label, sublabel } = refLabel(sub.ref);
+      const { label, sublabel } = refLabel(sub.ref, doubleElimination);
       rows.push({
         key: `${section.key}-${sub.key}`,
         label,
@@ -249,28 +249,30 @@ function sectionLabel(section: TimelineSection, doubleElimination: boolean): str
     case "group-play":
       return "Group play";
     case "winners":
-      return doubleElimination ? "Winners bracket" : "Bracket";
+      return doubleElimination ? "First chance bracket" : "Bracket";
     case "losers":
       return "Second chance bracket";
     case "grand-final":
-      return "Grand Final";
+      return "Final";
   }
 }
 
-function refLabel(ref: TimelineRef): { label: string; sublabel?: string } {
+function refLabel(ref: TimelineRef, doubleElimination: boolean): { label: string; sublabel?: string } {
   switch (ref.kind) {
     case "group":
       return { label: `Group ${ref.groupIndex + 1}` };
     case "winners-layer":
-      return { label: layerIndexToTournamentRound(ref.layerIndex) ?? `Layer ${ref.layerIndex}` };
+      return {
+        label: bracketLayerIndexToTournamentRound(ref.layerIndex, doubleElimination) ?? `Layer ${ref.layerIndex}`,
+      };
     case "losers-layer": {
       const { title, subtitle } = secondChanceRoundLabel(ref.layerIndex, ref.totalLayers);
       return { label: title, sublabel: subtitle };
     }
     case "grand-final-game":
-      return { label: "Grand Final" };
+      return { label: "Final" };
     case "bracket-reset":
-      return { label: "Bracket Reset" };
+      return { label: "The Final Decider" };
   }
 }
 

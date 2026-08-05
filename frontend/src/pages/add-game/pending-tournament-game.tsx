@@ -1,20 +1,25 @@
 import { Link } from "react-router-dom";
 import { useEventDbContext } from "../../wrappers/event-db-context";
-import { layerIndexToTournamentRound } from "../leaderboard/tournament-pending-games";
+import { bracketLayerIndexToTournamentRound } from "../leaderboard/tournament-pending-games";
 
 function pendingGameRoundLabel(pendingGame: {
   layerIndex?: number;
   bracketSection?: "winners" | "losers" | "grandFinal" | "bracketReset";
+  doubleElimination?: boolean;
 }): string | undefined {
   switch (pendingGame.bracketSection) {
     case "losers":
       return "Second chance bracket";
     case "grandFinal":
-      return "Grand Final";
+      return "Final";
     case "bracketReset":
       return "The Final Decider";
-    default:
-      return pendingGame.layerIndex !== undefined ? layerIndexToTournamentRound(pendingGame.layerIndex) : undefined;
+    default: {
+      if (pendingGame.layerIndex === undefined) return undefined;
+      const round = bracketLayerIndexToTournamentRound(pendingGame.layerIndex, pendingGame.doubleElimination === true);
+      if (!round) return undefined;
+      return pendingGame.doubleElimination ? `First Chance ${round}` : round;
+    }
   }
 }
 

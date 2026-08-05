@@ -38,8 +38,8 @@ export const TournamentPage: React.FC = () => {
   const tabs: { id: TabType; label: string; visible: boolean }[] = [
     ...(isDoubleElimination
       ? ([
-          { id: "grand-final", label: "Grand Final", visible: bracketVisible },
-          { id: "finals", label: "Winners bracket", visible: bracketVisible },
+          { id: "grand-final", label: "Final", visible: bracketVisible },
+          { id: "finals", label: "First chance bracket", visible: bracketVisible },
           { id: "second-chance", label: "Second chance bracket", visible: bracketVisible },
         ] as { id: TabType; label: string; visible: boolean }[])
       : [{ id: "finals" as TabType, label: "Finals", visible: bracketVisible }]),

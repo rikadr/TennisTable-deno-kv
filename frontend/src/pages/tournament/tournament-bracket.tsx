@@ -4,7 +4,7 @@ import { useSessionStorage } from "usehooks-ts";
 import { classNames } from "../../common/class-names";
 import { useTennisParams } from "../../hooks/use-tennis-params";
 import { useEventDbContext } from "../../wrappers/event-db-context";
-import { layerIndexToTournamentRound } from "../leaderboard/tournament-pending-games";
+import { bracketLayerIndexToTournamentRound } from "../leaderboard/tournament-pending-games";
 import { ProfilePicture } from "../player/profile-picture";
 import { getGameKeyFromPlayers } from "./tournament-page";
 import { Link, useNavigate } from "react-router-dom";
@@ -55,9 +55,9 @@ export const TournamentBracket = ({
 };
 
 /**
- * Double elimination only: a card at the top of each bracket tab showing the grand final like a
+ * Double elimination only: a card at the top of each bracket tab showing the final like a
  * normal game, so it is clear where the bracket's champion goes next. Clicking it opens the
- * Grand Final tab.
+ * Final tab.
  */
 export const GrandFinalLinkCard = ({
   tournament,
@@ -74,11 +74,11 @@ export const GrandFinalLinkCard = ({
   if (!grandFinal) return null;
 
   const championLabel =
-    fromSection === "winners" ? "the winners bracket champion" : "the second chance bracket champion";
+    fromSection === "winners" ? "the first chance champion" : "the second chance champion";
 
   return (
     <div className="w-96 max-w-full mx-auto space-y-1">
-      <h3 className="text-center text-sm text-primary-text">Grand Final</h3>
+      <h3 className="text-center text-sm text-primary-text">Final</h3>
       <TournamentGameListCard
         tournament={tournament}
         game={grandFinal}
@@ -88,7 +88,7 @@ export const GrandFinalLinkCard = ({
         linkTo={`/tournament?tournament=${tournament.id}&tab=grand-final`}
       />
       <p className="text-center text-xs font-light text-primary-text/60">
-        The winner of this bracket plays the grand final as {championLabel}. Click the card to open it.
+        The winner of this bracket plays the final as {championLabel}. Click the card to open it.
       </p>
     </div>
   );
@@ -143,7 +143,9 @@ const GamesList: React.FC<GamesListProps> = ({ tournament, itemRefs }) => {
       {tournament.bracket &&
         tournament.bracket.bracket.map((layer, layerIndex) => (
           <div key={layerIndex} className="flex flex-col gap-1 w-full min-w-[22rem] max-w-[27rem]">
-            <h3 className="text-center text-sm text-primary-text">{layerIndexToTournamentRound(layerIndex)}</h3>
+            <h3 className="text-center text-sm text-primary-text">
+              {bracketLayerIndexToTournamentRound(layerIndex, tournament.bracket!.doubleElimination)}
+            </h3>
             {layer.map((game, gameIndex) => {
               // Skip empty qualifier games
               if (layerIndex === tournament.bracket!.bracket.length - 1 && !game.player1 && !game.player2) return null;
@@ -346,7 +348,7 @@ export const TournamentGameListCard: React.FC<TournamentGameListCardProps> = ({
   );
 
   if (linkTo) {
-    // The whole card navigates (e.g. to the Grand Final tab). A div with onClick rather than a
+    // The whole card navigates (e.g. to the Final tab). A div with onClick rather than a
     // Link, so the nested CandidateHint links stay valid and clickable
     return (
       <div
@@ -354,7 +356,7 @@ export const TournamentGameListCard: React.FC<TournamentGameListCardProps> = ({
           if (!ghost) itemRefs.current[gameKey] = el;
         }}
         role="link"
-        title="Open the grand final"
+        title="Open the final"
         onClick={() => navigate(linkTo)}
         className={cardClassName}
       >
@@ -632,7 +634,9 @@ export const GameTriangle: React.FC<GameTriangleProps> = ({
   return (
     <div className="w-fit space-y-2">
       {section === "winners" && visualDepth < 3 ? (
-        <h2 className="font-light text-sm text-center text-primary-text">{layerIndexToTournamentRound(layerIndex)}</h2>
+        <h2 className="font-light text-sm text-center text-primary-text">
+          {bracketLayerIndexToTournamentRound(layerIndex, tournament.bracket.doubleElimination)}
+        </h2>
       ) : (
         <div className="h-0" />
       )}

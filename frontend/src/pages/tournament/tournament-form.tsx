@@ -181,8 +181,8 @@ export const TournamentForm = ({ initialData, onSubmit, submitLabel, isPending, 
               <span className="ml-2 text-xs text-primary-text/50">(locked - tournament has started)</span>
             )}
             <p className="text-xs text-primary-text/60 mt-0.5">
-              Players who lose in the winners bracket drop into the second chance bracket and can fight their way
-              back. The winner of the second chance bracket plays the winners bracket champion in the grand final
+              Players who lose in the first chance bracket drop into the second chance bracket and can fight their
+              way back. The winner of the second chance bracket plays the first chance champion in the final
             </p>
           </div>
         </label>
