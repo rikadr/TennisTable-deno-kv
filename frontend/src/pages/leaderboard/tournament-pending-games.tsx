@@ -87,7 +87,8 @@ export const TournamentHighlightsAndPendingGames: React.FC = () => {
                 <div key={layerIndex} className="space-y-1">
                   {layer.pending.length > 0 && (
                     <h3 className="text-center text-sm text-primary-text">
-                      {secondChanceLayerIndexToTournamentRound(layerIndex, bracket.losersBracketGames!.length)}
+                      {/* Title only: the subtitle explaining who enters is too long for this widget */}
+                      {secondChanceRoundLabel(layerIndex, bracket.losersBracketGames!.length).title}
                     </h3>
                   )}
                   {layer.pending.map((game) => (
@@ -270,11 +271,6 @@ export function secondChanceRoundLabel(layerIndex: number, totalLayers: number):
     };
   }
   return { title: `Second Chance Round ${round}`, subtitle: "Second chance survivors only" };
-}
-
-export function secondChanceLayerIndexToTournamentRound(layerIndex: number, totalLayers: number): string {
-  const { title, subtitle } = secondChanceRoundLabel(layerIndex, totalLayers);
-  return subtitle ? `${title} — ${subtitle}` : title;
 }
 
 /**
