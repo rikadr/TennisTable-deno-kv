@@ -331,7 +331,8 @@ export class HallOfFame {
       if (bestLosersLayer !== -1) {
         return { points: bestLosersLayer <= 2 ? 75 : 50, placement: "Second Chance Bracket" };
       }
-      // Not in the losers bracket (e.g. tournament still in progress): fall back to winners depth
+      // Not in the second chance bracket (e.g. tournament still in progress): fall back to first
+      // chance bracket depth
     }
 
     let bestLayer = -1;
@@ -347,6 +348,16 @@ export class HallOfFame {
     }
 
     if (bestLayer === -1) return { points: 25, placement: "Participated" };
+
+    if (bracket.doubleElimination) {
+      // First chance rounds sit one level below the same-depth single elimination rounds: the
+      // last first chance game is a semi final, because the real final is the grand final
+      switch (bestLayer) {
+        case 0: return { points: 100, placement: "Semi Final" };
+        case 1: return { points: 75, placement: "Quarter Finals" };
+        default: return { points: 50, placement: "First Chance Bracket" };
+      }
+    }
 
     switch (bestLayer) {
       case 0: return { points: 200, placement: "Final" };
