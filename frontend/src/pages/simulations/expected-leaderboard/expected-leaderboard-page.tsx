@@ -182,7 +182,7 @@ export const SimulatedLeaderboard: React.FC = () => {
                   y2={line.y2}
                   stroke={lineColor(line.change)}
                   strokeWidth={isHovered ? 4 : 2.5}
-                  strokeOpacity={isHovered ? 1 : isDimmed ? 0.1 : 0.45}
+                  strokeOpacity={isHovered ? 1 : isDimmed ? 0.1 : 1}
                   strokeLinecap="round"
                 />
               );
