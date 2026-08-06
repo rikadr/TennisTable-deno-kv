@@ -56,6 +56,7 @@ import { ChangelogPostPage } from "./pages/changelog/changelog-post-page";
 import { ComparePage } from "./pages/compare/compare-page";
 import { OtherPage } from "./pages/other/other-page";
 import { NotFoundPage } from "./pages/not-found-page";
+import { NewVersionChecker } from "./wrappers/new-version-checker";
 
 const RequireAuth: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   if (!session.isAuthenticated) {
@@ -78,6 +79,7 @@ function App() {
           {clientConfig.snow && <Snowfall radius={[0.2, 1]} speed={[0.1, 0.3]} wind={[0, 1]} />}
           <div className="min-h-screen w-full overflow-auto">
             <HelmetSetter />
+            <NewVersionChecker />
               <EventDbWrapper>
                 <WebSocketRefetcher>
                   <BrowserRouter>
