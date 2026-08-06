@@ -213,14 +213,61 @@ describe("Tournament timeline", () => {
 
     const semiFinals = bracket.subSections[0];
     expect(semiFinals.completed).toBe(false);
+    expect(semiFinals.started).toBe(true);
     expect(span(semiFinals)).toEqual([0, 1]);
 
     // The final has not been reachable yet, so it has no games and falls back to the last known boundary
     const final = bracket.subSections[1];
     expect(final.completed).toBe(false);
+    expect(final.started).toBe(false);
     expect(final.gamesPlayed).toBe(0);
     expect(final.lastGameAt).toBeUndefined();
     expect(span(final)).toEqual([0, undefined]);
+  });
+
+  it("starts a round's clock when the round before it finishes, even before its first game", () => {
+    // Both semifinals are played, so the final is playable but has no games yet
+    const timeline = buildTournamentTimeline(
+      getTournament([
+        ...baseEvents(["P1", "P2", "P3", "P4"]),
+        gameEvent("P1", "P4", day(1)),
+        gameEvent("P2", "P3", day(2)),
+      ]),
+    )!;
+
+    const bracket = section(timeline.sections, "winners");
+    const final = bracket.subSections[1];
+    expect(final.started).toBe(true);
+    expect(final.completed).toBe(false);
+    expect(final.gamesPlayed).toBe(0);
+    // Its clock has been running since the semifinals handed over
+    expect(span(final)).toEqual([2, undefined]);
+  });
+
+  it("keeps a losers round off the clock until both its feeders are done", () => {
+    // Winners bracket fully played, losers round 1 played: the losers final is playable but has no
+    // games, and the grand final is still blocked on the losers bracket champion
+    const timeline = buildTournamentTimeline(
+      getTournament([
+        ...baseEvents(["P1", "P2", "P3", "P4"], { doubleElimination: true }),
+        gameEvent("P1", "P4", day(1)), // Winners semifinal
+        gameEvent("P2", "P3", day(2)), // Winners semifinal
+        gameEvent("P4", "P3", day(3)), // Losers round 1
+        gameEvent("P1", "P2", day(4)), // Winners final
+      ]),
+    )!;
+
+    const losers = section(timeline.sections, "losers");
+    const losersFinal = losers.subSections[1];
+    expect(losersFinal.started).toBe(true);
+    expect(losersFinal.gamesPlayed).toBe(0);
+    // The losers final waits for the winners final loser, so its clock starts at day 4
+    expect(span(losersFinal)).toEqual([4, undefined]);
+
+    // The grand final has no losers bracket champion yet
+    const grandFinal = section(timeline.sections, "grand-final");
+    expect(grandFinal.started).toBe(false);
+    expect(grandFinal.subSections[0].started).toBe(false);
   });
 
   it("skips losers bracket rounds that only hold walkovers", () => {

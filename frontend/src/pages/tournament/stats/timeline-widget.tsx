@@ -16,6 +16,8 @@ type Row = {
   sublabel?: string;
   depth: 0 | 1;
   start: number;
+  /** The row's clock is running: it is playable, not blocked behind an earlier round */
+  started: boolean;
   /** Undefined while the row still has games left to play */
   end?: number;
   gamesPlayed: number;
@@ -82,6 +84,7 @@ export const TournamentTimelineWidget: React.FC<{ tournament: Tournament }> = ({
       label: sectionLabel(section, doubleElimination),
       depth: 0,
       start: section.start,
+      started: section.started,
       end: section.completed ? section.lastGameAt : undefined,
       gamesPlayed: section.gamesPlayed,
       gamesTotal: section.gamesTotal,
@@ -96,6 +99,7 @@ export const TournamentTimelineWidget: React.FC<{ tournament: Tournament }> = ({
         sublabel,
         depth: 1,
         start: sub.start,
+        started: sub.started,
         end: sub.completed ? sub.lastGameAt : undefined,
         gamesPlayed: sub.gamesPlayed,
         gamesTotal: sub.gamesTotal,
@@ -176,7 +180,11 @@ const TimelineRow: React.FC<{
 }> = ({ row, timelineStart, totalDays, now, gridLines }) => {
   const isSection = row.depth === 0;
   const ongoing = row.end === undefined;
-  const notStarted = ongoing && row.gamesPlayed === 0;
+  // A row that nothing blocks anymore is on the clock even before its first game: the time spent
+  // waiting for the players is part of how long it takes. A row still blocked behind an earlier
+  // round has no clock to show yet
+  const notStarted = ongoing && !row.started;
+  const waiting = ongoing && row.started && row.gamesPlayed === 0;
   const barEnd = row.end ?? now;
 
   // The bar covers whole days, from the first day of the row through its last one
@@ -190,7 +198,9 @@ const TimelineRow: React.FC<{
     <div
       className={classNames("flex items-center gap-2", isSection && "pt-2")}
       title={
-        notStarted ? "No games played yet" : `${formatDate(row.start)} → ${ongoing ? "ongoing" : formatDate(barEnd)}`
+        notStarted
+          ? "Waiting for an earlier round to finish"
+          : `${formatDate(row.start)} → ${ongoing ? "ongoing" : formatDate(barEnd)}${waiting ? " · no games played yet" : ""}`
       }
     >
       <div className={classNames(LABEL_COLUMN, "shrink-0", isSection ? "" : "pl-3")}>
@@ -228,11 +238,14 @@ const TimelineRow: React.FC<{
             style={{ left: `${(at / totalDays) * 100}%` }}
           />
         ))}
-        {/* A round with no games played has no span to draw: the bare lane says it all */}
+        {/* A round that is still blocked has no span to draw: the bare lane says it all */}
         {notStarted === false && (
           <div
             className={classNames(
               "absolute inset-y-0 rounded bg-secondary-background",
+              // A playable round nobody has played yet is all waiting time, drawn faded so the
+              // solid blocks stay reserved for time in which games were actually produced
+              waiting && "opacity-40",
               // An unfinished span runs up against now rather than a game, marked with a torn edge
               ongoing && "border-r-2 border-dashed border-primary-background",
             )}

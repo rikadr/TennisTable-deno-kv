@@ -12,6 +12,10 @@ import { Tournament, TournamentGame } from "./tournament";
  *
  * A segment ends at its last completed game. Segments that still have games left to play report
  * `completed: false` and the consumer decides what to draw them up against (usually "now").
+ *
+ * `started` separates the two kinds of unplayed segment: a round whose clock is running (everything
+ * it was waiting on has finished, so its games are playable) has started, while a round still
+ * blocked by an earlier one has not. Only started segments have a meaningful `start`.
  */
 
 export type TimelineRef =
@@ -28,6 +32,11 @@ type TimelineSegment = {
   key: string;
   /** When this segment's clock started */
   start: number;
+  /**
+   * The segment's clock is running: everything it was waiting on has finished, so its games are
+   * playable (or played). False while an earlier round still blocks it
+   */
+  started: boolean;
   /** Completion time of the last game played in it. Undefined until a game has been completed */
   lastGameAt?: number;
   /** Every game in the segment has been completed */
@@ -65,11 +74,14 @@ function segment(
   anchor: number,
   times: number[],
   gamesTotal: number,
+  started: boolean,
 ): TimelineSegment {
   const gamesPlayed = times.length;
   return {
     key,
     start: gamesPlayed > 0 ? Math.min(anchor, Math.min(...times)) : anchor,
+    // A game on the record proves the clock ran, whatever the structure says
+    started: started || gamesPlayed > 0,
     lastGameAt: gamesPlayed > 0 ? Math.max(...times) : undefined,
     completed: gamesPlayed >= gamesTotal,
     gamesPlayed,
@@ -86,6 +98,7 @@ function aggregate(subSections: TimelineSegment[], anchor: number): Omit<Timelin
   const ends = subSections.map((sub) => sub.lastGameAt).filter((time): time is number => time !== undefined);
   return {
     start: subSections.length > 0 ? Math.min(...subSections.map((sub) => sub.start)) : anchor,
+    started: subSections.some((sub) => sub.started),
     lastGameAt: ends.length > 0 ? Math.max(...ends) : undefined,
     completed: subSections.every((sub) => sub.completed),
     gamesPlayed: subSections.reduce((sum, sub) => sum + sub.gamesPlayed, 0),
@@ -108,7 +121,7 @@ export function buildTournamentTimeline(tournament: Tournament): TournamentTimel
   if (groupPlay) {
     // All groups start together at the tournament start and are played in parallel
     const subSections: TimelineSubSection[] = groupPlay.groups.map((group, groupIndex) => ({
-      ...segment(`group-${groupIndex}`, tournament.startDate, completionTimes(group.groupGames), group.groupGames.length),
+      ...segment(`group-${groupIndex}`, tournament.startDate, completionTimes(group.groupGames), group.groupGames.length, true),
       ref: { kind: "group", groupIndex },
     }));
     sections.push({
@@ -125,6 +138,9 @@ export function buildTournamentTimeline(tournament: Tournament): TournamentTimel
     // Layer indexes are inverted: the deepest layer is played first, layer 0 is the final
     const deepestLayer = bracket.bracket.length - 1;
     let anchor = bracket.bracketStarted;
+    // The first playable round is open from the bracket start. Each round after it only starts
+    // once the round before it has handed over
+    let clockRunning = true;
     for (let layerIndex = deepestLayer; layerIndex >= 0; layerIndex--) {
       const layer = bracket.bracket[layerIndex];
       // Only the deepest layer can hold structural byes: empty qualifier slots no one reaches.
@@ -135,11 +151,18 @@ export function buildTournamentTimeline(tournament: Tournament): TournamentTimel
           : layer.length;
       if (gamesTotal === 0) continue;
       const sub: TimelineSubSection = {
-        ...segment(`winners-${layerIndex}`, anchor, completionTimes(bracket.bracketGames[layerIndex].played), gamesTotal),
+        ...segment(
+          `winners-${layerIndex}`,
+          anchor,
+          completionTimes(bracket.bracketGames[layerIndex].played),
+          gamesTotal,
+          clockRunning,
+        ),
         ref: { kind: "winners-layer", layerIndex },
       };
       winnersSubSections.push(sub);
       anchor = handoverTime(sub) ?? anchor;
+      clockRunning = sub.completed;
     }
     if (winnersSubSections.length > 0) {
       sections.push({
@@ -157,6 +180,7 @@ export function buildTournamentTimeline(tournament: Tournament): TournamentTimel
       const winnersLayerCount = bracket.bracket.length;
       const losersSubSections: TimelineSubSection[] = [];
       let losersAnchor = bracket.bracketStarted;
+      let losersClockRunning = true;
       for (let layerIndex = totalLayers - 1; layerIndex >= 0; layerIndex--) {
         const gamesTotal = losersBracket[layerIndex].filter(isPlayableGame).length;
         if (gamesTotal === 0) continue; // Round holds only byes and walkovers, so it is never played
@@ -166,21 +190,27 @@ export function buildTournamentTimeline(tournament: Tournament): TournamentTimel
         const round = totalLayers - layerIndex;
         const feederLayerIndex =
           round === 1 ? winnersLayerCount - 1 : round % 2 === 0 ? winnersLayerCount - 1 - round / 2 : undefined;
-        const feederEnd =
+        const feederSub =
           feederLayerIndex === undefined
             ? undefined
-            : handoverTime(winnersSubSections.find((sub) => sub.key === `winners-${feederLayerIndex}`));
+            : winnersSubSections.find((sub) => sub.key === `winners-${feederLayerIndex}`);
+        const feederEnd = handoverTime(feederSub);
+        // A feeder round that never made it into the timeline holds no playable games, so it
+        // cannot block this round
+        const feederDone = feederLayerIndex === undefined || (feederSub?.completed ?? true);
         const sub: TimelineSubSection = {
           ...segment(
             `losers-${layerIndex}`,
             Math.max(losersAnchor, feederEnd ?? losersAnchor),
             completionTimes(bracket.losersBracketGames?.[layerIndex].played ?? []),
             gamesTotal,
+            losersClockRunning && feederDone,
           ),
           ref: { kind: "losers-layer", layerIndex, totalLayers },
         };
         losersSubSections.push(sub);
         losersAnchor = handoverTime(sub) ?? losersAnchor;
+        losersClockRunning = sub.completed;
       }
       if (losersSubSections.length > 0) {
         sections.push({
@@ -196,14 +226,15 @@ export function buildTournamentTimeline(tournament: Tournament): TournamentTimel
     const grandFinal = bracket.grandFinal;
     if (grandFinal) {
       // The grand final waits for both bracket champions
-      const bracketChampionsReady = ["winners", "losers"]
-        .map((key) => sections.find((section) => section.key === key))
-        .map((section) => handoverTime(section) ?? bracket.bracketStarted);
+      const feederSections = ["winners", "losers"].map((key) => sections.find((section) => section.key === key));
+      const bracketChampionsReady = feederSections.map((section) => handoverTime(section) ?? bracket.bracketStarted);
       const grandFinalAnchor = Math.max(bracket.bracketStarted, ...bracketChampionsReady);
+      // A bracket section that never made it into the timeline has no games left to play
+      const championsKnown = feederSections.every((section) => section?.completed ?? true);
 
       const subSections: TimelineSubSection[] = [
         {
-          ...segment("grand-final-game", grandFinalAnchor, completionTimes([grandFinal]), 1),
+          ...segment("grand-final-game", grandFinalAnchor, completionTimes([grandFinal]), 1, championsKnown),
           ref: { kind: "grand-final-game" },
         },
       ];
@@ -216,6 +247,7 @@ export function buildTournamentTimeline(tournament: Tournament): TournamentTimel
             handoverTime(subSections[0]) ?? grandFinalAnchor,
             completionTimes([bracketReset]),
             1,
+            subSections[0].completed,
           ),
           ref: { kind: "bracket-reset" },
         });
