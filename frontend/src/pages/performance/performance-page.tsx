@@ -232,6 +232,10 @@ export const PerformancePage: React.FC = () => {
   const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">("idle");
 
   const completedCount = benchmarks.filter((benchmark) => results[benchmark.id]?.status === "done").length;
+  const totalMs = benchmarks.reduce((sum, benchmark) => {
+    const result = results[benchmark.id];
+    return result?.status === "done" ? sum + result.ms : sum;
+  }, 0);
 
   async function copyResultsAsJson() {
     const exportData = {
@@ -243,6 +247,7 @@ export const PerformancePage: React.FC = () => {
         deviceMemoryGb: (navigator as Navigator & { deviceMemory?: number }).deviceMemory ?? null,
       },
       datasetMetrics: collectDatasetMetrics(context),
+      totalMs: Math.round(totalMs * 10) / 10,
       performanceResults: benchmarks.flatMap((benchmark) => {
         const result = results[benchmark.id];
         if (result?.status !== "done") return [];
@@ -307,6 +312,14 @@ export const PerformancePage: React.FC = () => {
               </button>
             </div>
           </div>
+          <div className="mt-4 flex items-baseline gap-2">
+            <span className="text-3xl tabular-nums">
+              {completedCount > 0 ? `${fmtNum(totalMs, { digits: 1 })} ms` : "– ms"}
+            </span>
+            <span className="text-sm text-primary-text/70">
+              total time for {completedCount} of {benchmarks.length} tests
+            </span>
+          </div>
           <p className="mt-4 text-sm text-primary-text/70">
             Each test creates a fresh TennisTable instance from the current {fmtNum(context.events.length)} events,
             without caches. The timer measures only the feature calculation, not the instance creation. Tests run on
@@ -326,8 +339,11 @@ export const PerformancePage: React.FC = () => {
                 <div className="grow">
                   <h2 className="text-lg">{benchmark.name}</h2>
                   <p className="text-sm text-primary-text/70">{benchmark.description}</p>
-                  {result?.status === "done" && <p className="text-sm text-primary-text/70">{result.detail}</p>}
-                  {result?.status === "error" && <p className="text-sm text-red-500">Failed: {result.message}</p>}
+                  <p className={classNames("text-sm", result?.status === "error" ? "text-red-500" : "text-primary-text/70")}>
+                    {result?.status === "done" && result.detail}
+                    {result?.status === "error" && `Failed: ${result.message}`}
+                    {(result === undefined || result.status === "running") && " "}
+                  </p>
                 </div>
                 <div className="flex items-center gap-4 shrink-0">
                   <div className="text-right min-w-24 text-lg tabular-nums">
