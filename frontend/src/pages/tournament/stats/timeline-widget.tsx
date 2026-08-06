@@ -16,7 +16,7 @@ type Row = {
   sublabel?: string;
   depth: 0 | 1;
   start: number;
-  /** The row's clock is running: it is playable, not blocked behind an earlier round */
+  /** The row's clock is running: its first game is (or was) available to play */
   started: boolean;
   /** Undefined while the row still has games left to play */
   end?: number;
@@ -180,11 +180,10 @@ const TimelineRow: React.FC<{
 }> = ({ row, timelineStart, totalDays, now, gridLines }) => {
   const isSection = row.depth === 0;
   const ongoing = row.end === undefined;
-  // A row that nothing blocks anymore is on the clock even before its first game: the time spent
-  // waiting for the players is part of how long it takes. A row still blocked behind an earlier
-  // round has no clock to show yet
+  // A row is on the clock from the moment its first game is available, played or not: the time
+  // spent waiting for the players is part of how long it takes. A row none of whose games have
+  // been reachable yet has no clock to show
   const notStarted = ongoing && !row.started;
-  const waiting = ongoing && row.started && row.gamesPlayed === 0;
   const barEnd = row.end ?? now;
 
   // The bar covers whole days, from the first day of the row through its last one
@@ -200,7 +199,7 @@ const TimelineRow: React.FC<{
       title={
         notStarted
           ? "Waiting for an earlier round to finish"
-          : `${formatDate(row.start)} → ${ongoing ? "ongoing" : formatDate(barEnd)}${waiting ? " · no games played yet" : ""}`
+          : `${formatDate(row.start)} → ${ongoing ? "ongoing" : formatDate(barEnd)}`
       }
     >
       <div className={classNames(LABEL_COLUMN, "shrink-0", isSection ? "" : "pl-3")}>
@@ -238,14 +237,11 @@ const TimelineRow: React.FC<{
             style={{ left: `${(at / totalDays) * 100}%` }}
           />
         ))}
-        {/* A round that is still blocked has no span to draw: the bare lane says it all */}
+        {/* A round that is not yet reachable has no span to draw: the bare lane says it all */}
         {notStarted === false && (
           <div
             className={classNames(
               "absolute inset-y-0 rounded bg-secondary-background",
-              // A playable round nobody has played yet is all waiting time, drawn faded so the
-              // solid blocks stay reserved for time in which games were actually produced
-              waiting && "opacity-40",
               // An unfinished span runs up against now rather than a game, marked with a torn edge
               ongoing && "border-r-2 border-dashed border-primary-background",
             )}

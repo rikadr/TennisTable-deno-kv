@@ -244,6 +244,33 @@ describe("Tournament timeline", () => {
     expect(span(final)).toEqual([2, undefined]);
   });
 
+  it("starts a round the moment its first game becomes available, before the previous round finishes", () => {
+    // 8 players: quarter finals feed the semifinals in pairs. Playing the two quarter finals that
+    // feed the first semifinal makes it available while the other two are still unplayed
+    const timeline = buildTournamentTimeline(
+      getTournament([
+        ...baseEvents(["P1", "P2", "P3", "P4", "P5", "P6", "P7", "P8"]),
+        gameEvent("P1", "P8", day(1)), // Quarter final feeding the first semifinal
+        gameEvent("P4", "P5", day(2)), // Quarter final feeding the first semifinal
+      ]),
+    )!;
+
+    const bracket = section(timeline.sections, "winners");
+    const quarterFinals = bracket.subSections[0];
+    expect(span(quarterFinals)).toEqual([0, 2]);
+    expect(quarterFinals.completed).toBe(false);
+
+    // The first semifinal (P1 vs P4) is available, so the round's clock runs from day 2
+    const semiFinals = bracket.subSections[1];
+    expect(semiFinals.started).toBe(true);
+    expect(semiFinals.gamesPlayed).toBe(0);
+    expect(span(semiFinals)).toEqual([2, undefined]);
+
+    // No final participant is known yet
+    const final = bracket.subSections[2];
+    expect(final.started).toBe(false);
+  });
+
   it("keeps a losers round off the clock until both its feeders are done", () => {
     // Winners bracket fully played, losers round 1 played: the losers final is playable but has no
     // games, and the grand final is still blocked on the losers bracket champion
