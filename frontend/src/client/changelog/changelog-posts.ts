@@ -53,7 +53,7 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
         "The loss and the revenge can be in the same tournament or in different tournaments. Group play matches and bracket matches both count. A skipped match does not count as a loss to avenge or as a revenge win.",
       ),
       text(
-        "You earn the achievement 1 time for each loss you avenge. When the same opponent beats you again in a tournament, you can avenge the new loss. The award shows the loss that it avenged.",
+        "You earn the achievement 1 time for each loss you avenge. When the same opponent beats you again in a tournament, you can avenge the new loss. The award shows how many days the revenge took.",
       ),
       text(
         "The Progress tab on the player page lists the opponents you can avenge. A win against any of them in a tournament match earns the achievement.",

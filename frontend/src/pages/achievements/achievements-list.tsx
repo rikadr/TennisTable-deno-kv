@@ -295,7 +295,13 @@ export const AchievementsList: React.FC<AchievementsListProps> = ({ achievements
                   )}
                   {achievement.type === "sweet-revenge" && achievement.data && (
                     <span className="text-[11px] opacity-80">
-                      Avenged their win from {dateString(achievement.data.lostAt)}
+                      Avenged in{" "}
+                      {Math.round((achievement.earnedAt - achievement.data.lostAt) / (24 * 60 * 60 * 1000))} day
+                      {Math.round((achievement.earnedAt - achievement.data.lostAt) / (24 * 60 * 60 * 1000)) !== 1
+                        ? "s"
+                        : ""}
+                      {achievement.data.lostTournamentId === achievement.data.tournamentId &&
+                        " in the same tournament"}
                     </span>
                   )}
                   {(achievement.type === "full-house" || achievement.type === "humbled") &&

@@ -678,9 +678,10 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
 
                 {achievement.type === "sweet-revenge" && achievement.data && (
                   <p className="text-xs text-secondary-text/70 mt-2">
-                    Avenged their win from {dateString(achievement.data.lostAt)} in{" "}
-                    {context.tournaments.getTournament(achievement.data.lostTournamentId)?.tournamentConfig.name ||
-                      "a tournament"}
+                    Avenged in {daysBetween(achievement.data.lostAt, achievement.earnedAt)} day
+                    {daysBetween(achievement.data.lostAt, achievement.earnedAt) !== 1 ? "s" : ""}
+                    {achievement.data.lostTournamentId === achievement.data.tournamentId &&
+                      " in the same tournament"}
                   </p>
                 )}
 
