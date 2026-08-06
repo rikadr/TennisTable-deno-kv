@@ -304,6 +304,11 @@ export const ACHIEVEMENT_LABELS: Record<string, { title: string; description: st
     description: "Go undefeated in a tournament's group play",
     icon: "⭐",
   },
+  "sweet-revenge": {
+    title: "Sweet Revenge",
+    description: "Beat a player in a tournament match after they beat you in an earlier tournament match",
+    icon: "😈",
+  },
   "full-house": {
     title: "Full House",
     description: "Beat every currently ranked player at least once",
@@ -668,6 +673,14 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
                 {achievement.type === "group-stage-star" && achievement.data && (
                   <p className="text-xs text-secondary-text/70 mt-2">
                     Undefeated with {achievement.data.wins} win{achievement.data.wins !== 1 ? "s" : ""}
+                  </p>
+                )}
+
+                {achievement.type === "sweet-revenge" && achievement.data && (
+                  <p className="text-xs text-secondary-text/70 mt-2">
+                    Avenged their win from {dateString(achievement.data.lostAt)} in{" "}
+                    {context.tournaments.getTournament(achievement.data.lostTournamentId)?.tournamentConfig.name ||
+                      "a tournament"}
                   </p>
                 )}
 
@@ -1112,14 +1125,18 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                           </div>
                         )}
 
-                      {/* Missing players for full-house / humbled */}
-                      {(type === "full-house" || type === "humbled") &&
+                      {/* Missing players for full-house / humbled / sweet-revenge */}
+                      {(type === "full-house" || type === "humbled" || type === "sweet-revenge") &&
                         "missing" in data &&
                         data.missing &&
                         data.missing.size > 0 && (
                           <div className="mt-3 pt-3 border-t border-secondary-text/50">
                             <p className="text-xs text-secondary-text/70 mb-2">
-                              {type === "full-house" ? "Still need to beat:" : "Still need to lose to:"}
+                              {type === "full-house"
+                                ? "Still need to beat:"
+                                : type === "humbled"
+                                  ? "Still need to lose to:"
+                                  : "They beat you in a tournament — beat them in a tournament match to avenge it:"}
                             </p>
                             <div className="flex flex-wrap gap-1">
                               {Array.from(data.missing).map((player: string) => (

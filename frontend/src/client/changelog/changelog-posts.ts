@@ -42,6 +42,23 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
+    slug: "sweet-revenge-achievement",
+    title: "New achievement: Sweet Revenge 😈",
+    date: "2026-08-06",
+    tags: ["feature-update"],
+    summary:
+      "Sweet Revenge 😈 is a new achievement. Win a tournament match against a player who beat you in an earlier tournament match.",
+    body: [
+      text(
+        "The loss and the revenge can be in the same tournament or in different tournaments. Group play matches and bracket matches both count. A skipped match does not count as a loss to avenge or as a revenge win.",
+      ),
+      text("You earn the achievement 1 time for each opponent. The award shows the loss that it avenged."),
+      text(
+        "The Progress tab on the player page lists the opponents you can avenge. A win against any of them in a tournament match earns the achievement.",
+      ),
+    ],
+  },
+  {
     slug: "performance-testing-page",
     title: "Performance testing page",
     date: "2026-08-06",

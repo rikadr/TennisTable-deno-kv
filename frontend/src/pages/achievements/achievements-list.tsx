@@ -293,6 +293,11 @@ export const AchievementsList: React.FC<AchievementsListProps> = ({ achievements
                       {achievement.data.wins !== 1 ? "s" : ""})
                     </span>
                   )}
+                  {achievement.type === "sweet-revenge" && achievement.data && (
+                    <span className="text-[11px] opacity-80">
+                      Avenged their win from {dateString(achievement.data.lostAt)}
+                    </span>
+                  )}
                   {(achievement.type === "full-house" || achievement.type === "humbled") &&
                     achievement.data && (
                       <span className="text-[11px] opacity-80">
