@@ -763,6 +763,7 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
   const search = usePlayerLinkSearch();
   const [sort, setSort] = useState<ProgressSort>("default");
   const [onlyAchievable, setOnlyAchievable] = useState(false);
+  const [onlyUnachieved, setOnlyUnachieved] = useState(false);
 
   const gameLimitForRanked = context.client.gameLimitForRanked;
 
@@ -797,15 +798,21 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
   // "Only achievable" hides what can never be earned again: achievements that
   // are earned AND one-time. An earned re-achievable one (a record, a streak,
   // a per-season chase) stays, because it can still be chased.
+  // "Only unachieved" hides everything earned. Both checked compose to the
+  // stricter of the two — only unachieved.
   const progressItems = useMemo(() => {
-    const items = onlyAchievable
-      ? allProgressItems.filter((item) => !item.hasEarned || isReachievableAchievement(item.type))
-      : allProgressItems;
+    let items = allProgressItems;
+    if (onlyAchievable) {
+      items = items.filter((item) => !item.hasEarned || isReachievableAchievement(item.type));
+    }
+    if (onlyUnachieved) {
+      items = items.filter((item) => !item.hasEarned);
+    }
     if (sort === "default") return items;
     return [...items].sort((a, b) =>
       sort === "progress-desc" ? b.sortPercentage - a.sortPercentage : a.sortPercentage - b.sortPercentage,
     );
-  }, [allProgressItems, sort, onlyAchievable]);
+  }, [allProgressItems, sort, onlyAchievable, onlyUnachieved]);
 
   return (
     <div className="space-y-4 text-secondary-text">
@@ -835,6 +842,15 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
             onChange={(event) => setOnlyAchievable(event.target.checked)}
           />
           Only achievable
+        </label>
+        <label className="flex items-center gap-2 text-sm cursor-pointer">
+          <input
+            type="checkbox"
+            className="w-4 h-4 cursor-pointer accent-secondary-text"
+            checked={onlyUnachieved}
+            onChange={(event) => setOnlyUnachieved(event.target.checked)}
+          />
+          Only unachieved
         </label>
       </div>
 
