@@ -3508,6 +3508,86 @@ type AchievementDefinitions = {
 
 type AchievementType = keyof AchievementDefinitions;
 
+// Whether each achievement can be earned again after it has been earned.
+// One-time achievements cross a threshold that never resets — total counts
+// that only grow (donut-5, close-calls, variety-player), a rank reached
+// (touched-the-throne, kingslayer) or a set that only fills (full-house).
+// Re-achievable achievements follow something that resets or can be retaken:
+// streaks, days and weeks, seasons, tournaments, retirements, per-opponent
+// chases, per-game conditions and league records. The Progress tab uses this
+// for its "Only achievable" filter — an earned one-time achievement is
+// complete and gets hidden, an earned re-achievable one can still be chased.
+// The record is exhaustive on purpose: a new achievement type does not
+// compile until it is classified here.
+export const ACHIEVEMENT_IS_REACHIEVABLE: Record<AchievementType, boolean> = {
+  "first-game": false,
+  "ranked": false,
+  "donut-1": true, // Per donut set
+  "donut-5": false,
+  "streak-all-10": true, // Per streak — a new streak of 10 earns again
+  "streak-player-10": true, // Per streak per opponent
+  "streak-player-20": true,
+  "back-after-6-months": true, // Per return from inactivity
+  "back-after-1-year": true,
+  "back-after-2-years": true,
+  "retired": true, // Per retirement cycle
+  "back-from-the-dead": true,
+  "hero-of-the-day": true, // League records — can be retaken
+  "hero-of-the-week": true,
+  "hero-of-the-month": true,
+  "active-6-months": true, // Per unbroken activity period
+  "active-1-year": true,
+  "active-2-years": true,
+  "anniversary": true, // Per year
+  "tournament-participated": true, // Per tournament
+  "tournament-winner": true,
+  "season-winner": true, // Per season
+  "nice-game": true, // Per qualifying game
+  "less-is-more": true,
+  "close-calls": false,
+  "edge-lord": false,
+  "consistency-is-key": false,
+  "variety-player": false,
+  "global-player": false,
+  "best-friends": true, // Per opponent
+  "welcome-committee": false,
+  "community-builder": false,
+  "punching-bag": true, // Per lose streak
+  "never-give-up": true,
+  "comeback-kid": true, // Per broken lose streak
+  "unbreakable-spirit": true,
+  "hat-trick": true, // Per 3-wins-in-90-minutes window
+  "perfect-day": true, // Per qualifying day / week
+  "perfect-week": true,
+  "kingslayer": false,
+  "king-maker": true, // Per new #1
+  "touched-the-throne": false,
+  "on-the-podium": false,
+  "photo-finish": true, // Per qualifying game
+  "leap-frog": true, // League records — can be retaken
+  "david": true,
+  "goliath": true,
+  "climber": false,
+  "marathon-set": true, // League record
+  "streak-ender": true, // Per ended streak
+  "longest-win-streak": true, // League records — can be retaken
+  "longest-lose-streak": true,
+  "group-stage-star": true, // Per tournament's group play
+  "full-house": false,
+  "humbled": false,
+  "earliest-game": true, // League records — can be retaken
+  "latest-game": true,
+  "shootout": true, // League record
+  "season-opener": true, // Per season
+  "milestone-game": true, // Per 500th league game
+};
+
+// String-keyed lookup for UI code that carries achievement types as plain
+// strings. An unknown type counts as re-achievable, so it is never hidden.
+export function isReachievableAchievement(type: string): boolean {
+  return (ACHIEVEMENT_IS_REACHIEVABLE as Record<string, boolean>)[type] ?? true;
+}
+
 type GenericAchievement<T extends AchievementType = AchievementType> = {
   type: T;
   earnedBy: string;

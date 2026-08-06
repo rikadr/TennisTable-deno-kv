@@ -6,6 +6,7 @@ import {
   Achievement,
   AchievementProgression,
   GAMES_IN_PERIOD_RECORD_FLOOR,
+  isReachievableAchievement,
   SHOOTOUT_RECORD_FLOOR,
   SHOOTOUT_SETS_COUNTED,
   STREAK_RECORD_FLOOR,
@@ -761,7 +762,7 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
   const context = useEventDbContext();
   const search = usePlayerLinkSearch();
   const [sort, setSort] = useState<ProgressSort>("default");
-  const [excludeAchieved, setExcludeAchieved] = useState(false);
+  const [onlyAchievable, setOnlyAchievable] = useState(false);
 
   const gameLimitForRanked = context.client.gameLimitForRanked;
 
@@ -793,13 +794,18 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
   );
 
   // Sorting is stable, so items with the same progress keep the default order.
+  // "Only achievable" hides what can never be earned again: achievements that
+  // are earned AND one-time. An earned re-achievable one (a record, a streak,
+  // a per-season chase) stays, because it can still be chased.
   const progressItems = useMemo(() => {
-    const items = excludeAchieved ? allProgressItems.filter((item) => !item.hasEarned) : allProgressItems;
+    const items = onlyAchievable
+      ? allProgressItems.filter((item) => !item.hasEarned || isReachievableAchievement(item.type))
+      : allProgressItems;
     if (sort === "default") return items;
     return [...items].sort((a, b) =>
       sort === "progress-desc" ? b.sortPercentage - a.sortPercentage : a.sortPercentage - b.sortPercentage,
     );
-  }, [allProgressItems, sort, excludeAchieved]);
+  }, [allProgressItems, sort, onlyAchievable]);
 
   return (
     <div className="space-y-4 text-secondary-text">
@@ -825,15 +831,15 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
           <input
             type="checkbox"
             className="w-4 h-4 cursor-pointer accent-secondary-text"
-            checked={excludeAchieved}
-            onChange={(event) => setExcludeAchieved(event.target.checked)}
+            checked={onlyAchievable}
+            onChange={(event) => setOnlyAchievable(event.target.checked)}
           />
-          Exclude achieved
+          Only achievable
         </label>
       </div>
 
       {progressItems.length === 0 && (
-        <p className="text-sm text-secondary-text/70">Every achievement is earned. Nothing left to show.</p>
+        <p className="text-sm text-secondary-text/70">No achievements to show.</p>
       )}
 
       {progressItems.map(({ type, label, data }) => {
