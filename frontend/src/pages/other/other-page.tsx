@@ -5,6 +5,7 @@ export const OtherPage: React.FC = () => {
   const otherOptions: { name: string; url: string }[] = [
     { name: "Settings 🔧", url: "/settings" },
     { name: "Changelog 📜", url: "/changelog" },
+    { name: "Performance testing ⏱️", url: "/performance" },
   ];
 
   return (

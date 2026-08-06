@@ -42,6 +42,25 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
+    slug: "performance-testing-page",
+    title: "Performance testing page",
+    date: "2026-08-06",
+    tags: ["new-feature", "technical"],
+    summary:
+      "A new page under Other measures how long the app takes to calculate each feature, for example achievements or the leaderboard.",
+    body: [
+      text(
+        "The app calculates all state from the event history in the browser. The new page measures the time for each of these calculations.",
+      ),
+      text(
+        "Each test creates a fresh instance from the current events, so no cache changes the result. The timer measures only the feature calculation. You can run one test or all tests.",
+      ),
+      text(
+        "The page covers event projection, the leaderboard, achievements, seasons, tournaments, predictions, the Hall of Fame and more. The audience is mostly engineers who want to find slow calculations.",
+      ),
+    ],
+  },
+  {
     slug: "auto-refresh-on-new-deployments",
     title: "Automatic refresh on new deployments",
     date: "2026-08-06",
