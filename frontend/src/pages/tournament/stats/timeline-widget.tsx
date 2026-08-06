@@ -13,7 +13,6 @@ import { bracketLayerIndexToTournamentRound, secondChanceRoundLabel } from "../.
 type Row = {
   key: string;
   label: string;
-  sublabel?: string;
   depth: 0 | 1;
   start: number;
   /** The row's clock is running: its first game is (or was) available to play */
@@ -92,11 +91,9 @@ export const TournamentTimelineWidget: React.FC<{ tournament: Tournament }> = ({
     // A single sub section would just repeat its section
     if (section.subSections.length <= 1) continue;
     for (const sub of section.subSections) {
-      const { label, sublabel } = refLabel(sub.ref, doubleElimination);
       rows.push({
         key: `${section.key}-${sub.key}`,
-        label,
-        sublabel,
+        label: refLabel(sub.ref, doubleElimination),
         depth: 1,
         start: sub.start,
         started: sub.started,
@@ -206,7 +203,6 @@ const TimelineRow: React.FC<{
         <p className={classNames("truncate", isSection ? "text-sm font-semibold" : "text-xs font-normal")}>
           {row.label}
         </p>
-        {row.sublabel && <p className="truncate text-[0.65rem] font-light">{row.sublabel}</p>}
       </div>
 
       {/* Kept left of the bar so the durations stay readable when the chart scrolls sideways */}
@@ -262,22 +258,18 @@ function sectionLabel(section: TimelineSection, doubleElimination: boolean): str
   }
 }
 
-function refLabel(ref: TimelineRef, doubleElimination: boolean): { label: string; sublabel?: string } {
+function refLabel(ref: TimelineRef, doubleElimination: boolean): string {
   switch (ref.kind) {
     case "group":
-      return { label: `Group ${ref.groupIndex + 1}` };
+      return `Group ${ref.groupIndex + 1}`;
     case "winners-layer":
-      return {
-        label: bracketLayerIndexToTournamentRound(ref.layerIndex, doubleElimination) ?? `Layer ${ref.layerIndex}`,
-      };
-    case "losers-layer": {
-      const { title, subtitle } = secondChanceRoundLabel(ref.layerIndex, ref.totalLayers);
-      return { label: title, sublabel: subtitle };
-    }
+      return bracketLayerIndexToTournamentRound(ref.layerIndex, doubleElimination) ?? `Layer ${ref.layerIndex}`;
+    case "losers-layer":
+      return secondChanceRoundLabel(ref.layerIndex, ref.totalLayers).title;
     case "grand-final-game":
-      return { label: "Final" };
+      return "Final";
     case "bracket-reset":
-      return { label: "The Final Decider" };
+      return "The Final Decider";
   }
 }
 
