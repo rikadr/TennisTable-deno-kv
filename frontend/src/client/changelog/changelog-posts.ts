@@ -42,6 +42,25 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
+    slug: "auto-refresh-on-new-deployments",
+    title: "Automatic refresh on new deployments",
+    date: "2026-08-06",
+    tags: ["new-feature", "technical"],
+    summary:
+      "The app detects a new deployment and shows a popup. You can refresh now or wait. Without an answer, the page refreshes after 1 minute.",
+    body: [
+      text(
+        "The app checks for a new deployment every 5 minutes, and when you return to the tab. When it finds one, a popup shows 2 choices: Refresh now, or Later. If you do not answer in 1 minute, the page refreshes automatically.",
+      ),
+      text(
+        "The Later choice protects your work. Use it when you track a game or fill in a form. The popup returns after 30 minutes.",
+      ),
+      text(
+        "Detection compares the file name of the deployed script bundle with the running one, so it needs no server support.",
+      ),
+    ],
+  },
+  {
     slug: "achievement-progress-best-values",
     title: "Best values on achievement progress",
     date: "2026-08-05",
