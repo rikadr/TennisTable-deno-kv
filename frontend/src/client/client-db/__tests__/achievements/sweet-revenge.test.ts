@@ -183,24 +183,54 @@ describe("Sweet Revenge Achievement", () => {
     });
   });
 
-  it("is earned once per opponent, even across repeated revenge cycles", () => {
+  it("is earned again against the same opponent after a new loss to them in between", () => {
     const events: EventType[] = [
       ...players,
       ...twoPlayerTournament("t1", "Cup 1", T1_START, ["alice", "bob"]),
       game("g1", T1_START + 100, "bob", "alice"),
       ...twoPlayerTournament("t2", "Cup 2", T2_START, ["alice", "bob"]),
-      game("g2", T2_START + 100, "alice", "bob"), // Revenge #1
+      game("g2", T2_START + 100, "alice", "bob"), // Alice's revenge #1
       ...twoPlayerTournament("t3", "Cup 3", T3_START, ["alice", "bob"]),
-      game("g3", T3_START + 100, "bob", "alice"), // Bob avenges his t2 loss
+      game("g3", T3_START + 100, "bob", "alice"), // Bob avenges his t2 loss — and re-arms alice
       ...twoPlayerTournament("t4", "Cup 4", T3_START + 1000, ["alice", "bob"]),
-      game("g4", T3_START + 1100, "alice", "bob"), // Same opponent — no 2nd award
+      game("g4", T3_START + 1100, "alice", "bob"), // Alice's revenge #2, avenging the t3 loss
+    ];
+
+    const tt = new TennisTable({ events });
+    tt.achievements.calculateAchievements();
+
+    const aliceAwards = revengeAwards(tt, "alice");
+    expect(aliceAwards).toHaveLength(2);
+    expect(aliceAwards[0].data).toStrictEqual({
+      opponent: "bob",
+      tournamentId: "t2",
+      lostAt: T1_START + 100,
+      lostTournamentId: "t1",
+    });
+    expect(aliceAwards[1].data).toStrictEqual({
+      opponent: "bob",
+      tournamentId: "t4",
+      lostAt: T3_START + 100,
+      lostTournamentId: "t3",
+    });
+    expect(revengeAwards(tt, "bob")).toHaveLength(1);
+  });
+
+  it("does NOT award a second win over the same opponent without a new loss in between", () => {
+    const events: EventType[] = [
+      ...players,
+      ...twoPlayerTournament("t1", "Cup 1", T1_START, ["alice", "bob"]),
+      game("g1", T1_START + 100, "bob", "alice"),
+      ...twoPlayerTournament("t2", "Cup 2", T2_START, ["alice", "bob"]),
+      game("g2", T2_START + 100, "alice", "bob"), // Revenge — consumes the t1 loss
+      ...twoPlayerTournament("t3", "Cup 3", T3_START, ["alice", "bob"]),
+      game("g3", T3_START + 100, "alice", "bob"), // No outstanding loss — no award
     ];
 
     const tt = new TennisTable({ events });
     tt.achievements.calculateAchievements();
 
     expect(revengeAwards(tt, "alice")).toHaveLength(1);
-    expect(revengeAwards(tt, "bob")).toHaveLength(1);
   });
 
   it("counts a group play loss as a loss to avenge", () => {

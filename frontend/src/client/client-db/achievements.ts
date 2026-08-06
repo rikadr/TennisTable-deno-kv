@@ -126,12 +126,11 @@ export class Achievements {
   // Elo drops, so the best is kept.
   bestClimb: Map<string, { climb: number; fromElo: number; toElo: number }> = new Map();
   // Sweet Revenge bookkeeping. For each player: the latest tournament-match
-  // loss they have suffered to each opponent (real matches only — a skip is
-  // a walkover, not a defeat), and the rivals they have since avenged. Used
-  // to award the achievement and to list the rivals still to beat in the
-  // progression view.
-  tournamentLossTo: Map<string, Map<string, { time: number; tournamentId: string }>> = new Map();
-  tournamentAvenged: Map<string, Set<string>> = new Map();
+  // loss to each opponent that is still to be avenged (real matches only — a
+  // skip is a walkover, not a defeat). A revenge win consumes the entry; a
+  // new loss to that opponent re-arms it. Used to award the achievement and
+  // to list the rivals still to beat in the progression view.
+  tournamentLossToAvenge: Map<string, Map<string, { time: number; tournamentId: string }>> = new Map();
   // League-wide running records for the Earliest / Latest Game achievements:
   // the earliest and latest time-of-day (minutes past local midnight, in the
   // browser's timezone) any game has been played to date. Undefined until the
@@ -193,8 +192,7 @@ export class Achievements {
     this.bestRankEver.clear();
     this.bestBeatenRank.clear();
     this.bestClimb.clear();
-    this.tournamentLossTo.clear();
-    this.tournamentAvenged.clear();
+    this.tournamentLossToAvenge.clear();
     this.earliestGameRecord = { minutesIntoDay: undefined };
     this.latestGameRecord = { minutesIntoDay: undefined };
     this.winStreakRecord = { length: undefined, holder: undefined };
@@ -2339,9 +2337,10 @@ export class Achievements {
   // play then bracket, or a double elimination rematch) or tournaments
   // apart. Only matches that were actually played count, in both directions:
   // a skipped game is a walkover, not a defeat to avenge nor a win that
-  // avenges one. Earned once per opponent — the first time you beat them
-  // back — and the award remembers the loss it avenged (the opponent's
-  // latest win over you before the revenge).
+  // avenges one. Each revenge consumes the loss it avenges, so the same
+  // opponent can be avenged again — but only after they beat you in a NEW
+  // tournament match in between. The award remembers the loss it avenged
+  // (the opponent's latest win over you before the revenge).
   #checkRevengeAchievements() {
     type TournamentMatch = { winner: string; loser: string; completedAt: number; tournamentId: string };
     const matches: TournamentMatch[] = [];
@@ -2371,32 +2370,28 @@ export class Achievements {
     matches.sort((a, b) => a.completedAt - b.completedAt);
 
     for (const match of matches) {
-      const lossToAvenge = this.tournamentLossTo.get(match.winner)?.get(match.loser);
+      const lossToAvenge = this.tournamentLossToAvenge.get(match.winner)?.get(match.loser);
       if (lossToAvenge !== undefined) {
-        let avenged = this.tournamentAvenged.get(match.winner);
-        if (!avenged) {
-          avenged = new Set();
-          this.tournamentAvenged.set(match.winner, avenged);
-        }
-        if (!avenged.has(match.loser)) {
-          avenged.add(match.loser);
-          this.#addAchievement(
-            match.winner,
-            this.#createAchievement("sweet-revenge", match.winner, match.completedAt, {
-              opponent: match.loser,
-              tournamentId: match.tournamentId,
-              lostAt: lossToAvenge.time,
-              lostTournamentId: lossToAvenge.tournamentId,
-            }),
-          );
-        }
+        // The revenge consumes the loss — earning it again against this
+        // opponent takes a new loss to them first.
+        this.tournamentLossToAvenge.get(match.winner)!.delete(match.loser);
+        this.#addAchievement(
+          match.winner,
+          this.#createAchievement("sweet-revenge", match.winner, match.completedAt, {
+            opponent: match.loser,
+            tournamentId: match.tournamentId,
+            lostAt: lossToAvenge.time,
+            lostTournamentId: lossToAvenge.tournamentId,
+          }),
+        );
       }
 
-      // Record the loser's defeat — the winner is now a rival to avenge.
-      let losses = this.tournamentLossTo.get(match.loser);
+      // Record the loser's defeat — the winner is now a rival to avenge
+      // (again, if an earlier loss to them was already avenged).
+      let losses = this.tournamentLossToAvenge.get(match.loser);
       if (!losses) {
         losses = new Map();
-        this.tournamentLossTo.set(match.loser, losses);
+        this.tournamentLossToAvenge.set(match.loser, losses);
       }
       losses.set(match.winner, { time: match.completedAt, tournamentId: match.tournamentId });
     }
@@ -3447,18 +3442,19 @@ export class Achievements {
     progression["humbled"].target = rankedTarget;
     progression["humbled"].missing = humbledMissing;
 
-    // Sweet Revenge progression: the rivals — active players who have beaten
-    // this player in a tournament match — and which of them have been
-    // avenged. The missing set is who is still to beat: winning a tournament
-    // match against any of them earns the award.
+    // Sweet Revenge progression: the missing set is the rivals still to beat
+    // — active players holding an unavenged tournament-match win over this
+    // player. Winning a tournament match against any of them earns the
+    // award. The bar counts revenges taken out of revenge opportunities ever
+    // (each award consumed one loss; each unavenged loss is one to take), so
+    // it fills as losses are avenged and dips when a new loss arrives.
     const activePlayerIds = new Set(this.parent.players.map((p) => p.id));
-    const revengeRivals = new Set(
-      [...(this.tournamentLossTo.get(playerId)?.keys() ?? [])].filter((id) => activePlayerIds.has(id)),
+    const revengeMissing = new Set(
+      [...(this.tournamentLossToAvenge.get(playerId)?.keys() ?? [])].filter((id) => activePlayerIds.has(id)),
     );
-    const avengedRivals = this.tournamentAvenged.get(playerId);
-    const revengeMissing = new Set([...revengeRivals].filter((id) => !avengedRivals?.has(id)));
-    progression["sweet-revenge"].current = revengeRivals.size - revengeMissing.size;
-    progression["sweet-revenge"].target = revengeRivals.size;
+    const revengesTaken = this.getAchievements(playerId).filter((a) => a.type === "sweet-revenge").length;
+    progression["sweet-revenge"].current = revengesTaken;
+    progression["sweet-revenge"].target = revengesTaken + revengeMissing.size;
     progression["sweet-revenge"].missing = revengeMissing;
 
     // Count earned achievements
@@ -3641,7 +3637,7 @@ export const ACHIEVEMENT_IS_REACHIEVABLE: Record<AchievementType, boolean> = {
   "anniversary": true, // Per year
   "tournament-participated": true, // Per tournament
   "tournament-winner": true,
-  "sweet-revenge": true, // Per opponent avenged
+  "sweet-revenge": true, // Per avenged loss — a new loss to that opponent re-arms it
   "season-winner": true, // Per season
   "nice-game": true, // Per qualifying game
   "less-is-more": true,
