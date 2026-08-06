@@ -4,13 +4,13 @@ import { useEventDbContext } from "../../wrappers/event-db-context";
 import { ProfilePicture } from "../player/profile-picture";
 import { fmtNum } from "../../common/number-utils";
 
-const TWO_WEEKS = 14 * 24 * 60 * 60 * 1000;
+const ONE_WEEK = 7 * 24 * 60 * 60 * 1000;
 
 export const RecentHallOfFame: React.FC = () => {
   const context = useEventDbContext();
 
   const recentlyRetired = context.eventStore.playersProjector.inactivePlayers.filter(
-    (player) => !player.active && Date.now() - player.updatedAt < TWO_WEEKS,
+    (player) => !player.active && Date.now() - player.updatedAt < ONE_WEEK,
   );
 
   if (recentlyRetired.length === 0) return null;
