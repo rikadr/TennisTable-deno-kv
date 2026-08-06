@@ -6,6 +6,7 @@ import {
   Achievement,
   AchievementProgression,
   GAMES_IN_PERIOD_RECORD_FLOOR,
+  isReachievableAchievement,
   SHOOTOUT_RECORD_FLOOR,
   SHOOTOUT_SETS_COUNTED,
   STREAK_RECORD_FLOOR,
@@ -757,11 +758,21 @@ const progressSortOptions: { value: ProgressSort; label: string }[] = [
   { value: "progress-asc", label: "Progress: low to high" },
 ];
 
+// The three filter states are mutually exclusive — a segmented control, not
+// checkboxes. "Achievable" hides what can never be earned again (earned AND
+// one-time); "Unachieved" hides everything earned, re-achievable or not.
+type ProgressFilter = "all" | "achievable" | "unachieved";
+const progressFilterOptions: { value: ProgressFilter; label: string }[] = [
+  { value: "all", label: "All" },
+  { value: "achievable", label: "Achievable" },
+  { value: "unachieved", label: "Unachieved" },
+];
+
 const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
   const context = useEventDbContext();
   const search = usePlayerLinkSearch();
   const [sort, setSort] = useState<ProgressSort>("default");
-  const [excludeAchieved, setExcludeAchieved] = useState(false);
+  const [filter, setFilter] = useState<ProgressFilter>("all");
 
   const gameLimitForRanked = context.client.gameLimitForRanked;
 
@@ -793,13 +804,20 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
   );
 
   // Sorting is stable, so items with the same progress keep the default order.
+  // An earned re-achievable achievement (a record, a streak, a per-season
+  // chase) counts as achievable, because it can still be chased again.
   const progressItems = useMemo(() => {
-    const items = excludeAchieved ? allProgressItems.filter((item) => !item.hasEarned) : allProgressItems;
+    let items = allProgressItems;
+    if (filter === "achievable") {
+      items = items.filter((item) => !item.hasEarned || isReachievableAchievement(item.type));
+    } else if (filter === "unachieved") {
+      items = items.filter((item) => !item.hasEarned);
+    }
     if (sort === "default") return items;
     return [...items].sort((a, b) =>
       sort === "progress-desc" ? b.sortPercentage - a.sortPercentage : a.sortPercentage - b.sortPercentage,
     );
-  }, [allProgressItems, sort, excludeAchieved]);
+  }, [allProgressItems, sort, filter]);
 
   return (
     <div className="space-y-4 text-secondary-text">
@@ -821,19 +839,35 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
             ))}
           </select>
         </div>
-        <label className="flex items-center gap-2 text-sm cursor-pointer">
-          <input
-            type="checkbox"
-            className="w-4 h-4 cursor-pointer accent-secondary-text"
-            checked={excludeAchieved}
-            onChange={(event) => setExcludeAchieved(event.target.checked)}
-          />
-          Exclude achieved
-        </label>
+        <div className="flex items-center gap-2">
+          <span className="text-sm">Show</span>
+          <div
+            role="radiogroup"
+            aria-label="Filter achievements"
+            className="flex rounded border border-secondary-text divide-x divide-secondary-text overflow-hidden"
+          >
+            {progressFilterOptions.map((option) => (
+              <button
+                key={option.value}
+                role="radio"
+                aria-checked={filter === option.value}
+                onClick={() => setFilter(option.value)}
+                className={classNames(
+                  "px-3 py-1 text-sm transition-colors",
+                  filter === option.value
+                    ? "bg-secondary-text text-secondary-background font-medium"
+                    : "bg-secondary-background text-secondary-text hover:bg-secondary-text/20",
+                )}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
       {progressItems.length === 0 && (
-        <p className="text-sm text-secondary-text/70">Every achievement is earned. Nothing left to show.</p>
+        <p className="text-sm text-secondary-text/70">No achievements to show.</p>
       )}
 
       {progressItems.map(({ type, label, data }) => {
