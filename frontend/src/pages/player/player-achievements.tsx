@@ -304,6 +304,11 @@ export const ACHIEVEMENT_LABELS: Record<string, { title: string; description: st
     description: "Go undefeated in a tournament's group play",
     icon: "⭐",
   },
+  "sweet-revenge": {
+    title: "Sweet Revenge",
+    description: "Beat a player in a tournament match after they beat you in an earlier tournament match",
+    icon: "😈",
+  },
   "full-house": {
     title: "Full House",
     description: "Beat every currently ranked player at least once",
@@ -671,6 +676,15 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
                   </p>
                 )}
 
+                {achievement.type === "sweet-revenge" && achievement.data && (
+                  <p className="text-xs text-secondary-text/70 mt-2">
+                    Avenged in {daysBetweenCeiled(achievement.data.lostAt, achievement.earnedAt)} day
+                    {daysBetweenCeiled(achievement.data.lostAt, achievement.earnedAt) !== 1 ? "s" : ""}
+                    {achievement.data.lostTournamentId === achievement.data.tournamentId &&
+                      " in the same tournament"}
+                  </p>
+                )}
+
                 {(achievement.type === "full-house" || achievement.type === "humbled") && achievement.data && (
                   <p className="text-xs text-secondary-text/70 mt-2">
                     {achievement.type === "full-house" ? "Beat " : "Lost to "}
@@ -724,6 +738,12 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
 
 function daysBetween(from: number, to: number): number {
   return Math.round((to - from) / (24 * 60 * 60 * 1000));
+}
+
+// Rounds up, so a revenge taken within the first day reads as "1 day",
+// never "0 days".
+export function daysBetweenCeiled(from: number, to: number): number {
+  return Math.ceil((to - from) / (24 * 60 * 60 * 1000));
 }
 
 // Formats minutes past midnight (0–1439) as a "HH:MM" clock time.
@@ -1112,14 +1132,18 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                           </div>
                         )}
 
-                      {/* Missing players for full-house / humbled */}
-                      {(type === "full-house" || type === "humbled") &&
+                      {/* Missing players for full-house / humbled / sweet-revenge */}
+                      {(type === "full-house" || type === "humbled" || type === "sweet-revenge") &&
                         "missing" in data &&
                         data.missing &&
                         data.missing.size > 0 && (
                           <div className="mt-3 pt-3 border-t border-secondary-text/50">
                             <p className="text-xs text-secondary-text/70 mb-2">
-                              {type === "full-house" ? "Still need to beat:" : "Still need to lose to:"}
+                              {type === "full-house"
+                                ? "Still need to beat:"
+                                : type === "humbled"
+                                  ? "Still need to lose to:"
+                                  : "They beat you in a tournament — beat them in a tournament match to avenge it:"}
                             </p>
                             <div className="flex flex-wrap gap-1">
                               {Array.from(data.missing).map((player: string) => (

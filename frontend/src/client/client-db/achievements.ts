@@ -1,6 +1,7 @@
 import { Elo } from "./elo";
 import { EventTypeEnum } from "./event-store/event-types";
 import { Game } from "./event-store/projectors/games-projector";
+import { SkippedGame } from "./event-store/projectors/tournaments-projector";
 import { determineNextSeason, determineSeason } from "./seasons/seasons";
 import { TennisTable } from "./tennis-table";
 
@@ -124,6 +125,12 @@ export class Achievements {
   // peak behind it. Used for Climber progression — the chase regresses when
   // Elo drops, so the best is kept.
   bestClimb: Map<string, { climb: number; fromElo: number; toElo: number }> = new Map();
+  // Sweet Revenge bookkeeping. For each player: the latest tournament-match
+  // loss to each opponent that is still to be avenged (real matches only — a
+  // skip is a walkover, not a defeat). A revenge win consumes the entry; a
+  // new loss to that opponent re-arms it. Used to award the achievement and
+  // to list the rivals still to beat in the progression view.
+  tournamentLossToAvenge: Map<string, Map<string, { time: number; tournamentId: string }>> = new Map();
   // League-wide running records for the Earliest / Latest Game achievements:
   // the earliest and latest time-of-day (minutes past local midnight, in the
   // browser's timezone) any game has been played to date. Undefined until the
@@ -185,6 +192,7 @@ export class Achievements {
     this.bestRankEver.clear();
     this.bestBeatenRank.clear();
     this.bestClimb.clear();
+    this.tournamentLossToAvenge.clear();
     this.earliestGameRecord = { minutesIntoDay: undefined };
     this.latestGameRecord = { minutesIntoDay: undefined };
     this.winStreakRecord = { length: undefined, holder: undefined };
@@ -753,6 +761,7 @@ export class Achievements {
     });
 
     this.#checkTournamentAchievements();
+    this.#checkRevengeAchievements();
     this.#checkSeasonAchievements();
     this.#calculateEloAchievements();
     this.#checkFullHouseAndHumbledAchievements();
@@ -2322,6 +2331,72 @@ export class Achievements {
     });
   }
 
+  // Awards "Sweet Revenge": win a tournament match against an opponent who
+  // beat you in an earlier tournament match. Matches from every tournament
+  // count — the loss and the revenge can be in the same tournament (group
+  // play then bracket, or a double elimination rematch) or tournaments
+  // apart. Only matches that were actually played count, in both directions:
+  // a skipped game is a walkover, not a defeat to avenge nor a win that
+  // avenges one. Each revenge consumes the loss it avenges, so the same
+  // opponent can be avenged again — but only after they beat you in a NEW
+  // tournament match in between. The award remembers the loss it avenged
+  // (the opponent's latest win over you before the revenge).
+  #checkRevengeAchievements() {
+    type TournamentMatch = { winner: string; loser: string; completedAt: number; tournamentId: string };
+    const matches: TournamentMatch[] = [];
+
+    this.parent.tournaments.getTournaments().forEach((t) => {
+      const tournamentId = t.tournamentConfig.id;
+      const collect = (game: {
+        player1?: string;
+        player2?: string;
+        winner?: string;
+        skipped?: SkippedGame;
+        completedAt?: number;
+      }) => {
+        if (game.skipped) return;
+        if (game.winner === undefined || game.completedAt === undefined) return;
+        // Byes and walkover slots carry a winner without two players.
+        if (game.player1 === undefined || game.player2 === undefined) return;
+        const loser = game.winner === game.player1 ? game.player2 : game.player1;
+        matches.push({ winner: game.winner, loser, completedAt: game.completedAt, tournamentId });
+      };
+      t.groupPlay?.groups.forEach((group) => group.played.forEach(collect));
+      t.bracket?.getCompletedGames().forEach(collect);
+    });
+
+    // Replay all tournament matches in time order, so "previously beat you"
+    // means earlier across all tournaments, not earlier within one.
+    matches.sort((a, b) => a.completedAt - b.completedAt);
+
+    for (const match of matches) {
+      const lossToAvenge = this.tournamentLossToAvenge.get(match.winner)?.get(match.loser);
+      if (lossToAvenge !== undefined) {
+        // The revenge consumes the loss — earning it again against this
+        // opponent takes a new loss to them first.
+        this.tournamentLossToAvenge.get(match.winner)!.delete(match.loser);
+        this.#addAchievement(
+          match.winner,
+          this.#createAchievement("sweet-revenge", match.winner, match.completedAt, {
+            opponent: match.loser,
+            tournamentId: match.tournamentId,
+            lostAt: lossToAvenge.time,
+            lostTournamentId: lossToAvenge.tournamentId,
+          }),
+        );
+      }
+
+      // Record the loser's defeat — the winner is now a rival to avenge
+      // (again, if an earlier loss to them was already avenged).
+      let losses = this.tournamentLossToAvenge.get(match.loser);
+      if (!losses) {
+        losses = new Map();
+        this.tournamentLossToAvenge.set(match.loser, losses);
+      }
+      losses.set(match.winner, { time: match.completedAt, tournamentId: match.tournamentId });
+    }
+  }
+
   #checkSeasonAchievements() {
     this.parent.seasons.getSeasons().forEach((s) => {
       const leaderboard = s.getLeaderboard();
@@ -2608,6 +2683,7 @@ export class Achievements {
       "tournament-participated": { earned: 0 },
       "tournament-winner": { earned: 0 },
       "group-stage-star": { earned: 0 },
+      "sweet-revenge": { current: 0, target: 0, missing: new Set(), earned: 0 },
       "season-winner": { current: 0, target: 1, earned: 0 },
       // League-wide countdown to the next season start, filled in below.
       "season-opener": { current: 0, target: 0, earned: 0 },
@@ -3366,6 +3442,21 @@ export class Achievements {
     progression["humbled"].target = rankedTarget;
     progression["humbled"].missing = humbledMissing;
 
+    // Sweet Revenge progression: the missing set is the rivals still to beat
+    // — active players holding an unavenged tournament-match win over this
+    // player. Winning a tournament match against any of them earns the
+    // award. The bar counts revenges taken out of revenge opportunities ever
+    // (each award consumed one loss; each unavenged loss is one to take), so
+    // it fills as losses are avenged and dips when a new loss arrives.
+    const activePlayerIds = new Set(this.parent.players.map((p) => p.id));
+    const revengeMissing = new Set(
+      [...(this.tournamentLossToAvenge.get(playerId)?.keys() ?? [])].filter((id) => activePlayerIds.has(id)),
+    );
+    const revengesTaken = this.getAchievements(playerId).filter((a) => a.type === "sweet-revenge").length;
+    progression["sweet-revenge"].current = revengesTaken;
+    progression["sweet-revenge"].target = revengesTaken + revengeMissing.size;
+    progression["sweet-revenge"].missing = revengeMissing;
+
     // Count earned achievements
     const achievements = this.getAchievements(playerId);
     achievements.forEach((achievement) => {
@@ -3414,6 +3505,11 @@ type AchievementDefinitions = {
   "anniversary": { firstGameAt: number; year: number };
   "tournament-participated": { tournamentId: string };
   "tournament-winner": { tournamentId: string };
+  // Won a tournament match against an opponent who beat the player in an
+  // earlier tournament match. The revenge match's tournament is
+  // `tournamentId`; the avenged loss — the opponent's latest win over the
+  // player before the revenge — is `lostAt` / `lostTournamentId`.
+  "sweet-revenge": { opponent: string; tournamentId: string; lostAt: number; lostTournamentId: string };
   "season-winner": { seasonStart: number };
   "nice-game": { gameId: string; opponent: string };
   "less-is-more": { gameId: string; opponent: string; playerPoints: number; opponentPoints: number };
@@ -3541,6 +3637,7 @@ export const ACHIEVEMENT_IS_REACHIEVABLE: Record<AchievementType, boolean> = {
   "anniversary": true, // Per year
   "tournament-participated": true, // Per tournament
   "tournament-winner": true,
+  "sweet-revenge": true, // Per avenged loss — a new loss to that opponent re-arms it
   "season-winner": true, // Per season
   "nice-game": true, // Per qualifying game
   "less-is-more": true,
@@ -3684,7 +3781,8 @@ type SeasonOpenerProgression = ProgressionWithTarget & {
 
 type MissingPlayersProgression = ProgressionWithTarget & {
   // Currently ranked players the player has not yet beaten (Full House) /
-  // not yet lost to (Humbled) — i.e. what's left to complete the set.
+  // not yet lost to (Humbled), or active tournament rivals the player has
+  // not yet avenged (Sweet Revenge) — i.e. what's left to complete the set.
   missing?: Set<string>;
 };
 
@@ -3854,6 +3952,7 @@ export type AchievementProgression = {
   "hero-of-the-week": HeroRecordProgression;
   "hero-of-the-month": HeroRecordProgression;
   "group-stage-star": GroupPlayStarProgression;
+  "sweet-revenge": MissingPlayersProgression;
   "full-house": MissingPlayersProgression;
   "humbled": MissingPlayersProgression;
   "earliest-game": TimeOfDayRecordProgression;

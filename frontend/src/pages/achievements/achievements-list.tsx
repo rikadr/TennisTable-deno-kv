@@ -2,7 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { Achievement } from "../../client/client-db/achievements";
 import { useEventDbContext } from "../../wrappers/event-db-context";
-import { getAchievementLabel, dateString } from "../player/player-achievements";
+import { getAchievementLabel, dateString, daysBetweenCeiled } from "../player/player-achievements";
 import { relativeTimeString } from "../../common/date-utils";
 import { ProfilePicture } from "../player/profile-picture";
 import { fmtNum } from "../../common/number-utils";
@@ -291,6 +291,14 @@ export const AchievementsList: React.FC<AchievementsListProps> = ({ achievements
                     <span className="text-[11px] opacity-80">
                       Undefeated ({achievement.data.wins} win
                       {achievement.data.wins !== 1 ? "s" : ""})
+                    </span>
+                  )}
+                  {achievement.type === "sweet-revenge" && achievement.data && (
+                    <span className="text-[11px] opacity-80">
+                      Avenged in {daysBetweenCeiled(achievement.data.lostAt, achievement.earnedAt)} day
+                      {daysBetweenCeiled(achievement.data.lostAt, achievement.earnedAt) !== 1 ? "s" : ""}
+                      {achievement.data.lostTournamentId === achievement.data.tournamentId &&
+                        " in the same tournament"}
                     </span>
                   )}
                   {(achievement.type === "full-house" || achievement.type === "humbled") &&
