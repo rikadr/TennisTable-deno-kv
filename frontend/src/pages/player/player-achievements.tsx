@@ -678,8 +678,8 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
 
                 {achievement.type === "sweet-revenge" && achievement.data && (
                   <p className="text-xs text-secondary-text/70 mt-2">
-                    Avenged in {daysBetween(achievement.data.lostAt, achievement.earnedAt)} day
-                    {daysBetween(achievement.data.lostAt, achievement.earnedAt) !== 1 ? "s" : ""}
+                    Avenged in {daysBetweenCeiled(achievement.data.lostAt, achievement.earnedAt)} day
+                    {daysBetweenCeiled(achievement.data.lostAt, achievement.earnedAt) !== 1 ? "s" : ""}
                     {achievement.data.lostTournamentId === achievement.data.tournamentId &&
                       " in the same tournament"}
                   </p>
@@ -738,6 +738,12 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
 
 function daysBetween(from: number, to: number): number {
   return Math.round((to - from) / (24 * 60 * 60 * 1000));
+}
+
+// Rounds up, so a revenge taken within the first day reads as "1 day",
+// never "0 days".
+export function daysBetweenCeiled(from: number, to: number): number {
+  return Math.ceil((to - from) / (24 * 60 * 60 * 1000));
 }
 
 // Formats minutes past midnight (0–1439) as a "HH:MM" clock time.
