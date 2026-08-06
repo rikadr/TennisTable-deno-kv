@@ -58,6 +58,9 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
       text(
         "The page covers event projection, the leaderboard, achievements, seasons, tournaments, predictions, the Hall of Fame and more. The audience is mostly engineers who want to find slow calculations.",
       ),
+      text(
+        "A button copies the results as JSON, together with data metrics: event, game, player, tournament and season counts, and the age of the game history. This makes it possible to compare how the times scale with the data across clients.",
+      ),
     ],
   },
   {

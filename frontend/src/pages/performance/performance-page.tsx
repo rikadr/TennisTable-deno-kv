@@ -189,10 +189,75 @@ type BenchmarkState =
   | { status: "done"; ms: number; detail: string }
   | { status: "error"; message: string };
 
+function collectDatasetMetrics(context: TennisTable) {
+  const games = context.games;
+  const eventsByType: Record<string, number> = {};
+  for (const event of context.events) {
+    eventsByType[event.type] = (eventsByType[event.type] ?? 0) + 1;
+  }
+
+  const firstGame = games[0];
+  const lastGame = games[games.length - 1];
+  const dayMs = 1_000 * 60 * 60 * 24;
+
+  const activePlayers = context.players.length;
+  const totalPlayers = context.allPlayers.length;
+
+  return {
+    events: { total: context.events.length, byType: eventsByType },
+    games: {
+      total: games.length,
+      withScore: games.filter((game) => game.score !== undefined).length,
+      withSetPoints: games.filter((game) => game.score?.setPoints !== undefined).length,
+      firstGameAt: firstGame ? new Date(firstGame.playedAt).toISOString() : null,
+      lastGameAt: lastGame ? new Date(lastGame.playedAt).toISOString() : null,
+      daysSinceFirstGame: firstGame ? Math.round(((Date.now() - firstGame.playedAt) / dayMs) * 10) / 10 : null,
+    },
+    players: {
+      total: totalPlayers,
+      active: activePlayers,
+      inactive: totalPlayers - activePlayers,
+      averageGamesPerActivePlayer: activePlayers > 0 ? Math.round(((games.length * 2) / activePlayers) * 10) / 10 : null,
+    },
+    tournaments: { total: context.tournaments.getTournaments().length },
+    seasons: { total: context.seasons.getSeasons().length },
+    gameLimitForRanked: context.client.gameLimitForRanked,
+  };
+}
+
 export const PerformancePage: React.FC = () => {
   const context = useEventDbContext();
   const [results, setResults] = useState<Record<string, BenchmarkState>>({});
   const [isRunning, setIsRunning] = useState(false);
+  const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">("idle");
+
+  const completedCount = benchmarks.filter((benchmark) => results[benchmark.id]?.status === "done").length;
+
+  async function copyResultsAsJson() {
+    const exportData = {
+      exportedAt: new Date().toISOString(),
+      client: { id: context.client.id ?? null, name: context.client.name },
+      environment: {
+        userAgent: navigator.userAgent,
+        hardwareConcurrency: navigator.hardwareConcurrency ?? null,
+        deviceMemoryGb: (navigator as Navigator & { deviceMemory?: number }).deviceMemory ?? null,
+      },
+      datasetMetrics: collectDatasetMetrics(context),
+      performanceResults: benchmarks.flatMap((benchmark) => {
+        const result = results[benchmark.id];
+        if (result?.status !== "done") return [];
+        return [{ id: benchmark.id, name: benchmark.name, ms: Math.round(result.ms * 10) / 10, detail: result.detail }];
+      }),
+    };
+
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(exportData, null, 2));
+      setCopyState("copied");
+    } catch {
+      setCopyState("failed");
+    }
+    setTimeout(() => setCopyState("idle"), 2_000);
+  }
 
   async function runBenchmarks(benchmarksToRun: Benchmark[]) {
     if (isRunning) return;
@@ -219,21 +284,38 @@ export const PerformancePage: React.FC = () => {
         <div className="p-6 border-b border-primary-text/10">
           <div className="flex flex-col xs:flex-row xs:items-center xs:justify-between gap-4">
             <h1 className="text-2xl">Performance testing ⏱️</h1>
-            <button
-              className={classNames(
-                "bg-secondary-background text-secondary-text rounded-md px-4 py-2 text-lg",
-                isRunning ? "opacity-50 cursor-not-allowed" : "hover:bg-secondary-background/50",
-              )}
-              disabled={isRunning}
-              onClick={() => runBenchmarks(benchmarks)}
-            >
-              {isRunning ? "Running…" : "Run all"}
-            </button>
+            <div className="flex gap-2 shrink-0">
+              <button
+                className={classNames(
+                  "bg-secondary-background text-secondary-text rounded-md px-4 py-2 text-lg",
+                  isRunning ? "opacity-50 cursor-not-allowed" : "hover:bg-secondary-background/50",
+                )}
+                disabled={isRunning}
+                onClick={() => runBenchmarks(benchmarks)}
+              >
+                {isRunning ? "Running…" : "Run all"}
+              </button>
+              <button
+                className={classNames(
+                  "bg-secondary-background text-secondary-text rounded-md px-4 py-2 text-lg",
+                  isRunning || completedCount === 0 ? "opacity-50 cursor-not-allowed" : "hover:bg-secondary-background/50",
+                )}
+                disabled={isRunning || completedCount === 0}
+                onClick={copyResultsAsJson}
+              >
+                {copyState === "copied" ? "Copied ✅" : copyState === "failed" ? "Copy failed ❌" : "Copy JSON 📋"}
+              </button>
+            </div>
           </div>
           <p className="mt-4 text-sm text-primary-text/70">
             Each test creates a fresh TennisTable instance from the current {fmtNum(context.events.length)} events,
             without caches. The timer measures only the feature calculation, not the instance creation. Tests run on
             the main thread, so the page can freeze while a test runs.
+          </p>
+          <p className="mt-2 text-sm text-primary-text/70">
+            Copy JSON copies the completed results together with dataset metrics: event, game, player, tournament and
+            season counts, and the age of the game history. Collect the JSON from each client to compare how the times
+            scale with the data.
           </p>
         </div>
         <div className="divide-y divide-primary-text/10">
