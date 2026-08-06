@@ -13,9 +13,10 @@ import { bracketLayerIndexToTournamentRound, secondChanceRoundLabel } from "../.
 type Row = {
   key: string;
   label: string;
-  sublabel?: string;
   depth: 0 | 1;
   start: number;
+  /** The row's clock is running: its first game is (or was) available to play */
+  started: boolean;
   /** Undefined while the row still has games left to play */
   end?: number;
   gamesPlayed: number;
@@ -82,6 +83,7 @@ export const TournamentTimelineWidget: React.FC<{ tournament: Tournament }> = ({
       label: sectionLabel(section, doubleElimination),
       depth: 0,
       start: section.start,
+      started: section.started,
       end: section.completed ? section.lastGameAt : undefined,
       gamesPlayed: section.gamesPlayed,
       gamesTotal: section.gamesTotal,
@@ -89,13 +91,12 @@ export const TournamentTimelineWidget: React.FC<{ tournament: Tournament }> = ({
     // A single sub section would just repeat its section
     if (section.subSections.length <= 1) continue;
     for (const sub of section.subSections) {
-      const { label, sublabel } = refLabel(sub.ref, doubleElimination);
       rows.push({
         key: `${section.key}-${sub.key}`,
-        label,
-        sublabel,
+        label: refLabel(sub.ref, doubleElimination),
         depth: 1,
         start: sub.start,
+        started: sub.started,
         end: sub.completed ? sub.lastGameAt : undefined,
         gamesPlayed: sub.gamesPlayed,
         gamesTotal: sub.gamesTotal,
@@ -176,7 +177,10 @@ const TimelineRow: React.FC<{
 }> = ({ row, timelineStart, totalDays, now, gridLines }) => {
   const isSection = row.depth === 0;
   const ongoing = row.end === undefined;
-  const notStarted = ongoing && row.gamesPlayed === 0;
+  // A row is on the clock from the moment its first game is available, played or not: the time
+  // spent waiting for the players is part of how long it takes. A row none of whose games have
+  // been reachable yet has no clock to show
+  const notStarted = ongoing && !row.started;
   const barEnd = row.end ?? now;
 
   // The bar covers whole days, from the first day of the row through its last one
@@ -190,14 +194,15 @@ const TimelineRow: React.FC<{
     <div
       className={classNames("flex items-center gap-2", isSection && "pt-2")}
       title={
-        notStarted ? "No games played yet" : `${formatDate(row.start)} → ${ongoing ? "ongoing" : formatDate(barEnd)}`
+        notStarted
+          ? "Waiting for an earlier round to finish"
+          : `${formatDate(row.start)} → ${ongoing ? "ongoing" : formatDate(barEnd)}`
       }
     >
       <div className={classNames(LABEL_COLUMN, "shrink-0", isSection ? "" : "pl-3")}>
         <p className={classNames("truncate", isSection ? "text-sm font-semibold" : "text-xs font-normal")}>
           {row.label}
         </p>
-        {row.sublabel && <p className="truncate text-[0.65rem] font-light">{row.sublabel}</p>}
       </div>
 
       {/* Kept left of the bar so the durations stay readable when the chart scrolls sideways */}
@@ -228,14 +233,10 @@ const TimelineRow: React.FC<{
             style={{ left: `${(at / totalDays) * 100}%` }}
           />
         ))}
-        {/* A round with no games played has no span to draw: the bare lane says it all */}
+        {/* A round that is not yet reachable has no span to draw: the bare lane says it all */}
         {notStarted === false && (
           <div
-            className={classNames(
-              "absolute inset-y-0 rounded bg-secondary-background",
-              // An unfinished span runs up against now rather than a game, marked with a torn edge
-              ongoing && "border-r-2 border-dashed border-primary-background",
-            )}
+            className="absolute inset-y-0 rounded bg-secondary-background"
             style={{ left: `${leftPercent}%`, width: `max(${widthPercent}%, 3px)` }}
           />
         )}
@@ -257,22 +258,18 @@ function sectionLabel(section: TimelineSection, doubleElimination: boolean): str
   }
 }
 
-function refLabel(ref: TimelineRef, doubleElimination: boolean): { label: string; sublabel?: string } {
+function refLabel(ref: TimelineRef, doubleElimination: boolean): string {
   switch (ref.kind) {
     case "group":
-      return { label: `Group ${ref.groupIndex + 1}` };
+      return `Group ${ref.groupIndex + 1}`;
     case "winners-layer":
-      return {
-        label: bracketLayerIndexToTournamentRound(ref.layerIndex, doubleElimination) ?? `Layer ${ref.layerIndex}`,
-      };
-    case "losers-layer": {
-      const { title, subtitle } = secondChanceRoundLabel(ref.layerIndex, ref.totalLayers);
-      return { label: title, sublabel: subtitle };
-    }
+      return bracketLayerIndexToTournamentRound(ref.layerIndex, doubleElimination) ?? `Layer ${ref.layerIndex}`;
+    case "losers-layer":
+      return secondChanceRoundLabel(ref.layerIndex, ref.totalLayers).title;
     case "grand-final-game":
-      return { label: "Final" };
+      return "Final";
     case "bracket-reset":
-      return { label: "The Final Decider" };
+      return "The Final Decider";
   }
 }
 
