@@ -240,11 +240,7 @@ const TimelineRow: React.FC<{
         {/* A round that is not yet reachable has no span to draw: the bare lane says it all */}
         {notStarted === false && (
           <div
-            className={classNames(
-              "absolute inset-y-0 rounded bg-secondary-background",
-              // An unfinished span runs up against now rather than a game, marked with a torn edge
-              ongoing && "border-r-2 border-dashed border-primary-background",
-            )}
+            className="absolute inset-y-0 rounded bg-secondary-background"
             style={{ left: `${leftPercent}%`, width: `max(${widthPercent}%, 3px)` }}
           />
         )}
