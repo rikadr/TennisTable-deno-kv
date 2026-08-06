@@ -14,9 +14,6 @@ import { reloadPage } from "../common/reload-page";
  * state like game tracking or form input), a popup offers "Refresh now" or
  * "Later". If the popup is not addressed within 1 minute, the page refreshes
  * automatically. "Later" snoozes the popup for 30 minutes.
- *
- * Exception: the live game TV overlay is unattended, so it refreshes
- * immediately without a popup.
  */
 
 export const CHECK_INTERVAL_MS = 5 * ONE_MINUTE;
@@ -71,11 +68,6 @@ export const NewVersionChecker: React.FC = () => {
       if (!deployedBundle || deployedBundle === runningBundle) return;
 
       newVersionFoundRef.current = true;
-      if (window.location.pathname === "/live-game/overlay") {
-        // The TV overlay is unattended, so there is no state to lose.
-        reloadPage();
-        return;
-      }
       setSecondsLeft(AUTO_REFRESH_AFTER_SECONDS);
       setShowPopup(true);
     }

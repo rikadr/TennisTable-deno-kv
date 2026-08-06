@@ -56,7 +56,7 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
         "The Later choice protects your work. Use it when you track a game or fill in a form. The popup returns after 30 minutes.",
       ),
       text(
-        "The TV overlay for live games refreshes immediately, without a popup. Detection compares the file name of the deployed script bundle with the running one, so it needs no server support.",
+        "Detection compares the file name of the deployed script bundle with the running one, so it needs no server support.",
       ),
     ],
   },

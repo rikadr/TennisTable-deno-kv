@@ -65,7 +65,6 @@ describe("NewVersionChecker", () => {
   beforeEach(() => {
     jest.useFakeTimers();
     reloadPageMock.mockClear();
-    window.history.pushState({}, "", "/leader-board");
   });
 
   afterEach(() => {
@@ -155,18 +154,6 @@ describe("NewVersionChecker", () => {
 
     // The countdown restarts after the snooze
     await advanceTime(AUTO_REFRESH_AFTER_SECONDS * ONE_SECOND);
-    expect(reloadPageMock).toHaveBeenCalled();
-  });
-
-  it("refreshes immediately without a popup on the live game TV overlay", async () => {
-    window.history.pushState({}, "", "/live-game/overlay");
-    scriptTag = addRunningBundleScript();
-    mockFetchReturning(NEW_BUNDLE);
-    render(<NewVersionChecker />);
-
-    await advanceTime(CHECK_INTERVAL_MS);
-
-    expect(screen.queryByText(/new version available/i)).not.toBeInTheDocument();
     expect(reloadPageMock).toHaveBeenCalled();
   });
 });
