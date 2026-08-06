@@ -19,8 +19,6 @@ type Row = {
   started: boolean;
   /** Undefined while the row still has games left to play */
   end?: number;
-  gamesPlayed: number;
-  gamesTotal: number;
 };
 
 /**
@@ -85,8 +83,6 @@ export const TournamentTimelineWidget: React.FC<{ tournament: Tournament }> = ({
       start: section.start,
       started: section.started,
       end: section.completed ? section.lastGameAt : undefined,
-      gamesPlayed: section.gamesPlayed,
-      gamesTotal: section.gamesTotal,
     });
     // A single sub section would just repeat its section
     if (section.subSections.length <= 1) continue;
@@ -98,8 +94,6 @@ export const TournamentTimelineWidget: React.FC<{ tournament: Tournament }> = ({
         start: sub.start,
         started: sub.started,
         end: sub.completed ? sub.lastGameAt : undefined,
-        gamesPlayed: sub.gamesPlayed,
-        gamesTotal: sub.gamesTotal,
       });
     }
   }
@@ -215,9 +209,6 @@ const TimelineRow: React.FC<{
           )}
         >
           {notStarted ? "not started" : formatDays(days)}
-        </p>
-        <p className="text-[0.65rem] font-light">
-          {fmtNum(row.gamesPlayed)}/{fmtNum(row.gamesTotal)} games
         </p>
       </div>
 
