@@ -42,6 +42,25 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
+    slug: "reunion-achievement",
+    title: "New achievement: Reunion 🫂",
+    date: "2026-08-07",
+    tags: ["feature-update"],
+    summary:
+      "Reunion 🫂 is a new achievement. Play a game against an opponent when your previous game against each other was 1 year or more ago.",
+    body: [
+      text(
+        "The app measures the gap for each pair of players. Games against other opponents do not reset the gap. Both players in the reunion game earn the achievement. The result of the game does not matter.",
+      ),
+      text(
+        "You can earn the achievement many times. A new gap of 1 year or more with the same opponent earns it again. Each other opponent has an independent gap.",
+      ),
+      text(
+        "The Progress tab on the player page shows your longest open gap against an active player, and names that opponent. Play that opponent to earn the achievement when the gap is 1 year or more.",
+      ),
+    ],
+  },
+  {
     slug: "sweet-revenge-achievement",
     title: "New achievement: Sweet Revenge 😈",
     date: "2026-08-06",

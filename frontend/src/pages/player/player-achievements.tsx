@@ -199,6 +199,11 @@ export const ACHIEVEMENT_LABELS: Record<string, { title: string; description: st
     description: "Play 50 games with a single opponent within 1 year",
     icon: "💙",
   },
+  "reunion": {
+    title: "Reunion",
+    description: "Play an opponent again after a year or more since your last game together",
+    icon: "🫂",
+  },
   "welcome-committee": {
     title: "Welcome Committee",
     description: "Be the first opponent for 3 different new players",
@@ -767,7 +772,9 @@ const RANK_BEST_TYPES = new Set(["on-the-podium", "touched-the-throne", "kingsla
 // in: ranks as "#N", the duration chases as days, everything else as a count.
 function formatBestValue(type: string, best: number): string {
   if (RANK_BEST_TYPES.has(type)) return `#${fmtNum(best)}`;
-  if (type.startsWith("active-") || type.startsWith("back-after-")) return formatTimePeriod(best);
+  if (type.startsWith("active-") || type.startsWith("back-after-") || type === "reunion") {
+    return formatTimePeriod(best);
+  }
   return fmtNum(best) ?? "";
 }
 
@@ -901,7 +908,8 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
           type.startsWith("active-") ||
           type.startsWith("back-after-") ||
           type === "anniversary" ||
-          type === "season-opener";
+          type === "season-opener" ||
+          type === "reunion";
 
         return (
           <div
@@ -1003,6 +1011,22 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                           </span>
                         </div>
                       </div>
+
+                      {/* Show who the longest open gap is with for Reunion —
+                          the opponent to play for the next award. */}
+                      {type === "reunion" && "gapOpponent" in data && data.gapOpponent && (
+                        <div className="mt-2 text-xs text-secondary-text/70">
+                          Longest gap: vs{" "}
+                          <Link to={{ pathname: "/player/" + data.gapOpponent, search }}>
+                            <span className="text-secondary-text underline">
+                              {context.playerName(data.gapOpponent)}
+                            </span>
+                          </Link>
+                          {data.gapLastGameAt !== undefined && (
+                            <>, last played {dateString(data.gapLastGameAt)}</>
+                          )}
+                        </div>
+                      )}
 
                       {/* Show last active time for back-after achievements */}
                       {type.startsWith("back-after-") && "lastActiveAt" in data && data.lastActiveAt && (
