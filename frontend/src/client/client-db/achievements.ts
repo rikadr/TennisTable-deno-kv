@@ -232,7 +232,7 @@ export class Achievements {
         edgeLordCount: number;
         consistencyCount: number;
         opponentsPlayed: Set<string>;
-        gamesPerOpponent: Map<string, { count: number; firstGame: number }>;
+        gamesPerOpponent: Map<string, { count: number; firstGame: number; lastGame: number }>;
         firstOpponentFor: Set<string>; // Track players this person was first opponent for
         hatTrickWins: { playedAt: number }[]; // Track recent wins for hat-trick
         gamesPlayed: number; // Total games played, used for the "ranked" achievement
@@ -454,22 +454,48 @@ export class Achievements {
         );
       }
 
-      // Track games per opponent for best-friends achievement
+      // Track games per opponent for the best-friends and reunion achievements
       if (!winner.gamesPerOpponent.has(game.loser)) {
-        winner.gamesPerOpponent.set(game.loser, { count: 0, firstGame: game.playedAt });
+        winner.gamesPerOpponent.set(game.loser, { count: 0, firstGame: game.playedAt, lastGame: game.playedAt });
       }
       if (!loser.gamesPerOpponent.has(game.winner)) {
-        loser.gamesPerOpponent.set(game.winner, { count: 0, firstGame: game.playedAt });
+        loser.gamesPerOpponent.set(game.winner, { count: 0, firstGame: game.playedAt, lastGame: game.playedAt });
       }
 
       const winnerOpponentData = winner.gamesPerOpponent.get(game.loser)!;
       const loserOpponentData = loser.gamesPerOpponent.get(game.winner)!;
 
+      const ONE_YEAR = 365 * 24 * 60 * 60 * 1000;
+
+      // Check for "Reunion": the pair's previous game against each other was
+      // a year or more ago. The gap is shared, so both players earn it. Must
+      // be checked before lastGame is moved forward to this game. The two
+      // trackers mirror the same pair history, so one gap check covers both.
+      if (winnerOpponentData.count > 0 && game.playedAt - winnerOpponentData.lastGame >= ONE_YEAR) {
+        this.#addAchievement(
+          game.winner,
+          this.#createAchievement("reunion", game.winner, game.playedAt, {
+            gameId: game.id,
+            opponent: game.loser,
+            lastGameAt: winnerOpponentData.lastGame,
+          }),
+        );
+        this.#addAchievement(
+          game.loser,
+          this.#createAchievement("reunion", game.loser, game.playedAt, {
+            gameId: game.id,
+            opponent: game.winner,
+            lastGameAt: loserOpponentData.lastGame,
+          }),
+        );
+      }
+
       winnerOpponentData.count++;
+      winnerOpponentData.lastGame = game.playedAt;
       loserOpponentData.count++;
+      loserOpponentData.lastGame = game.playedAt;
 
       // Check for best-friends achievement (50 games within 1 year)
-      const ONE_YEAR = 365 * 24 * 60 * 60 * 1000;
       if (winnerOpponentData.count === 50 && game.playedAt - winnerOpponentData.firstGame <= ONE_YEAR) {
         this.#addAchievement(
           game.winner,
@@ -2659,6 +2685,7 @@ export class Achievements {
       "variety-player": { current: 0, target: 10, opponents: new Set(), earned: 0 },
       "global-player": { current: 0, target: 20, opponents: new Set(), earned: 0 },
       "best-friends": { current: 0, target: 50, perOpponent: new Map(), earned: 0 },
+      "reunion": { current: 0, target: ONE_YEAR, earned: 0 },
       "welcome-committee": { current: 0, target: 3, newPlayers: new Set(), earned: 0 },
       "community-builder": { current: 0, target: 10, newPlayers: new Set(), earned: 0 },
 
@@ -2729,6 +2756,11 @@ export class Achievements {
     const opponentsPlayed = new Set<string>();
     const gamesPerOpponent = new Map<string, { count: number; firstGame: number; lastGame: number }>();
     const firstOpponentForSet = new Set<string>();
+    // Longest gap ever between two consecutive games against the same
+    // opponent — the Reunion best. Open gaps against active opponents are
+    // folded in after the loop.
+    let bestReunionGap = 0;
+    let bestReunionGapOpponent: string | undefined = undefined;
 
     // Track first games for each player to determine who was their first opponent
     const playerFirstGames = new Map<string, { opponent: string; timestamp: number }>();
@@ -2838,11 +2870,18 @@ export class Achievements {
         opponentsPlayed.add(game.winner);
       }
 
-      // Track games per opponent for best-friends progression
+      // Track games per opponent for best-friends and reunion progression
       if (!gamesPerOpponent.has(opponent)) {
         gamesPerOpponent.set(opponent, { count: 0, firstGame: game.playedAt, lastGame: game.playedAt });
       }
       const opponentData = gamesPerOpponent.get(opponent)!;
+      // Reunion best: the gap this game closed against this opponent. A
+      // just-created entry has lastGame === playedAt, so its gap is 0.
+      const closedGap = game.playedAt - opponentData.lastGame;
+      if (closedGap > bestReunionGap) {
+        bestReunionGap = closedGap;
+        bestReunionGapOpponent = opponent;
+      }
       opponentData.count++;
       opponentData.lastGame = game.playedAt;
 
@@ -3457,6 +3496,35 @@ export class Achievements {
     progression["sweet-revenge"].target = revengesTaken + revengeMissing.size;
     progression["sweet-revenge"].missing = revengeMissing;
 
+    // Reunion progression: the longest open gap — the time since the player's
+    // last game against each opponent who is still an active player. Playing
+    // that opponent earns the award once the gap passes a year. The open gaps
+    // also compete for the best value, since any of them may already be the
+    // player's longest.
+    let longestOpenGap = 0;
+    let longestOpenGapOpponent: string | undefined = undefined;
+    let longestOpenGapLastGameAt: number | undefined = undefined;
+    gamesPerOpponent.forEach((data, opponent) => {
+      if (!activePlayerIds.has(opponent)) return;
+      const openGap = now - data.lastGame;
+      if (openGap > longestOpenGap) {
+        longestOpenGap = openGap;
+        longestOpenGapOpponent = opponent;
+        longestOpenGapLastGameAt = data.lastGame;
+      }
+      if (openGap > bestReunionGap) {
+        bestReunionGap = openGap;
+        bestReunionGapOpponent = opponent;
+      }
+    });
+    progression["reunion"].current = longestOpenGap;
+    progression["reunion"].gapOpponent = longestOpenGapOpponent;
+    progression["reunion"].gapLastGameAt = longestOpenGapLastGameAt;
+    if (bestReunionGap > 0) {
+      progression["reunion"].best = bestReunionGap;
+      progression["reunion"].bestOpponent = bestReunionGapOpponent;
+    }
+
     // Count earned achievements
     const achievements = this.getAchievements(playerId);
     achievements.forEach((achievement) => {
@@ -3519,6 +3587,10 @@ type AchievementDefinitions = {
   "variety-player": undefined;
   "global-player": undefined;
   "best-friends": { opponent: string; firstGame: number };
+  // Played an opponent again a year or more after the pair's previous game
+  // against each other. `lastGameAt` is that previous game — the far end of
+  // the gap the reunion closed.
+  "reunion": { gameId: string; opponent: string; lastGameAt: number };
   "welcome-committee": { opponents: string[] };
   "community-builder": { opponents: string[] };
   "punching-bag": { startedAt: number };
@@ -3647,6 +3719,7 @@ export const ACHIEVEMENT_IS_REACHIEVABLE: Record<AchievementType, boolean> = {
   "variety-player": false,
   "global-player": false,
   "best-friends": true, // Per opponent
+  "reunion": true, // Per year-long gap per opponent
   "welcome-committee": false,
   "community-builder": false,
   "punching-bag": true, // Per lose streak
@@ -3767,6 +3840,19 @@ type BestFriendsProgression = ProgressionWithTarget & {
 
 type WelcomeCommitteeProgression = ProgressionWithTarget & {
   newPlayers?: Set<string>; // List of new players this person was first opponent for
+};
+
+// Reunion chases the longest open gap: the time since the player's last game
+// against each opponent who is still an active player. Once the gap passes a
+// year, playing that opponent earns the award. Current and target are
+// milliseconds.
+type ReunionProgression = ProgressionWithTarget & {
+  // Who the longest open gap (the `current` value) is with, and when that
+  // pair's last game was — the opponent to play for the next reunion.
+  gapOpponent?: string;
+  gapLastGameAt?: number;
+  // Who the best-ever gap was with, shown next to the best value.
+  bestOpponent?: string;
 };
 
 // Season Opener is league-wide: every player waits for the same next season
@@ -3925,6 +4011,7 @@ export type AchievementProgression = {
   "variety-player": VarietyPlayerProgression;
   "global-player": VarietyPlayerProgression;
   "best-friends": BestFriendsProgression;
+  "reunion": ReunionProgression;
   "welcome-committee": WelcomeCommitteeProgression;
   "community-builder": WelcomeCommitteeProgression;
   "punching-bag": ProgressionWithTarget;
