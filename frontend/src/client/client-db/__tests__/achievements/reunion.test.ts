@@ -156,8 +156,10 @@ describe("TennisTable", () => {
       expect(progression.target).toBe(ONE_YEAR);
       expect(progression.current).toBeGreaterThan(99 * ONE_DAY);
       expect(progression.current).toBeLessThan(101 * ONE_DAY);
-      expect(progression.gapOpponent).toBe("bob");
-      expect(progression.gapLastGameAt).toBe(lastBobGame);
+      // Every active opponent's open gap is listed, Bob's the longest.
+      expect(progression.perOpponent?.size).toBe(2);
+      expect(progression.perOpponent?.get("bob")).toBe(progression.current);
+      expect(progression.perOpponent?.get("carol")).toBeLessThan(11 * ONE_DAY);
       // The open gap is also the player's best so far.
       expect(progression.best).toBe(progression.current);
       expect(progression.bestOpponent).toBe("bob");
@@ -180,7 +182,8 @@ describe("TennisTable", () => {
       // Bob is retired, so the chase points at Carol's 10-day gap instead.
       expect(progression.current).toBeGreaterThan(9 * ONE_DAY);
       expect(progression.current).toBeLessThan(11 * ONE_DAY);
-      expect(progression.gapOpponent).toBe("carol");
+      expect(progression.perOpponent?.has("bob")).toBe(false);
+      expect(progression.perOpponent?.has("carol")).toBe(true);
     });
 
     it("keeps the longest closed gap as the best value", () => {
@@ -211,7 +214,7 @@ describe("TennisTable", () => {
       const progression = progressionFor([...baseEvents()]);
       expect(progression.current).toBe(0);
       expect(progression.earned).toBe(0);
-      expect(progression.gapOpponent).toBeUndefined();
+      expect(progression.perOpponent?.size).toBe(0);
       expect(progression.best).toBeUndefined();
     });
   });
