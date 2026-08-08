@@ -3496,30 +3496,26 @@ export class Achievements {
     progression["sweet-revenge"].target = revengesTaken + revengeMissing.size;
     progression["sweet-revenge"].missing = revengeMissing;
 
-    // Reunion progression: the longest open gap — the time since the player's
-    // last game against each opponent who is still an active player. Playing
-    // that opponent earns the award once the gap passes a year. The open gaps
-    // also compete for the best value, since any of them may already be the
-    // player's longest.
+    // Reunion progression: the open gaps — the time since the player's last
+    // game against each opponent who is still an active player. Playing an
+    // opponent earns the award once that gap passes a year. The longest gap
+    // is the bar; the per-opponent map feeds the top-5 list in the UI. Open
+    // gaps also compete for the best value, since any of them may already be
+    // the player's longest.
+    const reunionGaps = new Map<string, number>();
     let longestOpenGap = 0;
-    let longestOpenGapOpponent: string | undefined = undefined;
-    let longestOpenGapLastGameAt: number | undefined = undefined;
     gamesPerOpponent.forEach((data, opponent) => {
       if (!activePlayerIds.has(opponent)) return;
       const openGap = now - data.lastGame;
-      if (openGap > longestOpenGap) {
-        longestOpenGap = openGap;
-        longestOpenGapOpponent = opponent;
-        longestOpenGapLastGameAt = data.lastGame;
-      }
+      reunionGaps.set(opponent, openGap);
+      longestOpenGap = Math.max(longestOpenGap, openGap);
       if (openGap > bestReunionGap) {
         bestReunionGap = openGap;
         bestReunionGapOpponent = opponent;
       }
     });
     progression["reunion"].current = longestOpenGap;
-    progression["reunion"].gapOpponent = longestOpenGapOpponent;
-    progression["reunion"].gapLastGameAt = longestOpenGapLastGameAt;
+    progression["reunion"].perOpponent = reunionGaps;
     if (bestReunionGap > 0) {
       progression["reunion"].best = bestReunionGap;
       progression["reunion"].bestOpponent = bestReunionGapOpponent;
@@ -3847,10 +3843,10 @@ type WelcomeCommitteeProgression = ProgressionWithTarget & {
 // year, playing that opponent earns the award. Current and target are
 // milliseconds.
 type ReunionProgression = ProgressionWithTarget & {
-  // Who the longest open gap (the `current` value) is with, and when that
-  // pair's last game was — the opponent to play for the next reunion.
-  gapOpponent?: string;
-  gapLastGameAt?: number;
+  // Open gap per opponent still in the league: the time since the player's
+  // last game against each of them. The UI lists the longest ones — the
+  // opponents to play for the next reunion.
+  perOpponent?: Map<string, number>;
   // Who the best-ever gap was with, shown next to the best value.
   bestOpponent?: string;
 };

@@ -499,9 +499,15 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
                   </p>
                 )}
 
-                {achievement.data && "lastGameAt" in achievement.data && (
+                {achievement.data && "lastGameAt" in achievement.data && achievement.type !== "reunion" && (
                   <p className="text-xs text-secondary-text/70 mt-2">
                     From {dateString(achievement.data.lastGameAt)} to {dateString(achievement.earnedAt)}
+                  </p>
+                )}
+
+                {achievement.type === "reunion" && achievement.data && (
+                  <p className="text-xs text-secondary-text/70 mt-2">
+                    Reunited after {daysBetween(achievement.data.lastGameAt, achievement.earnedAt)} days
                   </p>
                 )}
 
@@ -1012,19 +1018,24 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                         </div>
                       </div>
 
-                      {/* Show who the longest open gap is with for Reunion —
-                          the opponent to play for the next award. */}
-                      {type === "reunion" && "gapOpponent" in data && data.gapOpponent && (
+                      {/* The 5 longest open gaps for Reunion — the opponents
+                          to play for the next award. Inline on one wrapping
+                          line to stay compact. */}
+                      {type === "reunion" && "perOpponent" in data && data.perOpponent && data.perOpponent.size > 0 && (
                         <div className="mt-2 text-xs text-secondary-text/70">
-                          Longest gap: vs{" "}
-                          <Link to={{ pathname: "/player/" + data.gapOpponent, search }}>
-                            <span className="text-secondary-text underline">
-                              {context.playerName(data.gapOpponent)}
-                            </span>
-                          </Link>
-                          {data.gapLastGameAt !== undefined && (
-                            <>, last played {dateString(data.gapLastGameAt)}</>
-                          )}
+                          Longest gaps:{" "}
+                          {Array.from(data.perOpponent.entries() as IterableIterator<[string, number]>)
+                            .sort((a, b) => b[1] - a[1])
+                            .slice(0, 5)
+                            .map(([opponent, gap], index) => (
+                              <span key={opponent}>
+                                {index > 0 && ", "}
+                                <Link to={{ pathname: "/player/" + opponent, search }}>
+                                  <span className="text-secondary-text">{context.playerName(opponent)}</span>
+                                </Link>{" "}
+                                ({Math.floor(gap / (24 * 60 * 60 * 1000))} days)
+                              </span>
+                            ))}
                         </div>
                       )}
 

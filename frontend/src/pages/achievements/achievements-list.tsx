@@ -113,9 +113,15 @@ export const AchievementsList: React.FC<AchievementsListProps> = ({ achievements
                       League game #{fmtNum(achievement.data.milestone)}
                     </span>
                   )}
-                  {achievement.data && "lastGameAt" in achievement.data && (
+                  {achievement.data && "lastGameAt" in achievement.data && achievement.type !== "reunion" && (
                     <span className="text-[11px] opacity-80">
                       {dateString(achievement.data.lastGameAt)} – {dateString(achievement.earnedAt)}
+                    </span>
+                  )}
+                  {achievement.type === "reunion" && achievement.data && (
+                    <span className="text-[11px] opacity-80">
+                      Reunited after{" "}
+                      {Math.round((achievement.earnedAt - achievement.data.lastGameAt) / (24 * 60 * 60 * 1000))} days
                     </span>
                   )}
                   {achievement.data &&

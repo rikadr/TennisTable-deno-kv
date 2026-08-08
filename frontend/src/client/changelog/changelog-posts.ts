@@ -56,7 +56,7 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
         "You can earn the achievement many times. A new gap of 1 year or more with the same opponent earns it again. Each other opponent has an independent gap.",
       ),
       text(
-        "The Progress tab on the player page shows your longest open gap against an active player, and names that opponent. Play that opponent to earn the achievement when the gap is 1 year or more.",
+        "The Progress tab on the player page lists your 5 longest open gaps against active players, with the number of days for each. Play one of those opponents to earn the achievement when the gap is 1 year or more.",
       ),
     ],
   },
