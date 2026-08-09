@@ -135,4 +135,19 @@ describe("Deuce Demon Achievement", () => {
     const bobProgress = tt.achievements.getPlayerProgression("bob");
     expect(bobProgress["deuce-demon"].current).toBe(2);
   });
+
+  it("caps progression at the target so the career total is not exposed", () => {
+    // 8 deuce games → Alice has 16 deuce sets, well past the target of 10.
+    const events: EventType[] = [...baseEvents];
+    for (let i = 0; i < 8; i++) {
+      events.push(...deuceGame(`g${i}`, 100 + i * 10, "alice", "bob"));
+    }
+
+    const tt = new TennisTable({ events });
+    tt.achievements.calculateAchievements();
+
+    const progression = tt.achievements.getPlayerProgression("alice");
+    expect(progression["deuce-demon"].current).toBe(10);
+    expect(progression["deuce-demon"].earned).toBe(1);
+  });
 });

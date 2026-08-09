@@ -3249,7 +3249,9 @@ export class Achievements {
     progression["edge-lord"].current = edgeLordCount;
     progression["consistency-is-key"].current = consistencyCount;
     progression["marathon-set"].current = bestDeuceSetWon;
-    progression["deuce-demon"].current = deuceSetsWonCount;
+    // Deuce Demon progress caps at the target: the count never resets, so
+    // going beyond would leak the player's career deuce-set total.
+    progression["deuce-demon"].current = Math.min(deuceSetsWonCount, DEUCE_DEMON_TARGET);
     progression["variety-player"].current = opponentsPlayed.size;
     progression["variety-player"].opponents = opponentsPlayed;
     progression["global-player"].current = opponentsPlayed.size;
