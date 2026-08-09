@@ -283,6 +283,14 @@ export const AchievementsList: React.FC<AchievementsListProps> = ({ achievements
                           : " (first league record!)"}
                       </span>
                     )}
+                  {achievement.type === "jing-jang" && achievement.data && (
+                    <span className="text-[11px] opacity-80">
+                      {achievement.data.streakLength} alternating results in a row
+                      {achievement.data.previousRecord !== undefined
+                        ? ` (prev record ${achievement.data.previousRecord})`
+                        : " (first league record!)"}
+                    </span>
+                  )}
                   {achievement.type === "perfect-day" && achievement.data && (
                     <span className="text-[11px] opacity-80">
                       {achievement.data.wins} wins, 0 losses

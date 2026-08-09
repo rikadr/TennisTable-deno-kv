@@ -7,6 +7,7 @@ import {
   AchievementProgression,
   GAMES_IN_PERIOD_RECORD_FLOOR,
   isReachievableAchievement,
+  JING_JANG_RECORD_FLOOR,
   SHOOTOUT_RECORD_FLOOR,
   SHOOTOUT_SETS_COUNTED,
   STREAK_RECORD_FLOOR,
@@ -78,6 +79,11 @@ export const ACHIEVEMENT_LABELS: Record<string, { title: string; description: st
     title: "Longest Lose Streak",
     description: "Suffer the longest run of consecutive losses in league history",
     icon: "🕳️",
+  },
+  "jing-jang": {
+    title: "Jing Jang",
+    description: "Put together the longest run of alternating wins and losses in league history",
+    icon: "☯️",
   },
   "comeback-kid": {
     title: "Comeback Kid",
@@ -681,6 +687,15 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
                         : " (first league record!)"}
                     </p>
                   )}
+
+                {achievement.type === "jing-jang" && achievement.data && (
+                  <p className="text-xs text-secondary-text/70 mt-2">
+                    {achievement.data.streakLength} alternating results in a row
+                    {achievement.data.previousRecord !== undefined
+                      ? ` (previous record: ${achievement.data.previousRecord})`
+                      : " (first league record!)"}
+                  </p>
+                )}
 
                 {achievement.type === "back-from-the-dead" && achievement.data && (
                   <p className="text-xs text-secondary-text/70 mt-2">
@@ -1378,6 +1393,32 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                             </p>
                           </div>
                         )}
+
+                      {/* Record holder for Jing Jang. The bar tracks the live
+                          alternation run; the player's longest ever run is the
+                          shared "Best" value next to the progress numbers. */}
+                      {type === "jing-jang" && "recordHolder" in data && (
+                        <div className="mt-2 text-xs text-secondary-text/70 space-y-1">
+                          <p>
+                            {data.recordHolder ? (
+                              <>
+                                League record held by{" "}
+                                <Link to={{ pathname: "/player/" + data.recordHolder, search }}>
+                                  <span className="text-secondary-text underline">
+                                    {context.playerName(data.recordHolder)}
+                                  </span>
+                                </Link>
+                                . Alternate wins and losses for {data.target} games in a row to take it.
+                              </>
+                            ) : (
+                              <>
+                                No record set yet — alternate wins and losses for {JING_JANG_RECORD_FLOOR} games
+                                in a row to start the record.
+                              </>
+                            )}
+                          </p>
+                        </div>
+                      )}
                     </>
                   ) : type === "marathon-set" ? (
                     <div className="mt-2 text-xs text-secondary-text/70">
@@ -1401,6 +1442,11 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                     <div className="mt-2 text-xs text-secondary-text/70">
                       No league record yet — {type === "longest-win-streak" ? "win" : "lose"}{" "}
                       {STREAK_RECORD_FLOOR} in a row to set the first record.
+                    </div>
+                  ) : type === "jing-jang" ? (
+                    <div className="mt-2 text-xs text-secondary-text/70">
+                      No league record yet — alternate wins and losses for {JING_JANG_RECORD_FLOOR} games in a
+                      row to set the first record.
                     </div>
                   ) : type in HERO_RECORD_PERIODS ? (
                     <div className="mt-2 text-xs text-secondary-text/70">
