@@ -50,7 +50,7 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
       "So Close 😫 and Full Coverage 🗺️ are new season achievements. The app awards both when a season ends.",
     body: [
       list(
-        "So Close 😫 - finish a season with a score within 5% of the winner's score. Every player within 5% earns it, at any rank.",
+        "So Close 😫 - finish a season with a score within 10% of the winner's score. Every player within 10% earns it, at any rank.",
         "Full Coverage 🗺️ - play every other player who played in the season. The season must have 5 or more players.",
       ),
       text(

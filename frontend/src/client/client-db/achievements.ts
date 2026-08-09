@@ -79,7 +79,7 @@ export const PARTY_POOPER_MIN_WINS = 5;
 // Close", as a fraction of the winner's score. Every non-winner within the
 // band qualifies, whatever rank the tiebreakers left them at — the score is
 // what they nearly matched, not the position.
-export const SO_CLOSE_MAX_DEFICIT_FRACTION = 0.05;
+export const SO_CLOSE_MAX_DEFICIT_FRACTION = 0.1;
 
 // Fewest players a season must have for "Full Coverage" — playing everyone
 // in a tiny season is not a feat. Matches the ≥5 cohort gate the rank and

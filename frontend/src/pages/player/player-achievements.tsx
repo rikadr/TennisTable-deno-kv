@@ -162,7 +162,7 @@ export const ACHIEVEMENT_LABELS: Record<string, { title: string; description: st
   },
   "so-close": {
     title: "So Close",
-    description: "Finish a season within 5% of the winner's score",
+    description: "Finish a season within 10% of the winner's score",
     icon: "😫",
   },
   "full-coverage": {

@@ -4,7 +4,7 @@ import { determineSeason } from "../../seasons/seasons";
 
 // So Close is awarded when a season ends, to every player other than the
 // winner whose final season score is within SO_CLOSE_MAX_DEFICIT_FRACTION
-// (5%) of the winner's score — whatever rank the tiebreakers left them at.
+// (10%) of the winner's score — whatever rank the tiebreakers left them at.
 describe("So Close Achievement", () => {
   const baseEvents: EventType[] = [
     { type: EventTypeEnum.PLAYER_CREATED, stream: "alice", time: 1, data: { name: "Alice" } },
@@ -47,16 +47,16 @@ describe("So Close Achievement", () => {
   const soCloseOf = (tt: TennisTable, playerId: string) =>
     tt.achievements.getAchievements(playerId).filter((a) => a.type === "so-close");
 
-  it("awards every non-winner within 5% of the winner's score — and nobody else", () => {
+  it("awards every non-winner within 10% of the winner's score — and nobody else", () => {
     // A win with all sets and all balls scores a 100 performance. Alice's
     // 11-0 win makes her season score exactly 100.
-    // Bob's 11-1 win scores 25 + 25 + (11/12) * 50 ≈ 95.83 — within 5%.
-    // Dave's 11-2 win scores 25 + 25 + (11/13) * 50 ≈ 92.31 — outside 5%.
+    // Bob's 11-1 win scores 25 + 25 + (11/12) * 50 ≈ 95.83 — within 10%.
+    // Dave's 11-4 win scores 25 + 25 + (11/15) * 50 ≈ 86.67 — outside 10%.
     const events: EventType[] = [
       ...baseEvents,
       ...scoredGame("g1", t(10), "alice", "bob", [{ gameWinner: 11, gameLoser: 0 }]),
       ...scoredGame("g2", t(11), "bob", "carol", [{ gameWinner: 11, gameLoser: 1 }]),
-      ...scoredGame("g3", t(12), "dave", "erin", [{ gameWinner: 11, gameLoser: 2 }]),
+      ...scoredGame("g3", t(12), "dave", "erin", [{ gameWinner: 11, gameLoser: 4 }]),
     ];
 
     const tt = new TennisTable({ events });
@@ -127,7 +127,7 @@ describe("So Close Achievement", () => {
   });
 
   it("is earned once per qualifying season", () => {
-    // Bob finishes within 5% in Q1 AND Q2 2024.
+    // Bob finishes within 10% in Q1 AND Q2 2024.
     const q2Time = (day: number) => new Date(2024, 3, day, 12).getTime();
     const events: EventType[] = [
       ...baseEvents,
@@ -149,7 +149,7 @@ describe("So Close Achievement", () => {
 
   // A game with no recorded score still counts: the winner performs 25 (win
   // only), the loser 0. So a single unscored win makes the winner's 25 the
-  // winning score, and only score ties can be within 5% of it.
+  // winning score, and only score ties can be within 10% of it.
   it("works for seasons of unscored games", () => {
     const events: EventType[] = [
       ...baseEvents,
@@ -161,7 +161,7 @@ describe("So Close Achievement", () => {
     tt.achievements.calculateAchievements();
 
     // Alice and Bob both scored 25; Alice wins on fewer pairings. Bob's tied
-    // score is within 5%.
+    // score is within 10%.
     expect(soCloseOf(tt, "alice")).toHaveLength(0);
     expect(soCloseOf(tt, "bob")).toHaveLength(1);
     expect(soCloseOf(tt, "carol")).toHaveLength(0);
