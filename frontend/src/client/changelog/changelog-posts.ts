@@ -52,7 +52,7 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
       list(
         "Everybody's Opponent 🧩 - play every currently ranked player at least once. Wins and losses both count.",
         "Deuce Demon 🔱 - win 10 deuce sets in total. A deuce set is won 12-10 or higher.",
-        "Giant Hunting 🏹 - beat 3 higher-ranked players in 1 day. You can earn it again on a later day.",
+        "Giant Hunting 🏹 - win 3 games against higher-ranked players in 1 day. Wins against the same player count. You can earn it again on a later day.",
         "Party Pooper 💩 - give a player their first loss on a day they had won 5 or more games. This removes their Perfect Day.",
         "Jing Jang ☯️ - a league record. Play the longest run of games where each result is different from the one before: win, loss, win, loss.",
       ),

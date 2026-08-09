@@ -342,7 +342,7 @@ export const ACHIEVEMENT_LABELS: Record<string, { title: string; description: st
   },
   "giant-hunting": {
     title: "Giant Hunting",
-    description: "Beat 3 higher-ranked players in a single day",
+    description: "Win 3 games against higher-ranked players in a single day (the same player can count more than once)",
     icon: "🏹",
   },
   "party-pooper": {

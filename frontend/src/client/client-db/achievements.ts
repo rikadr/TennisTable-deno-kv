@@ -60,8 +60,10 @@ export const DEUCE_DEMON_TARGET = 10;
 // record exists the floor is irrelevant — only beating the record counts.
 export const JING_JANG_RECORD_FLOOR = 5;
 
-// Higher-ranked opponents a player must beat within one local calendar day
-// for "Giant Hunting". A win counts when the opponent's pre-match rank was
+// Wins over higher-ranked opponents a player needs within one local calendar
+// day for "Giant Hunting". Counted per game, not per distinct opponent — the
+// same giant beaten again counts again while still ranked above the player.
+// A win counts when the opponent's pre-match rank was
 // better (lower) than the player's own pre-match rank, both were ranked, and
 // the ranked cohort had ≥5 players — the gate the other rank achievements use.
 export const GIANT_HUNTING_TARGET = 3;
@@ -1340,8 +1342,9 @@ export class Achievements {
     const climber = new Set<string>();
 
     // Giant Hunting: per-player chase state for the local calendar day being
-    // played — how many higher-ranked opponents they have beaten in it, and
-    // who they were. Reset when a qualifying win lands on a new day.
+    // played — how many wins over higher-ranked opponents it holds so far,
+    // and one entry per win (the same opponent can appear more than once).
+    // Reset when a qualifying win lands on a new day.
     const giantDayState = new Map<
       string,
       { day: number; count: number; giants: { opponent: string; opponentRank: number; playerRank: number }[] }
@@ -1563,8 +1566,10 @@ export class Achievements {
 
       // Giant Hunting: the winner beat an opponent whose pre-match rank was
       // better (lower) than their own. Such wins are counted per local
-      // calendar day; the GIANT_HUNTING_TARGET-th in one day earns the
-      // achievement, once per day (a 4th giant that day does not re-award).
+      // calendar day — per game, not per distinct opponent, so re-beating the
+      // same giant counts while they still outrank the player. The
+      // GIANT_HUNTING_TARGET-th win in one day earns the achievement, once
+      // per day (a 4th giant win that day does not re-award).
       // Both players must be ranked pre-match, with the same ≥5 cohort gate
       // as the other rank achievements.
       if (
@@ -3971,9 +3976,10 @@ type AchievementDefinitions = {
   // Career deuce sets won (winner ≥ 12, loser ≥ 10) reached
   // DEUCE_DEMON_TARGET. A pure counter crossing — no game to point at.
   "deuce-demon": undefined;
-  // Beat GIANT_HUNTING_TARGET higher-ranked opponents within one local
-  // calendar day. `day` is that day's local midnight; `giants` the wins that
-  // filled the day's tally, each with the pre-match ranks of both players.
+  // Won GIANT_HUNTING_TARGET games against higher-ranked opponents within
+  // one local calendar day. `day` is that day's local midnight; `giants` the
+  // wins that filled the day's tally, each with the pre-match ranks of both
+  // players — the same opponent can appear more than once.
   "giant-hunting": {
     day: number;
     giants: { opponent: string; opponentRank: number; playerRank: number }[];

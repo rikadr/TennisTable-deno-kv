@@ -1,10 +1,11 @@
 import { EventType, EventTypeEnum } from "../../event-store/event-types";
 import { TennisTable } from "../../tennis-table";
 
-// Giant Hunting: beat 3 higher-ranked opponents within one local calendar
-// day. A win counts when the opponent's pre-match rank was better (lower)
-// than the player's own, both were ranked, and the ranked cohort had ≥5
-// players. Once per day; a new day is a new chase.
+// Giant Hunting: win 3 games against higher-ranked opponents within one
+// local calendar day — counted per game, not per distinct opponent. A win
+// counts when the opponent's pre-match rank was better (lower) than the
+// player's own, both were ranked, and the ranked cohort had ≥5 players.
+// Once per day; a new day is a new chase.
 // Default GuestClient has gameLimitForRanked = 5.
 
 describe("Giant Hunting Achievement", () => {
@@ -67,6 +68,27 @@ describe("Giant Hunting Achievement", () => {
     expect(awards[0].data.giants).toHaveLength(3);
     expect(awards[0].data.giants.map((g) => g.opponent)).toEqual(["a", "b", "c"]);
     // Every slain giant outranked the hunter going into the match.
+    for (const giant of awards[0].data.giants) {
+      expect(giant.opponentRank).toBeLessThan(giant.playerRank);
+    }
+  });
+
+  it("counts wins, not distinct opponents — 3 wins over the same giant award it", () => {
+    const events: EventType[] = [
+      ...fivePlayerSetup(),
+      // Jan 15: bottom-ranked E beats top-ranked A three times. A must still
+      // outrank E before each game for every win to count.
+      gameAt("h1", new Date(2024, 0, 15, 10).getTime(), "e", "a"),
+      gameAt("h2", new Date(2024, 0, 15, 11).getTime(), "e", "a"),
+      gameAt("h3", new Date(2024, 0, 15, 12).getTime(), "e", "a"),
+    ];
+
+    const tt = new TennisTable({ events });
+    tt.achievements.calculateAchievements();
+
+    const awards = tt.achievements.getAchievements("e").filter((x) => x.type === "giant-hunting");
+    expect(awards).toHaveLength(1);
+    expect(awards[0].data.giants.map((g) => g.opponent)).toEqual(["a", "a", "a"]);
     for (const giant of awards[0].data.giants) {
       expect(giant.opponentRank).toBeLessThan(giant.playerRank);
     }
