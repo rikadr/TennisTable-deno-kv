@@ -98,14 +98,30 @@ export const AchievementsList: React.FC<AchievementsListProps> = ({ achievements
                       {dateString(achievement.data.startedAt)} – {dateString(achievement.earnedAt)}
                     </span>
                   )}
-                  {achievement.data && "seasonStart" in achievement.data && achievement.type !== "season-opener" && (
-                    <span className="text-[11px] opacity-80">
-                      Season: {dateString(achievement.data.seasonStart)} – {dateString(achievement.earnedAt)}
-                    </span>
-                  )}
+                  {achievement.data &&
+                    "seasonStart" in achievement.data &&
+                    achievement.type !== "season-opener" &&
+                    achievement.type !== "so-close" && (
+                      <span className="text-[11px] opacity-80">
+                        Season: {dateString(achievement.data.seasonStart)} – {dateString(achievement.earnedAt)}
+                      </span>
+                    )}
                   {achievement.type === "season-opener" && achievement.data && (
                     <span className="text-[11px] opacity-80">
                       Season starting {dateString(achievement.data.seasonStart)}
+                    </span>
+                  )}
+                  {achievement.type === "so-close" && achievement.data && (
+                    <span className="text-[11px] opacity-80">
+                      Season {context.seasons.getSeasons().findIndex((s) => s.start === achievement.data.seasonStart) + 1}
+                      {" — "}
+                      {fmtNum((achievement.data.playerScore / achievement.data.winnerScore) * 100, { digits: 1 })}% of{" "}
+                      {context.playerName(achievement.data.winner)}'s winning score
+                    </span>
+                  )}
+                  {achievement.type === "full-coverage" && achievement.data && (
+                    <span className="text-[11px] opacity-80">
+                      Played all {fmtNum(achievement.data.opponentCount)} other players
                     </span>
                   )}
                   {achievement.type === "milestone-game" && achievement.data && (

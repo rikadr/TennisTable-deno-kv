@@ -42,6 +42,23 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
+    slug: "2-new-season-achievements",
+    title: "2 new achievements: So Close and Full Coverage",
+    date: "2026-08-09",
+    tags: ["feature-update"],
+    summary:
+      "So Close 😫 and Full Coverage 🗺️ are new season achievements. The app awards both when a season ends.",
+    body: [
+      list(
+        "So Close 😫 - finish a season with a score within 10% of the winner's score. Every player within 10% earns it, at any rank.",
+        "Full Coverage 🗺️ - play every other player who played in the season. The season must have 5 or more players.",
+      ),
+      text(
+        "The Progress tab on the player page shows the Full Coverage players you have not played in the current season.",
+      ),
+    ],
+  },
+  {
     slug: "5-new-achievements",
     title: "5 new achievements",
     date: "2026-08-09",

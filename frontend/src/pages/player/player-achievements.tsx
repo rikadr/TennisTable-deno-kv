@@ -160,6 +160,16 @@ export const ACHIEVEMENT_LABELS: Record<string, { title: string; description: st
     description: "Play in the first game of a new season",
     icon: "🌱",
   },
+  "so-close": {
+    title: "So Close",
+    description: "Finish a season within 10% of the winner's score",
+    icon: "😫",
+  },
+  "full-coverage": {
+    title: "Full Coverage",
+    description: "Play every player who took part in a season of 5 or more players",
+    icon: "🗺️",
+  },
   "milestone-game": {
     title: "Milestone Game",
     description: "Play in a league milestone game — every 500th game played",
@@ -543,15 +553,34 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
                   </p>
                 )}
 
-                {achievement.data && "seasonStart" in achievement.data && achievement.type !== "season-opener" && (
-                  <p className="text-xs text-secondary-text/70 mt-2">
-                    Season from {dateString(achievement.data.seasonStart)} to {dateString(achievement.earnedAt)}
-                  </p>
-                )}
+                {achievement.data &&
+                  "seasonStart" in achievement.data &&
+                  achievement.type !== "season-opener" &&
+                  achievement.type !== "so-close" && (
+                    <p className="text-xs text-secondary-text/70 mt-2">
+                      Season from {dateString(achievement.data.seasonStart)} to {dateString(achievement.earnedAt)}
+                    </p>
+                  )}
 
                 {achievement.type === "season-opener" && achievement.data && (
                   <p className="text-xs text-secondary-text/70 mt-2">
                     Opened the season starting {dateString(achievement.data.seasonStart)}
+                  </p>
+                )}
+
+                {achievement.type === "so-close" && achievement.data && (
+                  <p className="text-xs text-secondary-text/70 mt-2">
+                    Season {context.seasons.getSeasons().findIndex((s) => s.start === achievement.data.seasonStart) + 1}:
+                    scored {fmtNum(achievement.data.playerScore, { digits: 1 })} points —{" "}
+                    {fmtNum((achievement.data.playerScore / achievement.data.winnerScore) * 100, { digits: 1 })}% of{" "}
+                    {context.playerName(achievement.data.winner)}'s winning{" "}
+                    {fmtNum(achievement.data.winnerScore, { digits: 1 })}
+                  </p>
+                )}
+
+                {achievement.type === "full-coverage" && achievement.data && (
+                  <p className="text-xs text-secondary-text/70 mt-2">
+                    Played all {fmtNum(achievement.data.opponentCount)} other players of the season
                   </p>
                 )}
 
@@ -1225,10 +1254,11 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                           </div>
                         )}
 
-                      {/* Missing players for full-house / humbled / sweet-revenge */}
+                      {/* Missing players for full-house / humbled / sweet-revenge / full-coverage */}
                       {(type === "full-house" ||
                         type === "humbled" ||
                         type === "everybodys-opponent" ||
+                        type === "full-coverage" ||
                         type === "sweet-revenge") &&
                         "missing" in data &&
                         data.missing &&
@@ -1241,7 +1271,9 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                                   ? "Still need to lose to:"
                                   : type === "everybodys-opponent"
                                     ? "Still need to play:"
-                                    : "They beat you in a tournament — beat them in a tournament match to avenge it:"}
+                                    : type === "full-coverage"
+                                      ? "Still need to play this season:"
+                                      : "They beat you in a tournament — beat them in a tournament match to avenge it:"}
                             </p>
                             <div className="flex flex-wrap gap-1">
                               {Array.from(data.missing).map((player: string) => (
