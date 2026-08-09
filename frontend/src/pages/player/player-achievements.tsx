@@ -7,6 +7,7 @@ import {
   AchievementProgression,
   GAMES_IN_PERIOD_RECORD_FLOOR,
   isReachievableAchievement,
+  JING_JANG_RECORD_FLOOR,
   SHOOTOUT_RECORD_FLOOR,
   SHOOTOUT_SETS_COUNTED,
   STREAK_RECORD_FLOOR,
@@ -78,6 +79,11 @@ export const ACHIEVEMENT_LABELS: Record<string, { title: string; description: st
     title: "Longest Lose Streak",
     description: "Suffer the longest run of consecutive losses in league history",
     icon: "🕳️",
+  },
+  "jing-jang": {
+    title: "Jing Jang",
+    description: "Put together the longest run of alternating wins and losses in league history",
+    icon: "☯️",
   },
   "comeback-kid": {
     title: "Comeback Kid",
@@ -323,6 +329,26 @@ export const ACHIEVEMENT_LABELS: Record<string, { title: string; description: st
     title: "Humbled",
     description: "Lose to every currently ranked player at least once",
     icon: "🙇",
+  },
+  "everybodys-opponent": {
+    title: "Everybody's Opponent",
+    description: "Play every currently ranked player at least once — wins and losses both count",
+    icon: "🧩",
+  },
+  "deuce-demon": {
+    title: "Deuce Demon",
+    description: "Win 10 deuce sets (a set won 12–10 or higher)",
+    icon: "🔱",
+  },
+  "giant-hunting": {
+    title: "Giant Hunting",
+    description: "Beat 3 higher-ranked players in a single day",
+    icon: "🏹",
+  },
+  "party-pooper": {
+    title: "Party Pooper",
+    description: "Hand a player their first loss of a day they had already won 5 or more games — spoiling their Perfect Day",
+    icon: "💩",
   },
   "earliest-game": {
     title: "Earliest Game",
@@ -662,6 +688,15 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
                     </p>
                   )}
 
+                {achievement.type === "jing-jang" && achievement.data && (
+                  <p className="text-xs text-secondary-text/70 mt-2">
+                    {achievement.data.streakLength} alternating results in a row
+                    {achievement.data.previousRecord !== undefined
+                      ? ` (previous record: ${achievement.data.previousRecord})`
+                      : " (first league record!)"}
+                  </p>
+                )}
+
                 {achievement.type === "back-from-the-dead" && achievement.data && (
                   <p className="text-xs text-secondary-text/70 mt-2">
                     Retired for {daysBetween(achievement.data.retiredAt, achievement.earnedAt)} day
@@ -696,11 +731,34 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
                   </p>
                 )}
 
-                {(achievement.type === "full-house" || achievement.type === "humbled") && achievement.data && (
+                {(achievement.type === "full-house" ||
+                  achievement.type === "humbled" ||
+                  achievement.type === "everybodys-opponent") &&
+                  achievement.data && (
+                    <p className="text-xs text-secondary-text/70 mt-2">
+                      {achievement.type === "full-house"
+                        ? "Beat "
+                        : achievement.type === "humbled"
+                          ? "Lost to "
+                          : "Played "}
+                      {achievement.data.count} ranked player{achievement.data.count !== 1 ? "s" : ""} in{" "}
+                      {daysBetween(achievement.data.firstGameAt, achievement.earnedAt)} days
+                    </p>
+                  )}
+
+                {achievement.type === "giant-hunting" && achievement.data && (
                   <p className="text-xs text-secondary-text/70 mt-2">
-                    {achievement.type === "full-house" ? "Beat " : "Lost to "}
-                    {achievement.data.count} ranked player{achievement.data.count !== 1 ? "s" : ""} in{" "}
-                    {daysBetween(achievement.data.firstGameAt, achievement.earnedAt)} days
+                    Beat{" "}
+                    {achievement.data.giants
+                      .map((giant) => `${context.playerName(giant.opponent)} (#${giant.opponentRank})`)
+                      .join(", ")}{" "}
+                    on {dateString(achievement.data.day)}
+                  </p>
+                )}
+
+                {achievement.type === "party-pooper" && achievement.data && (
+                  <p className="text-xs text-secondary-text/70 mt-2">
+                    They were undefeated with {achievement.data.opponentWins} wins that day
                   </p>
                 )}
 
@@ -1168,7 +1226,10 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                         )}
 
                       {/* Missing players for full-house / humbled / sweet-revenge */}
-                      {(type === "full-house" || type === "humbled" || type === "sweet-revenge") &&
+                      {(type === "full-house" ||
+                        type === "humbled" ||
+                        type === "everybodys-opponent" ||
+                        type === "sweet-revenge") &&
                         "missing" in data &&
                         data.missing &&
                         data.missing.size > 0 && (
@@ -1178,7 +1239,9 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                                 ? "Still need to beat:"
                                 : type === "humbled"
                                   ? "Still need to lose to:"
-                                  : "They beat you in a tournament — beat them in a tournament match to avenge it:"}
+                                  : type === "everybodys-opponent"
+                                    ? "Still need to play:"
+                                    : "They beat you in a tournament — beat them in a tournament match to avenge it:"}
                             </p>
                             <div className="flex flex-wrap gap-1">
                               {Array.from(data.missing).map((player: string) => (
@@ -1330,6 +1393,32 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                             </p>
                           </div>
                         )}
+
+                      {/* Record holder for Jing Jang. The bar tracks the live
+                          alternation run; the player's longest ever run is the
+                          shared "Best" value next to the progress numbers. */}
+                      {type === "jing-jang" && "recordHolder" in data && (
+                        <div className="mt-2 text-xs text-secondary-text/70 space-y-1">
+                          <p>
+                            {data.recordHolder ? (
+                              <>
+                                League record held by{" "}
+                                <Link to={{ pathname: "/player/" + data.recordHolder, search }}>
+                                  <span className="text-secondary-text underline">
+                                    {context.playerName(data.recordHolder)}
+                                  </span>
+                                </Link>
+                                . Alternate wins and losses for {data.target} games in a row to take it.
+                              </>
+                            ) : (
+                              <>
+                                No record set yet — alternate wins and losses for {JING_JANG_RECORD_FLOOR} games
+                                in a row to start the record.
+                              </>
+                            )}
+                          </p>
+                        </div>
+                      )}
                     </>
                   ) : type === "marathon-set" ? (
                     <div className="mt-2 text-xs text-secondary-text/70">
@@ -1353,6 +1442,11 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                     <div className="mt-2 text-xs text-secondary-text/70">
                       No league record yet — {type === "longest-win-streak" ? "win" : "lose"}{" "}
                       {STREAK_RECORD_FLOOR} in a row to set the first record.
+                    </div>
+                  ) : type === "jing-jang" ? (
+                    <div className="mt-2 text-xs text-secondary-text/70">
+                      No league record yet — alternate wins and losses for {JING_JANG_RECORD_FLOOR} games in a
+                      row to set the first record.
                     </div>
                   ) : type in HERO_RECORD_PERIODS ? (
                     <div className="mt-2 text-xs text-secondary-text/70">

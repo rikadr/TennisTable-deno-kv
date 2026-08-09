@@ -47,6 +47,32 @@ export function isMilestoneGameNumber(gameNumber: number): boolean {
   return gameNumber > 0 && gameNumber % MILESTONE_GAME_INTERVAL === 0;
 }
 
+// Career deuce sets a player must win for "Deuce Demon". A qualifying set is
+// won 12–10 or higher (winner ≥ 12, loser ≥ 10 — the same rule Marathon Set
+// uses to recognise a true-deuce set). The count only grows, so the
+// achievement is earned once.
+export const DEUCE_DEMON_TARGET = 10;
+
+// Shortest run of strictly alternating results — win, loss, win, loss (or
+// loss, win, loss, win) — that can establish the very first Jing Jang
+// record. Every game is trivially a run of 1 and any two mixed results a run
+// of 2, so the first record should take a genuinely long see-saw. Once a
+// record exists the floor is irrelevant — only beating the record counts.
+export const JING_JANG_RECORD_FLOOR = 5;
+
+// Higher-ranked opponents a player must beat within one local calendar day
+// for "Giant Hunting". A win counts when the opponent's pre-match rank was
+// better (lower) than the player's own pre-match rank, both were ranked, and
+// the ranked cohort had ≥5 players — the gate the other rank achievements use.
+export const GIANT_HUNTING_TARGET = 3;
+
+// Wins an opponent must have in a still-undefeated day for beating them to
+// count as "Party Pooper". It matches Perfect Day's win requirement on
+// purpose: at this count with zero losses the opponent's Perfect Day was
+// already secured pending the end of the day, so the loss provably
+// destroyed one.
+export const PARTY_POOPER_MIN_WINS = 5;
+
 export class Achievements {
   private parent: TennisTable;
   private hasCalculated = false;
@@ -151,6 +177,15 @@ export class Achievements {
     length: undefined,
     holder: undefined,
   };
+  // League-wide running record for the Jing Jang achievement: the longest
+  // run of strictly alternating results (win, loss, win, loss — or the
+  // mirror) any player has put together to date. Undefined until a run
+  // reaches JING_JANG_RECORD_FLOOR and establishes the first record. Used by
+  // the progression view so players can see the mark they need to beat.
+  jingJangRecord: { length: number | undefined; holder: string | undefined } = {
+    length: undefined,
+    holder: undefined,
+  };
   // League-wide running records for the Hero of the Day / Week / Month
   // achievements: the most games a single player has played in one local
   // calendar day / week (Monday-start) / month. Undefined until a period
@@ -168,6 +203,13 @@ export class Achievements {
     count: undefined,
     holder: undefined,
   };
+  // Giant Hunting bookkeeping from the Elo pass. lastGiantDay is each
+  // player's most recent local calendar day with a win over a higher-ranked
+  // opponent (the day's local midnight and how many such wins it holds so
+  // far); bestGiantDayCount is their best such day ever. Used for Giant
+  // Hunting progression — the chase resets at local midnight.
+  lastGiantDay: Map<string, { day: number; count: number }> = new Map();
+  bestGiantDayCount: Map<string, number> = new Map();
 
   constructor(parent: TennisTable) {
     this.parent = parent;
@@ -197,9 +239,12 @@ export class Achievements {
     this.latestGameRecord = { minutesIntoDay: undefined };
     this.winStreakRecord = { length: undefined, holder: undefined };
     this.loseStreakRecord = { length: undefined, holder: undefined };
+    this.jingJangRecord = { length: undefined, holder: undefined };
     this.gamesInDayRecord = { count: undefined, holder: undefined };
     this.gamesInWeekRecord = { count: undefined, holder: undefined };
     this.gamesInMonthRecord = { count: undefined, holder: undefined };
+    this.lastGiantDay.clear();
+    this.bestGiantDayCount.clear();
 
     const playerTracker = new Map<
       string,
@@ -218,6 +263,15 @@ export class Achievements {
         // once another player takes the record over.
         openWinStreakRecord: StreakRecordAchievement | undefined;
         openLoseStreakRecord: StreakRecordAchievement | undefined;
+        // Jing Jang chase state: the run of strictly alternating results the
+        // player is on right now, the result of their previous game (undefined
+        // before their first), and — like the streak records — the award the
+        // running alternation earned while the player still holds the record
+        // with it.
+        jingJangStreak: number;
+        jingJangStartedAt: number;
+        jingJangLastWasWin: boolean | undefined;
+        openJingJangRecord: StreakRecordAchievement | undefined;
         // Per-period state for the Hero of the Day / Week / Month records:
         // the local calendar period (its start timestamp) the player last
         // played in, how many games they have played in it so far, and the
@@ -231,6 +285,7 @@ export class Achievements {
         closeCallsCount: number;
         edgeLordCount: number;
         consistencyCount: number;
+        deuceSetsWon: number; // Career deuce sets won, for Deuce Demon
         opponentsPlayed: Set<string>;
         gamesPerOpponent: Map<string, { count: number; firstGame: number; lastGame: number }>;
         firstOpponentFor: Set<string>; // Track players this person was first opponent for
@@ -277,6 +332,10 @@ export class Achievements {
           winStreakPlayer: new Map(),
           openWinStreakRecord: undefined,
           openLoseStreakRecord: undefined,
+          jingJangStreak: 0,
+          jingJangStartedAt: game.playedAt,
+          jingJangLastWasWin: undefined,
+          openJingJangRecord: undefined,
           heroOfTheDay: { periodStart: 0, gamesInPeriod: 0, openRecord: undefined },
           heroOfTheWeek: { periodStart: 0, gamesInPeriod: 0, openRecord: undefined },
           heroOfTheMonth: { periodStart: 0, gamesInPeriod: 0, openRecord: undefined },
@@ -284,6 +343,7 @@ export class Achievements {
           closeCallsCount: 0,
           edgeLordCount: 0,
           consistencyCount: 0,
+          deuceSetsWon: 0,
           opponentsPlayed: new Set(),
           gamesPerOpponent: new Map(),
           firstOpponentFor: new Set(),
@@ -302,6 +362,10 @@ export class Achievements {
           winStreakPlayer: new Map(),
           openWinStreakRecord: undefined,
           openLoseStreakRecord: undefined,
+          jingJangStreak: 0,
+          jingJangStartedAt: game.playedAt,
+          jingJangLastWasWin: undefined,
+          openJingJangRecord: undefined,
           heroOfTheDay: { periodStart: 0, gamesInPeriod: 0, openRecord: undefined },
           heroOfTheWeek: { periodStart: 0, gamesInPeriod: 0, openRecord: undefined },
           heroOfTheMonth: { periodStart: 0, gamesInPeriod: 0, openRecord: undefined },
@@ -309,6 +373,7 @@ export class Achievements {
           closeCallsCount: 0,
           edgeLordCount: 0,
           consistencyCount: 0,
+          deuceSetsWon: 0,
           opponentsPlayed: new Set(),
           gamesPerOpponent: new Map(),
           firstOpponentFor: new Set(),
@@ -374,6 +439,13 @@ export class Achievements {
       // at once the win breaks the tie.
       this.#checkHeroAchievements(game.winner, winner, game.playedAt);
       this.#checkHeroAchievements(game.loser, loser, game.playedAt);
+
+      // Check for "Jing Jang": the league record for the longest run of
+      // strictly alternating results. Both players' runs move on every game;
+      // the winner is checked first, so when both reach the record length at
+      // once the win breaks the tie.
+      this.#updateJingJangStreak(game.winner, winner, true, game.playedAt);
+      this.#updateJingJangStreak(game.loser, loser, false, game.playedAt);
 
       // Check for Welcome Committee achievement
       // If this is the loser's first game ever, the winner is their first opponent
@@ -542,6 +614,7 @@ export class Achievements {
         winner.winStreakAllStartedAt,
         game.playedAt,
         winner.openWinStreakRecord,
+        STREAK_RECORD_FLOOR,
       );
 
       // Check if winner just broke a lose streak
@@ -613,6 +686,7 @@ export class Achievements {
         loser.loseStreakAllStartedAt,
         game.playedAt,
         loser.openLoseStreakRecord,
+        STREAK_RECORD_FLOOR,
       );
 
       // Check for lose streak achievements for loser
@@ -644,6 +718,10 @@ export class Achievements {
           game.playedAt,
         );
         this.#checkShootoutAchievement(game.winner, game.loser, game.id, game.score.setPoints, game.playedAt);
+
+        // Check for "Deuce Demon": career deuce sets won. Either player can
+        // win a qualifying set regardless of who wins the game.
+        this.#checkDeuceDemonAchievement(game, winner, loser);
       }
 
       // Check for donut achievements (individual sets where loser scored 0)
@@ -843,6 +921,15 @@ export class Achievements {
   // Both are earnable multiple times — once per qualifying day / week.
   // Games are already time-ordered, so the completing win's timestamp is
   // the natural earned-at moment.
+  //
+  // Party Pooper piggybacks on the same per-day stats: it goes to a winner
+  // whose opponent was undefeated that day with PARTY_POOPER_MIN_WINS or
+  // more wins — enough that the day would have ended as a Perfect Day, so
+  // this first loss of the day provably destroyed one. Awarded immediately
+  // (the destruction is final however the day continues) and earnable once
+  // per opponent per day, since the opponent cannot be undefeated again
+  // that day. The spoiled player keeps nothing — their day simply no longer
+  // qualifies as perfect.
   #checkPerfectDayAndWeekAchievements() {
     // Local midnight of the day containing `ms`.
     const dayStartOf = (ms: number): number => {
@@ -899,7 +986,22 @@ export class Achievements {
       const winnerDay = getDayStats(game.winner, day);
       winnerDay.wins++;
       winnerDay.lastWinAt = game.playedAt;
-      getDayStats(game.loser, day).losses++;
+
+      // Party Pooper: checked before the loss is recorded, so `loserDay`
+      // still shows the opponent's day as it stood going into this game.
+      const loserDay = getDayStats(game.loser, day);
+      if (loserDay.losses === 0 && loserDay.wins >= PARTY_POOPER_MIN_WINS) {
+        this.#addAchievement(
+          game.winner,
+          this.#createAchievement("party-pooper", game.winner, game.playedAt, {
+            gameId: game.id,
+            opponent: game.loser,
+            day,
+            opponentWins: loserDay.wins,
+          }),
+        );
+      }
+      loserDay.losses++;
 
       // Perfect Week counts wins on any day; what matters is completing a
       // run of 5 consecutive won days inside the week (start offset 0, 1 or
@@ -969,8 +1071,11 @@ export class Achievements {
     }
   }
 
-  // Awards "Full House" (beat every currently ranked player at least once)
-  // and "Humbled" (lose to every currently ranked player at least once). The
+  // Awards "Full House" (beat every currently ranked player at least once),
+  // "Humbled" (lose to every currently ranked player at least once) and
+  // "Everybody's Opponent" (play every currently ranked player at least
+  // once — wins and losses both count, so it always completes no later
+  // than the first of the other two). The
   // target cohort is the set of ranked players AT THE MOMENT being evaluated,
   // which shifts as players cross the ranked threshold or are deactivated /
   // reactivated (a deactivated player is not ranked). A win / loss counts
@@ -987,10 +1092,10 @@ export class Achievements {
   // Requires ≥5 ranked players in the cohort so completing the set is a real
   // feat, matching the gate used by the rank achievements. The earner
   // does NOT need to be ranked themselves — an unranked player who has beaten
-  // (or lost to) the whole ranked field still qualifies. Each is awarded
-  // once, stamped at the moment the set completes, recording how many players
-  // were beaten / lost to and the player's first game (so the display can
-  // show how long it took).
+  // (or lost to, or played) the whole ranked field still qualifies. Each is
+  // awarded once, stamped at the moment the set completes, recording how many
+  // players were beaten / lost to / played and the player's first game (so
+  // the display can show how long it took).
   #checkFullHouseAndHumbledAchievements() {
     const gameLimit = this.parent.client.gameLimitForRanked;
 
@@ -1029,8 +1134,10 @@ export class Achievements {
     const firstGameAt = new Map<string, number>();
     const beaten = new Map<string, Set<string>>();
     const lostTo = new Map<string, Set<string>>();
+    const played = new Map<string, Set<string>>();
     const fullHouseAwarded = new Set<string>();
     const humbledAwarded = new Set<string>();
+    const everybodysOpponentAwarded = new Set<string>();
 
     const addEdge = (map: Map<string, Set<string>>, key: string, value: string) => {
       let set = map.get(key);
@@ -1092,6 +1199,19 @@ export class Achievements {
             }),
           );
         }
+        if (
+          !everybodysOpponentAwarded.has(playerId) &&
+          coversCohort(played.get(playerId), cohort, playerId)
+        ) {
+          everybodysOpponentAwarded.add(playerId);
+          this.#addAchievement(
+            playerId,
+            this.#createAchievement("everybodys-opponent", playerId, time, {
+              count: targetCount,
+              firstGameAt: firstGameAt.get(playerId)!,
+            }),
+          );
+        }
       }
     };
 
@@ -1125,6 +1245,8 @@ export class Achievements {
         if (!firstGameAt.has(game.loser)) firstGameAt.set(game.loser, game.playedAt);
         addEdge(beaten, game.winner, game.loser);
         addEdge(lostTo, game.loser, game.winner);
+        addEdge(played, game.winner, game.loser);
+        addEdge(played, game.loser, game.winner);
       }
       recheckAt(action.time);
     }
@@ -1216,6 +1338,14 @@ export class Achievements {
     const onPodium = new Set<string>();
     const kingslayed = new Set<string>();
     const climber = new Set<string>();
+
+    // Giant Hunting: per-player chase state for the local calendar day being
+    // played — how many higher-ranked opponents they have beaten in it, and
+    // who they were. Reset when a qualifying win lands on a new day.
+    const giantDayState = new Map<
+      string,
+      { day: number; count: number; giants: { opponent: string; opponentRank: number; playerRank: number }[] }
+    >();
 
     // Per-player map of opponent → net Elo gained from that opponent.
     // When a player first reaches rank #1, the opponent who contributed
@@ -1429,6 +1559,45 @@ export class Achievements {
             gameId: game.id,
           }),
         );
+      }
+
+      // Giant Hunting: the winner beat an opponent whose pre-match rank was
+      // better (lower) than their own. Such wins are counted per local
+      // calendar day; the GIANT_HUNTING_TARGET-th in one day earns the
+      // achievement, once per day (a 4th giant that day does not re-award).
+      // Both players must be ranked pre-match, with the same ≥5 cohort gate
+      // as the other rank achievements.
+      if (
+        winnerRankBefore !== null &&
+        loserRankBefore !== null &&
+        loserRankBefore < winnerRankBefore &&
+        rankedCountBefore >= 5
+      ) {
+        const day = this.#dayStartOf(game.playedAt);
+        let giantState = giantDayState.get(game.winner);
+        if (!giantState || giantState.day !== day) {
+          giantState = { day, count: 0, giants: [] };
+          giantDayState.set(game.winner, giantState);
+        }
+        giantState.count++;
+        giantState.giants.push({
+          opponent: game.loser,
+          opponentRank: loserRankBefore,
+          playerRank: winnerRankBefore,
+        });
+        this.lastGiantDay.set(game.winner, { day, count: giantState.count });
+        if (giantState.count > (this.bestGiantDayCount.get(game.winner) ?? 0)) {
+          this.bestGiantDayCount.set(game.winner, giantState.count);
+        }
+        if (giantState.count === GIANT_HUNTING_TARGET) {
+          this.#addAchievement(
+            game.winner,
+            this.#createAchievement("giant-hunting", game.winner, game.playedAt, {
+              day,
+              giants: [...giantState.giants],
+            }),
+          );
+        }
       }
 
       // Apply Elo update.
@@ -1715,6 +1884,44 @@ export class Achievements {
     });
   }
 
+  // Awards "Deuce Demon" when a player's career total of won deuce sets
+  // (winner ≥ 12, loser ≥ 10 — the Marathon Set qualifying rule) reaches
+  // DEUCE_DEMON_TARGET. One game can contain several qualifying sets and can
+  // jump the total past the target, so the award triggers on the crossing,
+  // not on an exact count. Earnable once.
+  #checkDeuceDemonAchievement(
+    game: Game,
+    winnerTracker: { deuceSetsWon: number },
+    loserTracker: { deuceSetsWon: number },
+  ) {
+    if (!game.score?.setPoints) return;
+
+    let winnerDeuceSets = 0;
+    let loserDeuceSets = 0;
+    for (const set of game.score.setPoints) {
+      if (set.gameWinner === set.gameLoser) continue;
+      const setWinnerScore = Math.max(set.gameWinner, set.gameLoser);
+      const setLoserScore = Math.min(set.gameWinner, set.gameLoser);
+      if (setWinnerScore < 12 || setLoserScore < 10) continue;
+      if (set.gameWinner > set.gameLoser) winnerDeuceSets++;
+      else loserDeuceSets++;
+    }
+
+    const applyDeuceSets = (playerId: string, tracker: { deuceSetsWon: number }, setsWon: number) => {
+      if (setsWon === 0) return;
+      const before = tracker.deuceSetsWon;
+      tracker.deuceSetsWon += setsWon;
+      if (before < DEUCE_DEMON_TARGET && tracker.deuceSetsWon >= DEUCE_DEMON_TARGET) {
+        this.#addAchievement(
+          playerId,
+          this.#createAchievement("deuce-demon", playerId, game.playedAt, undefined),
+        );
+      }
+    };
+    applyDeuceSets(game.winner, winnerTracker, winnerDeuceSets);
+    applyDeuceSets(game.loser, loserTracker, loserDeuceSets);
+  }
+
   // The sets that count toward a game's Shootout score: its
   // SHOOTOUT_SETS_COUNTED highest-scoring ones (all of them when the game has
   // fewer, earlier sets winning ties), returned in the order they were
@@ -1965,12 +2172,13 @@ export class Achievements {
     }
   }
 
-  // Awards "Longest Win Streak" / "Longest Lose Streak" — the league-wide
-  // records for consecutive wins and consecutive losses. Called with the
-  // player's streak as it stands after the game just played.
+  // Awards "Longest Win Streak" / "Longest Lose Streak" / "Jing Jang" — the
+  // league-wide records for consecutive wins, consecutive losses and
+  // strictly alternating results. Called with the player's streak as it
+  // stands after the game just played.
   //
   // A streak takes the record the moment it passes the standing one (or
-  // reaches STREAK_RECORD_FLOOR, when nobody holds it yet). Extending that
+  // reaches `recordFloor`, when nobody holds it yet). Extending that
   // same streak while still holding the record does not award again — the
   // achievement already earned grows with the streak instead, so an
   // 11th straight win reads as one award worth 11 rather than two worth
@@ -1985,16 +2193,17 @@ export class Achievements {
   // Returns the award this streak now owns, to be stored on the player's
   // tracker and passed back in on their next game.
   #checkStreakRecordAchievement(
-    type: "longest-win-streak" | "longest-lose-streak",
+    type: "longest-win-streak" | "longest-lose-streak" | "jing-jang",
     record: { length: number | undefined; holder: string | undefined },
     playerId: string,
     streakLength: number,
     startedAt: number,
     playedAt: number,
     openRecord: StreakRecordAchievement | undefined,
+    recordFloor: number,
   ): StreakRecordAchievement | undefined {
     const beatsRecord =
-      record.length === undefined ? streakLength >= STREAK_RECORD_FLOOR : streakLength > record.length;
+      record.length === undefined ? streakLength >= recordFloor : streakLength > record.length;
     if (!beatsRecord) {
       return openRecord;
     }
@@ -2012,11 +2221,54 @@ export class Achievements {
     const achievement: StreakRecordAchievement =
       type === "longest-win-streak"
         ? this.#createAchievement("longest-win-streak", playerId, playedAt, data)
-        : this.#createAchievement("longest-lose-streak", playerId, playedAt, data);
+        : type === "longest-lose-streak"
+          ? this.#createAchievement("longest-lose-streak", playerId, playedAt, data)
+          : this.#createAchievement("jing-jang", playerId, playedAt, data);
     this.#addAchievement(playerId, achievement);
     record.length = streakLength;
     record.holder = playerId;
     return achievement;
+  }
+
+  // Jing Jang: the league record for the longest run of strictly alternating
+  // results — win, loss, win, loss (or the mirror). Every game moves the run
+  // of both its players: a result different from the player's previous one
+  // extends their run, a repeated result starts a fresh run at this game (a
+  // run of 1 — the game itself), and a player's first ever game also starts
+  // at 1. The record machinery is shared with the streak records: the first
+  // run to reach JING_JANG_RECORD_FLOOR establishes the record, after that
+  // only a longer run takes it, and the holder's award grows while their
+  // alternation continues instead of handing out one per game.
+  #updateJingJangStreak(
+    playerId: string,
+    tracker: {
+      jingJangStreak: number;
+      jingJangStartedAt: number;
+      jingJangLastWasWin: boolean | undefined;
+      openJingJangRecord: StreakRecordAchievement | undefined;
+    },
+    won: boolean,
+    playedAt: number,
+  ) {
+    if (tracker.jingJangLastWasWin === undefined || tracker.jingJangLastWasWin === won) {
+      tracker.jingJangStreak = 1;
+      tracker.jingJangStartedAt = playedAt;
+      tracker.openJingJangRecord = undefined;
+    } else {
+      tracker.jingJangStreak++;
+    }
+    tracker.jingJangLastWasWin = won;
+
+    tracker.openJingJangRecord = this.#checkStreakRecordAchievement(
+      "jing-jang",
+      this.jingJangRecord,
+      playerId,
+      tracker.jingJangStreak,
+      tracker.jingJangStartedAt,
+      playedAt,
+      tracker.openJingJangRecord,
+      JING_JANG_RECORD_FLOOR,
+    );
   }
 
   // Local midnight of the day containing `ms`.
@@ -2581,6 +2833,7 @@ export class Achievements {
       "perfect-day": { current: 0, target: 5, earned: 0 },
       "perfect-week": { current: 0, target: 5, earned: 0 },
       "streak-ender": { earned: 0 },
+      "party-pooper": { earned: 0 },
       // Record-chasing achievements are earned by strictly exceeding the
       // league record, so their target is one beyond it — reaching the
       // target is what earns the award, same as every other progress bar.
@@ -2604,12 +2857,22 @@ export class Achievements {
         target: this.loseStreakRecord.length === undefined ? undefined : this.loseStreakRecord.length + 1,
         recordHolder: this.loseStreakRecord.holder,
       },
+      "jing-jang": {
+        earned: 0,
+        current: 0,
+        best: 0,
+        target: this.jingJangRecord.length === undefined ? undefined : this.jingJangRecord.length + 1,
+        recordHolder: this.jingJangRecord.holder,
+      },
 
       // Rank & Score
       "on-the-podium": { earned: 0 },
       "touched-the-throne": { earned: 0 },
       "kingslayer": { earned: 0 },
       "king-maker": { earned: 0 },
+      // Giant Hunting resets at local midnight: current is today's wins over
+      // higher-ranked opponents, best the most in any single day.
+      "giant-hunting": { current: 0, target: GIANT_HUNTING_TARGET, best: 0, earned: 0 },
       "leap-frog": {
         earned: 0,
         current: 0,
@@ -2633,6 +2896,7 @@ export class Achievements {
       "climber": { current: 0, target: 300, earned: 0 },
       "full-house": { current: 0, target: 1, missing: new Set(), earned: 0 },
       "humbled": { current: 0, target: 1, missing: new Set(), earned: 0 },
+      "everybodys-opponent": { current: 0, target: 1, missing: new Set(), earned: 0 },
 
       // Game feats
       "donut-1": { current: 0, target: 1, earned: 0 },
@@ -2642,6 +2906,7 @@ export class Achievements {
       "close-calls": { current: 0, target: 5, earned: 0 },
       "edge-lord": { current: 0, target: 20, earned: 0 },
       "consistency-is-key": { current: 0, target: 5, earned: 0 },
+      "deuce-demon": { current: 0, target: DEUCE_DEMON_TARGET, earned: 0 },
       "photo-finish": { earned: 0 },
       "marathon-set": {
         earned: 0,
@@ -2726,11 +2991,18 @@ export class Achievements {
     // the streak they are on now. Shown alongside the league streak records.
     let longestWinStreakAll = 0;
     let longestLoseStreakAll = 0;
+    // Jing Jang: the alternation run the player is on now, and their longest
+    // ever. The run moves on every game — extended by a result different
+    // from the previous one, restarted at 1 by a repeat.
+    let currentJingJang = 0;
+    let longestJingJang = 0;
+    let jingJangLastWasWin: boolean | undefined = undefined;
     let donutCount = 0;
     let closeCallsCount = 0;
     let edgeLordCount = 0;
     let consistencyCount = 0;
     let bestDeuceSetWon = 0;
+    let deuceSetsWonCount = 0;
     const streaksPerOpponent = new Map<string, number>();
     // Highest win streak the player has EVER held against a single opponent —
     // streaksPerOpponent only carries live streaks, which reset when that
@@ -2825,6 +3097,15 @@ export class Achievements {
 
       // Track last active time
       lastActiveAt = game.playedAt;
+
+      // Jing Jang progression: move the alternation run with this result.
+      if (jingJangLastWasWin === undefined || jingJangLastWasWin === isWinner) {
+        currentJingJang = 1;
+      } else {
+        currentJingJang++;
+      }
+      jingJangLastWasWin = isWinner;
+      longestJingJang = Math.max(longestJingJang, currentJingJang);
 
       // Perfect Day progression: tally wins / losses per local calendar day.
       const dayStart = new Date(game.playedAt);
@@ -2944,8 +3225,11 @@ export class Achievements {
           const setWinnerIsGameWinner = set.gameWinner > set.gameLoser;
           const playerWonSet =
             (isWinner && setWinnerIsGameWinner) || (isLoser && !setWinnerIsGameWinner);
-          if (playerWonSet && setWinnerScore > bestDeuceSetWon) {
-            bestDeuceSetWon = setWinnerScore;
+          if (playerWonSet) {
+            deuceSetsWonCount++;
+            if (setWinnerScore > bestDeuceSetWon) {
+              bestDeuceSetWon = setWinnerScore;
+            }
           }
         });
       }
@@ -2965,6 +3249,9 @@ export class Achievements {
     progression["edge-lord"].current = edgeLordCount;
     progression["consistency-is-key"].current = consistencyCount;
     progression["marathon-set"].current = bestDeuceSetWon;
+    // Deuce Demon progress caps at the target: the count never resets, so
+    // going beyond would leak the player's career deuce-set total.
+    progression["deuce-demon"].current = Math.min(deuceSetsWonCount, DEUCE_DEMON_TARGET);
     progression["variety-player"].current = opponentsPlayed.size;
     progression["variety-player"].opponents = opponentsPlayed;
     progression["global-player"].current = opponentsPlayed.size;
@@ -2981,6 +3268,12 @@ export class Achievements {
     progression["longest-win-streak"].best = longestWinStreakAll;
     progression["longest-lose-streak"].current = currentLoseStreakAll;
     progression["longest-lose-streak"].best = longestLoseStreakAll;
+
+    // Jing Jang: the live alternation run is what can still grow into the
+    // league record, so that is the progress. The player's longest ever run
+    // is reported alongside it.
+    progression["jing-jang"].current = currentJingJang;
+    progression["jing-jang"].best = longestJingJang;
 
     // Perfect Day progression tracks TODAY's live attempt: the number of
     // games won today with zero losses so far. A single loss today nullifies
@@ -3425,6 +3718,17 @@ export class Achievements {
     progression["kingslayer"].best = bestBeatenEntry?.rank;
     progression["kingslayer"].bestOpponent = bestBeatenEntry?.opponent;
 
+    // Giant Hunting progression: today's wins over higher-ranked opponents —
+    // the chase resets at local midnight — with the player's best single-day
+    // count ever alongside. Capped at the target so an over-hunted day never
+    // reads past 100%.
+    const giantDay = this.lastGiantDay.get(playerId);
+    progression["giant-hunting"].current =
+      giantDay !== undefined && giantDay.day === this.#dayStartOf(now)
+        ? Math.min(giantDay.count, GIANT_HUNTING_TARGET)
+        : 0;
+    progression["giant-hunting"].best = this.bestGiantDayCount.get(playerId) ?? 0;
+
     // Group Play Star best: the player's group play that came closest to
     // perfect — the highest share of games won, ties broken by more wins, so
     // 3 of 4 beats 3 of 6 and a perfect 3 of 3 beats both. Both numbers are
@@ -3462,10 +3766,17 @@ export class Achievements {
     const enoughRanked = rankedActiveIds.length >= 5;
     const beatenRanked = new Set<string>();
     const lostToRanked = new Set<string>();
+    const playedRanked = new Set<string>();
     if (enoughRanked) {
       this.parent.games.forEach((game) => {
-        if (game.winner === playerId && rankedTargetPool.has(game.loser)) beatenRanked.add(game.loser);
-        if (game.loser === playerId && rankedTargetPool.has(game.winner)) lostToRanked.add(game.winner);
+        if (game.winner === playerId && rankedTargetPool.has(game.loser)) {
+          beatenRanked.add(game.loser);
+          playedRanked.add(game.loser);
+        }
+        if (game.loser === playerId && rankedTargetPool.has(game.winner)) {
+          lostToRanked.add(game.winner);
+          playedRanked.add(game.winner);
+        }
       });
     }
     const rankedTarget = rankedTargetPool.size;
@@ -3474,12 +3785,16 @@ export class Achievements {
     // empty, so the whole target pool shows as missing.
     const fullHouseMissing = new Set([...rankedTargetPool].filter((id) => !beatenRanked.has(id)));
     const humbledMissing = new Set([...rankedTargetPool].filter((id) => !lostToRanked.has(id)));
+    const everybodysOpponentMissing = new Set([...rankedTargetPool].filter((id) => !playedRanked.has(id)));
     progression["full-house"].current = beatenRanked.size;
     progression["full-house"].target = rankedTarget;
     progression["full-house"].missing = fullHouseMissing;
     progression["humbled"].current = lostToRanked.size;
     progression["humbled"].target = rankedTarget;
     progression["humbled"].missing = humbledMissing;
+    progression["everybodys-opponent"].current = playedRanked.size;
+    progression["everybodys-opponent"].target = rankedTarget;
+    progression["everybodys-opponent"].missing = everybodysOpponentMissing;
 
     // Sweet Revenge progression: the missing set is the rivals still to beat
     // — active players holding an unavenged tournament-match win over this
@@ -3642,9 +3957,32 @@ type AchievementDefinitions = {
   // of the streak, so startedAt → earnedAt spans the record run.
   "longest-win-streak": StreakRecordAchievementData;
   "longest-lose-streak": StreakRecordAchievementData;
+  // Record-breaking alternation achievement — the longest run of strictly
+  // alternating results (win, loss, win, loss or the mirror). Shares the
+  // streak-record data shape and growth behaviour.
+  "jing-jang": StreakRecordAchievementData;
   "group-stage-star": { tournamentId: string; wins: number };
   "full-house": { count: number; firstGameAt: number };
   "humbled": { count: number; firstGameAt: number };
+  // Played every currently ranked player at least once (wins and losses
+  // both count). Same shape as Full House / Humbled: how many ranked
+  // players the completed set held, and the player's first game.
+  "everybodys-opponent": { count: number; firstGameAt: number };
+  // Career deuce sets won (winner ≥ 12, loser ≥ 10) reached
+  // DEUCE_DEMON_TARGET. A pure counter crossing — no game to point at.
+  "deuce-demon": undefined;
+  // Beat GIANT_HUNTING_TARGET higher-ranked opponents within one local
+  // calendar day. `day` is that day's local midnight; `giants` the wins that
+  // filled the day's tally, each with the pre-match ranks of both players.
+  "giant-hunting": {
+    day: number;
+    giants: { opponent: string; opponentRank: number; playerRank: number }[];
+  };
+  // Handed an opponent their first loss of a day they had already won
+  // PARTY_POOPER_MIN_WINS or more games — destroying the Perfect Day they
+  // had secured. `day` is that day's local midnight and `opponentWins` the
+  // undefeated win count the loss spoiled.
+  "party-pooper": { gameId: string; opponent: string; day: number; opponentWins: number };
   // Record-breaking time-of-day achievements. Awarded to both players of
   // the game that sets a new league-wide earliest / latest time-of-day
   // record. `time` is the "HH:MM" the game was played and `minutesIntoDay`
@@ -3738,9 +4076,14 @@ export const ACHIEVEMENT_IS_REACHIEVABLE: Record<AchievementType, boolean> = {
   "streak-ender": true, // Per ended streak
   "longest-win-streak": true, // League records — can be retaken
   "longest-lose-streak": true,
+  "jing-jang": true,
   "group-stage-star": true, // Per tournament's group play
   "full-house": false,
   "humbled": false,
+  "everybodys-opponent": false,
+  "deuce-demon": false,
+  "giant-hunting": true, // Per qualifying day
+  "party-pooper": true, // Per spoiled perfect day
   "earliest-game": true, // League records — can be retaken
   "latest-game": true,
   "shootout": true, // League record
@@ -3770,7 +4113,8 @@ export type Achievement = {
 // interchangeably.
 type StreakRecordAchievement =
   | GenericAchievement<"longest-win-streak">
-  | GenericAchievement<"longest-lose-streak">;
+  | GenericAchievement<"longest-lose-streak">
+  | GenericAchievement<"jing-jang">;
 
 // The award for holding a games-in-a-period record — grown through the
 // day / week / month while the player still holds the record with it. The
@@ -4031,6 +4375,7 @@ export type AchievementProgression = {
   "streak-ender": BaseProgression;
   "longest-win-streak": StreakRecordProgression;
   "longest-lose-streak": StreakRecordProgression;
+  "jing-jang": StreakRecordProgression;
   "hero-of-the-day": HeroRecordProgression;
   "hero-of-the-week": HeroRecordProgression;
   "hero-of-the-month": HeroRecordProgression;
@@ -4038,6 +4383,10 @@ export type AchievementProgression = {
   "sweet-revenge": MissingPlayersProgression;
   "full-house": MissingPlayersProgression;
   "humbled": MissingPlayersProgression;
+  "everybodys-opponent": MissingPlayersProgression;
+  "deuce-demon": ProgressionWithTarget;
+  "giant-hunting": ProgressionWithTarget;
+  "party-pooper": BaseProgression;
   "earliest-game": TimeOfDayRecordProgression;
   "latest-game": TimeOfDayRecordProgression;
 };
