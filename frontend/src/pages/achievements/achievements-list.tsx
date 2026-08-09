@@ -307,10 +307,16 @@ export const AchievementsList: React.FC<AchievementsListProps> = ({ achievements
                         " in the same tournament"}
                     </span>
                   )}
-                  {(achievement.type === "full-house" || achievement.type === "humbled") &&
+                  {(achievement.type === "full-house" ||
+                    achievement.type === "humbled" ||
+                    achievement.type === "everybodys-opponent") &&
                     achievement.data && (
                       <span className="text-[11px] opacity-80">
-                        {achievement.type === "full-house" ? "Beat " : "Lost to "}
+                        {achievement.type === "full-house"
+                          ? "Beat "
+                          : achievement.type === "humbled"
+                            ? "Lost to "
+                            : "Played "}
                         {achievement.data.count} ranked player
                         {achievement.data.count !== 1 ? "s" : ""} in{" "}
                         {Math.round(
@@ -319,6 +325,19 @@ export const AchievementsList: React.FC<AchievementsListProps> = ({ achievements
                         days
                       </span>
                     )}
+                  {achievement.type === "giant-hunting" && achievement.data && (
+                    <span className="text-[11px] opacity-80">
+                      Beat{" "}
+                      {achievement.data.giants
+                        .map((giant) => `${context.playerName(giant.opponent)} (#${giant.opponentRank})`)
+                        .join(", ")}
+                    </span>
+                  )}
+                  {achievement.type === "party-pooper" && achievement.data && (
+                    <span className="text-[11px] opacity-80">
+                      Spoiled an undefeated day of {achievement.data.opponentWins} wins
+                    </span>
+                  )}
                   {achievement.type === "leap-frog" && achievement.data && (
                     <span className="text-[11px] opacity-80">
                       Jumped {achievement.data.ranksJumped} rank

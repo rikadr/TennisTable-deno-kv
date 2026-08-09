@@ -324,6 +324,26 @@ export const ACHIEVEMENT_LABELS: Record<string, { title: string; description: st
     description: "Lose to every currently ranked player at least once",
     icon: "🙇",
   },
+  "everybodys-opponent": {
+    title: "Everybody's Opponent",
+    description: "Play every currently ranked player at least once — wins and losses both count",
+    icon: "🧩",
+  },
+  "deuce-demon": {
+    title: "Deuce Demon",
+    description: "Win 10 deuce sets (a set won 12–10 or higher)",
+    icon: "🔱",
+  },
+  "giant-hunting": {
+    title: "Giant Hunting",
+    description: "Beat 3 higher-ranked players in a single day",
+    icon: "🏹",
+  },
+  "party-pooper": {
+    title: "Party Pooper",
+    description: "Hand a player their first loss of a day they had already won 5 or more games — spoiling their Perfect Day",
+    icon: "💩",
+  },
   "earliest-game": {
     title: "Earliest Game",
     description: "Play the earliest game of the day on record",
@@ -696,11 +716,34 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
                   </p>
                 )}
 
-                {(achievement.type === "full-house" || achievement.type === "humbled") && achievement.data && (
+                {(achievement.type === "full-house" ||
+                  achievement.type === "humbled" ||
+                  achievement.type === "everybodys-opponent") &&
+                  achievement.data && (
+                    <p className="text-xs text-secondary-text/70 mt-2">
+                      {achievement.type === "full-house"
+                        ? "Beat "
+                        : achievement.type === "humbled"
+                          ? "Lost to "
+                          : "Played "}
+                      {achievement.data.count} ranked player{achievement.data.count !== 1 ? "s" : ""} in{" "}
+                      {daysBetween(achievement.data.firstGameAt, achievement.earnedAt)} days
+                    </p>
+                  )}
+
+                {achievement.type === "giant-hunting" && achievement.data && (
                   <p className="text-xs text-secondary-text/70 mt-2">
-                    {achievement.type === "full-house" ? "Beat " : "Lost to "}
-                    {achievement.data.count} ranked player{achievement.data.count !== 1 ? "s" : ""} in{" "}
-                    {daysBetween(achievement.data.firstGameAt, achievement.earnedAt)} days
+                    Beat{" "}
+                    {achievement.data.giants
+                      .map((giant) => `${context.playerName(giant.opponent)} (#${giant.opponentRank})`)
+                      .join(", ")}{" "}
+                    on {dateString(achievement.data.day)}
+                  </p>
+                )}
+
+                {achievement.type === "party-pooper" && achievement.data && (
+                  <p className="text-xs text-secondary-text/70 mt-2">
+                    They were undefeated with {achievement.data.opponentWins} wins that day
                   </p>
                 )}
 
@@ -1168,7 +1211,10 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                         )}
 
                       {/* Missing players for full-house / humbled / sweet-revenge */}
-                      {(type === "full-house" || type === "humbled" || type === "sweet-revenge") &&
+                      {(type === "full-house" ||
+                        type === "humbled" ||
+                        type === "everybodys-opponent" ||
+                        type === "sweet-revenge") &&
                         "missing" in data &&
                         data.missing &&
                         data.missing.size > 0 && (
@@ -1178,7 +1224,9 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                                 ? "Still need to beat:"
                                 : type === "humbled"
                                   ? "Still need to lose to:"
-                                  : "They beat you in a tournament — beat them in a tournament match to avenge it:"}
+                                  : type === "everybodys-opponent"
+                                    ? "Still need to play:"
+                                    : "They beat you in a tournament — beat them in a tournament match to avenge it:"}
                             </p>
                             <div className="flex flex-wrap gap-1">
                               {Array.from(data.missing).map((player: string) => (
