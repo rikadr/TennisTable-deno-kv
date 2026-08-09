@@ -553,11 +553,14 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
                   </p>
                 )}
 
-                {achievement.data && "seasonStart" in achievement.data && achievement.type !== "season-opener" && (
-                  <p className="text-xs text-secondary-text/70 mt-2">
-                    Season from {dateString(achievement.data.seasonStart)} to {dateString(achievement.earnedAt)}
-                  </p>
-                )}
+                {achievement.data &&
+                  "seasonStart" in achievement.data &&
+                  achievement.type !== "season-opener" &&
+                  achievement.type !== "so-close" && (
+                    <p className="text-xs text-secondary-text/70 mt-2">
+                      Season from {dateString(achievement.data.seasonStart)} to {dateString(achievement.earnedAt)}
+                    </p>
+                  )}
 
                 {achievement.type === "season-opener" && achievement.data && (
                   <p className="text-xs text-secondary-text/70 mt-2">
@@ -567,7 +570,8 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
 
                 {achievement.type === "so-close" && achievement.data && (
                   <p className="text-xs text-secondary-text/70 mt-2">
-                    Scored {fmtNum(achievement.data.playerScore, { digits: 1 })} points —{" "}
+                    Season {context.seasons.getSeasons().findIndex((s) => s.start === achievement.data.seasonStart) + 1}:
+                    scored {fmtNum(achievement.data.playerScore, { digits: 1 })} points —{" "}
                     {fmtNum((achievement.data.playerScore / achievement.data.winnerScore) * 100, { digits: 1 })}% of{" "}
                     {context.playerName(achievement.data.winner)}'s winning{" "}
                     {fmtNum(achievement.data.winnerScore, { digits: 1 })}
