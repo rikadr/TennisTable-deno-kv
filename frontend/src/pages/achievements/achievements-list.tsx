@@ -108,6 +108,17 @@ export const AchievementsList: React.FC<AchievementsListProps> = ({ achievements
                       Season starting {dateString(achievement.data.seasonStart)}
                     </span>
                   )}
+                  {achievement.type === "so-close" && achievement.data && (
+                    <span className="text-[11px] opacity-80">
+                      {fmtNum((achievement.data.playerScore / achievement.data.winnerScore) * 100, { digits: 1 })}% of{" "}
+                      {context.playerName(achievement.data.winner)}'s winning score
+                    </span>
+                  )}
+                  {achievement.type === "full-coverage" && achievement.data && (
+                    <span className="text-[11px] opacity-80">
+                      Played all {fmtNum(achievement.data.opponentCount)} other players
+                    </span>
+                  )}
                   {achievement.type === "milestone-game" && achievement.data && (
                     <span className="text-[11px] opacity-80">
                       League game #{fmtNum(achievement.data.milestone)}

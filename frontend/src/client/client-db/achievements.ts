@@ -75,6 +75,17 @@ export const GIANT_HUNTING_TARGET = 3;
 // destroyed one.
 export const PARTY_POOPER_MIN_WINS = 5;
 
+// Largest deficit to the season winner's final score that still earns "So
+// Close", as a fraction of the winner's score. Every non-winner within the
+// band qualifies, whatever rank the tiebreakers left them at — the score is
+// what they nearly matched, not the position.
+export const SO_CLOSE_MAX_DEFICIT_FRACTION = 0.05;
+
+// Fewest players a season must have for "Full Coverage" — playing everyone
+// in a tiny season is not a feat. Matches the ≥5 cohort gate the rank and
+// full-house achievements use.
+export const FULL_COVERAGE_MIN_PLAYERS = 5;
+
 export class Achievements {
   private parent: TennisTable;
   private hasCalculated = false;
@@ -2684,8 +2695,6 @@ export class Achievements {
     this.parent.seasons.getSeasons().forEach((s) => {
       const leaderboard = s.getLeaderboard();
 
-      // Check participation TODO
-
       // Season Opener: both players of the season's very first game earned
       // it the moment they opened the season — no need to wait for the
       // season to end. Seasons only exist once they contain a game, and
@@ -2710,10 +2719,47 @@ export class Achievements {
         );
       }
 
-      // Check for season winners
+      // The remaining season achievements read the FINAL leaderboard, so
+      // they only exist once the season has ended.
       if (Date.now() > s.end && leaderboard.length > 0) {
         const winner = leaderboard[0].playerId;
         this.#addAchievement(winner, this.#createAchievement("season-winner", winner, s.end, { seasonStart: s.start }));
+
+        // So Close: every non-winner whose final score is within
+        // SO_CLOSE_MAX_DEFICIT_FRACTION of the winner's. Rank does not
+        // matter — a tiebreaker can push a matching score to any position.
+        const winnerScore = leaderboard[0].seasonScore;
+        const soCloseThreshold = winnerScore * (1 - SO_CLOSE_MAX_DEFICIT_FRACTION);
+        for (const entry of leaderboard.slice(1)) {
+          if (entry.seasonScore < soCloseThreshold) continue;
+          this.#addAchievement(
+            entry.playerId,
+            this.#createAchievement("so-close", entry.playerId, s.end, {
+              seasonStart: s.start,
+              winner,
+              winnerScore,
+              playerScore: entry.seasonScore,
+            }),
+          );
+        }
+
+        // Full Coverage: recorded a matchup against every other player who
+        // played in the season. Only decidable at season end — a new
+        // player's first game can reopen the set at any moment before that.
+        // Gated on season size so a tiny season is not a free award.
+        if (leaderboard.length >= FULL_COVERAGE_MIN_PLAYERS) {
+          for (const entry of leaderboard) {
+            if (entry.matchups.size === leaderboard.length - 1) {
+              this.#addAchievement(
+                entry.playerId,
+                this.#createAchievement("full-coverage", entry.playerId, s.end, {
+                  seasonStart: s.start,
+                  opponentCount: entry.matchups.size,
+                }),
+              );
+            }
+          }
+        }
       }
     });
   }
@@ -2982,6 +3028,9 @@ export class Achievements {
       "group-stage-star": { earned: 0 },
       "sweet-revenge": { current: 0, target: 0, missing: new Set(), earned: 0 },
       "season-winner": { current: 0, target: 1, earned: 0 },
+      "so-close": { earned: 0 },
+      // Progress through the live season's participants, filled in below.
+      "full-coverage": { current: 0, target: 1, missing: new Set(), earned: 0 },
       // League-wide countdown to the next season start, filled in below.
       "season-opener": { current: 0, target: 0, earned: 0 },
       "milestone-game": { current: 0, target: MILESTONE_GAME_INTERVAL, earned: 0 },
@@ -3630,6 +3679,20 @@ export class Achievements {
       if (player) {
         progression["season-winner"].current = player.seasonScore;
       }
+
+      // Full Coverage progress: matchups recorded against the live season's
+      // other participants so far, and who is still to be played. New
+      // players can keep joining until the season ends, so the target can
+      // still grow.
+      const fullCoverageMissing = new Set<string>();
+      for (const entry of leaderboard) {
+        if (entry.playerId === playerId) continue;
+        if (!player?.matchups.has(entry.playerId)) fullCoverageMissing.add(entry.playerId);
+      }
+      const participantsToPlay = leaderboard.length - (player ? 1 : 0);
+      progression["full-coverage"].current = player?.matchups.size ?? 0;
+      progression["full-coverage"].target = Math.max(participantsToPlay, 1);
+      progression["full-coverage"].missing = fullCoverageMissing;
     }
 
     // Season's Champion best: the best final rank in a finished season the
@@ -3895,6 +3958,13 @@ type AchievementDefinitions = {
   // player before the revenge — is `lostAt` / `lostTournamentId`.
   "sweet-revenge": { opponent: string; tournamentId: string; lostAt: number; lostTournamentId: string };
   "season-winner": { seasonStart: number };
+  // Finished a season with a score within SO_CLOSE_MAX_DEFICIT_FRACTION of
+  // the winner's final score — any rank but first qualifies.
+  "so-close": { seasonStart: number; winner: string; winnerScore: number; playerScore: number };
+  // Recorded a matchup against every other player who played in the season
+  // (a season of FULL_COVERAGE_MIN_PLAYERS or more). `opponentCount` is how
+  // many opponents the completed set held.
+  "full-coverage": { seasonStart: number; opponentCount: number };
   "nice-game": { gameId: string; opponent: string };
   "less-is-more": { gameId: string; opponent: string; playerPoints: number; opponentPoints: number };
   "close-calls": undefined;
@@ -4051,6 +4121,8 @@ export const ACHIEVEMENT_IS_REACHIEVABLE: Record<AchievementType, boolean> = {
   "tournament-winner": true,
   "sweet-revenge": true, // Per avenged loss — a new loss to that opponent re-arms it
   "season-winner": true, // Per season
+  "so-close": true, // Per season
+  "full-coverage": true, // Per season
   "nice-game": true, // Per qualifying game
   "less-is-more": true,
   "close-calls": false,
@@ -4213,8 +4285,10 @@ type SeasonOpenerProgression = ProgressionWithTarget & {
 
 type MissingPlayersProgression = ProgressionWithTarget & {
   // Currently ranked players the player has not yet beaten (Full House) /
-  // not yet lost to (Humbled), or active tournament rivals the player has
-  // not yet avenged (Sweet Revenge) — i.e. what's left to complete the set.
+  // not yet lost to (Humbled), active tournament rivals the player has not
+  // yet avenged (Sweet Revenge), or the live season's participants the
+  // player has not yet played (Full Coverage) — i.e. what's left to
+  // complete the set.
   missing?: Set<string>;
 };
 
@@ -4347,6 +4421,8 @@ export type AchievementProgression = {
   "tournament-participated": BaseProgression;
   "tournament-winner": BaseProgression;
   "season-winner": ProgressionWithTarget;
+  "so-close": BaseProgression;
+  "full-coverage": MissingPlayersProgression;
   "season-opener": SeasonOpenerProgression;
   "milestone-game": ProgressionWithTarget;
   "nice-game": BaseProgression;
