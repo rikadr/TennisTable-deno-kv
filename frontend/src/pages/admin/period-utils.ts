@@ -72,12 +72,12 @@ export const advancePeriod = (date: Date, period: Period): Date => {
   return d;
 };
 
-export const formatPeriod = (timestamp: number, period: Period): string => {
+export const formatPeriod = (timestamp: number, period: Period, variant: "long" | "short" = "long"): string => {
   const date = new Date(timestamp);
   switch (period) {
     case "day":
       return date.toLocaleDateString("nb-NO", {
-        weekday: "long",
+        weekday: variant === "short" ? "short" : "long",
         month: "long",
         day: "numeric",
         year: "numeric",
