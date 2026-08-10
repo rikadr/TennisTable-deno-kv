@@ -486,7 +486,7 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
             className="bg-background-secondary rounded-lg px-3 py-2.5 border border-secondary-text"
           >
             <div className="flex items-start gap-3">
-              <div className="text-3xl">{label.icon}</div>
+              <div className="text-3xl sm:text-4xl md:text-5xl">{label.icon}</div>
               <div className="flex-1">
                 <div className="flex items-center justify-between">
                   <h3 className="font-semibold text-secondary-text">{label.title}</h3>
@@ -1103,7 +1103,7 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
 
             <div className="relative px-3 py-2.5">
               <div className="flex items-start gap-3">
-                <div className="text-2xl">{label.icon}</div>
+                <div className="text-2xl sm:text-3xl md:text-4xl">{label.icon}</div>
                 <div className="flex-1">
                   <div className="flex items-center justify-between mb-1">
                     <div className="flex-1">
