@@ -17,6 +17,11 @@ import { Link } from "react-router-dom";
 import { fmtNum } from "../../common/number-utils";
 import { usePlayerLinkSearch } from "../../hooks/use-player-link-search";
 import { achievementProgressPercentage } from "../../common/achievement-progress";
+import {
+  ACHIEVEMENT_GROUPS,
+  ACHIEVEMENT_TYPE_TO_GROUP_ID,
+  OTHER_ACHIEVEMENT_GROUP,
+} from "./achievement-groups";
 
 type Props = {
   playerId?: string;
@@ -440,8 +445,10 @@ export const PlayerAchievements: React.FC<Props> = ({ playerId }) => {
         </div>
       </div>
 
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto p-6">
+      {/* Content. No overflow-y-auto here: the wrapper never actually
+          scrolls (the document does), but an overflow container ancestor
+          would break the sticky section headers in the Progress tab. */}
+      <div className="flex-1 p-6">
         {activeTab === "earned" && <AchievementsTab achievements={sortedAchievements} />}
         {activeTab === "progress" && <ProgressTab progression={progression} playerId={playerId} />}
       </div>
@@ -893,6 +900,8 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
   const search = usePlayerLinkSearch();
   const [sort, setSort] = useState<ProgressSort>("default");
   const [filter, setFilter] = useState<ProgressFilter>("all");
+  const [query, setQuery] = useState("");
+  const normalizedQuery = query.trim().toLowerCase();
 
   const gameLimitForRanked = context.client.gameLimitForRanked;
 
@@ -926,22 +935,66 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
   // Sorting is stable, so items with the same progress keep the default order.
   // An earned re-achievable achievement (a record, a streak, a per-season
   // chase) counts as achievable, because it can still be chased again.
-  const progressItems = useMemo(() => {
+  //
+  // The filtered items are grouped into thematic sections. Sorting applies
+  // within each section, so the grouping survives a progress sort. A section
+  // with nothing visible is dropped. The earned/total counts on a section
+  // header always cover the whole group, independent of filter and search.
+  const sections = useMemo(() => {
     let items = allProgressItems;
     if (filter === "achievable") {
       items = items.filter((item) => !item.hasEarned || isReachievableAchievement(item.type));
     } else if (filter === "unachieved") {
       items = items.filter((item) => !item.hasEarned);
     }
-    if (sort === "default") return items;
-    return [...items].sort((a, b) =>
-      sort === "progress-desc" ? b.sortPercentage - a.sortPercentage : a.sortPercentage - b.sortPercentage,
-    );
-  }, [allProgressItems, sort, filter]);
+    if (normalizedQuery) {
+      items = items.filter(
+        (item) =>
+          item.label.title.toLowerCase().includes(normalizedQuery) ||
+          item.label.description.toLowerCase().includes(normalizedQuery),
+      );
+    }
+
+    const visibleByType = new Map(items.map((item) => [item.type, item]));
+
+    return [...ACHIEVEMENT_GROUPS, OTHER_ACHIEVEMENT_GROUP]
+      .map((group) => {
+        const isOther = group.id === OTHER_ACHIEVEMENT_GROUP.id;
+        const groupItems = isOther
+          ? items.filter((item) => !ACHIEVEMENT_TYPE_TO_GROUP_ID.has(item.type))
+          : group.types.flatMap((type) => visibleByType.get(type) ?? []);
+        if (sort !== "default") {
+          groupItems.sort((a, b) =>
+            sort === "progress-desc" ? b.sortPercentage - a.sortPercentage : a.sortPercentage - b.sortPercentage,
+          );
+        }
+        const allGroupItems = allProgressItems.filter((item) =>
+          isOther
+            ? !ACHIEVEMENT_TYPE_TO_GROUP_ID.has(item.type)
+            : ACHIEVEMENT_TYPE_TO_GROUP_ID.get(item.type) === group.id,
+        );
+        return {
+          group,
+          items: groupItems,
+          earnedCount: allGroupItems.filter((item) => item.hasEarned).length,
+          totalCount: allGroupItems.length,
+        };
+      })
+      .filter((section) => section.items.length > 0);
+  }, [allProgressItems, sort, filter, normalizedQuery]);
 
   return (
     <div className="space-y-4 text-secondary-text">
-      <div className="flex flex-wrap items-center gap-x-6 gap-y-3 rounded-lg border border-secondary-text p-3">
+      <div className="space-y-3 rounded-lg border border-secondary-text p-3">
+        <input
+          type="search"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="Search achievements…"
+          aria-label="Search achievements by name or description"
+          className="w-full px-3 py-2 bg-secondary-background text-secondary-text border border-secondary-text rounded text-sm placeholder:text-secondary-text/50"
+        />
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
         <div className="flex items-center gap-2">
           <label htmlFor="achievement-progress-sort" className="text-sm">
             Sort
@@ -984,13 +1037,33 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
             ))}
           </div>
         </div>
+        </div>
       </div>
 
-      {progressItems.length === 0 && (
-        <p className="text-sm text-secondary-text/70">No achievements to show.</p>
+      {sections.length === 0 && (
+        <p className="text-sm text-secondary-text/70">
+          No achievements {normalizedQuery ? `match "${query.trim()}"` : "to show"}.
+        </p>
       )}
 
-      {progressItems.map(({ type, label, data }) => {
+      {sections.map(({ group, items, earnedCount, totalCount }) => (
+        <section key={group.id}>
+          {/* The section name stays pinned below the fixed nav (h-16, md:h-12)
+              while its achievements scroll past, and the next section's name
+              pushes it away. Needs every ancestor to be overflow-visible. */}
+          <div className="sticky top-16 md:top-12 z-20 bg-secondary-background/95 backdrop-blur-sm">
+            <div className="flex items-baseline justify-between gap-2 py-2 border-b border-secondary-text/40">
+              <h3 className="font-semibold">
+                {group.icon} {group.title}
+              </h3>
+              <span className="text-xs text-secondary-text/70 whitespace-nowrap">
+                {earnedCount}/{totalCount} earned
+              </span>
+            </div>
+          </div>
+
+          <div className="mt-3 space-y-4">
+            {items.map(({ type, label, data }) => {
         // Recomputed here rather than read off the item so TypeScript narrows
         // `data` to the progression shapes that carry current/target.
         const hasTarget = "target" in data && !!data.target;
@@ -1528,6 +1601,9 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
           </div>
         );
       })}
+          </div>
+        </section>
+      ))}
     </div>
   );
 };
