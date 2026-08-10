@@ -939,10 +939,11 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
   // An earned re-achievable achievement (a record, a streak, a per-season
   // chase) counts as achievable, because it can still be chased again.
   //
-  // The filtered items are grouped into thematic sections. Sorting applies
-  // within each section, so the grouping survives a progress sort. A section
-  // with nothing visible is dropped. The earned/total counts on a section
-  // header always cover the whole group, independent of filter and search.
+  // In the default order the filtered items are grouped into thematic
+  // sections; a section with nothing visible is dropped, and the earned/total
+  // counts on a section header always cover the whole group, independent of
+  // filter and search. A progress sort disregards the groups: it returns one
+  // flat list across all achievements, under a single header naming the sort.
   const sections = useMemo(() => {
     let items = allProgressItems;
     if (filter === "achievable") {
@@ -958,6 +959,27 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
       );
     }
 
+    if (sort !== "default") {
+      const sorted = [...items].sort((a, b) =>
+        sort === "progress-desc" ? b.sortPercentage - a.sortPercentage : a.sortPercentage - b.sortPercentage,
+      );
+      return sorted.length === 0
+        ? []
+        : [
+            {
+              group: {
+                id: "sorted-by-progress",
+                title: sort === "progress-desc" ? "Most progress first" : "Least progress first",
+                icon: "📊",
+                types: [],
+              },
+              items: sorted,
+              earnedCount: allProgressItems.filter((item) => item.hasEarned).length,
+              totalCount: allProgressItems.length,
+            },
+          ];
+    }
+
     const visibleByType = new Map(items.map((item) => [item.type, item]));
 
     return [...ACHIEVEMENT_GROUPS, OTHER_ACHIEVEMENT_GROUP]
@@ -966,11 +988,6 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
         const groupItems = isOther
           ? items.filter((item) => !ACHIEVEMENT_TYPE_TO_GROUP_ID.has(item.type))
           : group.types.flatMap((type) => visibleByType.get(type) ?? []);
-        if (sort !== "default") {
-          groupItems.sort((a, b) =>
-            sort === "progress-desc" ? b.sortPercentage - a.sortPercentage : a.sortPercentage - b.sortPercentage,
-          );
-        }
         const allGroupItems = allProgressItems.filter((item) =>
           isOther
             ? !ACHIEVEMENT_TYPE_TO_GROUP_ID.has(item.type)
