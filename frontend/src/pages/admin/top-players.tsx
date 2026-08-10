@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { useEventDbContext } from "../../wrappers/event-db-context";
-import { relativeTimeString } from "../../common/date-utils";
+import { relativeTimeStringShort } from "../../common/date-utils";
 import { Period, PERIOD_LABELS, getPeriodKey, getPeriodTimestamp, formatPeriod, pairingKey } from "./period-utils";
 
 type Metric = "games" | "pairings" | "achievements";
@@ -168,55 +168,55 @@ export const TopPlayers: React.FC = () => {
           No data available
         </div>
       ) : (
-        <table className="w-full text-xs border-collapse">
-          <thead>
-            <tr className="bg-secondary-background text-secondary-text">
-              <th className="px-2 py-1 text-left border border-primary-text/20">#</th>
-              <th className="px-2 py-1 text-left border border-primary-text/20">Player</th>
-              <th className="px-2 py-1 text-left border border-primary-text/20">Best {periodLabel.singular}</th>
-              <th className="px-2 py-1 text-left border border-primary-text/20">When</th>
-              <th className="px-2 py-1 text-right border border-primary-text/20">{metricLabel.column}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row, index) => {
-              const isCurrent = row.key === currentKey;
-              const countPercent = maxCount > 0 ? Math.max(0, Math.min(100, (row.count / maxCount) * 100)) : 0;
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs border-collapse">
+            <thead>
+              <tr className="bg-secondary-background text-secondary-text">
+                <th className="px-2 py-1 text-left border border-primary-text/20">#</th>
+                <th className="px-2 py-1 text-left border border-primary-text/20">Player</th>
+                <th className="px-2 py-1 text-left border border-primary-text/20">Best {periodLabel.singular}</th>
+                <th className="px-2 py-1 text-left border border-primary-text/20">When</th>
+                <th className="px-2 py-1 text-right border border-primary-text/20">{metricLabel.column}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row, index) => {
+                const isCurrent = row.key === currentKey;
+                const countPercent = maxCount > 0 ? Math.max(0, Math.min(100, (row.count / maxCount) * 100)) : 0;
 
-              return (
-                <tr
-                  key={row.playerId}
-                  className={
-                    isCurrent ? "bg-tertiary-background text-tertiary-text" : "hover:bg-secondary-background/50"
-                  }
-                >
-                  <td className="px-2 py-1 border border-primary-text/20 font-medium whitespace-nowrap">
-                    {index + 1}
-                  </td>
-                  <td className="px-2 py-1 border border-primary-text/20 whitespace-nowrap">
-                    {context.playerName(row.playerId)}
-                    {inactivePlayerIds.has(row.playerId) && (
-                      <span className="text-primary-text/50"> (deactivated)</span>
-                    )}
-                  </td>
-                  <td className="px-2 py-1 border border-primary-text/20 whitespace-nowrap">
-                    {formatPeriod(row.timestamp, period)}
-                  </td>
-                  <td className="px-2 py-1 border border-primary-text/20 whitespace-nowrap">
-                    {relativeTimeString(new Date(row.timestamp))}
-                  </td>
-                  <td className="px-2 py-1 border border-primary-text/20 text-right font-bold relative overflow-hidden">
-                    {row.count}
-                    <div
-                      className={`absolute bottom-0 left-0 h-[2px] ${isCurrent ? "bg-tertiary-text" : "bg-current"}`}
-                      style={{ width: `${countPercent}%` }}
-                    />
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+                return (
+                  <tr
+                    key={row.playerId}
+                    className={
+                      isCurrent ? "bg-tertiary-background text-tertiary-text" : "hover:bg-secondary-background/50"
+                    }
+                  >
+                    <td className="px-2 py-1 border border-primary-text/20 font-medium whitespace-nowrap">
+                      {index + 1}
+                    </td>
+                    <td className="px-2 py-1 border border-primary-text/20 whitespace-nowrap">
+                      {context.playerName(row.playerId)}
+                      {inactivePlayerIds.has(row.playerId) && <span className="text-primary-text/50"> (🪦)</span>}
+                    </td>
+                    <td className="px-2 py-1 border border-primary-text/20 whitespace-nowrap">
+                      {formatPeriod(row.timestamp, period, "short")}
+                    </td>
+                    <td className="px-2 py-1 border border-primary-text/20 whitespace-nowrap">
+                      {relativeTimeStringShort(new Date(row.timestamp))}
+                    </td>
+                    <td className="px-2 py-1 border border-primary-text/20 text-right font-bold relative overflow-hidden">
+                      {row.count}
+                      <div
+                        className={`absolute bottom-0 left-0 h-[2px] ${isCurrent ? "bg-tertiary-text" : "bg-current"}`}
+                        style={{ width: `${countPercent}%` }}
+                      />
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       )}
       {hasCurrent && (
         <div className="mt-3 text-xs flex items-center gap-2">
