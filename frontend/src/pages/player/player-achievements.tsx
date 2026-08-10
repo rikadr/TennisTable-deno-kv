@@ -447,8 +447,10 @@ export const PlayerAchievements: React.FC<Props> = ({ playerId }) => {
 
       {/* Content. No overflow-y-auto here: the wrapper never actually
           scrolls (the document does), but an overflow container ancestor
-          would break the sticky section headers in the Progress tab. */}
-      <div className="flex-1 p-6">
+          would break the sticky section headers in the Progress tab.
+          Horizontal padding is nearly zero on mobile — the page card
+          already pads, and the achievement cards need the width. */}
+      <div className="flex-1 px-0.5 py-4 sm:p-6">
         {activeTab === "earned" && <AchievementsTab achievements={sortedAchievements} />}
         {activeTab === "progress" && <ProgressTab progression={progression} playerId={playerId} />}
       </div>
@@ -879,10 +881,11 @@ function formatBestValue(type: string, best: number): string {
 }
 
 type ProgressSort = "default" | "progress-desc" | "progress-asc";
+// Labels are self-explanatory so the select needs no "Sort" label next to it.
 const progressSortOptions: { value: ProgressSort; label: string }[] = [
-  { value: "default", label: "Default" },
-  { value: "progress-desc", label: "Progress: high to low" },
-  { value: "progress-asc", label: "Progress: low to high" },
+  { value: "default", label: "Default order" },
+  { value: "progress-desc", label: "Most progress" },
+  { value: "progress-asc", label: "Least progress" },
 ];
 
 // The three filter states are mutually exclusive — a segmented control, not
@@ -985,39 +988,23 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
 
   return (
     <div className="space-y-4 text-secondary-text">
-      <div className="space-y-3 rounded-lg border border-secondary-text p-3">
+      {/* Compact controls: a search field, then one row with the filter
+          chips left and the sort select right. No box, no labels — the
+          controls explain themselves, and mobile gets the vertical space. */}
+      <div className="space-y-2">
         <input
           type="search"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           placeholder="Search achievements…"
           aria-label="Search achievements by name or description"
-          className="w-full px-3 py-2 bg-secondary-background text-secondary-text border border-secondary-text rounded text-sm placeholder:text-secondary-text/50"
+          className="w-full px-3 py-2 bg-secondary-background text-secondary-text border border-secondary-text rounded-lg text-sm placeholder:text-secondary-text/50"
         />
-        <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
         <div className="flex items-center gap-2">
-          <label htmlFor="achievement-progress-sort" className="text-sm">
-            Sort
-          </label>
-          <select
-            id="achievement-progress-sort"
-            value={sort}
-            onChange={(event) => setSort(event.target.value as ProgressSort)}
-            className="px-2 py-1 bg-secondary-background text-secondary-text border border-secondary-text rounded text-sm cursor-pointer"
-          >
-            {progressSortOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-sm">Show</span>
           <div
             role="radiogroup"
             aria-label="Filter achievements"
-            className="flex rounded border border-secondary-text divide-x divide-secondary-text overflow-hidden"
+            className="flex rounded-lg border border-secondary-text divide-x divide-secondary-text overflow-hidden"
           >
             {progressFilterOptions.map((option) => (
               <button
@@ -1026,7 +1013,7 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                 aria-checked={filter === option.value}
                 onClick={() => setFilter(option.value)}
                 className={classNames(
-                  "px-3 py-1 text-sm transition-colors",
+                  "px-2.5 py-1.5 text-xs xs:text-sm transition-colors",
                   filter === option.value
                     ? "bg-secondary-text text-secondary-background font-medium"
                     : "bg-secondary-background text-secondary-text hover:bg-secondary-text/20",
@@ -1036,7 +1023,19 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
               </button>
             ))}
           </div>
-        </div>
+          <div className="grow" />
+          <select
+            value={sort}
+            onChange={(event) => setSort(event.target.value as ProgressSort)}
+            aria-label="Sort achievements"
+            className="px-2 py-1.5 bg-secondary-background text-secondary-text border border-secondary-text rounded-lg text-xs xs:text-sm cursor-pointer"
+          >
+            {progressSortOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
 
