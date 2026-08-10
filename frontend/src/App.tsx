@@ -78,11 +78,14 @@ function App() {
       <ImageKitContext>
         <ThemeProvider>
           {clientConfig.snow && <Snowfall radius={[0.2, 1]} speed={[0.1, 0.3]} wind={[0, 1]} />}
-          {/* No overflow-auto here: it would make this div the scroll container
-              for position:sticky descendants (section headers on the player's
-              achievement Progress tab) while the document does the scrolling,
-              so they would never stick. */}
-          <div className="min-h-screen w-full">
+          {/* flow-root keeps descendant bottom margins (the page wrapper's
+              mb-24 in NavMenu) inside this div, so the themed background
+              reaches the bottom of the document. Do not use overflow-auto
+              for that: it would make this div the scroll container for
+              position:sticky descendants (section headers on the player's
+              achievement Progress tab) while the document does the
+              scrolling, so they would never stick. */}
+          <div className="flow-root min-h-screen w-full">
             <HelmetSetter />
             <NewVersionChecker />
               <EventDbWrapper>
