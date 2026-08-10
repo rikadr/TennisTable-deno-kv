@@ -272,7 +272,7 @@ export const ACHIEVEMENT_LABELS: Record<string, { title: string; description: st
   },
   "photo-finish": {
     title: "Photo Finish",
-    description: "Play a game that ended with both Scores within 1 point",
+    description: "Finish a game with your leaderboard Score within 1 point of your opponent's",
     icon: "📸",
   },
   "leap-frog": {
