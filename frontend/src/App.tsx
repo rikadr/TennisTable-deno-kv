@@ -78,7 +78,11 @@ function App() {
       <ImageKitContext>
         <ThemeProvider>
           {clientConfig.snow && <Snowfall radius={[0.2, 1]} speed={[0.1, 0.3]} wind={[0, 1]} />}
-          <div className="min-h-screen w-full overflow-auto">
+          {/* No overflow-auto here: it would make this div the scroll container
+              for position:sticky descendants (section headers on the player's
+              achievement Progress tab) while the document does the scrolling,
+              so they would never stick. */}
+          <div className="min-h-screen w-full">
             <HelmetSetter />
             <NewVersionChecker />
               <EventDbWrapper>

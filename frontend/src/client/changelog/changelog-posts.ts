@@ -42,6 +42,23 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
+    slug: "achievement-progress-sections-and-search",
+    title: "Sections and search on the achievement Progress tab",
+    date: "2026-08-10",
+    tags: ["feature-update"],
+    summary:
+      "The Progress tab on the player page groups the achievements into 8 sections and gets a search field.",
+    body: [
+      text(
+        "The Progress tab on the player page now groups the achievements into 8 sections: Getting Started, Win Streaks, Resilience, Rank & Score, Game Feats, Social, Loyalty & Activity and Competition.",
+      ),
+      text(
+        "The name of the section stays at the top of the screen while you scroll through its achievements. Each section shows how many of its achievements you have earned.",
+      ),
+      text("A search field is at the top of the tab. The search matches the name and the description of an achievement."),
+    ],
+  },
+  {
     slug: "2-new-season-achievements",
     title: "2 new achievements: So Close and Full Coverage",
     date: "2026-08-09",

@@ -17,6 +17,11 @@ import { Link } from "react-router-dom";
 import { fmtNum } from "../../common/number-utils";
 import { usePlayerLinkSearch } from "../../hooks/use-player-link-search";
 import { achievementProgressPercentage } from "../../common/achievement-progress";
+import {
+  ACHIEVEMENT_GROUPS,
+  ACHIEVEMENT_TYPE_TO_GROUP_ID,
+  OTHER_ACHIEVEMENT_GROUP,
+} from "./achievement-groups";
 
 type Props = {
   playerId?: string;
@@ -267,7 +272,7 @@ export const ACHIEVEMENT_LABELS: Record<string, { title: string; description: st
   },
   "photo-finish": {
     title: "Photo Finish",
-    description: "Play a game that ended with both Scores within 1 point",
+    description: "Finish a game with your leaderboard Score within 1 point of your opponent's",
     icon: "📸",
   },
   "leap-frog": {
@@ -440,8 +445,12 @@ export const PlayerAchievements: React.FC<Props> = ({ playerId }) => {
         </div>
       </div>
 
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto p-6">
+      {/* Content. No overflow-y-auto here: the wrapper never actually
+          scrolls (the document does), but an overflow container ancestor
+          would break the sticky section headers in the Progress tab.
+          Horizontal padding is nearly zero on mobile — the page card
+          already pads, and the achievement cards need the width. */}
+      <div className="flex-1 px-0.5 py-4 sm:p-6">
         {activeTab === "earned" && <AchievementsTab achievements={sortedAchievements} />}
         {activeTab === "progress" && <ProgressTab progression={progression} playerId={playerId} />}
       </div>
@@ -467,17 +476,17 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       {achievements.map((achievement, index) => {
         const label = getAchievementLabel(achievement.type, context.client.gameLimitForRanked);
 
         return (
           <div
             key={`${achievement.type}-${achievement.earnedAt}-${index}`}
-            className="bg-background-secondary rounded-lg p-4 border border-secondary-text"
+            className="bg-background-secondary rounded-lg px-3 py-2.5 border border-secondary-text"
           >
-            <div className="flex items-start gap-4">
-              <div className="text-4xl">{label.icon}</div>
+            <div className="flex items-start gap-3">
+              <div className="text-3xl sm:text-4xl md:text-5xl">{label.icon}</div>
               <div className="flex-1">
                 <div className="flex items-center justify-between">
                   <h3 className="font-semibold text-secondary-text">{label.title}</h3>
@@ -523,7 +532,7 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
                 )}
 
                 {achievement.data && "opponents" in achievement.data && achievement.data.opponents && (
-                  <div className="mt-2 text-xs text-secondary-text/70">
+                  <div className="mt-1.5 text-xs text-secondary-text/70">
                     Welcomed:{" "}
                     {achievement.data.opponents.map((player: string) => context.playerName(player)).join(", ")}
                   </div>
@@ -872,10 +881,11 @@ function formatBestValue(type: string, best: number): string {
 }
 
 type ProgressSort = "default" | "progress-desc" | "progress-asc";
+// Labels are self-explanatory so the select needs no "Sort" label next to it.
 const progressSortOptions: { value: ProgressSort; label: string }[] = [
-  { value: "default", label: "Default" },
-  { value: "progress-desc", label: "Progress: high to low" },
-  { value: "progress-asc", label: "Progress: low to high" },
+  { value: "default", label: "Default order" },
+  { value: "progress-desc", label: "Most progress" },
+  { value: "progress-asc", label: "Least progress" },
 ];
 
 // The three filter states are mutually exclusive — a segmented control, not
@@ -893,6 +903,8 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
   const search = usePlayerLinkSearch();
   const [sort, setSort] = useState<ProgressSort>("default");
   const [filter, setFilter] = useState<ProgressFilter>("all");
+  const [query, setQuery] = useState("");
+  const normalizedQuery = query.trim().toLowerCase();
 
   const gameLimitForRanked = context.client.gameLimitForRanked;
 
@@ -926,45 +938,91 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
   // Sorting is stable, so items with the same progress keep the default order.
   // An earned re-achievable achievement (a record, a streak, a per-season
   // chase) counts as achievable, because it can still be chased again.
-  const progressItems = useMemo(() => {
+  //
+  // In the default order the filtered items are grouped into thematic
+  // sections; a section with nothing visible is dropped, and the earned/total
+  // counts on a section header always cover the whole group, independent of
+  // filter and search. A progress sort disregards the groups: it returns one
+  // flat list across all achievements, under a single header naming the sort.
+  const sections = useMemo(() => {
     let items = allProgressItems;
     if (filter === "achievable") {
       items = items.filter((item) => !item.hasEarned || isReachievableAchievement(item.type));
     } else if (filter === "unachieved") {
       items = items.filter((item) => !item.hasEarned);
     }
-    if (sort === "default") return items;
-    return [...items].sort((a, b) =>
-      sort === "progress-desc" ? b.sortPercentage - a.sortPercentage : a.sortPercentage - b.sortPercentage,
-    );
-  }, [allProgressItems, sort, filter]);
+    if (normalizedQuery) {
+      items = items.filter(
+        (item) =>
+          item.label.title.toLowerCase().includes(normalizedQuery) ||
+          item.label.description.toLowerCase().includes(normalizedQuery),
+      );
+    }
+
+    if (sort !== "default") {
+      const sorted = [...items].sort((a, b) =>
+        sort === "progress-desc" ? b.sortPercentage - a.sortPercentage : a.sortPercentage - b.sortPercentage,
+      );
+      return sorted.length === 0
+        ? []
+        : [
+            {
+              group: {
+                id: "sorted-by-progress",
+                title: sort === "progress-desc" ? "Most progress first" : "Least progress first",
+                icon: "📊",
+                types: [],
+              },
+              items: sorted,
+              earnedCount: allProgressItems.filter((item) => item.hasEarned).length,
+              totalCount: allProgressItems.length,
+            },
+          ];
+    }
+
+    const visibleByType = new Map(items.map((item) => [item.type, item]));
+
+    return [...ACHIEVEMENT_GROUPS, OTHER_ACHIEVEMENT_GROUP]
+      .map((group) => {
+        const isOther = group.id === OTHER_ACHIEVEMENT_GROUP.id;
+        const groupItems = isOther
+          ? items.filter((item) => !ACHIEVEMENT_TYPE_TO_GROUP_ID.has(item.type))
+          : group.types.flatMap((type) => visibleByType.get(type) ?? []);
+        const allGroupItems = allProgressItems.filter((item) =>
+          isOther
+            ? !ACHIEVEMENT_TYPE_TO_GROUP_ID.has(item.type)
+            : ACHIEVEMENT_TYPE_TO_GROUP_ID.get(item.type) === group.id,
+        );
+        return {
+          group,
+          items: groupItems,
+          earnedCount: allGroupItems.filter((item) => item.hasEarned).length,
+          totalCount: allGroupItems.length,
+        };
+      })
+      .filter((section) => section.items.length > 0);
+  }, [allProgressItems, sort, filter, normalizedQuery]);
 
   return (
-    <div className="space-y-4 text-secondary-text">
-      <div className="flex flex-wrap items-center gap-x-6 gap-y-3 rounded-lg border border-secondary-text p-3">
-        <div className="flex items-center gap-2">
-          <label htmlFor="achievement-progress-sort" className="text-sm">
-            Sort
-          </label>
-          <select
-            id="achievement-progress-sort"
-            value={sort}
-            onChange={(event) => setSort(event.target.value as ProgressSort)}
-            className="px-2 py-1 bg-secondary-background text-secondary-text border border-secondary-text rounded text-sm cursor-pointer"
-          >
-            {progressSortOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-sm">Show</span>
+    <div className="space-y-3 text-secondary-text">
+      {/* Compact controls: the search field, the filter chips and the sort
+          select. Two rows on mobile, a single row from sm up. No box, no
+          labels — the controls explain themselves, and mobile gets the
+          vertical space. */}
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        <input
+          type="search"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="Search achievements…"
+          aria-label="Search achievements by name or description"
+          className="w-full min-w-0 sm:flex-1 px-3 py-2 bg-secondary-background text-secondary-text border border-secondary-text rounded-lg text-sm placeholder:text-secondary-text/50"
+        />
+        <div className="flex items-center gap-2 shrink-0">
           <div
             role="radiogroup"
             aria-label="Filter achievements"
-            className="flex rounded border border-secondary-text divide-x divide-secondary-text overflow-hidden"
+            className="flex rounded-lg border border-secondary-text divide-x divide-secondary-text overflow-hidden"
           >
             {progressFilterOptions.map((option) => (
               <button
@@ -973,7 +1031,7 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                 aria-checked={filter === option.value}
                 onClick={() => setFilter(option.value)}
                 className={classNames(
-                  "px-3 py-1 text-sm transition-colors",
+                  "px-2.5 py-1.5 text-xs xs:text-sm transition-colors",
                   filter === option.value
                     ? "bg-secondary-text text-secondary-background font-medium"
                     : "bg-secondary-background text-secondary-text hover:bg-secondary-text/20",
@@ -983,14 +1041,46 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
               </button>
             ))}
           </div>
+          <div className="grow sm:hidden" />
+          <select
+            value={sort}
+            onChange={(event) => setSort(event.target.value as ProgressSort)}
+            aria-label="Sort achievements"
+            className="px-2 py-1.5 bg-secondary-background text-secondary-text border border-secondary-text rounded-lg text-xs xs:text-sm cursor-pointer"
+          >
+            {progressSortOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
 
-      {progressItems.length === 0 && (
-        <p className="text-sm text-secondary-text/70">No achievements to show.</p>
+      {sections.length === 0 && (
+        <p className="text-sm text-secondary-text/70">
+          No achievements {normalizedQuery ? `match "${query.trim()}"` : "to show"}.
+        </p>
       )}
 
-      {progressItems.map(({ type, label, data }) => {
+      {sections.map(({ group, items, earnedCount, totalCount }) => (
+        <section key={group.id}>
+          {/* The section name stays pinned below the fixed nav (h-16, md:h-12)
+              while its achievements scroll past, and the next section's name
+              pushes it away. Needs every ancestor to be overflow-visible. */}
+          <div className="sticky top-16 md:top-12 z-20 bg-secondary-background/95 backdrop-blur-sm">
+            <div className="flex items-baseline justify-between gap-2 py-1.5 border-b border-secondary-text/40">
+              <h3 className="font-semibold">
+                {group.icon} {group.title}
+              </h3>
+              <span className="text-xs text-secondary-text/70 whitespace-nowrap">
+                {earnedCount}/{totalCount} earned
+              </span>
+            </div>
+          </div>
+
+          <div className="mt-2 space-y-2">
+            {items.map(({ type, label, data }) => {
         // Recomputed here rather than read off the item so TypeScript narrows
         // `data` to the progression shapes that carry current/target.
         const hasTarget = "target" in data && !!data.target;
@@ -1028,11 +1118,11 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
               </div>
             )}
 
-            <div className="relative p-4">
-              <div className="flex items-start gap-4">
-                <div className="text-3xl">{label.icon}</div>
+            <div className="relative px-3 py-2.5">
+              <div className="flex items-start gap-3">
+                <div className="text-2xl sm:text-3xl md:text-4xl">{label.icon}</div>
                 <div className="flex-1">
-                  <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center justify-between mb-1">
                     <div className="flex-1">
                       <div className="flex items-center gap-3">
                         <h3 className="font-semibold ">{label.title}</h3>
@@ -1050,7 +1140,7 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                   {hasTarget ? (
                     <>
                       {/* Progress info */}
-                      <div className="mt-2">
+                      <div className="mt-1">
                         <div className="text-sm text-secondary-text">
                           <span className="font-medium">
                             {isTimePeriod ? formatTimePeriod(data.current) : fmtNum(data.current)}{" "}
@@ -1109,7 +1199,7 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                           to play for the next award. Inline on one wrapping
                           line to stay compact. */}
                       {type === "reunion" && "perOpponent" in data && data.perOpponent && data.perOpponent.size > 0 && (
-                        <div className="mt-2 text-xs text-secondary-text/70">
+                        <div className="mt-1.5 text-xs text-secondary-text/70">
                           Longest gaps:{" "}
                           {Array.from(data.perOpponent.entries() as IterableIterator<[string, number]>)
                             .sort((a, b) => b[1] - a[1])
@@ -1128,14 +1218,14 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
 
                       {/* Show last active time for back-after achievements */}
                       {type.startsWith("back-after-") && "lastActiveAt" in data && data.lastActiveAt && (
-                        <div className="mt-2 text-xs text-secondary-text/70">
+                        <div className="mt-1.5 text-xs text-secondary-text/70">
                           Last active: {dateString(data.lastActiveAt)}
                         </div>
                       )}
 
                       {/* Show start date for active achievements */}
                       {type.startsWith("active-") && "current" in data && !!data.current && (
-                        <div className="mt-2 text-xs text-secondary-text/70">
+                        <div className="mt-1.5 text-xs text-secondary-text/70">
                           Since: {dateString(Date.now() - data.current)}
                         </div>
                       )}
@@ -1143,7 +1233,7 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                       {/* Show the recurring anniversary date — the player's
                           first ever game. */}
                       {type === "anniversary" && "firstGameAt" in data && !!data.firstGameAt && (
-                        <div className="mt-2 text-xs text-secondary-text/70">
+                        <div className="mt-1.5 text-xs text-secondary-text/70">
                           Anniversary date: {dateString(data.firstGameAt)}
                         </div>
                       )}
@@ -1151,7 +1241,7 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                       {/* Show when the next season starts — the moment the
                           next Season Opener is there to take. */}
                       {type === "season-opener" && "nextSeasonStart" in data && !!data.nextSeasonStart && (
-                        <div className="mt-2 text-xs text-secondary-text/70">
+                        <div className="mt-1.5 text-xs text-secondary-text/70">
                           Next season starts: {dateString(data.nextSeasonStart)}
                         </div>
                       )}
@@ -1161,7 +1251,7 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                         "perOpponent" in data &&
                         data.perOpponent &&
                         data.perOpponent.size > 0 && (
-                          <div className="mt-3 pt-3 border-t border-secondary-text/50">
+                          <div className="mt-2 pt-2 border-t border-secondary-text/50">
                             <p className="text-xs text-secondary-text/70 mb-2">Current highest streaks:</p>
                             <div className="space-y-1 w-fit">
                               {Array.from(data.perOpponent.entries() as IterableIterator<[string, number]>)
@@ -1192,7 +1282,7 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                         "perOpponent" in data &&
                         data.perOpponent &&
                         data.perOpponent.size > 0 && (
-                          <div className="mt-3 pt-3 border-t border-secondary-text/50">
+                          <div className="mt-2 pt-2 border-t border-secondary-text/50">
                             <p className="text-xs text-secondary-text/70 mb-2">Games with opponents:</p>
                             <div className="space-y-1 w-fit">
                               {Array.from(
@@ -1240,7 +1330,7 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                         "newPlayers" in data &&
                         data.newPlayers &&
                         data.newPlayers.size > 0 && (
-                          <div className="mt-3 pt-3 border-t border-secondary-text/50">
+                          <div className="mt-2 pt-2 border-t border-secondary-text/50">
                             <p className="text-xs text-secondary-text/70 mb-2">First opponent for:</p>
                             <div className="flex flex-wrap gap-1">
                               {Array.from(data.newPlayers).map((player: string) => (
@@ -1263,7 +1353,7 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                         "missing" in data &&
                         data.missing &&
                         data.missing.size > 0 && (
-                          <div className="mt-3 pt-3 border-t border-secondary-text/50">
+                          <div className="mt-2 pt-2 border-t border-secondary-text/50">
                             <p className="text-xs text-secondary-text/70 mb-2">
                               {type === "full-house"
                                 ? "Still need to beat:"
@@ -1289,7 +1379,7 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
 
                       {/* Record holder for marathon-set */}
                       {type === "marathon-set" && "recordHolder" in data && (
-                        <div className="mt-2 text-xs text-secondary-text/70">
+                        <div className="mt-1.5 text-xs text-secondary-text/70">
                           {data.recordHolder ? (
                             <>
                               League record held by{" "}
@@ -1310,7 +1400,7 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                           fractional Elo swing, so the target must be strictly
                           exceeded rather than reached. */}
                       {(type === "david" || type === "goliath") && "recordHolder" in data && data.recordHolder && (
-                        <div className="mt-2 text-xs text-secondary-text/70">
+                        <div className="mt-1.5 text-xs text-secondary-text/70">
                           League record held by{" "}
                           <Link to={{ pathname: "/player/" + data.recordHolder, search }}>
                             <span className="text-secondary-text underline">
@@ -1325,7 +1415,7 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                       {/* Record holders for shootout — both players of the
                           record game hold it together. */}
                       {type === "shootout" && "recordHolders" in data && (
-                        <div className="mt-2 text-xs text-secondary-text/70">
+                        <div className="mt-1.5 text-xs text-secondary-text/70">
                           {data.recordHolders && data.recordHolders.length > 0 ? (
                             <>
                               League record held by{" "}
@@ -1353,7 +1443,7 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
 
                       {/* Record holder for leap-frog */}
                       {type === "leap-frog" && "recordHolder" in data && (
-                        <div className="mt-2 text-xs text-secondary-text/70">
+                        <div className="mt-1.5 text-xs text-secondary-text/70">
                           {data.recordHolder ? (
                             <>
                               League record held by{" "}
@@ -1375,7 +1465,7 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                           the player's busiest period ever is the shared
                           "Best" value next to the progress numbers. */}
                       {type in HERO_RECORD_PERIODS && "recordHolder" in data && (
-                        <div className="mt-2 text-xs text-secondary-text/70 space-y-1">
+                        <div className="mt-1.5 text-xs text-secondary-text/70 space-y-1">
                           <p>
                             {data.recordHolder ? (
                               <>
@@ -1402,7 +1492,7 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                           shared "Best" value next to the progress numbers. */}
                       {(type === "longest-win-streak" || type === "longest-lose-streak") &&
                         "recordHolder" in data && (
-                          <div className="mt-2 text-xs text-secondary-text/70 space-y-1">
+                          <div className="mt-1.5 text-xs text-secondary-text/70 space-y-1">
                             <p>
                               {data.recordHolder ? (
                                 <>
@@ -1430,7 +1520,7 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                           alternation run; the player's longest ever run is the
                           shared "Best" value next to the progress numbers. */}
                       {type === "jing-jang" && "recordHolder" in data && (
-                        <div className="mt-2 text-xs text-secondary-text/70 space-y-1">
+                        <div className="mt-1.5 text-xs text-secondary-text/70 space-y-1">
                           <p>
                             {data.recordHolder ? (
                               <>
@@ -1453,40 +1543,40 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                       )}
                     </>
                   ) : type === "marathon-set" ? (
-                    <div className="mt-2 text-xs text-secondary-text/70">
+                    <div className="mt-1.5 text-xs text-secondary-text/70">
                       No league record yet — win a deuce set with the winning score at 12 or above to set the first record.
                     </div>
                   ) : type === "david" || type === "goliath" ? (
-                    <div className="mt-2 text-xs text-secondary-text/70">
+                    <div className="mt-1.5 text-xs text-secondary-text/70">
                       No league record yet — {type === "david" ? "gain" : "lose"} {UPSET_RECORD_FLOOR}+ Score in a
                       single game (both players ranked) to set the first record.
                     </div>
                   ) : type === "shootout" ? (
-                    <div className="mt-2 text-xs text-secondary-text/70">
+                    <div className="mt-1.5 text-xs text-secondary-text/70">
                       No league record yet — play a {SHOOTOUT_RECORD_FLOOR}+ point game (the{" "}
                       {SHOOTOUT_SETS_COUNTED} highest-scoring legal sets count) to set the first record.
                     </div>
                   ) : type === "leap-frog" ? (
-                    <div className="mt-2 text-xs text-secondary-text/70">
+                    <div className="mt-1.5 text-xs text-secondary-text/70">
                       No league record yet — jump 2 or more ranks in a single game to set the first record.
                     </div>
                   ) : type === "longest-win-streak" || type === "longest-lose-streak" ? (
-                    <div className="mt-2 text-xs text-secondary-text/70">
+                    <div className="mt-1.5 text-xs text-secondary-text/70">
                       No league record yet — {type === "longest-win-streak" ? "win" : "lose"}{" "}
                       {STREAK_RECORD_FLOOR} in a row to set the first record.
                     </div>
                   ) : type === "jing-jang" ? (
-                    <div className="mt-2 text-xs text-secondary-text/70">
+                    <div className="mt-1.5 text-xs text-secondary-text/70">
                       No league record yet — alternate wins and losses for {JING_JANG_RECORD_FLOOR} games in a
                       row to set the first record.
                     </div>
                   ) : type in HERO_RECORD_PERIODS ? (
-                    <div className="mt-2 text-xs text-secondary-text/70">
+                    <div className="mt-1.5 text-xs text-secondary-text/70">
                       No league record yet — play {GAMES_IN_PERIOD_RECORD_FLOOR} games in one{" "}
                       {HERO_RECORD_PERIODS[type].noun} to set the first record.
                     </div>
                   ) : type === "earliest-game" || type === "latest-game" ? (
-                    <div className="mt-2 text-xs text-secondary-text/70 space-y-1">
+                    <div className="mt-1.5 text-xs text-secondary-text/70 space-y-1">
                       {"recordMinutes" in data && data.recordMinutes !== undefined ? (
                         <>
                           <p>
@@ -1509,7 +1599,7 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                     // achievements). The rank chases (On the Podium, Touched the
                     // Throne, Kingslayer) carry a best-ever rank shown here, and
                     // Group Play Star its best "N of M" group play.
-                    <div className="mt-2 text-xs text-secondary-text/70">
+                    <div className="mt-1.5 text-xs text-secondary-text/70">
                       {data.earned > 0 ? `Earned ${data.earned} time${data.earned > 1 ? "s" : ""}` : "No progress yet"}
                       {data.best !== undefined && data.best > 0 && (
                         <span className="ml-2">
@@ -1528,6 +1618,9 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
           </div>
         );
       })}
+          </div>
+        </section>
+      ))}
     </div>
   );
 };
