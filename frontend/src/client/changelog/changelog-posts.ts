@@ -54,6 +54,9 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
       text(
         "A table shows each ranked player with the rank and the score at the start, at the end, and the change in both. A toggle sorts the table by the rank at the start or by the rank at the end.",
       ),
+      text(
+        "A second toggle changes the data source between the actual leaderboard and the expected leaderboard. The expected leaderboard is the average of 5 000 simulations at each of the two times.",
+      ),
       text("The page is in the Other menu."),
     ],
   },
