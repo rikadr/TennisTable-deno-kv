@@ -18,6 +18,11 @@ type Source = "actual" | "expected";
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 const GAMES_PAGE_SIZE = 50;
 
+// One shared column template so the header rows and every player row line up.
+const ROW_GRID =
+  "grid grid-cols-[minmax(0,1fr)_2.25rem_2.25rem_2.5rem_3rem_3rem_3.25rem] md:grid-cols-[minmax(0,1fr)_3.5rem_3.5rem_3.5rem_4.5rem_4.5rem_4.5rem] items-center";
+const NUM_CELL = "self-stretch flex items-center justify-end py-1 px-1 md:px-2 whitespace-nowrap";
+
 // Convert a millisecond timestamp into the local "YYYY-MM-DDTHH:mm" string
 // expected by a <input type="datetime-local"> element.
 function toDatetimeLocalValue(ms: number): string {
@@ -217,6 +222,12 @@ export const WhatChangedPage: React.FC = () => {
     return Array.from(rowMap.values()).sort((a, b) => sortRank(a) - sortRank(b) || fallbackRank(a) - fallbackRank(b));
   }, [startEntries, endEntries, sortBy]);
 
+  // The DOM order of the rows stays fixed and the CSS `order` property places
+  // them, so a sort or source change animates the rows to their new positions
+  // (the season charts bars technique).
+  const stableRows = useMemo(() => [...rows].sort((a, b) => a.playerId.localeCompare(b.playerId)), [rows]);
+  const visualOrder = new Map(rows.map((row, index) => [row.playerId, index + 1]));
+
   // Games played between the two times, newest first. Always the actual
   // games - the source toggle only changes the leaderboard table.
   const gamesInWindow = useMemo(() => {
@@ -282,13 +293,6 @@ export const WhatChangedPage: React.FC = () => {
             />
           </div>
 
-          {source === "expected" && !simulating && (
-            <p className="text-center text-xs text-primary-text/60 px-4 pt-2">
-              The expected score at a time is the average of 5 000 simulated leaderboards where every ranked player
-              plays every other player.
-            </p>
-          )}
-
           {simulating ? (
             <div className="max-w-md mx-auto p-6 text-center">
               <p className="text-primary-text/60 text-sm mb-4">Simulating 2 × 5 000 leaderboards…</p>
@@ -303,80 +307,75 @@ export const WhatChangedPage: React.FC = () => {
           ) : rows.length === 0 ? (
             <div className="p-8 text-center text-primary-text/60">No ranked players at either time</div>
           ) : (
-            <table className="w-full text-primary-text border-collapse">
-              <thead className="border-b border-primary-text/50">
-                <tr className="text-xs md:text-sm text-primary-text/60">
-                  <th></th>
-                  <th colSpan={3} className="py-1 text-center font-medium border-l border-primary-text/20">
-                    Rank
-                  </th>
-                  <th colSpan={3} className="py-1 text-center font-medium border-l border-primary-text/20">
-                    Score
-                  </th>
-                </tr>
-                <tr className="text-xs xs:text-sm md:text-base text-primary-text">
-                  <th className="py-1 px-1 xs:px-2 md:px-3 text-left font-medium">Player</th>
-                  <th className="py-1 px-1 md:px-2 text-right font-medium border-l border-primary-text/20">Start</th>
-                  <th className="py-1 px-1 md:px-2 text-right font-medium">End</th>
-                  <th className="py-1 px-1 md:px-2 text-right font-medium">Δ</th>
-                  <th className="py-1 px-1 md:px-2 text-right font-medium border-l border-primary-text/20">Start</th>
-                  <th className="py-1 px-1 md:px-2 text-right font-medium">End</th>
-                  <th className="py-1 px-1 xs:px-2 md:px-3 text-right font-medium">Δ</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-primary-text/50 text-xs xs:text-sm md:text-base">
-                {rows.map((row) => {
-                  const deltaRank =
-                    row.startRank !== undefined && row.endRank !== undefined
-                      ? row.startRank - row.endRank
-                      : undefined;
-                  const deltaScore =
-                    row.startScore !== undefined && row.endScore !== undefined
-                      ? row.endScore - row.startScore
-                      : undefined;
-                  return (
-                    <tr
-                      key={row.playerId}
-                      onClick={() => navigate(`/player/${row.playerId}`)}
-                      className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text cursor-pointer transition-colors"
-                    >
-                      <td className="py-1 px-1 xs:px-2 md:px-3 max-w-0 w-full">
-                        <div className="flex items-center gap-1 md:gap-2 min-w-0">
-                          <ProfilePicture playerId={row.playerId} size={24} border={2} />
-                          <span className="font-medium truncate">{context.playerName(row.playerId)}</span>
-                        </div>
-                      </td>
-                      <td className="py-1 px-1 md:px-2 text-right whitespace-nowrap border-l border-primary-text/20">
-                        {row.startRank ?? <span className="text-primary-text/40">–</span>}
-                      </td>
-                      <td className="py-1 px-1 md:px-2 text-right whitespace-nowrap">
-                        {row.endRank ?? <span className="text-primary-text/40">–</span>}
-                      </td>
-                      <td className="py-1 px-1 md:px-2 text-right whitespace-nowrap">
-                        <DeltaCell delta={deltaRank} />
-                      </td>
-                      <td className="py-1 px-1 md:px-2 text-right whitespace-nowrap border-l border-primary-text/20">
-                        {row.startScore !== undefined ? (
-                          fmtNum(row.startScore, { digits: 0 })
-                        ) : (
-                          <span className="text-primary-text/40">–</span>
-                        )}
-                      </td>
-                      <td className="py-1 px-1 md:px-2 text-right whitespace-nowrap">
-                        {row.endScore !== undefined ? (
-                          fmtNum(row.endScore, { digits: 0 })
-                        ) : (
-                          <span className="text-primary-text/40">–</span>
-                        )}
-                      </td>
-                      <td className="py-1 px-1 xs:px-2 md:px-3 text-right whitespace-nowrap">
-                        <DeltaCell delta={deltaScore} />
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+            <div className="flex flex-col text-primary-text">
+              <div className={classNames(ROW_GRID, "text-xs md:text-sm text-primary-text/60")}>
+                <div />
+                <div className="col-span-3 self-stretch flex items-center justify-center py-1 font-medium border-l border-primary-text/20">
+                  Rank
+                </div>
+                <div className="col-span-3 self-stretch flex items-center justify-center py-1 font-medium border-l border-primary-text/20">
+                  Score
+                </div>
+              </div>
+              <div className={classNames(ROW_GRID, "text-xs xs:text-sm md:text-base border-b border-primary-text/50")}>
+                <div className="py-1 px-1 xs:px-2 md:px-3 font-medium">Player</div>
+                <div className={classNames(NUM_CELL, "font-medium border-l border-primary-text/20")}>Start</div>
+                <div className={classNames(NUM_CELL, "font-medium")}>End</div>
+                <div className={classNames(NUM_CELL, "font-medium")}>Δ</div>
+                <div className={classNames(NUM_CELL, "font-medium border-l border-primary-text/20")}>Start</div>
+                <div className={classNames(NUM_CELL, "font-medium")}>End</div>
+                <div className={classNames(NUM_CELL, "font-medium md:px-3")}>Δ</div>
+              </div>
+              {stableRows.map((row) => {
+                const deltaRank =
+                  row.startRank !== undefined && row.endRank !== undefined ? row.startRank - row.endRank : undefined;
+                const deltaScore =
+                  row.startScore !== undefined && row.endScore !== undefined
+                    ? row.endScore - row.startScore
+                    : undefined;
+                return (
+                  <div
+                    key={row.playerId}
+                    style={{ order: visualOrder.get(row.playerId) }}
+                    onClick={() => navigate(`/player/${row.playerId}`)}
+                    className={classNames(
+                      ROW_GRID,
+                      "text-xs xs:text-sm md:text-base transition-all duration-500 border-b border-primary-text/50",
+                      "bg-primary-background hover:bg-secondary-background hover:text-secondary-text cursor-pointer",
+                    )}
+                  >
+                    <div className="py-1 px-1 xs:px-2 md:px-3 min-w-0 flex items-center gap-1 md:gap-2">
+                      <ProfilePicture playerId={row.playerId} size={24} border={2} />
+                      <span className="font-medium truncate">{context.playerName(row.playerId)}</span>
+                    </div>
+                    <div className={classNames(NUM_CELL, "border-l border-primary-text/20")}>
+                      {row.startRank ?? <span className="text-primary-text/40">–</span>}
+                    </div>
+                    <div className={NUM_CELL}>{row.endRank ?? <span className="text-primary-text/40">–</span>}</div>
+                    <div className={NUM_CELL}>
+                      <DeltaCell delta={deltaRank} />
+                    </div>
+                    <div className={classNames(NUM_CELL, "border-l border-primary-text/20")}>
+                      {row.startScore !== undefined ? (
+                        fmtNum(row.startScore, { digits: 0 })
+                      ) : (
+                        <span className="text-primary-text/40">–</span>
+                      )}
+                    </div>
+                    <div className={NUM_CELL}>
+                      {row.endScore !== undefined ? (
+                        fmtNum(row.endScore, { digits: 0 })
+                      ) : (
+                        <span className="text-primary-text/40">–</span>
+                      )}
+                    </div>
+                    <div className={classNames(NUM_CELL, "md:px-3")}>
+                      <DeltaCell delta={deltaScore} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           )}
 
           {/* Games played between the two times */}
