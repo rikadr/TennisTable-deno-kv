@@ -5,7 +5,7 @@ import { TennisTable } from "../tennis-table";
 import { TournamentPredictionResult } from "../tournaments/prediction";
 
 export type WorkerMessage =
-  | { type: "start-expected-leaderboard"; data: { events: EventType[] } }
+  | { type: "start-expected-leaderboard"; data: { events: EventType[]; referenceTime?: number } }
   | { type: "expected-leaderboard-progress"; data: { progress: number } }
   | { type: "expected-leaderboard-result"; data: { result: ExpectedLeaderboard } }
   | { type: "start-simulating-elo-over-time"; data: { playerId: string; events: EventType[] } }
@@ -32,7 +32,10 @@ scope.addEventListener("message", (event) => {
 function handleWorkerMessage(message: WorkerMessage) {
   switch (message.type) {
     case "start-expected-leaderboard": {
-      const tennisTableForLeaderboard = new TennisTable({ events: message.data.events });
+      const tennisTableForLeaderboard = new TennisTable({
+        events: message.data.events,
+        referenceTime: message.data.referenceTime,
+      });
       const result = tennisTableForLeaderboard.simulations.expectedLeaderBoard((progress) =>
         postWorkerMessage({ type: "expected-leaderboard-progress", data: { progress } }),
       );

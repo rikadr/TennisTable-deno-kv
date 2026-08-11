@@ -42,6 +42,28 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
+    slug: "what-changed-page",
+    title: "What changed: compare the leaderboard between two times",
+    date: "2026-08-11",
+    tags: ["new-feature"],
+    summary: "A new page shows how the leaderboard changed between two times that you select.",
+    body: [
+      text(
+        "The new What changed page compares the leaderboard at two points in time. You select a start time and an end time.",
+      ),
+      text(
+        "A table shows each ranked player with the rank and the score at the start, at the end, and the change in both. A toggle sorts the tables by the rank at the start, the rank at the end, or the change in score.",
+      ),
+      text(
+        "A second toggle changes the data source between the actual leaderboard and the expected leaderboard. The expected leaderboard is the average of 5 000 simulations at each of the two times.",
+      ),
+      text(
+        "Sections under the table show the change in the season leaderboard and in the Hall of Fame score for each player, the achievements earned, and the games played in the same period. The season section needs a period within 1 season.",
+      ),
+      text("The page is in the Other menu."),
+    ],
+  },
+  {
     slug: "achievement-progress-sections-and-search",
     title: "Sections and search on the achievement Progress tab",
     date: "2026-08-10",
