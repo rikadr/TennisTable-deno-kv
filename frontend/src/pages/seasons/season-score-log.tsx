@@ -1,4 +1,4 @@
-import { Link, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { Season } from "../../client/client-db/seasons/season";
 import { ProfilePicture } from "../player/profile-picture";
@@ -167,27 +167,27 @@ export const SeasonScoreLog = ({ season }: Props) => {
             return (
             <tr key={idx} className="text-xs xs:text-sm md:text-base">
               <td className="py-1 px-1 xs:px-2 md:px-3 w-[35%] max-w-0">
-                <Link
-                  to={`/season/player?seasonStart=${season.start}&playerId=${imp.playerId}`}
-                  className="flex items-center gap-1 md:gap-2 font-medium hover:underline min-w-0"
+                <button
+                  onClick={() => setPlayerFilter(imp.playerId)}
+                  className="flex items-center gap-1 md:gap-2 font-medium hover:underline min-w-0 w-full text-left"
                 >
                   <div className="md:hidden shrink-0"><ProfilePicture playerId={imp.playerId} size={18} border={1} shape="rounded" /></div>
                   <div className="hidden md:block shrink-0"><ProfilePicture playerId={imp.playerId} size={30} border={2} shape="rounded" /></div>
                   <span className="truncate">{context.playerName(imp.playerId)}</span>
-                </Link>
+                </button>
               </td>
               <td className="py-1 px-1 xs:px-2 md:px-3 text-right font-bold w-[1%] whitespace-nowrap">
                 +{fmtNum(imp.improvement)}
               </td>
               <td className="py-1 px-1 xs:px-2 md:px-3 w-[35%] max-w-0">
-                <Link
-                  to={`/season/player?seasonStart=${season.start}&playerId=${imp.opponentId}`}
-                  className="flex items-center gap-1 md:gap-2 hover:underline min-w-0"
+                <button
+                  onClick={() => setOpponentFilter(imp.opponentId)}
+                  className="flex items-center gap-1 md:gap-2 hover:underline min-w-0 w-full text-left"
                 >
                   <div className="md:hidden shrink-0"><ProfilePicture playerId={imp.opponentId} size={18} border={1} shape="rounded" /></div>
                   <div className="hidden md:block shrink-0"><ProfilePicture playerId={imp.opponentId} size={30} border={2} shape="rounded" /></div>
                   <span className="truncate">{context.playerName(imp.opponentId)}</span>
-                </Link>
+                </button>
               </td>
               <td className="py-1 px-1 xs:px-2 md:px-3 w-[1%] whitespace-nowrap">
                 {/* Tiny screens: sets on top, per-set points below (max 3 sets per line). xs+: inline. */}
