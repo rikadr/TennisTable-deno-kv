@@ -10,6 +10,8 @@ import { classNames } from "../../common/class-names";
 import { fmtNum } from "../../common/number-utils";
 import { RelativeTime } from "../../common/date-utils";
 import { Game } from "../../client/client-db/event-store/projectors/games-projector";
+import { Achievement } from "../../client/client-db/achievements";
+import { getAchievementLabel } from "../player/player-achievements";
 import { ProfilePicture } from "../player/profile-picture";
 
 type SortBy = "start" | "end";
@@ -17,6 +19,7 @@ type Source = "actual" | "expected";
 
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 const GAMES_PAGE_SIZE = 50;
+const ACHIEVEMENTS_PAGE_SIZE = 50;
 
 // One shared column template so the header rows and every player row line up.
 const ROW_GRID =
@@ -63,12 +66,21 @@ function eventsUpTo(events: EventType[], time: number): EventType[] {
   });
 }
 
-function useLeaderboardAt(time: number | undefined): RankedEntry[] | undefined {
+function useDebounced<T>(value: T, ms: number): T {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const timeout = setTimeout(() => setDebounced(value), ms);
+    return () => clearTimeout(timeout);
+  }, [value, ms]);
+  return debounced;
+}
+
+// The full app state projected at a point in time.
+function useStateAt(time: number | undefined): TennisTable | undefined {
   const context = useEventDbContext();
   return useMemo(() => {
     if (time === undefined) return undefined;
-    const state = new TennisTable({ events: eventsUpTo(context.events, time), referenceTime: time });
-    return state.leaderboard.getLeaderboard().rankedPlayers.map(({ id, rank, elo }) => ({ id, rank, score: elo }));
+    return new TennisTable({ events: eventsUpTo(context.events, time), referenceTime: time });
   }, [context, time]);
 }
 
@@ -178,32 +190,18 @@ const DeltaCell: React.FC<{ delta?: number; digits?: number }> = ({ delta, digit
   );
 };
 
-export const WhatChangedPage: React.FC = () => {
+// Rank + score diff table between the two times. The DOM order of the rows
+// stays fixed and the CSS `order` property places them, so a sort or source
+// change animates the rows to their new positions (the season charts bars
+// technique).
+const DiffTable: React.FC<{
+  startEntries?: RankedEntry[];
+  endEntries?: RankedEntry[];
+  sortBy: SortBy;
+  emptyText: string;
+  onRowClick: (playerId: string) => void;
+}> = ({ startEntries, endEntries, sortBy, emptyText, onRowClick }) => {
   const context = useEventDbContext();
-  const navigate = useNavigate();
-
-  const [initialNow] = useState(() => Date.now());
-  const [fromValue, setFromValue] = useState(() => toDatetimeLocalValue(initialNow - WEEK_MS));
-  const [toValue, setToValue] = useState(() => toDatetimeLocalValue(initialNow));
-  const [sortBy, setSortBy] = useState<SortBy>("end");
-  const [source, setSource] = useState<Source>("actual");
-
-  const fromMs = fromDatetimeLocalValue(fromValue);
-  const toMs = fromDatetimeLocalValue(toValue);
-  const timesReversed = fromMs !== undefined && toMs !== undefined && fromMs > toMs;
-  const startTime = timesReversed ? toMs : fromMs;
-  const endTime = timesReversed ? fromMs : toMs;
-
-  const startActual = useLeaderboardAt(source === "actual" ? startTime : undefined);
-  const endActual = useLeaderboardAt(source === "actual" ? endTime : undefined);
-  const startExpected = useExpectedLeaderboardAt(startTime, source === "expected");
-  const endExpected = useExpectedLeaderboardAt(endTime, source === "expected");
-
-  const startEntries = source === "actual" ? startActual : startExpected.entries;
-  const endEntries = source === "actual" ? endActual : endExpected.entries;
-  const simulating = source === "expected" && (startExpected.loading || endExpected.loading);
-  const simulationProgress = (startExpected.loading ? startExpected.progress : 1) *
-    0.5 + (endExpected.loading ? endExpected.progress : 1) * 0.5;
 
   const rows = useMemo(() => {
     const rowMap = new Map<string, DiffRow>();
@@ -222,11 +220,148 @@ export const WhatChangedPage: React.FC = () => {
     return Array.from(rowMap.values()).sort((a, b) => sortRank(a) - sortRank(b) || fallbackRank(a) - fallbackRank(b));
   }, [startEntries, endEntries, sortBy]);
 
-  // The DOM order of the rows stays fixed and the CSS `order` property places
-  // them, so a sort or source change animates the rows to their new positions
-  // (the season charts bars technique).
   const stableRows = useMemo(() => [...rows].sort((a, b) => a.playerId.localeCompare(b.playerId)), [rows]);
   const visualOrder = new Map(rows.map((row, index) => [row.playerId, index + 1]));
+
+  if (rows.length === 0) {
+    return <div className="p-8 text-center text-primary-text/60">{emptyText}</div>;
+  }
+
+  return (
+    <div className="flex flex-col text-primary-text">
+      <div className={classNames(ROW_GRID, "text-xs md:text-sm text-primary-text/60")}>
+        <div />
+        <div className="col-span-3 self-stretch flex items-center justify-center py-1 font-medium border-l border-primary-text/20">
+          Rank
+        </div>
+        <div className="col-span-3 self-stretch flex items-center justify-center py-1 font-medium border-l border-primary-text/20">
+          Score
+        </div>
+      </div>
+      <div className={classNames(ROW_GRID, "text-xs xs:text-sm md:text-base border-b border-primary-text/50")}>
+        <div className="py-1 px-1 xs:px-2 md:px-3 font-medium">Player</div>
+        <div className={classNames(NUM_CELL, "font-medium border-l border-primary-text/20")}>Start</div>
+        <div className={classNames(NUM_CELL, "font-medium")}>End</div>
+        <div className={classNames(NUM_CELL, "font-medium")}>Δ</div>
+        <div className={classNames(NUM_CELL, "font-medium border-l border-primary-text/20")}>Start</div>
+        <div className={classNames(NUM_CELL, "font-medium")}>End</div>
+        <div className={classNames(NUM_CELL, "font-medium md:px-3")}>Δ</div>
+      </div>
+      {stableRows.map((row) => {
+        const deltaRank =
+          row.startRank !== undefined && row.endRank !== undefined ? row.startRank - row.endRank : undefined;
+        const deltaScore =
+          row.startScore !== undefined && row.endScore !== undefined ? row.endScore - row.startScore : undefined;
+        return (
+          <div
+            key={row.playerId}
+            style={{ order: visualOrder.get(row.playerId) }}
+            onClick={() => onRowClick(row.playerId)}
+            className={classNames(
+              ROW_GRID,
+              "text-xs xs:text-sm md:text-base transition-all duration-500 border-b border-primary-text/50",
+              "bg-primary-background hover:bg-secondary-background hover:text-secondary-text cursor-pointer",
+            )}
+          >
+            <div className="py-1 px-1 xs:px-2 md:px-3 min-w-0 flex items-center gap-1 md:gap-2">
+              <ProfilePicture playerId={row.playerId} size={24} border={2} />
+              <span className="font-medium truncate">{context.playerName(row.playerId)}</span>
+            </div>
+            <div className={classNames(NUM_CELL, "border-l border-primary-text/20")}>
+              {row.startRank ?? <span className="text-primary-text/40">–</span>}
+            </div>
+            <div className={NUM_CELL}>{row.endRank ?? <span className="text-primary-text/40">–</span>}</div>
+            <div className={NUM_CELL}>
+              <DeltaCell delta={deltaRank} />
+            </div>
+            <div className={classNames(NUM_CELL, "border-l border-primary-text/20")}>
+              {row.startScore !== undefined ? (
+                fmtNum(row.startScore, { digits: 0 })
+              ) : (
+                <span className="text-primary-text/40">–</span>
+              )}
+            </div>
+            <div className={NUM_CELL}>
+              {row.endScore !== undefined ? (
+                fmtNum(row.endScore, { digits: 0 })
+              ) : (
+                <span className="text-primary-text/40">–</span>
+              )}
+            </div>
+            <div className={classNames(NUM_CELL, "md:px-3")}>
+              <DeltaCell delta={deltaScore} />
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
+export const WhatChangedPage: React.FC = () => {
+  const context = useEventDbContext();
+  const navigate = useNavigate();
+
+  const [initialNow] = useState(() => Date.now());
+  const [fromValue, setFromValue] = useState(() => toDatetimeLocalValue(initialNow - WEEK_MS));
+  const [toValue, setToValue] = useState(() => toDatetimeLocalValue(initialNow));
+  const [sortBy, setSortBy] = useState<SortBy>("end");
+  const [source, setSource] = useState<Source>("actual");
+
+  const fromMs = fromDatetimeLocalValue(fromValue);
+  const toMs = fromDatetimeLocalValue(toValue);
+  const timesReversed = fromMs !== undefined && toMs !== undefined && fromMs > toMs;
+  // Debounced so typing in a datetime input does not rebuild the projections
+  // on every keystroke.
+  const startTime = useDebounced(timesReversed ? toMs : fromMs, 300);
+  const endTime = useDebounced(timesReversed ? fromMs : toMs, 300);
+
+  const startState = useStateAt(startTime);
+  const endState = useStateAt(endTime);
+
+  const startActual = useMemo(
+    () => startState?.leaderboard.getLeaderboard().rankedPlayers.map(({ id, rank, elo }) => ({ id, rank, score: elo })),
+    [startState],
+  );
+  const endActual = useMemo(
+    () => endState?.leaderboard.getLeaderboard().rankedPlayers.map(({ id, rank, elo }) => ({ id, rank, score: elo })),
+    [endState],
+  );
+  const startExpected = useExpectedLeaderboardAt(startTime, source === "expected");
+  const endExpected = useExpectedLeaderboardAt(endTime, source === "expected");
+
+  const simulating = source === "expected" && (startExpected.loading || endExpected.loading);
+  const simulationProgress =
+    (startExpected.loading ? startExpected.progress : 1) * 0.5 + (endExpected.loading ? endExpected.progress : 1) * 0.5;
+
+  // Hall of Fame score for every player, retired and active, at the two times.
+  const startHallOfFame = useMemo(
+    () =>
+      startState?.hallOfFame
+        .getFullHypotheticalLeaderboard()
+        .map((entry, index) => ({ id: entry.playerId, rank: index + 1, score: entry.score.total })),
+    [startState],
+  );
+  const endHallOfFame = useMemo(
+    () =>
+      endState?.hallOfFame
+        .getFullHypotheticalLeaderboard()
+        .map((entry, index) => ({ id: entry.playerId, rank: index + 1, score: entry.score.total })),
+    [endState],
+  );
+
+  // Achievements earned between the two times, newest first. Read from the
+  // current full history - `earnedAt` records when each was earned.
+  const achievementsInWindow = useMemo(() => {
+    if (startTime === undefined || endTime === undefined) return [];
+    context.achievements.calculateAchievements();
+    const all: Achievement[] = [];
+    context.achievements.achievementMap.forEach((playerAchievements) => all.push(...playerAchievements));
+    return all
+      .filter((achievement) => achievement.earnedAt >= startTime && achievement.earnedAt <= endTime)
+      .sort((a, b) => b.earnedAt - a.earnedAt);
+  }, [context, startTime, endTime]);
+  const [visibleAchievements, setVisibleAchievements] = useState(ACHIEVEMENTS_PAGE_SIZE);
 
   // Games played between the two times, newest first. Always the actual
   // games - the source toggle only changes the leaderboard table.
@@ -245,7 +380,7 @@ export const WhatChangedPage: React.FC = () => {
         <div className="bg-primary-background rounded-lg w-full overflow-hidden">
           <h1 className="text-2xl md:text-4xl text-center mt-2 md:mt-4 text-primary-text">What changed</h1>
           <p className="text-center text-sm md:text-base text-primary-text/60 mb-1 md:mb-2">
-            Leaderboard changes between two points in time
+            Changes between two points in time
           </p>
 
           {/* Timestamp pickers */}
@@ -304,79 +439,76 @@ export const WhatChangedPage: React.FC = () => {
               </div>
               <p className="text-primary-text/60 text-xs mt-2">{Math.round(simulationProgress * 100)} %</p>
             </div>
-          ) : rows.length === 0 ? (
-            <div className="p-8 text-center text-primary-text/60">No ranked players at either time</div>
           ) : (
-            <div className="flex flex-col text-primary-text">
-              <div className={classNames(ROW_GRID, "text-xs md:text-sm text-primary-text/60")}>
-                <div />
-                <div className="col-span-3 self-stretch flex items-center justify-center py-1 font-medium border-l border-primary-text/20">
-                  Rank
-                </div>
-                <div className="col-span-3 self-stretch flex items-center justify-center py-1 font-medium border-l border-primary-text/20">
-                  Score
-                </div>
-              </div>
-              <div className={classNames(ROW_GRID, "text-xs xs:text-sm md:text-base border-b border-primary-text/50")}>
-                <div className="py-1 px-1 xs:px-2 md:px-3 font-medium">Player</div>
-                <div className={classNames(NUM_CELL, "font-medium border-l border-primary-text/20")}>Start</div>
-                <div className={classNames(NUM_CELL, "font-medium")}>End</div>
-                <div className={classNames(NUM_CELL, "font-medium")}>Δ</div>
-                <div className={classNames(NUM_CELL, "font-medium border-l border-primary-text/20")}>Start</div>
-                <div className={classNames(NUM_CELL, "font-medium")}>End</div>
-                <div className={classNames(NUM_CELL, "font-medium md:px-3")}>Δ</div>
-              </div>
-              {stableRows.map((row) => {
-                const deltaRank =
-                  row.startRank !== undefined && row.endRank !== undefined ? row.startRank - row.endRank : undefined;
-                const deltaScore =
-                  row.startScore !== undefined && row.endScore !== undefined
-                    ? row.endScore - row.startScore
-                    : undefined;
-                return (
-                  <div
-                    key={row.playerId}
-                    style={{ order: visualOrder.get(row.playerId) }}
-                    onClick={() => navigate(`/player/${row.playerId}`)}
-                    className={classNames(
-                      ROW_GRID,
-                      "text-xs xs:text-sm md:text-base transition-all duration-500 border-b border-primary-text/50",
-                      "bg-primary-background hover:bg-secondary-background hover:text-secondary-text cursor-pointer",
-                    )}
-                  >
-                    <div className="py-1 px-1 xs:px-2 md:px-3 min-w-0 flex items-center gap-1 md:gap-2">
-                      <ProfilePicture playerId={row.playerId} size={24} border={2} />
-                      <span className="font-medium truncate">{context.playerName(row.playerId)}</span>
-                    </div>
-                    <div className={classNames(NUM_CELL, "border-l border-primary-text/20")}>
-                      {row.startRank ?? <span className="text-primary-text/40">–</span>}
-                    </div>
-                    <div className={NUM_CELL}>{row.endRank ?? <span className="text-primary-text/40">–</span>}</div>
-                    <div className={NUM_CELL}>
-                      <DeltaCell delta={deltaRank} />
-                    </div>
-                    <div className={classNames(NUM_CELL, "border-l border-primary-text/20")}>
-                      {row.startScore !== undefined ? (
-                        fmtNum(row.startScore, { digits: 0 })
-                      ) : (
-                        <span className="text-primary-text/40">–</span>
-                      )}
-                    </div>
-                    <div className={NUM_CELL}>
-                      {row.endScore !== undefined ? (
-                        fmtNum(row.endScore, { digits: 0 })
-                      ) : (
-                        <span className="text-primary-text/40">–</span>
-                      )}
-                    </div>
-                    <div className={classNames(NUM_CELL, "md:px-3")}>
-                      <DeltaCell delta={deltaScore} />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+            <DiffTable
+              startEntries={source === "actual" ? startActual : startExpected.entries}
+              endEntries={source === "actual" ? endActual : endExpected.entries}
+              sortBy={sortBy}
+              emptyText="No ranked players at either time"
+              onRowClick={(playerId) => navigate(`/player/${playerId}`)}
+            />
           )}
+
+          {/* Hall of Fame score changes between the two times */}
+          <div className="mt-4 border-t border-primary-text/20">
+            <h2 className="text-lg md:text-2xl text-center mt-2 text-primary-text">Hall of Fame score</h2>
+            <p className="text-center text-sm md:text-base text-primary-text/60 mb-1 md:mb-2">
+              The hypothetical Hall of Fame leaderboard for all players
+            </p>
+            <DiffTable
+              startEntries={startHallOfFame}
+              endEntries={endHallOfFame}
+              sortBy={sortBy}
+              emptyText="No players at either time"
+              onRowClick={(playerId) => navigate(`/hall-of-fame/${playerId}`)}
+            />
+          </div>
+
+          {/* Achievements earned between the two times */}
+          <div className="mt-4 border-t border-primary-text/20">
+            <h2 className="text-lg md:text-2xl text-center mt-2 text-primary-text">Achievements earned</h2>
+            <p className="text-center text-sm md:text-base text-primary-text/60 mb-1 md:mb-2">
+              {achievementsInWindow.length} {achievementsInWindow.length === 1 ? "achievement" : "achievements"} between
+              the two times
+            </p>
+
+            {achievementsInWindow.length > 0 && (
+              <div className="flex flex-col text-primary-text text-xs xs:text-sm md:text-base border-t border-primary-text/50">
+                {achievementsInWindow.slice(0, visibleAchievements).map((achievement, index) => {
+                  const label = getAchievementLabel(achievement.type, context.client.gameLimitForRanked);
+                  return (
+                    <div
+                      key={`${achievement.type}-${achievement.earnedBy}-${achievement.earnedAt}-${index}`}
+                      onClick={() => navigate(`/player/${achievement.earnedBy}`)}
+                      className="flex items-center gap-2 md:gap-3 py-1 px-1 xs:px-2 md:px-3 border-b border-primary-text/50 bg-primary-background hover:bg-secondary-background hover:text-secondary-text cursor-pointer transition-colors"
+                    >
+                      <span className="text-xl md:text-2xl shrink-0">{label.icon}</span>
+                      <span className="font-medium truncate flex-1 min-w-0">{label.title}</span>
+                      <div className="flex items-center justify-end gap-1 md:gap-2 min-w-0 max-w-[40%]">
+                        <span className="truncate">{context.playerName(achievement.earnedBy)}</span>
+                        <ProfilePicture playerId={achievement.earnedBy} size={24} border={2} />
+                      </div>
+                      <span className="whitespace-nowrap text-right">
+                        <RelativeTime date={new Date(achievement.earnedAt)} variant="auto" />
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {achievementsInWindow.length > visibleAchievements && (
+              <div className="flex justify-center py-4">
+                <button
+                  onClick={() => setVisibleAchievements((prev) => prev + ACHIEVEMENTS_PAGE_SIZE)}
+                  className="px-6 py-2 rounded text-sm font-medium transition-colors ring-1 bg-secondary-background text-secondary-text ring-secondary-text hover:opacity-80"
+                >
+                  Load {Math.min(ACHIEVEMENTS_PAGE_SIZE, achievementsInWindow.length - visibleAchievements)} more
+                  achievements
+                </button>
+              </div>
+            )}
+          </div>
 
           {/* Games played between the two times */}
           <div className="mt-4 border-t border-primary-text/20">
