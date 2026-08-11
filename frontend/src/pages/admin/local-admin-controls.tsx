@@ -2,6 +2,7 @@ import { useMutation } from "@tanstack/react-query";
 import React, { useState } from "react";
 import { classNames } from "../../common/class-names";
 import { httpClient } from "../../common/http-client";
+import { LoadingButton } from "../../common/loading-button";
 import { GenerateMockData } from "./mock-data/generate-mock-data";
 
 const LOCAL_API_BASE = process.env.REACT_APP_API_BASE_URL || "http://localhost:8000";
@@ -76,21 +77,25 @@ export const LocalAdminControls: React.FC = () => {
         </select>
 
         <div className="space-y-3">
-          <button
+          <LoadingButton
             onClick={() => window.confirm(`Replace local with ${selectedEnv.name}?`) && syncMutation.mutate()}
+            loading={syncMutation.isPending}
+            loadingText="Syncing..."
             disabled={loading}
             className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 disabled:bg-gray-400"
           >
-            {syncMutation.isPending ? "Syncing..." : `Sync from ${selectedEnv.name}`}
-          </button>
+            Sync from {selectedEnv.name}
+          </LoadingButton>
 
-          <button
+          <LoadingButton
             onClick={() => window.confirm("Delete all local events?") && deleteMutation.mutate()}
+            loading={deleteMutation.isPending}
+            loadingText="Deleting..."
             disabled={loading}
             className="w-full bg-red-600 text-white py-3 px-4 rounded-lg hover:bg-red-700 disabled:bg-gray-400"
           >
-            {deleteMutation.isPending ? "Deleting..." : "Delete Local Events"}
-          </button>
+            Delete Local Events
+          </LoadingButton>
         </div>
 
         {(syncMutation.isSuccess || deleteMutation.isSuccess || error) && (

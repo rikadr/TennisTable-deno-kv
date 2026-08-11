@@ -48,7 +48,6 @@ export const AddPlayerPage: React.FC = () => {
 
     const validateResponse = context.eventStore.playersProjector.validateCreatePlayer(event);
     if (validateResponse.valid === false) {
-      console.error(validateResponse.message);
       setErrorMessage(validateResponse.message);
       return;
     }

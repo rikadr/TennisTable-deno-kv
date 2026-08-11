@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { classNames } from "../../common/class-names";
+import { LoadingButton } from "../../common/loading-button";
 
 export type TournamentFormData = {
   name: string;
@@ -188,16 +189,17 @@ export const TournamentForm = ({ initialData, onSubmit, submitLabel, isPending, 
         </label>
       </div>
 
-      <button
+      <LoadingButton
         type="submit"
-        disabled={isPending}
+        loading={isPending}
+        loadingText="Saving..."
         className={classNames(
           "w-full py-3 px-6 rounded-lg font-semibold text-secondary-text bg-secondary-background hover:opacity-80 transition-opacity",
           isPending && "opacity-50 cursor-not-allowed",
         )}
       >
-        {isPending ? "Saving..." : submitLabel}
-      </button>
+        {submitLabel}
+      </LoadingButton>
     </form>
   );
 };

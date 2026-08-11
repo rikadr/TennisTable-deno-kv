@@ -6,6 +6,7 @@ import { classNames } from "../../common/class-names";
 import { EventTypeEnum, TournamentSkipGame } from "../../client/client-db/event-store/event-types";
 import { newId } from "../../common/nani-id";
 import { useEventMutation } from "../../hooks/use-event-mutation";
+import { useToast } from "../../wrappers/toast-provider";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { queryClient } from "../../common/query-client";
 import ConfettiExplosion from "react-confetti-explosion";
@@ -15,6 +16,7 @@ export const TournamentSkipGamePage = () => {
   const context = useEventDbContext();
   const tournament = context.tournaments.getTournament(tournamentId);
   const addEventMutation = useEventMutation();
+  const { showToast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
   const [skipSuccessfullyAdded, setSkipSuccessfullyAdded] = useState(false);
@@ -42,8 +44,7 @@ export const TournamentSkipGamePage = () => {
 
     const validateCreated = context.eventStore.tournamentsProjector.validateSkipGame(gameSkippedEvent);
     if (validateCreated.valid === false) {
-      console.error(validateCreated.message);
-      alert(`Error: ${validateCreated.message}`);
+      showToast("error", validateCreated.message);
       return;
     }
 

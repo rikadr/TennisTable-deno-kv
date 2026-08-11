@@ -3,6 +3,7 @@ import { queryClient } from "../../common/query-client";
 import { relativeTimeString } from "../../common/date-utils";
 import { Users } from "./users";
 import { useEventDbContext } from "../../wrappers/event-db-context";
+import { useToast } from "../../wrappers/toast-provider";
 import { session } from "../../services/auth";
 import { AllPlayerGamesDistrubution } from "./all-player-games-distribution";
 import { useEventMutation } from "../../hooks/use-event-mutation";
@@ -43,6 +44,7 @@ export const AdminPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const addEventMutation = useEventMutation();
+  const { showToast } = useToast();
 
   const activeTab = (searchParams.get("tab") as TabType) || "stats";
 
@@ -68,7 +70,7 @@ export const AdminPage: React.FC = () => {
 
     const validateResponse = context.eventStore.playersProjector.validateDeactivatePlayer(event);
     if (validateResponse.valid === false) {
-      console.error(validateResponse.message);
+      showToast("error", validateResponse.message);
       return;
     }
 
@@ -85,7 +87,7 @@ export const AdminPage: React.FC = () => {
 
     const validateResponse = context.eventStore.playersProjector.validateReactivatePlayer(event);
     if (validateResponse.valid === false) {
-      console.error(validateResponse.message);
+      showToast("error", validateResponse.message);
       return;
     }
 
@@ -102,7 +104,7 @@ export const AdminPage: React.FC = () => {
 
     const validateResponse = context.eventStore.gamesProjector.validateDeleteGame(event);
     if (validateResponse.valid === false) {
-      console.error(validateResponse.message);
+      showToast("error", validateResponse.message);
       return;
     }
 
