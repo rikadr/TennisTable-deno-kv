@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Switch } from "@headlessui/react";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { TennisTable } from "../../client/client-db/tennis-table";
 import { EventType, EventTypeEnum } from "../../client/client-db/event-store/event-types";
@@ -14,7 +13,7 @@ import { Achievement } from "../../client/client-db/achievements";
 import { getAchievementLabel } from "../player/player-achievements";
 import { ProfilePicture } from "../player/profile-picture";
 
-type SortBy = "start" | "end";
+type SortBy = "start" | "end" | "delta";
 type Source = "actual" | "expected";
 
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
@@ -140,45 +139,51 @@ function useExpectedLeaderboardAt(time: number | undefined, enabled: boolean) {
   return { entries, progress, loading: enabled && time !== undefined && entries === undefined };
 }
 
-// Labeled pill switch in the style of the tournament tree/list toggle.
-// `checked` selects the right-hand option.
-const PillToggle: React.FC<{
+// Labeled pill selector in the style of the tournament tree/list toggle,
+// generalized to any number of options: a knob slides to the selected one.
+function PillSelect<T extends string>({
+  label,
+  options,
+  value,
+  onChange,
+}: {
   label: string;
-  leftLabel: string;
-  rightLabel: string;
-  checked: boolean;
-  onChange: (checked: boolean) => void;
-}> = ({ label, leftLabel, rightLabel, checked, onChange }) => (
-  <div className="flex flex-col items-center gap-1">
-    <span className="text-xs md:text-sm text-primary-text/60">{label}</span>
-    <Switch
-      checked={checked}
-      onChange={onChange}
-      className="group relative flex h-10 w-40 cursor-pointer rounded-full bg-secondary-background p-1 transition-colors duration-200 ease-in-out focus:outline-none data-[focus]:outline-1 data-[focus]:outline-white"
-    >
-      <span
-        className={classNames(
-          "z-10 flex w-1/2 items-center justify-center text-sm",
-          checked ? "text-secondary-text" : "text-primary-text",
-        )}
-      >
-        {leftLabel}
-      </span>
-      <span
-        className={classNames(
-          "z-10 flex w-1/2 items-center justify-center text-sm",
-          checked ? "text-primary-text" : "text-secondary-text",
-        )}
-      >
-        {rightLabel}
-      </span>
-      <span
-        aria-hidden="true"
-        className="pointer-events-none absolute left-1 top-1 h-8 w-[4.75rem] rounded-full bg-primary-background shadow-lg ring-0 transition duration-200 ease-in-out group-data-[checked]:translate-x-[4.75rem]"
-      />
-    </Switch>
-  </div>
-);
+  options: { value: T; label: string }[];
+  value: T;
+  onChange: (value: T) => void;
+}) {
+  const selectedIndex = Math.max(
+    0,
+    options.findIndex((option) => option.value === value),
+  );
+  return (
+    <div className="flex flex-col items-center gap-1">
+      <span className="text-xs md:text-sm text-primary-text/60">{label}</span>
+      <div className="relative flex h-10 w-40 rounded-full bg-secondary-background p-1">
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute top-1 bottom-1 left-1 rounded-full bg-primary-background shadow-lg transition-transform duration-200 ease-in-out"
+          style={{
+            width: `calc((100% - 0.5rem) / ${options.length})`,
+            transform: `translateX(${selectedIndex * 100}%)`,
+          }}
+        />
+        {options.map((option) => (
+          <button
+            key={option.value}
+            onClick={() => onChange(option.value)}
+            className={classNames(
+              "z-10 flex-1 flex items-center justify-center text-xs xs:text-sm whitespace-nowrap rounded-full focus:outline-none",
+              option.value === value ? "text-primary-text" : "text-secondary-text",
+            )}
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 const DeltaCell: React.FC<{ delta?: number; digits?: number }> = ({ delta, digits = 0 }) => {
   if (delta === undefined) return <span className="text-primary-text/40">–</span>;
@@ -215,9 +220,25 @@ const DiffTable: React.FC<{
       rowMap.set(player.id, row);
     });
 
+    const list = Array.from(rowMap.values());
+
+    if (sortBy === "delta") {
+      // Biggest climbers first; rows without a delta go to the bottom.
+      const rankDelta = (row: DiffRow) =>
+        row.startRank !== undefined && row.endRank !== undefined ? row.startRank - row.endRank : -Infinity;
+      const scoreDelta = (row: DiffRow) =>
+        row.startScore !== undefined && row.endScore !== undefined ? row.endScore - row.startScore : -Infinity;
+      return list.sort(
+        (a, b) =>
+          rankDelta(b) - rankDelta(a) ||
+          scoreDelta(b) - scoreDelta(a) ||
+          (a.endRank ?? Infinity) - (b.endRank ?? Infinity),
+      );
+    }
+
     const sortRank = (row: DiffRow) => (sortBy === "start" ? row.startRank : row.endRank) ?? Infinity;
     const fallbackRank = (row: DiffRow) => (sortBy === "start" ? row.endRank : row.startRank) ?? Infinity;
-    return Array.from(rowMap.values()).sort((a, b) => sortRank(a) - sortRank(b) || fallbackRank(a) - fallbackRank(b));
+    return list.sort((a, b) => sortRank(a) - sortRank(b) || fallbackRank(a) - fallbackRank(b));
   }, [startEntries, endEntries, sortBy]);
 
   const stableRows = useMemo(() => [...rows].sort((a, b) => a.playerId.localeCompare(b.playerId)), [rows]);
@@ -412,19 +433,24 @@ export const WhatChangedPage: React.FC = () => {
 
           {/* Sort + source toggles */}
           <div className="flex justify-center items-end gap-4 xs:gap-8 px-4 py-2 border-b border-primary-text/20">
-            <PillToggle
-              label="Sort by rank at"
-              leftLabel="Start"
-              rightLabel="End"
-              checked={sortBy === "end"}
-              onChange={(checked) => setSortBy(checked ? "end" : "start")}
+            <PillSelect<SortBy>
+              label="Sort by"
+              options={[
+                { value: "start", label: "# Start" },
+                { value: "end", label: "# End" },
+                { value: "delta", label: "Δ" },
+              ]}
+              value={sortBy}
+              onChange={setSortBy}
             />
-            <PillToggle
+            <PillSelect<Source>
               label="Leaderboard"
-              leftLabel="Actual"
-              rightLabel="Expected"
-              checked={source === "expected"}
-              onChange={(checked) => setSource(checked ? "expected" : "actual")}
+              options={[
+                { value: "actual", label: "Actual" },
+                { value: "expected", label: "Expected" },
+              ]}
+              value={source}
+              onChange={setSource}
             />
           </div>
 
