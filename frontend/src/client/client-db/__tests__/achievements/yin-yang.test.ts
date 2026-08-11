@@ -1,13 +1,13 @@
 import { EventType, EventTypeEnum } from "../../event-store/event-types";
 import { TennisTable } from "../../tennis-table";
 
-// Jing Jang: the league record for the longest run of strictly alternating
+// Yin Yang: the league record for the longest run of strictly alternating
 // results — win, loss, win, loss (or the mirror). The first run to reach 5
 // games establishes the record; after that only a longer run takes it. While
 // the holder keeps alternating, the award grows with the run instead of
 // handing out one per game.
 
-describe("Jing Jang Achievement", () => {
+describe("Yin Yang Achievement", () => {
   const baseEvents: EventType[] = [
     { type: EventTypeEnum.PLAYER_CREATED, stream: "alice", time: 1, data: { name: "Alice" } },
     { type: EventTypeEnum.PLAYER_CREATED, stream: "bob", time: 2, data: { name: "Bob" } },
@@ -35,8 +35,8 @@ describe("Jing Jang Achievement", () => {
     return events;
   };
 
-  const jingJangs = (tt: TennisTable, playerId: string) =>
-    tt.achievements.getAchievements(playerId).filter((a) => a.type === "jing-jang");
+  const yinYangs = (tt: TennisTable, playerId: string) =>
+    tt.achievements.getAchievements(playerId).filter((a) => a.type === "yin-yang");
 
   it("establishes the first record at 5 alternating results", () => {
     const events: EventType[] = [...baseEvents, ...aliceAlternation(5, 100)];
@@ -44,15 +44,15 @@ describe("Jing Jang Achievement", () => {
     const tt = new TennisTable({ events });
     tt.achievements.calculateAchievements();
 
-    const awards = jingJangs(tt, "alice");
+    const awards = yinYangs(tt, "alice");
     expect(awards).toHaveLength(1);
     expect(awards[0]).toStrictEqual({
-      type: "jing-jang",
+      type: "yin-yang",
       earnedBy: "alice",
       earnedAt: 140,
       data: { streakLength: 5, startedAt: 100, previousRecord: undefined },
     });
-    expect(tt.achievements.jingJangRecord).toStrictEqual({ length: 5, holder: "alice" });
+    expect(tt.achievements.yinYangRecord).toStrictEqual({ length: 5, holder: "alice" });
   });
 
   it("does NOT award below the 5-game floor", () => {
@@ -61,8 +61,8 @@ describe("Jing Jang Achievement", () => {
     const tt = new TennisTable({ events });
     tt.achievements.calculateAchievements();
 
-    expect(jingJangs(tt, "alice")).toHaveLength(0);
-    expect(tt.achievements.jingJangRecord.length).toBeUndefined();
+    expect(yinYangs(tt, "alice")).toHaveLength(0);
+    expect(tt.achievements.yinYangRecord.length).toBeUndefined();
   });
 
   it("grows the holder's award as the alternation continues, instead of awarding again", () => {
@@ -71,13 +71,13 @@ describe("Jing Jang Achievement", () => {
     const tt = new TennisTable({ events });
     tt.achievements.calculateAchievements();
 
-    const awards = jingJangs(tt, "alice");
+    const awards = yinYangs(tt, "alice");
     expect(awards).toHaveLength(1);
     expect(awards[0].data.streakLength).toBe(7);
     expect(awards[0].data.startedAt).toBe(100);
     // earnedAt moves with the run — the 7th game.
     expect(awards[0].earnedAt).toBe(160);
-    expect(tt.achievements.jingJangRecord).toStrictEqual({ length: 7, holder: "alice" });
+    expect(tt.achievements.yinYangRecord).toStrictEqual({ length: 7, holder: "alice" });
   });
 
   it("a repeated result breaks the run", () => {
@@ -94,7 +94,7 @@ describe("Jing Jang Achievement", () => {
     const tt = new TennisTable({ events });
     tt.achievements.calculateAchievements();
 
-    expect(jingJangs(tt, "alice")).toHaveLength(0);
+    expect(yinYangs(tt, "alice")).toHaveLength(0);
   });
 
   it("a standing record must be strictly exceeded", () => {
@@ -117,16 +117,16 @@ describe("Jing Jang Achievement", () => {
 
     // Dave's run of 5 (at time 240) only matches the record — no award until
     // the 6th alternating result exceeds it.
-    const daveAwards = jingJangs(tt, "dave");
+    const daveAwards = yinYangs(tt, "dave");
     expect(daveAwards).toHaveLength(1);
     expect(daveAwards[0].data.streakLength).toBe(6);
     expect(daveAwards[0].data.previousRecord).toBe(5);
     expect(daveAwards[0].earnedAt).toBe(250);
     // Alice keeps the award her record run earned, at the length it held.
-    const aliceAwards = jingJangs(tt, "alice");
+    const aliceAwards = yinYangs(tt, "alice");
     expect(aliceAwards).toHaveLength(1);
     expect(aliceAwards[0].data.streakLength).toBe(5);
-    expect(tt.achievements.jingJangRecord).toStrictEqual({ length: 6, holder: "dave" });
+    expect(tt.achievements.yinYangRecord).toStrictEqual({ length: 6, holder: "dave" });
   });
 
   it("a pure head-to-head see-saw: the winner takes the tie, then the record trades", () => {
@@ -147,14 +147,14 @@ describe("Jing Jang Achievement", () => {
     const tt = new TennisTable({ events });
     tt.achievements.calculateAchievements();
 
-    const aliceAwards = jingJangs(tt, "alice");
+    const aliceAwards = yinYangs(tt, "alice");
     expect(aliceAwards).toHaveLength(1);
     expect(aliceAwards[0].data.streakLength).toBe(5);
-    const bobAwards = jingJangs(tt, "bob");
+    const bobAwards = yinYangs(tt, "bob");
     expect(bobAwards).toHaveLength(1);
     expect(bobAwards[0].data.streakLength).toBe(6);
     expect(bobAwards[0].data.previousRecord).toBe(5);
-    expect(tt.achievements.jingJangRecord).toStrictEqual({ length: 6, holder: "bob" });
+    expect(tt.achievements.yinYangRecord).toStrictEqual({ length: 6, holder: "bob" });
   });
 
   describe("Progression", () => {
@@ -171,7 +171,7 @@ describe("Jing Jang Achievement", () => {
       const tt = new TennisTable({ events });
       tt.achievements.calculateAchievements();
 
-      const progression = tt.achievements.getPlayerProgression("alice")["jing-jang"];
+      const progression = tt.achievements.getPlayerProgression("alice")["yin-yang"];
       expect(progression.current).toBe(1);
       expect(progression.best).toBe(3);
       expect(progression.target).toBeUndefined();
@@ -191,7 +191,7 @@ describe("Jing Jang Achievement", () => {
       const tt = new TennisTable({ events });
       tt.achievements.calculateAchievements();
 
-      const progression = tt.achievements.getPlayerProgression("dave")["jing-jang"];
+      const progression = tt.achievements.getPlayerProgression("dave")["yin-yang"];
       expect(progression.current).toBe(2);
       expect(progression.best).toBe(2);
       expect(progression.target).toBe(6);

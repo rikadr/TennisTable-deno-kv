@@ -103,17 +103,17 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
     date: "2026-08-09",
     tags: ["feature-update"],
     summary:
-      "Everybody's Opponent 🧩, Deuce Demon 🔱, Giant Hunting 🏹, Party Pooper 💩 and Jing Jang ☯️ are new achievements.",
+      "Everybody's Opponent 🧩, Deuce Demon 🔱, Giant Hunting 🏹, Party Pooper 💩 and Yin Yang ☯️ are new achievements.",
     body: [
       list(
         "Everybody's Opponent 🧩 - play every currently ranked player at least once. Wins and losses both count.",
         "Deuce Demon 🔱 - win 10 deuce sets in total. A deuce set is won 12-10 or higher.",
         "Giant Hunting 🏹 - win 3 games against higher-ranked players in 1 day. Wins against the same player count. You can earn it again on a later day.",
         "Party Pooper 💩 - give a player their first loss on a day they had won 5 or more games. This removes their Perfect Day.",
-        "Jing Jang ☯️ - a league record. Play the longest run of games where each result is different from the one before: win, loss, win, loss.",
+        "Yin Yang ☯️ - a league record. Play the longest run of games where each result is different from the one before: win, loss, win, loss.",
       ),
       text(
-        "Jing Jang works like the other league records. The first run of 5 alternating results sets the record. After that, only a longer run takes the record. The holder's award grows while their run continues.",
+        "Yin Yang works like the other league records. The first run of 5 alternating results sets the record. After that, only a longer run takes the record. The holder's award grows while their run continues.",
       ),
       text(
         "The Progress tab on the player page shows your progress for each achievement. For Everybody's Opponent it lists the ranked players you still need to play.",

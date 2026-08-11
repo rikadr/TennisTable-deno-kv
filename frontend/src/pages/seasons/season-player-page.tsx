@@ -3,8 +3,7 @@ import { ProfilePicture } from "../player/profile-picture";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { fmtNum } from "../../common/number-utils";
 import { useTennisParams } from "../../hooks/use-tennis-params";
-import { dateString } from "../player/player-achievements";
-import { RelativeTime, relativeTimeString } from "../../common/date-utils";
+import { dateString, RelativeTime, relativeTimeString } from "../../common/date-utils";
 
 export function SeasonPlayerPage() {
   const context = useEventDbContext();

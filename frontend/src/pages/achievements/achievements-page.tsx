@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import { classNames } from "../../common/class-names";
 import { useEventDbContext } from "../../wrappers/event-db-context";
-import { Achievement } from "../../client/client-db/achievements";
+import { Achievement, AchievementType } from "../../client/client-db/achievements";
 import { ACHIEVEMENT_LABELS } from "../player/player-achievements";
 import { AchievementsList } from "./achievements-list";
 import { ProgressList } from "./progress-list";
@@ -71,7 +71,7 @@ export const AchievementsPage: React.FC = () => {
 
   // Get all achievement types (including those with 0 earned)
   const achievementTypes = useMemo(() => {
-    const allTypes = Object.keys(ACHIEVEMENT_LABELS);
+    const allTypes = Object.keys(ACHIEVEMENT_LABELS) as AchievementType[];
     return allTypes.sort((a, b) => {
       const countA = achievementCounts[a] || 0;
       const countB = achievementCounts[b] || 0;
@@ -123,10 +123,7 @@ export const AchievementsPage: React.FC = () => {
                 All Achievements ({allAchievements.length})
               </option>
               {achievementTypes.map((type) => {
-                const label = ACHIEVEMENT_LABELS[type] || {
-                  title: type,
-                  icon: "🏅",
-                };
+                const label = ACHIEVEMENT_LABELS[type];
                 return (
                   <option key={type} value={type}>
                     {label.icon} {label.title} ({achievementCounts[type] ?? 0})

@@ -1,5 +1,3 @@
-import { isAfter } from "date-fns";
-
 const JWT_TOKEN_NAME = "jwt-token";
 
 export const session = {
@@ -18,7 +16,7 @@ export const session = {
   get isAuthenticated() {
     const sessionData = this.sessionData;
 
-    if (!sessionData || isAfter(new Date(), sessionData.expires)) {
+    if (!sessionData || Date.now() > sessionData.expires.getTime()) {
       this.token = undefined;
       return false;
     }

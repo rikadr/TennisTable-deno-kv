@@ -1,13 +1,14 @@
 import { useEventDbContext } from "../../wrappers/event-db-context";
-import { relativeTimeString } from "../../common/date-utils";
+import { dateString, daysBetweenCeiled, monthString, relativeTimeString } from "../../common/date-utils";
 import { classNames } from "../../common/class-names";
 import { useMemo, useState } from "react";
 import {
   Achievement,
   AchievementProgression,
+  AchievementType,
   GAMES_IN_PERIOD_RECORD_FLOOR,
   isReachievableAchievement,
-  JING_JANG_RECORD_FLOOR,
+  YIN_YANG_RECORD_FLOOR,
   SHOOTOUT_RECORD_FLOOR,
   SHOOTOUT_SETS_COUNTED,
   STREAK_RECORD_FLOOR,
@@ -27,7 +28,9 @@ type Props = {
   playerId?: string;
 };
 
-export const ACHIEVEMENT_LABELS: Record<string, { title: string; description: string; icon: string }> = {
+// Keyed on AchievementType so a new achievement without a label (or a
+// mistyped key) is a compile error instead of a silent fallback.
+export const ACHIEVEMENT_LABELS: Record<AchievementType, { title: string; description: string; icon: string }> = {
   "first-game": {
     title: "First Game",
     description: "Play your first game",
@@ -85,8 +88,8 @@ export const ACHIEVEMENT_LABELS: Record<string, { title: string; description: st
     description: "Suffer the longest run of consecutive losses in league history",
     icon: "🕳️",
   },
-  "jing-jang": {
-    title: "Jing Jang",
+  "yin-yang": {
+    title: "Yin Yang",
     description: "Put together the longest run of alternating wins and losses in league history",
     icon: "☯️",
   },
@@ -384,7 +387,7 @@ export function getAchievementLabel(
   type: string,
   gameLimitForRanked: number,
 ): { title: string; description: string; icon: string } {
-  const label = ACHIEVEMENT_LABELS[type] || { title: type, description: "", icon: "🏅" };
+  const label = ACHIEVEMENT_LABELS[type as AchievementType] || { title: type, description: "", icon: "🏅" };
   if (type === "ranked") {
     return { ...label, description: `Play ${gameLimitForRanked} games to qualify for the leaderboard` };
   }
@@ -726,7 +729,7 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
                     </p>
                   )}
 
-                {achievement.type === "jing-jang" && achievement.data && (
+                {achievement.type === "yin-yang" && achievement.data && (
                   <p className="text-xs text-secondary-text/70 mt-2">
                     {achievement.data.streakLength} alternating results in a row
                     {achievement.data.previousRecord !== undefined
@@ -845,12 +848,6 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
 
 function daysBetween(from: number, to: number): number {
   return Math.round((to - from) / (24 * 60 * 60 * 1000));
-}
-
-// Rounds up, so a revenge taken within the first day reads as "1 day",
-// never "0 days".
-export function daysBetweenCeiled(from: number, to: number): number {
-  return Math.ceil((to - from) / (24 * 60 * 60 * 1000));
 }
 
 // Formats minutes past midnight (0–1439) as a "HH:MM" clock time.
@@ -1516,10 +1513,10 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                           </div>
                         )}
 
-                      {/* Record holder for Jing Jang. The bar tracks the live
+                      {/* Record holder for Yin Yang. The bar tracks the live
                           alternation run; the player's longest ever run is the
                           shared "Best" value next to the progress numbers. */}
-                      {type === "jing-jang" && "recordHolder" in data && (
+                      {type === "yin-yang" && "recordHolder" in data && (
                         <div className="mt-1.5 text-xs text-secondary-text/70 space-y-1">
                           <p>
                             {data.recordHolder ? (
@@ -1534,7 +1531,7 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                               </>
                             ) : (
                               <>
-                                No record set yet — alternate wins and losses for {JING_JANG_RECORD_FLOOR} games
+                                No record set yet — alternate wins and losses for {YIN_YANG_RECORD_FLOOR} games
                                 in a row to start the record.
                               </>
                             )}
@@ -1565,9 +1562,9 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                       No league record yet — {type === "longest-win-streak" ? "win" : "lose"}{" "}
                       {STREAK_RECORD_FLOOR} in a row to set the first record.
                     </div>
-                  ) : type === "jing-jang" ? (
+                  ) : type === "yin-yang" ? (
                     <div className="mt-1.5 text-xs text-secondary-text/70">
-                      No league record yet — alternate wins and losses for {JING_JANG_RECORD_FLOOR} games in a
+                      No league record yet — alternate wins and losses for {YIN_YANG_RECORD_FLOOR} games in a
                       row to set the first record.
                     </div>
                   ) : type in HERO_RECORD_PERIODS ? (
@@ -1632,21 +1629,4 @@ function formatTimePeriod(ms?: number): string {
   }
   const days = Math.floor(ms / (24 * 60 * 60 * 1000));
   return `${days} day${days !== 1 ? "s" : ""}`;
-}
-
-export function dateString(time: number) {
-  return new Date(time).toLocaleDateString("nb-NO", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
-}
-
-// Month-granularity variant of dateString, for periods that span a whole
-// calendar month (e.g. "januar 2026").
-export function monthString(time: number) {
-  return new Date(time).toLocaleDateString("nb-NO", {
-    month: "long",
-    year: "numeric",
-  });
 }

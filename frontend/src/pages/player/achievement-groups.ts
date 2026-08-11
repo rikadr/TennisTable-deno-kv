@@ -46,7 +46,7 @@ export const ACHIEVEMENT_GROUPS: AchievementGroup[] = [
       "comeback-kid",
       "unbreakable-spirit",
       "longest-lose-streak",
-      "jing-jang",
+      "yin-yang",
     ],
   },
   {

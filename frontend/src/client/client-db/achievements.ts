@@ -54,11 +54,11 @@ export function isMilestoneGameNumber(gameNumber: number): boolean {
 export const DEUCE_DEMON_TARGET = 10;
 
 // Shortest run of strictly alternating results — win, loss, win, loss (or
-// loss, win, loss, win) — that can establish the very first Jing Jang
+// loss, win, loss, win) — that can establish the very first Yin Yang
 // record. Every game is trivially a run of 1 and any two mixed results a run
 // of 2, so the first record should take a genuinely long see-saw. Once a
 // record exists the floor is irrelevant — only beating the record counts.
-export const JING_JANG_RECORD_FLOOR = 5;
+export const YIN_YANG_RECORD_FLOOR = 5;
 
 // Wins over higher-ranked opponents a player needs within one local calendar
 // day for "Giant Hunting". Counted per game, not per distinct opponent — the
@@ -190,12 +190,12 @@ export class Achievements {
     length: undefined,
     holder: undefined,
   };
-  // League-wide running record for the Jing Jang achievement: the longest
+  // League-wide running record for the Yin Yang achievement: the longest
   // run of strictly alternating results (win, loss, win, loss — or the
   // mirror) any player has put together to date. Undefined until a run
-  // reaches JING_JANG_RECORD_FLOOR and establishes the first record. Used by
+  // reaches YIN_YANG_RECORD_FLOOR and establishes the first record. Used by
   // the progression view so players can see the mark they need to beat.
-  jingJangRecord: { length: number | undefined; holder: string | undefined } = {
+  yinYangRecord: { length: number | undefined; holder: string | undefined } = {
     length: undefined,
     holder: undefined,
   };
@@ -252,7 +252,7 @@ export class Achievements {
     this.latestGameRecord = { minutesIntoDay: undefined };
     this.winStreakRecord = { length: undefined, holder: undefined };
     this.loseStreakRecord = { length: undefined, holder: undefined };
-    this.jingJangRecord = { length: undefined, holder: undefined };
+    this.yinYangRecord = { length: undefined, holder: undefined };
     this.gamesInDayRecord = { count: undefined, holder: undefined };
     this.gamesInWeekRecord = { count: undefined, holder: undefined };
     this.gamesInMonthRecord = { count: undefined, holder: undefined };
@@ -276,15 +276,15 @@ export class Achievements {
         // once another player takes the record over.
         openWinStreakRecord: StreakRecordAchievement | undefined;
         openLoseStreakRecord: StreakRecordAchievement | undefined;
-        // Jing Jang chase state: the run of strictly alternating results the
+        // Yin Yang chase state: the run of strictly alternating results the
         // player is on right now, the result of their previous game (undefined
         // before their first), and — like the streak records — the award the
         // running alternation earned while the player still holds the record
         // with it.
-        jingJangStreak: number;
-        jingJangStartedAt: number;
-        jingJangLastWasWin: boolean | undefined;
-        openJingJangRecord: StreakRecordAchievement | undefined;
+        yinYangStreak: number;
+        yinYangStartedAt: number;
+        yinYangLastWasWin: boolean | undefined;
+        openYinYangRecord: StreakRecordAchievement | undefined;
         // Per-period state for the Hero of the Day / Week / Month records:
         // the local calendar period (its start timestamp) the player last
         // played in, how many games they have played in it so far, and the
@@ -345,10 +345,10 @@ export class Achievements {
           winStreakPlayer: new Map(),
           openWinStreakRecord: undefined,
           openLoseStreakRecord: undefined,
-          jingJangStreak: 0,
-          jingJangStartedAt: game.playedAt,
-          jingJangLastWasWin: undefined,
-          openJingJangRecord: undefined,
+          yinYangStreak: 0,
+          yinYangStartedAt: game.playedAt,
+          yinYangLastWasWin: undefined,
+          openYinYangRecord: undefined,
           heroOfTheDay: { periodStart: 0, gamesInPeriod: 0, openRecord: undefined },
           heroOfTheWeek: { periodStart: 0, gamesInPeriod: 0, openRecord: undefined },
           heroOfTheMonth: { periodStart: 0, gamesInPeriod: 0, openRecord: undefined },
@@ -375,10 +375,10 @@ export class Achievements {
           winStreakPlayer: new Map(),
           openWinStreakRecord: undefined,
           openLoseStreakRecord: undefined,
-          jingJangStreak: 0,
-          jingJangStartedAt: game.playedAt,
-          jingJangLastWasWin: undefined,
-          openJingJangRecord: undefined,
+          yinYangStreak: 0,
+          yinYangStartedAt: game.playedAt,
+          yinYangLastWasWin: undefined,
+          openYinYangRecord: undefined,
           heroOfTheDay: { periodStart: 0, gamesInPeriod: 0, openRecord: undefined },
           heroOfTheWeek: { periodStart: 0, gamesInPeriod: 0, openRecord: undefined },
           heroOfTheMonth: { periodStart: 0, gamesInPeriod: 0, openRecord: undefined },
@@ -453,12 +453,12 @@ export class Achievements {
       this.#checkHeroAchievements(game.winner, winner, game.playedAt);
       this.#checkHeroAchievements(game.loser, loser, game.playedAt);
 
-      // Check for "Jing Jang": the league record for the longest run of
+      // Check for "Yin Yang": the league record for the longest run of
       // strictly alternating results. Both players' runs move on every game;
       // the winner is checked first, so when both reach the record length at
       // once the win breaks the tie.
-      this.#updateJingJangStreak(game.winner, winner, true, game.playedAt);
-      this.#updateJingJangStreak(game.loser, loser, false, game.playedAt);
+      this.#updateYinYangStreak(game.winner, winner, true, game.playedAt);
+      this.#updateYinYangStreak(game.loser, loser, false, game.playedAt);
 
       // Check for Welcome Committee achievement
       // If this is the loser's first game ever, the winner is their first opponent
@@ -2183,7 +2183,7 @@ export class Achievements {
     }
   }
 
-  // Awards "Longest Win Streak" / "Longest Lose Streak" / "Jing Jang" — the
+  // Awards "Longest Win Streak" / "Longest Lose Streak" / "Yin Yang" — the
   // league-wide records for consecutive wins, consecutive losses and
   // strictly alternating results. Called with the player's streak as it
   // stands after the game just played.
@@ -2204,7 +2204,7 @@ export class Achievements {
   // Returns the award this streak now owns, to be stored on the player's
   // tracker and passed back in on their next game.
   #checkStreakRecordAchievement(
-    type: "longest-win-streak" | "longest-lose-streak" | "jing-jang",
+    type: "longest-win-streak" | "longest-lose-streak" | "yin-yang",
     record: { length: number | undefined; holder: string | undefined },
     playerId: string,
     streakLength: number,
@@ -2234,51 +2234,51 @@ export class Achievements {
         ? this.#createAchievement("longest-win-streak", playerId, playedAt, data)
         : type === "longest-lose-streak"
           ? this.#createAchievement("longest-lose-streak", playerId, playedAt, data)
-          : this.#createAchievement("jing-jang", playerId, playedAt, data);
+          : this.#createAchievement("yin-yang", playerId, playedAt, data);
     this.#addAchievement(playerId, achievement);
     record.length = streakLength;
     record.holder = playerId;
     return achievement;
   }
 
-  // Jing Jang: the league record for the longest run of strictly alternating
+  // Yin Yang: the league record for the longest run of strictly alternating
   // results — win, loss, win, loss (or the mirror). Every game moves the run
   // of both its players: a result different from the player's previous one
   // extends their run, a repeated result starts a fresh run at this game (a
   // run of 1 — the game itself), and a player's first ever game also starts
   // at 1. The record machinery is shared with the streak records: the first
-  // run to reach JING_JANG_RECORD_FLOOR establishes the record, after that
+  // run to reach YIN_YANG_RECORD_FLOOR establishes the record, after that
   // only a longer run takes it, and the holder's award grows while their
   // alternation continues instead of handing out one per game.
-  #updateJingJangStreak(
+  #updateYinYangStreak(
     playerId: string,
     tracker: {
-      jingJangStreak: number;
-      jingJangStartedAt: number;
-      jingJangLastWasWin: boolean | undefined;
-      openJingJangRecord: StreakRecordAchievement | undefined;
+      yinYangStreak: number;
+      yinYangStartedAt: number;
+      yinYangLastWasWin: boolean | undefined;
+      openYinYangRecord: StreakRecordAchievement | undefined;
     },
     won: boolean,
     playedAt: number,
   ) {
-    if (tracker.jingJangLastWasWin === undefined || tracker.jingJangLastWasWin === won) {
-      tracker.jingJangStreak = 1;
-      tracker.jingJangStartedAt = playedAt;
-      tracker.openJingJangRecord = undefined;
+    if (tracker.yinYangLastWasWin === undefined || tracker.yinYangLastWasWin === won) {
+      tracker.yinYangStreak = 1;
+      tracker.yinYangStartedAt = playedAt;
+      tracker.openYinYangRecord = undefined;
     } else {
-      tracker.jingJangStreak++;
+      tracker.yinYangStreak++;
     }
-    tracker.jingJangLastWasWin = won;
+    tracker.yinYangLastWasWin = won;
 
-    tracker.openJingJangRecord = this.#checkStreakRecordAchievement(
-      "jing-jang",
-      this.jingJangRecord,
+    tracker.openYinYangRecord = this.#checkStreakRecordAchievement(
+      "yin-yang",
+      this.yinYangRecord,
       playerId,
-      tracker.jingJangStreak,
-      tracker.jingJangStartedAt,
+      tracker.yinYangStreak,
+      tracker.yinYangStartedAt,
       playedAt,
-      tracker.openJingJangRecord,
-      JING_JANG_RECORD_FLOOR,
+      tracker.openYinYangRecord,
+      YIN_YANG_RECORD_FLOOR,
     );
   }
 
@@ -2903,12 +2903,12 @@ export class Achievements {
         target: this.loseStreakRecord.length === undefined ? undefined : this.loseStreakRecord.length + 1,
         recordHolder: this.loseStreakRecord.holder,
       },
-      "jing-jang": {
+      "yin-yang": {
         earned: 0,
         current: 0,
         best: 0,
-        target: this.jingJangRecord.length === undefined ? undefined : this.jingJangRecord.length + 1,
-        recordHolder: this.jingJangRecord.holder,
+        target: this.yinYangRecord.length === undefined ? undefined : this.yinYangRecord.length + 1,
+        recordHolder: this.yinYangRecord.holder,
       },
 
       // Rank & Score
@@ -3040,12 +3040,12 @@ export class Achievements {
     // the streak they are on now. Shown alongside the league streak records.
     let longestWinStreakAll = 0;
     let longestLoseStreakAll = 0;
-    // Jing Jang: the alternation run the player is on now, and their longest
+    // Yin Yang: the alternation run the player is on now, and their longest
     // ever. The run moves on every game — extended by a result different
     // from the previous one, restarted at 1 by a repeat.
-    let currentJingJang = 0;
-    let longestJingJang = 0;
-    let jingJangLastWasWin: boolean | undefined = undefined;
+    let currentYinYang = 0;
+    let longestYinYang = 0;
+    let yinYangLastWasWin: boolean | undefined = undefined;
     let donutCount = 0;
     let closeCallsCount = 0;
     let edgeLordCount = 0;
@@ -3147,14 +3147,14 @@ export class Achievements {
       // Track last active time
       lastActiveAt = game.playedAt;
 
-      // Jing Jang progression: move the alternation run with this result.
-      if (jingJangLastWasWin === undefined || jingJangLastWasWin === isWinner) {
-        currentJingJang = 1;
+      // Yin Yang progression: move the alternation run with this result.
+      if (yinYangLastWasWin === undefined || yinYangLastWasWin === isWinner) {
+        currentYinYang = 1;
       } else {
-        currentJingJang++;
+        currentYinYang++;
       }
-      jingJangLastWasWin = isWinner;
-      longestJingJang = Math.max(longestJingJang, currentJingJang);
+      yinYangLastWasWin = isWinner;
+      longestYinYang = Math.max(longestYinYang, currentYinYang);
 
       // Perfect Day progression: tally wins / losses per local calendar day.
       const dayStart = new Date(game.playedAt);
@@ -3318,11 +3318,11 @@ export class Achievements {
     progression["longest-lose-streak"].current = currentLoseStreakAll;
     progression["longest-lose-streak"].best = longestLoseStreakAll;
 
-    // Jing Jang: the live alternation run is what can still grow into the
+    // Yin Yang: the live alternation run is what can still grow into the
     // league record, so that is the progress. The player's longest ever run
     // is reported alongside it.
-    progression["jing-jang"].current = currentJingJang;
-    progression["jing-jang"].best = longestJingJang;
+    progression["yin-yang"].current = currentYinYang;
+    progression["yin-yang"].best = longestYinYang;
 
     // Perfect Day progression tracks TODAY's live attempt: the number of
     // games won today with zero losses so far. A single loss today nullifies
@@ -4030,7 +4030,7 @@ type AchievementDefinitions = {
   // Record-breaking alternation achievement — the longest run of strictly
   // alternating results (win, loss, win, loss or the mirror). Shares the
   // streak-record data shape and growth behaviour.
-  "jing-jang": StreakRecordAchievementData;
+  "yin-yang": StreakRecordAchievementData;
   "group-stage-star": { tournamentId: string; wins: number };
   "full-house": { count: number; firstGameAt: number };
   "humbled": { count: number; firstGameAt: number };
@@ -4079,7 +4079,7 @@ type AchievementDefinitions = {
   "milestone-game": { gameId: string; opponent: string; milestone: number };
 };
 
-type AchievementType = keyof AchievementDefinitions;
+export type AchievementType = keyof AchievementDefinitions;
 
 // Whether each achievement can be earned again after it has been earned.
 // One-time achievements cross a threshold that never resets — total counts
@@ -4149,7 +4149,7 @@ export const ACHIEVEMENT_IS_REACHIEVABLE: Record<AchievementType, boolean> = {
   "streak-ender": true, // Per ended streak
   "longest-win-streak": true, // League records — can be retaken
   "longest-lose-streak": true,
-  "jing-jang": true,
+  "yin-yang": true,
   "group-stage-star": true, // Per tournament's group play
   "full-house": false,
   "humbled": false,
@@ -4187,7 +4187,7 @@ export type Achievement = {
 type StreakRecordAchievement =
   | GenericAchievement<"longest-win-streak">
   | GenericAchievement<"longest-lose-streak">
-  | GenericAchievement<"jing-jang">;
+  | GenericAchievement<"yin-yang">;
 
 // The award for holding a games-in-a-period record — grown through the
 // day / week / month while the player still holds the record with it. The
@@ -4452,7 +4452,7 @@ export type AchievementProgression = {
   "streak-ender": BaseProgression;
   "longest-win-streak": StreakRecordProgression;
   "longest-lose-streak": StreakRecordProgression;
-  "jing-jang": StreakRecordProgression;
+  "yin-yang": StreakRecordProgression;
   "hero-of-the-day": HeroRecordProgression;
   "hero-of-the-week": HeroRecordProgression;
   "hero-of-the-month": HeroRecordProgression;
