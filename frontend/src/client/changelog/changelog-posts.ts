@@ -52,7 +52,7 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
         "The new What changed page compares the leaderboard at two points in time. You select a start time and an end time.",
       ),
       text(
-        "A table shows each ranked player with the rank and the score at the start, at the end, and the change in both. A toggle sorts the tables by the rank at the start, the rank at the end, or the change in rank.",
+        "A table shows each ranked player with the rank and the score at the start, at the end, and the change in both. A toggle sorts the tables by the rank at the start, the rank at the end, or the change in score.",
       ),
       text(
         "A second toggle changes the data source between the actual leaderboard and the expected leaderboard. The expected leaderboard is the average of 5 000 simulations at each of the two times.",

@@ -238,16 +238,11 @@ const DiffTable: React.FC<{
     const list = Array.from(rowMap.values());
 
     if (sortBy === "delta") {
-      // Biggest climbers first; rows without a delta go to the bottom.
-      const rankDelta = (row: DiffRow) =>
-        row.startRank !== undefined && row.endRank !== undefined ? row.startRank - row.endRank : -Infinity;
+      // Biggest score gain first; rows without a delta go to the bottom.
       const scoreDelta = (row: DiffRow) =>
         row.startScore !== undefined && row.endScore !== undefined ? row.endScore - row.startScore : -Infinity;
       return list.sort(
-        (a, b) =>
-          rankDelta(b) - rankDelta(a) ||
-          scoreDelta(b) - scoreDelta(a) ||
-          (a.endRank ?? Infinity) - (b.endRank ?? Infinity),
+        (a, b) => scoreDelta(b) - scoreDelta(a) || (a.endRank ?? Infinity) - (b.endRank ?? Infinity),
       );
     }
 
@@ -471,7 +466,7 @@ export const WhatChangedPage: React.FC = () => {
               options={[
                 { value: "start", label: "# Start" },
                 { value: "end", label: "# End" },
-                { value: "delta", label: "Δ" },
+                { value: "delta", label: "Score Δ" },
               ]}
               value={sortBy}
               onChange={setSortBy}
