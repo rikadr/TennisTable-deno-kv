@@ -4,7 +4,7 @@ import { useEventDbContext } from "../../wrappers/event-db-context";
 import { fmtNum } from "../../common/number-utils";
 import { ContentCard } from "./content-card";
 import { Season } from "../../client/client-db/seasons/season";
-import { dateString } from "./player-achievements";
+import { dateString } from "../../common/date-utils";
 import { SeasonPlayerScoreGraph } from "./season-player-score-graph";
 
 interface PlayerSeasonStatsProps {

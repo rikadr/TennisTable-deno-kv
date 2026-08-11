@@ -76,6 +76,29 @@ export function relativeTimeStringShort(date?: Date): string {
   return isPast ? `${result} ago` : `in ${result}`;
 }
 
+// Formats an epoch timestamp as a full date, e.g. "5. januar 2026".
+export function dateString(time: number) {
+  return new Date(time).toLocaleDateString("nb-NO", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+}
+
+// Month-granularity variant of dateString, for periods that span a whole
+// calendar month (e.g. "januar 2026").
+export function monthString(time: number) {
+  return new Date(time).toLocaleDateString("nb-NO", {
+    month: "long",
+    year: "numeric",
+  });
+}
+
+// Rounds up, so a span within the first day reads as "1 day", never "0 days".
+export function daysBetweenCeiled(from: number, to: number): number {
+  return Math.ceil((to - from) / (24 * 60 * 60 * 1000));
+}
+
 interface FormatDistanceOptions {
   includeSeconds?: boolean;
   addSuffix?: boolean;

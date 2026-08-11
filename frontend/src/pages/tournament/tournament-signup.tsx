@@ -7,6 +7,7 @@ import { ProfilePicture } from "../player/profile-picture";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { Tournament } from "../../client/client-db/tournaments/tournament";
 import { useEventMutation } from "../../hooks/use-event-mutation";
+import { useToast } from "../../wrappers/toast-provider";
 import {
   EventTypeEnum,
   TournamentCancelSignup,
@@ -16,6 +17,7 @@ import {
 export const TournamentSignup = ({ tournament }: { tournament: Tournament }) => {
   const context = useEventDbContext();
   const addEventMutation = useEventMutation();
+  const { showToast } = useToast();
   const [signUpEdit, setSignUpEdit] = useState(false);
   const [signUpPlayer, setSignUpPlayer] = useState<string>();
   const [showConfetti, setShowConfetti] = useState(false);
@@ -30,7 +32,7 @@ export const TournamentSignup = ({ tournament }: { tournament: Tournament }) => 
     };
     const validateResponse = context.eventStore.tournamentsProjector.validateSignup(event);
     if (validateResponse.valid === false) {
-      console.error(validateResponse.message);
+      showToast("error", validateResponse.message);
       return;
     }
     addEventMutation.mutate(event, {
@@ -53,7 +55,7 @@ export const TournamentSignup = ({ tournament }: { tournament: Tournament }) => 
     };
     const validateResponse = context.eventStore.tournamentsProjector.validateCancelSignup(event);
     if (validateResponse.valid === false) {
-      console.error(validateResponse.message);
+      showToast("error", validateResponse.message);
       return;
     }
     addEventMutation.mutate(event, {

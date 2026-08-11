@@ -59,6 +59,7 @@ import { WhatChangedPage } from "./pages/other/what-changed-page";
 import { PerformancePage } from "./pages/performance/performance-page";
 import { NotFoundPage } from "./pages/not-found-page";
 import { NewVersionChecker } from "./wrappers/new-version-checker";
+import { ToastProvider } from "./wrappers/toast-provider";
 
 const RequireAuth: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   if (!session.isAuthenticated) {
@@ -78,6 +79,7 @@ function App() {
       <Analytics />
       <ImageKitContext>
         <ThemeProvider>
+          <ToastProvider>
           {clientConfig.snow && <Snowfall radius={[0.2, 1]} speed={[0.1, 0.3]} wind={[0, 1]} />}
           {/* flow-root keeps descendant bottom margins (the page wrapper's
               mb-24 in NavMenu) inside this div, so the themed background
@@ -179,6 +181,7 @@ function App() {
                 </WebSocketRefetcher>
               </EventDbWrapper>
           </div>
+          </ToastProvider>
         </ThemeProvider>
       </ImageKitContext>
     </QueryClientProvider>

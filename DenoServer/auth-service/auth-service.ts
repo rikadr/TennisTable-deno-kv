@@ -46,13 +46,7 @@ async function signUp(username: string, password: string): Promise<{ token: stri
   // async hash not avaiable in deno deploy
   const encryptedPassword = bcrypt.hashSync(password);
 
-  const role: string = "user";
-
-  // if (username === "peder" || username === "rikard") {
-  //   role = "admin";
-  // }
-
-  const user = await userStore.createUser(username, encryptedPassword, role);
+  const user = await userStore.createUser(username, encryptedPassword, "user");
 
   return { token: await createJwt(user) };
 }
@@ -85,7 +79,8 @@ async function setRole(options: { role: string; username: string }): Promise<Omi
   if (!user) {
     throw new Error("User not found");
   }
-  return user;
+  const { password: _password, ...safeUser } = user;
+  return safeUser;
 }
 
 async function deleteUser(username: string): Promise<void> {

@@ -12,7 +12,7 @@ import { stringToColor } from "../common/string-to-color";
 export const AddPlayerPage: React.FC = () => {
   const navigate = useNavigate();
   const context = useEventDbContext();
-  const addEventMutation = useEventMutation();
+  const addEventMutation = useEventMutation({ suppressErrorToast: true });
   const [playerName, setPlayerName] = useState("");
   const [playerId, setPlayerId] = useState(newId());
   const [colorOptions, setColorOptions] = useState([
@@ -48,7 +48,6 @@ export const AddPlayerPage: React.FC = () => {
 
     const validateResponse = context.eventStore.playersProjector.validateCreatePlayer(event);
     if (validateResponse.valid === false) {
-      console.error(validateResponse.message);
       setErrorMessage(validateResponse.message);
       return;
     }

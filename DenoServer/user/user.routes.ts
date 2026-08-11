@@ -20,7 +20,13 @@ export const registerUserRoutes = (api: Router) => {
   api.get("/user/me", isAuthenticated, async (context: OptioPongContext) => {
     const user = authService.getUserFromRequest(context);
     const userData = await getUser(user.username);
-    context.response.body = userData;
+    if (!userData) {
+      context.response.status = 404;
+      context.response.body = { error: "User not found" };
+      return;
+    }
+    const { password: _password, ...safeUser } = userData;
+    context.response.body = safeUser;
     return;
   });
 

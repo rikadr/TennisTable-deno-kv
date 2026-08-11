@@ -533,12 +533,7 @@ export class HallOfFame {
         if (winner && loser) {
           winner.totalGames++;
           loser.totalGames++;
-          const { winnersNewElo, losersNewElo } = Elo.calculateELO(
-            winner.elo,
-            loser.elo,
-            winner.totalGames,
-            loser.totalGames,
-          );
+          const { winnersNewElo, losersNewElo } = Elo.calculateELO(winner.elo, loser.elo);
           winner.elo = winnersNewElo;
           loser.elo = losersNewElo;
         }

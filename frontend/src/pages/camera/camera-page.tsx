@@ -6,6 +6,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { upload } from "@imagekit/react";
 import { useImageKitTimestamp } from "../../wrappers/image-kit-context";
+import { useToast } from "../../wrappers/toast-provider";
 import { httpClient } from "../../common/http-client";
 
 export const CameraPage: React.FC = () => {
@@ -22,6 +23,7 @@ export const CameraPage: React.FC = () => {
   const [hasMediaStream, setHasMediaStream] = useState(false);
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const { setTimestamp } = useImageKitTimestamp();
+  const { showToast } = useToast();
 
   function captureWebcam() {
     const img = webCamRef.current?.getScreenshot();
@@ -68,6 +70,7 @@ export const CameraPage: React.FC = () => {
       navigate(`/player/${playerId}`);
     } catch (error) {
       console.error("Error uploading:", error);
+      showToast("error", "Could not upload the photo — check your connection and try again.");
       setIsUploading(false);
     }
   };

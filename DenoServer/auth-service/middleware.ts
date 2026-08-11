@@ -23,42 +23,23 @@ export const isAuthenticated: Middleware<ContextState> = async (context, next) =
     return;
   }
 
-  const authHeader = context.request.headers.get("Authorization");
-
-  if (!authHeader) {
-    context.response.status = 401;
-    context.response.body = { message: "Authorization header missing" };
-    return;
-  }
-
-  const token = authHeader.split(" ")[1];
-  if (!token) {
-    context.response.status = 401;
-    context.response.body = { message: "Token missing" };
-    return;
-  }
-
   try {
-    const user = await jwtVerify<SessionUser>(token, JWT_SECRET);
-    context.state.user = {
-      username: user.payload.username,
-      role: user.payload.role,
-    };
-
+    context.state.user = await verifyRequestToken(context);
     context.state.auth = new Auth(context);
-
-    await next();
-  } catch (_err) {
+  } catch (err) {
     context.response.status = 401;
-    context.response.body = { message: "Invalid token" };
+    context.response.body = { message: (err as Error).message };
+    return;
   }
+
+  // Outside the try/catch: a route handler failure must surface as a server
+  // error, not be re-labelled 401 with its internals echoed to the client.
+  await next();
 };
 
-export const middleware = {
-  isAuthenticated,
-};
-
-async function authenticate(context: Context) {
+// Shared token verification used by both the middleware path (isAuthenticated)
+// and the imperative path (hasAccess), so the two cannot drift apart.
+async function verifyRequestToken(context: Context): Promise<SessionUser> {
   const authHeader = context.request.headers.get("Authorization");
 
   if (!authHeader) {
@@ -72,7 +53,10 @@ async function authenticate(context: Context) {
 
   try {
     const user = await jwtVerify<SessionUser>(token, JWT_SECRET);
-    context.state.user = user.payload;
+    return {
+      username: user.payload.username,
+      role: user.payload.role,
+    };
   } catch (_err) {
     throw new Error("Invalid token");
   }
@@ -84,7 +68,7 @@ export async function hasAccess<T extends Resource, K extends Action<T>>(
   action: K,
 ): Promise<boolean> {
   try {
-    await authenticate(context);
+    context.state.user = await verifyRequestToken(context);
     const auth = new Auth(context);
     return auth.can(resource, action);
   } catch (_) {

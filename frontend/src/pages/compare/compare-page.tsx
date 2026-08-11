@@ -1,26 +1,14 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { LinkListPage } from "../../common/link-list-page";
 
 export const ComparePage: React.FC = () => {
-  const compareOptions: { name: string; url: string }[] = [
-    { name: "Compare 1v1 👥🥊", url: "/1v1" },
-    { name: "Compare all 📈", url: "/compare-players" },
-  ];
-
   return (
-    <div className="flex flex-col items-center bg-primary-background rounded-lg p-4 w-fit m-auto">
-      <h1 className="mb-6 text-2xl text-primary-text">Compare</h1>
-      <div className="flex flex-col gap-4 w-96">
-        {compareOptions.map(({ name, url }) => (
-          <Link
-            key={url}
-            className="bg-secondary-background hover:bg-secondary-background/50 rounded-md py-4 text-center text-lg text-secondary-text"
-            to={url}
-          >
-            {name}
-          </Link>
-        ))}
-      </div>
-    </div>
+    <LinkListPage
+      title="Compare"
+      links={[
+        { name: "Compare 1v1 👥🥊", url: "/1v1" },
+        { name: "Compare all 📈", url: "/compare-players" },
+      ]}
+    />
   );
 };

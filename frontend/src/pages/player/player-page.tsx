@@ -361,13 +361,13 @@ export const PlayerPage: React.FC = () => {
               )}
 
               {playerId && (
-                <ContentCard title="Oponent Frequency" description="Relative frequency of opponents you play">
+                <ContentCard title="Opponent Frequency" description="Relative frequency of opponents you play">
                   <PlayerGamesDistrubution playerId={playerId} />
                 </ContentCard>
               )}
 
               {playerId && (
-                <ContentCard title="Oponent scores" description="Relative score of oponents you play">
+                <ContentCard title="Opponent scores" description="Relative score of opponents you play">
                   <OponentsScores playerId={playerId} />
                 </ContentCard>
               )}

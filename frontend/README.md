@@ -1,55 +1,64 @@
-# Getting Started with Create React App
+# Tennis Table — Frontend
 
-This project was bootstrapped with
-[Create React App](https://github.com/facebook/create-react-app).
+The React frontend for Tennis Table, an office table-tennis leaderboard with
+Elo ratings, achievements, tournaments, seasons, and live game tracking.
 
-## Available Scripts
+The app is a **thick client**: it downloads the full event history from the
+backend and projects it into application state locally (the `TennisTable`
+class in `src/client/client-db/`). The backend is a thin event store — all
+business logic lives here in the frontend.
 
-In the project directory, you can run:
+## Getting started
 
-### `npm run start`
+Requires Node 24 (see `engines` in `package.json`).
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+```bash
+npm install
+cp .env.example .env   # defaults point at a local backend on :8000
+npm start
+```
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+Start the backend from `../DenoServer` with `deno task dev` (see its README),
+or point `REACT_APP_API_BASE_URL` at a deployed backend.
 
-### `npm run build`
+### Environment variables
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the
-best performance.
+| Variable | Purpose |
+| --- | --- |
+| `REACT_APP_API_BASE_URL` | Backend base URL (local dev: `http://localhost:8000`) |
+| `REACT_APP_CLIENT` | Client/tenant config: `local`, `optio`, `skimore`, `asplanviak`, `deepinsight`, or unset for the guest client |
+| `REACT_APP_ENV` | `local` enables local-only admin controls |
+| `REACT_APP_IMAGE_KIT_PUBLIC_KEY` | ImageKit public key for profile picture uploads |
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+## Scripts
 
-See the section about
-[deployment](https://facebook.github.io/create-react-app/docs/deployment) for
-more information.
+| Script | What it does |
+| --- | --- |
+| `npm start` | Dev server |
+| `npm run build` | Production build |
+| `npm test` | Run the Jest suite once |
+| `npm run test:watch` | Jest in watch mode |
+| `npm run test:coverage` | Jest with coverage report |
+| `npm run lint` | ESLint over `src/` |
 
-### `npm run eject`
+## Project layout
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+- `src/client/client-db/` — all domain logic: event projection, Elo,
+  leaderboard, achievements, tournaments, seasons, predictions. Tested in
+  `src/client/client-db/__tests__/`.
+- `src/client/client-config/` — per-tenant client configs and themes.
+- `src/client/changelog/` — the changelog posts shown at `/changelog`.
+- `src/pages/` — page components, routed in `src/App.tsx`.
+- `src/common/` — shared UI helpers and utilities.
+- `src/wrappers/` — providers (event DB, theming, nav).
 
-If you aren’t satisfied with the build tool and configuration choices, you can
-`eject` at any time. This command will remove the single build dependency from
-your project.
+## Conventions
 
-Instead, it will copy all the configuration files and the transitive
-dependencies (webpack, Babel, ESLint, etc) right into your project so you have
-full control over them. All of the commands except `eject` will still work, but
-they will point to the copied scripts so you can tweak them. At this point
-you’re on your own.
+See `AGENTS.md` for the full guidelines. The short version:
 
-You don’t have to ever use `eject`. The curated feature set is suitable for
-small and middle deployments, and you shouldn’t feel obligated to use this
-feature. However we understand that this tool wouldn’t be useful if you couldn’t
-customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the
-[Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
+- **Mobile-first is critical** — the app is used at the tennis table on
+  phones and tablets.
+- Use the theme classes (`bg-primary-background`, `text-primary-text`, …)
+  instead of hardcoded Tailwind colors, so client themes keep working.
+- Never use the `any` type in application code.
+- Table components follow the rules in `TABLES.md`.

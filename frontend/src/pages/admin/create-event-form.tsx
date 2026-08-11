@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { EventType, EventTypeEnum } from "../../client/client-db/event-store/event-types";
 import { newId } from "../../common/nani-id";
+import { LoadingButton } from "../../common/loading-button";
 import { useEventMutation } from "../../hooks/use-event-mutation";
 
 type CreateEventFormProps = {
@@ -8,7 +9,7 @@ type CreateEventFormProps = {
 };
 
 export const CreateEventForm = ({ onClose }: CreateEventFormProps) => {
-  const createEvent = useEventMutation();
+  const createEvent = useEventMutation({ suppressErrorToast: true });
   const [form, setForm] = useState({
     time: Date.now(),
     type: "",
@@ -95,7 +96,9 @@ export const CreateEventForm = ({ onClose }: CreateEventFormProps) => {
         </div>
       )}
       <div className="flex gap-2">
-        <button
+        <LoadingButton
+          loading={createEvent.isPending}
+          loadingText="Submitting..."
           onClick={() => {
             setError(undefined);
             let parsed;
@@ -118,11 +121,10 @@ export const CreateEventForm = ({ onClose }: CreateEventFormProps) => {
               },
             );
           }}
-          disabled={createEvent.isPending}
           className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 disabled:opacity-50"
         >
-          {createEvent.isPending ? "Submitting..." : "Submit"}
-        </button>
+          Submit
+        </LoadingButton>
         <button
           onClick={onClose}
           className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"

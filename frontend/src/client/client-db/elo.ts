@@ -27,12 +27,7 @@ export abstract class Elo {
       winner.totalGames++;
       loser.totalGames++;
 
-      const { winnersNewElo, losersNewElo } = this.calculateELO(
-        winner.elo,
-        loser.elo,
-        winner.totalGames,
-        loser.totalGames,
-      );
+      const { winnersNewElo, losersNewElo } = this.calculateELO(winner.elo, loser.elo);
       const pointsWon = winnersNewElo - winner.elo;
 
       winner.elo = winnersNewElo;
@@ -43,7 +38,7 @@ export abstract class Elo {
     return playerMap;
   }
 
-  static calculateELO(winnersElo: number, losersElo: number, winnersGames: number = 0, losersGames: number = 0) {
+  static calculateELO(winnersElo: number, losersElo: number) {
     // Calculate the expected scores for both players
     const expectedScoreWinner = 1 / (1 + Math.pow(10, (losersElo - winnersElo) / this.DIVISOR));
     const expectedScoreLoser = 1 / (1 + Math.pow(10, (winnersElo - losersElo) / this.DIVISOR));

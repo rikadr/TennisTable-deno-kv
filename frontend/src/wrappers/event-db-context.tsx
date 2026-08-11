@@ -21,7 +21,8 @@ export function useEventDb() {
       const LOCAL_STORAGE_KEY = EVENTS_LOCAL_STORAGE_KEY;
       const CACHE_TIMESTAMP_KEY = EVENTS_CACHE_TIMESTAMP_KEY;
       const TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
-      const FORCE_INVALIDATE_BEFORE = new Date("2026-02-23T00:00:00").getTime();
+      // Explicit UTC offset so the cutoff resolves to the same instant in every client timezone
+      const FORCE_INVALIDATE_BEFORE = new Date("2026-02-23T00:00:00Z").getTime();
 
       let storedEvents: EventType[] = [];
       let shouldClearCache = false;
@@ -111,9 +112,9 @@ export const EventDbWrapper: React.FC<{
   }
   if (eventsQuery.isError) {
     return (
-      <div className="w-full h-screen flex items-center justify-center">
+      <div className="w-full h-screen flex items-center justify-center bg-primary-background text-primary-text">
         <section>
-          <p>An error occured when loading events. Please try again</p>
+          <p>An error occurred when loading events. Please try again</p>
           <p>Error message: {eventsQuery.error?.message}</p>
         </section>
       </div>
@@ -121,7 +122,7 @@ export const EventDbWrapper: React.FC<{
   }
   if (!eventsQuery.data) {
     return (
-      <div className="w-full h-screen flex items-center justify-center">
+      <div className="w-full h-screen flex items-center justify-center bg-primary-background text-primary-text">
         <p>Unable to load events. Please try again</p>
       </div>
     );

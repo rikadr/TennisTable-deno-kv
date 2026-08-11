@@ -2,8 +2,8 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { Achievement } from "../../client/client-db/achievements";
 import { useEventDbContext } from "../../wrappers/event-db-context";
-import { getAchievementLabel, dateString, daysBetweenCeiled } from "../player/player-achievements";
-import { relativeTimeString } from "../../common/date-utils";
+import { getAchievementLabel } from "../player/player-achievements";
+import { dateString, daysBetweenCeiled, relativeTimeString } from "../../common/date-utils";
 import { ProfilePicture } from "../player/profile-picture";
 import { fmtNum } from "../../common/number-utils";
 
@@ -299,7 +299,7 @@ export const AchievementsList: React.FC<AchievementsListProps> = ({ achievements
                           : " (first league record!)"}
                       </span>
                     )}
-                  {achievement.type === "jing-jang" && achievement.data && (
+                  {achievement.type === "yin-yang" && achievement.data && (
                     <span className="text-[11px] opacity-80">
                       {achievement.data.streakLength} alternating results in a row
                       {achievement.data.previousRecord !== undefined

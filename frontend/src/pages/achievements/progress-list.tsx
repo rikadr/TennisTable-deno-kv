@@ -6,6 +6,7 @@ import { ProfilePicture } from "../player/profile-picture";
 import { fmtNum } from "../../common/number-utils";
 import { classNames } from "../../common/class-names";
 import { achievementProgressPercentage } from "../../common/achievement-progress";
+import { AchievementType } from "../../client/client-db/achievements";
 
 interface ProgressListProps {
   selectedType: string;
@@ -35,16 +36,16 @@ export const ProgressList: React.FC<ProgressListProps> = ({ selectedType }) => {
         const progression = context.achievements.getPlayerProgression(player.id);
         const specificProgression = progression[selectedType as keyof typeof progression];
 
-        // Safely extract current and target if they exist
-        // Use type narrowing or 'in' operator checks
+        // Safely extract current and target if they exist. Some progression
+        // shapes have no target (record chases before a record exists), so
+        // narrowed values still need an undefined fallback.
         let current = 0;
         let target = 0;
         let percent = 0;
         let earned = 0;
 
         if (specificProgression && "earned" in specificProgression) {
-          // @ts-ignore
-          earned = specificProgression.earned;
+          earned = specificProgression.earned ?? 0;
         }
 
         if (
@@ -52,10 +53,8 @@ export const ProgressList: React.FC<ProgressListProps> = ({ selectedType }) => {
           "target" in specificProgression &&
           "current" in specificProgression
         ) {
-          // @ts-ignore - TS doesn't fully understand the discrimination here without strict checks
-          current = specificProgression.current;
-          // @ts-ignore
-          target = specificProgression.target;
+          current = specificProgression.current ?? 0;
+          target = specificProgression.target ?? 0;
         } else if (specificProgression && "earned" in specificProgression) {
           current = earned;
           // For achievements without target (just 'earned' count), we can treat 1 as target if earned > 0
@@ -100,8 +99,8 @@ export const ProgressList: React.FC<ProgressListProps> = ({ selectedType }) => {
             <h2 className="text-xl font-bold flex items-center gap-3">
               <span>Progress:</span>
               <span className="bg-background-secondary px-3 py-1 rounded-md border border-primary-text/20 flex items-center gap-2">
-                {ACHIEVEMENT_LABELS[selectedType]?.icon}{" "}
-                {ACHIEVEMENT_LABELS[selectedType]?.title}
+                {ACHIEVEMENT_LABELS[selectedType as AchievementType]?.icon}{" "}
+                {ACHIEVEMENT_LABELS[selectedType as AchievementType]?.title}
               </span>
             </h2>
             <p className="text-sm opacity-70 mt-2">

@@ -17,7 +17,6 @@
     "@types/react-dom": "^18.3.7",
     "@vercel/analytics": "^2.0.1",
     "d3": "^7.9.0",
-    "date-fns": "^4.1.0",
     "nanoid": "^5.1.7",
     "react": "^18.3.1",
     "react-avatar-edit": "^1.2.0",
@@ -30,9 +29,7 @@
     "react-webcam": "^7.2.0",
     "recharts": "^2.13.0",
     "typescript": "^5.9.3",
-    "usehooks-ts": "^3.1.1",
-    "web-vitals": "^5.2.0",
-    "yocto-queue": "^1.2.2"
+    "usehooks-ts": "^3.1.1"
   },
   "scripts": {
     "start": "react-scripts start",
@@ -55,8 +52,7 @@
       "src/**/*.{ts,tsx}",
       "!src/**/*.d.ts",
       "!src/**/__tests__/**",
-      "!src/index.tsx",
-      "!src/reportWebVitals.ts"
+      "!src/index.tsx"
     ]
   },
   "browserslist": {
@@ -75,9 +71,8 @@
     "@types/d3": "^7.4.3",
     "@types/jest": "^30.0.0",
     "eslint": "^8.57.1",
-    "jest": "^30.3.0",
-    "tailwindcss": "^3.4.19",
-    "ts-jest": "^29.4.6"
+    "identity-obj-proxy": "^3.0.0",
+    "tailwindcss": "^3.4.19"
   },
   "overrides": {
     "@tootallnate/once": "3.0.1",

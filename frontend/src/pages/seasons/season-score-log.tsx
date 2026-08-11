@@ -3,8 +3,7 @@ import { useEventDbContext } from "../../wrappers/event-db-context";
 import { Season } from "../../client/client-db/seasons/season";
 import { ProfilePicture } from "../player/profile-picture";
 import { fmtNum } from "../../common/number-utils";
-import { dateString } from "../player/player-achievements";
-import { RelativeTime } from "../../common/date-utils";
+import { dateString, RelativeTime } from "../../common/date-utils";
 import { useMemo } from "react";
 
 type Props = {

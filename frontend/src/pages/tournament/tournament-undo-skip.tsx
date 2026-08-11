@@ -4,10 +4,12 @@ import { useEventDbContext } from "../../wrappers/event-db-context";
 import { ProfilePicture } from "../player/profile-picture";
 import { EventTypeEnum, TournamentUndoSkipGame } from "../../client/client-db/event-store/event-types";
 import { useEventMutation } from "../../hooks/use-event-mutation";
+import { useToast } from "../../wrappers/toast-provider";
 import { useNavigate, useLocation, Link, useSearchParams } from "react-router-dom";
 import { queryClient } from "../../common/query-client";
 import ConfettiExplosion from "react-confetti-explosion";
 import { classNames } from "../../common/class-names";
+import { LoadingButton } from "../../common/loading-button";
 
 export const TournamentUndoSkipPage = () => {
   const { tournament: tournamentId, player1, player2 } = useTennisParams();
@@ -16,6 +18,7 @@ export const TournamentUndoSkipPage = () => {
   const context = useEventDbContext();
   const tournament = context.tournaments.getTournament(tournamentId);
   const addEventMutation = useEventMutation();
+  const { showToast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
   const [undoSuccessfullyAdded, setUndoSuccessfullyAdded] = useState(false);
@@ -42,8 +45,7 @@ export const TournamentUndoSkipPage = () => {
 
     const validateUndo = context.eventStore.tournamentsProjector.validateUndoSkipGame(undoSkipEvent);
     if (validateUndo.valid === false) {
-      console.error(validateUndo.message);
-      alert(`Error: ${validateUndo.message}`);
+      showToast("error", validateUndo.message);
       return;
     }
 
@@ -95,9 +97,10 @@ export const TournamentUndoSkipPage = () => {
       </div>
 
       <div className="flex gap-4">
-        <button
+        <LoadingButton
           onClick={() => submitUndo(skipId, tournamentId)}
-          disabled={isSubmitting}
+          loading={isSubmitting}
+          loadingText="Undoing..."
           className={classNames(
             "flex-1 px-6 py-3 rounded-lg font-semibold",
             isSubmitting
@@ -105,8 +108,8 @@ export const TournamentUndoSkipPage = () => {
               : "bg-secondary-background text-secondary-text hover:opacity-90",
           )}
         >
-          {isSubmitting ? "Undoing..." : "⏮️ Confirm Undo Skip"}
-        </button>
+          ⏮️ Confirm Undo Skip
+        </LoadingButton>
 
         <Link
           to={`/tournament${location.search}`}
