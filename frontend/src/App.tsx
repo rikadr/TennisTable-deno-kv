@@ -55,6 +55,7 @@ import { ChangelogPage } from "./pages/changelog/changelog-page";
 import { ChangelogPostPage } from "./pages/changelog/changelog-post-page";
 import { ComparePage } from "./pages/compare/compare-page";
 import { OtherPage } from "./pages/other/other-page";
+import { WhatChangedPage } from "./pages/other/what-changed-page";
 import { PerformancePage } from "./pages/performance/performance-page";
 import { NotFoundPage } from "./pages/not-found-page";
 import { NewVersionChecker } from "./wrappers/new-version-checker";
@@ -150,6 +151,7 @@ function App() {
                         <Route path="/game/edit/score" element={<EditGameSore />} />
                         <Route path="/camera" element={<CameraPage />} />
                         <Route path="/other" element={<OtherPage />} />
+                        <Route path="/what-changed" element={<WhatChangedPage />} />
                         <Route path="/performance" element={<PerformancePage />} />
                         <Route path="/settings" element={<SettingsPage />} />
                         <Route path="/log-in" element={<LoginPage />} />
