@@ -30,7 +30,6 @@ export interface Database {
   updateEvent(oldTime: number, newEvent: EventType): Promise<boolean>;
   getEventsAfter(time: number): Promise<EventType[]>;
   getLatestEventTimestamp(): Promise<number | null>;
-  getAllEntries(): Promise<{ key: unknown[]; value: unknown }[]>;
   deleteAllEvents(): Promise<number>;
 
   // Users

@@ -116,43 +116,6 @@ export class SqliteDatabase implements Database {
     return row ? row.time : null;
   }
 
-  async getAllEntries(): Promise<{ key: unknown[]; value: unknown }[]> {
-    const entries: { key: unknown[]; value: unknown }[] = [];
-
-    const events = this.db.prepare(
-      "SELECT time, stream, type, data FROM events ORDER BY time ASC",
-    ).all<EventRow>();
-    for (const row of events) {
-      entries.push({
-        key: ["event", row.time],
-        value: { time: row.time, stream: row.stream, type: row.type, data: JSON.parse(row.data) },
-      });
-    }
-
-    const users = this.db.prepare(
-      "SELECT username, password, role FROM users",
-    ).all<{ username: string; password: string; role: string }>();
-    for (const row of users) {
-      entries.push({ key: ["user", row.username], value: row });
-    }
-
-    const liveGame = this.db.prepare(
-      "SELECT state FROM live_game WHERE id = 1",
-    ).get<{ state: string }>();
-    if (liveGame) {
-      entries.push({ key: ["live-game"], value: JSON.parse(liveGame.state) });
-    }
-
-    const kvEntries = this.db.prepare(
-      "SELECT key, value FROM key_value",
-    ).all<{ key: string; value: string }>();
-    for (const row of kvEntries) {
-      entries.push({ key: [row.key], value: JSON.parse(row.value) });
-    }
-
-    return entries;
-  }
-
   async deleteAllEvents(): Promise<number> {
     const count = this.db.prepare("SELECT COUNT(*) as cnt FROM events").get<{ cnt: number }>();
     this.db.exec("DELETE FROM events");

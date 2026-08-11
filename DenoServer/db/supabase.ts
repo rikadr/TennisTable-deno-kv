@@ -52,18 +52,35 @@ export class SupabaseDatabase implements Database {
   }
 
   async updateEvent(oldTime: number, newEvent: EventType): Promise<boolean> {
-    const { data: deleted } = await this.client
+    // Supabase has no client-side transactions, so order the operations to
+    // fail safe: the old event is never deleted before the new one is stored.
+    if (newEvent.time === oldTime) {
+      const { data, error } = await this.client
+        .from("events")
+        .update({ stream: newEvent.stream, type: newEvent.type, data: newEvent.data })
+        .eq("client_id", this.clientId)
+        .eq("time", oldTime)
+        .select("time");
+
+      if (error) {
+        console.error(`Failed to update event (time=${oldTime}):`, error.message);
+        return false;
+      }
+      return (data?.length ?? 0) > 0;
+    }
+
+    const { data: existing } = await this.client
       .from("events")
-      .delete()
+      .select("time")
       .eq("client_id", this.clientId)
       .eq("time", oldTime)
-      .select("time");
+      .maybeSingle();
 
-    if (!deleted?.length) {
+    if (!existing) {
       return false;
     }
 
-    const { error } = await this.client.from("events").insert({
+    const { error: insertError } = await this.client.from("events").insert({
       client_id: this.clientId,
       time: newEvent.time,
       stream: newEvent.stream,
@@ -71,8 +88,21 @@ export class SupabaseDatabase implements Database {
       data: newEvent.data,
     });
 
-    if (error) {
-      console.error(`Failed to insert updated event after deleting old one (time=${oldTime}):`, error.message);
+    if (insertError) {
+      console.error(`Failed to insert updated event (old time=${oldTime}):`, insertError.message);
+      return false;
+    }
+
+    const { error: deleteError } = await this.client
+      .from("events")
+      .delete()
+      .eq("client_id", this.clientId)
+      .eq("time", oldTime);
+
+    if (deleteError) {
+      // Remove the just-inserted event so the update does not leave both versions behind
+      await this.client.from("events").delete().eq("client_id", this.clientId).eq("time", newEvent.time);
+      console.error(`Failed to delete old event after inserting update (time=${oldTime}):`, deleteError.message);
       return false;
     }
 
@@ -123,63 +153,6 @@ export class SupabaseDatabase implements Database {
     }
 
     return data?.length ? data[0].time : null;
-  }
-
-  async getAllEntries(): Promise<{ key: unknown[]; value: unknown }[]> {
-    const entries: { key: unknown[]; value: unknown }[] = [];
-
-    let from = 0;
-    const pageSize = 1000;
-    while (true) {
-      const { data: events } = await this.client
-        .from("events")
-        .select("time, stream, type, data")
-        .eq("client_id", this.clientId)
-        .order("time", { ascending: true })
-        .range(from, from + pageSize - 1);
-
-      for (const row of events ?? []) {
-        entries.push({
-          key: ["event", row.time],
-          value: { time: row.time, stream: row.stream, type: row.type, data: row.data },
-        });
-      }
-      if (!events || events.length < pageSize) break;
-      from += pageSize;
-    }
-
-    const { data: users } = await this.client
-      .from("users")
-      .select("username, password, role")
-      .eq("client_id", this.clientId);
-
-    for (const row of users ?? []) {
-      entries.push({
-        key: ["user", row.username],
-        value: row,
-      });
-    }
-
-    const { data: liveGame } = await this.client
-      .from("live_game")
-      .select("state")
-      .eq("client_id", this.clientId)
-      .maybeSingle();
-
-    if (liveGame) {
-      entries.push({ key: ["live-game"], value: liveGame.state });
-    }
-
-    const { data: kvEntries } = await this.client
-      .from("key_value")
-      .select("key, value")
-      .eq("client_id", this.clientId);
-
-    for (const row of kvEntries ?? []) {
-      entries.push({ key: [row.key], value: row.value });
-    }
-
-    return entries;
   }
 
   async deleteAllEvents(): Promise<number> {
