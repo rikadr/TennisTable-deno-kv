@@ -1,12 +1,11 @@
 // Jest setup file - runs before all tests
+import "@testing-library/jest-dom";
 
-// Set up environment variables for tests
-process.env.REACT_APP_CLIENT = "optio";
+// Tests are written against the guest client config, so REACT_APP_CLIENT stays unset.
 process.env.REACT_APP_API_BASE_URL = "http://localhost:8000";
 process.env.REACT_APP_IMAGE_KIT_PUBLIC_KEY = "test_key";
 
-// You can also set up global mocks here
-// For example, if you need to mock window.matchMedia:
+// jsdom does not implement window.matchMedia
 Object.defineProperty(window, "matchMedia", {
   writable: true,
   value: jest.fn().mockImplementation((query) => ({
@@ -20,12 +19,3 @@ Object.defineProperty(window, "matchMedia", {
     dispatchEvent: jest.fn(),
   })),
 });
-
-// Mock localStorage if needed
-const localStorageMock = {
-  getItem: jest.fn(),
-  setItem: jest.fn(),
-  removeItem: jest.fn(),
-  clear: jest.fn(),
-};
-global.localStorage = localStorageMock as any;

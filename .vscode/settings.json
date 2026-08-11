@@ -2,7 +2,7 @@
   "deno.enablePaths": [
     "./DenoServer"
   ],
-  "deno.unstable": ["kv"],
+  "deno.unstable": ["cron", "broadcast-channel"],
   "deno.lint": true,
   "editor.formatOnSave": true,
   "editor.defaultFormatter": "denoland.vscode-deno",

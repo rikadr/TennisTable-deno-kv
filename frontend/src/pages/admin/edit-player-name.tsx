@@ -25,7 +25,7 @@ export const EditPlayerName: React.FC<{ playerId: string }> = ({ playerId }) => 
       return;
     }
 
-    await addEventMutation.mutateAsync(event, { onSuccess: () => queryClient.invalidateQueries });
+    await addEventMutation.mutateAsync(event, { onSuccess: () => queryClient.invalidateQueries() });
     setIsEdit(false);
   }
 

@@ -1621,12 +1621,7 @@ export class Achievements {
       loser.totalGames++;
       const winnerEloBefore = winner.elo;
       const loserEloBefore = loser.elo;
-      const { winnersNewElo, losersNewElo } = Elo.calculateELO(
-        winner.elo,
-        loser.elo,
-        winner.totalGames,
-        loser.totalGames,
-      );
+      const { winnersNewElo, losersNewElo } = Elo.calculateELO(winner.elo, loser.elo);
       winner.elo = winnersNewElo;
       loser.elo = losersNewElo;
       const eloGain = winnersNewElo - winnerEloBefore;

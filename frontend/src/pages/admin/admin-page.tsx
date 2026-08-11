@@ -72,7 +72,7 @@ export const AdminPage: React.FC = () => {
       return;
     }
 
-    addEventMutation.mutate(event, { onSuccess: () => queryClient.invalidateQueries });
+    addEventMutation.mutate(event, { onSuccess: () => queryClient.invalidateQueries() });
   }
 
   function handleReactivatePlayer(playerId: string) {
@@ -89,7 +89,7 @@ export const AdminPage: React.FC = () => {
       return;
     }
 
-    addEventMutation.mutate(event, { onSuccess: () => queryClient.invalidateQueries });
+    addEventMutation.mutate(event, { onSuccess: () => queryClient.invalidateQueries() });
   }
 
   function handleDeleteGame(gameId: string) {
