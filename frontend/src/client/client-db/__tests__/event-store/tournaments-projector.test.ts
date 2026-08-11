@@ -1,5 +1,4 @@
-import { ValidatorResponse } from "../../event-store/projectors/validator-types";
-
+import { expectInvalid } from "../../event-store/projectors/validator-test-utils";
 import { TournamentsProjector } from "../../event-store/projectors/tournaments-projector";
 import {
   EventTypeEnum,
@@ -12,11 +11,6 @@ import {
   TournamentUndoSkipGame,
   TournamentUpdated,
 } from "../../event-store/event-types";
-
-// Narrows a validator result so the failure message can be read type-safely.
-function expectInvalid(response: ValidatorResponse): asserts response is { valid: false; message: string } {
-  expect(response.valid).toBe(false);
-}
 
 const ONE_DAY = 24 * 60 * 60 * 1000;
 const FUTURE_START = Date.now() + 7 * ONE_DAY;

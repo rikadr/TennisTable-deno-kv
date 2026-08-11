@@ -1,5 +1,4 @@
-import { ValidatorResponse } from "../../event-store/projectors/validator-types";
-
+import { expectInvalid } from "../../event-store/projectors/validator-test-utils";
 import { PlyersProjector } from "../../event-store/projectors/players-projector";
 import {
   EventTypeEnum,
@@ -8,11 +7,6 @@ import {
   PlayerNameUpdated,
   PlayerReactivated,
 } from "../../event-store/event-types";
-
-// Narrows a validator result so the failure message can be read type-safely.
-function expectInvalid(response: ValidatorResponse): asserts response is { valid: false; message: string } {
-  expect(response.valid).toBe(false);
-}
 
 function createEvent(stream: string, name: string, time = 1000): PlayerCreated {
   return { time, stream, type: EventTypeEnum.PLAYER_CREATED, data: { name } };

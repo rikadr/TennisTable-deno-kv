@@ -12,7 +12,7 @@ import { stringToColor } from "../common/string-to-color";
 export const AddPlayerPage: React.FC = () => {
   const navigate = useNavigate();
   const context = useEventDbContext();
-  const addEventMutation = useEventMutation();
+  const addEventMutation = useEventMutation({ suppressErrorToast: true });
   const [playerName, setPlayerName] = useState("");
   const [playerId, setPlayerId] = useState(newId());
   const [colorOptions, setColorOptions] = useState([

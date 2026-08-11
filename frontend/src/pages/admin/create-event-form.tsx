@@ -9,7 +9,7 @@ type CreateEventFormProps = {
 };
 
 export const CreateEventForm = ({ onClose }: CreateEventFormProps) => {
-  const createEvent = useEventMutation();
+  const createEvent = useEventMutation({ suppressErrorToast: true });
   const [form, setForm] = useState({
     time: Date.now(),
     type: "",
