@@ -101,8 +101,18 @@ export class SupabaseDatabase implements Database {
 
     if (deleteError) {
       // Remove the just-inserted event so the update does not leave both versions behind
-      await this.client.from("events").delete().eq("client_id", this.clientId).eq("time", newEvent.time);
+      const { error: rollbackError } = await this.client
+        .from("events")
+        .delete()
+        .eq("client_id", this.clientId)
+        .eq("time", newEvent.time);
       console.error(`Failed to delete old event after inserting update (time=${oldTime}):`, deleteError.message);
+      if (rollbackError) {
+        console.error(
+          `Rollback failed too - events ${oldTime} and ${newEvent.time} both exist and need manual cleanup:`,
+          rollbackError.message,
+        );
+      }
       return false;
     }
 

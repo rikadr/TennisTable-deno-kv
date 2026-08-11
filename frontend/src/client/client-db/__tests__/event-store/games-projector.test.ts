@@ -1,12 +1,12 @@
 import { ValidatorResponse } from "../../event-store/projectors/validator-types";
 
+import { GamesProjector } from "../../event-store/projectors/games-projector";
+import { EventTypeEnum, GameCreated, GameDeleted, GameScore } from "../../event-store/event-types";
+
 // Narrows a validator result so the failure message can be read type-safely.
 function expectInvalid(response: ValidatorResponse): asserts response is { valid: false; message: string } {
   expect(response.valid).toBe(false);
 }
-
-import { GamesProjector } from "../../event-store/projectors/games-projector";
-import { EventTypeEnum, GameCreated, GameDeleted, GameScore } from "../../event-store/event-types";
 
 function createEvent(stream: string, playedAt: number, winner: string, loser: string): GameCreated {
   return { time: playedAt, stream, type: EventTypeEnum.GAME_CREATED, data: { playedAt, winner, loser } };

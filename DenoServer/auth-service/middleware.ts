@@ -26,12 +26,15 @@ export const isAuthenticated: Middleware<ContextState> = async (context, next) =
   try {
     context.state.user = await verifyRequestToken(context);
     context.state.auth = new Auth(context);
-
-    await next();
   } catch (err) {
     context.response.status = 401;
     context.response.body = { message: (err as Error).message };
+    return;
   }
+
+  // Outside the try/catch: a route handler failure must surface as a server
+  // error, not be re-labelled 401 with its internals echoed to the client.
+  await next();
 };
 
 // Shared token verification used by both the middleware path (isAuthenticated)

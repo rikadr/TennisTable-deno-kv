@@ -11,7 +11,7 @@ export const EditPlayerName: React.FC<{ playerId: string }> = ({ playerId }) => 
   const addEventMutation = useEventMutation();
   const context = useEventDbContext();
 
-  async function handleUpdatePlayerName() {
+  function handleUpdatePlayerName() {
     const event: PlayerNameUpdated = {
       type: EventTypeEnum.PLAYER_NAME_UPDATED,
       time: Date.now(),
@@ -25,8 +25,12 @@ export const EditPlayerName: React.FC<{ playerId: string }> = ({ playerId }) => 
       return;
     }
 
-    await addEventMutation.mutateAsync(event, { onSuccess: () => queryClient.invalidateQueries() });
-    setIsEdit(false);
+    addEventMutation.mutate(event, {
+      onSuccess: () => {
+        queryClient.invalidateQueries();
+        setIsEdit(false);
+      },
+    });
   }
 
   return (

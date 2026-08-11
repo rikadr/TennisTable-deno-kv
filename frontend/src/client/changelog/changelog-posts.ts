@@ -64,6 +64,21 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
     ],
   },
   {
+    slug: "error-messages-on-failed-saves",
+    title: "Error messages when a save fails",
+    date: "2026-08-11",
+    tags: ["new-feature"],
+    summary: "The app now shows an error message when it cannot save a game or another change.",
+    body: [
+      text(
+        "The app now shows an error message when it cannot save a change to the server. Before, a failed save was silent, and the change could look saved when it was not.",
+      ),
+      text(
+        "The message appears for games, tournament signups, skipped games, new players and profile photos. If you see the message, check your connection and try again.",
+      ),
+    ],
+  },
+  {
     slug: "achievement-progress-sections-and-search",
     title: "Sections and search on the achievement Progress tab",
     date: "2026-08-10",
