@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Switch } from "@headlessui/react";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { TennisTable } from "../../client/client-db/tennis-table";
 import { EventType, EventTypeEnum } from "../../client/client-db/event-store/event-types";
@@ -7,12 +8,15 @@ import { WorkerMessage } from "../../client/client-db/web-worker/web-worker";
 import { createModernWorker } from "../../hooks/use-elo-simulation-worker";
 import { classNames } from "../../common/class-names";
 import { fmtNum } from "../../common/number-utils";
+import { RelativeTime } from "../../common/date-utils";
+import { Game } from "../../client/client-db/event-store/projectors/games-projector";
 import { ProfilePicture } from "../player/profile-picture";
 
 type SortBy = "start" | "end";
 type Source = "actual" | "expected";
 
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+const GAMES_PAGE_SIZE = 50;
 
 // Convert a millisecond timestamp into the local "YYYY-MM-DDTHH:mm" string
 // expected by a <input type="datetime-local"> element.
@@ -119,6 +123,46 @@ function useExpectedLeaderboardAt(time: number | undefined, enabled: boolean) {
   return { entries, progress, loading: enabled && time !== undefined && entries === undefined };
 }
 
+// Labeled pill switch in the style of the tournament tree/list toggle.
+// `checked` selects the right-hand option.
+const PillToggle: React.FC<{
+  label: string;
+  leftLabel: string;
+  rightLabel: string;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+}> = ({ label, leftLabel, rightLabel, checked, onChange }) => (
+  <div className="flex flex-col items-center gap-1">
+    <span className="text-xs md:text-sm text-primary-text/60">{label}</span>
+    <Switch
+      checked={checked}
+      onChange={onChange}
+      className="group relative flex h-10 w-40 cursor-pointer rounded-full bg-secondary-background p-1 transition-colors duration-200 ease-in-out focus:outline-none data-[focus]:outline-1 data-[focus]:outline-white"
+    >
+      <span
+        className={classNames(
+          "z-10 flex w-1/2 items-center justify-center text-sm",
+          checked ? "text-secondary-text" : "text-primary-text",
+        )}
+      >
+        {leftLabel}
+      </span>
+      <span
+        className={classNames(
+          "z-10 flex w-1/2 items-center justify-center text-sm",
+          checked ? "text-primary-text" : "text-secondary-text",
+        )}
+      >
+        {rightLabel}
+      </span>
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute left-1 top-1 h-8 w-[4.75rem] rounded-full bg-primary-background shadow-lg ring-0 transition duration-200 ease-in-out group-data-[checked]:translate-x-[4.75rem]"
+      />
+    </Switch>
+  </div>
+);
+
 const DeltaCell: React.FC<{ delta?: number; digits?: number }> = ({ delta, digits = 0 }) => {
   if (delta === undefined) return <span className="text-primary-text/40">–</span>;
   if (Math.round(delta) === 0) return <span className="text-primary-text/60">0</span>;
@@ -173,6 +217,17 @@ export const WhatChangedPage: React.FC = () => {
     return Array.from(rowMap.values()).sort((a, b) => sortRank(a) - sortRank(b) || fallbackRank(a) - fallbackRank(b));
   }, [startEntries, endEntries, sortBy]);
 
+  // Games played between the two times, newest first. Always the actual
+  // games - the source toggle only changes the leaderboard table.
+  const gamesInWindow = useMemo(() => {
+    if (startTime === undefined || endTime === undefined) return [];
+    return context.games.filter((game) => game.playedAt >= startTime && game.playedAt <= endTime).toReversed();
+  }, [context, startTime, endTime]);
+  const [visibleGames, setVisibleGames] = useState(GAMES_PAGE_SIZE);
+  const leaderboardMap = context.leaderboard.getCachedLeaderboardMap();
+  const eloWonInGame = (game: Game) =>
+    leaderboardMap.get(game.winner)?.games.find((g) => g.time === game.playedAt)?.pointsDiff;
+
   return (
     <div className="w-full px-4 flex flex-col items-center">
       <div className="w-full max-w-2xl md:max-w-4xl">
@@ -209,52 +264,22 @@ export const WhatChangedPage: React.FC = () => {
             </p>
           )}
 
-          {/* Source toggle */}
-          <div className="flex justify-center items-center gap-2 px-4 py-2">
-            <span className="text-xs md:text-sm text-primary-text/60 w-16 text-right">Leaderboard</span>
-            {(
-              [
-                { value: "actual", label: "Actual" },
-                { value: "expected", label: "Expected" },
-              ] as const
-            ).map(({ value, label }) => (
-              <button
-                key={value}
-                onClick={() => setSource(value)}
-                className={classNames(
-                  "px-4 py-2 md:px-6 rounded text-sm md:text-base font-medium transition-colors ring-1",
-                  source === value
-                    ? "bg-secondary-background text-secondary-text ring-secondary-text"
-                    : "bg-primary-background text-primary-text ring-secondary-background hover:opacity-80",
-                )}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-
-          {/* Sort toggle */}
-          <div className="flex justify-center items-center gap-2 px-4 py-2 border-b border-primary-text/20">
-            <span className="text-xs md:text-sm text-primary-text/60 w-16 text-right">Sort by</span>
-            {(
-              [
-                { value: "start", label: "Rank at start" },
-                { value: "end", label: "Rank at end" },
-              ] as const
-            ).map(({ value, label }) => (
-              <button
-                key={value}
-                onClick={() => setSortBy(value)}
-                className={classNames(
-                  "px-4 py-2 md:px-6 rounded text-sm md:text-base font-medium transition-colors ring-1",
-                  sortBy === value
-                    ? "bg-secondary-background text-secondary-text ring-secondary-text"
-                    : "bg-primary-background text-primary-text ring-secondary-background hover:opacity-80",
-                )}
-              >
-                {label}
-              </button>
-            ))}
+          {/* Sort + source toggles */}
+          <div className="flex justify-center items-end gap-4 xs:gap-8 px-4 py-2 border-b border-primary-text/20">
+            <PillToggle
+              label="Sort by rank at"
+              leftLabel="Start"
+              rightLabel="End"
+              checked={sortBy === "end"}
+              onChange={(checked) => setSortBy(checked ? "end" : "start")}
+            />
+            <PillToggle
+              label="Leaderboard"
+              leftLabel="Actual"
+              rightLabel="Expected"
+              checked={source === "expected"}
+              onChange={(checked) => setSource(checked ? "expected" : "actual")}
+            />
           </div>
 
           {source === "expected" && !simulating && (
@@ -353,6 +378,86 @@ export const WhatChangedPage: React.FC = () => {
               </tbody>
             </table>
           )}
+
+          {/* Games played between the two times */}
+          <div className="mt-4 border-t border-primary-text/20">
+            <h2 className="text-lg md:text-2xl text-center mt-2 text-primary-text">Games played</h2>
+            <p className="text-center text-sm md:text-base text-primary-text/60 mb-1 md:mb-2">
+              {gamesInWindow.length} {gamesInWindow.length === 1 ? "game" : "games"} between the two times
+            </p>
+
+            {gamesInWindow.length > 0 && (
+              <table className="w-full text-primary-text border-collapse">
+                <thead className="border-b border-primary-text/50">
+                  <tr className="text-xs xs:text-sm md:text-base text-primary-text">
+                    <th className="py-1 px-1 xs:px-2 md:px-3 text-left font-medium">🏆 Winner</th>
+                    <th className="py-1 px-1 md:px-2 text-center font-medium whitespace-nowrap">Score</th>
+                    <th className="py-1 px-1 xs:px-2 md:px-3 text-right font-medium">Loser 💔</th>
+                    <th className="py-1 px-1 xs:px-2 md:px-3 text-right font-medium whitespace-nowrap">Elo won</th>
+                    <th className="py-1 px-1 xs:px-2 md:px-3"></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-primary-text/50 text-xs xs:text-sm md:text-base">
+                  {gamesInWindow.slice(0, visibleGames).map((game) => {
+                    const eloWon = eloWonInGame(game);
+                    return (
+                      <tr
+                        key={game.id}
+                        onClick={() => navigate(`/1v1?player1=${game.winner}&player2=${game.loser}`)}
+                        className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text cursor-pointer transition-colors"
+                      >
+                        <td className="py-1 px-1 xs:px-2 md:px-3 w-[35%] max-w-0">
+                          <div className="flex items-center gap-1 md:gap-2 min-w-0">
+                            <ProfilePicture playerId={game.winner} size={24} border={2} />
+                            <span className="font-medium truncate">{context.playerName(game.winner)}</span>
+                          </div>
+                        </td>
+                        <td className="py-1 px-1 md:px-2 text-center whitespace-nowrap w-[1%]">
+                          {game.score ? (
+                            <div className="leading-tight -my-1">
+                              <div className="font-medium">
+                                {game.score.setsWon.gameWinner} - {game.score.setsWon.gameLoser}
+                              </div>
+                              {game.score.setPoints && (
+                                <div className="font-light italic text-[10px] md:text-xs whitespace-nowrap leading-none">
+                                  {game.score.setPoints.map((set) => `${set.gameWinner}-${set.gameLoser}`).join(", ")}
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <span>-</span>
+                          )}
+                        </td>
+                        <td className="py-1 px-1 xs:px-2 md:px-3 w-[35%] max-w-0">
+                          <div className="flex items-center justify-end gap-1 md:gap-2 min-w-0">
+                            <span className="font-medium truncate">{context.playerName(game.loser)}</span>
+                            <ProfilePicture playerId={game.loser} size={24} border={2} />
+                          </div>
+                        </td>
+                        <td className="py-1 px-1 xs:px-2 md:px-3 text-right font-medium w-[1%] whitespace-nowrap">
+                          {eloWon !== undefined ? `+${fmtNum(eloWon, { digits: 0 })}` : "-"}
+                        </td>
+                        <td className="py-1 px-1 xs:px-2 md:px-3 text-right whitespace-nowrap w-[1%]">
+                          <RelativeTime date={new Date(game.playedAt)} variant="auto" />
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
+
+            {gamesInWindow.length > visibleGames && (
+              <div className="flex justify-center py-4 border-t border-primary-text/20">
+                <button
+                  onClick={() => setVisibleGames((prev) => prev + GAMES_PAGE_SIZE)}
+                  className="px-6 py-2 rounded text-sm font-medium transition-colors ring-1 bg-secondary-background text-secondary-text ring-secondary-text hover:opacity-80"
+                >
+                  Load {Math.min(GAMES_PAGE_SIZE, gamesInWindow.length - visibleGames)} more games
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

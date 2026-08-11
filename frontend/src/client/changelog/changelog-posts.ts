@@ -57,6 +57,7 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
       text(
         "A second toggle changes the data source between the actual leaderboard and the expected leaderboard. The expected leaderboard is the average of 5 000 simulations at each of the two times.",
       ),
+      text("A list under the table shows the games from the same period, with the score and the Elo points won."),
       text("The page is in the Other menu."),
     ],
   },
