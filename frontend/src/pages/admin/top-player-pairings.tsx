@@ -1,6 +1,34 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useEventDbContext } from "../../wrappers/event-db-context";
+
+type TimeRange = "day" | "week" | "month" | "year" | "all";
+
+const TIME_RANGE_LABELS: Record<TimeRange, string> = {
+  day: "Today",
+  week: "7 days",
+  month: "30 days",
+  year: "365 days",
+  all: "All time",
+};
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+// "day" is the current calendar day; the other ranges are rolling windows ending now.
+const getRangeCutoff = (range: TimeRange, now: Date): number => {
+  switch (range) {
+    case "day":
+      return new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    case "week":
+      return now.getTime() - 7 * DAY_MS;
+    case "month":
+      return now.getTime() - 30 * DAY_MS;
+    case "year":
+      return now.getTime() - 365 * DAY_MS;
+    case "all":
+      return 0;
+  }
+};
 
 interface PairingData {
   key: string;
@@ -11,11 +39,17 @@ interface PairingData {
 
 export const TopPlayerPairings: React.FC = () => {
   const context = useEventDbContext();
+  const [timeRange, setTimeRange] = useState<TimeRange>("all");
 
   const topPairings = useMemo<PairingData[]>(() => {
+    const cutoff = getRangeCutoff(timeRange, new Date());
     const counts = new Map<string, PairingData>();
 
-    context.games.forEach(({ winner, loser }) => {
+    context.games.forEach(({ playedAt, winner, loser }) => {
+      if (playedAt < cutoff) {
+        return;
+      }
+
       // Normalize the pair so that (a, b) and (b, a) count as the same pairing.
       const [player1, player2] = [winner, loser].sort();
       const key = `${player1}::${player2}`;
@@ -31,14 +65,34 @@ export const TopPlayerPairings: React.FC = () => {
     return Array.from(counts.values())
       .sort((a, b) => b.count - a.count)
       .slice(0, 10);
-  }, [context.games]);
+  }, [context.games, timeRange]);
 
   return (
     <div className="bg-primary-background text-primary-text rounded-lg p-4">
-      <h2 className="text-lg font-semibold mb-4">Top 10 Player Pairings</h2>
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+        <h2 className="text-lg font-semibold">Top 10 Player Pairings</h2>
+        <div className="flex gap-1" role="tablist" aria-label="Filter by time range">
+          {(Object.keys(TIME_RANGE_LABELS) as TimeRange[]).map((range) => (
+            <button
+              key={range}
+              type="button"
+              role="tab"
+              aria-selected={timeRange === range}
+              onClick={() => setTimeRange(range)}
+              className={`px-3 py-1 text-xs rounded border border-primary-text/20 transition-colors ${
+                timeRange === range
+                  ? "bg-secondary-background text-secondary-text font-semibold"
+                  : "bg-primary-background hover:bg-secondary-background/50"
+              }`}
+            >
+              {TIME_RANGE_LABELS[range]}
+            </button>
+          ))}
+        </div>
+      </div>
       {topPairings.length === 0 ? (
         <div className="text-center text-primary-text p-4 bg-secondary-background rounded-lg">
-          <p>No games data available</p>
+          <p>{timeRange === "all" ? "No games data available" : "No games in this time range"}</p>
         </div>
       ) : (
         <table className="w-full text-xs md:text-sm border-collapse">
