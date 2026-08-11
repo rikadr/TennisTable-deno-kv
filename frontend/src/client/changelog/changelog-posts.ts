@@ -58,7 +58,7 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
         "A second toggle changes the data source between the actual leaderboard and the expected leaderboard. The expected leaderboard is the average of 5 000 simulations at each of the two times.",
       ),
       text(
-        "Sections under the table show the change in the Hall of Fame score for each player, the achievements earned, and the games played in the same period.",
+        "Sections under the table show the change in the season leaderboard and in the Hall of Fame score for each player, the achievements earned, and the games played in the same period. The season section needs a period within 1 season.",
       ),
       text("The page is in the Other menu."),
     ],

@@ -74,6 +74,20 @@ function useDebounced<T>(value: T, ms: number): T {
   return debounced;
 }
 
+// The leaderboard of one season (identified by its start time) as it stood in
+// a projected state. An empty list means the season had no games yet at that
+// time; undefined means the state itself is not available.
+function seasonEntriesAt(state: TennisTable | undefined, seasonStart: number): RankedEntry[] | undefined {
+  if (!state) return undefined;
+  const season = state.seasons.getSeasons().find((s) => s.start === seasonStart);
+  if (!season) return [];
+  return season.getLeaderboard().map((player, index) => ({
+    id: player.playerId,
+    rank: index + 1,
+    score: player.seasonScore,
+  }));
+}
+
 // The full app state projected at a point in time.
 function useStateAt(time: number | undefined): TennisTable | undefined {
   const context = useEventDbContext();
@@ -187,7 +201,7 @@ function PillSelect<T extends string>({
 
 const DeltaCell: React.FC<{ delta?: number; digits?: number }> = ({ delta, digits = 0 }) => {
   if (delta === undefined) return <span className="text-primary-text/40">–</span>;
-  if (Math.round(delta) === 0) return <span className="text-primary-text/60">0</span>;
+  if (Number(delta.toFixed(digits)) === 0) return <span className="text-primary-text/60">0</span>;
   return (
     <span className={classNames("font-medium", delta > 0 ? "text-green-500" : "text-red-500")}>
       {fmtNum(delta, { digits, signedPositive: true })}
@@ -204,8 +218,9 @@ const DiffTable: React.FC<{
   endEntries?: RankedEntry[];
   sortBy: SortBy;
   emptyText: string;
+  scoreDigits?: number;
   onRowClick: (playerId: string) => void;
-}> = ({ startEntries, endEntries, sortBy, emptyText, onRowClick }) => {
+}> = ({ startEntries, endEntries, sortBy, emptyText, scoreDigits = 0, onRowClick }) => {
   const context = useEventDbContext();
 
   const rows = useMemo(() => {
@@ -297,20 +312,20 @@ const DiffTable: React.FC<{
             </div>
             <div className={classNames(NUM_CELL, "border-l border-primary-text/20")}>
               {row.startScore !== undefined ? (
-                fmtNum(row.startScore, { digits: 0 })
+                fmtNum(row.startScore, { digits: scoreDigits })
               ) : (
                 <span className="text-primary-text/40">–</span>
               )}
             </div>
             <div className={NUM_CELL}>
               {row.endScore !== undefined ? (
-                fmtNum(row.endScore, { digits: 0 })
+                fmtNum(row.endScore, { digits: scoreDigits })
               ) : (
                 <span className="text-primary-text/40">–</span>
               )}
             </div>
             <div className={classNames(NUM_CELL, "md:px-3")}>
-              <DeltaCell delta={deltaScore} />
+              <DeltaCell delta={deltaScore} digits={scoreDigits} />
             </div>
           </div>
         );
@@ -369,6 +384,24 @@ export const WhatChangedPage: React.FC = () => {
         .getFullHypotheticalLeaderboard()
         .map((entry, index) => ({ id: entry.playerId, rank: index + 1, score: entry.score.total })),
     [endState],
+  );
+
+  // Seasons that overlap the selected period. The season leaderboard diff is
+  // only meaningful when the period touches exactly one season.
+  const allSeasons = context.seasons.getSeasons();
+  const seasonsInWindow = useMemo(() => {
+    if (startTime === undefined || endTime === undefined) return [];
+    return allSeasons.filter((season) => season.start < endTime && season.end > startTime);
+  }, [allSeasons, startTime, endTime]);
+  const singleSeason = seasonsInWindow.length === 1 ? seasonsInWindow[0] : undefined;
+  const singleSeasonName = singleSeason ? `Season ${allSeasons.indexOf(singleSeason) + 1}` : undefined;
+  const startSeasonEntries = useMemo(
+    () => (singleSeason ? seasonEntriesAt(startState, singleSeason.start) : undefined),
+    [startState, singleSeason],
+  );
+  const endSeasonEntries = useMemo(
+    () => (singleSeason ? seasonEntriesAt(endState, singleSeason.start) : undefined),
+    [endState, singleSeason],
   );
 
   // Achievements earned between the two times, newest first. Read from the
@@ -474,6 +507,35 @@ export const WhatChangedPage: React.FC = () => {
               onRowClick={(playerId) => navigate(`/player/${playerId}`)}
             />
           )}
+
+          {/* Season leaderboard changes between the two times */}
+          <div className="mt-4 border-t border-primary-text/20">
+            <h2 className="text-lg md:text-2xl text-center mt-2 text-primary-text">Season leaderboard</h2>
+            {singleSeason ? (
+              <>
+                <p className="text-center text-sm md:text-base text-primary-text/60 mb-1 md:mb-2">{singleSeasonName}</p>
+                <DiffTable
+                  startEntries={startSeasonEntries}
+                  endEntries={endSeasonEntries}
+                  sortBy={sortBy}
+                  emptyText="No season games at either time"
+                  scoreDigits={1}
+                  onRowClick={(playerId) =>
+                    navigate(`/season/player?seasonStart=${singleSeason.start}&playerId=${playerId}`)
+                  }
+                />
+              </>
+            ) : seasonsInWindow.length === 0 ? (
+              <p className="text-center text-sm md:text-base text-primary-text/60 pb-4">
+                No season games in the selected period
+              </p>
+            ) : (
+              <p className="text-center text-sm md:text-base text-primary-text/60 pb-4 px-4">
+                The selected period contains {seasonsInWindow.length} seasons, so a single season leaderboard cannot be
+                shown. Select a period within one season.
+              </p>
+            )}
+          </div>
 
           {/* Hall of Fame score changes between the two times */}
           <div className="mt-4 border-t border-primary-text/20">
