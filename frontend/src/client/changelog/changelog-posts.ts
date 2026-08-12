@@ -480,6 +480,9 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
       text(
         "The live game pages and the TV overlay show a win percentage for each player. The percentage updates when the score changes. It comes from the same model as the 1v1 comparison.",
       ),
+      text(
+        "The model simulates a match to the best of 3 sets. If a set starts after a player has 2 won sets, the simulation extends to the best of 5, and then to the best of 7. Before this rule, the prediction locked to 100% in an extra set.",
+      ),
     ],
   },
   {

@@ -114,6 +114,81 @@ describe("computeLiveWinPrediction", () => {
     expect(decider.confidence).toBeGreaterThan(0.95);
   });
 
+  it("extends to best of 5 when a 3rd set starts after 2-0", () => {
+    const extended = computeLiveWinPrediction({
+      preGameWinChance: 0.5,
+      preGameConfidence: 0.5,
+      setsWon: { player1: 2, player2: 0 },
+      currentSet: { player1: 0, player2: 1 },
+      completedSets: [
+        { player1: 11, player2: 5 },
+        { player1: 11, player2: 8 },
+      ],
+      simulations: 20000,
+      random: seededRandom(3),
+    });
+    // The match is live again: player 1 is still the favourite (needs 1 of the
+    // next 3 sets) but is no longer locked at 100%.
+    expect(extended.player1WinChance).toBeGreaterThan(0.5);
+    expect(extended.player1WinChance).toBeLessThan(1);
+  });
+
+  it("extends to best of 5 when a 4th set starts after 2-1", () => {
+    const extended = computeLiveWinPrediction({
+      preGameWinChance: 0.5,
+      preGameConfidence: 0.5,
+      setsWon: { player1: 2, player2: 1 },
+      currentSet: { player1: 1, player2: 0 },
+      completedSets: [
+        { player1: 11, player2: 5 },
+        { player1: 8, player2: 11 },
+        { player1: 11, player2: 9 },
+      ],
+      simulations: 20000,
+      random: seededRandom(4),
+    });
+    expect(extended.player1WinChance).toBeGreaterThan(0.5);
+    expect(extended.player1WinChance).toBeLessThan(1);
+  });
+
+  it("extends to best of 7 when a set starts after 3 won sets", () => {
+    const extended = computeLiveWinPrediction({
+      preGameWinChance: 0.5,
+      preGameConfidence: 0.5,
+      setsWon: { player1: 3, player2: 1 },
+      currentSet: { player1: 0, player2: 2 },
+      completedSets: [
+        { player1: 11, player2: 5 },
+        { player1: 8, player2: 11 },
+        { player1: 11, player2: 9 },
+        { player1: 11, player2: 7 },
+      ],
+      simulations: 20000,
+      random: seededRandom(5),
+    });
+    expect(extended.player1WinChance).toBeGreaterThan(0.5);
+    expect(extended.player1WinChance).toBeLessThan(1);
+  });
+
+  it("stays decided at 3-1 when no further set has started", () => {
+    const decided = computeLiveWinPrediction({
+      preGameWinChance: 0.5,
+      preGameConfidence: 0.5,
+      setsWon: { player1: 3, player2: 1 },
+      currentSet: { player1: 0, player2: 0 },
+      completedSets: [
+        { player1: 11, player2: 5 },
+        { player1: 8, player2: 11 },
+        { player1: 11, player2: 9 },
+        { player1: 11, player2: 7 },
+      ],
+      simulations: 1000,
+      random: seededRandom(6),
+    });
+    expect(decided.player1WinChance).toBe(1);
+    expect(decided.confidence).toBe(1);
+  });
+
   it("builds a confident prediction from live points alone when there is no pairing data", () => {
     const dominating = computeLiveWinPrediction({
       preGameWinChance: 0.5,

@@ -9,7 +9,9 @@ import { pointToGame, setToGame } from "../../client/client-db/future-elo-probab
 
 /**
  * Live win-probability model for a best-of-3 table tennis match
- * (first to 2 sets; each set first to 11, win by 2 / deuce).
+ * (first to 2 sets; each set first to 11, win by 2 / deuce). A match that keeps
+ * going past a decided best-of-3 extends to the next best-of-odd-N — see
+ * `setsToWinMatch`.
  *
  * Approach (see chat design):
  *
@@ -57,6 +59,21 @@ export type LiveWinPredictionInput = {
 const SETS_TO_WIN_MATCH = 2;
 const POINTS_TO_WIN_SET = 11;
 const DEFAULT_SIMULATIONS = 1000;
+
+/**
+ * How many sets win this match. Best of 3 (first to 2) by default, but the
+ * players can keep going: when a set is in progress (has at least one point)
+ * although a player already has enough sets to have won, the match extends to
+ * the next best-of-odd-N. A 3rd set started at 2–0 or a 4th at 2–1 makes it
+ * best of 5 (first to 3), a set started at 3–x makes it best of 7, and so on.
+ * With no set in progress a decided score stays decided.
+ */
+function setsToWinMatch(setsWon: { player1: number; player2: number }, currentSet: LiveGameSetPoint): number {
+  const leaderSets = Math.max(setsWon.player1, setsWon.player2);
+  const currentSetStarted = currentSet.player1 + currentSet.player2 > 0;
+  if (currentSetStarted && leaderSets >= SETS_TO_WIN_MATCH) return leaderSets + 1;
+  return SETS_TO_WIN_MATCH;
+}
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
@@ -154,6 +171,7 @@ type SimulationSummary = {
  */
 function runSimulations(
   perPoint: number,
+  setsToWin: number,
   setsWon1: number,
   setsWon2: number,
   currentA: number,
@@ -171,7 +189,7 @@ function runSimulations(
     let b = currentB;
     let points = 0;
 
-    while (s1 < SETS_TO_WIN_MATCH && s2 < SETS_TO_WIN_MATCH) {
+    while (s1 < setsToWin && s2 < setsToWin) {
       // Play one set to completion, counting the points played.
       // eslint-disable-next-line no-constant-condition
       while (true) {
@@ -191,7 +209,7 @@ function runSimulations(
       b = 0;
     }
 
-    if (s1 >= SETS_TO_WIN_MATCH) wins++;
+    if (s1 >= setsToWin) wins++;
     totalRemainingPoints += points;
   }
 
@@ -204,9 +222,11 @@ export function computeLiveWinPrediction(input: LiveWinPredictionInput): LiveWin
   const random = input.random ?? Math.random;
 
   const perPoint = derivePerPointWinChance(input);
+  const setsToWin = setsToWinMatch(setsWon, currentSet);
 
   const current = runSimulations(
     perPoint.fraction,
+    setsToWin,
     setsWon.player1,
     setsWon.player2,
     currentSet.player1,
@@ -225,7 +245,7 @@ export function computeLiveWinPrediction(input: LiveWinPredictionInput): LiveWin
   // The mapping is concave (1 − r²) so the final stretch saturates to ~100 %:
   // once only a handful of points remain we are essentially certain of the
   // prediction, whatever it is.
-  const fullMatch = runSimulations(perPoint.fraction, 0, 0, 0, 0, simulations, random);
+  const fullMatch = runSimulations(perPoint.fraction, setsToWin, 0, 0, 0, 0, simulations, random);
   const remainingRatio = current.avgRemainingPoints / Math.max(fullMatch.avgRemainingPoints, 1);
   const matchProgress = clamp(1 - remainingRatio * remainingRatio, 0, 1);
   const confidence = perPoint.confidence + (1 - perPoint.confidence) * matchProgress;
