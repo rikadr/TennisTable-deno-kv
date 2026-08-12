@@ -61,18 +61,64 @@ const POINTS_TO_WIN_SET = 11;
 const DEFAULT_SIMULATIONS = 1000;
 
 /**
- * How many sets win this match. Best of 3 (first to 2) by default, but the
- * players can keep going: when a set is in progress (has at least one point)
- * although a player already has enough sets to have won, the match extends to
- * the next best-of-odd-N. A 3rd set started at 2–0 or a 4th at 2–1 makes it
- * best of 5 (first to 3), a set started at 3–x makes it best of 7, and so on.
- * With no set in progress a decided score stays decided.
+ * A current set that is already decided (11+ points, 2 clear) counts as a
+ * completed set, so the prediction is the same just before and just after the
+ * set win is confirmed and the score returns to 0–0. Without this, confirming
+ * a set moves the same evidence from the points estimator into the sets
+ * estimator and the prediction jumps.
  */
-function setsToWinMatch(setsWon: { player1: number; player2: number }, currentSet: LiveGameSetPoint): number {
-  const leaderSets = Math.max(setsWon.player1, setsWon.player2);
+function normalizeScore(
+  input: LiveWinPredictionInput,
+): Pick<LiveWinPredictionInput, "setsWon" | "currentSet" | "completedSets"> {
+  const { setsWon, currentSet, completedSets } = input;
+  const p1Decided = currentSet.player1 >= POINTS_TO_WIN_SET && currentSet.player1 - currentSet.player2 >= 2;
+  const p2Decided = currentSet.player2 >= POINTS_TO_WIN_SET && currentSet.player2 - currentSet.player1 >= 2;
+  if (!p1Decided && !p2Decided) return { setsWon, currentSet, completedSets };
+  return {
+    setsWon: {
+      player1: setsWon.player1 + (p1Decided ? 1 : 0),
+      player2: setsWon.player2 + (p2Decided ? 1 : 0),
+    },
+    currentSet: { player1: 0, player2: 0 },
+    completedSets: [...completedSets, currentSet],
+  };
+}
+
+/**
+ * How many sets win this match. Best of 3 (first to 2) by default, but the
+ * players can keep going: a set that starts although a player already has
+ * enough sets to have won extends the match to the next best-of-odd-N. A 3rd
+ * set at 2–0 or a 4th at 2–1 makes it best of 5 (first to 3), a set after 3
+ * won sets makes it best of 7, and so on.
+ *
+ * The completed sets replay in order so an extension stays counted after its
+ * set ends: 2–1 reached through 2–0 keeps the match a best of 5, while 2–1
+ * reached through 1–1 ends a best of 3. When the per-set history does not
+ * match the sets won, only a set currently in progress (with at least one
+ * point) can extend the match.
+ */
+function setsToWinMatch(
+  setsWon: { player1: number; player2: number },
+  completedSets: LiveGameSetPoint[],
+  currentSet: LiveGameSetPoint,
+): number {
+  let setsToWin = SETS_TO_WIN_MATCH;
   const currentSetStarted = currentSet.player1 + currentSet.player2 > 0;
-  if (currentSetStarted && leaderSets >= SETS_TO_WIN_MATCH) return leaderSets + 1;
-  return SETS_TO_WIN_MATCH;
+
+  if (completedSets.length === setsWon.player1 + setsWon.player2) {
+    let s1 = 0;
+    let s2 = 0;
+    for (const set of completedSets) {
+      if (Math.max(s1, s2) >= setsToWin) setsToWin = Math.max(s1, s2) + 1;
+      if (set.player1 > set.player2) s1++;
+      else s2++;
+    }
+    if (currentSetStarted && Math.max(s1, s2) >= setsToWin) setsToWin = Math.max(s1, s2) + 1;
+  } else if (currentSetStarted && Math.max(setsWon.player1, setsWon.player2) >= setsToWin) {
+    setsToWin = Math.max(setsWon.player1, setsWon.player2) + 1;
+  }
+
+  return setsToWin;
 }
 
 function clamp(value: number, min: number, max: number): number {
@@ -217,12 +263,13 @@ function runSimulations(
 }
 
 export function computeLiveWinPrediction(input: LiveWinPredictionInput): LiveWinPrediction {
-  const { setsWon, currentSet } = input;
   const simulations = input.simulations ?? DEFAULT_SIMULATIONS;
   const random = input.random ?? Math.random;
 
-  const perPoint = derivePerPointWinChance(input);
-  const setsToWin = setsToWinMatch(setsWon, currentSet);
+  const { setsWon, currentSet, completedSets } = normalizeScore(input);
+
+  const perPoint = derivePerPointWinChance({ ...input, setsWon, currentSet, completedSets });
+  const setsToWin = setsToWinMatch(setsWon, completedSets, currentSet);
 
   const current = runSimulations(
     perPoint.fraction,

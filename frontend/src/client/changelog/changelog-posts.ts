@@ -483,6 +483,9 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
       text(
         "The model simulates a match to the best of 3 sets. If a set starts after a player has 2 won sets, the simulation extends to the best of 5, and then to the best of 7. Before this rule, the prediction locked to 100% in an extra set.",
       ),
+      text(
+        "A set score that has a winner counts as a won set immediately. The prediction does not change when you confirm the set and the set score returns to 0-0.",
+      ),
     ],
   },
   {
