@@ -16,6 +16,9 @@ import { CARD_SURFACE, fill, panelTint, ROW_SURFACE, softFill, textOn } from "..
 import { getServeInfo, Server } from "../../common/serve-tracker";
 import { ServeTrackerDisplay } from "../../common/serve-tracker-display";
 import { LiveGamePredictionCard } from "../live-game/live-game-prediction-card";
+import { computeLiveWinPrediction } from "../live-game/live-game-win-probability";
+import { Predictions } from "../../client/client-db/predictions";
+import { WinPercentGraph } from "./win-percent-graph";
 import { session } from "../../services/auth";
 import { useLiveGameQuery, useUpdateLiveGameMutation } from "../live-game/use-live-game";
 
@@ -52,6 +55,8 @@ export const TrackGamePage: React.FC = () => {
     player2: 0,
   });
   const [firstServer, setFirstServer] = useState<Server>(1);
+  // Player 1's live win chance sampled after every point, for the summary graph.
+  const [winPercentHistory, setWinPercentHistory] = useState<number[]>([]);
   const [validationError, setValidationError] = useState<string>("");
   const [gameSuccessfullyAdded, setGameSuccessfullyAdded] = useState(false);
 
@@ -65,18 +70,36 @@ export const TrackGamePage: React.FC = () => {
   const liveGameQuery = useLiveGameQuery({ enabled: isAdmin });
   const updateLiveGame = useUpdateLiveGameMutation();
 
+  // Player 1's match-win chance at a given current-set score, from the same
+  // model as the live prediction card below the score buttons.
+  const computeWinPercent = (currentSet: SetPoint): number => {
+    const direct = context.predictions.getDirectFraction(player1 ?? "", player2 ?? "");
+    const oneLayer = context.predictions.getOneLayerFraction(player1 ?? "", player2 ?? "");
+    const twoLayer = context.predictions.getTwoLayerFraction(player1 ?? "", player2 ?? "");
+    const base = Predictions.combinePrioritizedFractions([direct, oneLayer, twoLayer]);
+    return computeLiveWinPrediction({
+      preGameWinChance: base.confidence > 0 ? base.fraction : 0.5,
+      preGameConfidence: base.confidence,
+      setsWon: matchData.setsWon,
+      currentSet,
+      completedSets: matchData.setPoints ?? [],
+    }).player1WinChance;
+  };
+
   const addPoint = (player: number) => {
-    setCurrentSetScore((prev) => ({
-      ...prev,
-      [`player${player}`]: prev[`player${player}` as keyof SetPoint] + 1,
-    }));
+    const key = `player${player}` as keyof SetPoint;
+    const next: SetPoint = { ...currentSetScore, [key]: currentSetScore[key] + 1 };
+    setCurrentSetScore(next);
+    setWinPercentHistory((prev) => [...prev, computeWinPercent(next)]);
   };
 
   const removePoint = (player: number) => {
-    setCurrentSetScore((prev) => ({
-      ...prev,
-      [`player${player}`]: Math.max(0, prev[`player${player}` as keyof SetPoint] - 1),
-    }));
+    const key = `player${player}` as keyof SetPoint;
+    if (currentSetScore[key] === 0) return;
+    const next: SetPoint = { ...currentSetScore, [key]: currentSetScore[key] - 1 };
+    setCurrentSetScore(next);
+    // Undoing a point drops the last 2 samples and appends one for the restored score.
+    setWinPercentHistory((prev) => [...prev.slice(0, -2), computeWinPercent(next)]);
   };
 
   const setWon = (player: number) => {
@@ -246,6 +269,7 @@ export const TrackGamePage: React.FC = () => {
     });
     setCurrentSetScore({ player1: 0, player2: 0 });
     setFirstServer(1);
+    setWinPercentHistory([]);
     setValidationError("");
   };
 
@@ -577,6 +601,15 @@ export const TrackGamePage: React.FC = () => {
                 </div>
               </div>
             </div>
+
+            {/* Winner's win % point by point */}
+            <WinPercentGraph
+              history={winPercentHistory}
+              winnerIsPlayer1={winner === player1}
+              winnerName={context.playerName(winner)}
+              winnerColor={winner === player1 ? player1Color : player2Color}
+              completedSets={matchData.setPoints ?? []}
+            />
 
             {/* Set Details */}
             {matchData.setPoints && matchData.setPoints.length > 0 && (

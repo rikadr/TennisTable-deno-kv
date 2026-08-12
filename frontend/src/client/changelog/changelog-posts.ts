@@ -42,6 +42,19 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
+    slug: "win-percent-graph-on-tracked-game-summary",
+    title: "Win % graph on the tracked game summary",
+    date: "2026-08-12",
+    tags: ["feature-update"],
+    summary: "The summary step of a tracked game shows a graph of the winner's win % after every point.",
+    body: [
+      text(
+        "The app records the live win prediction after every point of a tracked game. The summary step shows the winner's win % over the game as a graph under the score.",
+      ),
+      text("A vertical line marks the end of each set. A horizontal line marks 50%."),
+    ],
+  },
+  {
     slug: "what-changed-page",
     title: "What changed: compare the leaderboard between two times",
     date: "2026-08-11",
