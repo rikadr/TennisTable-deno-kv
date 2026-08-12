@@ -190,7 +190,14 @@ function PillSelect<T extends string>({
   return (
     <div className="flex flex-col items-center gap-1">
       <span className="text-xs md:text-sm text-primary-text/60">{label}</span>
-      <div className="relative flex h-10 w-40 rounded-full bg-secondary-background p-1">
+      <div
+        className={classNames(
+          "relative flex h-10 rounded-full bg-secondary-background p-1",
+          // Three options need more room than two, so the texts keep some
+          // space between each other and to the ends of the pill.
+          options.length > 2 ? "w-52" : "w-40",
+        )}
+      >
         <span
           aria-hidden="true"
           className="pointer-events-none absolute top-1 bottom-1 left-1 rounded-full bg-primary-background shadow-lg transition-transform duration-200 ease-in-out"
@@ -204,7 +211,7 @@ function PillSelect<T extends string>({
             key={option.value}
             onClick={() => onChange(option.value)}
             className={classNames(
-              "z-10 flex-1 flex items-center justify-center text-xs xs:text-sm whitespace-nowrap rounded-full focus:outline-none",
+              "z-10 flex-1 flex items-center justify-center px-2 text-xs xs:text-sm whitespace-nowrap rounded-full focus:outline-none",
               option.value === value ? "text-primary-text" : "text-secondary-text",
             )}
           >
@@ -348,33 +355,41 @@ export const WhatChangedPage: React.FC = () => {
   const context = useEventDbContext();
   const navigate = useNavigate();
 
-  const [initialNow] = useState(() => Date.now());
-  const [fromValue, setFromValue] = useState(() => toDatetimeLocalValue(initialNow - WEEK_MS));
-  const [toValue, setToValue] = useState(() => toDatetimeLocalValue(initialNow));
-  const [sortBy, setSortBy] = useState<SortBy>("end");
-  const [source, setSource] = useState<Source>("actual");
-
+  // Every selection on the page lives in the URL, so navigating away and
+  // back restores the same view. Defaults are not written to the URL.
   const [searchParams, setSearchParams] = useSearchParams();
-  const setParam = (key: string, value: string) => {
-    setSearchParams((prev) => {
-      const newParams = new URLSearchParams(prev);
-      newParams.set(key, value);
-      return newParams;
-    });
+  const setParams = (updates: Record<string, string | undefined>, replace = false) => {
+    setSearchParams(
+      (prev) => {
+        const newParams = new URLSearchParams(prev);
+        Object.entries(updates).forEach(([key, value]) => {
+          if (value === undefined) newParams.delete(key);
+          else newParams.set(key, value);
+        });
+        return newParams;
+      },
+      { replace },
+    );
   };
   const tabParam = searchParams.get("tab");
-  const activeTab: Tab = TABS.some((tab) => tab.id === tabParam) ? (tabParam as Tab) : "leaderboards";
+  const activeTab: Tab = TABS.some((tab) => tab.id === tabParam) ? (tabParam as Tab) : "games";
   const leaderboardParam = searchParams.get("leaderboard");
   const leaderboardTab: LeaderboardTab = LEADERBOARD_TABS.some((tab) => tab.id === leaderboardParam)
     ? (leaderboardParam as LeaderboardTab)
     : "overall";
+  const sortParam = searchParams.get("sort");
+  const sortBy: SortBy = sortParam === "start" || sortParam === "delta" ? sortParam : "end";
+  const source: Source = searchParams.get("source") === "expected" ? "expected" : "actual";
+
+  // Fixed at mount and refreshed when a quick range is clicked, so the quick
+  // windows do not drift while the page stays open.
+  const [now, setNow] = useState(() => Date.now());
 
   // Quick select of common periods, all ending now. The inputs have minute
   // resolution, so the last-game window starts 1 ms before the game: the
   // truncated minute is then strictly before the game and the game itself
   // falls inside the window. "custom" has no start - it reveals the two
   // datetime inputs and keeps their current values.
-  const [selectedRange, setSelectedRange] = useState<QuickRange>("7-days");
   const lastGame = context.games.at(-1);
   const quickRanges: { id: QuickRange; label: string; start?: (now: number) => number }[] = [
     ...(lastGame ? [{ id: "last-game" as const, label: "Last game", start: () => lastGame.playedAt - 1 }] : []),
@@ -384,12 +399,30 @@ export const WhatChangedPage: React.FC = () => {
     { id: "365-days", label: "Last 365 days", start: (now: number) => now - 365 * DAY_MS },
     { id: "custom", label: "Custom" },
   ];
+  const rangeParam = searchParams.get("range");
+  const selectedRange: QuickRange = quickRanges.some((range) => range.id === rangeParam)
+    ? (rangeParam as QuickRange)
+    : "today";
+
+  // A quick range stays relative in the URL - reopening it computes the
+  // window from the current time. The custom range keeps its two absolute
+  // timestamps in the from/to params instead.
+  const selectedQuickStart = quickRanges.find((range) => range.id === selectedRange)?.start;
+  const fromValue =
+    selectedRange === "custom"
+      ? (searchParams.get("from") ?? toDatetimeLocalValue(now - WEEK_MS))
+      : toDatetimeLocalValue(selectedQuickStart ? selectedQuickStart(now) : now - WEEK_MS);
+  const toValue =
+    selectedRange === "custom" ? (searchParams.get("to") ?? toDatetimeLocalValue(now)) : toDatetimeLocalValue(now);
+
   const selectQuickRange = (range: (typeof quickRanges)[number]) => {
-    setSelectedRange(range.id);
-    if (!range.start) return;
-    const now = Date.now();
-    setFromValue(toDatetimeLocalValue(range.start(now)));
-    setToValue(toDatetimeLocalValue(now));
+    if (range.id === "custom") {
+      // Seed the custom inputs with the window of the quick range they replace.
+      setParams({ range: "custom", from: fromValue, to: toValue });
+      return;
+    }
+    setNow(Date.now());
+    setParams({ range: range.id, from: undefined, to: undefined });
   };
 
   const fromMs = fromDatetimeLocalValue(fromValue);
@@ -483,10 +516,9 @@ export const WhatChangedPage: React.FC = () => {
     <div className="w-full px-4 flex flex-col items-center">
       <div className="w-full max-w-2xl md:max-w-4xl">
         <div className="bg-primary-background rounded-lg w-full overflow-hidden">
-          <h1 className="text-2xl md:text-4xl text-center mt-2 md:mt-4 text-primary-text">What changed</h1>
-          <p className="text-center text-sm md:text-base text-primary-text/60 mb-1 md:mb-2">
-            Changes between two points in time
-          </p>
+          <h1 className="text-2xl md:text-4xl text-center mt-2 md:mt-4 mb-1 md:mb-2 text-primary-text">
+            What changed
+          </h1>
 
           {/* Quick select of common periods */}
           <div className="flex flex-wrap justify-center gap-1.5 xs:gap-2 px-4 py-2">
@@ -515,7 +547,7 @@ export const WhatChangedPage: React.FC = () => {
                   <input
                     type="datetime-local"
                     value={fromValue}
-                    onChange={(e) => setFromValue(e.target.value)}
+                    onChange={(e) => setParams({ from: e.target.value }, true)}
                     className="px-3 py-2 rounded-lg bg-primary-background text-primary-text text-sm normal-case tracking-normal ring-1 ring-secondary-background focus:ring-2 focus:ring-secondary-text focus:outline-none"
                   />
                 </label>
@@ -524,7 +556,7 @@ export const WhatChangedPage: React.FC = () => {
                   <input
                     type="datetime-local"
                     value={toValue}
-                    onChange={(e) => setToValue(e.target.value)}
+                    onChange={(e) => setParams({ to: e.target.value }, true)}
                     className="px-3 py-2 rounded-lg bg-primary-background text-primary-text text-sm normal-case tracking-normal ring-1 ring-secondary-background focus:ring-2 focus:ring-secondary-text focus:outline-none"
                   />
                 </label>
@@ -542,7 +574,7 @@ export const WhatChangedPage: React.FC = () => {
             {TABS.map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => setParam("tab", tab.id)}
+                onClick={() => setParams({ tab: tab.id })}
                 className={classNames(
                   "flex items-center py-2 px-4 border-b-4 font-medium text-sm transition-colors shrink-0 whitespace-nowrap",
                   activeTab === tab.id
@@ -558,16 +590,16 @@ export const WhatChangedPage: React.FC = () => {
           {activeTab === "leaderboards" && (
             <>
               {/* Sub tabs between the three leaderboards */}
-              <div className="flex justify-center space-x-1 overflow-x-auto flex-nowrap scrollbar-hide pt-1">
+              <div className="flex justify-center space-x-2 overflow-x-auto flex-nowrap scrollbar-hide pt-1">
                 {LEADERBOARD_TABS.map((tab) => (
                   <button
                     key={tab.id}
-                    onClick={() => setParam("leaderboard", tab.id)}
+                    onClick={() => setParams({ leaderboard: tab.id })}
                     className={classNames(
-                      "py-1.5 px-3 border-b-2 text-xs md:text-sm transition-colors shrink-0 whitespace-nowrap",
+                      "flex items-center py-2 px-4 border-b-4 font-medium text-sm transition-colors shrink-0 whitespace-nowrap",
                       leaderboardTab === tab.id
-                        ? "text-primary-text border-primary-text font-medium"
-                        : "text-primary-text/60 border-transparent hover:text-primary-text hover:border-primary-text hover:border-dotted",
+                        ? "text-primary-text border-primary-text"
+                        : "text-primary-text/60 border-transparent hover:text-primary-text hover:border-primary-text border-dotted",
                     )}
                   >
                     {tab.label}
@@ -586,7 +618,7 @@ export const WhatChangedPage: React.FC = () => {
                     { value: "delta", label: "Score Δ" },
                   ]}
                   value={sortBy}
-                  onChange={setSortBy}
+                  onChange={(value) => setParams({ sort: value })}
                 />
                 {leaderboardTab === "overall" && (
                   <PillSelect<Source>
@@ -596,7 +628,7 @@ export const WhatChangedPage: React.FC = () => {
                       { value: "expected", label: "Expected" },
                     ]}
                     value={source}
-                    onChange={setSource}
+                    onChange={(value) => setParams({ source: value })}
                   />
                 )}
               </div>
