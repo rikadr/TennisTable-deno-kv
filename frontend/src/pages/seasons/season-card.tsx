@@ -2,7 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { Season } from "../../client/client-db/seasons/season";
 import { useEventDbContext } from "../../wrappers/event-db-context";
-import { dateString, relativeTimeString } from "../../common/date-utils";
+import { dateString, relativeTimeString, relativeTimeStringShort } from "../../common/date-utils";
 import { fmtNum } from "../../common/number-utils";
 import { ProfilePicture } from "../player/profile-picture";
 import { Shimmer } from "../../common/shimmer";
@@ -33,73 +33,72 @@ export const SeasonCard: React.FC<SeasonCardProps> = ({ season, index, totalSeas
     }
   }
 
+  // Compact day + month for the mobile date range; the full dates render on
+  // md and up.
+  const shortDate = (time: number) =>
+    new Date(time).toLocaleDateString("nb-NO", { day: "numeric", month: "short" });
+
+  const statusDate = hasEnded || isActive ? new Date(end) : new Date(start);
+  const statusVerb = hasEnded ? "Ended" : isActive ? "Ends" : "Starts";
+
   return (
     <Link
       to={`/season?seasonStart=${start}`}
       className="block group"
     >
-      <div className="bg-secondary-background rounded-xl p-3 md:p-5 border border-primary-text/10 ring-1 ring-primary-text/20 shadow-sm hover:shadow-md hover:border-primary-text/30 transition-all duration-200">
-        <div className="flex flex-row justify-between gap-2 md:gap-4">
+      <div className="bg-secondary-background rounded-xl px-3 py-2 md:px-5 md:py-3 border border-primary-text/10 ring-1 ring-primary-text/20 shadow-sm hover:shadow-md hover:border-primary-text/30 transition-all duration-200">
 
-          {/* Left Side: Info */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 md:gap-3 mb-1 md:mb-2">
-              <h2 className="text-base md:text-xl font-bold text-secondary-text group-hover:text-primary-text transition-colors">
-                Season {fmtNum(totalSeasons - index)}
-              </h2>
-              {isActive && (
-                <Shimmer className="rounded-full">
-                  <div className="px-1.5 md:px-2 py-0.5 bg-primary-background text-primary-text text-xs font-medium">
-                    Active
-                  </div>
-                </Shimmer>
-              )}
-              {isUpcoming && (
-                <span className="px-1.5 md:px-2 py-0.5 rounded-full bg-secondary-text/10 text-secondary-text text-xs font-medium border border-secondary-text/20">
-                  Upcoming
-                </span>
-              )}
-            </div>
-
-            <div className="text-xs md:text-sm text-secondary-text/80 space-y-0 md:space-y-1">
-              <div className="flex items-center gap-1 md:gap-2">
-                <span>📅</span>
-                <span>{dateString(start)} — {dateString(end)}</span>
-              </div>
-              <div className="flex items-center gap-1 md:gap-2">
-                <span>⏱️</span>
-                <span>
-                  {hasEnded
-                    ? `Ended ${relativeTimeString(new Date(end)).toLowerCase()}`
-                    : isActive
-                      ? `Ends ${relativeTimeString(new Date(end)).toLowerCase()}`
-                      : `Starts ${relativeTimeString(new Date(start)).toLowerCase()}`
-                  }
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Right Side: Stats & Winner */}
-          <div className="flex flex-col items-end gap-1 md:gap-2">
-            <div className="text-right">
-              <span className="text-base md:text-lg font-bold text-secondary-text">{participantCount}</span>{" "}
-              <span className="text-xs text-secondary-text/60">Players</span>
-            </div>
-
-            {winnerId && (
-              <div className="flex items-center gap-1.5 md:gap-2 bg-primary-background px-2 md:px-3 py-1 md:py-1.5 rounded-lg">
-                <span className="text-base md:text-xl">🏆</span>
-                <ProfilePicture playerId={winnerId} size={20} border={1} />
-                <span className="font-bold text-primary-text text-xs md:text-sm truncate max-w-[80px] md:max-w-none">{context.playerName(winnerId)}</span>
-                {winnerScore !== undefined && (
-                  <span className="text-primary-text/70 text-xs md:text-sm whitespace-nowrap">
-                    {fmtNum(winnerScore)} pts
-                  </span>
-                )}
-              </div>
+        {/* Row 1: Season name + state badge, player count on the right */}
+        <div className="flex items-center justify-between gap-2 md:gap-4">
+          <div className="flex items-center gap-2 md:gap-3 min-w-0">
+            <h2 className="text-base md:text-xl font-bold text-secondary-text group-hover:text-primary-text transition-colors whitespace-nowrap">
+              Season {fmtNum(totalSeasons - index)}
+            </h2>
+            {isActive && (
+              <Shimmer className="rounded-full">
+                <div className="px-1.5 md:px-2 py-0.5 bg-primary-background text-primary-text text-xs font-medium">
+                  Active
+                </div>
+              </Shimmer>
+            )}
+            {isUpcoming && (
+              <span className="px-1.5 md:px-2 py-0.5 rounded-full bg-secondary-text/10 text-secondary-text text-xs font-medium border border-secondary-text/20">
+                Upcoming
+              </span>
             )}
           </div>
+          {participantCount > 0 && (
+            <div className="whitespace-nowrap">
+              <span className="text-sm md:text-lg font-bold text-secondary-text">{participantCount}</span>{" "}
+              <span className="text-xs text-secondary-text/60">players</span>
+            </div>
+          )}
+        </div>
+
+        {/* Row 2: dates + status, winner badge on the right */}
+        <div className="flex items-center justify-between gap-2 md:gap-4 mt-1">
+          <div className="text-xs md:text-sm text-secondary-text/80 min-w-0">
+            <span className="md:hidden">
+              📅 {shortDate(start)} – {shortDate(end)} · {statusVerb} {relativeTimeStringShort(statusDate)}
+            </span>
+            <span className="hidden md:inline">
+              📅 {dateString(start)} — {dateString(end)} · {statusVerb}{" "}
+              {relativeTimeString(statusDate).toLowerCase()}
+            </span>
+          </div>
+
+          {winnerId && (
+            <div className="flex items-center gap-1.5 md:gap-2 bg-primary-background px-2 md:px-3 py-0.5 md:py-1 rounded-lg shrink-0">
+              <span className="text-base md:text-xl">🏆</span>
+              <ProfilePicture playerId={winnerId} size={20} border={1} />
+              <span className="font-bold text-primary-text text-xs md:text-sm truncate max-w-[80px] md:max-w-none">{context.playerName(winnerId)}</span>
+              {winnerScore !== undefined && (
+                <span className="text-primary-text/70 text-xs md:text-sm whitespace-nowrap">
+                  {fmtNum(winnerScore)} pts
+                </span>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </Link>
