@@ -235,8 +235,8 @@ export const LiveGameAdminPage: React.FC = () => {
   }
 
   return (
-    <div className="p-4 max-w-xl mx-auto">
-      <div className="flex items-center justify-between mb-4">
+    <div className="p-2 sm:p-4 max-w-xl mx-auto">
+      <div className="flex items-center justify-between mb-3">
         <h1 className="text-2xl font-bold text-primary-text">Live Game Admin</h1>
         <button
           onClick={() => navigate("/live-game")}
@@ -268,16 +268,13 @@ export const LiveGameAdminPage: React.FC = () => {
       )}
 
       {isActive && hasPlayers && stage === "scoring" && (
-        <div className="space-y-4">
-          <div className="bg-white rounded-xl shadow-lg p-4 text-black">
-            <h2 className="text-gray-400 text-xs uppercase tracking-widest font-bold mb-3 text-center">
-              Total Score
-            </h2>
-            <div className="flex justify-center items-center gap-6 mb-2">
-              <div className="flex flex-col items-center gap-1">
-                <ProfilePicture playerId={localState.player1Id} size={50} border={2} />
+        <div className="space-y-3">
+          <div className="bg-white rounded-xl shadow-lg p-3 sm:p-4 text-black">
+            <div className="flex justify-center items-center gap-3 xs:gap-6">
+              <div className="flex flex-col items-center gap-0.5 flex-1 min-w-0">
+                <ProfilePicture playerId={localState.player1Id} size={40} border={2} />
                 <span
-                  className="font-bold text-sm"
+                  className="font-bold text-xs truncate max-w-full"
                   style={textOn(player1Color, CARD_SURFACE)}
                 >
                   {context.playerName(localState.player1Id)}
@@ -285,7 +282,7 @@ export const LiveGameAdminPage: React.FC = () => {
               </div>
               {/* Big numbers are sets, the small ones under them are the points of
                   the set being played. */}
-              <div className="flex flex-col items-center bg-gray-50 px-4 py-1 rounded-xl shadow-inner">
+              <div className="flex flex-col items-center bg-gray-50 px-3 py-1 rounded-xl shadow-inner">
                 <div className="flex items-center gap-2">
                   <span className="text-3xl font-black">{localState.setsWon.player1}</span>
                   <span className="font-bold text-xl">-</span>
@@ -295,10 +292,10 @@ export const LiveGameAdminPage: React.FC = () => {
                   ({localState.currentSet.player1}-{localState.currentSet.player2})
                 </div>
               </div>
-              <div className="flex flex-col items-center gap-1">
-                <ProfilePicture playerId={localState.player2Id} size={50} border={2} />
+              <div className="flex flex-col items-center gap-0.5 flex-1 min-w-0">
+                <ProfilePicture playerId={localState.player2Id} size={40} border={2} />
                 <span
-                  className="font-bold text-sm"
+                  className="font-bold text-xs truncate max-w-full"
                   style={textOn(player2Color, CARD_SURFACE)}
                 >
                   {context.playerName(localState.player2Id)}
@@ -306,7 +303,7 @@ export const LiveGameAdminPage: React.FC = () => {
               </div>
             </div>
             {/* Set number and serve tracker share one row to save height */}
-            <div className="mt-3 flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
+            <div className="mt-2 flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
               <h2 className="text-gray-400 text-xs uppercase tracking-widest font-bold">
                 Set {localState.completedSets.length + 1}
               </h2>
@@ -321,7 +318,7 @@ export const LiveGameAdminPage: React.FC = () => {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-2 mt-3">
+            <div className="grid grid-cols-2 gap-2 mt-2">
               <PlayerScoreControls
                 name={context.playerName(localState.player1Id)}
                 score={localState.currentSet.player1}
@@ -344,7 +341,7 @@ export const LiveGameAdminPage: React.FC = () => {
               onClick={() => setLeader && setWon(setLeader)}
               disabled={setLeader === null}
               className={classNames(
-                "w-full py-3 mt-3 rounded-lg font-semibold text-base",
+                "w-full py-2.5 mt-2 rounded-lg font-semibold text-base",
                 setLeader === null ? "bg-gray-300 text-gray-500 cursor-not-allowed" : "hover:brightness-95",
               )}
               style={setLeader === null ? undefined : fill(setLeader === 1 ? player1Color : player2Color)}
@@ -384,7 +381,7 @@ export const LiveGameAdminPage: React.FC = () => {
               onClick={reviewMatch}
               disabled={isSubmitting}
               className={classNames(
-                "w-full py-3 rounded-lg font-semibold text-base",
+                "w-full py-2.5 rounded-lg font-semibold text-base",
                 isSubmitting
                   ? "bg-gray-400 text-white cursor-not-allowed"
                   : "bg-green-600 text-white hover:bg-green-700",
@@ -397,14 +394,14 @@ export const LiveGameAdminPage: React.FC = () => {
               <button
                 onClick={resetMatch}
                 disabled={isSubmitting}
-                className="py-3 rounded-lg font-semibold bg-gray-200 text-gray-700 hover:bg-gray-300 disabled:opacity-50"
+                className="py-2.5 rounded-lg font-semibold bg-gray-200 text-gray-700 hover:bg-gray-300 disabled:opacity-50"
               >
                 Reset score
               </button>
               <button
                 onClick={endLiveGame}
                 disabled={isSubmitting}
-                className="py-3 rounded-lg font-semibold bg-red-100 text-red-700 hover:bg-red-200 disabled:opacity-50"
+                className="py-2.5 rounded-lg font-semibold bg-red-100 text-red-700 hover:bg-red-200 disabled:opacity-50"
               >
                 ❌ End live game
               </button>
@@ -439,15 +436,15 @@ const PlayerScoreControls: React.FC<{
   const tint = panelTint(color);
   return (
     <div className="rounded-lg p-2" style={{ backgroundColor: tint }}>
-      <h3 className="text-sm font-semibold text-gray-700 mb-1 text-center truncate">{name}</h3>
-      <div className="flex flex-col items-center justify-center gap-2">
+      <h3 className="text-sm font-semibold text-gray-700 mb-0.5 text-center truncate">{name}</h3>
+      <div className="flex flex-col items-center justify-center gap-1.5">
         <div className="text-5xl font-bold text-center" style={textOn(color, tint)}>
           {score}
         </div>
-        <div className="flex flex-col gap-2 w-full items-center">
+        <div className="flex flex-col gap-1.5 w-full items-center">
           <button
             onClick={onAdd}
-            className="w-full max-w-28 aspect-square text-center text-4xl font-bold rounded-lg hover:brightness-95 transition"
+            className="w-full h-24 text-center text-4xl font-bold rounded-lg hover:brightness-95 transition"
             style={fill(color)}
           >
             +
@@ -456,7 +453,7 @@ const PlayerScoreControls: React.FC<{
             onClick={onRemove}
             disabled={score === 0}
             className={classNames(
-              "w-full max-w-28 h-12 text-center rounded-lg transition text-2xl font-bold",
+              "w-full h-11 text-center rounded-lg transition text-2xl font-bold",
               score === 0 ? "bg-gray-300 text-gray-500 cursor-not-allowed" : "hover:brightness-95",
             )}
             style={score === 0 ? undefined : softFill(color)}
@@ -491,8 +488,8 @@ const ConfirmView: React.FC<{
           <ConfettiExplosion particleCount={250} force={0.8} width={2_000} duration={10_000} />
         </div>
       )}
-      <div className="bg-white rounded-xl shadow-lg p-6 text-black">
-        <div className="text-center mb-6">
+      <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 text-black">
+        <div className="text-center mb-4">
           🏆
           <h1 className="text-2xl font-bold text-gray-800 mb-2">Match Complete!</h1>
           <p className="text-lg text-gray-600">
@@ -502,11 +499,11 @@ const ConfirmView: React.FC<{
             </span>
           </p>
           <div className="m-auto w-fit mt-2">
-            <ProfilePicture playerId={winnerId} border={12} shape="rounded" />
+            <ProfilePicture playerId={winnerId} size={140} border={8} shape="rounded" />
           </div>
         </div>
 
-        <div className="bg-gray-50 rounded-lg p-4 mb-6">
+        <div className="bg-gray-50 rounded-lg p-3 mb-4">
           <div className="grid grid-cols-3 items-center text-center">
             <div>
               <h3 className="font-semibold text-gray-700 mb-2 text-sm">{context.playerName(localState.player1Id)}</h3>
@@ -525,13 +522,13 @@ const ConfirmView: React.FC<{
         </div>
 
         {localState.completedSets.length > 0 && (
-          <div className="mb-6">
-            <h3 className="text-base font-bold text-gray-800 mb-3">Set Details</h3>
+          <div className="mb-4">
+            <h3 className="text-base font-bold text-gray-800 mb-2">Set Details</h3>
             <div className="space-y-2">
               {localState.completedSets.map((set, index) => {
                 const setWinner = set.player1 > set.player2 ? 1 : 2;
                 return (
-                  <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg text-sm">
+                  <div key={index} className="flex items-center justify-between px-3 py-2 bg-gray-50 rounded-lg text-sm">
                     <span className="font-semibold text-gray-700">Set {index + 1}</span>
                     <div className="flex items-center gap-3">
                       <div className="w-5">{setWinner === 1 && "🏆"}</div>
@@ -565,12 +562,12 @@ const ConfirmView: React.FC<{
           </div>
         )}
 
-        <div className="space-y-3">
+        <div className="space-y-2">
           <button
             onClick={() => !gameSuccessfullyAdded && onConfirm()}
             disabled={isSubmitting || gameSuccessfullyAdded}
             className={classNames(
-              "w-full py-4 rounded-lg font-semibold transition text-base",
+              "w-full py-3 rounded-lg font-semibold transition text-base",
               isSubmitting || gameSuccessfullyAdded
                 ? "bg-gray-400 text-white cursor-not-allowed"
                 : "bg-green-600 text-white hover:bg-green-700",
@@ -581,7 +578,7 @@ const ConfirmView: React.FC<{
           <button
             onClick={onBack}
             disabled={isSubmitting || gameSuccessfullyAdded}
-            className="w-full py-4 rounded-lg font-semibold bg-gray-200 text-gray-700 hover:bg-gray-300 transition text-base disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full py-3 rounded-lg font-semibold bg-gray-200 text-gray-700 hover:bg-gray-300 transition text-base disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {"<-"} Back
           </button>

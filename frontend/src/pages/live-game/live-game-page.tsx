@@ -29,8 +29,8 @@ export const LiveGamePage: React.FC = () => {
   const isFinished = !!state && !!state.player1Id && !!state.player2Id && !!state.finishedAt && (Date.now() - state.finishedAt) < ONE_HOUR_MS;
 
   return (
-    <div className="p-4 max-w-2xl mx-auto">
-      <div className="flex items-center justify-between mb-4">
+    <div className="p-2 sm:p-4 max-w-2xl mx-auto">
+      <div className="flex items-center justify-between mb-3">
         <h1 className="text-2xl font-bold text-primary-text">Live Game</h1>
         <div className="flex items-center gap-2">
           {isActive && (
