@@ -46,19 +46,20 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
     title: "What changed: compare the leaderboard between two times",
     date: "2026-08-11",
     tags: ["new-feature"],
-    summary: "A new page shows how the leaderboard changed between two times that you select.",
+    summary:
+      "A new page shows how the leaderboards, the games and the achievements changed in a period that you select.",
     body: [
       text(
-        "The new What changed page compares the leaderboard at two points in time. You select a start time and an end time.",
+        "The new What changed page shows what changed in a period that you select. Buttons select common periods: the last game, today, or the last 7, 30 or 365 days. The Custom button shows two inputs for a start time and an end time.",
       ),
       text(
-        "A table shows each ranked player with the rank and the score at the start, at the end, and the change in both. A toggle sorts the tables by the rank at the start, the rank at the end, or the change in score.",
+        "The Leaderboards tab compares the overall leaderboard, the season leaderboard or the Hall of Fame score at the two times. A table shows each player with the rank and the score at the start, at the end, and the change in both. A toggle sorts the table by the rank at the start, the rank at the end, or the change in score.",
       ),
       text(
-        "A second toggle changes the data source between the actual leaderboard and the expected leaderboard. The expected leaderboard is the average of 5 000 simulations at each of the two times.",
+        "On the overall leaderboard, a second toggle changes the data source between the actual leaderboard and the expected leaderboard. The expected leaderboard is the average of 5 000 simulations at each of the two times.",
       ),
       text(
-        "Sections under the table show the change in the season leaderboard and in the Hall of Fame score for each player, the achievements earned, and the games played in the same period. The season section needs a period within 1 season.",
+        "The Games tab and the Achievements tab list the games played and the achievements earned in the period. The season leaderboard needs a period within 1 season.",
       ),
       text("The page is in the Other menu."),
     ],
@@ -83,8 +84,7 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
     title: "Sections and search on the achievement Progress tab",
     date: "2026-08-10",
     tags: ["feature-update"],
-    summary:
-      "The Progress tab on the player page groups the achievements into 8 sections and gets a search field.",
+    summary: "The Progress tab on the player page groups the achievements into 8 sections and gets a search field.",
     body: [
       text(
         "The Progress tab on the player page now groups the achievements into 8 sections: Getting Started, Win Streaks, Resilience, Rank & Score, Game Feats, Social, Loyalty & Activity and Competition.",
@@ -92,7 +92,9 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
       text(
         "The name of the section stays at the top of the screen while you scroll through its achievements. Each section shows how many of its achievements you have earned.",
       ),
-      text("A search field is at the top of the tab. The search matches the name and the description of an achievement."),
+      text(
+        "A search field is at the top of the tab. The search matches the name and the description of an achievement.",
+      ),
     ],
   },
   {
@@ -100,8 +102,7 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
     title: "2 new achievements: So Close and Full Coverage",
     date: "2026-08-09",
     tags: ["feature-update"],
-    summary:
-      "So Close 😫 and Full Coverage 🗺️ are new season achievements. The app awards both when a season ends.",
+    summary: "So Close 😫 and Full Coverage 🗺️ are new season achievements. The app awards both when a season ends.",
     body: [
       list(
         "So Close 😫 - finish a season with a score within 10% of the winner's score. Every player within 10% earns it, at any rank.",
@@ -438,9 +439,7 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
       text(
         "Double elimination is an option on the tournament form, next to single elimination. The bracket view, the pending games list and the signup all support it.",
       ),
-      text(
-        "The top of each bracket tab shows a card for the final. Click the card to open the final tab.",
-      ),
+      text("The top of each bracket tab shows a card for the final. Click the card to open the final tab."),
     ],
   },
   {

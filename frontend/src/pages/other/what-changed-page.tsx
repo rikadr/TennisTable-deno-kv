@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { TennisTable } from "../../client/client-db/tennis-table";
 import { EventType, EventTypeEnum } from "../../client/client-db/event-store/event-types";
@@ -16,7 +16,24 @@ import { ProfilePicture } from "../player/profile-picture";
 type SortBy = "start" | "end" | "delta";
 type Source = "actual" | "expected";
 
-const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+type Tab = "leaderboards" | "games" | "achievements";
+const TABS: { id: Tab; label: string }[] = [
+  { id: "leaderboards", label: "Leaderboards" },
+  { id: "games", label: "Games" },
+  { id: "achievements", label: "Achievements" },
+];
+
+type LeaderboardTab = "overall" | "season" | "hall-of-fame";
+const LEADERBOARD_TABS: { id: LeaderboardTab; label: string }[] = [
+  { id: "overall", label: "Overall" },
+  { id: "season", label: "Season" },
+  { id: "hall-of-fame", label: "Hall of Fame" },
+];
+
+type QuickRange = "last-game" | "today" | "7-days" | "30-days" | "365-days" | "custom";
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+const WEEK_MS = 7 * DAY_MS;
 const GAMES_PAGE_SIZE = 50;
 const ACHIEVEMENTS_PAGE_SIZE = 50;
 
@@ -241,9 +258,7 @@ const DiffTable: React.FC<{
       // Biggest score gain first; rows without a delta go to the bottom.
       const scoreDelta = (row: DiffRow) =>
         row.startScore !== undefined && row.endScore !== undefined ? row.endScore - row.startScore : -Infinity;
-      return list.sort(
-        (a, b) => scoreDelta(b) - scoreDelta(a) || (a.endRank ?? Infinity) - (b.endRank ?? Infinity),
-      );
+      return list.sort((a, b) => scoreDelta(b) - scoreDelta(a) || (a.endRank ?? Infinity) - (b.endRank ?? Infinity));
     }
 
     const sortRank = (row: DiffRow) => (sortBy === "start" ? row.startRank : row.endRank) ?? Infinity;
@@ -339,6 +354,44 @@ export const WhatChangedPage: React.FC = () => {
   const [sortBy, setSortBy] = useState<SortBy>("end");
   const [source, setSource] = useState<Source>("actual");
 
+  const [searchParams, setSearchParams] = useSearchParams();
+  const setParam = (key: string, value: string) => {
+    setSearchParams((prev) => {
+      const newParams = new URLSearchParams(prev);
+      newParams.set(key, value);
+      return newParams;
+    });
+  };
+  const tabParam = searchParams.get("tab");
+  const activeTab: Tab = TABS.some((tab) => tab.id === tabParam) ? (tabParam as Tab) : "leaderboards";
+  const leaderboardParam = searchParams.get("leaderboard");
+  const leaderboardTab: LeaderboardTab = LEADERBOARD_TABS.some((tab) => tab.id === leaderboardParam)
+    ? (leaderboardParam as LeaderboardTab)
+    : "overall";
+
+  // Quick select of common periods, all ending now. The inputs have minute
+  // resolution, so the last-game window starts 1 ms before the game: the
+  // truncated minute is then strictly before the game and the game itself
+  // falls inside the window. "custom" has no start - it reveals the two
+  // datetime inputs and keeps their current values.
+  const [selectedRange, setSelectedRange] = useState<QuickRange>("7-days");
+  const lastGame = context.games.at(-1);
+  const quickRanges: { id: QuickRange; label: string; start?: (now: number) => number }[] = [
+    ...(lastGame ? [{ id: "last-game" as const, label: "Last game", start: () => lastGame.playedAt - 1 }] : []),
+    { id: "today", label: "Today", start: (now: number) => new Date(now).setHours(0, 0, 0, 0) },
+    { id: "7-days", label: "Last 7 days", start: (now: number) => now - 7 * DAY_MS },
+    { id: "30-days", label: "Last 30 days", start: (now: number) => now - 30 * DAY_MS },
+    { id: "365-days", label: "Last 365 days", start: (now: number) => now - 365 * DAY_MS },
+    { id: "custom", label: "Custom" },
+  ];
+  const selectQuickRange = (range: (typeof quickRanges)[number]) => {
+    setSelectedRange(range.id);
+    if (!range.start) return;
+    const now = Date.now();
+    setFromValue(toDatetimeLocalValue(range.start(now)));
+    setToValue(toDatetimeLocalValue(now));
+  };
+
   const fromMs = fromDatetimeLocalValue(fromValue);
   const toMs = fromDatetimeLocalValue(toValue);
   const timesReversed = fromMs !== undefined && toMs !== undefined && fromMs > toMs;
@@ -358,10 +411,13 @@ export const WhatChangedPage: React.FC = () => {
     () => endState?.leaderboard.getLeaderboard().rankedPlayers.map(({ id, rank, elo }) => ({ id, rank, score: elo })),
     [endState],
   );
-  const startExpected = useExpectedLeaderboardAt(startTime, source === "expected");
-  const endExpected = useExpectedLeaderboardAt(endTime, source === "expected");
+  // The expected leaderboard is only shown on the overall leaderboard tab, so
+  // only simulate there.
+  const simulationNeeded = source === "expected" && activeTab === "leaderboards" && leaderboardTab === "overall";
+  const startExpected = useExpectedLeaderboardAt(startTime, simulationNeeded);
+  const endExpected = useExpectedLeaderboardAt(endTime, simulationNeeded);
 
-  const simulating = source === "expected" && (startExpected.loading || endExpected.loading);
+  const simulating = simulationNeeded && (startExpected.loading || endExpected.loading);
   const simulationProgress =
     (startExpected.loading ? startExpected.progress : 1) * 0.5 + (endExpected.loading ? endExpected.progress : 1) * 0.5;
 
@@ -432,246 +488,316 @@ export const WhatChangedPage: React.FC = () => {
             Changes between two points in time
           </p>
 
-          {/* Timestamp pickers */}
-          <div className="flex flex-col xs:flex-row justify-center gap-2 xs:gap-4 px-4 py-2">
-            <label className="flex flex-col text-xs font-medium text-primary-text/70 uppercase tracking-wide gap-1">
-              Start
-              <input
-                type="datetime-local"
-                value={fromValue}
-                onChange={(e) => setFromValue(e.target.value)}
-                className="px-3 py-2 rounded-lg bg-primary-background text-primary-text text-sm normal-case tracking-normal ring-1 ring-secondary-background focus:ring-2 focus:ring-secondary-text focus:outline-none"
-              />
-            </label>
-            <label className="flex flex-col text-xs font-medium text-primary-text/70 uppercase tracking-wide gap-1">
-              End
-              <input
-                type="datetime-local"
-                value={toValue}
-                onChange={(e) => setToValue(e.target.value)}
-                className="px-3 py-2 rounded-lg bg-primary-background text-primary-text text-sm normal-case tracking-normal ring-1 ring-secondary-background focus:ring-2 focus:ring-secondary-text focus:outline-none"
-              />
-            </label>
-          </div>
-          {timesReversed && (
-            <p className="text-center text-xs text-primary-text/60 pb-1">
-              The start is after the end, so the two times are swapped.
-            </p>
-          )}
-
-          {/* Sort + source toggles */}
-          <div className="flex justify-center items-end gap-4 xs:gap-8 px-4 py-2 border-b border-primary-text/20">
-            <PillSelect<SortBy>
-              label="Sort by"
-              options={[
-                { value: "start", label: "# Start" },
-                { value: "end", label: "# End" },
-                { value: "delta", label: "Score Δ" },
-              ]}
-              value={sortBy}
-              onChange={setSortBy}
-            />
-            <PillSelect<Source>
-              label="Leaderboard"
-              options={[
-                { value: "actual", label: "Actual" },
-                { value: "expected", label: "Expected" },
-              ]}
-              value={source}
-              onChange={setSource}
-            />
+          {/* Quick select of common periods */}
+          <div className="flex flex-wrap justify-center gap-1.5 xs:gap-2 px-4 py-2">
+            {quickRanges.map((range) => (
+              <button
+                key={range.id}
+                onClick={() => selectQuickRange(range)}
+                className={classNames(
+                  "px-3 py-1 rounded-full text-xs md:text-sm ring-1 ring-secondary-background transition-colors whitespace-nowrap",
+                  selectedRange === range.id
+                    ? "bg-secondary-background text-secondary-text"
+                    : "text-primary-text hover:bg-secondary-background hover:text-secondary-text",
+                )}
+              >
+                {range.label}
+              </button>
+            ))}
           </div>
 
-          {simulating ? (
-            <div className="max-w-md mx-auto p-6 text-center">
-              <p className="text-primary-text/60 text-sm mb-4">Simulating 2 × 5 000 leaderboards…</p>
-              <div className="h-2.5 w-full rounded-full bg-primary-text/10 overflow-hidden">
-                <div
-                  className="h-full rounded-full bg-secondary-background transition-all duration-150"
-                  style={{ width: `${Math.round(simulationProgress * 100)}%` }}
-                />
+          {/* Timestamp pickers, revealed by the Custom quick select */}
+          {selectedRange === "custom" && (
+            <>
+              <div className="flex flex-col xs:flex-row justify-center gap-2 xs:gap-4 px-4 pb-2">
+                <label className="flex flex-col text-xs font-medium text-primary-text/70 uppercase tracking-wide gap-1">
+                  Start
+                  <input
+                    type="datetime-local"
+                    value={fromValue}
+                    onChange={(e) => setFromValue(e.target.value)}
+                    className="px-3 py-2 rounded-lg bg-primary-background text-primary-text text-sm normal-case tracking-normal ring-1 ring-secondary-background focus:ring-2 focus:ring-secondary-text focus:outline-none"
+                  />
+                </label>
+                <label className="flex flex-col text-xs font-medium text-primary-text/70 uppercase tracking-wide gap-1">
+                  End
+                  <input
+                    type="datetime-local"
+                    value={toValue}
+                    onChange={(e) => setToValue(e.target.value)}
+                    className="px-3 py-2 rounded-lg bg-primary-background text-primary-text text-sm normal-case tracking-normal ring-1 ring-secondary-background focus:ring-2 focus:ring-secondary-text focus:outline-none"
+                  />
+                </label>
               </div>
-              <p className="text-primary-text/60 text-xs mt-2">{Math.round(simulationProgress * 100)} %</p>
-            </div>
-          ) : (
-            <DiffTable
-              startEntries={source === "actual" ? startActual : startExpected.entries}
-              endEntries={source === "actual" ? endActual : endExpected.entries}
-              sortBy={sortBy}
-              emptyText="No ranked players at either time"
-              onRowClick={(playerId) => navigate(`/player/${playerId}`)}
-            />
+              {timesReversed && (
+                <p className="text-center text-xs text-primary-text/60 pb-1">
+                  The start is after the end, so the two times are swapped.
+                </p>
+              )}
+            </>
           )}
 
-          {/* Season leaderboard changes between the two times */}
-          <div className="mt-4 border-t border-primary-text/20">
-            <h2 className="text-lg md:text-2xl text-center mt-2 text-primary-text">Season leaderboard</h2>
-            {singleSeason ? (
-              <>
-                <p className="text-center text-sm md:text-base text-primary-text/60 mb-1 md:mb-2">{singleSeasonName}</p>
-                <DiffTable
-                  startEntries={startSeasonEntries}
-                  endEntries={endSeasonEntries}
-                  sortBy={sortBy}
-                  emptyText="No season games at either time"
-                  scoreDigits={1}
-                  onRowClick={(playerId) =>
-                    navigate(`/season/player?seasonStart=${singleSeason.start}&playerId=${playerId}`)
-                  }
-                />
-              </>
-            ) : seasonsInWindow.length === 0 ? (
-              <p className="text-center text-sm md:text-base text-primary-text/60 pb-4">
-                No season games in the selected period
-              </p>
-            ) : (
-              <p className="text-center text-sm md:text-base text-primary-text/60 pb-4 px-4">
-                The selected period contains {seasonsInWindow.length} seasons, so a single season leaderboard cannot be
-                shown. Select a period within one season.
-              </p>
-            )}
+          {/* Tabs navigation */}
+          <div className="flex justify-center space-x-2 overflow-x-auto flex-nowrap scrollbar-hide border-b border-primary-text/20 mt-1">
+            {TABS.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setParam("tab", tab.id)}
+                className={classNames(
+                  "flex items-center py-2 px-4 border-b-4 font-medium text-sm transition-colors shrink-0 whitespace-nowrap",
+                  activeTab === tab.id
+                    ? "text-primary-text border-primary-text"
+                    : "text-primary-text/80 border-transparent hover:text-primary-text hover:border-primary-text border-dotted",
+                )}
+              >
+                {tab.label}
+              </button>
+            ))}
           </div>
 
-          {/* Hall of Fame score changes between the two times */}
-          <div className="mt-4 border-t border-primary-text/20">
-            <h2 className="text-lg md:text-2xl text-center mt-2 text-primary-text">Hall of Fame score</h2>
-            <p className="text-center text-sm md:text-base text-primary-text/60 mb-1 md:mb-2">
-              The hypothetical Hall of Fame leaderboard for all players
-            </p>
-            <DiffTable
-              startEntries={startHallOfFame}
-              endEntries={endHallOfFame}
-              sortBy={sortBy}
-              emptyText="No players at either time"
-              onRowClick={(playerId) => navigate(`/hall-of-fame/${playerId}`)}
-            />
-          </div>
+          {activeTab === "leaderboards" && (
+            <>
+              {/* Sub tabs between the three leaderboards */}
+              <div className="flex justify-center space-x-1 overflow-x-auto flex-nowrap scrollbar-hide pt-1">
+                {LEADERBOARD_TABS.map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setParam("leaderboard", tab.id)}
+                    className={classNames(
+                      "py-1.5 px-3 border-b-2 text-xs md:text-sm transition-colors shrink-0 whitespace-nowrap",
+                      leaderboardTab === tab.id
+                        ? "text-primary-text border-primary-text font-medium"
+                        : "text-primary-text/60 border-transparent hover:text-primary-text hover:border-primary-text hover:border-dotted",
+                    )}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Sort toggle for every leaderboard; the source toggle only
+                  applies to the overall leaderboard */}
+              <div className="flex justify-center items-end gap-4 xs:gap-8 px-4 py-2 border-b border-primary-text/20">
+                <PillSelect<SortBy>
+                  label="Sort by"
+                  options={[
+                    { value: "start", label: "# Start" },
+                    { value: "end", label: "# End" },
+                    { value: "delta", label: "Score Δ" },
+                  ]}
+                  value={sortBy}
+                  onChange={setSortBy}
+                />
+                {leaderboardTab === "overall" && (
+                  <PillSelect<Source>
+                    label="Leaderboard"
+                    options={[
+                      { value: "actual", label: "Actual" },
+                      { value: "expected", label: "Expected" },
+                    ]}
+                    value={source}
+                    onChange={setSource}
+                  />
+                )}
+              </div>
+
+              {/* Overall leaderboard changes between the two times */}
+              {leaderboardTab === "overall" &&
+                (simulating ? (
+                  <div className="max-w-md mx-auto p-6 text-center">
+                    <p className="text-primary-text/60 text-sm mb-4">Simulating 2 × 5 000 leaderboards…</p>
+                    <div className="h-2.5 w-full rounded-full bg-primary-text/10 overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-secondary-background transition-all duration-150"
+                        style={{ width: `${Math.round(simulationProgress * 100)}%` }}
+                      />
+                    </div>
+                    <p className="text-primary-text/60 text-xs mt-2">{Math.round(simulationProgress * 100)} %</p>
+                  </div>
+                ) : (
+                  <DiffTable
+                    startEntries={source === "actual" ? startActual : startExpected.entries}
+                    endEntries={source === "actual" ? endActual : endExpected.entries}
+                    sortBy={sortBy}
+                    emptyText="No ranked players at either time"
+                    onRowClick={(playerId) => navigate(`/player/${playerId}`)}
+                  />
+                ))}
+
+              {/* Season leaderboard changes between the two times */}
+              {leaderboardTab === "season" &&
+                (singleSeason ? (
+                  <>
+                    <p className="text-center text-sm md:text-base text-primary-text/60 py-1 md:py-2">
+                      {singleSeasonName}
+                    </p>
+                    <DiffTable
+                      startEntries={startSeasonEntries}
+                      endEntries={endSeasonEntries}
+                      sortBy={sortBy}
+                      emptyText="No season games at either time"
+                      scoreDigits={1}
+                      onRowClick={(playerId) =>
+                        navigate(`/season/player?seasonStart=${singleSeason.start}&playerId=${playerId}`)
+                      }
+                    />
+                  </>
+                ) : seasonsInWindow.length === 0 ? (
+                  <p className="text-center text-sm md:text-base text-primary-text/60 py-4">
+                    No season games in the selected period
+                  </p>
+                ) : (
+                  <p className="text-center text-sm md:text-base text-primary-text/60 py-4 px-4">
+                    The selected period contains {seasonsInWindow.length} seasons, so a single season leaderboard cannot
+                    be shown. Select a period within one season.
+                  </p>
+                ))}
+
+              {/* Hall of Fame score changes between the two times */}
+              {leaderboardTab === "hall-of-fame" && (
+                <>
+                  <p className="text-center text-sm md:text-base text-primary-text/60 py-1 md:py-2">
+                    The hypothetical Hall of Fame leaderboard for all players
+                  </p>
+                  <DiffTable
+                    startEntries={startHallOfFame}
+                    endEntries={endHallOfFame}
+                    sortBy={sortBy}
+                    emptyText="No players at either time"
+                    onRowClick={(playerId) => navigate(`/hall-of-fame/${playerId}`)}
+                  />
+                </>
+              )}
+            </>
+          )}
 
           {/* Achievements earned between the two times */}
-          <div className="mt-4 border-t border-primary-text/20">
-            <h2 className="text-lg md:text-2xl text-center mt-2 text-primary-text">Achievements earned</h2>
-            <p className="text-center text-sm md:text-base text-primary-text/60 mb-1 md:mb-2">
-              {achievementsInWindow.length} {achievementsInWindow.length === 1 ? "achievement" : "achievements"} between
-              the two times
-            </p>
+          {activeTab === "achievements" && (
+            <div>
+              <p className="text-center text-sm md:text-base text-primary-text/60 py-1 md:py-2">
+                {achievementsInWindow.length} {achievementsInWindow.length === 1 ? "achievement" : "achievements"}{" "}
+                between the two times
+              </p>
 
-            {achievementsInWindow.length > 0 && (
-              <div className="flex flex-col text-primary-text text-xs xs:text-sm md:text-base border-t border-primary-text/50">
-                {achievementsInWindow.slice(0, visibleAchievements).map((achievement, index) => {
-                  const label = getAchievementLabel(achievement.type, context.client.gameLimitForRanked);
-                  return (
-                    <div
-                      key={`${achievement.type}-${achievement.earnedBy}-${achievement.earnedAt}-${index}`}
-                      onClick={() => navigate(`/player/${achievement.earnedBy}`)}
-                      className="flex items-center gap-2 md:gap-3 py-1 px-1 xs:px-2 md:px-3 border-b border-primary-text/50 bg-primary-background hover:bg-secondary-background hover:text-secondary-text cursor-pointer transition-colors"
-                    >
-                      <span className="text-xl md:text-2xl shrink-0">{label.icon}</span>
-                      <span className="font-medium truncate flex-1 min-w-0">{label.title}</span>
-                      <div className="flex items-center justify-end gap-1 md:gap-2 min-w-0 max-w-[40%]">
-                        <span className="truncate">{context.playerName(achievement.earnedBy)}</span>
-                        <ProfilePicture playerId={achievement.earnedBy} size={24} border={2} />
-                      </div>
-                      <span className="whitespace-nowrap text-right">
-                        <RelativeTime date={new Date(achievement.earnedAt)} variant="auto" />
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-
-            {achievementsInWindow.length > visibleAchievements && (
-              <div className="flex justify-center py-4">
-                <button
-                  onClick={() => setVisibleAchievements((prev) => prev + ACHIEVEMENTS_PAGE_SIZE)}
-                  className="px-6 py-2 rounded text-sm font-medium transition-colors ring-1 bg-secondary-background text-secondary-text ring-secondary-text hover:opacity-80"
-                >
-                  Load {Math.min(ACHIEVEMENTS_PAGE_SIZE, achievementsInWindow.length - visibleAchievements)} more
-                  achievements
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* Games played between the two times */}
-          <div className="mt-4 border-t border-primary-text/20">
-            <h2 className="text-lg md:text-2xl text-center mt-2 text-primary-text">Games played</h2>
-            <p className="text-center text-sm md:text-base text-primary-text/60 mb-1 md:mb-2">
-              {gamesInWindow.length} {gamesInWindow.length === 1 ? "game" : "games"} between the two times
-            </p>
-
-            {gamesInWindow.length > 0 && (
-              <table className="w-full text-primary-text border-collapse">
-                <thead className="border-b border-primary-text/50">
-                  <tr className="text-xs xs:text-sm md:text-base text-primary-text">
-                    <th className="py-1 px-1 xs:px-2 md:px-3 text-left font-medium">🏆 Winner</th>
-                    <th className="py-1 px-1 md:px-2 text-center font-medium whitespace-nowrap">Score</th>
-                    <th className="py-1 px-1 xs:px-2 md:px-3 text-right font-medium">Loser 💔</th>
-                    <th className="py-1 px-1 xs:px-2 md:px-3 text-right font-medium whitespace-nowrap">Elo won</th>
-                    <th className="py-1 px-1 xs:px-2 md:px-3"></th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-primary-text/50 text-xs xs:text-sm md:text-base">
-                  {gamesInWindow.slice(0, visibleGames).map((game) => {
-                    const eloWon = eloWonInGame(game);
+              {achievementsInWindow.length > 0 && (
+                <div className="flex flex-col text-primary-text text-xs xs:text-sm md:text-base border-t border-primary-text/50">
+                  {achievementsInWindow.slice(0, visibleAchievements).map((achievement, index) => {
+                    const label = getAchievementLabel(achievement.type, context.client.gameLimitForRanked);
                     return (
-                      <tr
-                        key={game.id}
-                        onClick={() => navigate(`/1v1?player1=${game.winner}&player2=${game.loser}`)}
-                        className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text cursor-pointer transition-colors"
+                      <div
+                        key={`${achievement.type}-${achievement.earnedBy}-${achievement.earnedAt}-${index}`}
+                        onClick={() => navigate(`/player/${achievement.earnedBy}`)}
+                        className="flex items-center gap-2 md:gap-3 py-1 px-1 xs:px-2 md:px-3 border-b border-primary-text/50 bg-primary-background hover:bg-secondary-background hover:text-secondary-text cursor-pointer transition-colors"
                       >
-                        <td className="py-1 px-1 xs:px-2 md:px-3 w-[35%] max-w-0">
-                          <div className="flex items-center gap-1 md:gap-2 min-w-0">
-                            <ProfilePicture playerId={game.winner} size={24} border={2} />
-                            <span className="font-medium truncate">{context.playerName(game.winner)}</span>
-                          </div>
-                        </td>
-                        <td className="py-1 px-1 md:px-2 text-center whitespace-nowrap w-[1%]">
-                          {game.score ? (
-                            <div className="leading-tight -my-1">
-                              <div className="font-medium">
-                                {game.score.setsWon.gameWinner} - {game.score.setsWon.gameLoser}
-                              </div>
-                              {game.score.setPoints && (
-                                <div className="font-light italic text-[10px] md:text-xs whitespace-nowrap leading-none">
-                                  {game.score.setPoints.map((set) => `${set.gameWinner}-${set.gameLoser}`).join(", ")}
-                                </div>
-                              )}
-                            </div>
-                          ) : (
-                            <span>-</span>
-                          )}
-                        </td>
-                        <td className="py-1 px-1 xs:px-2 md:px-3 w-[35%] max-w-0">
-                          <div className="flex items-center justify-end gap-1 md:gap-2 min-w-0">
-                            <span className="font-medium truncate">{context.playerName(game.loser)}</span>
-                            <ProfilePicture playerId={game.loser} size={24} border={2} />
-                          </div>
-                        </td>
-                        <td className="py-1 px-1 xs:px-2 md:px-3 text-right font-medium w-[1%] whitespace-nowrap">
-                          {eloWon !== undefined ? `+${fmtNum(eloWon, { digits: 0 })}` : "-"}
-                        </td>
-                        <td className="py-1 px-1 xs:px-2 md:px-3 text-right whitespace-nowrap w-[1%]">
-                          <RelativeTime date={new Date(game.playedAt)} variant="auto" />
-                        </td>
-                      </tr>
+                        <span className="text-xl md:text-2xl shrink-0">{label.icon}</span>
+                        <span className="font-medium truncate flex-1 min-w-0">{label.title}</span>
+                        <div className="flex items-center justify-end gap-1 md:gap-2 min-w-0 max-w-[40%]">
+                          <span className="truncate">{context.playerName(achievement.earnedBy)}</span>
+                          <ProfilePicture playerId={achievement.earnedBy} size={24} border={2} />
+                        </div>
+                        <span className="whitespace-nowrap text-right">
+                          <RelativeTime date={new Date(achievement.earnedAt)} variant="auto" />
+                        </span>
+                      </div>
                     );
                   })}
-                </tbody>
-              </table>
-            )}
+                </div>
+              )}
 
-            {gamesInWindow.length > visibleGames && (
-              <div className="flex justify-center py-4 border-t border-primary-text/20">
-                <button
-                  onClick={() => setVisibleGames((prev) => prev + GAMES_PAGE_SIZE)}
-                  className="px-6 py-2 rounded text-sm font-medium transition-colors ring-1 bg-secondary-background text-secondary-text ring-secondary-text hover:opacity-80"
-                >
-                  Load {Math.min(GAMES_PAGE_SIZE, gamesInWindow.length - visibleGames)} more games
-                </button>
-              </div>
-            )}
-          </div>
+              {achievementsInWindow.length > visibleAchievements && (
+                <div className="flex justify-center py-4">
+                  <button
+                    onClick={() => setVisibleAchievements((prev) => prev + ACHIEVEMENTS_PAGE_SIZE)}
+                    className="px-6 py-2 rounded text-sm font-medium transition-colors ring-1 bg-secondary-background text-secondary-text ring-secondary-text hover:opacity-80"
+                  >
+                    Load {Math.min(ACHIEVEMENTS_PAGE_SIZE, achievementsInWindow.length - visibleAchievements)} more
+                    achievements
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Games played between the two times */}
+          {activeTab === "games" && (
+            <div>
+              <p className="text-center text-sm md:text-base text-primary-text/60 py-1 md:py-2">
+                {gamesInWindow.length} {gamesInWindow.length === 1 ? "game" : "games"} between the two times
+              </p>
+
+              {gamesInWindow.length > 0 && (
+                <table className="w-full text-primary-text border-collapse">
+                  <thead className="border-b border-primary-text/50">
+                    <tr className="text-xs xs:text-sm md:text-base text-primary-text">
+                      <th className="py-1 px-1 xs:px-2 md:px-3 text-left font-medium">🏆 Winner</th>
+                      <th className="py-1 px-1 md:px-2 text-center font-medium whitespace-nowrap">Score</th>
+                      <th className="py-1 px-1 xs:px-2 md:px-3 text-right font-medium">Loser 💔</th>
+                      <th className="py-1 px-1 xs:px-2 md:px-3 text-right font-medium whitespace-nowrap">Elo won</th>
+                      <th className="py-1 px-1 xs:px-2 md:px-3"></th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-primary-text/50 text-xs xs:text-sm md:text-base">
+                    {gamesInWindow.slice(0, visibleGames).map((game) => {
+                      const eloWon = eloWonInGame(game);
+                      return (
+                        <tr
+                          key={game.id}
+                          onClick={() => navigate(`/1v1?player1=${game.winner}&player2=${game.loser}`)}
+                          className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text cursor-pointer transition-colors"
+                        >
+                          <td className="py-1 px-1 xs:px-2 md:px-3 w-[35%] max-w-0">
+                            <div className="flex items-center gap-1 md:gap-2 min-w-0">
+                              <ProfilePicture playerId={game.winner} size={24} border={2} />
+                              <span className="font-medium truncate">{context.playerName(game.winner)}</span>
+                            </div>
+                          </td>
+                          <td className="py-1 px-1 md:px-2 text-center whitespace-nowrap w-[1%]">
+                            {game.score ? (
+                              <div className="leading-tight -my-1">
+                                <div className="font-medium">
+                                  {game.score.setsWon.gameWinner} - {game.score.setsWon.gameLoser}
+                                </div>
+                                {game.score.setPoints && (
+                                  <div className="font-light italic text-[10px] md:text-xs whitespace-nowrap leading-none">
+                                    {game.score.setPoints.map((set) => `${set.gameWinner}-${set.gameLoser}`).join(", ")}
+                                  </div>
+                                )}
+                              </div>
+                            ) : (
+                              <span>-</span>
+                            )}
+                          </td>
+                          <td className="py-1 px-1 xs:px-2 md:px-3 w-[35%] max-w-0">
+                            <div className="flex items-center justify-end gap-1 md:gap-2 min-w-0">
+                              <span className="font-medium truncate">{context.playerName(game.loser)}</span>
+                              <ProfilePicture playerId={game.loser} size={24} border={2} />
+                            </div>
+                          </td>
+                          <td className="py-1 px-1 xs:px-2 md:px-3 text-right font-medium w-[1%] whitespace-nowrap">
+                            {eloWon !== undefined ? `+${fmtNum(eloWon, { digits: 0 })}` : "-"}
+                          </td>
+                          <td className="py-1 px-1 xs:px-2 md:px-3 text-right whitespace-nowrap w-[1%]">
+                            <RelativeTime date={new Date(game.playedAt)} variant="auto" />
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              )}
+
+              {gamesInWindow.length > visibleGames && (
+                <div className="flex justify-center py-4 border-t border-primary-text/20">
+                  <button
+                    onClick={() => setVisibleGames((prev) => prev + GAMES_PAGE_SIZE)}
+                    className="px-6 py-2 rounded text-sm font-medium transition-colors ring-1 bg-secondary-background text-secondary-text ring-secondary-text hover:opacity-80"
+                  >
+                    Load {Math.min(GAMES_PAGE_SIZE, gamesInWindow.length - visibleGames)} more games
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>
