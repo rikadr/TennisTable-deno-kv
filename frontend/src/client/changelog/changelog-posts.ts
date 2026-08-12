@@ -42,6 +42,38 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
+    slug: "live-win-prediction-extended-matches",
+    title: "Live win% prediction supports extended matches",
+    date: "2026-08-12",
+    tags: ["feature-update"],
+    summary:
+      "The live prediction extends to the best of 5 or 7 sets when the players continue after a decided match. It no longer locks to 100% in an extra set.",
+    body: [
+      text(
+        "The model simulates a match to the best of 3 sets. If a set starts after a player has 2 won sets, the simulation extends to the best of 5, and then to the best of 7. Before this change, the prediction locked to 100% in an extra set.",
+      ),
+      text(
+        "The app finds the match format from the order of the completed sets. A score of 2-1 that goes through 2-0 keeps the match at the best of 5. A score of 2-1 that goes through 1-1 ends the match.",
+      ),
+      text(
+        "A set score that has a winner counts as a won set immediately. The prediction does not change when you confirm the set and the set score returns to 0-0.",
+      ),
+    ],
+  },
+  {
+    slug: "win-percent-graph-on-tracked-game-summary",
+    title: "Win % graph on the tracked game summary",
+    date: "2026-08-12",
+    tags: ["feature-update"],
+    summary: "The summary step of a tracked game shows a graph of the winner's win % after every point.",
+    body: [
+      text(
+        "The app records the live win prediction after every point of a tracked game. The summary step shows the winner's win % over the game as a graph under the score.",
+      ),
+      text("A vertical line marks the end of each set. A horizontal line marks 50%."),
+    ],
+  },
+  {
     slug: "what-changed-page",
     title: "What changed: compare the leaderboard between two times",
     date: "2026-08-11",
