@@ -41,6 +41,7 @@ export const TopPlayers: React.FC = () => {
   const context = useEventDbContext();
   const [period, setPeriod] = useState<Period>("day");
   const [metric, setMetric] = useState<Metric>("games");
+  const [showAll, setShowAll] = useState(false);
 
   const currentKey = useMemo(() => getPeriodKey(new Date(), period), [period]);
 
@@ -121,7 +122,8 @@ export const TopPlayers: React.FC = () => {
   const periodLabel = PERIOD_LABELS[period];
   const metricLabel = METRIC_LABELS[metric];
   const maxCount = rows.length > 0 ? rows[0].count : 0;
-  const hasCurrent = rows.some((row) => row.key === currentKey);
+  const visibleRows = showAll ? rows : rows.slice(0, 10);
+  const hasCurrent = visibleRows.some((row) => row.key === currentKey);
 
   return (
     <div className="bg-primary-background text-primary-text rounded-lg p-4">
@@ -180,7 +182,7 @@ export const TopPlayers: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {rows.map((row, index) => {
+              {visibleRows.map((row, index) => {
                 const isCurrent = row.key === currentKey;
                 const countPercent = maxCount > 0 ? Math.max(0, Math.min(100, (row.count / maxCount) * 100)) : 0;
 
@@ -216,6 +218,17 @@ export const TopPlayers: React.FC = () => {
               })}
             </tbody>
           </table>
+        </div>
+      )}
+      {rows.length > 10 && (
+        <div className="flex justify-center mt-3">
+          <button
+            type="button"
+            onClick={() => setShowAll((prev) => !prev)}
+            className="px-3 py-1 text-xs rounded border border-primary-text/20 bg-primary-background hover:bg-secondary-background/50 transition-colors"
+          >
+            {showAll ? "Show top 10" : `Show all ${rows.length}`}
+          </button>
         </div>
       )}
       {hasCurrent && (

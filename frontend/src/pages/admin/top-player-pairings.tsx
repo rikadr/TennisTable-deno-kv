@@ -40,8 +40,9 @@ interface PairingData {
 export const TopPlayerPairings: React.FC = () => {
   const context = useEventDbContext();
   const [timeRange, setTimeRange] = useState<TimeRange>("all");
+  const [showAll, setShowAll] = useState(false);
 
-  const topPairings = useMemo<PairingData[]>(() => {
+  const pairings = useMemo<PairingData[]>(() => {
     const cutoff = getRangeCutoff(timeRange, new Date());
     const counts = new Map<string, PairingData>();
 
@@ -62,15 +63,15 @@ export const TopPlayerPairings: React.FC = () => {
       }
     });
 
-    return Array.from(counts.values())
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 10);
+    return Array.from(counts.values()).sort((a, b) => b.count - a.count);
   }, [context.games, timeRange]);
+
+  const visiblePairings = showAll ? pairings : pairings.slice(0, 10);
 
   return (
     <div className="bg-primary-background text-primary-text rounded-lg p-4">
       <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
-        <h2 className="text-lg font-semibold">Top 10 Player Pairings</h2>
+        <h2 className="text-lg font-semibold">Top Player Pairings</h2>
         <div className="flex gap-1" role="tablist" aria-label="Filter by time range">
           {(Object.keys(TIME_RANGE_LABELS) as TimeRange[]).map((range) => (
             <button
@@ -90,7 +91,7 @@ export const TopPlayerPairings: React.FC = () => {
           ))}
         </div>
       </div>
-      {topPairings.length === 0 ? (
+      {pairings.length === 0 ? (
         <div className="text-center text-primary-text p-4 bg-secondary-background rounded-lg">
           <p>{timeRange === "all" ? "No games data available" : "No games in this time range"}</p>
         </div>
@@ -104,8 +105,8 @@ export const TopPlayerPairings: React.FC = () => {
             </tr>
           </thead>
           <tbody>
-            {topPairings.map((pairing, index) => {
-              const maxCount = topPairings[0].count;
+            {visiblePairings.map((pairing, index) => {
+              const maxCount = pairings[0].count;
               const countPercent = maxCount > 0 ? Math.max(0, Math.min(100, (pairing.count / maxCount) * 100)) : 0;
               return (
                 <tr key={pairing.key} className="hover:bg-secondary-background/50">
@@ -129,6 +130,17 @@ export const TopPlayerPairings: React.FC = () => {
             })}
           </tbody>
         </table>
+      )}
+      {pairings.length > 10 && (
+        <div className="flex justify-center mt-3">
+          <button
+            type="button"
+            onClick={() => setShowAll((prev) => !prev)}
+            className="px-3 py-1 text-xs rounded border border-primary-text/20 bg-primary-background hover:bg-secondary-background/50 transition-colors"
+          >
+            {showAll ? "Show top 10" : `Show all ${pairings.length}`}
+          </button>
+        </div>
       )}
     </div>
   );
