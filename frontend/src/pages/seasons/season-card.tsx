@@ -21,6 +21,7 @@ export const SeasonCard: React.FC<SeasonCardProps> = ({ season, index, totalSeas
   const isUpcoming = Date.now() < start;
 
   let winnerId: string | undefined;
+  let winnerScore: number | undefined;
   let participantCount = 0;
 
   const leaderboard = season.getLeaderboard();
@@ -28,6 +29,7 @@ export const SeasonCard: React.FC<SeasonCardProps> = ({ season, index, totalSeas
     participantCount = leaderboard.length;
     if (hasEnded) {
       winnerId = leaderboard[0].playerId;
+      winnerScore = leaderboard[0].seasonScore;
     }
   }
 
@@ -81,8 +83,8 @@ export const SeasonCard: React.FC<SeasonCardProps> = ({ season, index, totalSeas
           {/* Right Side: Stats & Winner */}
           <div className="flex flex-col items-end gap-1 md:gap-2">
             <div className="text-right">
-              <div className="text-base md:text-lg font-bold text-secondary-text">{participantCount}</div>
-              <div className="text-xs text-secondary-text/60">Players</div>
+              <span className="text-base md:text-lg font-bold text-secondary-text">{participantCount}</span>{" "}
+              <span className="text-xs text-secondary-text/60">Players</span>
             </div>
 
             {winnerId && (
@@ -90,6 +92,11 @@ export const SeasonCard: React.FC<SeasonCardProps> = ({ season, index, totalSeas
                 <span className="text-base md:text-xl">🏆</span>
                 <ProfilePicture playerId={winnerId} size={20} border={1} />
                 <span className="font-bold text-primary-text text-xs md:text-sm truncate max-w-[80px] md:max-w-none">{context.playerName(winnerId)}</span>
+                {winnerScore !== undefined && (
+                  <span className="text-primary-text/70 text-xs md:text-sm whitespace-nowrap">
+                    {fmtNum(winnerScore)} pts
+                  </span>
+                )}
               </div>
             )}
           </div>
