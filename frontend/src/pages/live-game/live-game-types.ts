@@ -12,6 +12,13 @@ export type LiveGameState = {
   };
   currentSet: LiveGameSetPoint;
   completedSets: LiveGameSetPoint[];
+  /**
+   * One char per point of the current set in the order the points were scored:
+   * "1" = point to player 1, "2" = point to player 2.
+   */
+  currentSetSequence: string;
+  /** Point sequence of each completed set, same encoding as currentSetSequence. */
+  completedSetSequences: string[];
   /** Which player (1 or 2) served the first point of the current set. */
   firstServer: 1 | 2;
   startedAt: number | null;
@@ -25,6 +32,8 @@ export const emptyLiveGame: LiveGameState = {
   setsWon: { player1: 0, player2: 0 },
   currentSet: { player1: 0, player2: 0 },
   completedSets: [],
+  currentSetSequence: "",
+  completedSetSequences: [],
   firstServer: 1,
   startedAt: null,
   finishedAt: null,

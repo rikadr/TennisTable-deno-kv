@@ -40,7 +40,16 @@ export type GameCreated = GenericEvent<EventTypeEnum.GAME_CREATED, { playedAt: n
 export type GameDeleted = GenericEvent<EventTypeEnum.GAME_DELETED, null>;
 export type GameScore = GenericEvent<
   EventTypeEnum.GAME_SCORE,
-  { setsWon: { gameWinner: number; gameLoser: number }; setPoints?: { gameWinner: number; gameLoser: number }[] }
+  {
+    setsWon: { gameWinner: number; gameLoser: number };
+    setPoints?: { gameWinner: number; gameLoser: number }[];
+    /**
+     * Point-by-point log, one string per set in the order the sets were played.
+     * Each char is one point in the order it was scored: "W" = point to the game
+     * winner, "L" = point to the game loser.
+     */
+    pointSequences?: string[];
+  }
 >;
 
 export type TournamentCreated = GenericEvent<

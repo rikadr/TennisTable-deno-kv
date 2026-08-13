@@ -94,6 +94,30 @@ export class GamesProjector {
       }
     }
 
+    if (event.data.pointSequences) {
+      if (!event.data.setPoints) {
+        return { valid: false, message: "Point sequences require set points" };
+      }
+      if (event.data.pointSequences.length !== event.data.setPoints.length) {
+        return { valid: false, message: "Point sequences are invalid. There must be one sequence per set" };
+      }
+      for (let setIndex = 0; setIndex < event.data.pointSequences.length; setIndex++) {
+        const sequence = event.data.pointSequences[setIndex];
+        if (/^[WL]*$/.test(sequence) === false) {
+          return { valid: false, message: "Point sequences are invalid. Only 'W' and 'L' points are allowed" };
+        }
+        const winnerPoints = sequence.split("").filter((point) => point === "W").length;
+        const loserPoints = sequence.length - winnerPoints;
+        const set = event.data.setPoints[setIndex];
+        if (winnerPoints !== set.gameWinner || loserPoints !== set.gameLoser) {
+          return {
+            valid: false,
+            message: `Point sequences are invalid. Sequence for set ${setIndex + 1} does not match the set points`,
+          };
+        }
+      }
+    }
+
     return { valid: true };
   }
 }

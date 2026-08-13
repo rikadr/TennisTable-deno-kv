@@ -26,6 +26,11 @@ import { LiveGamePredictionCard } from "./live-game-prediction-card";
 import ConfettiExplosion from "react-confetti-explosion";
 import { Server } from "../../common/serve-tracker";
 import { ServeTrackerDisplay } from "../../common/serve-tracker-display";
+import {
+  appendPointToSequence,
+  removeLastPointFromSequence,
+  toEventPointSequences,
+} from "../../common/point-sequences";
 
 type Stage = "scoring" | "confirm";
 
@@ -96,6 +101,8 @@ export const LiveGameAdminPage: React.FC = () => {
       setsWon: { player1: 0, player2: 0 },
       currentSet: { player1: 0, player2: 0 },
       completedSets: [],
+      currentSetSequence: "",
+      completedSetSequences: [],
       firstServer: localState!.firstServer,
       startedAt: Date.now(),
       finishedAt: null,
@@ -115,6 +122,7 @@ export const LiveGameAdminPage: React.FC = () => {
         ...localState!.currentSet,
         [key]: localState!.currentSet[key] + 1,
       },
+      currentSetSequence: appendPointToSequence(localState!.currentSetSequence, player),
     });
   }
 
@@ -126,6 +134,7 @@ export const LiveGameAdminPage: React.FC = () => {
         ...localState!.currentSet,
         [key]: Math.max(0, localState!.currentSet[key] - 1),
       },
+      currentSetSequence: removeLastPointFromSequence(localState!.currentSetSequence, player),
     });
   }
 
@@ -138,6 +147,8 @@ export const LiveGameAdminPage: React.FC = () => {
       },
       completedSets: [...localState!.completedSets, { ...localState!.currentSet }],
       currentSet: { player1: 0, player2: 0 },
+      completedSetSequences: [...localState!.completedSetSequences, localState!.currentSetSequence],
+      currentSetSequence: "",
       // Alternate who serves first in the next set, per table tennis convention.
       firstServer: localState!.firstServer === 1 ? 2 : 1,
     });
@@ -150,6 +161,8 @@ export const LiveGameAdminPage: React.FC = () => {
       setsWon: { player1: 0, player2: 0 },
       currentSet: { player1: 0, player2: 0 },
       completedSets: [],
+      currentSetSequence: "",
+      completedSetSequences: [],
       firstServer: 1,
       updatedAt: Date.now(),
     });
@@ -209,6 +222,13 @@ export const LiveGameAdminPage: React.FC = () => {
                 gameLoser: player1Won ? set.player2 : set.player1,
               }))
             : undefined,
+        // undefined when the sequences do not align with the completed sets,
+        // e.g. a live game that started before point tracking existed.
+        pointSequences: toEventPointSequences({
+          setSequences: localState!.completedSetSequences,
+          completedSets: localState!.completedSets,
+          player1IsGameWinner: player1Won,
+        }),
       },
     };
 

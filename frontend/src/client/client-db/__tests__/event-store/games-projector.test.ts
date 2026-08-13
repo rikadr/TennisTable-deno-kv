@@ -223,6 +223,74 @@ describe("validateScoreGame", () => {
     expect(result.message).toBe("Points are invalid. Loser must win the correct amount of sets");
   });
 
+  it("accepts point sequences that match the set points", () => {
+    const result = projector.validateScoreGame(
+      scoreEvent("game-1", {
+        setsWon: { gameWinner: 2, gameLoser: 1 },
+        setPoints: [
+          { gameWinner: 3, gameLoser: 1 },
+          { gameWinner: 1, gameLoser: 2 },
+          { gameWinner: 2, gameLoser: 0 },
+        ],
+        pointSequences: ["WLWW", "LWL", "WW"],
+      }),
+    );
+    expect(result).toEqual({ valid: true });
+  });
+
+  it("rejects point sequences without set points", () => {
+    const result = projector.validateScoreGame(
+      scoreEvent("game-1", {
+        setsWon: { gameWinner: 2, gameLoser: 0 },
+        pointSequences: ["WW", "WW"],
+      }),
+    );
+    expectInvalid(result);
+    expect(result.message).toBe("Point sequences require set points");
+  });
+
+  it("rejects point sequences when the number of sequences does not match the number of sets", () => {
+    const result = projector.validateScoreGame(
+      scoreEvent("game-1", {
+        setsWon: { gameWinner: 2, gameLoser: 0 },
+        setPoints: [
+          { gameWinner: 2, gameLoser: 0 },
+          { gameWinner: 2, gameLoser: 1 },
+        ],
+        pointSequences: ["WW"],
+      }),
+    );
+    expectInvalid(result);
+    expect(result.message).toBe("Point sequences are invalid. There must be one sequence per set");
+  });
+
+  it("rejects point sequences with characters other than W and L", () => {
+    const result = projector.validateScoreGame(
+      scoreEvent("game-1", {
+        setsWon: { gameWinner: 1, gameLoser: 0 },
+        setPoints: [{ gameWinner: 2, gameLoser: 0 }],
+        pointSequences: ["W1"],
+      }),
+    );
+    expectInvalid(result);
+    expect(result.message).toBe("Point sequences are invalid. Only 'W' and 'L' points are allowed");
+  });
+
+  it("rejects a point sequence whose point counts do not match its set points", () => {
+    const result = projector.validateScoreGame(
+      scoreEvent("game-1", {
+        setsWon: { gameWinner: 2, gameLoser: 0 },
+        setPoints: [
+          { gameWinner: 2, gameLoser: 0 },
+          { gameWinner: 2, gameLoser: 1 },
+        ],
+        pointSequences: ["WW", "WLL"],
+      }),
+    );
+    expectInvalid(result);
+    expect(result.message).toBe("Point sequences are invalid. Sequence for set 2 does not match the set points");
+  });
+
   it("currently accepts a score for a game that does not exist (documented gap)", () => {
     // validateScoreGame never checks the game stream, so a GAME_SCORE event
     // for an unknown game passes validation (the projection then no-ops).
