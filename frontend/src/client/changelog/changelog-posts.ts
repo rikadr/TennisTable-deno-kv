@@ -56,7 +56,7 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
         "The page shows the win % prediction between the 2 players before and after the game, each with its confidence.",
       ),
       text(
-        "A game with a point-by-point log gets a win % graph. The app replays the recorded points through the live prediction model, with the prediction data as it stood before the game. A 📈 mark next to a score in the game lists shows that the game has the log.",
+        "A game with a point-by-point log gets a win % graph. The app replays the recorded points through the live prediction model, with the prediction data from before the game. A 📈 mark next to a score in the game lists shows that the game has the log.",
       ),
       text(
         "2 buttons open related pages: the head-to-head page for the 2 players, and the What changed page with the period of this game preselected.",

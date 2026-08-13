@@ -347,9 +347,9 @@ export const WhatChangedPage: React.FC = () => {
   // windows do not drift while the page stays open.
   const [now, setNow] = useState(() => Date.now());
 
-  // Quick select of common periods, all ending now. The inputs have minute
+  // Quick select of common periods, all ending now. The inputs have second
   // resolution, so the last-game window starts 1 ms before the game: the
-  // truncated minute is then strictly before the game and the game itself
+  // truncated second is then strictly before the game and the game itself
   // falls inside the window. "custom" has no start - it reveals the two
   // datetime inputs and keeps their current values.
   const lastGame = context.games.at(-1);

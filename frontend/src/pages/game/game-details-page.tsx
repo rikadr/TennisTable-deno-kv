@@ -7,8 +7,7 @@ import { fmtNum } from "../../common/number-utils";
 import { RelativeTime, toDatetimeLocalValue } from "../../common/date-utils";
 import { stringToColor } from "../../common/string-to-color";
 import { ProfilePicture } from "../player/profile-picture";
-import { Fraction, Predictions } from "../../client/client-db/predictions";
-import { TennisTable } from "../../client/client-db/tennis-table";
+import { Fraction } from "../../client/client-db/predictions";
 import { WinPercentGraph } from "../add-game/win-percent-graph";
 import { replayWinPercentHistory } from "./game-win-replay";
 
@@ -20,16 +19,6 @@ import { replayWinPercentHistory } from "./game-win-replay";
  * game changed beyond that (leaderboards, achievements) lives on the What
  * changed page, linked with the game's own 2-second window preselected.
  */
-// The overall pairing prediction (direct + indirect, combined by confidence)
-// in a projected state, from the winner's perspective.
-function pairingPrediction(state: TennisTable | undefined, winner: string, loser: string): Fraction | undefined {
-  if (!state) return undefined;
-  const direct = state.predictions.getDirectFraction(winner, loser);
-  const oneLayer = state.predictions.getOneLayerFraction(winner, loser);
-  const twoLayer = state.predictions.getTwoLayerFraction(winner, loser);
-  return Predictions.combinePrioritizedFractions([direct, oneLayer, twoLayer]);
-}
-
 export const GameDetailsPage: React.FC = () => {
   const context = useEventDbContext();
   const navigate = useNavigate();
@@ -40,10 +29,12 @@ export const GameDetailsPage: React.FC = () => {
     [context, playedAt],
   );
 
-  // The app state just before and just at the game. Both drive the pairing
-  // prediction; the pre-game one also seeds the win % replay.
+  // The app state just before and just after the game. Both drive the pairing
+  // prediction; the pre-game one also seeds the win % replay. The game's
+  // GAME_SCORE event is stored at playedAt + 1, so the post state projects
+  // there — at playedAt itself the game would count without its score.
   const preState = useStateAt(game ? game.playedAt - 1 : undefined);
-  const postState = useStateAt(game?.playedAt);
+  const postState = useStateAt(game ? game.playedAt + 1 : undefined);
 
   // Elo moved by this game, from the players' game log entries.
   const eloExchange = useMemo(() => {
@@ -58,26 +49,30 @@ export const GameDetailsPage: React.FC = () => {
     };
   }, [context, game]);
 
+  // The overall pairing prediction, from the winner's perspective, in the two
+  // projected states. Undefined when there is no data to predict from.
   const preGamePrediction = useMemo(
-    () => (game ? pairingPrediction(preState, game.winner, game.loser) : undefined),
+    () => (game ? preState?.predictions.getPredictedFraction(game.winner, game.loser) : undefined),
     [game, preState],
   );
   const postGamePrediction = useMemo(
-    () => (game ? pairingPrediction(postState, game.winner, game.loser) : undefined),
+    () => (game ? postState?.predictions.getPredictedFraction(game.winner, game.loser) : undefined),
     [game, postState],
   );
 
   // Win % after every point, replayed from the stored point sequences with the
-  // live model. Seeded by the game so the graph is stable across renders.
+  // live model. Seeded by the game so the graph is stable across renders. A
+  // pair without prediction data replays from an even coin flip, like the
+  // live trackers do.
   const winPercentHistory = useMemo(() => {
-    if (!game?.score?.pointSequences || !preGamePrediction) return undefined;
+    if (!game?.score?.pointSequences?.length || !preState) return undefined;
     return replayWinPercentHistory({
       pointSequences: game.score.pointSequences,
-      preGameWinChance: preGamePrediction.confidence > 0 ? preGamePrediction.fraction : 0.5,
-      preGameConfidence: preGamePrediction.confidence,
+      preGameWinChance: preGamePrediction?.fraction ?? 0.5,
+      preGameConfidence: preGamePrediction?.confidence ?? 0,
       seed: game.playedAt,
     });
-  }, [game, preGamePrediction]);
+  }, [game, preState, preGamePrediction]);
 
   if (!game) {
     return <div className="p-8 text-center text-primary-text/60">Game not found</div>;
@@ -178,7 +173,7 @@ export const GameDetailsPage: React.FC = () => {
 
           {/* Win % over the game, replayed from the point-by-point log */}
           <div className="px-2 xs:px-4 pb-4">
-            {winPercentHistory && game.score?.setPoints ? (
+            {winPercentHistory && winPercentHistory.length >= 2 && game.score?.setPoints ? (
               <div className="bg-white rounded-xl shadow-lg p-3 sm:p-4 text-black">
                 <WinPercentGraph
                   history={winPercentHistory}
@@ -191,8 +186,8 @@ export const GameDetailsPage: React.FC = () => {
                   }))}
                 />
                 <p className="text-xs text-gray-500 -mt-4">
-                  Replayed from the recorded points with the live prediction model, using the prediction data as it
-                  stood before the game.
+                  Replayed from the recorded points with the live prediction model, using the prediction data from
+                  before the game.
                 </p>
               </div>
             ) : (

@@ -31,7 +31,10 @@ export function replayWinPercentHistory(params: {
   seed: number;
   simulations?: number;
 }): number[] {
-  const { pointSequences, preGameWinChance, preGameConfidence, seed, simulations } = params;
+  const { pointSequences, preGameWinChance, preGameConfidence, seed } = params;
+  // The replay runs the model for every point of the game at once on the main
+  // thread, so trade some Monte-Carlo resolution for render time.
+  const simulations = params.simulations ?? 500;
   const random = seededRandom(seed);
 
   const history: number[] = [];
@@ -52,6 +55,8 @@ export function replayWinPercentHistory(params: {
           completedSets: [...completedSets],
           simulations,
           random,
+          // Only player1WinChance is kept, so skip the confidence-only pass.
+          skipConfidenceSimulation: true,
         }).player1WinChance,
       );
     }
