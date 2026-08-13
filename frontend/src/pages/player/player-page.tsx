@@ -16,6 +16,7 @@ import { PlayerPredictionsPage } from "./player-predictions-page";
 import { PlayerSeasonStats } from "./player-season-stats";
 import { PlayerPairings } from "./player-pairings";
 import { ContentCard } from "./content-card";
+import { UnrankedExpectedScore } from "./unranked-expected-score";
 import { usePlayerLinkSearch } from "../../hooks/use-player-link-search";
 
 type TabType = "overview" | "games" | "statistics" | "achievements" | "predictions" | "season";
@@ -213,6 +214,11 @@ export const PlayerPage: React.FC = () => {
                   </div>
                 ))}
               </div>
+            )}
+
+            {/* Expected score simulation for unranked players */}
+            {playerId && isActive && !summary.isRanked && summary.games.length > 0 && (
+              <UnrankedExpectedScore playerId={playerId} />
             )}
 
             {/* Score Timeline */}

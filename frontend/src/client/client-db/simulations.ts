@@ -45,9 +45,9 @@ export class Simulations {
     return wins / (loss || 1);
   }
 
-  expectedLeaderBoard(onProgress?: (progress: number) => void): ExpectedLeaderboard {
+  expectedLeaderBoard(onProgress?: (progress: number) => void, includeUnrankedPlayerId?: string): ExpectedLeaderboard {
     const currentLeaderboard = this.parent.leaderboard.getLeaderboard();
-    const predictedGames = this.parent.predictions.generateSimulatedGames();
+    const predictedGames = this.parent.predictions.generateSimulatedGames(undefined, includeUnrankedPlayerId);
 
     const simResultMap = new Map<string, number[]>();
 
@@ -80,7 +80,11 @@ export class Simulations {
     return {
       current: currentLeaderboard.rankedPlayers.map(({ id, rank, elo }) => ({ id, rank, score: elo })),
       expected: avgSimResult
-        .filter((player) => currentLeaderboard.rankedPlayers.some((ranked) => ranked.id === player.id))
+        .filter(
+          (player) =>
+            player.id === includeUnrankedPlayerId ||
+            currentLeaderboard.rankedPlayers.some((ranked) => ranked.id === player.id),
+        )
         .map((player, index) => ({ ...player, rank: index + 1 })),
     };
   }
