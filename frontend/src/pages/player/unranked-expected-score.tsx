@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { fmtNum } from "../../common/number-utils";
 import { useUnrankedExpectedScoreWorker } from "../../hooks/use-unranked-expected-score-worker";
 
@@ -59,7 +60,11 @@ export const UnrankedExpectedScore: React.FC<Props> = ({ playerId }) => {
               <span className="text-sm font-light">points</span>
             </span>
             <span className="text-sm">
-              rank {fmtNum(playerEntry.rank)} of {result.expected.length}
+              rank {fmtNum(playerEntry.rank)} of {result.expected.length} on the{" "}
+              <Link to="/simulations/expected-leaderboard" className="underline hover:text-primary-text/70">
+                expected leaderboard
+              </Link>
+              , not the current leaderboard
             </span>
             <span className="text-xs text-primary-text/60">⚠️ May be unreliable — player is not ranked</span>
           </>
