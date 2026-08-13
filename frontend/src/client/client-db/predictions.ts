@@ -445,22 +445,24 @@ export class Predictions {
   // Simulated game generation
   // ---------------------------------------------------------------------------
 
-  generateSimulatedGames(targetGamesPerPlayer = 400): Game[] {
-    const rankedPlayerIds = this.getAllPlayerIds().filter((id) => {
+  generateSimulatedGames(targetGamesPerPlayer = 400, includeUnrankedPlayerId?: string): Game[] {
+    const simulatedPlayerIds = this.getAllPlayerIds().filter((id) => {
       const isActive = this.parent.eventStore.playersProjector.getPlayer(id)?.active === true;
+      // The explicitly included player joins the simulation regardless of game count
+      if (id === includeUnrankedPlayerId) return isActive;
       return this.getPlayerTotalGames(id) >= this.parent.client.gameLimitForRanked && isActive;
     });
 
-    if (rankedPlayerIds.length < 2) return [];
+    if (simulatedPlayerIds.length < 2) return [];
 
-    const gamesPerPairing = Math.max(1, Math.round(targetGamesPerPlayer / (rankedPlayerIds.length - 1)));
+    const gamesPerPairing = Math.max(1, Math.round(targetGamesPerPlayer / (simulatedPlayerIds.length - 1)));
 
     const predictedGamesTemp: { winner: string; loser: string }[][] = [];
 
-    for (let i = 0; i < rankedPlayerIds.length; i++) {
-      for (let j = i + 1; j < rankedPlayerIds.length; j++) {
-        const p1 = rankedPlayerIds[i];
-        const p2 = rankedPlayerIds[j];
+    for (let i = 0; i < simulatedPlayerIds.length; i++) {
+      for (let j = i + 1; j < simulatedPlayerIds.length; j++) {
+        const p1 = simulatedPlayerIds[i];
+        const p2 = simulatedPlayerIds[j];
 
         const direct = this.getDirectFraction(p1, p2);
         const oneLayer = this.getOneLayerFraction(p1, p2);

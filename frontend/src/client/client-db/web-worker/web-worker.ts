@@ -5,7 +5,10 @@ import { TennisTable } from "../tennis-table";
 import { TournamentPredictionResult } from "../tournaments/prediction";
 
 export type WorkerMessage =
-  | { type: "start-expected-leaderboard"; data: { events: EventType[]; referenceTime?: number } }
+  | {
+      type: "start-expected-leaderboard";
+      data: { events: EventType[]; referenceTime?: number; includeUnrankedPlayerId?: string };
+    }
   | { type: "expected-leaderboard-progress"; data: { progress: number } }
   | { type: "expected-leaderboard-result"; data: { result: ExpectedLeaderboard } }
   | { type: "start-simulating-elo-over-time"; data: { playerId: string; events: EventType[] } }
@@ -36,8 +39,9 @@ function handleWorkerMessage(message: WorkerMessage) {
         events: message.data.events,
         referenceTime: message.data.referenceTime,
       });
-      const result = tennisTableForLeaderboard.simulations.expectedLeaderBoard((progress) =>
-        postWorkerMessage({ type: "expected-leaderboard-progress", data: { progress } }),
+      const result = tennisTableForLeaderboard.simulations.expectedLeaderBoard(
+        (progress) => postWorkerMessage({ type: "expected-leaderboard-progress", data: { progress } }),
+        message.data.includeUnrankedPlayerId,
       );
       postWorkerMessage({ type: "expected-leaderboard-result", data: { result } });
       break;

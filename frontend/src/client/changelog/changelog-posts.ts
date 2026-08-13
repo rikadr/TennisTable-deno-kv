@@ -42,6 +42,25 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
+    slug: "unranked-expected-score-simulation",
+    title: "Simulated expected score for unranked players",
+    date: "2026-08-13",
+    tags: ["feature-update"],
+    summary:
+      "The Overview tab of an unranked player has a button that simulates the expected score and rank for that player.",
+    body: [
+      text(
+        "An unranked player has no score on the leaderboard. The Overview tab of the player page now has a button that simulates the expected score for that player.",
+      ),
+      text(
+        "The simulation uses the same model as the expected leaderboard: the average of 5 000 simulated leaderboards where every ranked player and this player play each other. The result shows the expected score and the expected rank.",
+      ),
+      text(
+        "The player is not ranked, so the simulation has insufficient data. A warning shows this before the simulation and with the result.",
+      ),
+    ],
+  },
+  {
     slug: "live-win-prediction-extended-matches",
     title: "Live win% prediction supports extended matches",
     date: "2026-08-12",
