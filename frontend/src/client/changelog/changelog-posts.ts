@@ -42,6 +42,25 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
+    slug: "hall-of-fame-counts-all-tournaments",
+    title: "Hall of fame score counts all tournaments",
+    date: "2026-08-13",
+    tags: ["bug-fix"],
+    summary:
+      "The career score skipped a tournament when the admin did not set an explicit player order. Such tournaments now count, so some scores are higher.",
+    body: [
+      text(
+        "The tournament part of the career score only counted tournaments with an explicitly set player order. A tournament that took its players from the signup list gave 0 points to every player, also to the winner. Such tournaments now count, for tournaments in progress and for completed tournaments.",
+      ),
+      text(
+        "The score for a tournament in progress shows the round you stand in now. It grows as you advance, and it is the score you keep if you lose your next game.",
+      ),
+      text(
+        "The score breakdown on a hall of fame player page now also shows double elimination results. The second chance semi final counts in the Semis tier, because it gives the same 100 points. Before this change, the points were part of the total but no tier showed them.",
+      ),
+    ],
+  },
+  {
     slug: "unranked-expected-score-simulation",
     title: "Simulated expected score for unranked players",
     date: "2026-08-13",

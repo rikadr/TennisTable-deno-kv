@@ -290,7 +290,12 @@ export class HallOfFame {
     const tournamentDetails: TournamentDetail[] = [];
 
     for (const tournament of tournaments) {
-      if (!tournament.tournamentConfig.playerOrder?.includes(playerId)) continue;
+      // A tournament that has not started has neither group play nor a bracket: nothing achieved yet
+      if (!tournament.groupPlay && !tournament.bracket) continue;
+      // Same participant source as the bracket and group play: an explicitly set player order,
+      // otherwise everyone who signed up
+      const participants = tournament.tournamentConfig.playerOrder ?? tournament.signedUp.map((s) => s.player);
+      if (!participants.includes(playerId)) continue;
 
       if (tournament.winner === playerId) {
         score += 300;
