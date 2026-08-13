@@ -83,20 +83,22 @@ function renderDetails(breakdown: HallOfFameScoreBreakdown, key: FactorKey): Rea
     case "tournamentProgression": {
       const d = data as HallOfFameScoreBreakdown["tournamentProgression"];
       if (d.tournaments.length === 0) return <p className="text-primary-text text-xs">No tournaments participated</p>;
+      // Placement names vary (e.g. "Semi Finals" and "Second Chance Semi Final" are both worth
+      // 100), so tiers group by points, not by name
       const tournamentTiers = [
-        { label: "🏆 Win", placement: "Winner", pts: 300 },
-        { label: "Final", placement: "Final", pts: 200 },
-        { label: "Semis", placement: "Semi Finals", pts: 100 },
-        { label: "Quarters", placement: "Quarter Finals", pts: 75 },
-        { label: "Bracket", placement: "Bracket", pts: 50 },
-        { label: "Participated", placement: "Participated", pts: 25 },
+        { label: "🏆 Win", pts: 300 },
+        { label: "Final", pts: 200 },
+        { label: "Semis", pts: 100 },
+        { label: "Quarters", pts: 75 },
+        { label: "Bracket", pts: 50 },
+        { label: "Participated", pts: 25 },
       ];
-      const tournamentCounts = new Map<string, number>();
-      d.tournaments.forEach((t) => tournamentCounts.set(t.placement, (tournamentCounts.get(t.placement) || 0) + 1));
+      const tournamentCounts = new Map<number, number>();
+      d.tournaments.forEach((t) => tournamentCounts.set(t.points, (tournamentCounts.get(t.points) || 0) + 1));
       return (
         <div className="flex flex-wrap gap-1.5">
           {tournamentTiers.map((tier) => {
-            const count = tournamentCounts.get(tier.placement) || 0;
+            const count = tournamentCounts.get(tier.pts) || 0;
             return (
               <span key={tier.label} className={classNames("px-2 py-0.5 rounded text-xs inline-flex items-center gap-1.5", count === 0 ? "bg-secondary-background/50 text-secondary-text/75" : "bg-secondary-background text-secondary-text")}>
                 {tier.label}: {tier.pts} pts
