@@ -216,11 +216,6 @@ export const PlayerPage: React.FC = () => {
               </div>
             )}
 
-            {/* Expected score simulation for unranked players */}
-            {playerId && isActive && !summary.isRanked && summary.games.length > 0 && (
-              <UnrankedExpectedScore playerId={playerId} />
-            )}
-
             {/* Score Timeline */}
             <ContentCard title="Score Timeline">
               {playerId && summary.games.length > 0 && (
@@ -230,6 +225,11 @@ export const PlayerPage: React.FC = () => {
                 </div>
               )}
             </ContentCard>
+
+            {/* Expected score simulation for unranked players */}
+            {playerId && isActive && !summary.isRanked && summary.games.length > 0 && (
+              <UnrankedExpectedScore playerId={playerId} />
+            )}
 
             {/* Quick Stats */}
             {summary.games.length > 0 && (
