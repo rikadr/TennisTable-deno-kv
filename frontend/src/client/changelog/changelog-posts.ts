@@ -80,6 +80,25 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
     ],
   },
   {
+    slug: "point-by-point-log-on-tracked-games",
+    title: "Tracked games record every point",
+    date: "2026-08-13",
+    tags: ["technical"],
+    summary:
+      "A game tracked live now saves the order of every point, not only the set scores. The app does not show the data yet.",
+    body: [
+      text(
+        "The track game page and the broadcasted live game record each point. When you save the game, the `GAME_SCORE` event stores one string per set. Each character is one point, in scoring order. `W` is a point to the game winner. `L` is a point to the game loser.",
+      ),
+      text(
+        "A string ends when a player wins the set. The storage cost is 1 character for each point. Validation rejects a log that does not match the set points.",
+      ),
+      text(
+        "Only games tracked live get the log. A game added with the normal form, an edited score, or a live game that started before this change saves without it.",
+      ),
+    ],
+  },
+  {
     slug: "live-win-prediction-extended-matches",
     title: "Live win% prediction supports extended matches",
     date: "2026-08-12",

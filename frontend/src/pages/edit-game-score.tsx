@@ -102,6 +102,10 @@ export const EditGameSore: React.FC = () => {
     }
   }, [winnerSets, loserSets, setPoints.length]);
 
+  // Editing replaces the score event, and the edit form has no point-level
+  // detail — so a point-by-point log from live tracking is lost on save.
+  const hasPointSequences = (game?.score?.pointSequences?.length ?? 0) > 0;
+
   if (!game) return null;
   return (
     <div>
@@ -130,6 +134,12 @@ export const EditGameSore: React.FC = () => {
         {validationError && <div className="bg-black text-red-500 text-center">Error: {validationError}</div>}
       </div>
       <div className="p-6 bg-secondary-background">
+        {hasPointSequences && (
+          <div className="mb-3 p-3 bg-amber-100 border border-amber-400 text-amber-800 rounded-lg text-sm">
+            ⚠️ This game was tracked live, point by point. If you save an edited score, the point-by-point data of
+            this game is discarded.
+          </div>
+        )}
         <div className="flex space-x-3">
           <button
             onClick={() => navigate(-1)}

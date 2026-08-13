@@ -21,6 +21,11 @@ import { Predictions } from "../../client/client-db/predictions";
 import { WinPercentGraph } from "./win-percent-graph";
 import { session } from "../../services/auth";
 import { useLiveGameQuery, useUpdateLiveGameMutation } from "../live-game/use-live-game";
+import {
+  appendPointToSequence,
+  removeLastPointFromSequence,
+  toEventPointSequences,
+} from "../../common/point-sequences";
 
 interface SetPoint {
   player1: number;
@@ -33,6 +38,8 @@ interface MatchData {
     player2: number;
   };
   setPoints?: SetPoint[];
+  /** Point sequence of each completed set: "1"/"2" chars in the order the points were scored. */
+  setSequences: string[];
 }
 
 type Stage = "player-selection" | "scoring" | "summary";
@@ -49,11 +56,14 @@ export const TrackGamePage: React.FC = () => {
   const [matchData, setMatchData] = useState<MatchData>({
     setsWon: { player1: 0, player2: 0 },
     setPoints: [],
+    setSequences: [],
   });
   const [currentSetScore, setCurrentSetScore] = useState<SetPoint>({
     player1: 0,
     player2: 0,
   });
+  // "1"/"2" per point of the current set, in the order the points were scored.
+  const [currentSetSequence, setCurrentSetSequence] = useState<string>("");
   const [firstServer, setFirstServer] = useState<Server>(1);
   // Player 1's live win chance sampled after every point, for the summary graph.
   const [winPercentHistory, setWinPercentHistory] = useState<number[]>([]);
@@ -90,6 +100,7 @@ export const TrackGamePage: React.FC = () => {
     const key = `player${player}` as keyof SetPoint;
     const next: SetPoint = { ...currentSetScore, [key]: currentSetScore[key] + 1 };
     setCurrentSetScore(next);
+    setCurrentSetSequence((prev) => appendPointToSequence(prev, player as 1 | 2));
     setWinPercentHistory((prev) => [...prev, computeWinPercent(next)]);
   };
 
@@ -98,8 +109,11 @@ export const TrackGamePage: React.FC = () => {
     if (currentSetScore[key] === 0) return;
     const next: SetPoint = { ...currentSetScore, [key]: currentSetScore[key] - 1 };
     setCurrentSetScore(next);
-    // Undoing a point drops the last 2 samples and appends one for the restored score.
-    setWinPercentHistory((prev) => [...prev.slice(0, -2), computeWinPercent(next)]);
+    setCurrentSetSequence((prev) => removeLastPointFromSequence(prev, player as 1 | 2));
+    // Undoing a point drops the last 2 samples and appends one for the restored
+    // score, so the history keeps one sample per point. Undoing the only point
+    // of the match just empties the history.
+    setWinPercentHistory((prev) => (prev.length <= 1 ? [] : [...prev.slice(0, -2), computeWinPercent(next)]));
   };
 
   const setWon = (player: number) => {
@@ -114,9 +128,11 @@ export const TrackGamePage: React.FC = () => {
         player2: prev.setsWon.player2 + (player === 2 ? 1 : 0),
       },
       setPoints: [...(prev.setPoints || []), newSetPoint],
+      setSequences: [...prev.setSequences, currentSetSequence],
     }));
 
     setCurrentSetScore({ player1: 0, player2: 0 });
+    setCurrentSetSequence("");
     // Alternate who serves first in the next set, per table tennis convention.
     setFirstServer((prev) => (prev === 1 ? 2 : 1));
   };
@@ -166,6 +182,11 @@ export const TrackGamePage: React.FC = () => {
                 gameLoser: player1 === winner ? set.player2 : set.player1,
               }))
             : undefined,
+        pointSequences: toEventPointSequences({
+          setSequences: matchData.setSequences,
+          completedSets: setPointsForValidation,
+          player1IsGameWinner: player1 === winner,
+        }),
       },
     };
 
@@ -247,6 +268,8 @@ export const TrackGamePage: React.FC = () => {
         setsWon: { ...matchData.setsWon },
         currentSet: { ...currentSetScore },
         completedSets: matchData.setPoints ?? [],
+        currentSetSequence,
+        completedSetSequences: [...matchData.setSequences],
         firstServer,
         startedAt: now,
         finishedAt: null,
@@ -266,8 +289,10 @@ export const TrackGamePage: React.FC = () => {
     setMatchData({
       setsWon: { player1: 0, player2: 0 },
       setPoints: [],
+      setSequences: [],
     });
     setCurrentSetScore({ player1: 0, player2: 0 });
+    setCurrentSetSequence("");
     setFirstServer(1);
     setWinPercentHistory([]);
     setValidationError("");

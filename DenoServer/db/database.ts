@@ -16,6 +16,13 @@ export type LiveGameState = {
   };
   currentSet: SetPoint;
   completedSets: SetPoint[];
+  /**
+   * One char per point of the current set in the order the points were scored:
+   * "1" = point to player 1, "2" = point to player 2.
+   */
+  currentSetSequence: string;
+  /** Point sequence of each completed set, same encoding as currentSetSequence. */
+  completedSetSequences: string[];
   /** Which player (1 or 2) served the first point of the current set. */
   firstServer: 1 | 2;
   startedAt: number | null;
