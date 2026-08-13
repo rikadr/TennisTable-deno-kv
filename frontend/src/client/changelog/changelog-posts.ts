@@ -88,10 +88,10 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
       "A game tracked live now saves the order of every point, not only the set scores. The app does not show the data yet.",
     body: [
       text(
-        "The track game page and the broadcasted live game record each point as it is scored. When the game is saved, the `GAME_SCORE` event stores one string per set. Each character is one point, in the order the points were scored: `W` for a point to the game winner, `L` for a point to the game loser.",
+        "The track game page and the broadcasted live game record each point. When you save the game, the `GAME_SCORE` event stores one string per set. Each character is one point, in scoring order. `W` is a point to the game winner. `L` is a point to the game loser.",
       ),
       text(
-        "The end of each string is the moment the set was won. The storage cost is 1 character per point. Validation rejects a log that does not match the set points.",
+        "A string ends when a player wins the set. The storage cost is 1 character for each point. Validation rejects a log that does not match the set points.",
       ),
       text(
         "Only games tracked live get the log. A game added with the normal form, an edited score, or a live game that started before this change saves without it.",

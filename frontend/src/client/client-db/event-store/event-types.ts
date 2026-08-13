@@ -44,9 +44,10 @@ export type GameScore = GenericEvent<
     /**
      * Point-by-point log, one string per set in the order the sets were played.
      * Each char is one point in the order it was scored: "W" = point to the game
-     * winner, "L" = point to the game loser. The end of a string is the moment
-     * the set was won. Requires setPoints, and each string must count up to the
-     * corresponding set's points.
+     * winner, "L" = point to the game loser. A string ends when the set was
+     * marked won — the last char is not necessarily the set winner's point.
+     * Requires setPoints, and each string must count up to the corresponding
+     * set's points.
      */
     pointSequences?: string[];
   }

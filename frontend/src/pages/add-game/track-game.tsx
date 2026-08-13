@@ -110,8 +110,10 @@ export const TrackGamePage: React.FC = () => {
     const next: SetPoint = { ...currentSetScore, [key]: currentSetScore[key] - 1 };
     setCurrentSetScore(next);
     setCurrentSetSequence((prev) => removeLastPointFromSequence(prev, player as 1 | 2));
-    // Undoing a point drops the last 2 samples and appends one for the restored score.
-    setWinPercentHistory((prev) => [...prev.slice(0, -2), computeWinPercent(next)]);
+    // Undoing a point drops the last 2 samples and appends one for the restored
+    // score, so the history keeps one sample per point. Undoing the only point
+    // of the match just empties the history.
+    setWinPercentHistory((prev) => (prev.length <= 1 ? [] : [...prev.slice(0, -2), computeWinPercent(next)]));
   };
 
   const setWon = (player: number) => {
