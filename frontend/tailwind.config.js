@@ -10,6 +10,9 @@ module.exports = {
     extend: {
       screens: {
         "xs": "470px",
+        // Viewport-height breakpoint: phones with room to spare (a Pixel, a
+        // Plus/Max iPhone) get roomier vertical spacing than an iPhone SE.
+        "tall": { raw: "(min-height: 740px)" },
       },
       colors: {
         primary: {

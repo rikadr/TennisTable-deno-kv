@@ -269,7 +269,7 @@ export const LiveGameAdminPage: React.FC = () => {
 
       {isActive && hasPlayers && stage === "scoring" && (
         <div className="space-y-3">
-          <div className="bg-white rounded-xl shadow-lg p-3 sm:p-4 text-black">
+          <div className="bg-white rounded-xl shadow-lg p-3 tall:p-4 sm:p-4 text-black">
             <div className="flex justify-center items-center gap-3 xs:gap-6">
               <div className="flex flex-col items-center gap-0.5 flex-1 min-w-0">
                 <ProfilePicture playerId={localState.player1Id} size={40} border={2} />
@@ -303,7 +303,7 @@ export const LiveGameAdminPage: React.FC = () => {
               </div>
             </div>
             {/* Set number and serve tracker share one row to save height */}
-            <div className="mt-2 flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
+            <div className="mt-2 tall:mt-3 flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
               <h2 className="text-gray-400 text-xs uppercase tracking-widest font-bold">
                 Set {localState.completedSets.length + 1}
               </h2>
@@ -318,7 +318,7 @@ export const LiveGameAdminPage: React.FC = () => {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-2 mt-2">
+            <div className="grid grid-cols-2 gap-2 tall:gap-3 mt-2 tall:mt-3">
               <PlayerScoreControls
                 name={context.playerName(localState.player1Id)}
                 score={localState.currentSet.player1}
@@ -341,7 +341,7 @@ export const LiveGameAdminPage: React.FC = () => {
               onClick={() => setLeader && setWon(setLeader)}
               disabled={setLeader === null}
               className={classNames(
-                "w-full py-2.5 mt-2 rounded-lg font-semibold text-base",
+                "w-full py-2.5 tall:py-3 mt-2 tall:mt-3 rounded-lg font-semibold text-base",
                 setLeader === null ? "bg-gray-300 text-gray-500 cursor-not-allowed" : "hover:brightness-95",
               )}
               style={setLeader === null ? undefined : fill(setLeader === 1 ? player1Color : player2Color)}
@@ -381,7 +381,7 @@ export const LiveGameAdminPage: React.FC = () => {
               onClick={reviewMatch}
               disabled={isSubmitting}
               className={classNames(
-                "w-full py-2.5 rounded-lg font-semibold text-base",
+                "w-full py-2.5 tall:py-3 rounded-lg font-semibold text-base",
                 isSubmitting
                   ? "bg-gray-400 text-white cursor-not-allowed"
                   : "bg-green-600 text-white hover:bg-green-700",
@@ -394,14 +394,14 @@ export const LiveGameAdminPage: React.FC = () => {
               <button
                 onClick={resetMatch}
                 disabled={isSubmitting}
-                className="py-2.5 rounded-lg font-semibold bg-gray-200 text-gray-700 hover:bg-gray-300 disabled:opacity-50"
+                className="py-2.5 tall:py-3 rounded-lg font-semibold bg-gray-200 text-gray-700 hover:bg-gray-300 disabled:opacity-50"
               >
                 Reset score
               </button>
               <button
                 onClick={endLiveGame}
                 disabled={isSubmitting}
-                className="py-2.5 rounded-lg font-semibold bg-red-100 text-red-700 hover:bg-red-200 disabled:opacity-50"
+                className="py-2.5 tall:py-3 rounded-lg font-semibold bg-red-100 text-red-700 hover:bg-red-200 disabled:opacity-50"
               >
                 ❌ End live game
               </button>
@@ -435,16 +435,16 @@ const PlayerScoreControls: React.FC<{
 }> = ({ name, score, onAdd, onRemove, color }) => {
   const tint = panelTint(color);
   return (
-    <div className="rounded-lg p-2" style={{ backgroundColor: tint }}>
-      <h3 className="text-sm font-semibold text-gray-700 mb-0.5 text-center truncate">{name}</h3>
-      <div className="flex flex-col items-center justify-center gap-1.5">
-        <div className="text-5xl font-bold text-center" style={textOn(color, tint)}>
+    <div className="rounded-lg p-2 tall:p-3" style={{ backgroundColor: tint }}>
+      <h3 className="text-sm font-semibold text-gray-700 mb-0.5 tall:mb-1 text-center truncate">{name}</h3>
+      <div className="flex flex-col items-center justify-center gap-1.5 tall:gap-2">
+        <div className="text-5xl tall:text-6xl font-bold text-center" style={textOn(color, tint)}>
           {score}
         </div>
-        <div className="flex flex-col gap-1.5 w-full items-center">
+        <div className="flex flex-col gap-1.5 tall:gap-2 w-full items-center">
           <button
             onClick={onAdd}
-            className="w-full h-24 text-center text-4xl font-bold rounded-lg hover:brightness-95 transition"
+            className="w-full h-24 tall:h-32 text-center text-4xl font-bold rounded-lg hover:brightness-95 transition"
             style={fill(color)}
           >
             +
@@ -453,7 +453,7 @@ const PlayerScoreControls: React.FC<{
             onClick={onRemove}
             disabled={score === 0}
             className={classNames(
-              "w-full h-11 text-center rounded-lg transition text-2xl font-bold",
+              "w-full h-11 tall:h-12 text-center rounded-lg transition text-2xl font-bold",
               score === 0 ? "bg-gray-300 text-gray-500 cursor-not-allowed" : "hover:brightness-95",
             )}
             style={score === 0 ? undefined : softFill(color)}
