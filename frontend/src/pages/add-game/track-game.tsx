@@ -563,11 +563,10 @@ export const TrackGamePage: React.FC = () => {
             <ConfettiExplosion particleCount={250} force={0.8} width={2_000} duration={10_000} />
           </div>
         )}
-        <div className="max-w-sm mx-auto pt-2 sm:pt-8">
+        <div className="max-w-sm mx-auto pt-0 sm:pt-8">
           <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6">
             <div className="text-center mb-4">
-              🏆
-              <h1 className="text-2xl font-bold text-gray-800 mb-2">Match Complete!</h1>
+              <h1 className="text-2xl font-bold text-gray-800 mb-2">🏆 Match Complete!</h1>
               <p className="text-lg text-gray-600 text-center">
                 Winner:{" "}
                 <span

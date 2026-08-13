@@ -490,8 +490,7 @@ const ConfirmView: React.FC<{
       )}
       <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 text-black">
         <div className="text-center mb-4">
-          🏆
-          <h1 className="text-2xl font-bold text-gray-800 mb-2">Match Complete!</h1>
+          <h1 className="text-2xl font-bold text-gray-800 mb-2">🏆 Match Complete!</h1>
           <p className="text-lg text-gray-600">
             Winner:{" "}
             <span className="font-bold" style={textOn(winnerColor, CARD_SURFACE)}>
