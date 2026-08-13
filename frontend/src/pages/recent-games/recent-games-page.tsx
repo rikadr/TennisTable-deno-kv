@@ -9,6 +9,7 @@ import { useLocalStorage } from "../../hooks/use-local-storage";
 import { useMediaQuery } from "../../hooks/use-media-query";
 import { session } from "../../services/auth";
 import { ProfilePicture } from "../player/profile-picture";
+import { PointSequenceMarker } from "../game/point-sequence-marker";
 
 type View = "overall" | "season";
 
@@ -94,6 +95,7 @@ export const RecentGamesPage: React.FC = () => {
       <div className="leading-tight -my-1">
         <div className="font-medium">
           {game.score.setsWon.gameWinner} - {game.score.setsWon.gameLoser}
+          <PointSequenceMarker score={game.score} />
         </div>
         {game.score.setPoints && (
           <div className="font-light italic text-[10px] md:text-xs whitespace-nowrap leading-none">
@@ -173,7 +175,7 @@ export const RecentGamesPage: React.FC = () => {
               </thead>
               <tbody className="divide-y divide-primary-text/50 text-xs xs:text-sm md:text-base">
                 {processedGames.map((game, index) => {
-                  const rowClick = () => navigate(`/1v1?player1=${game.winner}&player2=${game.loser}`);
+                  const rowClick = () => navigate(`/game?time=${game.playedAt}`);
 
                   if (view === "season") {
                     return (

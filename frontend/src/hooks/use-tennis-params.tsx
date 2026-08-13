@@ -6,6 +6,7 @@ const PLAYER_2 = "player2";
 const TOURNAMENT = "tournament";
 const GAME_ID = "gameId";
 const SEASON_START = "seasonStart";
+const TIME = "time";
 
 export function useTennisParams() {
   const [searchParams] = useSearchParams();
@@ -15,6 +16,7 @@ export function useTennisParams() {
   const tournament = searchParams.get(TOURNAMENT);
   const gameId = searchParams.get(GAME_ID);
   const seasonStart = searchParams.get(SEASON_START);
+  const time = searchParams.get(TIME);
 
-  return { playerId, player1, player2, tournament, gameId, seasonStart };
+  return { playerId, player1, player2, tournament, gameId, seasonStart, time };
 }

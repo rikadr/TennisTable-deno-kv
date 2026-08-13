@@ -18,6 +18,7 @@ import { PlayerPairings } from "./player-pairings";
 import { ContentCard } from "./content-card";
 import { UnrankedExpectedScore } from "./unranked-expected-score";
 import { usePlayerLinkSearch } from "../../hooks/use-player-link-search";
+import { PointSequenceMarker } from "../game/point-sequence-marker";
 
 type TabType = "overview" | "games" | "statistics" | "achievements" | "predictions" | "season";
 const tabs: { id: TabType; label: string }[] = [
@@ -313,6 +314,7 @@ export const PlayerPage: React.FC = () => {
                             {game.result === "win"
                               ? `${game.score?.setsWon.gameWinner} - ${game.score?.setsWon.gameLoser}`
                               : `${game.score?.setsWon.gameLoser} - ${game.score?.setsWon.gameWinner}`}
+                            <PointSequenceMarker score={game.score} />
                           </div>
                         )}
                         {game.score?.setPoints && (

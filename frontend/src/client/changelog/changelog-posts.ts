@@ -42,6 +42,28 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
+    slug: "game-details-page",
+    title: "Game details page",
+    date: "2026-08-13",
+    tags: ["new-feature"],
+    summary:
+      "Each game has a page with the score, the Elo it moved, the win % prediction before and after the game, and a win % graph for games tracked live.",
+    body: [
+      text(
+        "A game in the recent games list, on the What changed page, or in the 1v1 match history opens the new game details page. The page shows the players, the score, the time, and the Elo each player won or lost.",
+      ),
+      text(
+        "The page shows the win % prediction between the 2 players before and after the game, each with its confidence.",
+      ),
+      text(
+        "A game with a point-by-point log gets a win % graph. The app replays the recorded points through the live prediction model, with the prediction data as it stood before the game. A 📈 mark next to a score in the game lists shows that the game has the log.",
+      ),
+      text(
+        "2 buttons open related pages: the head-to-head page for the 2 players, and the What changed page with the period of this game preselected.",
+      ),
+    ],
+  },
+  {
     slug: "hall-of-fame-counts-all-tournaments",
     title: "Hall of fame score counts all tournaments",
     date: "2026-08-13",

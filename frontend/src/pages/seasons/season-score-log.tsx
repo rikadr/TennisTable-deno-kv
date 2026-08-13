@@ -4,6 +4,7 @@ import { Season } from "../../client/client-db/seasons/season";
 import { ProfilePicture } from "../player/profile-picture";
 import { fmtNum } from "../../common/number-utils";
 import { dateString, RelativeTime } from "../../common/date-utils";
+import { PointSequenceMarker } from "../game/point-sequence-marker";
 import { useMemo } from "react";
 
 type Props = {
@@ -196,6 +197,7 @@ export const SeasonScoreLog = ({ season }: Props) => {
                       {imp.game.winner === imp.playerId
                         ? `${imp.game.score?.setsWon.gameWinner} - ${imp.game.score?.setsWon.gameLoser}`
                         : `${imp.game.score?.setsWon.gameLoser} - ${imp.game.score?.setsWon.gameWinner}`}
+                      <PointSequenceMarker score={imp.game.score} />
                     </span>
                   )}
                   {setStrings.length > 0 && (
