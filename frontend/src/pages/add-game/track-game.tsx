@@ -281,7 +281,7 @@ export const TrackGamePage: React.FC = () => {
           <PendingTournamentGame key={`${player1}-${player2}`} player1={player1} player2={player2} />
         )}
 
-        <div className="max-w-sm mx-auto pt-8 space-y-4">
+        <div className="max-w-sm mx-auto pt-4 sm:pt-8 space-y-4">
           <StepSelectPlayers player1={{ id: player1, set: setPlayer1 }} player2={{ id: player2, set: setPlayer2 }} />
           {player1 && player2 && (
             <button
@@ -318,22 +318,21 @@ export const TrackGamePage: React.FC = () => {
     const panel2Tint = panelTint(player2Color);
 
     return (
-      <div className="text-black p-4 pt-0">
-        <div className="max-w-sm mx-auto">
-          <div className="bg-white rounded-xl shadow-lg p-4 mb-4">
-            <div className="text-center mb-4">
-              <h2 className="text-gray-400 text-xs uppercase tracking-widest font-bold mb-3">Total Score</h2>
-              <div className="flex justify-center items-center gap-6 mb-2">
-                <div className="flex flex-col items-center gap-1">
-                  <ProfilePicture playerId={player1} size={50} border={2} />
-                  <span className="font-bold text-sm" style={textOn(player1Color, CARD_SURFACE)}>
+      <div className="text-black px-2 pb-2 pt-0 sm:px-4 sm:pb-4">
+        <div className="max-w-md mx-auto">
+          <div className="bg-white rounded-xl shadow-lg p-3 tall:p-4 sm:p-4 mb-3">
+            <div className="text-center mb-2 tall:mb-3">
+              <div className="flex justify-center items-center gap-3 xs:gap-6">
+                <div className="flex flex-col items-center gap-0.5 flex-1 min-w-0">
+                  <ProfilePicture playerId={player1} size={40} border={2} />
+                  <span className="font-bold text-xs truncate max-w-full" style={textOn(player1Color, CARD_SURFACE)}>
                     {context.playerName(player1)}
                   </span>
                 </div>
 
                 {/* Big numbers are sets, the small ones under them are the points
                     of the set being played. */}
-                <div className="flex flex-col items-center bg-gray-50 px-4 py-1 rounded-xl shadow-inner">
+                <div className="flex flex-col items-center bg-gray-50 px-3 py-1 rounded-xl shadow-inner">
                   <div className="flex items-center gap-2">
                     <span className="text-3xl font-black">{matchData.setsWon.player1}</span>
                     <span className="font-bold text-xl">-</span>
@@ -344,15 +343,15 @@ export const TrackGamePage: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="flex flex-col items-center gap-1">
-                  <ProfilePicture playerId={player2} size={50} border={2} />
-                  <span className="font-bold text-sm" style={textOn(player2Color, CARD_SURFACE)}>
+                <div className="flex flex-col items-center gap-0.5 flex-1 min-w-0">
+                  <ProfilePicture playerId={player2} size={40} border={2} />
+                  <span className="font-bold text-xs truncate max-w-full" style={textOn(player2Color, CARD_SURFACE)}>
                     {context.playerName(player2)}
                   </span>
                 </div>
               </div>
               {/* Set number and serve tracker share one row to save height */}
-              <div className="mt-3 flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
+              <div className="mt-2 tall:mt-3 flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
                 <h2 className="text-gray-400 text-xs uppercase tracking-widest font-bold">
                   Set {(matchData.setPoints?.length || 0) + 1}
                 </h2>
@@ -369,21 +368,21 @@ export const TrackGamePage: React.FC = () => {
             </div>
 
             {/* Score Display */}
-            <div className="grid grid-cols-2 gap-2 mb-3">
+            <div className="grid grid-cols-2 gap-2 tall:gap-3 mb-2 tall:mb-3">
               {/* Player 1 */}
-              <div className="rounded-lg p-2" style={{ backgroundColor: panel1Tint }}>
-                <h3 className="text-sm font-semibold text-gray-700 mb-1 text-center truncate">
+              <div className="rounded-lg p-2 tall:p-3" style={{ backgroundColor: panel1Tint }}>
+                <h3 className="text-sm font-semibold text-gray-700 mb-0.5 tall:mb-1 text-center truncate">
                   {currentServer === 1 && <span className="mr-1">🏓</span>}
                   {context.playerName(player1)}
                 </h3>
-                <div className="flex flex-col items-center justify-center gap-2">
-                  <div className="text-5xl font-bold text-center" style={textOn(player1Color, panel1Tint)}>
+                <div className="flex flex-col items-center justify-center gap-1.5 tall:gap-2">
+                  <div className="text-5xl tall:text-6xl font-bold text-center" style={textOn(player1Color, panel1Tint)}>
                     {currentSetScore.player1}
                   </div>
-                  <div className="flex flex-col gap-2 w-full items-center">
+                  <div className="flex flex-col gap-1.5 tall:gap-2 w-full items-center">
                     <button
                       onClick={() => addPoint(1)}
-                      className="w-full max-w-28 aspect-square text-center text-4xl font-bold rounded-lg hover:brightness-95 transition"
+                      className="w-full h-24 tall:h-32 text-center text-4xl font-bold rounded-lg hover:brightness-95 transition"
                       style={fill(player1Color)}
                     >
                       +
@@ -392,7 +391,7 @@ export const TrackGamePage: React.FC = () => {
                       onClick={() => removePoint(1)}
                       disabled={currentSetScore.player1 === 0}
                       className={classNames(
-                        "w-full max-w-28 h-12 text-center rounded-lg transition text-2xl font-bold",
+                        "w-full h-11 tall:h-12 text-center rounded-lg transition text-2xl font-bold",
                         currentSetScore.player1 === 0
                           ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                           : "hover:brightness-95",
@@ -406,19 +405,19 @@ export const TrackGamePage: React.FC = () => {
               </div>
 
               {/* Player 2 */}
-              <div className="rounded-lg p-2" style={{ backgroundColor: panel2Tint }}>
-                <h3 className="text-sm font-semibold text-gray-700 mb-1 text-center truncate">
+              <div className="rounded-lg p-2 tall:p-3" style={{ backgroundColor: panel2Tint }}>
+                <h3 className="text-sm font-semibold text-gray-700 mb-0.5 tall:mb-1 text-center truncate">
                   {currentServer === 2 && <span className="mr-1">🏓</span>}
                   {context.playerName(player2)}
                 </h3>
-                <div className="flex flex-col items-center justify-center gap-2">
-                  <div className="text-5xl font-bold text-center" style={textOn(player2Color, panel2Tint)}>
+                <div className="flex flex-col items-center justify-center gap-1.5 tall:gap-2">
+                  <div className="text-5xl tall:text-6xl font-bold text-center" style={textOn(player2Color, panel2Tint)}>
                     {currentSetScore.player2}
                   </div>
-                  <div className="flex flex-col gap-2 w-full items-center">
+                  <div className="flex flex-col gap-1.5 tall:gap-2 w-full items-center">
                     <button
                       onClick={() => addPoint(2)}
-                      className="w-full max-w-28 aspect-square text-center text-4xl font-bold rounded-lg hover:brightness-95 transition"
+                      className="w-full h-24 tall:h-32 text-center text-4xl font-bold rounded-lg hover:brightness-95 transition"
                       style={fill(player2Color)}
                     >
                       +
@@ -427,7 +426,7 @@ export const TrackGamePage: React.FC = () => {
                       onClick={() => removePoint(2)}
                       disabled={currentSetScore.player2 === 0}
                       className={classNames(
-                        "w-full max-w-28 h-12 text-center rounded-lg transition text-2xl font-bold",
+                        "w-full h-11 tall:h-12 text-center rounded-lg transition text-2xl font-bold",
                         currentSetScore.player2 === 0
                           ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                           : "hover:brightness-95",
@@ -446,7 +445,7 @@ export const TrackGamePage: React.FC = () => {
               onClick={() => setLeader && setWon(setLeader)}
               disabled={setLeader === null}
               className={classNames(
-                "w-full py-3 mb-2 rounded-lg font-semibold transition text-base",
+                "w-full py-2.5 tall:py-3 mb-2 rounded-lg font-semibold transition text-base",
                 setLeader === null ? "bg-gray-300 text-gray-500 cursor-not-allowed" : "hover:brightness-95",
               )}
               style={setLeader === null ? undefined : fill(setLeaderColor)}
@@ -461,7 +460,7 @@ export const TrackGamePage: React.FC = () => {
               onClick={endMatch}
               disabled={!canEndMatch}
               className={classNames(
-                "w-full py-3 rounded-lg font-semibold transition text-base",
+                "w-full py-2.5 tall:py-3 rounded-lg font-semibold transition text-base",
                 canEndMatch
                   ? "bg-green-600 text-white hover:bg-green-700"
                   : "bg-gray-300 text-gray-500 cursor-not-allowed",
@@ -479,7 +478,7 @@ export const TrackGamePage: React.FC = () => {
           </div>
 
           {/* Live Win Prediction */}
-          <div className="mb-4">
+          <div className="mb-3">
             <LiveGamePredictionCard
               player1Id={player1!}
               player2Id={player2!}
@@ -492,20 +491,20 @@ export const TrackGamePage: React.FC = () => {
           </div>
 
           {validationError && (
-            <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg text-sm">
+            <div className="mb-3 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg text-sm">
               {validationError}
             </div>
           )}
 
           {/* Sets History */}
           {matchData.setPoints && matchData.setPoints.length > 0 && (
-            <div className="bg-white rounded-xl shadow-lg p-4">
-              <h3 className="text-gray-400 text-xs uppercase tracking-widest font-bold mb-3">Completed Sets</h3>
+            <div className="bg-white rounded-xl shadow-lg p-3 sm:p-4">
+              <h3 className="text-gray-400 text-xs uppercase tracking-widest font-bold mb-2">Completed Sets</h3>
               <div className="space-y-2">
                 {matchData.setPoints.map((set, index) => {
                   const setWinner = set.player1 > set.player2 ? 1 : 2;
                   return (
-                    <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg text-sm">
+                    <div key={index} className="flex items-center justify-between px-3 py-2 bg-gray-50 rounded-lg text-sm">
                       <span className="font-semibold text-gray-700">Set {index + 1}</span>
                       <div className="flex items-center gap-3">
                         <div className="w-5">{setWinner === 1 && "🏆"}</div>
@@ -538,7 +537,7 @@ export const TrackGamePage: React.FC = () => {
             <button
               onClick={convertToBroadcastedLiveGame}
               disabled={updateLiveGame.isPending}
-              className="w-full mt-4 py-3 px-4 rounded-lg bg-secondary-background text-secondary-text hover:opacity-80 transition-opacity disabled:opacity-50"
+              className="w-full mt-3 py-3 px-4 rounded-lg bg-secondary-background text-secondary-text hover:opacity-80 transition-opacity disabled:opacity-50"
             >
               <div className="font-semibold">
                 {updateLiveGame.isPending ? "Starting broadcast…" : "📺 Convert to broadcasted live game"}
@@ -558,17 +557,16 @@ export const TrackGamePage: React.FC = () => {
     const winner = matchData.setsWon.player1 > matchData.setsWon.player2 ? player1 : player2;
 
     return (
-      <div className="p-4">
+      <div className="p-2 sm:p-4">
         {gameSuccessfullyAdded && (
           <div className="flex justify-center">
             <ConfettiExplosion particleCount={250} force={0.8} width={2_000} duration={10_000} />
           </div>
         )}
-        <div className="max-w-sm mx-auto pt-8">
-          <div className="bg-white rounded-xl shadow-lg p-6">
-            <div className="text-center mb-6">
-              🏆
-              <h1 className="text-2xl font-bold text-gray-800 mb-2">Match Complete!</h1>
+        <div className="max-w-md mx-auto pt-0 sm:pt-8">
+          <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6">
+            <div className="text-center mb-4">
+              <h1 className="text-2xl font-bold text-gray-800 mb-2">🏆 Match Complete!</h1>
               <p className="text-lg text-gray-600 text-center">
                 Winner:{" "}
                 <span
@@ -579,12 +577,12 @@ export const TrackGamePage: React.FC = () => {
                 </span>
               </p>
               <div className="m-auto w-fit">
-                <ProfilePicture playerId={winner} border={12} shape="rounded" />
+                <ProfilePicture playerId={winner} size={140} border={8} shape="rounded" />
               </div>
             </div>
 
             {/* Final Score */}
-            <div className="bg-gray-50 rounded-lg p-4 mb-6">
+            <div className="bg-gray-50 rounded-lg p-3 mb-4">
               <div className="grid grid-cols-3 items-center text-center">
                 <div>
                   <h3 className="font-semibold text-gray-700 mb-2 text-sm">{context.playerName(player1)}</h3>
@@ -613,13 +611,13 @@ export const TrackGamePage: React.FC = () => {
 
             {/* Set Details */}
             {matchData.setPoints && matchData.setPoints.length > 0 && (
-              <div className="mb-6">
-                <h3 className="text-base font-bold text-gray-800 mb-3">Set Details</h3>
+              <div className="mb-4">
+                <h3 className="text-base font-bold text-gray-800 mb-2">Set Details</h3>
                 <div className="space-y-2">
                   {matchData.setPoints.map((set, index) => {
                     const setWinner = set.player1 > set.player2 ? 1 : 2;
                     return (
-                      <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg text-sm">
+                      <div key={index} className="flex items-center justify-between px-3 py-2 bg-gray-50 rounded-lg text-sm">
                         <span className="font-semibold text-gray-700">Set {index + 1}</span>
                         <div className="flex items-center gap-3">
                           <div className="w-5">{setWinner === 1 && "🏆"}</div>
@@ -655,12 +653,12 @@ export const TrackGamePage: React.FC = () => {
             )}
 
             {/* Action Buttons */}
-            <div className="space-y-3">
+            <div className="space-y-2">
               <button
                 onClick={() => !gameSuccessfullyAdded && confirmMatch()}
                 disabled={addEventMutation.isPending}
                 className={classNames(
-                  "w-full py-4 rounded-lg font-semibold transition flex items-center justify-center gap-2 text-base",
+                  "w-full py-3 rounded-lg font-semibold transition flex items-center justify-center gap-2 text-base",
                   addEventMutation.isPending
                     ? "bg-gray-400 text-white cursor-not-allowed"
                     : "bg-green-600 text-white hover:bg-green-700",
@@ -671,14 +669,14 @@ export const TrackGamePage: React.FC = () => {
               <button
                 onClick={() => setStage("scoring")}
                 disabled={addEventMutation.isPending}
-                className="w-full bg-gray-200 text-gray-700 py-4 rounded-lg font-semibold hover:bg-gray-300 transition flex items-center justify-center gap-2 text-base disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-gray-200 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-300 transition flex items-center justify-center gap-2 text-base disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {"<-"} Back
               </button>
               <button
                 onClick={cancelMatch}
                 disabled={addEventMutation.isPending}
-                className="w-full bg-gray-200 text-gray-700 py-4 rounded-lg font-semibold hover:bg-gray-300 transition flex items-center justify-center gap-2 text-base disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-gray-200 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-300 transition flex items-center justify-center gap-2 text-base disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 ❌ Cancel
               </button>

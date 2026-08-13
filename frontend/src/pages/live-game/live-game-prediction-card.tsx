@@ -119,7 +119,7 @@ export const LiveGamePredictionCard: React.FC<Props> = ({
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-lg p-4 text-black">
+    <div className="bg-white rounded-xl shadow-lg p-3 sm:p-4 text-black">
       <h2 className="text-gray-400 text-xs uppercase tracking-widest font-bold mb-2 text-center">
         Live Win Prediction
       </h2>
