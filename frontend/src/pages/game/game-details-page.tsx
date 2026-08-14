@@ -4,7 +4,7 @@ import { useEventDbContext } from "../../wrappers/event-db-context";
 import { useTennisParams } from "../../hooks/use-tennis-params";
 import { useStateAt } from "../../hooks/use-state-at";
 import { fmtNum } from "../../common/number-utils";
-import { RelativeTime, toDatetimeLocalValue } from "../../common/date-utils";
+import { RelativeTime, fullDateTimeString, toDatetimeLocalValue } from "../../common/date-utils";
 import { stringToColor } from "../../common/string-to-color";
 import { ProfilePicture } from "../player/profile-picture";
 import { Fraction } from "../../client/client-db/predictions";
@@ -89,7 +89,7 @@ export const GameDetailsPage: React.FC = () => {
         <div className="bg-primary-background rounded-lg w-full overflow-hidden">
           <h1 className="text-2xl md:text-4xl text-center mt-2 md:mt-4 text-primary-text">Game details</h1>
           <p className="text-center text-sm md:text-base text-primary-text/60 mb-2 md:mb-3">
-            {new Date(game.playedAt).toLocaleString()} · <RelativeTime date={new Date(game.playedAt)} variant="auto" />
+            {fullDateTimeString(game.playedAt)} - <RelativeTime date={new Date(game.playedAt)} variant="auto" />
           </p>
 
           {/* Who played, the score, and the Elo the game moved */}
@@ -185,10 +185,6 @@ export const GameDetailsPage: React.FC = () => {
                     player2: set.gameLoser,
                   }))}
                 />
-                <p className="text-xs text-gray-500 -mt-4">
-                  Replayed from the recorded points with the live prediction model, using the prediction data from
-                  before the game.
-                </p>
               </div>
             ) : (
               <p className="text-center text-sm text-primary-text/60 py-2">

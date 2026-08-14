@@ -85,6 +85,23 @@ export function dateString(time: number) {
   });
 }
 
+// Full date and time with the weekday, e.g. "Mandag 1. April 2026 08:37".
+// Norwegian locale writes weekdays and months in lowercase; capitalize them
+// so the line reads as a heading.
+export function fullDateTimeString(time: number): string {
+  const date = new Date(time);
+  const datePart = date
+    .toLocaleDateString("nb-NO", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    })
+    .replace(/\p{L}+/gu, (word) => word[0].toUpperCase() + word.slice(1));
+  const timePart = date.toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit" });
+  return `${datePart} ${timePart}`;
+}
+
 // Month-granularity variant of dateString, for periods that span a whole
 // calendar month (e.g. "januar 2026").
 export function monthString(time: number) {
