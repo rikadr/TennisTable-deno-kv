@@ -54,6 +54,12 @@ export type LiveWinPredictionInput = {
   simulations?: number;
   /** Injectable RNG for deterministic tests. Defaults to Math.random. */
   random?: () => number;
+  /**
+   * Skip the second full-match simulation pass that only refines `confidence`
+   * (it then stays at the per-point estimate's data confidence). Halves the
+   * cost for callers that ignore the confidence, like the game details replay.
+   */
+  skipConfidenceSimulation?: boolean;
 };
 
 const SETS_TO_WIN_MATCH = 2;
@@ -282,6 +288,10 @@ export function computeLiveWinPrediction(input: LiveWinPredictionInput): LiveWin
     random,
   );
   const player1WinChance = current.winRate;
+
+  if (input.skipConfidenceSimulation) {
+    return { player1WinChance, confidence: perPoint.confidence, perPointWinChance: perPoint.fraction };
+  }
 
   // Confidence rises from the per-point estimate's data confidence toward 100 %
   // as the match nears its end — measured by how few points remain to be played

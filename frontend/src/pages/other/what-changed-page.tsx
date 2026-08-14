@@ -2,12 +2,13 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { TennisTable } from "../../client/client-db/tennis-table";
-import { EventType, EventTypeEnum } from "../../client/client-db/event-store/event-types";
 import { WorkerMessage } from "../../client/client-db/web-worker/web-worker";
 import { createModernWorker } from "../../hooks/use-elo-simulation-worker";
 import { classNames } from "../../common/class-names";
 import { fmtNum } from "../../common/number-utils";
-import { RelativeTime } from "../../common/date-utils";
+import { fromDatetimeLocalValue, RelativeTime, toDatetimeLocalValue } from "../../common/date-utils";
+import { eventsUpTo, useStateAt } from "../../hooks/use-state-at";
+import { PointSequenceMarker } from "../game/point-sequence-marker";
 import { Game } from "../../client/client-db/event-store/projectors/games-projector";
 import { Achievement } from "../../client/client-db/achievements";
 import { getAchievementLabel } from "../player/player-achievements";
@@ -42,25 +43,6 @@ const ROW_GRID =
   "grid grid-cols-[minmax(0,1fr)_2.25rem_2.25rem_2.5rem_3rem_3rem_3.25rem] md:grid-cols-[minmax(0,1fr)_3.5rem_3.5rem_3.5rem_4.5rem_4.5rem_4.5rem] items-center";
 const NUM_CELL = "self-stretch flex items-center justify-end py-1 px-1 md:px-2 whitespace-nowrap";
 
-// Convert a millisecond timestamp into the local "YYYY-MM-DDTHH:mm" string
-// expected by a <input type="datetime-local"> element.
-function toDatetimeLocalValue(ms: number): string {
-  const date = new Date(ms);
-  const pad = (n: number) => n.toString().padStart(2, "0");
-  return (
-    `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}` +
-    `T${pad(date.getHours())}:${pad(date.getMinutes())}`
-  );
-}
-
-// A datetime-local string parses as local time. Returns undefined while the
-// input is incomplete (the browser then reports an empty value).
-function fromDatetimeLocalValue(value: string): number | undefined {
-  if (!value) return undefined;
-  const ms = new Date(value).getTime();
-  return isNaN(ms) ? undefined : ms;
-}
-
 type DiffRow = {
   playerId: string;
   startRank?: number;
@@ -70,17 +52,6 @@ type DiffRow = {
 };
 
 type RankedEntry = { id: string; rank: number; score: number };
-
-// Same "state at a point in time" filter as tournament predictions:
-// games count by when they were played, everything else by event time.
-function eventsUpTo(events: EventType[], time: number): EventType[] {
-  return events.filter((event) => {
-    if (event.type === EventTypeEnum.GAME_CREATED) {
-      return event.data.playedAt <= time;
-    }
-    return event.time <= time;
-  });
-}
 
 function useDebounced<T>(value: T, ms: number): T {
   const [debounced, setDebounced] = useState(value);
@@ -103,15 +74,6 @@ function seasonEntriesAt(state: TennisTable | undefined, seasonStart: number): R
     rank: index + 1,
     score: player.seasonScore,
   }));
-}
-
-// The full app state projected at a point in time.
-function useStateAt(time: number | undefined): TennisTable | undefined {
-  const context = useEventDbContext();
-  return useMemo(() => {
-    if (time === undefined) return undefined;
-    return new TennisTable({ events: eventsUpTo(context.events, time), referenceTime: time });
-  }, [context, time]);
 }
 
 function useExpectedLeaderboardAt(time: number | undefined, enabled: boolean) {
@@ -385,9 +347,9 @@ export const WhatChangedPage: React.FC = () => {
   // windows do not drift while the page stays open.
   const [now, setNow] = useState(() => Date.now());
 
-  // Quick select of common periods, all ending now. The inputs have minute
+  // Quick select of common periods, all ending now. The inputs have second
   // resolution, so the last-game window starts 1 ms before the game: the
-  // truncated minute is then strictly before the game and the game itself
+  // truncated second is then strictly before the game and the game itself
   // falls inside the window. "custom" has no start - it reveals the two
   // datetime inputs and keeps their current values.
   const lastGame = context.games.at(-1);
@@ -546,6 +508,7 @@ export const WhatChangedPage: React.FC = () => {
                   Start
                   <input
                     type="datetime-local"
+                    step={1}
                     value={fromValue}
                     onChange={(e) => setParams({ from: e.target.value }, true)}
                     className="px-3 py-2 rounded-lg bg-primary-background text-primary-text text-sm normal-case tracking-normal ring-1 ring-secondary-background focus:ring-2 focus:ring-secondary-text focus:outline-none"
@@ -555,6 +518,7 @@ export const WhatChangedPage: React.FC = () => {
                   End
                   <input
                     type="datetime-local"
+                    step={1}
                     value={toValue}
                     onChange={(e) => setParams({ to: e.target.value }, true)}
                     className="px-3 py-2 rounded-lg bg-primary-background text-primary-text text-sm normal-case tracking-normal ring-1 ring-secondary-background focus:ring-2 focus:ring-secondary-text focus:outline-none"
@@ -774,7 +738,7 @@ export const WhatChangedPage: React.FC = () => {
                       return (
                         <tr
                           key={game.id}
-                          onClick={() => navigate(`/1v1?player1=${game.winner}&player2=${game.loser}`)}
+                          onClick={() => navigate(`/game?time=${game.playedAt}`)}
                           className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text cursor-pointer transition-colors"
                         >
                           <td className="py-1 px-1 xs:px-2 md:px-3 w-[35%] max-w-0">
@@ -788,6 +752,7 @@ export const WhatChangedPage: React.FC = () => {
                               <div className="leading-tight -my-1">
                                 <div className="font-medium">
                                   {game.score.setsWon.gameWinner} - {game.score.setsWon.gameLoser}
+                                  <PointSequenceMarker score={game.score} />
                                 </div>
                                 {game.score.setPoints && (
                                   <div className="font-light italic text-[10px] md:text-xs whitespace-nowrap leading-none">

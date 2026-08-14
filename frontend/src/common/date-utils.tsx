@@ -207,3 +207,22 @@ function formatDistance(laterDate: Date, earlierDate: Date, options?: FormatDist
 
   return result[0].toUpperCase() + result.slice(1);
 }
+
+// Convert a millisecond timestamp into the local "YYYY-MM-DDTHH:mm:ss" string
+// expected by a <input type="datetime-local"> element (step 1 for seconds).
+export function toDatetimeLocalValue(ms: number): string {
+  const date = new Date(ms);
+  const pad = (n: number) => n.toString().padStart(2, "0");
+  return (
+    `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}` +
+    `T${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`
+  );
+}
+
+// A datetime-local string parses as local time. Returns undefined while the
+// input is incomplete (the browser then reports an empty value).
+export function fromDatetimeLocalValue(value: string): number | undefined {
+  if (!value) return undefined;
+  const ms = new Date(value).getTime();
+  return isNaN(ms) ? undefined : ms;
+}

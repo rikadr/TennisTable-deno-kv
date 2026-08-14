@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { RelativeTime } from "../common/date-utils";
 import { fmtNum } from "../common/number-utils";
 import { useEffect, useState } from "react";
+import { PointSequenceMarker } from "./game/point-sequence-marker";
 
 type Props = {
   player1?: string;
@@ -71,7 +72,7 @@ export const PvPStats: React.FC<Props> = ({ player1, player2 }) => {
                 return (
                   <tr
                     key={`${p1.playerId}-${p2.playerId}-${index}`}
-                    onClick={() => navigate(`/player/${winner.playerId}`)}
+                    onClick={() => navigate(`/game?time=${game.time}`)}
                     className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text cursor-pointer transition-colors text-xs xs:text-sm md:text-base"
                   >
                     {/* Three slots: player 1's trophy | winner name | player 2's trophy.
@@ -108,6 +109,7 @@ export const PvPStats: React.FC<Props> = ({ player1, player2 }) => {
                             {isPlayer1Win
                               ? `${game.score.setsWon.gameWinner} - ${game.score.setsWon.gameLoser}`
                               : `${game.score.setsWon.gameLoser} - ${game.score.setsWon.gameWinner}`}
+                            <PointSequenceMarker score={game.score} />
                           </span>
                         )}
                         {setStrings.length > 0 && (
