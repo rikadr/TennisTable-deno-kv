@@ -13,7 +13,7 @@ export type HallOfFameScoreBreakdown = {
   tournamentProgression: { score: number; tournaments: TournamentDetail[] };
   longevity: { score: number; activeDays: number };
   experience: { score: number; gamesWon: number; gamesLost: number };
-  dataVolume: { score: number; gamesWithSets: number; gamesWithPoints: number };
+  dataVolume: { score: number; gamesWithSets: number; gamesWithPoints: number; liveTrackedGames: number };
   peakElo: { score: number; peakElo: number };
   podiumTime: { score: number; rank1Days: number; rank2Days: number; rank3Days: number };
   total: number;
@@ -272,7 +272,7 @@ export class HallOfFame {
     this.parent.achievements.calculateAchievements();
     const achievements = this.parent.achievements.achievementMap.get(playerId);
     const count = achievements?.length ?? 0;
-    return { score: count * 20, count };
+    return { score: count * 15, count };
   }
 
   #calcSocialDiversity(playerId: string): HallOfFameScoreBreakdown["socialDiversity"] {
@@ -410,6 +410,7 @@ export class HallOfFame {
   #calcDataVolume(playerId: string): HallOfFameScoreBreakdown["dataVolume"] {
     let gamesWithSets = 0;
     let gamesWithPoints = 0;
+    let liveTrackedGames = 0;
 
     for (const game of this.parent.games) {
       if (game.winner !== playerId && game.loser !== playerId) continue;
@@ -422,9 +423,18 @@ export class HallOfFame {
       if (game.score.setPoints && game.score.setPoints.length > 0) {
         gamesWithPoints++;
       }
+
+      if (game.score.pointSequences && game.score.pointSequences.length > 0) {
+        liveTrackedGames++;
+      }
     }
 
-    return { score: gamesWithSets + gamesWithPoints, gamesWithSets, gamesWithPoints };
+    return {
+      score: gamesWithSets + gamesWithPoints + liveTrackedGames,
+      gamesWithSets,
+      gamesWithPoints,
+      liveTrackedGames,
+    };
   }
 
   #calcPeakElo(playerId: string): HallOfFameScoreBreakdown["peakElo"] {
