@@ -272,7 +272,7 @@ export class HallOfFame {
     this.parent.achievements.calculateAchievements();
     const achievements = this.parent.achievements.achievementMap.get(playerId);
     const count = achievements?.length ?? 0;
-    return { score: count * 20, count };
+    return { score: count * 15, count };
   }
 
   #calcSocialDiversity(playerId: string): HallOfFameScoreBreakdown["socialDiversity"] {
