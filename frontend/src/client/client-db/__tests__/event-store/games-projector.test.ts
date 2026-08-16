@@ -1,6 +1,23 @@
 import { expectInvalid } from "../../event-store/projectors/validator-test-utils";
 import { GamesProjector } from "../../event-store/projectors/games-projector";
-import { EventTypeEnum, GameCreated, GameDeleted, GameScore } from "../../event-store/event-types";
+import { EventTypeEnum, GameCreated, GameDeleted, GameScore, GameTracking } from "../../event-store/event-types";
+
+/**
+ * Valid tracking data for a point log. A point log is never stored without it,
+ * so the sequence tests below supply it and stay about the sequences.
+ */
+function tracking(pointSequences: string[], overrides: Partial<GameTracking> = {}): GameTracking {
+  return {
+    version: 1,
+    source: "track-game",
+    startedAt: 1_700_000_000_000,
+    pointDeltas: pointSequences.map((sequence) => sequence.split("").map(() => 50)),
+    endedAfter: 30,
+    firstServers: pointSequences.map(() => "W").join(""),
+    corrections: 0,
+    ...overrides,
+  };
+}
 
 function createEvent(stream: string, playedAt: number, winner: string, loser: string): GameCreated {
   return { time: playedAt, stream, type: EventTypeEnum.GAME_CREATED, data: { playedAt, winner, loser } };
@@ -233,6 +250,7 @@ describe("validateScoreGame", () => {
           { gameWinner: 2, gameLoser: 0 },
         ],
         pointSequences: ["WLWW", "LWL", "WW"],
+        tracking: tracking(["WLWW", "LWL", "WW"]),
       }),
     );
     expect(result).toEqual({ valid: true });
@@ -243,6 +261,7 @@ describe("validateScoreGame", () => {
       scoreEvent("game-1", {
         setsWon: { gameWinner: 2, gameLoser: 0 },
         pointSequences: ["WW", "WW"],
+        tracking: tracking(["WW", "WW"]),
       }),
     );
     expectInvalid(result);
@@ -258,6 +277,7 @@ describe("validateScoreGame", () => {
           { gameWinner: 2, gameLoser: 1 },
         ],
         pointSequences: ["WW"],
+        tracking: tracking(["WW"]),
       }),
     );
     expectInvalid(result);
@@ -270,6 +290,7 @@ describe("validateScoreGame", () => {
         setsWon: { gameWinner: 1, gameLoser: 0 },
         setPoints: [{ gameWinner: 2, gameLoser: 0 }],
         pointSequences: ["W1"],
+        tracking: tracking(["W1"]),
       }),
     );
     expectInvalid(result);
@@ -285,10 +306,111 @@ describe("validateScoreGame", () => {
           { gameWinner: 2, gameLoser: 1 },
         ],
         pointSequences: ["WW", "WLL"],
+        tracking: tracking(["WW", "WLL"]),
       }),
     );
     expectInvalid(result);
     expect(result.message).toBe("Point sequences are invalid. Sequence for set 2 does not match the set points");
+  });
+
+  it("rejects point sequences without tracking data", () => {
+    const result = projector.validateScoreGame(
+      scoreEvent("game-1", {
+        setsWon: { gameWinner: 1, gameLoser: 0 },
+        setPoints: [{ gameWinner: 2, gameLoser: 0 }],
+        pointSequences: ["WW"],
+      }),
+    );
+    expectInvalid(result);
+    expect(result.message).toBe("Point sequences require tracking data");
+  });
+
+  it("rejects tracking data without point sequences", () => {
+    const result = projector.validateScoreGame(
+      scoreEvent("game-1", {
+        setsWon: { gameWinner: 1, gameLoser: 0 },
+        setPoints: [{ gameWinner: 2, gameLoser: 0 }],
+        tracking: tracking(["WW"]),
+      }),
+    );
+    expectInvalid(result);
+    expect(result.message).toBe("Tracking data requires point sequences");
+  });
+
+  /** A one-set game whose tracking data can be broken one field at a time. */
+  function trackedScoreEvent(overrides: Partial<GameTracking>) {
+    return scoreEvent("game-1", {
+      setsWon: { gameWinner: 1, gameLoser: 0 },
+      setPoints: [{ gameWinner: 2, gameLoser: 0 }],
+      pointSequences: ["WW"],
+      tracking: tracking(["WW"], overrides),
+    });
+  }
+
+  it("accepts tracking data that matches the point sequences", () => {
+    expect(projector.validateScoreGame(trackedScoreEvent({}))).toEqual({ valid: true });
+  });
+
+  it("rejects an unknown tracking version", () => {
+    const result = projector.validateScoreGame(trackedScoreEvent({ version: 2 as 1 }));
+    expectInvalid(result);
+    expect(result.message).toBe("Tracking data is invalid. Unknown version 2");
+  });
+
+  it("rejects an unknown tracking source", () => {
+    const result = projector.validateScoreGame(
+      trackedScoreEvent({ source: "guesswork" as GameTracking["source"] }),
+    );
+    expectInvalid(result);
+    expect(result.message).toBe("Tracking data is invalid. Unknown source");
+  });
+
+  it("rejects a missing start time", () => {
+    const result = projector.validateScoreGame(trackedScoreEvent({ startedAt: 0 }));
+    expectInvalid(result);
+    expect(result.message).toBe("Tracking data is invalid. Started at must be an epoch timestamp");
+  });
+
+  it("rejects point deltas that do not cover every set", () => {
+    const result = projector.validateScoreGame(trackedScoreEvent({ pointDeltas: [] }));
+    expectInvalid(result);
+    expect(result.message).toBe("Tracking data is invalid. There must be one point delta list per set");
+  });
+
+  it("rejects a set whose point deltas do not cover every point", () => {
+    const result = projector.validateScoreGame(trackedScoreEvent({ pointDeltas: [[50]] }));
+    expectInvalid(result);
+    expect(result.message).toBe("Tracking data is invalid. Set 1 has 1 point deltas for 2 points");
+  });
+
+  it("rejects a negative point delta", () => {
+    const result = projector.validateScoreGame(trackedScoreEvent({ pointDeltas: [[50, -1]] }));
+    expectInvalid(result);
+    expect(result.message).toBe(
+      "Tracking data is invalid. Set 1 has a point delta that is not a positive whole number",
+    );
+  });
+
+  it("rejects a first server list that does not cover every set", () => {
+    const result = projector.validateScoreGame(trackedScoreEvent({ firstServers: "" }));
+    expectInvalid(result);
+    expect(result.message).toBe("Tracking data is invalid. There must be one first server per set");
+  });
+
+  it("rejects a first server that is not W or L", () => {
+    const result = projector.validateScoreGame(trackedScoreEvent({ firstServers: "1" }));
+    expectInvalid(result);
+    expect(result.message).toBe("Tracking data is invalid. Only 'W' and 'L' first servers are allowed");
+  });
+
+  it("rejects a negative end delta and a negative correction count", () => {
+    const endedAfter = projector.validateScoreGame(trackedScoreEvent({ endedAfter: -1 }));
+    expectInvalid(endedAfter);
+    expect(endedAfter.message).toBe("Tracking data is invalid. Ended after must be a positive whole number");
+
+    const corrections = projector.validateScoreGame(trackedScoreEvent({ corrections: -1 }));
+    expectInvalid(corrections);
+    expect(corrections.message).toBe("Tracking data is invalid. Corrections must be a positive whole number");
   });
 
   it("currently accepts a score for a game that does not exist (documented gap)", () => {

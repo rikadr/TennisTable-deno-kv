@@ -26,11 +26,7 @@ import { LiveGamePredictionCard } from "./live-game-prediction-card";
 import ConfettiExplosion from "react-confetti-explosion";
 import { Server } from "../../common/serve-tracker";
 import { ServeTrackerDisplay } from "../../common/serve-tracker-display";
-import {
-  appendPointToSequence,
-  removeLastPointFromSequence,
-  toEventPointSequences,
-} from "../../common/point-sequences";
+import { appendPoint, removeLastPoint, toEventTrackingData, trackingNow } from "../../common/point-sequences";
 
 type Stage = "scoring" | "confirm";
 
@@ -102,9 +98,14 @@ export const LiveGameAdminPage: React.FC = () => {
       currentSet: { player1: 0, player2: 0 },
       completedSets: [],
       currentSetSequence: "",
+      currentSetPointTimes: [],
       completedSetSequences: [],
+      completedSetPointTimes: [],
+      completedSetFirstServers: [],
       firstServer: localState!.firstServer,
-      startedAt: Date.now(),
+      corrections: 0,
+      startedAt: trackingNow(),
+      endedAt: null,
       finishedAt: null,
       updatedAt: Date.now(),
     });
@@ -116,25 +117,37 @@ export const LiveGameAdminPage: React.FC = () => {
 
   function addPoint(player: 1 | 2) {
     const key: keyof LiveGameSetPoint = player === 1 ? "player1" : "player2";
+    const trackedSet = appendPoint(
+      { sequence: localState!.currentSetSequence, pointTimes: localState!.currentSetPointTimes },
+      player,
+      trackingNow(),
+    );
     pushState({
       ...localState!,
       currentSet: {
         ...localState!.currentSet,
         [key]: localState!.currentSet[key] + 1,
       },
-      currentSetSequence: appendPointToSequence(localState!.currentSetSequence, player),
+      currentSetSequence: trackedSet.sequence,
+      currentSetPointTimes: trackedSet.pointTimes,
     });
   }
 
   function removePoint(player: 1 | 2) {
     const key: keyof LiveGameSetPoint = player === 1 ? "player1" : "player2";
+    const trackedSet = removeLastPoint(
+      { sequence: localState!.currentSetSequence, pointTimes: localState!.currentSetPointTimes },
+      player,
+    );
     pushState({
       ...localState!,
       currentSet: {
         ...localState!.currentSet,
         [key]: Math.max(0, localState!.currentSet[key] - 1),
       },
-      currentSetSequence: removeLastPointFromSequence(localState!.currentSetSequence, player),
+      currentSetSequence: trackedSet.sequence,
+      currentSetPointTimes: trackedSet.pointTimes,
+      corrections: localState!.corrections + 1,
     });
   }
 
@@ -148,7 +161,10 @@ export const LiveGameAdminPage: React.FC = () => {
       completedSets: [...localState!.completedSets, { ...localState!.currentSet }],
       currentSet: { player1: 0, player2: 0 },
       completedSetSequences: [...localState!.completedSetSequences, localState!.currentSetSequence],
+      completedSetPointTimes: [...localState!.completedSetPointTimes, localState!.currentSetPointTimes],
+      completedSetFirstServers: [...localState!.completedSetFirstServers, localState!.firstServer],
       currentSetSequence: "",
+      currentSetPointTimes: [],
       // Alternate who serves first in the next set, per table tennis convention.
       firstServer: localState!.firstServer === 1 ? 2 : 1,
     });
@@ -162,8 +178,15 @@ export const LiveGameAdminPage: React.FC = () => {
       currentSet: { player1: 0, player2: 0 },
       completedSets: [],
       currentSetSequence: "",
+      currentSetPointTimes: [],
       completedSetSequences: [],
+      completedSetPointTimes: [],
+      completedSetFirstServers: [],
       firstServer: 1,
+      corrections: 0,
+      // The match restarts, so its timeline restarts with it.
+      startedAt: trackingNow(),
+      endedAt: null,
       updatedAt: Date.now(),
     });
   }
@@ -184,6 +207,7 @@ export const LiveGameAdminPage: React.FC = () => {
       setValidationError("Match is tied — complete another set before saving.");
       return;
     }
+    pushState({ ...localState!, endedAt: trackingNow() });
     setStage("confirm");
   }
 
@@ -209,6 +233,23 @@ export const LiveGameAdminPage: React.FC = () => {
       return;
     }
 
+    // Both are undefined when the tracked points do not line up with the
+    // completed sets, e.g. a live game that started before this tracking
+    // existed. They are always saved together.
+    const trackingData = toEventTrackingData({
+      completedSets: localState!.completedSets,
+      trackedSets: localState!.completedSetSequences.map((sequence, index) => ({
+        sequence,
+        pointTimes: localState!.completedSetPointTimes[index] ?? [],
+      })),
+      firstServers: localState!.completedSetFirstServers,
+      player1IsGameWinner: player1Won,
+      source: "live-game",
+      startedAt: localState!.startedAt,
+      endedAt: localState!.endedAt,
+      corrections: localState!.corrections,
+    });
+
     const gameScoreEvent: GameScore = {
       type: EventTypeEnum.GAME_SCORE,
       time: gameCreatedEvent.time + 1,
@@ -222,13 +263,8 @@ export const LiveGameAdminPage: React.FC = () => {
                 gameLoser: player1Won ? set.player2 : set.player1,
               }))
             : undefined,
-        // undefined when the sequences do not align with the completed sets,
-        // e.g. a live game that started before point tracking existed.
-        pointSequences: toEventPointSequences({
-          setSequences: localState!.completedSetSequences,
-          completedSets: localState!.completedSets,
-          player1IsGameWinner: player1Won,
-        }),
+        pointSequences: trackingData?.pointSequences,
+        tracking: trackingData?.tracking,
       },
     };
 
