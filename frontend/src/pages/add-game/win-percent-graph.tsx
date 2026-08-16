@@ -53,12 +53,12 @@ export const WinPercentGraph: React.FC<Props> = ({
   const lineColor = readableOn(winnerColor, ROW_SURFACE);
 
   return (
-    <div className="bg-gray-50 rounded-lg p-4 mb-6">
+    <div className="bg-gray-50 rounded-lg p-4">
       <h3 className="text-base font-bold text-gray-800 mb-1">Win % over the game</h3>
       <p className="text-xs text-gray-500 mb-2">{winnerName}'s chance to win, after every point</p>
       <ResponsiveContainer width="100%" height={180}>
         <LineChart data={data} margin={{ top: 12, right: 12, left: 0, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="1 4" vertical={false} stroke="#d1d5db" />
+          <CartesianGrid vertical={false} stroke="#e5e7eb" />
           <XAxis
             dataKey="point"
             type="number"

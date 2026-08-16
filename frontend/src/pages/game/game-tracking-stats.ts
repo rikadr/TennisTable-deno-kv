@@ -14,8 +14,6 @@ const TENTH_MS = 100;
 export type GameTimingStats = {
   /** Ms from the start of tracking to the last point. */
   durationMs: number;
-  /** Ms each set took, from its first point to its last point. */
-  setDurationsMs: number[];
   /** Ms between two points, on average, excluding the breaks between sets. */
   averagePointGapMs: number;
   /** The longest gap between two points, excluding the breaks between sets. */
@@ -39,13 +37,101 @@ export function gameTimingStats(tracking: GameTracking): GameTimingStats {
   );
   return {
     durationMs: totalTenths * TENTH_MS,
-    setDurationsMs: tracking.pointDeltas.map(
-      (deltas) => deltas.slice(1).reduce((sum, delta) => sum + delta, 0) * TENTH_MS,
-    ),
     averagePointGapMs:
       gaps.length === 0 ? 0 : (gaps.reduce((sum, gap) => sum + gap, 0) / gaps.length) * TENTH_MS,
     longestPointGapMs: gaps.length === 0 ? 0 : Math.max(...gaps) * TENTH_MS,
   };
+}
+
+export type SetBreakdown = {
+  /** 1-based number of the set. */
+  set: number;
+  points: { winner: number; loser: number };
+  /** True when the game winner also won this set. */
+  wonByGameWinner: boolean;
+  /** Who served the first point of the set. */
+  firstServer: "W" | "L";
+  /** Ms from the first point of the set to its last point. */
+  durationMs: number;
+  /** Ms between the last point of the previous set and the first of this one. */
+  breakBeforeMs: number;
+  /** The longest gap between two points of this set. */
+  longestPointGapMs: number;
+};
+
+/**
+ * One row per set: the score, who served it first, and how long it took. The
+ * first delta of a set is the break before it, so it is the break time and not
+ * part of the duration of the set.
+ */
+export function setBreakdown(pointSequences: string[], tracking: GameTracking): SetBreakdown[] {
+  return pointSequences.map((sequence, index) => {
+    const deltas = tracking.pointDeltas[index] ?? [];
+    const gaps = deltas.slice(1);
+    const winnerPoints = sequence.split("").filter((point) => point === "W").length;
+    return {
+      set: index + 1,
+      points: { winner: winnerPoints, loser: sequence.length - winnerPoints },
+      wonByGameWinner: winnerPoints > sequence.length - winnerPoints,
+      firstServer: tracking.firstServers[index] === "W" ? "W" : "L",
+      durationMs: gaps.reduce((sum, gap) => sum + gap, 0) * TENTH_MS,
+      breakBeforeMs: (deltas[0] ?? 0) * TENTH_MS,
+      longestPointGapMs: gaps.length === 0 ? 0 : Math.max(...gaps) * TENTH_MS,
+    };
+  });
+}
+
+/** The longest run of points in a row that each player won, over the game. */
+export function longestStreaks(pointSequences: string[]): { winner: number; loser: number } {
+  const longest = { winner: 0, loser: 0 };
+  let current = 0;
+  let currentPoint = "";
+
+  // A streak carries across a set boundary: the points are still consecutive.
+  for (const point of pointSequences.join("")) {
+    current = point === currentPoint ? current + 1 : 1;
+    currentPoint = point;
+    const side = point === "W" ? "winner" : "loser";
+    longest[side] = Math.max(longest[side], current);
+  }
+
+  return longest;
+}
+
+export type PacePoint = {
+  /** 1-based number of the point over the whole game. */
+  point: number;
+  /**
+   * Seconds since the previous point of the same set, or null for the first
+   * point of a set. That first gap is the break before the set, not the pace
+   * of the game.
+   */
+  seconds: number | null;
+  /** Which player won the point. */
+  scoredBy: "W" | "L";
+  /** 1-based number of the set the point belongs to. */
+  set: number;
+};
+
+/** The time each point took, in the order the points were scored. */
+export function pointPace(pointSequences: string[], tracking: GameTracking): PacePoint[] {
+  const pace: PacePoint[] = [];
+  let point = 0;
+
+  pointSequences.forEach((sequence, setIndex) => {
+    const deltas = tracking.pointDeltas[setIndex] ?? [];
+    sequence.split("").forEach((scoredBy, pointIndex) => {
+      point++;
+      pace.push({
+        point,
+        seconds: pointIndex === 0 ? null : (deltas[pointIndex] ?? 0) / 10,
+        scoredBy: scoredBy === "W" ? "W" : "L",
+        set: setIndex + 1,
+      });
+    });
+  });
+
+  return pace;
 }
 
 export type ServeStats = {

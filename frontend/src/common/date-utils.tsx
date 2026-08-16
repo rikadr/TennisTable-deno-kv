@@ -102,6 +102,11 @@ export function fullDateTimeString(time: number): string {
   return `${datePart} ${timePart}`;
 }
 
+// Clock time only, e.g. "08:37". For a time whose date is already on screen.
+export function clockTimeString(time: number): string {
+  return new Date(time).toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit" });
+}
+
 // Month-granularity variant of dateString, for periods that span a whole
 // calendar month (e.g. "januar 2026").
 export function monthString(time: number) {
