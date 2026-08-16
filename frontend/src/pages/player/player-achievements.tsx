@@ -358,6 +358,11 @@ export const ACHIEVEMENT_LABELS: Record<AchievementType, { title: string; descri
     description: "Win 10 deuce sets (a set won 12–10 or higher)",
     icon: "🔱",
   },
+  "on-the-record": {
+    title: "On the Record",
+    description: "Play 5 games tracked point by point — the games marked 👀",
+    icon: "👀",
+  },
   "giant-hunting": {
     title: "Giant Hunting",
     description: "Win 3 games against higher-ranked players in a single day (the same player can count more than once)",

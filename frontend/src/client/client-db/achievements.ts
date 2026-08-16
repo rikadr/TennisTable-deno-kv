@@ -81,6 +81,19 @@ export const PARTY_POOPER_MIN_WINS = 5;
 // what they nearly matched, not the position.
 export const SO_CLOSE_MAX_DEFICIT_FRACTION = 0.1;
 
+// Games tracked point by point a player must take part in for "On the Record".
+// A game only carries a point log when a third person tracks it on the track
+// game page or the live broadcast, so a tracked game takes real effort to
+// arrange. The target is deliberately low — the achievement rewards taking
+// part in the tracking, not a long career of it. Wins and losses both count,
+// and both players of a tracked game get the credit.
+export const ON_THE_RECORD_TARGET = 5;
+
+// Whether a game carries a point-by-point log — the mark of a tracked game.
+export function isTrackedGame(game: Game): boolean {
+  return (game.score?.pointSequences?.length ?? 0) > 0;
+}
+
 // Fewest players a season must have for "Full Coverage" — playing everyone
 // in a tiny season is not a feat. Matches the ≥5 cohort gate the rank and
 // full-house achievements use.
@@ -299,6 +312,7 @@ export class Achievements {
         edgeLordCount: number;
         consistencyCount: number;
         deuceSetsWon: number; // Career deuce sets won, for Deuce Demon
+        trackedGamesPlayed: number; // Career tracked games played, for On the Record
         opponentsPlayed: Set<string>;
         gamesPerOpponent: Map<string, { count: number; firstGame: number; lastGame: number }>;
         firstOpponentFor: Set<string>; // Track players this person was first opponent for
@@ -357,6 +371,7 @@ export class Achievements {
           edgeLordCount: 0,
           consistencyCount: 0,
           deuceSetsWon: 0,
+          trackedGamesPlayed: 0,
           opponentsPlayed: new Set(),
           gamesPerOpponent: new Map(),
           firstOpponentFor: new Set(),
@@ -387,6 +402,7 @@ export class Achievements {
           edgeLordCount: 0,
           consistencyCount: 0,
           deuceSetsWon: 0,
+          trackedGamesPlayed: 0,
           opponentsPlayed: new Set(),
           gamesPerOpponent: new Map(),
           firstOpponentFor: new Set(),
@@ -735,6 +751,23 @@ export class Achievements {
         // Check for "Deuce Demon": career deuce sets won. Either player can
         // win a qualifying set regardless of who wins the game.
         this.#checkDeuceDemonAchievement(game, winner, loser);
+      }
+
+      // Check for "On the Record": career games tracked point by point.
+      // Awarded to both players when the count crosses the target — the game
+      // was tracked for the pair, so both take the credit. Earned once.
+      if (isTrackedGame(game)) {
+        const awardOnTheRecord = (playerId: string, tracker: { trackedGamesPlayed: number }) => {
+          tracker.trackedGamesPlayed++;
+          if (tracker.trackedGamesPlayed === ON_THE_RECORD_TARGET) {
+            this.#addAchievement(
+              playerId,
+              this.#createAchievement("on-the-record", playerId, game.playedAt, undefined),
+            );
+          }
+        };
+        awardOnTheRecord(game.winner, winner);
+        awardOnTheRecord(game.loser, loser);
       }
 
       // Check for donut achievements (individual sets where loser scored 0)
@@ -2953,6 +2986,7 @@ export class Achievements {
       "edge-lord": { current: 0, target: 20, earned: 0 },
       "consistency-is-key": { current: 0, target: 5, earned: 0 },
       "deuce-demon": { current: 0, target: DEUCE_DEMON_TARGET, earned: 0 },
+      "on-the-record": { current: 0, target: ON_THE_RECORD_TARGET, earned: 0 },
       "photo-finish": { earned: 0 },
       "marathon-set": {
         earned: 0,
@@ -3052,6 +3086,7 @@ export class Achievements {
     let consistencyCount = 0;
     let bestDeuceSetWon = 0;
     let deuceSetsWonCount = 0;
+    let trackedGamesPlayedCount = 0;
     const streaksPerOpponent = new Map<string, number>();
     // Highest win streak the player has EVER held against a single opponent —
     // streaksPerOpponent only carries live streaks, which reset when that
@@ -3262,6 +3297,11 @@ export class Achievements {
         consistencyCount++;
       }
 
+      // Count tracked games for both winners and losers
+      if (isTrackedGame(game)) {
+        trackedGamesPlayedCount++;
+      }
+
       // Track highest deuce-set winning score this player has won
       // (regardless of overall game outcome — the achievement is
       // awarded to set winners).
@@ -3301,6 +3341,10 @@ export class Achievements {
     // Deuce Demon progress caps at the target: the count never resets, so
     // going beyond would leak the player's career deuce-set total.
     progression["deuce-demon"].current = Math.min(deuceSetsWonCount, DEUCE_DEMON_TARGET);
+    // On the Record progress caps at the target for the same reason: the
+    // count never resets. Uncap it if a higher tracked-games tier is added,
+    // the way Edge Lord keeps the Close Calls count uncapped.
+    progression["on-the-record"].current = Math.min(trackedGamesPlayedCount, ON_THE_RECORD_TARGET);
     progression["variety-player"].current = opponentsPlayed.size;
     progression["variety-player"].opponents = opponentsPlayed;
     progression["global-player"].current = opponentsPlayed.size;
@@ -4041,6 +4085,9 @@ type AchievementDefinitions = {
   // Career deuce sets won (winner ≥ 12, loser ≥ 10) reached
   // DEUCE_DEMON_TARGET. A pure counter crossing — no game to point at.
   "deuce-demon": undefined;
+  // Career games tracked point by point reached ON_THE_RECORD_TARGET.
+  // A pure counter crossing — no game to point at.
+  "on-the-record": undefined;
   // Won GIANT_HUNTING_TARGET games against higher-ranked opponents within
   // one local calendar day. `day` is that day's local midnight; `giants` the
   // wins that filled the day's tally, each with the pre-match ranks of both
@@ -4155,6 +4202,7 @@ export const ACHIEVEMENT_IS_REACHIEVABLE: Record<AchievementType, boolean> = {
   "humbled": false,
   "everybodys-opponent": false,
   "deuce-demon": false,
+  "on-the-record": false,
   "giant-hunting": true, // Per qualifying day
   "party-pooper": true, // Per spoiled perfect day
   "earliest-game": true, // League records — can be retaken
@@ -4462,6 +4510,7 @@ export type AchievementProgression = {
   "humbled": MissingPlayersProgression;
   "everybodys-opponent": MissingPlayersProgression;
   "deuce-demon": ProgressionWithTarget;
+  "on-the-record": ProgressionWithTarget;
   "giant-hunting": ProgressionWithTarget;
   "party-pooper": BaseProgression;
   "earliest-game": TimeOfDayRecordProgression;

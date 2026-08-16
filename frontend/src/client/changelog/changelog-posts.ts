@@ -42,6 +42,26 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
+    slug: "on-the-record-achievement",
+    title: "New achievement: On the Record 👀",
+    date: "2026-08-16",
+    tags: ["feature-update"],
+    summary:
+      "On the Record 👀 is a new achievement. Play 5 games that are tracked point by point.",
+    body: [
+      text(
+        "A game is tracked when a person records each point on the track game page or the broadcasted live game. The game lists show a 👀 mark next to the score of a tracked game.",
+      ),
+      text(
+        "Both players of a tracked game get the credit, and the result of the game does not matter. The count is for your career, and you earn the achievement 1 time.",
+      ),
+      text(
+        "A game added with the normal form does not count. An edited score removes the point log, so an edit also removes the game from your count.",
+      ),
+      text("The Progress tab on the player page shows how many of the 5 games you have."),
+    ],
+  },
+  {
     slug: "game-details-page",
     title: "Game details page",
     date: "2026-08-13",
