@@ -50,7 +50,7 @@ from the ordered `setPoints` array and needs none of this.
 A tracked game almost always means a third person watched and recorded it. That
 effort is the reason the data is rare, and the rarity is the point — a tracked
 game is worth a badge on its own, before any of the point-level detail is read.
-Ideas 20 to 23 award the tracking. Ideas 12 to 19 award what happened inside it.
+Ideas 20 and 21 award the tracking. Ideas 12 to 19 award what happened inside it.
 
 Read the design notes at the end before implementing any of these.
 
@@ -119,31 +119,22 @@ awards Goliath, Humbled and Punching Bag, so a badge for a loss fits.
 
 # Awards for the tracking itself
 
-## 20. On the Record 👀
-Play a tracked game. Awarded to both players, earned once.
+On the Record 👀 — play 5 tracked games — is the first of these, and it now
+ships. The 2 below build on it.
 
-The entry tier. A player earns it by arranging for an observer, which is the
-effort the league wants to reward. It uses the 👀 marker the game lists already
-show, so the badge and the marker teach each other.
+## 20. Under Observation 🔍
+Play 25 tracked games. Awarded to both players, earned once.
 
-## 21. Under Observation 🔍
-Play 10 tracked games. Awarded to both players, earned once.
+The second tier above On the Record, in the pattern of Close Calls and Edge
+Lord. Adding it means uncapping the On the Record progress count, which caps at
+5 today because no higher tier reads it.
 
-The second tier, in the pattern of Variety Player and Global Player. Add a third
-tier at 25 later if the first two fill too fast.
-
-## 22. Full Session 📼
+## 21. Full Session 📼
 Play 3 or more games in one local calendar day, and have every one of them
 tracked.
 
 This awards a whole tracked session, not one game. It needs an observer to stay
 for the full evening, which is the largest version of the effort.
-
-## 23. Scorekeeper 📋
-Track 10 games as the observer. **Needs a new field — see the design notes.**
-
-The observer does the work and currently gets nothing. This is the achievement
-that closes that gap, and it needs the event to record who tracked the game.
 
 # Design notes
 
@@ -165,11 +156,11 @@ carry `pointSequences` through the edit form unchanged when the set scores are
 unchanged, or store a separate durable marker on the event that says the game
 was tracked, which edits preserve.
 
-**Nothing records who tracked the game.** Both the track game page and the live
-broadcast write the same `GAME_SCORE` event, and neither names the observer.
-Idea 23 needs a new field — a player id for the observer on the score event.
-That field is also the only way to tell the two tracking paths apart, if a badge
-for a live broadcast game is ever wanted.
+**The observer is not recorded, and does not need to be.** Both the track game
+page and the live broadcast write the same `GAME_SCORE` event, and neither names
+the person who tracked the game. The award goes to the 2 players who played it.
+The same absence means the 2 tracking paths cannot be told apart, so a badge
+only for a broadcast game is not possible.
 
 **Reuse the set validity rule.** `#isValidSetScore` in `achievements.ts` already
 states the format: 11 points, win by 2. Gate every set-point and match-point
@@ -186,8 +177,10 @@ after an undo can differ from the order played. Point totals stay correct.
 Achievements that count exact transitions — Seesaw most of all — carry this
 noise. Achievements that test whether a state was ever reached are robust to it.
 
-**Serve is not in the data.** Serve alternates every 2 points, and every point
-from 10-10, so the log fixes the serve pattern of a set. It does not say which
-player served first, and the first server alternates each set, so the whole
-family of service achievements — break points, points held on serve — needs one
-more field on the event: who served the first point of the game.
+**Serve is known while tracking, but not saved.** The house rule in
+`serve-tracker.ts` is 2 serves each for the whole set — it does not change to 1
+serve each at 10-10 — so the server for any point follows from the points played
+so far and the first server of the set. The tracker holds `firstServer` in its
+own state and the live game state carries it, but `GAME_SCORE` does not store
+it, so it is lost on save. Service achievements — break points, points held on
+serve — need only that one field added to the event, not new tracking work.
