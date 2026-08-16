@@ -663,13 +663,15 @@ export const TrackGamePage: React.FC = () => {
             </div>
 
             {/* Winner's win % point by point */}
-            <WinPercentGraph
-              history={winPercentHistory}
-              winnerIsPlayer1={winner === player1}
-              winnerName={context.playerName(winner)}
-              winnerColor={winner === player1 ? player1Color : player2Color}
-              completedSets={matchData.setPoints ?? []}
-            />
+            <div className="mb-6">
+              <WinPercentGraph
+                history={winPercentHistory}
+                winnerIsPlayer1={winner === player1}
+                winnerName={context.playerName(winner)}
+                winnerColor={winner === player1 ? player1Color : player2Color}
+                completedSets={matchData.setPoints ?? []}
+              />
+            </div>
 
             {/* Set Details */}
             {matchData.setPoints && matchData.setPoints.length > 0 && (

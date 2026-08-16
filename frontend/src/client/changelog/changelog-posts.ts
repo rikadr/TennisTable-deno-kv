@@ -53,7 +53,10 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
         "The `GAME_SCORE` event stores the start of the match as a full timestamp. Each point after it is the time since the previous point, in tenths of a second. The event also stores who served the first point of each set, which tracker recorded the game, and how many points the person undid.",
       ),
       text(
-        "The game details page shows the duration of the game, the duration of each set, the average time between 2 points, and the longest pause. It also shows the percent of points that each player won on their own serve.",
+        "The game details page shows the duration of the game, the time it started, the average time between 2 points, and the longest pause. For each player it shows the percent of points won on their own serve, and the longest run of points in a row.",
+      ),
+      text(
+        "A table gives every set: the score, who served the first point, the time the set took, and the break before it. A graph below the win % graph shows the time each point took. Each bar has the colour of the player who won the point.",
       ),
       text(
         "The time between 2 points includes everything that happens between the rallies. A player can collect the ball or speak. Read the value as the pace of the game, not as the length of a rally.",

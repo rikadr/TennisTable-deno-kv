@@ -10,8 +10,9 @@ import { ProfilePicture } from "../player/profile-picture";
 import { Fraction } from "../../client/client-db/predictions";
 import { WinPercentGraph } from "../add-game/win-percent-graph";
 import { replayWinPercentHistory } from "./game-win-replay";
-import { durationString, gameTimingStats, gapString, serveStats } from "./game-tracking-stats";
-import { GameTracking } from "../../client/client-db/event-store/event-types";
+import { pointPace } from "./game-tracking-stats";
+import { SetBreakdownTable, TrackingStats } from "./game-tracking-panels";
+import { PointPaceGraph } from "./point-pace-graph";
 
 /**
  * Details about a single game, identified by its played-at timestamp (unique
@@ -173,10 +174,17 @@ export const GameDetailsPage: React.FC = () => {
             </button>
           </div>
 
-          {/* How long the game took, and how each player did on their serve */}
+          {/* Everything the live tracker recorded: the timeline, the serves,
+              the sets one by one, and the pace of the points */}
           {game.score?.tracking && game.score.pointSequences && (
-            <div className="px-2 xs:px-4 pb-3">
+            <div className="px-2 xs:px-4 pb-3 space-y-3">
               <TrackingStats
+                tracking={game.score.tracking}
+                pointSequences={game.score.pointSequences}
+                winnerName={context.playerName(game.winner)}
+                loserName={context.playerName(game.loser)}
+              />
+              <SetBreakdownTable
                 tracking={game.score.tracking}
                 pointSequences={game.score.pointSequences}
                 winnerName={context.playerName(game.winner)}
@@ -185,10 +193,11 @@ export const GameDetailsPage: React.FC = () => {
             </div>
           )}
 
-          {/* Win % over the game, replayed from the point-by-point log */}
+          {/* Win % over the game and the time each point took, both replayed
+              from the point-by-point log and both on the same point scale */}
           <div className="px-2 xs:px-4 pb-4">
             {winPercentHistory && winPercentHistory.length >= 2 && game.score?.setPoints ? (
-              <div className="bg-white rounded-xl shadow-lg p-3 sm:p-4 text-black">
+              <div className="bg-white rounded-xl shadow-lg p-3 sm:p-4 text-black space-y-3">
                 <WinPercentGraph
                   history={winPercentHistory}
                   winnerIsPlayer1={true}
@@ -199,6 +208,15 @@ export const GameDetailsPage: React.FC = () => {
                     player2: set.gameLoser,
                   }))}
                 />
+                {game.score.tracking && game.score.pointSequences && (
+                  <PointPaceGraph
+                    pace={pointPace(game.score.pointSequences, game.score.tracking)}
+                    winnerName={context.playerName(game.winner)}
+                    loserName={context.playerName(game.loser)}
+                    winnerColor={stringToColor(game.winner)}
+                    loserColor={stringToColor(game.loser)}
+                  />
+                )}
               </div>
             ) : (
               <p className="text-center text-sm text-primary-text/60 py-2">
@@ -211,48 +229,6 @@ export const GameDetailsPage: React.FC = () => {
     </div>
   );
 };
-
-/**
- * The timeline and serve data of a tracked game. The gaps are the time between
- * two points being registered, so they include everything that happens between
- * the rallies, not the rally alone.
- */
-const TrackingStats: React.FC<{
-  tracking: GameTracking;
-  pointSequences: string[];
-  winnerName: string;
-  loserName: string;
-}> = ({ tracking, pointSequences, winnerName, loserName }) => {
-  const timing = gameTimingStats(tracking);
-  const serves = serveStats(pointSequences, tracking.firstServers);
-  const servePercent = (side: { served: number; won: number }) =>
-    side.served === 0 ? "–" : `${fmtNum((side.won / side.served) * 100)}%`;
-
-  return (
-    <div className="rounded-lg bg-secondary-background text-secondary-text p-3">
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-y-2 gap-x-3 text-center">
-        <StatCell label="Duration" value={durationString(timing.durationMs)} />
-        <StatCell
-          label="Sets"
-          value={timing.setDurationsMs.map((ms) => durationString(ms)).join(" · ")}
-        />
-        <StatCell label="Between points" value={gapString(timing.averagePointGapMs)} />
-        <StatCell label="Longest pause" value={gapString(timing.longestPointGapMs)} />
-      </div>
-      <div className="mt-3 pt-3 border-t border-secondary-text/20 grid grid-cols-2 gap-x-3 text-center">
-        <StatCell label={`${winnerName} on serve`} value={servePercent(serves.winner)} />
-        <StatCell label={`${loserName} on serve`} value={servePercent(serves.loser)} />
-      </div>
-    </div>
-  );
-};
-
-const StatCell: React.FC<{ label: string; value: string }> = ({ label, value }) => (
-  <div className="flex flex-col items-center min-w-0">
-    <span className="text-xs opacity-70 truncate max-w-full">{label}</span>
-    <span className="text-lg font-bold truncate max-w-full">{value}</span>
-  </div>
-);
 
 const PredictionCell: React.FC<{ label: string; prediction?: Fraction }> = ({ label, prediction }) => (
   <div className="flex flex-col items-center">
