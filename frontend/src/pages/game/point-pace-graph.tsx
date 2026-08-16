@@ -1,7 +1,6 @@
 import React from "react";
 import { Bar, BarChart, CartesianGrid, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { readableOn } from "../../common/color-utils";
-import { ROW_SURFACE } from "../../common/player-color-styles";
+import { markOn, ROW_SURFACE } from "../../common/player-color-styles";
 import { PacePoint } from "./game-tracking-stats";
 
 type Props = {
@@ -24,10 +23,9 @@ export const PointPaceGraph: React.FC<Props> = ({ pace, winnerName, loserName, w
   const timed = pace.filter((point) => point.seconds !== null);
   if (timed.length < 2) return null;
 
-  // Player colours run from near-black to near-white, so darken pale ones the
-  // same way the score text and the win % line do.
-  const winnerFill = readableOn(winnerColor, ROW_SURFACE);
-  const loserFill = readableOn(loserColor, ROW_SURFACE);
+  // Each player's own colour, the one they have everywhere else in the app.
+  const winnerFill = markOn(winnerColor, ROW_SURFACE);
+  const loserFill = markOn(loserColor, ROW_SURFACE);
 
   const data = pace.map((point) => ({
     ...point,

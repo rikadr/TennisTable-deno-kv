@@ -9,8 +9,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { readableOn } from "../../common/color-utils";
-import { ROW_SURFACE } from "../../common/player-color-styles";
+import { markOn, ROW_SURFACE } from "../../common/player-color-styles";
 import { fmtNum } from "../../common/number-utils";
 
 type Props = {
@@ -48,9 +47,8 @@ export const WinPercentGraph: React.FC<Props> = ({
     return { point: pointsPlayed, label: `Set ${index + 1}` };
   });
 
-  // Player colours run from near-black to near-white, so darken pale ones the
-  // same way the score text does.
-  const lineColor = readableOn(winnerColor, ROW_SURFACE);
+  // The winner's own colour, the one they have everywhere else in the app.
+  const lineColor = markOn(winnerColor, ROW_SURFACE);
 
   return (
     <div className="bg-gray-50 rounded-lg p-4">
