@@ -36,6 +36,41 @@ export type PlayerNameUpdated = GenericEvent<EventTypeEnum.PLAYER_NAME_UPDATED, 
 
 export type GameCreated = GenericEvent<EventTypeEnum.GAME_CREATED, { playedAt: number; winner: string; loser: string }>;
 export type GameDeleted = GenericEvent<EventTypeEnum.GAME_DELETED, null>;
+/**
+ * What the live trackers recorded while the points were logged: when each point
+ * was scored, who served, and how much the log was corrected. Always stored
+ * together with `pointSequences` — validation rejects one without the other.
+ */
+export type GameTracking = {
+  /** Schema version of this object, so the format can change later. */
+  version: 1;
+  /** Which tracker logged the points. */
+  source: "track-game" | "live-game";
+  /** Epoch ms when tracking started. The only absolute time in the object. */
+  startedAt: number;
+  /**
+   * One array per set, parallel to `pointSequences`. Each number is the tenths
+   * of a second since the previous point of the game, across set boundaries —
+   * so the first number of a set is the break after the previous set, and the
+   * first number of the game is the delay before the first point. A point was
+   * scored at `startedAt + 100 * (sum of every delta up to and including it)`.
+   */
+  pointDeltas: number[][];
+  /** Tenths of a second from the last point to the end of the match. */
+  endedAfter: number;
+  /**
+   * Who served the first point of each set, one char per set: "W" = the game
+   * winner, "L" = the game loser. The server of every later point follows from
+   * the set score, see `getServeInfo`.
+   */
+  firstServers: string;
+  /**
+   * How many points were undone while tracking. A high count means the log was
+   * corrected by hand, so its times are less trustworthy.
+   */
+  corrections: number;
+};
+
 export type GameScore = GenericEvent<
   EventTypeEnum.GAME_SCORE,
   {
@@ -50,6 +85,8 @@ export type GameScore = GenericEvent<
      * set's points.
      */
     pointSequences?: string[];
+    /** Timing and serve data of the same points. Requires pointSequences. */
+    tracking?: GameTracking;
   }
 >;
 

@@ -21,11 +21,21 @@ export type LiveGameState = {
    * "1" = point to player 1, "2" = point to player 2.
    */
   currentSetSequence: string;
+  /** Epoch ms of each point of the current set, parallel to currentSetSequence. */
+  currentSetPointTimes: number[];
   /** Point sequence of each completed set, same encoding as currentSetSequence. */
   completedSetSequences: string[];
+  /** Point times of each completed set, same encoding as currentSetPointTimes. */
+  completedSetPointTimes: number[][];
+  /** Which player (1 or 2) served the first point of each completed set. */
+  completedSetFirstServers: (1 | 2)[];
   /** Which player (1 or 2) served the first point of the current set. */
   firstServer: 1 | 2;
+  /** How many points were undone while tracking this match. */
+  corrections: number;
   startedAt: number | null;
+  /** Epoch ms the match was ended for review. Null while it is still played. */
+  endedAt: number | null;
   finishedAt: number | null;
   updatedAt: number;
 };

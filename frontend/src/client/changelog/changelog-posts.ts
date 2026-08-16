@@ -42,6 +42,28 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
+    slug: "point-times-and-serves-on-tracked-games",
+    title: "Tracked games record point times and serves",
+    date: "2026-08-16",
+    tags: ["feature-update", "technical"],
+    summary:
+      "A game tracked live now records when each point was scored and who served each set. The game details page shows the duration and the serve statistics.",
+    body: [
+      text(
+        "The `GAME_SCORE` event stores the start of the match as a full timestamp. Each point after it is the time since the previous point, in tenths of a second. The event also stores who served the first point of each set, which tracker recorded the game, and how many points the person undid.",
+      ),
+      text(
+        "The game details page shows the duration of the game, the duration of each set, the average time between 2 points, and the longest pause. It also shows the percent of points that each player won on their own serve.",
+      ),
+      text(
+        "The time between 2 points includes everything that happens between the rallies. A player can collect the ball or speak. Read the value as the pace of the game, not as the length of a rally.",
+      ),
+      text(
+        "Only games tracked live record the data. An edited score removes it, together with the point log.",
+      ),
+    ],
+  },
+  {
     slug: "on-the-record-achievement",
     title: "New achievement: On the Record 👀",
     date: "2026-08-16",
@@ -126,8 +148,7 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
     title: "Tracked games record every point",
     date: "2026-08-13",
     tags: ["technical"],
-    summary:
-      "A game tracked live now saves the order of every point, not only the set scores. The app does not show the data yet.",
+    summary: "A game tracked live saves the order of every point, not only the set scores.",
     body: [
       text(
         "The track game page and the broadcasted live game record each point. When you save the game, the `GAME_SCORE` event stores one string per set. Each character is one point, in scoring order. `W` is a point to the game winner. `L` is a point to the game loser.",

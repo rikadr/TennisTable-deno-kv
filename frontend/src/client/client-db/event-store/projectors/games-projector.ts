@@ -1,5 +1,50 @@
-import { GameCreated, GameDeleted, GameScore } from "../event-types";
+import { GameCreated, GameDeleted, GameScore, GameTracking } from "../event-types";
 import { ValidatorResponse } from "./validator-types";
+
+const isCount = (value: number) => Number.isInteger(value) && value >= 0;
+
+/**
+ * Checks the timing and serve data against the point log it describes. Returns
+ * the error message, or undefined when the tracking data is valid.
+ */
+function validateTracking(tracking: GameTracking, pointSequences: string[]): string | undefined {
+  if (tracking.version !== 1) {
+    return `Tracking data is invalid. Unknown version ${tracking.version}`;
+  }
+  if (tracking.source !== "track-game" && tracking.source !== "live-game") {
+    return "Tracking data is invalid. Unknown source";
+  }
+  if (isCount(tracking.startedAt) === false || tracking.startedAt === 0) {
+    return "Tracking data is invalid. Started at must be an epoch timestamp";
+  }
+  if (tracking.pointDeltas.length !== pointSequences.length) {
+    return "Tracking data is invalid. There must be one point delta list per set";
+  }
+  for (let setIndex = 0; setIndex < tracking.pointDeltas.length; setIndex++) {
+    const deltas = tracking.pointDeltas[setIndex];
+    if (deltas.length !== pointSequences[setIndex].length) {
+      return `Tracking data is invalid. Set ${setIndex + 1} has ${deltas.length} point deltas for ${
+        pointSequences[setIndex].length
+      } points`;
+    }
+    if (deltas.some((delta) => isCount(delta) === false)) {
+      return `Tracking data is invalid. Set ${setIndex + 1} has a point delta that is not a positive whole number`;
+    }
+  }
+  if (tracking.firstServers.length !== pointSequences.length) {
+    return "Tracking data is invalid. There must be one first server per set";
+  }
+  if (/^[WL]*$/.test(tracking.firstServers) === false) {
+    return "Tracking data is invalid. Only 'W' and 'L' first servers are allowed";
+  }
+  if (isCount(tracking.endedAfter) === false) {
+    return "Tracking data is invalid. Ended after must be a positive whole number";
+  }
+  if (isCount(tracking.corrections) === false) {
+    return "Tracking data is invalid. Corrections must be a positive whole number";
+  }
+  return undefined;
+}
 
 export type Game = { id: string; playedAt: number; winner: string; loser: string; score?: GameScore["data"] };
 
@@ -94,6 +139,13 @@ export class GamesProjector {
       }
     }
 
+    if (event.data.pointSequences && !event.data.tracking) {
+      return { valid: false, message: "Point sequences require tracking data" };
+    }
+    if (event.data.tracking && !event.data.pointSequences) {
+      return { valid: false, message: "Tracking data requires point sequences" };
+    }
+
     if (event.data.pointSequences) {
       if (!event.data.setPoints) {
         return { valid: false, message: "Point sequences require set points" };
@@ -115,6 +167,13 @@ export class GamesProjector {
             message: `Point sequences are invalid. Sequence for set ${setIndex + 1} does not match the set points`,
           };
         }
+      }
+    }
+
+    if (event.data.tracking && event.data.pointSequences) {
+      const trackingError = validateTracking(event.data.tracking, event.data.pointSequences);
+      if (trackingError) {
+        return { valid: false, message: trackingError };
       }
     }
 
