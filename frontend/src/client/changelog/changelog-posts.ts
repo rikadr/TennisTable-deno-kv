@@ -65,14 +65,14 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
   },
   {
     slug: "on-the-record-achievement",
-    title: "New achievement: On the Record 👀",
+    title: "New achievement: On the Record 🔴",
     date: "2026-08-16",
     tags: ["feature-update"],
     summary:
-      "On the Record 👀 is a new achievement. Play 5 games that are tracked point by point.",
+      "On the Record 🔴 is a new achievement. Play 5 games that are tracked point by point.",
     body: [
       text(
-        "A game is tracked when a person records each point on the track game page or the broadcasted live game. The game lists show a 👀 mark next to the score of a tracked game.",
+        "A game is tracked when a person records each point on the track game page or the broadcasted live game. The game lists show a 🔴 mark next to the score of a tracked game.",
       ),
       text(
         "Both players of a tracked game get the credit, and the result of the game does not matter. The count is for your career, and you earn the achievement 1 time.",
@@ -98,7 +98,7 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
         "The page shows the win % prediction between the 2 players before and after the game, each with its confidence.",
       ),
       text(
-        "A game with a point-by-point log gets a win % graph. The app replays the recorded points through the live prediction model, with the prediction data from before the game. A 👀 mark next to a score in the game lists shows that the game has the log.",
+        "A game with a point-by-point log gets a win % graph. The app replays the recorded points through the live prediction model, with the prediction data from before the game. A 🔴 mark next to a score in the game lists shows that the game has the log.",
       ),
       text(
         "2 buttons open related pages: the head-to-head page for the 2 players, and the What changed page with the period of this game preselected.",

@@ -9,7 +9,7 @@ export const PointSequenceMarker: React.FC<{ score?: GameScore["data"] }> = ({ s
   if (!score?.pointSequences?.length) return null;
   return (
     <span title="Tracked point by point" className="ml-1 text-[10px] md:text-xs align-middle">
-      👀
+      🔴
     </span>
   );
 };

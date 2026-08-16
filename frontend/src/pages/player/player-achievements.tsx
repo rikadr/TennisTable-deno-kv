@@ -360,8 +360,8 @@ export const ACHIEVEMENT_LABELS: Record<AchievementType, { title: string; descri
   },
   "on-the-record": {
     title: "On the Record",
-    description: "Play 5 games tracked point by point — the games marked 👀",
-    icon: "👀",
+    description: "Play 5 games tracked point by point — the games marked 🔴",
+    icon: "🔴",
   },
   "giant-hunting": {
     title: "Giant Hunting",
