@@ -47,6 +47,11 @@ needs a score state part-way through a set, which the final set score cannot
 give. Set-level order (lost the first set, won the match) is already available
 from the ordered `setPoints` array and needs none of this.
 
+A tracked game almost always means a third person watched and recorded it. That
+effort is the reason the data is rare, and the rarity is the point — a tracked
+game is worth a badge on its own, before any of the point-level detail is read.
+Ideas 20 to 23 award the tracking. Ideas 12 to 19 award what happened inside it.
+
 Read the design notes at the end before implementing any of these.
 
 ## 12. Match Point Down 🧗
@@ -112,15 +117,59 @@ Lose a game after your replayed win chance was above 95%.
 The mirror of Escape Artist, and the same trade-off applies. The league already
 awards Goliath, Humbled and Punching Bag, so a badge for a loss fits.
 
+# Awards for the tracking itself
+
+## 20. On the Record 👀
+Play a tracked game. Awarded to both players, earned once.
+
+The entry tier. A player earns it by arranging for an observer, which is the
+effort the league wants to reward. It uses the 👀 marker the game lists already
+show, so the badge and the marker teach each other.
+
+## 21. Under Observation 🔍
+Play 10 tracked games. Awarded to both players, earned once.
+
+The second tier, in the pattern of Variety Player and Global Player. Add a third
+tier at 25 later if the first two fill too fast.
+
+## 22. Full Session 📼
+Play 3 or more games in one local calendar day, and have every one of them
+tracked.
+
+This awards a whole tracked session, not one game. It needs an observer to stay
+for the full evening, which is the largest version of the effort.
+
+## 23. Scorekeeper 📋
+Track 10 games as the observer. **Needs a new field — see the design notes.**
+
+The observer does the work and currently gets nothing. This is the achievement
+that closes that gap, and it needs the event to record who tracked the game.
+
 # Design notes
 
-**Coverage is thin, so prefer thresholds over league records.** Only games
-tracked on the track game page or the live broadcast carry a point log, and only
-since the feature shipped. Editing a game's score replaces the `GAME_SCORE`
-event without `pointSequences`, so the log is lost and any achievement built on
-it disappears on recalculation. A league record over a small set of games reads
-as a record over the whole league, which it is not. Threshold achievements —
-12, 13, 16, 18, 19 — do not have this problem.
+**A tracked game is rare on purpose, so records over them are fair.** An
+observer has to be arranged, so only a small part of the league's games carry a
+point log. That is the reason the badges are worth having. The one thing to get
+right is the wording: a record from ideas 14, 15 and 17 is a record among
+tracked games, not among all games. Say so in the title or the description, so
+the badge does not claim more than it holds. Floors can also start lower than
+the Shootout and Marathon Set floors, because a smaller pool of games competes
+for the record and a record nobody can take is not interesting.
+
+**An award for a tracked game must survive a score edit.** Editing a game's
+score replaces the `GAME_SCORE` event without `pointSequences`, so the log is
+lost and every achievement built on it disappears on the next recalculation.
+That is already a warning on the edit page, and it becomes a real problem once
+the badge rewards the observer's effort rather than the score. Two options:
+carry `pointSequences` through the edit form unchanged when the set scores are
+unchanged, or store a separate durable marker on the event that says the game
+was tracked, which edits preserve.
+
+**Nothing records who tracked the game.** Both the track game page and the live
+broadcast write the same `GAME_SCORE` event, and neither names the observer.
+Idea 23 needs a new field — a player id for the observer on the score event.
+That field is also the only way to tell the two tracking paths apart, if a badge
+for a live broadcast game is ever wanted.
 
 **Reuse the set validity rule.** `#isValidSetScore` in `achievements.ts` already
 states the format: 11 points, win by 2. Gate every set-point and match-point
