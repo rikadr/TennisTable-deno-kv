@@ -208,7 +208,7 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
         "The new What changed page shows what changed in a period that you select. Buttons select common periods: the last game, today, or the last 7, 30 or 365 days. The Custom button shows two inputs for a start time and an end time.",
       ),
       text(
-        "The Leaderboards tab compares the overall leaderboard, the season leaderboard or the Hall of Fame score at the two times. A table shows each player with the rank and the score at the start, at the end, and the change in both. A toggle sorts the table by the rank at the start, the rank at the end, or the change in score.",
+        "The Leaderboards tab compares the overall leaderboard, the season leaderboard or the Hall of Fame score at the two times. A table shows each player with the rank and the score at the start, at the end, and the change in both. A toggle sorts the table by the rank at the start, the rank at the end, or the change in score. A player who joins or leaves a leaderboard in the period also gets a score change. The season score and the Hall of Fame score start at 0, and the overall leaderboard uses the elo of the player.",
       ),
       text(
         "On the overall leaderboard, a second toggle changes the data source between the actual leaderboard and the expected leaderboard. The expected leaderboard is the average of 5 000 simulations at each of the two times.",

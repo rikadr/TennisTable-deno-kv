@@ -13,8 +13,9 @@ import { Game } from "../../client/client-db/event-store/projectors/games-projec
 import { Achievement } from "../../client/client-db/achievements";
 import { getAchievementLabel } from "../player/player-achievements";
 import { ProfilePicture } from "../player/profile-picture";
+import { Elo } from "../../client/client-db/elo";
+import { AbsentScore, absentScoreZero, buildDiffRows, RankedEntry, scoreDelta, SortBy } from "./what-changed-diff";
 
-type SortBy = "start" | "end" | "delta";
 type Source = "actual" | "expected";
 
 type Tab = "leaderboards" | "games" | "achievements";
@@ -42,16 +43,6 @@ const ACHIEVEMENTS_PAGE_SIZE = 50;
 const ROW_GRID =
   "grid grid-cols-[minmax(0,1fr)_2.25rem_2.25rem_2.5rem_3rem_3rem_3.25rem] md:grid-cols-[minmax(0,1fr)_3.5rem_3.5rem_3.5rem_4.5rem_4.5rem_4.5rem] items-center";
 const NUM_CELL = "self-stretch flex items-center justify-end py-1 px-1 md:px-2 whitespace-nowrap";
-
-type DiffRow = {
-  playerId: string;
-  startRank?: number;
-  endRank?: number;
-  startScore?: number;
-  endScore?: number;
-};
-
-type RankedEntry = { id: string; rank: number; score: number };
 
 function useDebounced<T>(value: T, ms: number): T {
   const [debounced, setDebounced] = useState(value);
@@ -205,35 +196,22 @@ const DiffTable: React.FC<{
   sortBy: SortBy;
   emptyText: string;
   scoreDigits?: number;
+  // The score of a player who is on only one of the two leaderboards, so the
+  // score delta of a player who joins or leaves stays comparable.
+  absentScore?: AbsentScore;
   onRowClick: (playerId: string) => void;
-}> = ({ startEntries, endEntries, sortBy, emptyText, scoreDigits = 0, onRowClick }) => {
+}> = ({ startEntries, endEntries, sortBy, emptyText, scoreDigits = 0, absentScore, onRowClick }) => {
   const context = useEventDbContext();
 
-  const rows = useMemo(() => {
-    const rowMap = new Map<string, DiffRow>();
-    startEntries?.forEach((player) => {
-      rowMap.set(player.id, { playerId: player.id, startRank: player.rank, startScore: player.score });
-    });
-    endEntries?.forEach((player) => {
-      const row = rowMap.get(player.id) ?? { playerId: player.id };
-      row.endRank = player.rank;
-      row.endScore = player.score;
-      rowMap.set(player.id, row);
-    });
+  // A missing entry list means the leaderboard at that time is not known. The
+  // absent score then does not apply - it scores a player who is not on a
+  // leaderboard that the table has.
+  const knownAbsentScore = startEntries !== undefined && endEntries !== undefined ? absentScore : undefined;
 
-    const list = Array.from(rowMap.values());
-
-    if (sortBy === "delta") {
-      // Biggest score gain first; rows without a delta go to the bottom.
-      const scoreDelta = (row: DiffRow) =>
-        row.startScore !== undefined && row.endScore !== undefined ? row.endScore - row.startScore : -Infinity;
-      return list.sort((a, b) => scoreDelta(b) - scoreDelta(a) || (a.endRank ?? Infinity) - (b.endRank ?? Infinity));
-    }
-
-    const sortRank = (row: DiffRow) => (sortBy === "start" ? row.startRank : row.endRank) ?? Infinity;
-    const fallbackRank = (row: DiffRow) => (sortBy === "start" ? row.endRank : row.startRank) ?? Infinity;
-    return list.sort((a, b) => sortRank(a) - sortRank(b) || fallbackRank(a) - fallbackRank(b));
-  }, [startEntries, endEntries, sortBy]);
+  const rows = useMemo(
+    () => buildDiffRows(startEntries, endEntries, sortBy, knownAbsentScore),
+    [startEntries, endEntries, sortBy, knownAbsentScore],
+  );
 
   const stableRows = useMemo(() => [...rows].sort((a, b) => a.playerId.localeCompare(b.playerId)), [rows]);
   const visualOrder = new Map(rows.map((row, index) => [row.playerId, index + 1]));
@@ -265,8 +243,7 @@ const DiffTable: React.FC<{
       {stableRows.map((row) => {
         const deltaRank =
           row.startRank !== undefined && row.endRank !== undefined ? row.startRank - row.endRank : undefined;
-        const deltaScore =
-          row.startScore !== undefined && row.endScore !== undefined ? row.endScore - row.startScore : undefined;
+        const deltaScore = scoreDelta(row, knownAbsentScore);
         return (
           <div
             key={row.playerId}
@@ -406,6 +383,18 @@ export const WhatChangedPage: React.FC = () => {
     () => endState?.leaderboard.getLeaderboard().rankedPlayers.map(({ id, rank, elo }) => ({ id, rank, score: elo })),
     [endState],
   );
+  // A player who is not on the overall leaderboard is unranked or retired, but
+  // still has an elo. The score delta of a player who becomes ranked or retires
+  // in the period is the change of that elo.
+  const actualAbsentScore = useMemo<AbsentScore>(
+    () => (playerId, side) => {
+      const state = side === "start" ? startState : endState;
+      if (!state) return undefined;
+      return state.leaderboard.getCachedLeaderboardMap().get(playerId)?.elo ?? Elo.INITIAL_ELO;
+    },
+    [startState, endState],
+  );
+
   // The expected leaderboard is only shown on the overall leaderboard tab, so
   // only simulate there.
   const simulationNeeded = source === "expected" && activeTab === "leaderboards" && leaderboardTab === "overall";
@@ -616,6 +605,10 @@ export const WhatChangedPage: React.FC = () => {
                     endEntries={source === "actual" ? endActual : endExpected.entries}
                     sortBy={sortBy}
                     emptyText="No ranked players at either time"
+                    // The simulation only covers the players who are ranked at
+                    // that time, so the expected leaderboard has no score for a
+                    // player who is absent.
+                    absentScore={source === "actual" ? actualAbsentScore : undefined}
                     onRowClick={(playerId) => navigate(`/player/${playerId}`)}
                   />
                 ))}
@@ -633,6 +626,9 @@ export const WhatChangedPage: React.FC = () => {
                       sortBy={sortBy}
                       emptyText="No season games at either time"
                       scoreDigits={1}
+                      // A player with no game in the season has a season score
+                      // of 0.
+                      absentScore={absentScoreZero}
                       onRowClick={(playerId) =>
                         navigate(`/season/player?seasonStart=${singleSeason.start}&playerId=${playerId}`)
                       }
@@ -660,6 +656,9 @@ export const WhatChangedPage: React.FC = () => {
                     endEntries={endHallOfFame}
                     sortBy={sortBy}
                     emptyText="No players at either time"
+                    // A player who is not registered yet has a Hall of Fame
+                    // score of 0.
+                    absentScore={absentScoreZero}
                     onRowClick={(playerId) => navigate(`/hall-of-fame/${playerId}`)}
                   />
                 </>
