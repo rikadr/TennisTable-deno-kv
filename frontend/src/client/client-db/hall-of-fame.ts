@@ -3,6 +3,8 @@ import { EventTypeEnum } from "./event-store/event-types";
 import { TennisTable } from "./tennis-table";
 import { TournamentBracket } from "./tournaments/bracket";
 
+type PodiumRank = 1 | 2 | 3 | 4 | 5;
+
 export type SeasonDetail = { rank: number; points: number };
 export type TournamentDetail = { name: string; placement: string; points: number };
 
@@ -15,7 +17,7 @@ export type HallOfFameScoreBreakdown = {
   experience: { score: number; gamesWon: number; gamesLost: number };
   dataVolume: { score: number; gamesWithSets: number; gamesWithPoints: number; liveTrackedGames: number };
   peakElo: { score: number; peakElo: number };
-  podiumTime: { score: number; rank1Days: number; rank2Days: number; rank3Days: number };
+  podiumTime: { score: number; rank1Days: number; rank2to3Days: number; rank4to5Days: number };
   total: number;
 };
 
@@ -58,7 +60,7 @@ export class HallOfFame {
   private sectionRanks: Record<HallOfFameFactorKey, Map<string, number>> | undefined;
   private totalRanks: Map<string, number> | undefined;
   private peakEloCache: Map<string, number> | undefined;
-  private podiumMsCache: Map<string, { rank1Days: number; rank2Days: number; rank3Days: number }> | undefined;
+  private podiumMsCache: Map<string, { rank1Days: number; rank2to3Days: number; rank4to5Days: number }> | undefined;
 
   constructor(parent: TennisTable) {
     this.parent = parent;
@@ -443,7 +445,7 @@ export class HallOfFame {
       return { score: 0, peakElo: 0 };
     }
     const peakElo = this.#getPeakElos().get(playerId) ?? Elo.INITIAL_ELO;
-    const score = Math.max(0, peakElo - Elo.INITIAL_ELO);
+    const score = Math.max(0, peakElo - Elo.INITIAL_ELO) * 2;
     return { score, peakElo };
   }
 
@@ -467,17 +469,18 @@ export class HallOfFame {
   #calcPodiumTime(playerId: string): HallOfFameScoreBreakdown["podiumTime"] {
     const days = this.#getPodiumDaysByPlayer().get(playerId);
     const rank1Days = days?.rank1Days ?? 0;
-    const rank2Days = days?.rank2Days ?? 0;
-    const rank3Days = days?.rank3Days ?? 0;
-    const score = rank1Days + rank2Days * 0.5 + rank3Days * 0.5;
-    return { score, rank1Days, rank2Days, rank3Days };
+    const rank2to3Days = days?.rank2to3Days ?? 0;
+    const rank4to5Days = days?.rank4to5Days ?? 0;
+    const score = rank1Days * 1.5 + rank2to3Days * 1 + rank4to5Days * 0.5;
+    return { score, rank1Days, rank2to3Days, rank4to5Days };
   }
 
-  #getPodiumDaysByPlayer(): Map<string, { rank1Days: number; rank2Days: number; rank3Days: number }> {
+  #getPodiumDaysByPlayer(): Map<string, { rank1Days: number; rank2to3Days: number; rank4to5Days: number }> {
     if (this.podiumMsCache) return this.podiumMsCache;
     const ONE_DAY = 24 * 60 * 60 * 1000;
     const gameLimitForRanked = this.parent.client.gameLimitForRanked;
     const MIN_RANKED_FOR_PODIUM = 5;
+    const PODIUM_SIZE = 5;
 
     type Timeline = { kind: "game"; time: number; winner: string; loser: string }
       | { kind: "activity"; time: number; playerId: string; active: boolean };
@@ -503,23 +506,23 @@ export class HallOfFame {
 
     type State = { elo: number; totalGames: number; active: boolean };
     const playerState = new Map<string, State>();
-    let currentTop3: string[] = [];
+    let currentPodium: string[] = [];
     let lastTime: number | undefined;
 
-    const recomputeTop3 = (): string[] => {
+    const recomputePodium = (): string[] => {
       const ranked = Array.from(playerState.entries())
         .filter(([, s]) => s.active && s.totalGames >= gameLimitForRanked);
       if (ranked.length < MIN_RANKED_FOR_PODIUM) return [];
       return ranked
         .sort((a, b) => b[1].elo - a[1].elo)
-        .slice(0, 3)
+        .slice(0, PODIUM_SIZE)
         .map(([id]) => id);
     };
 
     // Per player: day index -> best (lowest) rank held on that day.
-    const dayBestRank = new Map<string, Map<number, 1 | 2 | 3>>();
+    const dayBestRank = new Map<string, Map<number, PodiumRank>>();
 
-    const recordInterval = (playerId: string, rank: 1 | 2 | 3, tStart: number, tEnd: number) => {
+    const recordInterval = (playerId: string, rank: PodiumRank, tStart: number, tEnd: number) => {
       if (tEnd <= tStart) return;
       const dStart = Math.floor(tStart / ONE_DAY);
       const dEnd = Math.ceil(tEnd / ONE_DAY) - 1;
@@ -535,10 +538,10 @@ export class HallOfFame {
     };
 
     for (const entry of timeline) {
-      if (lastTime !== undefined && currentTop3.length > 0) {
-        for (let i = 0; i < currentTop3.length; i++) {
-          const rank = (i + 1) as 1 | 2 | 3;
-          recordInterval(currentTop3[i], rank, lastTime, entry.time);
+      if (lastTime !== undefined && currentPodium.length > 0) {
+        for (let i = 0; i < currentPodium.length; i++) {
+          const rank = (i + 1) as PodiumRank;
+          recordInterval(currentPodium[i], rank, lastTime, entry.time);
         }
       }
 
@@ -561,21 +564,21 @@ export class HallOfFame {
         }
       }
 
-      currentTop3 = recomputeTop3();
+      currentPodium = recomputePodium();
       lastTime = entry.time;
     }
 
-    const result = new Map<string, { rank1Days: number; rank2Days: number; rank3Days: number }>();
+    const result = new Map<string, { rank1Days: number; rank2to3Days: number; rank4to5Days: number }>();
     for (const [playerId, dayMap] of dayBestRank) {
       let rank1Days = 0;
-      let rank2Days = 0;
-      let rank3Days = 0;
+      let rank2to3Days = 0;
+      let rank4to5Days = 0;
       for (const rank of dayMap.values()) {
         if (rank === 1) rank1Days++;
-        else if (rank === 2) rank2Days++;
-        else rank3Days++;
+        else if (rank <= 3) rank2to3Days++;
+        else rank4to5Days++;
       }
-      result.set(playerId, { rank1Days, rank2Days, rank3Days });
+      result.set(playerId, { rank1Days, rank2to3Days, rank4to5Days });
     }
 
     this.podiumMsCache = result;

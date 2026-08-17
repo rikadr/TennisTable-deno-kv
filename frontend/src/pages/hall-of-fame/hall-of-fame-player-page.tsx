@@ -181,6 +181,7 @@ function renderDetails(breakdown: HallOfFameScoreBreakdown, key: FactorKey): Rea
       const d = data as HallOfFameScoreBreakdown["peakElo"];
       return (
         <div className="text-primary-text text-xs space-y-1.5">
+          <p className="italic">2 pts for each Elo point above the start rating of 1 000.</p>
           <div className="flex flex-wrap gap-1.5">
             <span className="bg-secondary-background text-secondary-text px-2 py-0.5 rounded text-xs inline-flex items-center gap-1.5">
               Peak ELO
@@ -195,13 +196,16 @@ function renderDetails(breakdown: HallOfFameScoreBreakdown, key: FactorKey): Rea
     case "podiumTime": {
       const d = data as HallOfFameScoreBreakdown["podiumTime"];
       const podiumTiers = [
-        { label: "🥇 Day at #1", pts: 1, count: d.rank1Days },
-        { label: "🥈 Day at #2", pts: 0.5, count: d.rank2Days },
-        { label: "🥉 Day at #3", pts: 0.5, count: d.rank3Days },
+        { label: "🥇 Day at #1", pts: 1.5, count: d.rank1Days },
+        { label: "🥈 Day at #2-3", pts: 1, count: d.rank2to3Days },
+        { label: "🥉 Day at #4-5", pts: 0.5, count: d.rank4to5Days },
       ];
       return (
         <div className="text-primary-text text-xs space-y-1.5">
-          <p className="italic">Days spent in the top 3 of the ranked leaderboard. Only counts while at least 5 players are ranked.</p>
+          <p className="italic">
+            Days spent at the top of the ranked leaderboard. A higher place gives more points per day. Each day counts
+            once, at the best place held that day. Only counts while at least 5 players are ranked.
+          </p>
           <div className="flex flex-wrap gap-1.5">
             {podiumTiers.map((tier) => (
               <span
@@ -234,14 +238,14 @@ function renderDetails(breakdown: HallOfFameScoreBreakdown, key: FactorKey): Rea
 
 export const FACTORS: { key: FactorKey; emoji: string; name: string }[] = [
   { key: "peakElo", emoji: "🔥", name: "All-Time High" },
-  { key: "podiumTime", emoji: "🥉", name: "Podium Time" },
+  { key: "podiumTime", emoji: "🥉", name: "Time at the Top" },
   { key: "experience", emoji: "🏓", name: "Experience" },
   { key: "dataVolume", emoji: "📊", name: "Data Volume" },
   { key: "longevity", emoji: "📅", name: "Activity" },
-  { key: "seasonPerformance", emoji: "🍁", name: "Season Performance" },
-  { key: "tournamentProgression", emoji: "🏆", name: "Tournament Performance" },
+  { key: "seasonPerformance", emoji: "🍁", name: "Seasons" },
+  { key: "tournamentProgression", emoji: "🏆", name: "Tournaments" },
   { key: "socialDiversity", emoji: "👥", name: "Social Diversity" },
-  { key: "achievementsEarned", emoji: "🎖️", name: "Achievements Earned" },
+  { key: "achievementsEarned", emoji: "🎖️", name: "Achievements" },
 ];
 
 export const HallOfFamePlayerPage: React.FC = () => {

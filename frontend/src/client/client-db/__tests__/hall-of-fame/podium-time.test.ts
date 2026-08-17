@@ -48,16 +48,17 @@ describe("Hall of Fame podium time", () => {
     const a = tt.hallOfFame.getScoreForAnyPlayer("a")?.score.podiumTime;
     expect(a?.score).toBe(0);
     expect(a?.rank1Days).toBe(0);
-    expect(a?.rank2Days).toBe(0);
-    expect(a?.rank3Days).toBe(0);
+    expect(a?.rank2to3Days).toBe(0);
+    expect(a?.rank4to5Days).toBe(0);
   });
 
-  it("scores 1 pt per day at #1, 0.5 pt per day at #2 and #3", () => {
+  it("scores 1.5 pt per day at #1, 1 pt per day at #2-3 and 0.5 pt per day at #4-5", () => {
     const setup = fivePlayerSetup();
     const lastSetupTime = 119; // last game time in the round-robin
     const futureTime = lastSetupTime + 10 * ONE_DAY;
     // A pings-the-clock game between D and E far in the future. This
-    // doesn't change the top 3 (A, B, C) but advances time by 10 days.
+    // doesn't change the top 5 order (A, B, C, D, E) but advances time by
+    // 10 days.
     const events = [...setup, game("ping", futureTime, "d", "e")];
 
     const tt = new TennisTable({ events });
@@ -70,13 +71,15 @@ describe("Hall of Fame podium time", () => {
     // The podium activates at t=113 (when E becomes ranked, all in day 0)
     // and runs until the ping at day 10 + tiny offset, so days [0..10] = 11.
     expect(a?.rank1Days).toBe(11);
-    expect(a?.score).toBe(11);
-    expect(b?.rank2Days).toBe(11);
-    expect(b?.score).toBe(5.5);
-    expect(c?.rank3Days).toBe(11);
-    expect(c?.score).toBe(5.5);
-    expect(d?.score).toBe(0);
-    expect(e?.score).toBe(0);
+    expect(a?.score).toBe(16.5);
+    expect(b?.rank2to3Days).toBe(11);
+    expect(b?.score).toBe(11);
+    expect(c?.rank2to3Days).toBe(11);
+    expect(c?.score).toBe(11);
+    expect(d?.rank4to5Days).toBe(11);
+    expect(d?.score).toBe(5.5);
+    expect(e?.rank4to5Days).toBe(11);
+    expect(e?.score).toBe(5.5);
   });
 
   it("freezes the podium clock when a deactivation drops the ranked count below 5", () => {
@@ -102,14 +105,15 @@ describe("Hall of Fame podium time", () => {
     // Podium runs from t=113 (day 0) until C's retirement at day 5 + tiny,
     // so days [0..5] = 6 calendar days each at their respective ranks.
     expect(a?.rank1Days).toBe(6);
-    expect(a?.score).toBe(6);
-    expect(b?.rank2Days).toBe(6);
-    expect(b?.score).toBe(3);
-    expect(c?.rank3Days).toBe(6);
-    expect(c?.score).toBe(3);
-    // D never earns podium time — the ranked count drops to 4 the moment
-    // C retires.
-    expect(d?.score).toBe(0);
+    expect(a?.score).toBe(9);
+    expect(b?.rank2to3Days).toBe(6);
+    expect(b?.score).toBe(6);
+    expect(c?.rank2to3Days).toBe(6);
+    expect(c?.score).toBe(6);
+    // D earns only the 6 days at #4 before C retires — the ranked count
+    // drops to 4 the moment C retires, which stops the clock.
+    expect(d?.rank4to5Days).toBe(6);
+    expect(d?.score).toBe(3);
   });
 
   it("does not accumulate podium time until 5 players are ranked", () => {
@@ -198,6 +202,6 @@ describe("Hall of Fame podium time", () => {
     expect(a?.rank1Days).toBe(12);
     // C is back at #3 across days [10..15] after reactivation = 6 days,
     // plus the 6 days [0..5] before retirement = 12 unique days.
-    expect(c?.rank3Days).toBe(12);
+    expect(c?.rank2to3Days).toBe(12);
   });
 });
