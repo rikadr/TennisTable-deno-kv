@@ -29,6 +29,7 @@ import { PlayersTab } from "./players";
 import { PlayerDiversityChart } from "./player-diversity-chart";
 import { PlayerGameCount } from "./player-game-count";
 import { HallOfFameCategoryBalance } from "./hall-of-fame-category-balance";
+import { PointSequenceMarker } from "../game/point-sequence-marker";
 
 type TabType = "stats" | "games" | "players" | "users" | "events" | "local";
 const tabs: { id: TabType; label: string }[] = [
@@ -336,11 +337,16 @@ export const AdminPage: React.FC = () => {
                         })}
                       </p>
                     </td>
-                    <td className="border border-gray-300 px-1 md:px-4 py-0.5 md:py-1">
-                      {game.score && (
+                    <td
+                      className="border border-gray-300 px-1 md:px-4 py-0.5 md:py-1 cursor-pointer hover:bg-blue-500/20"
+                      title="Game details"
+                      onClick={() => navigate(`/game?time=${game.playedAt}`)}
+                    >
+                      {game.score ? (
                         <div className="flex flex-col">
                           <span className="text-xs md:text-base font-bold whitespace-nowrap">
                             {game.score.setsWon.gameWinner}-{game.score.setsWon.gameLoser}
+                            <PointSequenceMarker score={game.score} />
                           </span>
                           {game.score.setPoints && (
                             <span className="text-[10px] md:text-xs whitespace-nowrap">
@@ -350,6 +356,9 @@ export const AdminPage: React.FC = () => {
                             </span>
                           )}
                         </div>
+                      ) : (
+                        // A game with no score still opens its details page.
+                        <span className="opacity-40">-</span>
                       )}
                     </td>
                     <td className="border border-gray-300 px-1 md:px-4 py-0.5 md:py-1 text-center">
