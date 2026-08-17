@@ -4,6 +4,7 @@ import { useEventDbContext } from "../../wrappers/event-db-context";
 import { ProfilePicture } from "../player/profile-picture";
 import { fmtNum } from "../../common/number-utils";
 import { RelativeTime } from "../../common/date-utils";
+import { isRecentlyRetired } from "./recently-retired";
 
 export const HallOfFamePage: React.FC = () => {
   const context = useEventDbContext();
@@ -44,6 +45,11 @@ export const HallOfFamePage: React.FC = () => {
                       <div className="flex items-center gap-2 min-w-0">
                         <ProfilePicture playerId={entry.playerId} size={28} border={2} />
                         <span className="font-normal truncate">{entry.playerName}</span>
+                        {player && isRecentlyRetired(player) && (
+                          <span className="bg-secondary-background text-secondary-text text-xs px-2 py-0.5 rounded-full font-normal shrink-0">
+                            Recent
+                          </span>
+                        )}
                       </div>
                     </td>
                     <td className="py-1 px-2 text-right w-[1%] whitespace-nowrap">{fmtNum(entry.score.total)}</td>
