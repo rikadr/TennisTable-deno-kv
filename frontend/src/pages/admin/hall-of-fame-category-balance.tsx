@@ -35,7 +35,7 @@ export const HallOfFameCategoryBalance: React.FC = () => {
   return (
     <div className="bg-primary-background text-primary-text rounded-lg my-6">
       <h2 className="text-xl font-semibold text-center mb-1">Hall of Fame score per category</h2>
-      <p className="text-sm text-center opacity-75 mb-4">
+      <p className="text-sm text-center mb-4">
         Sum over all players, active and retired. An even spread means the categories are balanced.
       </p>
 
@@ -48,21 +48,25 @@ export const HallOfFameCategoryBalance: React.FC = () => {
               <div className="truncate">
                 {row.emoji} {row.name}
               </div>
-              <div className="h-5 rounded bg-secondary-background/40">
+              {/* Only full theme colors, in the pairs the themes define: the
+                  track is the secondary background and the bar is the secondary
+                  text. A tertiary color on a faded secondary background has
+                  almost no contrast in some themes. */}
+              <div className="h-5 rounded ring-1 ring-secondary-background bg-secondary-background">
                 <div
-                  className="h-5 rounded bg-tertiary-background"
+                  className="h-5 rounded bg-secondary-text"
                   style={{ width: `${Math.max(barWidth, row.total > 0 ? 1 : 0)}%` }}
                 />
               </div>
               <div className="text-right tabular-nums whitespace-nowrap">
-                {fmtNum(Math.round(row.total))} <span className="opacity-60">({share.toFixed(1)}%)</span>
+                {fmtNum(Math.round(row.total))} ({share.toFixed(1)}%)
               </div>
             </div>
           );
         })}
       </div>
 
-      <div className="mt-4 text-sm text-center opacity-75">
+      <div className="mt-4 text-sm text-center">
         Players: {fmtNum(playerCount)} | Total points: {fmtNum(Math.round(grandTotal))}
       </div>
     </div>
