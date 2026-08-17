@@ -42,6 +42,31 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
+    slug: "hall-of-fame-scoring-weights",
+    title: "New weights in the career score",
+    date: "2026-08-17",
+    tags: ["feature-update"],
+    summary:
+      "Time at the top of the leaderboard now counts the top 5 places. Each Elo point above the start rating now gives 2 points.",
+    body: [
+      text(
+        "The Time at the Top factor gives points for each day you spent near the top of the leaderboard. A day counts once, at the best place you held that day:",
+      ),
+      list(
+        "A day at place 1 gives 1.5 points.",
+        "A day at place 2 or 3 gives 1 point.",
+        "A day at place 4 or 5 gives 0.5 points.",
+      ),
+      text(
+        "The factor counted only the top 3 before this change. It gave 1 point for a day at place 1, and 0.5 points for a day at place 2 or 3.",
+      ),
+      text(
+        "The All-Time High factor also changed. Each Elo point above the start rating of 1 000 now gives 2 points, not 1 point.",
+      ),
+      text("Both changes move the ranks on the Hall of Fame page."),
+    ],
+  },
+  {
     slug: "point-times-and-serves-on-tracked-games",
     title: "Tracked games record point times and serves",
     date: "2026-08-16",
@@ -707,7 +732,7 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
       text("The career score now uses 3 more values:"),
       list(
         "The highest Elo of your career, not your final rating. A bad final year no longer removes a good year.",
-        "Podium time - the time you spent in the top 3, not the number of times.",
+        "The time you spent at the top of the leaderboard, not the number of times you got there.",
         "Experience as games won and games lost, so a game counts even after a loss.",
       ),
       text(
