@@ -42,6 +42,31 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
+    slug: "skill-rating-over-time",
+    title: "Skill rating over time",
+    date: "2026-08-18",
+    tags: ["new-feature", "technical"],
+    summary:
+      "A new page under Simulations shows a skill curve for each player. The rating stays comparable back in time, and it does not change when a player retires.",
+    body: [
+      text(
+        "The page is at Simulations, Skill rating over time. Select up to 8 players to compare their curves. Select one player to also see the uncertainty of the rating.",
+      ),
+      text(
+        "The method is Whole History Rating. It fits every game in the history at once, and it gives each player one rating per day they played. A rating of 1 000 is the skill of a new player. This anchor keeps the numbers comparable between 2024 and today.",
+      ),
+      text("The rating differs from the expected score simulation on the player page:"),
+      list(
+        "It uses played games only. A retirement today does not change the history of any player.",
+        "It does not depend on who is on the leaderboard today.",
+        "A result from today also sharpens the estimate of a player months back, so a curve can change when new games arrive.",
+      ),
+      text(
+        "The expected score simulation answers a different question: your place in the field of active players. Both numbers stay, and they are not the same measure.",
+      ),
+    ],
+  },
+  {
     slug: "statistics-page",
     title: "Statistics page",
     date: "2026-08-18",

@@ -7,6 +7,7 @@ export const SimulationsPage: React.FC = () => {
       title="Simulations"
       links={[
         { name: "Expected leaderboard 🥇🥈🥉", url: "expected-leaderboard" },
+        { name: "Skill rating over time 📈", url: "skill-rating" },
         { name: "Player network 🕸️", url: "/player-network" },
         { name: "Expected win/loss rate 🏆💔", url: "win-loss" },
         { name: "Numbered points 🔢🧮 (Experimental)", url: "individual-points" },

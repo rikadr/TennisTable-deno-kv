@@ -32,6 +32,7 @@ import { IndividualPointsOverview } from "./pages/simulations/individual-points/
 import { IndividualPointsPlayer } from "./pages/simulations/individual-points/individual-points-player";
 import { PlayerPage } from "./pages/player/player-page";
 import { SimulatedLeaderboard } from "./pages/simulations/expected-leaderboard/expected-leaderboard-page";
+import { SkillRatingPage } from "./pages/simulations/skill-rating/skill-rating-page";
 import { OptioPongPage } from "./pages/simulations/optio-pong";
 import { PlayerNetwork } from "./pages/player-network/player-network";
 import { TrackGamePage } from "./pages/add-game/track-game";
@@ -144,6 +145,7 @@ function App() {
                           <Route index element={<SimulationsPage />} />
                           <Route path="win-loss" element={<WinLoss />} />
                           <Route path="expected-leaderboard" element={<SimulatedLeaderboard />} />
+                          <Route path="skill-rating" element={<SkillRatingPage />} />
                           <Route path="individual-points" element={<IndividualPointsOverview />} />
                           <Route path="individual-points/player" element={<IndividualPointsPlayer />} />
                           <Route path="optio-pong" element={<OptioPongPage />} />

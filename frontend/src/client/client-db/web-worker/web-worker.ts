@@ -3,6 +3,7 @@ import { PredictionHistoryEntry } from "../predictions-history";
 import { ExpectedLeaderboard } from "../simulations";
 import { TennisTable } from "../tennis-table";
 import { TournamentPredictionResult } from "../tournaments/prediction";
+import { WhrConfig, WhrResult } from "../whr";
 
 export type WorkerMessage =
   | {
@@ -24,7 +25,10 @@ export type WorkerMessage =
   | { type: "start-predictions-history"; data: { playerId: string; events: EventType[] } }
   | { type: "predictions-history-times"; data: { times: number[] } }
   | { type: "predictions-history-data"; data: { entry: PredictionHistoryEntry; progress: number } }
-  | { type: "predictions-history-complete" };
+  | { type: "predictions-history-complete" }
+  | { type: "start-whr"; data: { events: EventType[]; config?: Partial<WhrConfig> } }
+  | { type: "whr-progress"; data: { progress: number } }
+  | { type: "whr-result"; data: { result: WhrResult } };
 
 // eslint-disable-next-line no-restricted-globals
 const scope = self as unknown as DedicatedWorkerGlobalScope;
@@ -86,6 +90,15 @@ function handleWorkerMessage(message: WorkerMessage) {
       );
       setTimeout(() => postWorkerMessage({ type: "predictions-history-complete" }), 1000);
       break;
+
+    case "start-whr": {
+      const tennisTableForWhr = new TennisTable({ events: message.data.events });
+      const result = tennisTableForWhr.whr.compute(message.data.config, (progress) =>
+        postWorkerMessage({ type: "whr-progress", data: { progress } }),
+      );
+      postWorkerMessage({ type: "whr-result", data: { result } });
+      break;
+    }
   }
 }
 
