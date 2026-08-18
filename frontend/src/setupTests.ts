@@ -5,6 +5,13 @@ import "@testing-library/jest-dom";
 process.env.REACT_APP_API_BASE_URL = "http://localhost:8000";
 process.env.REACT_APP_IMAGE_KIT_PUBLIC_KEY = "test_key";
 
+// jsdom does not implement ResizeObserver, which Recharts' ResponsiveContainer needs
+global.ResizeObserver = class {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+};
+
 // jsdom does not implement window.matchMedia
 Object.defineProperty(window, "matchMedia", {
   writable: true,

@@ -42,6 +42,32 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
+    slug: "skill-rating-over-time",
+    title: "Skill rating over time",
+    date: "2026-08-18",
+    tags: ["new-feature", "technical"],
+    summary:
+      "A new page under Simulations shows a skill curve for each player. A win by a large margin counts for more, and the rating does not change when a player retires.",
+    body: [
+      text(
+        "The page is at Simulations, Skill rating over time. Select any number of players to compare their curves. Select one player to also see the uncertainty of the rating. A filter adds the unranked and the retired players to the list.",
+      ),
+      text(
+        "The method is Whole History Rating. It fits every game in the history at once, and it gives each player one rating per day they played. A rating of 1 000 is the skill of a new player. This anchor keeps the numbers comparable between 2024 and today.",
+      ),
+      text("The score of a game changes how much a result moves a rating:"),
+      list(
+        "A win by 11-2 moves a rating more than a win by 11-9.",
+        "A win where you drop a set moves a rating less than a win in straight sets.",
+        "The game result decides the direction. The sets and the points then refine it.",
+        "Set scores are newer than the league, so a rating is more exact over the recent period. A game with no score still counts in full.",
+      ),
+      text(
+        "The rating uses played games only. A retirement today does not change the history of any player, and the rating does not depend on who is on the leaderboard. A result from today also sharpens the estimate of a player months back, so a curve can change when new games arrive. The expected score simulation on the player page answers a different question: your place in the field of active players. Both numbers stay.",
+      ),
+    ],
+  },
+  {
     slug: "statistics-page",
     title: "Statistics page",
     date: "2026-08-18",
