@@ -10,9 +10,10 @@ import { ProfilePicture } from "../player/profile-picture";
 import { Fraction } from "../../client/client-db/predictions";
 import { WinPercentGraph } from "../add-game/win-percent-graph";
 import { replayWinPercentHistory } from "./game-win-replay";
-import { pointPace } from "./game-tracking-stats";
+import { pointSituations, setProgressions } from "./game-tracking-stats";
 import { SetBreakdownTable, TrackingStats } from "./game-tracking-panels";
-import { PointPaceGraph } from "./point-pace-graph";
+import { SetScoreGraphs } from "./set-score-graphs";
+import { PointSituationRadar } from "./point-situation-radar";
 
 /**
  * Details about a single game, identified by its played-at timestamp (unique
@@ -193,10 +194,10 @@ export const GameDetailsPage: React.FC = () => {
             </div>
           )}
 
-          {/* Win % over the game and the time each point took, both replayed
-              from the point-by-point log and both on the same point scale */}
+          {/* Everything read off the point-by-point log: the win % over the
+              game, the points of each set, and how the two players compare */}
           <div className="px-2 xs:px-4 pb-4">
-            {winPercentHistory && winPercentHistory.length >= 2 && game.score?.setPoints ? (
+            {winPercentHistory && winPercentHistory.length >= 2 && game.score?.setPoints && game.score.pointSequences ? (
               <div className="bg-white rounded-xl shadow-lg p-3 sm:p-4 text-black space-y-3">
                 <WinPercentGraph
                   history={winPercentHistory}
@@ -208,9 +209,16 @@ export const GameDetailsPage: React.FC = () => {
                     player2: set.gameLoser,
                   }))}
                 />
-                {game.score.tracking && game.score.pointSequences && (
-                  <PointPaceGraph
-                    pace={pointPace(game.score.pointSequences, game.score.tracking)}
+                <SetScoreGraphs
+                  progressions={setProgressions(game.score.pointSequences)}
+                  winnerName={context.playerName(game.winner)}
+                  loserName={context.playerName(game.loser)}
+                  winnerColor={stringToColor(game.winner)}
+                  loserColor={stringToColor(game.loser)}
+                />
+                {game.score.tracking && (
+                  <PointSituationRadar
+                    situations={pointSituations(game.score.pointSequences, game.score.tracking)}
                     winnerName={context.playerName(game.winner)}
                     loserName={context.playerName(game.loser)}
                     winnerColor={stringToColor(game.winner)}

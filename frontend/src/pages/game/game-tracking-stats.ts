@@ -98,40 +98,171 @@ export function longestStreaks(pointSequences: string[]): { winner: number; lose
   return longest;
 }
 
-export type PacePoint = {
+export type GamePoint = {
   /** 1-based number of the point over the whole game. */
   point: number;
+  /** 1-based number of the set the point belongs to. */
+  set: number;
+  /** Which player won the point. */
+  scoredBy: "W" | "L";
+  /** Which player served the point. */
+  servedBy: "W" | "L";
   /**
    * Seconds since the previous point of the same set, or null for the first
    * point of a set. That first gap is the break before the set, not the pace
    * of the game.
    */
   seconds: number | null;
-  /** Which player won the point. */
-  scoredBy: "W" | "L";
-  /** 1-based number of the set the point belongs to. */
-  set: number;
 };
 
-/** The time each point took, in the order the points were scored. */
-export function pointPace(pointSequences: string[], tracking: GameTracking): PacePoint[] {
-  const pace: PacePoint[] = [];
-  let point = 0;
+/**
+ * Every point of the game in the order it was scored: who won it, who served
+ * it, and how long it took. The server of a point follows from who served
+ * first in the set and the score at that point, the same rule the live serve
+ * tracker shows.
+ */
+export function gamePoints(pointSequences: string[], tracking: GameTracking): GamePoint[] {
+  const points: GamePoint[] = [];
 
   pointSequences.forEach((sequence, setIndex) => {
     const deltas = tracking.pointDeltas[setIndex] ?? [];
-    sequence.split("").forEach((scoredBy, pointIndex) => {
-      point++;
-      pace.push({
-        point,
-        seconds: pointIndex === 0 ? null : (deltas[pointIndex] ?? 0) / 10,
-        scoredBy: scoredBy === "W" ? "W" : "L",
+    // The game winner is slot 1 here, so the set score is counted their way.
+    const firstServer: Server = tracking.firstServers[setIndex] === "W" ? 1 : 2;
+    let winnerPoints = 0;
+    let loserPoints = 0;
+
+    sequence.split("").forEach((point, pointIndex) => {
+      const { server } = getServeInfo({ player1: winnerPoints, player2: loserPoints }, firstServer);
+      const scoredBy = point === "W" ? "W" : "L";
+      points.push({
+        point: points.length + 1,
         set: setIndex + 1,
+        scoredBy,
+        servedBy: server === 1 ? "W" : "L",
+        seconds: pointIndex === 0 ? null : (deltas[pointIndex] ?? 0) / 10,
       });
+      if (scoredBy === "W") winnerPoints++;
+      else loserPoints++;
     });
   });
 
-  return pace;
+  return points;
+}
+
+export type ScoreStep = {
+  /** Points played in the set so far. 0 is the start of the set. */
+  played: number;
+  /** The game winner's points in the set after this point. */
+  winner: number;
+  /** The game loser's points in the set after this point. */
+  loser: number;
+  /** Who won this point, or null at the start of the set. */
+  scoredBy: "W" | "L" | null;
+};
+
+export type SetProgression = {
+  /** 1-based number of the set. */
+  set: number;
+  final: { winner: number; loser: number };
+  /** True when the game winner also won this set. */
+  wonByGameWinner: boolean;
+  /** The score of both players after every point, from 0-0 up. */
+  steps: ScoreStep[];
+};
+
+/**
+ * The score of both players through each set, one step per point. The steps
+ * start at 0-0, so a set of n points has n + 1 steps.
+ */
+export function setProgressions(pointSequences: string[]): SetProgression[] {
+  return pointSequences.map((sequence, index) => {
+    const steps: ScoreStep[] = [{ played: 0, winner: 0, loser: 0, scoredBy: null }];
+    let winner = 0;
+    let loser = 0;
+
+    for (const point of sequence) {
+      if (point === "W") winner++;
+      else loser++;
+      steps.push({ played: steps.length, winner, loser, scoredBy: point === "W" ? "W" : "L" });
+    }
+
+    return { set: index + 1, final: { winner, loser }, wonByGameWinner: winner > loser, steps };
+  });
+}
+
+export type PointSituation = {
+  /** Short name of the situation, for the axis of the chart. */
+  label: string;
+  /** Which points the situation counts, for the tooltip. */
+  description: string;
+  /** Percent of the situation's points the game winner won, or null for none. */
+  winner: number | null;
+  /** Percent of the situation's points the game loser won, or null for none. */
+  loser: number | null;
+  /** How many points each percent is over. */
+  winnerOf: number;
+  loserOf: number;
+};
+
+/** The percent of a set of points that one player won. */
+function wonPercent(points: GamePoint[], side: "W" | "L"): number | null {
+  if (points.length === 0) return null;
+  return (points.filter((point) => point.scoredBy === side).length / points.length) * 100;
+}
+
+/** The middle value of a list of numbers, or null when the list is empty. */
+function median(values: number[]): number | null {
+  if (values.length === 0) return null;
+  const sorted = [...values].sort((a, b) => a - b);
+  const middle = Math.floor(sorted.length / 2);
+  if (sorted.length % 2 === 1) return sorted[middle];
+  return (sorted[middle - 1] + sorted[middle]) / 2;
+}
+
+/**
+ * How each player did in the situations of the game: over all of the points,
+ * on each side of the serve, and over the slower and the faster half of the
+ * points. Each percent is over the points of that situation, so the two
+ * players read on the same 0 to 100 scale.
+ *
+ * A situation with no points for either player is left out. The two halves of
+ * the pace need timed points, which the first point of a set does not have.
+ */
+export function pointSituations(pointSequences: string[], tracking: GameTracking): PointSituation[] {
+  const points = gamePoints(pointSequences, tracking);
+  const timed = points.filter((point): point is GamePoint & { seconds: number } => point.seconds !== null);
+  const middle = median(timed.map((point) => point.seconds));
+  const slower = middle === null ? [] : timed.filter((point) => point.seconds > middle);
+  const faster = middle === null ? [] : timed.filter((point) => point.seconds <= middle);
+
+  const situations: { label: string; description: string; winner: GamePoint[]; loser: GamePoint[] }[] = [
+    { label: "All points", description: "Every point of the game", winner: points, loser: points },
+    {
+      label: "Own serve",
+      description: "The points the player served",
+      winner: points.filter((point) => point.servedBy === "W"),
+      loser: points.filter((point) => point.servedBy === "L"),
+    },
+    {
+      label: "Their serve",
+      description: "The points the opponent served",
+      winner: points.filter((point) => point.servedBy === "L"),
+      loser: points.filter((point) => point.servedBy === "W"),
+    },
+    { label: "Long points", description: "The slower half of the points", winner: slower, loser: slower },
+    { label: "Short points", description: "The faster half of the points", winner: faster, loser: faster },
+  ];
+
+  return situations
+    .filter((situation) => situation.winner.length > 0 && situation.loser.length > 0)
+    .map((situation) => ({
+      label: situation.label,
+      description: situation.description,
+      winner: wonPercent(situation.winner, "W"),
+      loser: wonPercent(situation.loser, "L"),
+      winnerOf: situation.winner.length,
+      loserOf: situation.loser.length,
+    }));
 }
 
 export type ServeStats = {
@@ -140,30 +271,15 @@ export type ServeStats = {
   loser: { served: number; won: number };
 };
 
-/**
- * Counts how each player did on their own serve. The server of a point follows
- * from who served first in the set and the score at that point, the same rule
- * the live serve tracker shows.
- */
-export function serveStats(pointSequences: string[], firstServers: string): ServeStats {
+/** Counts how each player did on the points they served themselves. */
+export function serveStats(pointSequences: string[], tracking: GameTracking): ServeStats {
   const stats: ServeStats = { winner: { served: 0, won: 0 }, loser: { served: 0, won: 0 } };
 
-  pointSequences.forEach((sequence, setIndex) => {
-    // The game winner is slot 1 here, so the set score is counted their way.
-    const firstServer: Server = firstServers[setIndex] === "W" ? 1 : 2;
-    let winnerPoints = 0;
-    let loserPoints = 0;
-
-    for (const point of sequence) {
-      const { server } = getServeInfo({ player1: winnerPoints, player2: loserPoints }, firstServer);
-      const winnerScored = point === "W";
-      const side = server === 1 ? stats.winner : stats.loser;
-      side.served++;
-      if (winnerScored === (server === 1)) side.won++;
-      if (winnerScored) winnerPoints++;
-      else loserPoints++;
-    }
-  });
+  for (const point of gamePoints(pointSequences, tracking)) {
+    const side = point.servedBy === "W" ? stats.winner : stats.loser;
+    side.served++;
+    if (point.scoredBy === point.servedBy) side.won++;
+  }
 
   return stats;
 }

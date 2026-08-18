@@ -23,7 +23,7 @@ export const TrackingStats: React.FC<{
   loserName: string;
 }> = ({ tracking, pointSequences, winnerName, loserName }) => {
   const timing = gameTimingStats(tracking);
-  const serves = serveStats(pointSequences, tracking.firstServers);
+  const serves = serveStats(pointSequences, tracking);
   const streaks = longestStreaks(pointSequences);
   const servePercent = (side: { served: number; won: number }) =>
     side.served === 0 ? "–" : `${fmtNum((side.won / side.served) * 100)}%`;
