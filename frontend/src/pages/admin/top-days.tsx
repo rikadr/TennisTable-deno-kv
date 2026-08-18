@@ -10,7 +10,7 @@ import {
   advancePeriod,
   formatPeriod,
   pairingKey,
-} from "./period-utils";
+} from "../../common/period-utils";
 
 type Metric = "games" | "activePlayers" | "pairings" | "achievements";
 

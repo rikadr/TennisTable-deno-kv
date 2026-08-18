@@ -42,6 +42,29 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
+    slug: "statistics-page",
+    title: "Statistics page",
+    date: "2026-08-18",
+    tags: ["new-feature"],
+    summary:
+      "A new page shows how the whole league plays. It gives shares, medians and percentages, and never a number of games.",
+    body: [
+      text("Open the Statistics page from the Other item in the menu. It has four tabs:"),
+      list(
+        "Activity shows the busy months, weeks, days of the week and times of the day.",
+        "Games shows how many games record the sets, the points and every point. It also shows the pace and the serve.",
+        "Matchups shows the rating gap between the two players, and how often the weaker player wins.",
+        "League shows the rating spread, the pairs of players who have met, and the movement on the leaderboard.",
+      ),
+      text(
+        "Each chart uses a percent axis. The chart of the days of the week gives the share of all games. The charts with many groups compare each group to the busiest group, which reads 100%.",
+      ),
+      text(
+        "The page shows the difference between periods and matchups. It does not show how many games the league plays, and it does not show how many games a player plays.",
+      ),
+    ],
+  },
+  {
     slug: "hall-of-fame-scoring-weights",
     title: "New weights in the career score",
     date: "2026-08-17",
