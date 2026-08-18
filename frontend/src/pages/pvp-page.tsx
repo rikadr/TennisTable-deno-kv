@@ -1,23 +1,32 @@
-import React, { useState } from "react";
+import React from "react";
 import { useEventDbContext } from "../wrappers/event-db-context";
 import { Select } from "@headlessui/react";
 import { PvPStats } from "./pvp-stats";
 import { ProfilePicture } from "./player/profile-picture";
 import { useTennisParams } from "../hooks/use-tennis-params";
+import { useSearchParams } from "react-router-dom";
 
 export const PvPPage: React.FC = () => {
-  const { player1: paramPlayer1, player2: paramPlayer2 } = useTennisParams();
+  const { player1, player2 } = useTennisParams();
+  const [, setSearchParams] = useSearchParams();
 
-  const [player1, setPlayer1] = useState<string | undefined>(paramPlayer1 || undefined);
-  const [player2, setPlayer2] = useState<string | undefined>(paramPlayer2 || undefined);
+  // The url is the source of truth for the selected players, so the browser
+  // back button steps through the pairings the user selected on this page.
+  const selectPlayer = (param: "player1" | "player2", value: string) => {
+    setSearchParams((prev) => {
+      const newParams = new URLSearchParams(prev);
+      newParams.set(param, value);
+      return newParams;
+    });
+  };
 
   return (
     <div className="space-y-4 max-w-4xl m-auto p-4 bg-primary-background rounded-lg">
       <div className="flex gap-4 justify-around">
-        <SelectPlayer value={player1} onChange={(value) => setPlayer1(value)} />
-        <SelectPlayer value={player2} onChange={(value) => setPlayer2(value)} />
+        <SelectPlayer value={player1 ?? undefined} onChange={(value) => selectPlayer("player1", value)} />
+        <SelectPlayer value={player2 ?? undefined} onChange={(value) => selectPlayer("player2", value)} />
       </div>
-      <PvPStats player1={player1} player2={player2} />
+      <PvPStats player1={player1 ?? undefined} player2={player2 ?? undefined} />
     </div>
   );
 };
