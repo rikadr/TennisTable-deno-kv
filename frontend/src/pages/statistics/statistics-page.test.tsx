@@ -31,7 +31,7 @@ const PLAYERS = ["alice", "bob", "carol", "dave"];
 const START = new Date(2024, 0, 1, 12, 0).getTime();
 const HOUR_MS = 60 * 60 * 1000;
 
-function buildEvents(): EventType[] {
+function buildEvents(gameCount = 120): EventType[] {
   const events: EventType[] = PLAYERS.map((id, index) => ({
     time: index + 1,
     stream: id,
@@ -39,9 +39,9 @@ function buildEvents(): EventType[] {
     data: { name: id },
   }));
 
-  // Enough games, spread over months and weekdays, for every section to pass
-  // its minimum. Every fourth game records a full point by point log.
-  for (let index = 0; index < 120; index++) {
+  // Games spread over months and weekdays. Every fourth game records a full
+  // point by point log.
+  for (let index = 0; index < gameCount; index++) {
     const playedAt = START + index * 7 * HOUR_MS;
     const winner = PLAYERS[index % PLAYERS.length];
     const loser = PLAYERS[(index + 1 + (index % 3)) % PLAYERS.length];
@@ -82,8 +82,8 @@ function buildEvents(): EventType[] {
   return events;
 }
 
-function renderTab(tab: string) {
-  const context = new TennisTable({ events: buildEvents(), gameLimitForRankedOverride: 3 });
+function renderTab(tab: string, events: EventType[] = buildEvents()) {
+  const context = new TennisTable({ events, gameLimitForRankedOverride: 3 });
   return render(
     <MemoryRouter initialEntries={[`/statistics?tab=${tab}`]}>
       <EventDbContext.Provider value={context}>
@@ -123,6 +123,17 @@ describe("StatisticsPage", () => {
     expect(screen.getByText("How much detail we record")).toBeInTheDocument();
     expect(screen.getByText("Tracked games over time")).toBeInTheDocument();
     expect(screen.getByText("Pace and serve")).toBeInTheDocument();
+  });
+
+  it("shows the games tab statistics on one tracked game", () => {
+    // The page held every statistic back until the period had 10 games. One
+    // game that records the statistic is now enough.
+    renderTab("games", buildEvents(1));
+
+    expect(screen.getByText("Sets recorded")).toBeInTheDocument();
+    expect(screen.getByText("Median game length")).toBeInTheDocument();
+    expect(screen.getByText("Median points in a set")).toBeInTheDocument();
+    expect(screen.queryByText(/Not enough/)).not.toBeInTheDocument();
   });
 
   it("renders the matchups tab", () => {

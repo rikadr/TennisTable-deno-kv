@@ -14,7 +14,7 @@ export const StatTileRow: React.FC<{ children: React.ReactNode }> = ({ children 
   <div className="grid grid-cols-2 md:grid-cols-4 gap-2">{children}</div>
 );
 
-/** Shown instead of a chart when a period holds too few games to stay anonymous. */
+/** Shown instead of a chart when a period holds no game with the statistic. */
 export const NotEnoughGames: React.FC<{ what?: string }> = ({ what = "games" }) => (
   <p className="text-sm text-primary-text/60">Not enough {what} in this period yet.</p>
 );

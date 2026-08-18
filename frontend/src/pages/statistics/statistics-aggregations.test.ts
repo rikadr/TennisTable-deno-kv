@@ -7,7 +7,6 @@ import {
   activityTrend,
   detailLevels,
   forEachGameWithPreGameStanding,
-  MIN_GAMES_FOR_SHARES,
   MIN_GAMES_PER_BUCKET,
   paceAndServe,
   pairingCoverage,
@@ -180,8 +179,17 @@ describe("detailLevels", () => {
     },
   };
 
-  it("stays silent below the minimum, so a share cannot be read as a count", () => {
-    expect(detailLevels(games(MIN_GAMES_FOR_SHARES - 1, { score: tracked }))).toBeUndefined();
+  it("stays silent for a period that holds no game", () => {
+    expect(detailLevels([])).toBeUndefined();
+  });
+
+  it("gives the shares of a single game", () => {
+    const levels = detailLevels([game({ score: tracked })])!;
+
+    expect(levels.withSets).toBe(100);
+    expect(levels.withPoints).toBe(100);
+    expect(levels.tracked).toBe(100);
+    expect(levels.trackedOnLiveScreen).toBe(100);
   });
 
   it("nests strictly: tracked is inside points, which is inside sets", () => {
@@ -216,6 +224,16 @@ describe("scoreShape", () => {
     // No set points recorded, so the point statistics are left out.
     expect(shape.setsToDeuce).toBeUndefined();
     expect(shape.medianPointsPerSet).toBeUndefined();
+  });
+
+  it("gives the shares of a single game with sets", () => {
+    const shape = scoreShape([game({ score: { setsWon: { gameWinner: 2, gameLoser: 0 } } })])!;
+
+    expect(shape.whitewash).toBe(100);
+  });
+
+  it("stays silent when no game records a set", () => {
+    expect(scoreShape(games(50))).toBeUndefined();
   });
 
   it("counts a set as a deuce set when both players reach 10", () => {
@@ -253,19 +271,20 @@ describe("trackedShareTrend", () => {
     },
   };
 
-  it("leaves out a month that holds too few games", () => {
-    const january = games(MIN_GAMES_FOR_SHARES, { playedAt: new Date(2024, 0, 5).getTime() }).map((entry, index) => ({
+  it("plots every month that holds a game", () => {
+    const january = games(10, { playedAt: new Date(2024, 0, 5).getTime() }).map((entry, index) => ({
       ...entry,
       playedAt: entry.playedAt + index,
       score: index < 5 ? tracked : undefined,
     }));
-    // February is under the minimum, so it says nothing rather than 0%.
+    // February holds 2 games, and neither of them is tracked.
     const february = games(2, { playedAt: new Date(2024, 1, 5).getTime() });
 
     const trend = trackedShareTrend([...january, ...february]);
 
-    expect(trend.map((point) => point.period)).toEqual(["2024-01"]);
+    expect(trend.map((point) => point.period)).toEqual(["2024-01", "2024-02"]);
     expect(trend[0].share).toBe(50);
+    expect(trend[1].share).toBe(0);
   });
 });
 
@@ -376,12 +395,12 @@ describe("rankedMix", () => {
 });
 
 describe("paceAndServe", () => {
-  it("stays silent when too few games are tracked", () => {
+  it("stays silent when no game is tracked", () => {
     expect(paceAndServe(games(50))).toBeUndefined();
   });
 
   it("reports medians and the share of points won by the server", () => {
-    const played = games(MIN_GAMES_FOR_SHARES, {
+    const played = games(1, {
       score: {
         setsWon: { gameWinner: 1, gameLoser: 0 },
         setPoints: [{ gameWinner: 2, gameLoser: 2 }],
@@ -443,10 +462,6 @@ describe("ratingGapDistribution", () => {
   const players = [player("alice"), player("bob")];
   const played = games(20, { winner: "alice", loser: "bob" });
 
-  it("stays silent below the minimum", () => {
-    expect(ratingGapDistribution(games(2), players, "all")).toBeUndefined();
-  });
-
   it("gives the wins view and the losses view opposite averages", () => {
     const wins = ratingGapDistribution(played, players, "wins")!;
     const losses = ratingGapDistribution(played, players, "losses")!;
@@ -491,13 +506,12 @@ describe("ratingGapDistribution", () => {
     expect(wins.map((bucket) => bucket.share)).toEqual([...losses].reverse().map((bucket) => bucket.share));
   });
 
-  it("counts games and not entries, so the all view needs as many games as the others", () => {
-    // The all view takes two entries per game. Counting entries would let this
-    // through on half of the minimum.
-    const tooFew = games(MIN_GAMES_FOR_SHARES - 1, { winner: "alice", loser: "bob" });
+  it("gives every view on a single game, and nothing on none", () => {
+    const one = games(1, { winner: "alice", loser: "bob" });
 
-    expect(ratingGapDistribution(tooFew, players, "all")).toBeUndefined();
-    expect(ratingGapDistribution(tooFew, players, "wins")).toBeUndefined();
+    expect(ratingGapDistribution(one, players, "all")).toBeDefined();
+    expect(ratingGapDistribution(one, players, "wins")).toBeDefined();
+    expect(ratingGapDistribution([], players, "all")).toBeUndefined();
   });
 
   it("reports a share per group and never a count", () => {
