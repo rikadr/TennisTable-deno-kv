@@ -13,11 +13,14 @@
  * inside this file, so a count never reaches a component prop, a chart dataset
  * or the DOM, and it cannot be read back out of the React devtools.
  *
- * Two guards support the rule:
- *  - A group of games smaller than MIN_GAMES_FOR_SHARES gets no shares at all.
- *    The caller shows "not enough games" instead.
- *  - A rating gap group below MIN_GAMES_PER_BUCKET is not plotted, so one game
- *    cannot draw a 0% or a 100%.
+ * A function needs one game only. It gives the shares of the games it has, and
+ * an empty group gets no shares at all. The caller shows "not enough games"
+ * instead. A small group can read 0% or 100%, which is the true share of the
+ * games it holds.
+ *
+ * One guard is left. A rating gap group below MIN_GAMES_PER_BUCKET is not
+ * plotted, because that chart reads each group against the rating model and one
+ * game per group makes the comparison noise.
  *
  * The functions here return an exact percentage. `fmtNum` decides how to print
  * it, the same way it does everywhere else in the app: a value of 1 or more
@@ -36,8 +39,6 @@ import { EventType, EventTypeEnum } from "../../client/client-db/event-store/eve
 import { advancePeriod, getPeriodKey, getPeriodStart, getPeriodTimestamp, Period } from "../../common/period-utils";
 import { gameTimingStats, serveStats } from "../game/game-tracking-stats";
 
-/** A group of games smaller than this gets no shares. */
-export const MIN_GAMES_FOR_SHARES = 10;
 /** A rating gap bucket with fewer games than this is not plotted. */
 export const MIN_GAMES_PER_BUCKET = 20;
 /** Rating gaps are grouped in steps of this many points. */
@@ -275,7 +276,7 @@ export type ActivityHighlights = {
 };
 
 export function activityHighlights(games: Game[]): ActivityHighlights | undefined {
-  if (games.length < MIN_GAMES_FOR_SHARES) return undefined;
+  if (games.length === 0) return undefined;
 
   const weekdays = weekdayShares(games);
   const slots = timeOfDayShares(games);
@@ -323,7 +324,7 @@ export type DetailLevels = {
  * `validateScoreGame` in the games projector.
  */
 export function detailLevels(games: Game[]): DetailLevels | undefined {
-  if (games.length < MIN_GAMES_FOR_SHARES) return undefined;
+  if (games.length === 0) return undefined;
 
   const withSets = games.filter((game) => game.score !== undefined);
   const withPoints = withSets.filter((game) => game.score?.setPoints !== undefined);
@@ -349,10 +350,8 @@ export function trackedShareTrend(games: Game[]): TrendPoint[] {
     if (isTrackedGame(game)) bucket.tracked++;
     buckets.set(key, bucket);
   }
-  // A month below the minimum is left out. Reporting it as 0% would claim that
-  // none of its games were tracked, which is not what too few games means.
+  // Every month the map holds has at least one game, so every month is plotted.
   return Array.from(buckets)
-    .filter(([, bucket]) => bucket.total >= MIN_GAMES_FOR_SHARES)
     .map(([period, bucket]) => ({
       period,
       timestamp: bucket.timestamp,
@@ -372,19 +371,19 @@ export type ScoreShape = {
 
 export function scoreShape(games: Game[]): ScoreShape | undefined {
   const withSets = games.filter((game) => game.score !== undefined);
-  if (withSets.length < MIN_GAMES_FOR_SHARES) return undefined;
+  if (withSets.length === 0) return undefined;
 
   const whitewashes = withSets.filter((game) => game.score!.setsWon.gameLoser === 0);
 
   const sets = withSets.flatMap((game) => game.score?.setPoints ?? []);
-  const enoughSets = sets.length >= MIN_GAMES_FOR_SHARES;
+  const hasSets = sets.length > 0;
   const deuceSets = sets.filter((set) => set.gameWinner >= 10 && set.gameLoser >= 10);
 
   return {
     whitewash: percent(whitewashes.length, withSets.length),
-    setsToDeuce: enoughSets ? percent(deuceSets.length, sets.length) : undefined,
-    medianPointsPerSet: enoughSets ? median(sets.map((set) => set.gameWinner + set.gameLoser)) : undefined,
-    medianSetMargin: enoughSets ? median(sets.map((set) => Math.abs(set.gameWinner - set.gameLoser))) : undefined,
+    setsToDeuce: hasSets ? percent(deuceSets.length, sets.length) : undefined,
+    medianPointsPerSet: hasSets ? median(sets.map((set) => set.gameWinner + set.gameLoser)) : undefined,
+    medianSetMargin: hasSets ? median(sets.map((set) => Math.abs(set.gameWinner - set.gameLoser))) : undefined,
   };
 }
 
@@ -399,7 +398,7 @@ export type PaceAndServe = {
 /** Only tracked games carry timings and serves, so this covers that subset. */
 export function paceAndServe(games: Game[]): PaceAndServe | undefined {
   const tracked = games.filter(isTrackedGame);
-  if (tracked.length < MIN_GAMES_FOR_SHARES) return undefined;
+  if (tracked.length === 0) return undefined;
 
   const durations: number[] = [];
   const gaps: number[] = [];
@@ -464,15 +463,11 @@ export function ratingGapDistribution(
   view: GapView,
 ): GapDistribution | undefined {
   const gaps: number[] = [];
-  let counted = 0;
   forEachGameWithPreGameStanding(games, players, (game, { elo }) => {
-    counted++;
     if (view === "all" || view === "wins") gaps.push(elo.loser - elo.winner);
     if (view === "all" || view === "losses") gaps.push(elo.winner - elo.loser);
   });
-  // The minimum counts games, not entries. The "all" view takes two entries per
-  // game, so counting entries would let it through on half as many games.
-  if (counted < MIN_GAMES_FOR_SHARES) return undefined;
+  if (gaps.length === 0) return undefined;
 
   // Groups are centred on a multiple of 50, so the middle group holds the even
   // matchups from -25 to +25 and the chart is symmetric about it.
@@ -543,7 +538,7 @@ export function upsetRate(games: Game[], players: Player[]): UpsetRate | undefin
     groups.set(group, bucket);
   });
 
-  if (total < MIN_GAMES_FOR_SHARES) return undefined;
+  if (total === 0) return undefined;
 
   const points = Array.from(groups)
     .filter(([, bucket]) => bucket.total >= MIN_GAMES_PER_BUCKET)
@@ -747,7 +742,7 @@ export type RankedMix = {
 };
 
 export function rankedMix(games: Game[], rankedPlayerIds: Set<string>): RankedMix | undefined {
-  if (games.length < MIN_GAMES_FOR_SHARES) return undefined;
+  if (games.length === 0) return undefined;
 
   let both = 0;
   let one = 0;
