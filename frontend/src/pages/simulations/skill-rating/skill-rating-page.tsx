@@ -294,7 +294,7 @@ export const SkillRatingPage: React.FC = () => {
               <th className="py-1 px-1 xs:px-2 md:px-3 text-right w-[1%] whitespace-nowrap font-medium">#</th>
               <th className="py-1 px-1 xs:px-2 md:px-3 text-left w-[50%] max-w-0 font-medium">Player</th>
               <th className="py-1 px-1 xs:px-2 md:px-3 text-right w-[1%] whitespace-nowrap font-medium">Rating</th>
-              <th className="py-1 px-1 xs:px-2 md:px-3 text-right w-[1%] whitespace-nowrap font-light">±</th>
+              <th className="py-1 px-1 xs:px-2 md:px-3 text-right w-[1%] whitespace-nowrap font-light">Uncertainty</th>
               <th className="py-1 px-1 xs:px-2 md:px-3 text-right w-[1%] whitespace-nowrap font-light"></th>
             </tr>
           </thead>
@@ -329,7 +329,7 @@ export const SkillRatingPage: React.FC = () => {
                     {fmtNum(summary.rating, { digits: 0 })}
                   </td>
                   <td className="py-1 px-1 xs:px-2 md:px-3 text-right w-[1%] whitespace-nowrap font-light text-primary-text/70">
-                    {fmtNum(summary.uncertainty, { digits: 0 })}
+                    ±{fmtNum(summary.uncertainty, { digits: 0 })}
                   </td>
                   <td className="py-1 px-1 xs:px-2 md:px-3 text-right w-[1%] whitespace-nowrap font-light text-primary-text/70">
                     {relativeTimeStringShort(new Date(summary.lastPlayed))}
