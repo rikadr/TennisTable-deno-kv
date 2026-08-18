@@ -3,7 +3,7 @@ import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Too
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { ContentCard } from "../player/content-card";
 import { NotEnoughGames, ShareBar, StatTile, StatTileRow } from "./stat-tile";
-import { ACCENT_COLOR, AXIS_COLOR, percentTick, SERIES_COLOR, TooltipCard } from "./percent-chart";
+import { ACCENT_COLOR, AXIS_COLOR, percentLabel, percentTick, SERIES_COLOR, TooltipCard } from "./percent-chart";
 import { GAP_GROUP_SIZE, pairingCoverage, rankedMix, rankMovement, ratingDistribution } from "./statistics-aggregations";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -23,28 +23,29 @@ export const LeagueTab: React.FC = () => {
   const ratings = useMemo(() => ratingDistribution(rankedPlayers.map((player) => player.elo)), [rankedPlayers]);
   const coverage = useMemo(() => pairingCoverage(context.games, rankedIds), [context, rankedIds]);
   const mix = useMemo(() => rankedMix(context.games, rankedIds), [context, rankedIds]);
-  const movement = useMemo(
-    () =>
-      rankMovement(
-        Array.from(context.leaderboard.getCachedLeaderboardMap().values()),
-        Date.now() - MOVEMENT_WINDOW_DAYS * DAY_MS,
-        context.client.gameLimitForRanked,
-      ),
-    [context],
-  );
+  const movement = useMemo(() => {
+    // The cached map holds every player ever created. The leaderboard this tile
+    // describes shows the active ones only, so a deactivated player must not
+    // take up a place in either ranking.
+    const active = new Set(context.players.map((entry) => entry.id));
+    const summaries = Array.from(context.leaderboard.getCachedLeaderboardMap().values()).filter((summary) =>
+      active.has(summary.id),
+    );
+    return rankMovement(summaries, Date.now() - MOVEMENT_WINDOW_DAYS * DAY_MS, context.client.gameLimitForRanked);
+  }, [context]);
 
   return (
     <div className="flex flex-col gap-4">
       <StatTileRow>
         <StatTile
           label="Of the possible pairs have met"
-          value={coverage === undefined ? "–" : `${coverage.coverage}%`}
+          value={coverage === undefined ? "–" : percentLabel(coverage.coverage)}
           note="between ranked players"
         />
         <StatTile
           label={`Changed place in ${MOVEMENT_WINDOW_DAYS} days`}
-          value={movement === undefined ? "–" : `${movement.moved}%`}
-          note={movement === undefined ? undefined : `${movement.climbed}% up, ${movement.fell}% down`}
+          value={movement === undefined ? "–" : percentLabel(movement.moved)}
+          note={movement === undefined ? undefined : `${percentLabel(movement.climbed)} up, ${percentLabel(movement.fell)} down`}
         />
       </StatTileRow>
 
@@ -69,7 +70,7 @@ export const LeagueTab: React.FC = () => {
                   const entry = payload[0].payload as { ratingGroup: number; share: number };
                   return (
                     <TooltipCard title={`${entry.ratingGroup} to ${entry.ratingGroup + GAP_GROUP_SIZE}`}>
-                      <p>{entry.share}% of the ranked players</p>
+                      <p>{percentLabel(entry.share)} of the ranked players</p>
                     </TooltipCard>
                   );
                 }}
@@ -105,7 +106,7 @@ export const LeagueTab: React.FC = () => {
                   if (!active || !payload?.length) return null;
                   return (
                     <TooltipCard title={formatMonth(String(label))}>
-                      <p>{payload[0].value}% of the pairs had met</p>
+                      <p>{percentLabel(Number(payload[0].value))} of the pairs had met</p>
                     </TooltipCard>
                   );
                 }}

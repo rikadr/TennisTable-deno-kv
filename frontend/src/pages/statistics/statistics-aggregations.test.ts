@@ -2,6 +2,7 @@ import { Game } from "../../client/client-db/event-store/projectors/games-projec
 import { Player } from "../../client/client-db/event-store/projectors/players-projector";
 import { Elo } from "../../client/client-db/elo";
 import {
+  GapView,
   activityTrend,
   detailLevels,
   forEachGameWithPreGameStanding,
@@ -10,10 +11,12 @@ import {
   paceAndServe,
   percent,
   PreGameStanding,
+  rankedMix,
   rankMovement,
   ratingGapDistribution,
   scoreShape,
   timeOfDayShares,
+  trackedShareTrend,
   upsetRate,
   weakerPlayer,
   weekdayShares,
@@ -48,9 +51,10 @@ beforeEach(() => {
 });
 
 describe("percent", () => {
-  it("rounds to a whole number, so a small sample stays ambiguous", () => {
-    expect(percent(1, 3)).toBe(33);
-    expect(percent(2, 3)).toBe(67);
+  it("is exact, and leaves the precision of the printed value to fmtNum", () => {
+    expect(percent(1, 3)).toBeCloseTo(33.333);
+    // A tiny share must survive as a fraction. Rounding here would print 0%.
+    expect(percent(1, 400)).toBeCloseTo(0.25);
   });
 
   it("is 0 for an empty group instead of NaN", () => {
@@ -59,7 +63,7 @@ describe("percent", () => {
 });
 
 describe("weekdayShares", () => {
-  it("adds up to 100 and puts the games on the right day", () => {
+  it("gives the share of all games on each day", () => {
     const played = [
       ...games(3, { playedAt: MONDAY }),
       ...games(1, { playedAt: MONDAY + DAY_MS }),
@@ -68,7 +72,7 @@ describe("weekdayShares", () => {
     const shares = weekdayShares(played);
 
     expect(shares).toHaveLength(7);
-    expect(shares.reduce((sum, day) => sum + day.share, 0)).toBe(100);
+    expect(shares.reduce((sum, day) => sum + day.share, 0)).toBeCloseTo(100);
     expect(shares[0]).toMatchObject({ weekday: "Monday", share: 75 });
     expect(shares[1]).toMatchObject({ weekday: "Tuesday", share: 25 });
   });
@@ -76,6 +80,12 @@ describe("weekdayShares", () => {
   it("reports a share and never a count", () => {
     const shares = weekdayShares(games(4));
     expect(Object.keys(shares[0]).sort()).toEqual(["share", "short", "weekday"]);
+  });
+
+  it("adds up to 100 even when the counts do not divide evenly", () => {
+    const played = games(3).map((entry, index) => ({ ...entry, playedAt: MONDAY + index * DAY_MS }));
+
+    expect(weekdayShares(played).reduce((sum, day) => sum + day.share, 0)).toBeCloseTo(100);
   });
 });
 
@@ -92,6 +102,30 @@ describe("timeOfDayShares", () => {
     expect(slots[slots.length - 1].slot).toBe("09:00");
     expect(slots).toHaveLength(5);
     expect(slots.filter((slot) => slot.share > 0)).toHaveLength(2);
+  });
+
+  it("measures each slot against the busiest one", () => {
+    const played = [
+      ...games(10, { playedAt: new Date(2024, 0, 1, 8, 5).getTime() }),
+      ...games(5, { playedAt: new Date(2024, 0, 1, 8, 20).getTime() }),
+    ].map((entry, index) => ({ ...entry, playedAt: entry.playedAt + index }));
+
+    expect(timeOfDayShares(played).map((slot) => slot.share)).toEqual([100, 50]);
+  });
+
+  /**
+   * A share of the total would round a slot holding a few percent of the games
+   * down to 0, and the quiet parts of the day would vanish from the chart.
+   */
+  it("keeps a slot visible when it holds a tiny part of all the games", () => {
+    const busy = games(400, { playedAt: new Date(2024, 0, 1, 12, 0).getTime() });
+    const quiet = games(8, { playedAt: new Date(2024, 0, 1, 12, 15).getTime() });
+    const played = [...busy, ...quiet].map((entry, index) => ({ ...entry, playedAt: entry.playedAt + index }));
+
+    const slots = timeOfDayShares(played);
+
+    expect(slots[0].share).toBe(100);
+    expect(slots[1].share).toBe(2);
   });
 
   it("returns nothing for no games", () => {
@@ -201,6 +235,53 @@ describe("scoreShape", () => {
   });
 });
 
+describe("trackedShareTrend", () => {
+  const tracked = {
+    setsWon: { gameWinner: 1, gameLoser: 0 },
+    setPoints: [{ gameWinner: 11, gameLoser: 0 }],
+    pointSequences: ["WWWWWWWWWWW"],
+    tracking: {
+      version: 1 as const,
+      source: "track-game" as const,
+      startedAt: 1,
+      pointDeltas: [new Array(11).fill(10)],
+      endedAfter: 10,
+      firstServers: "W",
+      corrections: 0,
+    },
+  };
+
+  it("leaves out a month that holds too few games", () => {
+    const january = games(MIN_GAMES_FOR_SHARES, { playedAt: new Date(2024, 0, 5).getTime() }).map((entry, index) => ({
+      ...entry,
+      playedAt: entry.playedAt + index,
+      score: index < 5 ? tracked : undefined,
+    }));
+    // February is under the minimum, so it says nothing rather than 0%.
+    const february = games(2, { playedAt: new Date(2024, 1, 5).getTime() });
+
+    const trend = trackedShareTrend([...january, ...february]);
+
+    expect(trend.map((point) => point.period)).toEqual(["2024-01"]);
+    expect(trend[0].share).toBe(50);
+  });
+});
+
+describe("rankedMix", () => {
+  it("splits every game three ways, and the shares add up to 100", () => {
+    const ranked = new Set(["alice", "bob"]);
+    const played = [
+      ...games(2, { winner: "alice", loser: "bob" }),
+      ...games(14, { winner: "alice", loser: "carol" }),
+    ];
+
+    const mix = rankedMix(played, ranked)!;
+
+    expect(mix.bothRanked + mix.oneRanked + mix.neitherRanked).toBe(100);
+    expect(mix.neitherRanked).toBeGreaterThanOrEqual(0);
+  });
+});
+
 describe("paceAndServe", () => {
   it("stays silent when too few games are tracked", () => {
     expect(paceAndServe(games(50))).toBeUndefined();
@@ -284,7 +365,46 @@ describe("ratingGapDistribution", () => {
     const all = ratingGapDistribution(played, players, "all")!;
 
     expect(all.averageGap).toBeCloseTo(0);
-    expect(all.buckets.reduce((sum, bucket) => sum + bucket.share, 0)).toBeGreaterThan(95);
+  });
+
+  it("measures each group against the most common one", () => {
+    const all = ratingGapDistribution(played, players, "all")!;
+
+    expect(Math.max(...all.buckets.map((bucket) => bucket.share))).toBe(100);
+  });
+
+  it("keeps zero as the middle group", () => {
+    for (const view of ["all", "wins", "losses"] as const) {
+      const { buckets } = ratingGapDistribution(played, players, view)!;
+
+      expect(buckets).toHaveLength(buckets.length | 1);
+      expect(buckets[Math.floor(buckets.length / 2)].gapGroup).toBe(0);
+      expect(buckets[0].gapGroup).toBe(-buckets[buckets.length - 1].gapGroup);
+    }
+  });
+
+  it("gives the three views the same groups, so a toggle only changes the heights", () => {
+    const groupsOf = (view: GapView) =>
+      ratingGapDistribution(played, players, view)!.buckets.map((bucket) => bucket.gapGroup);
+
+    expect(groupsOf("wins")).toEqual(groupsOf("all"));
+    expect(groupsOf("losses")).toEqual(groupsOf("all"));
+  });
+
+  it("makes the wins view and the losses view mirror images", () => {
+    const wins = ratingGapDistribution(played, players, "wins")!.buckets;
+    const losses = ratingGapDistribution(played, players, "losses")!.buckets;
+
+    expect(wins.map((bucket) => bucket.share)).toEqual([...losses].reverse().map((bucket) => bucket.share));
+  });
+
+  it("counts games and not entries, so the all view needs as many games as the others", () => {
+    // The all view takes two entries per game. Counting entries would let this
+    // through on half of the minimum.
+    const tooFew = games(MIN_GAMES_FOR_SHARES - 1, { winner: "alice", loser: "bob" });
+
+    expect(ratingGapDistribution(tooFew, players, "all")).toBeUndefined();
+    expect(ratingGapDistribution(tooFew, players, "wins")).toBeUndefined();
   });
 
   it("reports a share per group and never a count", () => {

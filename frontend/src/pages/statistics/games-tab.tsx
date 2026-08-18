@@ -7,7 +7,7 @@ import { fmtNum } from "../../common/number-utils";
 import { ContentCard } from "../player/content-card";
 import { durationString, gapString } from "../game/game-tracking-stats";
 import { NotEnoughGames, ShareBar, StatTile, StatTileRow } from "./stat-tile";
-import { ACCENT_COLOR, AXIS_COLOR, percentTick, SERIES_COLOR, TooltipCard } from "./percent-chart";
+import { ACCENT_COLOR, AXIS_COLOR, percentLabel, percentTick, SERIES_COLOR, TooltipCard } from "./percent-chart";
 import { detailLevels, paceAndServe, scoreShape, trackedShareTrend } from "./statistics-aggregations";
 
 const RANGE_OPTIONS = TIME_RANGES.map((range) => ({ value: range, label: TIME_RANGE_LABELS[range] }));
@@ -49,7 +49,7 @@ export const GamesTab: React.FC<{ range: TimeRange; setRange: (range: TimeRange)
             <ShareBar
               label="Tracked point by point"
               share={detail.tracked}
-              description={`${detail.trackedOnLiveScreen}% of the tracked games were logged on the live screen.`}
+              description={`${percentLabel(detail.trackedOnLiveScreen)} of the tracked games were logged on the live screen.`}
             />
           </div>
         )}
@@ -77,7 +77,7 @@ export const GamesTab: React.FC<{ range: TimeRange; setRange: (range: TimeRange)
                   if (!active || !payload?.length) return null;
                   return (
                     <TooltipCard title={formatMonth(String(label))}>
-                      <p>{payload[0].value}% tracked</p>
+                      <p>{percentLabel(Number(payload[0].value))} tracked</p>
                     </TooltipCard>
                   );
                 }}
@@ -93,10 +93,10 @@ export const GamesTab: React.FC<{ range: TimeRange; setRange: (range: TimeRange)
           <NotEnoughGames what="games with sets" />
         ) : (
           <StatTileRow>
-            <StatTile label="Loser won no set" value={`${shape.whitewash}%`} note="of games with sets" />
+            <StatTile label="Loser won no set" value={percentLabel(shape.whitewash)} note="of games with sets" />
             <StatTile
               label="Sets that reach deuce"
-              value={shape.setsToDeuce === undefined ? "–" : `${shape.setsToDeuce}%`}
+              value={shape.setsToDeuce === undefined ? "–" : percentLabel(shape.setsToDeuce)}
               note="both players at 10 or more"
             />
             <StatTile
@@ -122,7 +122,7 @@ export const GamesTab: React.FC<{ range: TimeRange; setRange: (range: TimeRange)
           <StatTileRow>
             <StatTile label="Median game length" value={durationString(pace.medianGameDurationMs)} />
             <StatTile label="Median time per point" value={gapString(pace.medianPointGapMs)} />
-            <StatTile label="Points won by the server" value={`${pace.pointsWonOnServe}%`} />
+            <StatTile label="Points won by the server" value={percentLabel(pace.pointsWonOnServe)} />
             <StatTile label="Median points in a game" value={fmtNum(pace.medianPointsPerGame, { digits: 0 }) ?? "–"} />
           </StatTileRow>
         )}

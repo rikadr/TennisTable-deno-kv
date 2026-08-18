@@ -14,10 +14,15 @@
  * or the DOM, and it cannot be read back out of the React devtools.
  *
  * Two guards support the rule:
- *  - Percentages round to whole numbers. A decimal place makes a small sample
- *    legible as a count.
  *  - A group of games smaller than MIN_GAMES_FOR_SHARES gets no shares at all.
  *    The caller shows "not enough games" instead.
+ *  - A rating gap group below MIN_GAMES_PER_BUCKET is not plotted, so one game
+ *    cannot draw a 0% or a 100%.
+ *
+ * The functions here return an exact percentage. `fmtNum` decides how to print
+ * it, the same way it does everywhere else in the app: a value of 1 or more
+ * prints as a whole number, and a smaller value keeps 1 or 2 decimals so a
+ * quiet group reads as 0,4% and not as 0%.
  *
  * Add a statistic here, not in a component, and keep the return type free of
  * counts.
@@ -57,17 +62,24 @@ export function average(values: number[]): number | undefined {
   return values.reduce((sum, value) => sum + value, 0) / values.length;
 }
 
-/** A whole percent. Rounds, so a small sample stays ambiguous. */
+/** An exact percent. `fmtNum` decides how many decimals to print. */
 export function percent(part: number, whole: number): number {
   if (whole === 0) return 0;
-  return Math.round((part / whole) * 100);
+  return (part / whole) * 100;
 }
 
-/** Divides every count by the largest one, so the busiest entry reads 100. */
+/**
+ * Divides every count by the largest one, so the busiest entry reads 100.
+ *
+ * Use this for a chart with many groups, such as the 15 minute slots of the day
+ * or the rating gap groups. A share of the total makes every group only a few
+ * percent of the whole, which is hard to read. Against the peak, every group
+ * keeps the full range of 0 to 100 and the shape of the chart stays true.
+ */
 function indexOfPeak(counts: number[]): number[] {
   const peak = Math.max(...counts, 0);
   if (peak === 0) return counts.map(() => 0);
-  return counts.map((count) => Math.round((count / peak) * 100));
+  return counts.map((count) => (count / peak) * 100);
 }
 
 /** Where both players stood before the game was played. */
@@ -211,11 +223,16 @@ export function weekdayShares(games: Game[]): WeekdayShare[] {
   }));
 }
 
-export type TimeSlotShare = { slot: string; slotIndex: number; share: number };
+export type TimeSlotShare = {
+  slot: string;
+  slotIndex: number;
+  /** 0-100, where the busiest slot of the day reads 100. */
+  share: number;
+};
 
 /**
- * Share of all games started in each 15 minute slot of the day, from the
- * earliest slot the league has ever played in to the latest.
+ * How busy each 15 minute slot of the day is, against the busiest slot, from
+ * the earliest slot the league has ever played in to the latest.
  */
 export function timeOfDayShares(games: Game[]): TimeSlotShare[] {
   if (games.length === 0) return [];
@@ -231,11 +248,13 @@ export function timeOfDayShares(games: Game[]): TimeSlotShare[] {
     latest = Math.max(latest, slotIndex);
   }
 
-  const slots: TimeSlotShare[] = [];
-  for (let slotIndex = earliest; slotIndex <= latest; slotIndex++) {
-    slots.push({ slot: slotLabel(slotIndex), slotIndex, share: percent(counts[slotIndex], games.length) });
-  }
-  return slots;
+  const inRange = counts.slice(earliest, latest + 1);
+  const shares = indexOfPeak(inRange);
+  return inRange.map((_, offset) => ({
+    slot: slotLabel(earliest + offset),
+    slotIndex: earliest + offset,
+    share: shares[offset],
+  }));
 }
 
 export function slotLabel(slotIndex: number): string {
@@ -329,11 +348,16 @@ export function trackedShareTrend(games: Game[]): TrendPoint[] {
     if (isTrackedGame(game)) bucket.tracked++;
     buckets.set(key, bucket);
   }
-  return Array.from(buckets, ([period, bucket]) => ({
-    period,
-    timestamp: bucket.timestamp,
-    share: bucket.total < MIN_GAMES_FOR_SHARES ? 0 : percent(bucket.tracked, bucket.total),
-  })).sort((a, b) => a.timestamp - b.timestamp);
+  // A month below the minimum is left out. Reporting it as 0% would claim that
+  // none of its games were tracked, which is not what too few games means.
+  return Array.from(buckets)
+    .filter(([, bucket]) => bucket.total >= MIN_GAMES_FOR_SHARES)
+    .map(([period, bucket]) => ({
+      period,
+      timestamp: bucket.timestamp,
+      share: percent(bucket.tracked, bucket.total),
+    }))
+    .sort((a, b) => a.timestamp - b.timestamp);
 }
 
 export type ScoreShape = {
@@ -410,9 +434,9 @@ export function paceAndServe(games: Game[]): PaceAndServe | undefined {
 export type GapView = "all" | "wins" | "losses";
 
 export type GapBucket = {
-  /** The lower edge of the 50 point group. */
+  /** The centre of the 50 point group. The group holds a gap within 25 of it. */
   gapGroup: number;
-  /** Share of the games in the selected view that fall in this group. */
+  /** 0-100, where the most common group reads 100. */
   share: number;
 };
 
@@ -439,25 +463,40 @@ export function ratingGapDistribution(
   view: GapView,
 ): GapDistribution | undefined {
   const gaps: number[] = [];
+  let counted = 0;
   forEachGameWithPreGameStanding(games, players, (game, { elo }) => {
+    counted++;
     if (view === "all" || view === "wins") gaps.push(elo.loser - elo.winner);
     if (view === "all" || view === "losses") gaps.push(elo.winner - elo.loser);
   });
-  if (gaps.length < MIN_GAMES_FOR_SHARES) return undefined;
+  // The minimum counts games, not entries. The "all" view takes two entries per
+  // game, so counting entries would let it through on half as many games.
+  if (counted < MIN_GAMES_FOR_SHARES) return undefined;
 
+  // Groups are centred on a multiple of 50, so the middle group holds the even
+  // matchups from -25 to +25 and the chart is symmetric about it.
   const counts = new Map<number, number>();
   for (const gap of gaps) {
-    const group = Math.floor(gap / GAP_GROUP_SIZE) * GAP_GROUP_SIZE;
+    const group = Math.round(gap / GAP_GROUP_SIZE) * GAP_GROUP_SIZE;
     counts.set(group, (counts.get(group) ?? 0) + 1);
   }
 
-  const groups = Array.from(counts.keys());
-  const buckets: GapBucket[] = [];
-  for (let group = Math.min(...groups); group <= Math.max(...groups); group += GAP_GROUP_SIZE) {
-    buckets.push({ gapGroup: group, share: percent(counts.get(group) ?? 0, gaps.length) });
+  // The range runs the same distance either side of zero, so the zero group
+  // stays the middle entry and the groups do not move when the view changes.
+  const widest = Math.max(...Array.from(counts.keys(), Math.abs));
+  const centres: number[] = [];
+  const ordered: number[] = [];
+  for (let group = -widest; group <= widest; group += GAP_GROUP_SIZE) {
+    centres.push(group);
+    ordered.push(counts.get(group) ?? 0);
   }
+  const shares = indexOfPeak(ordered);
 
-  return { buckets, medianGap: median(gaps) ?? 0, averageGap: average(gaps) ?? 0 };
+  return {
+    buckets: centres.map((gapGroup, index) => ({ gapGroup, share: shares[index] })),
+    medianGap: median(gaps) ?? 0,
+    averageGap: average(gaps) ?? 0,
+  };
 }
 
 export type UpsetPoint = {
@@ -513,7 +552,7 @@ export function upsetRate(games: Game[], players: Player[]): UpsetRate | undefin
       actual: percent(bucket.upsets, bucket.total),
       // The Elo expectation for the middle of the group, so the curve lines up
       // with the games the group holds rather than with its lower edge.
-      expected: Math.round(expectedUnderdogShare(gapGroup + GAP_GROUP_SIZE / 2) * 100),
+      expected: expectedUnderdogShare(gapGroup + GAP_GROUP_SIZE / 2) * 100,
     }));
 
   return { points, favouriteWinRate: percent(favouriteWins, total) };
@@ -546,11 +585,16 @@ export function ratingDistribution(ratings: number[]): RatingBucket[] {
   }
 
   const groups = Array.from(counts.keys());
-  const buckets: RatingBucket[] = [];
+  const edges: number[] = [];
+  const ordered: number[] = [];
   for (let group = Math.min(...groups); group <= Math.max(...groups); group += GAP_GROUP_SIZE) {
-    buckets.push({ ratingGroup: group, share: percent(counts.get(group) ?? 0, ratings.length) });
+    edges.push(group);
+    ordered.push(counts.get(group) ?? 0);
   }
-  return buckets;
+  return edges.map((ratingGroup, index) => ({
+    ratingGroup,
+    share: percent(ordered[index], ratings.length),
+  }));
 }
 
 export type PairingCoverage = {
@@ -614,9 +658,13 @@ export function rankedMix(games: Game[], rankedPlayerIds: Set<string>): RankedMi
     else if (ranked === 1) one++;
   }
 
-  const bothRanked = percent(both, games.length);
-  const oneRanked = percent(one, games.length);
-  return { bothRanked, oneRanked, neitherRanked: 100 - bothRanked - oneRanked };
+  // Each share is worked out from the total on its own. Taking one as the
+  // remainder of the other two would let a rounding error make it negative.
+  return {
+    bothRanked: percent(both, games.length),
+    oneRanked: percent(one, games.length),
+    neitherRanked: percent(games.length - both - one, games.length),
+  };
 }
 
 export type RankMovement = {

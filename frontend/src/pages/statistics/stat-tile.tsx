@@ -1,4 +1,5 @@
 import React from "react";
+import { percentLabel } from "./percent-chart";
 
 /** One labelled number. The value is always a share, a median or an average. */
 export const StatTile: React.FC<{ label: string; value: string; note?: string }> = ({ label, value, note }) => (
@@ -27,7 +28,7 @@ export const ShareBar: React.FC<{ label: string; share: number; description?: st
   <div className="flex flex-col gap-1">
     <div className="flex items-baseline justify-between gap-2 text-sm text-primary-text">
       <span>{label}</span>
-      <span className="font-semibold tabular-nums">{share}%</span>
+      <span className="font-semibold tabular-nums">{percentLabel(share)}</span>
     </div>
     <div className="h-3 w-full rounded-full bg-secondary-background overflow-hidden">
       <div className="h-full rounded-full bg-secondary-text" style={{ width: `${share}%` }} />

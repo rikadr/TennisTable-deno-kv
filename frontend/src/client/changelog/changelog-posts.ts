@@ -57,7 +57,7 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
         "League shows the rating spread, the pairs of players who have met, and the movement on the leaderboard.",
       ),
       text(
-        "Each chart uses a percent axis. A chart of the days of the week gives the share of all games, so the shares add up to 100%. A trend compares each period to the busiest one, which reads 100%.",
+        "Each chart uses a percent axis. The chart of the days of the week gives the share of all games. The charts with many groups compare each group to the busiest group, which reads 100%.",
       ),
       text(
         "The page shows the difference between periods and matchups. It does not show how many games the league plays, and it does not show how many games a player plays.",

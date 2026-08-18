@@ -17,7 +17,7 @@ import { PillSelect } from "../../common/pill-select";
 import { getPeriodKey, Period } from "../../common/period-utils";
 import { ContentCard } from "../player/content-card";
 import { NotEnoughGames, StatTile, StatTileRow } from "./stat-tile";
-import { ACCENT_COLOR, AXIS_COLOR, percentTick, SERIES_COLOR, TooltipCard } from "./percent-chart";
+import { ACCENT_COLOR, AXIS_COLOR, percentLabel, percentTick, SERIES_COLOR, TooltipCard } from "./percent-chart";
 import {
   activityHighlights,
   activityTrend,
@@ -51,7 +51,10 @@ export const ActivityTab: React.FC = () => {
   const context = useEventDbContext();
   const [period, setPeriod] = useState<Period>("month");
 
-  const games = context.games;
+  // `context.games` sorts and returns a new array on every read, so it is
+  // pinned here. Depending on it directly would rebuild every chart on every
+  // render.
+  const games = useMemo(() => context.games, [context]);
   const trend = useMemo(() => activityTrend(games, period), [games, period]);
   const weekdays = useMemo(() => weekdayShares(games), [games]);
   const slots = useMemo(() => timeOfDayShares(games), [games]);
@@ -77,10 +80,10 @@ export const ActivityTab: React.FC = () => {
   return (
     <div className="flex flex-col gap-4">
       <StatTileRow>
-        <StatTile label="Busiest day" value={highlights.busiestWeekday.weekday} note={`${highlights.busiestWeekday.share}% of all games`} />
-        <StatTile label="Busiest time" value={highlights.busiestSlot.slot} note={`${highlights.busiestSlot.share}% of all games`} />
+        <StatTile label="Busiest day" value={highlights.busiestWeekday.weekday} note={`${percentLabel(highlights.busiestWeekday.share)} of all games`} />
+        <StatTile label="Busiest time" value={highlights.busiestSlot.slot} />
         <StatTile label="Median start time" value={minuteOfDayLabel(highlights.medianMinuteOfDay)} />
-        <StatTile label="Played Monday to Friday" value={`${highlights.weekdayShare}%`} />
+        <StatTile label="Played Monday to Friday" value={percentLabel(highlights.weekdayShare)} />
       </StatTileRow>
 
       <ContentCard
@@ -106,7 +109,7 @@ export const ActivityTab: React.FC = () => {
                 if (!active || !payload?.length) return null;
                 return (
                   <TooltipCard title={formatPeriodLabel(String(label), period)}>
-                    <p>{payload[0].value}% of the busiest {period}</p>
+                    <p>{percentLabel(Number(payload[0].value))} of the busiest {period}</p>
                   </TooltipCard>
                 );
               }}
@@ -133,7 +136,7 @@ export const ActivityTab: React.FC = () => {
         </ResponsiveContainer>
       </ContentCard>
 
-      <ContentCard title="Day of the week" description="Share of all games played on each day. The shares add up to 100%.">
+      <ContentCard title="Day of the week" description="Share of all games played on each day of the week.">
         <ResponsiveContainer width="100%" height={280}>
           <BarChart data={weekdays} margin={{ top: 10, right: 10, bottom: 10, left: -10 }}>
             <CartesianGrid strokeDasharray="3 3" stroke={AXIS_COLOR} opacity={0.3} />
@@ -146,7 +149,7 @@ export const ActivityTab: React.FC = () => {
                 const entry = payload[0].payload as { weekday: string; share: number };
                 return (
                   <TooltipCard title={entry.weekday}>
-                    <p>{entry.share}% of all games</p>
+                    <p>{percentLabel(entry.share)} of all games</p>
                   </TooltipCard>
                 );
               }}
@@ -156,7 +159,10 @@ export const ActivityTab: React.FC = () => {
         </ResponsiveContainer>
       </ContentCard>
 
-      <ContentCard title="Time of the day" description="Share of all games started in each 15 minute slot.">
+      <ContentCard
+        title="Time of the day"
+        description="Each 15 minute slot against the busiest slot of the day, which reads 100%."
+      >
         <ResponsiveContainer width="100%" height={280}>
           <BarChart data={slots} margin={{ top: 10, right: 10, bottom: 10, left: -10 }}>
             <CartesianGrid strokeDasharray="3 3" stroke={AXIS_COLOR} opacity={0.3} />
@@ -166,7 +172,7 @@ export const ActivityTab: React.FC = () => {
               tick={{ fontSize: 10 }}
               interval={Math.max(Math.floor(slots.length / 10), 3)}
             />
-            <YAxis stroke={AXIS_COLOR} tick={{ fontSize: 11 }} tickFormatter={percentTick} />
+            <YAxis stroke={AXIS_COLOR} tick={{ fontSize: 11 }} domain={[0, 100]} tickFormatter={percentTick} />
             <Tooltip
               cursor={{ fill: AXIS_COLOR, fillOpacity: 0.1 }}
               content={({ active, payload }) => {
@@ -174,7 +180,7 @@ export const ActivityTab: React.FC = () => {
                 const entry = payload[0].payload as { slot: string; share: number };
                 return (
                   <TooltipCard title={entry.slot}>
-                    <p>{entry.share}% of all games</p>
+                    <p>{percentLabel(entry.share)} of the busiest slot</p>
                   </TooltipCard>
                 );
               }}

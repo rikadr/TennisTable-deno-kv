@@ -17,7 +17,7 @@ import { PillSelect } from "../../common/pill-select";
 import { fmtNum } from "../../common/number-utils";
 import { ContentCard } from "../player/content-card";
 import { NotEnoughGames, StatTile, StatTileRow } from "./stat-tile";
-import { ACCENT_COLOR, AXIS_COLOR, percentTick, SERIES_COLOR, TooltipCard } from "./percent-chart";
+import { ACCENT_COLOR, AXIS_COLOR, percentLabel, percentTick, SERIES_COLOR, TooltipCard } from "./percent-chart";
 import { GAP_GROUP_SIZE, GapView, MIN_GAMES_PER_BUCKET, ratingGapDistribution, upsetRate } from "./statistics-aggregations";
 
 const VIEW_OPTIONS: { value: GapView; label: string }[] = [
@@ -26,6 +26,7 @@ const VIEW_OPTIONS: { value: GapView; label: string }[] = [
   { value: "losses", label: "Losses" },
 ];
 
+// Each group is measured against the most common one, which reads 100%.
 const VIEW_DESCRIPTION: Record<GapView, string> = {
   all: "Every game counts twice, once from each side. A negative gap means the player was the stronger of the two.",
   wins: "The winner's view of each game. A negative gap means the winner beat a stronger player.",
@@ -64,7 +65,7 @@ export const MatchupsTab: React.FC<{ view: GapView; setView: (view: GapView) => 
                   tickFormatter={signedGroup}
                   interval={Math.max(Math.floor(gaps.buckets.length / 10), 1)}
                 />
-                <YAxis stroke={AXIS_COLOR} tick={{ fontSize: 11 }} tickFormatter={percentTick} />
+                <YAxis stroke={AXIS_COLOR} tick={{ fontSize: 11 }} domain={[0, 100]} tickFormatter={percentTick} />
                 <Tooltip
                   cursor={{ fill: AXIS_COLOR, fillOpacity: 0.1 }}
                   content={({ active, payload }) => {
@@ -72,9 +73,11 @@ export const MatchupsTab: React.FC<{ view: GapView; setView: (view: GapView) => 
                     const entry = payload[0].payload as { gapGroup: number; share: number };
                     return (
                       <TooltipCard
-                        title={`${signedGroup(entry.gapGroup)} to ${signedGroup(entry.gapGroup + GAP_GROUP_SIZE)}`}
+                        title={`${signedGroup(entry.gapGroup - GAP_GROUP_SIZE / 2)} to ${signedGroup(
+                          entry.gapGroup + GAP_GROUP_SIZE / 2,
+                        )}`}
                       >
-                        <p>{entry.share}% of the games</p>
+                        <p>{percentLabel(entry.share)} of the most common group</p>
                       </TooltipCard>
                     );
                   }}
@@ -113,7 +116,8 @@ export const MatchupsTab: React.FC<{ view: GapView; setView: (view: GapView) => 
                   tick={{ fontSize: 11 }}
                   label={{ value: "Rating gap", position: "insideBottom", offset: -12, style: { fill: AXIS_COLOR, fontSize: 11 } }}
                 />
-                <YAxis stroke={AXIS_COLOR} tick={{ fontSize: 11 }} domain={[0, 50]} tickFormatter={percentTick} />
+                {/* A near even matchup can pass 50%, so the axis holds the whole range. */}
+                <YAxis stroke={AXIS_COLOR} tick={{ fontSize: 11 }} domain={[0, 100]} tickFormatter={percentTick} />
                 <Legend verticalAlign="top" height={28} iconType="line" />
                 <Tooltip
                   content={({ active, payload, label }) => {
@@ -121,8 +125,8 @@ export const MatchupsTab: React.FC<{ view: GapView; setView: (view: GapView) => 
                     const entry = payload[0].payload as { actual: number; expected: number };
                     return (
                       <TooltipCard title={`${label} to ${Number(label) + GAP_GROUP_SIZE} points apart`}>
-                        <p>{entry.actual}% won by the weaker player</p>
-                        <p className="opacity-80">{entry.expected}% expected</p>
+                        <p>{percentLabel(entry.actual)} won by the weaker player</p>
+                        <p className="opacity-80">{percentLabel(entry.expected)} expected</p>
                       </TooltipCard>
                     );
                   }}
@@ -140,7 +144,7 @@ export const MatchupsTab: React.FC<{ view: GapView; setView: (view: GapView) => 
               </LineChart>
             </ResponsiveContainer>
             <StatTileRow>
-              <StatTile label="Won by the stronger player" value={`${upsets.favouriteWinRate}%`} note="of all games" />
+              <StatTile label="Won by the stronger player" value={percentLabel(upsets.favouriteWinRate)} note="of all games" />
             </StatTileRow>
           </div>
         )}
