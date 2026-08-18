@@ -23,9 +23,6 @@ import { useWhrWorker } from "../../../hooks/use-whr-worker";
 import { WhrPlayerCurve } from "../../../client/client-db/whr";
 import { ProfilePicture } from "../../player/profile-picture";
 
-const DAY_MS = 24 * 60 * 60 * 1000;
-const TREND_DAYS = 90;
-
 /**
  * How far a rating may move in one day, as a standard deviation in Elo points.
  * A high value follows a change in form, and it also follows a run of luck. The
@@ -47,10 +44,7 @@ type PlayerSummary = {
   playerId: string;
   rating: number;
   uncertainty: number;
-  games: number;
   lastPlayed: number;
-  /** Rating change over the last 90 days, when the player has a rating that far back. */
-  trend: number | undefined;
   active: boolean;
   /** Enough games to hold a place on the leaderboard. */
   ranked: boolean;
@@ -67,15 +61,11 @@ function axisTick(time: number, spansYears: boolean): string {
 
 function summarize(curve: WhrPlayerCurve, active: boolean, gameLimitForRanked: number): PlayerSummary {
   const last = curve.points[curve.points.length - 1];
-  const trendFrom = curve.points.filter((point) => point.time <= last.time - TREND_DAYS * DAY_MS).pop();
-
   return {
     playerId: curve.playerId,
     rating: last.rating,
     uncertainty: last.uncertainty,
-    games: curve.totalGames,
     lastPlayed: last.time,
-    trend: trendFrom ? last.rating - trendFrom.rating : undefined,
     active,
     ranked: curve.totalGames >= gameLimitForRanked,
   };
@@ -305,8 +295,6 @@ export const SkillRatingPage: React.FC = () => {
               <th className="py-1 px-1 xs:px-2 md:px-3 text-left w-[50%] max-w-0 font-medium">Player</th>
               <th className="py-1 px-1 xs:px-2 md:px-3 text-right w-[1%] whitespace-nowrap font-medium">Rating</th>
               <th className="py-1 px-1 xs:px-2 md:px-3 text-right w-[1%] whitespace-nowrap font-light">±</th>
-              <th className="py-1 px-1 xs:px-2 md:px-3 text-right w-[1%] whitespace-nowrap font-light">90 d</th>
-              <th className="py-1 px-1 xs:px-2 md:px-3 text-right w-[1%] whitespace-nowrap font-light">Games</th>
               <th className="py-1 px-1 xs:px-2 md:px-3 text-right w-[1%] whitespace-nowrap font-light"></th>
             </tr>
           </thead>
@@ -342,18 +330,6 @@ export const SkillRatingPage: React.FC = () => {
                   </td>
                   <td className="py-1 px-1 xs:px-2 md:px-3 text-right w-[1%] whitespace-nowrap font-light text-primary-text/70">
                     {fmtNum(summary.uncertainty, { digits: 0 })}
-                  </td>
-                  <td className="py-1 px-1 xs:px-2 md:px-3 text-right w-[1%] whitespace-nowrap font-light">
-                    {summary.trend === undefined ? (
-                      <span className="text-primary-text/40">-</span>
-                    ) : (
-                      <span className={summary.trend >= 0 ? "text-green-500" : "text-red-500"}>
-                        {fmtNum(summary.trend, { digits: 0, signedPositive: true })}
-                      </span>
-                    )}
-                  </td>
-                  <td className="py-1 px-1 xs:px-2 md:px-3 text-right w-[1%] whitespace-nowrap font-light text-primary-text/70">
-                    {summary.games}
                   </td>
                   <td className="py-1 px-1 xs:px-2 md:px-3 text-right w-[1%] whitespace-nowrap font-light text-primary-text/70">
                     {relativeTimeStringShort(new Date(summary.lastPlayed))}
