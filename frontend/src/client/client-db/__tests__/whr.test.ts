@@ -1,6 +1,6 @@
 import { TennisTable } from "../tennis-table";
 import { EventType, EventTypeEnum } from "../event-store/event-types";
-import { WhrConfig, WhrResult } from "../whr";
+import { GAME_LEVEL_ONLY, POINT_SLOPE, SET_SLOPE, WhrConfig, WhrResult } from "../whr";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -24,6 +24,32 @@ function game(winner: string, loser: string, day = 0): EventType {
     type: EventTypeEnum.GAME_CREATED,
     data: { playedAt, winner, loser },
   };
+}
+
+/** A game with a set score, and the points of each set. */
+function scoredGame(
+  winner: string,
+  loser: string,
+  setPoints: { gameWinner: number; gameLoser: number }[],
+  day = 0,
+): EventType[] {
+  const playedAt = day * DAY_MS + nextSequence();
+  const stream = `game-${playedAt}`;
+  return [
+    { time: playedAt, stream, type: EventTypeEnum.GAME_CREATED, data: { playedAt, winner, loser } },
+    {
+      time: playedAt + 1,
+      stream,
+      type: EventTypeEnum.GAME_SCORE,
+      data: {
+        setsWon: {
+          gameWinner: setPoints.filter((set) => set.gameWinner > set.gameLoser).length,
+          gameLoser: setPoints.filter((set) => set.gameLoser > set.gameWinner).length,
+        },
+        setPoints,
+      },
+    },
+  ];
 }
 
 function games(winner: string, loser: string, count: number, day = 0): EventType[] {
@@ -250,6 +276,159 @@ describe("Whr", () => {
     expect(result.converged).toBe(true);
     expect(fitted[0].rating).toBeGreaterThan(1000);
     expect(fitted[fitted.length - 1].rating).toBeLessThan(1000);
+  });
+
+  describe("set and point scores", () => {
+    const crushing = [
+      { gameWinner: 11, gameLoser: 2 },
+      { gameWinner: 11, gameLoser: 1 },
+    ];
+    const narrow = [
+      { gameWinner: 11, gameLoser: 9 },
+      { gameWinner: 12, gameLoser: 10 },
+    ];
+
+    /** Two separate pairings, each with the same game record, so only the margin differs. */
+    function twoLeagues(options?: Partial<WhrConfig>) {
+      const dominant: EventType[] = [player("a"), player("b")];
+      const even: EventType[] = [player("c"), player("d")];
+      for (let day = 0; day < 5; day++) {
+        dominant.push(...scoredGame("a", "b", crushing, day));
+        even.push(...scoredGame("c", "d", narrow, day));
+      }
+      return {
+        dominant: lastRating(compute(dominant, options), "a"),
+        even: lastRating(compute(even, options), "c"),
+      };
+    }
+
+    it("rates a win by a large margin above a win by a small margin", () => {
+      const { dominant, even } = twoLeagues();
+
+      expect(dominant).toBeGreaterThan(even + 100);
+    });
+
+    it("ignores the margin when the score levels are switched off", () => {
+      const { dominant, even } = twoLeagues({ levelWeights: GAME_LEVEL_ONLY });
+
+      expect(dominant).toBeCloseTo(even, 6);
+    });
+
+    it("keeps a player who wins every game above the rating of a new player", () => {
+      // 'a' wins 2 sets to 1 every time, but takes 24 points against 29
+      const events: EventType[] = [player("a"), player("b")];
+      for (let day = 0; day < 6; day++) {
+        events.push(
+          ...scoredGame(
+            "a",
+            "b",
+            [
+              { gameWinner: 11, gameLoser: 9 },
+              { gameWinner: 11, gameLoser: 9 },
+              { gameWinner: 2, gameLoser: 11 },
+            ],
+            day,
+          ),
+        );
+      }
+
+      const result = compute(events);
+      const winner = lastRating(result, "a");
+
+      // The points pull the rating down, but the game result still decides the sign
+      expect(winner).toBeGreaterThan(1050);
+      expect(winner).toBeLessThan(lastRating(compute(events, { levelWeights: GAME_LEVEL_ONLY }), "a"));
+    });
+
+    it("rates a player who sweeps the sets above one who drops a set", () => {
+      const sweep: EventType[] = [player("a"), player("b")];
+      const dropped: EventType[] = [player("c"), player("d")];
+      for (let day = 0; day < 5; day++) {
+        sweep.push(
+          ...scoredGame(
+            "a",
+            "b",
+            [
+              { gameWinner: 11, gameLoser: 9 },
+              { gameWinner: 11, gameLoser: 9 },
+            ],
+            day,
+          ),
+        );
+        dropped.push(
+          ...scoredGame(
+            "c",
+            "d",
+            [
+              { gameWinner: 11, gameLoser: 9 },
+              { gameWinner: 9, gameLoser: 11 },
+              { gameWinner: 11, gameLoser: 9 },
+            ],
+            day,
+          ),
+        );
+      }
+
+      expect(lastRating(compute(sweep), "a")).toBeGreaterThan(lastRating(compute(dropped), "c"));
+    });
+
+    it("rates a win where a set was dropped below the same games with no score", () => {
+      // Losing a set is evidence that the two players are closer than the win
+      // alone suggests, so a recorded score can lower a rating.
+      const scored: EventType[] = [player("a"), player("b")];
+      const bare: EventType[] = [player("a"), player("b")];
+      for (let day = 0; day < 5; day++) {
+        scored.push(
+          ...scoredGame(
+            "a",
+            "b",
+            [
+              { gameWinner: 11, gameLoser: 9 },
+              { gameWinner: 9, gameLoser: 11 },
+              { gameWinner: 11, gameLoser: 9 },
+            ],
+            day,
+          ),
+        );
+        bare.push(...games("a", "b", 1, day));
+      }
+
+      expect(lastRating(compute(scored), "a")).toBeLessThan(lastRating(compute(bare), "a"));
+    });
+
+    it("derives each level's slope from the probability lookups", () => {
+      // A win fraction means something different per level, so each needs its own slope
+      expect(SET_SLOPE).toBeCloseTo(0.666, 2);
+      expect(POINT_SLOPE).toBeCloseTo(0.173, 2);
+      expect(SET_SLOPE).toBeLessThan(1);
+      expect(POINT_SLOPE).toBeLessThan(SET_SLOPE);
+
+      // A 400 Elo gap is a 0.909 game win chance. The slopes must agree with the
+      // lookups on what that means in sets and in points.
+      const gap = Math.log(10);
+      expect(1 / (1 + Math.exp(-gap * SET_SLOPE))).toBeCloseTo(0.822, 2);
+      expect(1 / (1 + Math.exp(-gap * POINT_SLOPE))).toBeCloseTo(0.598, 2);
+    });
+
+    it("reports how many games carry a score", () => {
+      const events: EventType[] = [player("a"), player("b")];
+      events.push(...games("a", "b", 2));
+      events.push(...scoredGame("a", "b", [{ gameWinner: 11, gameLoser: 4 }]));
+      events.push({
+        time: nextSequence(),
+        stream: "game-sets-only",
+        type: EventTypeEnum.GAME_CREATED,
+        data: { playedAt: nextSequence(), winner: "a", loser: "b" },
+      });
+      events.push({
+        time: nextSequence(),
+        stream: "game-sets-only",
+        type: EventTypeEnum.GAME_SCORE,
+        data: { setsWon: { gameWinner: 2, gameLoser: 0 } },
+      });
+
+      expect(compute(events).coverage).toEqual({ games: 4, withSets: 2, withPoints: 1 });
+    });
   });
 
   it("reports the configuration it used", () => {

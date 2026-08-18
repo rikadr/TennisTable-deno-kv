@@ -20,7 +20,7 @@ import { stringToColor } from "../../../common/string-to-color";
 import { relativeTimeStringShort } from "../../../common/date-utils";
 import { useEventDbContext } from "../../../wrappers/event-db-context";
 import { useWhrWorker } from "../../../hooks/use-whr-worker";
-import { WhrPlayerCurve } from "../../../client/client-db/whr";
+import { DEFAULT_LEVEL_WEIGHTS, GAME_LEVEL_ONLY, WhrPlayerCurve } from "../../../client/client-db/whr";
 import { ProfilePicture } from "../../player/profile-picture";
 
 /** More curves than this on one chart cannot be told apart. */
@@ -82,9 +82,15 @@ export const SkillRatingPage: React.FC = () => {
 
   const [driftPerDay, setDriftPerDay] = useState(DRIFT_PRESETS[1].driftPerDay);
   const [showRetired, setShowRetired] = useState(false);
+  const [useScores, setUseScores] = useState(true);
   const [selected, setSelected] = useState<string[] | null>(null);
 
-  const { result, progress } = useWhrWorker(useMemo(() => ({ driftPerDay }), [driftPerDay]));
+  const { result, progress } = useWhrWorker(
+    useMemo(
+      () => ({ driftPerDay, levelWeights: useScores ? DEFAULT_LEVEL_WEIGHTS : GAME_LEVEL_ONLY }),
+      [driftPerDay, useScores],
+    ),
+  );
 
   const summaries = useMemo<PlayerSummary[]>(() => {
     if (!result) return [];
@@ -178,8 +184,9 @@ export const SkillRatingPage: React.FC = () => {
       <h1 className="text-xl md:text-2xl text-center pt-2">Skill rating over time</h1>
       <p className="text-center text-primary-text/60 text-xs md:text-sm mt-1 mb-4 max-w-2xl mx-auto">
         One skill curve per player, fitted over every game at once. A rating of 1 000 is the skill of a new player, so
-        the numbers stay comparable back in time. The rating uses played games only. It does not change when a player
-        retires, and it does not depend on who is on the leaderboard today.
+        the numbers stay comparable back in time. A win by a large margin moves a rating more than a win by a small
+        margin. The rating uses played games only. It does not change when a player retires, and it does not depend on
+        who is on the leaderboard today.
       </p>
 
       {/* Controls */}
@@ -203,6 +210,10 @@ export const SkillRatingPage: React.FC = () => {
             ))}
           </div>
         </div>
+        <label className="flex items-center gap-2 text-xs md:text-sm text-primary-text/80">
+          <input type="checkbox" checked={useScores} onChange={(e) => setUseScores(e.target.checked)} />
+          Use set and point scores
+        </label>
         <label className="flex items-center gap-2 text-xs md:text-sm text-primary-text/80">
           <input type="checkbox" checked={showRetired} onChange={(e) => setShowRetired(e.target.checked)} />
           Show retired players
@@ -362,6 +373,13 @@ export const SkillRatingPage: React.FC = () => {
         <p>
           "Rating moves" sets how far a rating may move per day. A faster setting follows a change in form sooner, and it
           also reacts more to a run of luck.
+        </p>
+        <p>
+          The game result decides whether a rating goes up or down. The sets and the points then refine it. A set score
+          is recorded on {fmtNum(result.coverage.withSets, { digits: 0 })} of{" "}
+          {fmtNum(result.coverage.games, { digits: 0 })} games, and the points of each set on{" "}
+          {fmtNum(result.coverage.withPoints, { digits: 0 })}. Games with no score still count in full at the game
+          level, so a rating is more exact over the period with recorded scores.
         </p>
       </div>
     </div>

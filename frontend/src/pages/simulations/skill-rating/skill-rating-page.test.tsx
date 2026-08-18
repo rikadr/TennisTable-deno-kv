@@ -89,6 +89,40 @@ describe("SkillRatingPage", () => {
     expect(mockWorkerState.result?.curves.map((curve) => curve.playerId).sort()).toEqual(["Ada", "Bo", "Cy"]);
   });
 
+  it("says how many games carry a score", () => {
+    const events: EventType[] = [player("Ada"), player("Bo")];
+    for (let day = 0; day < 3; day++) {
+      events.push(game("Ada", "Bo", day));
+    }
+    const scoredAt = 9 * DAY_MS + ++sequence;
+    events.push(
+      { time: scoredAt, stream: "scored", type: EventTypeEnum.GAME_CREATED, data: { playedAt: scoredAt, winner: "Ada", loser: "Bo" } },
+      {
+        time: scoredAt + 1,
+        stream: "scored",
+        type: EventTypeEnum.GAME_SCORE,
+        data: { setsWon: { gameWinner: 2, gameLoser: 0 }, setPoints: [{ gameWinner: 11, gameLoser: 5 }, { gameWinner: 11, gameLoser: 7 }] },
+      },
+    );
+
+    renderPage(events);
+
+    expect(screen.getByText(/A set score is recorded on/)).toHaveTextContent(
+      "A set score is recorded on 1 of 4 games, and the points of each set on 1.",
+    );
+  });
+
+  it("offers a switch for the set and point scores", () => {
+    const events: EventType[] = [player("Ada"), player("Bo")];
+    for (let day = 0; day < 3; day++) {
+      events.push(game("Ada", "Bo", day));
+    }
+
+    renderPage(events);
+
+    expect(screen.getByLabelText("Use set and point scores")).toBeChecked();
+  });
+
   it("shows the progress bar while the fit runs", () => {
     render(
       <MemoryRouter>
