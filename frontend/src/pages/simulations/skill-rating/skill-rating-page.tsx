@@ -31,6 +31,12 @@ import { ProfilePicture } from "../../player/profile-picture";
  */
 const DRIFT_PER_DAY = 16;
 
+/**
+ * TEMPORARY, for tuning only. Remove this list and the control that uses it,
+ * and the page goes back to the fixed DRIFT_PER_DAY above.
+ */
+const DEBUG_DRIFT_OPTIONS = [2, 4, 8, 16, 32, 64, 128];
+
 /** More curves than this make a legend longer than it is useful. */
 const MAX_LEGEND_SERIES = 12;
 
@@ -78,8 +84,10 @@ export const SkillRatingPage: React.FC = () => {
   const [showRetired, setShowRetired] = useState(false);
   const [showUnranked, setShowUnranked] = useState(false);
   const [selected, setSelected] = useState<string[] | null>(null);
+  // TEMPORARY, for tuning only
+  const [driftPerDay, setDriftPerDay] = useState(DRIFT_PER_DAY);
 
-  const { result, progress } = useWhrWorker(useMemo(() => ({ driftPerDay: DRIFT_PER_DAY }), []));
+  const { result, progress } = useWhrWorker(useMemo(() => ({ driftPerDay }), [driftPerDay]));
 
   const summaries = useMemo<PlayerSummary[]>(() => {
     if (!result) return [];
@@ -184,6 +192,26 @@ export const SkillRatingPage: React.FC = () => {
 
       {/* Controls */}
       <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 mb-4">
+        {/* TEMPORARY, for tuning only */}
+        <div className="flex items-center gap-2">
+          <span className="text-xs md:text-sm text-primary-text/80">Rating moves:</span>
+          <div className="flex flex-wrap gap-1">
+            {DEBUG_DRIFT_OPTIONS.map((option) => (
+              <button
+                key={option}
+                onClick={() => setDriftPerDay(option)}
+                className={classNames(
+                  "px-2 py-1 rounded text-xs md:text-sm font-medium transition-colors",
+                  driftPerDay === option
+                    ? "bg-secondary-background text-secondary-text"
+                    : "border border-primary-text/20 hover:bg-secondary-background/50",
+                )}
+              >
+                {option}
+              </button>
+            ))}
+          </div>
+        </div>
         <label className="flex items-center gap-2 text-xs md:text-sm text-primary-text/80">
           <input type="checkbox" checked={showUnranked} onChange={(e) => setShowUnranked(e.target.checked)} />
           Include unranked players
