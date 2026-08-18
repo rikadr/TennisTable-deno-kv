@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { EventDbContext } from "../../../wrappers/event-db-context";
 import { TennisTable } from "../../../client/client-db/tennis-table";
@@ -44,6 +44,12 @@ function renderPage(events: EventType[]) {
   );
 }
 
+function selectedNames(): (string | null)[] {
+  return Array.from(document.querySelectorAll('tr[data-selected="true"]')).map(
+    (row) => (row as HTMLTableRowElement).cells[1].textContent,
+  );
+}
+
 function playerColumn(): (string | null)[] {
   return screen
     .getAllByRole("row")
@@ -77,7 +83,7 @@ describe("SkillRatingPage", () => {
 
   it("hides a retired player from the list until it is asked for", () => {
     const events: EventType[] = [player("Ada"), player("Bo"), player("Cy")];
-    for (let day = 0; day < 4; day++) {
+    for (let day = 0; day < 6; day++) {
       events.push(game("Ada", "Bo", day), game("Bo", "Cy", day));
     }
     events.push({ time: ++sequence, stream: "Bo", type: EventTypeEnum.PLAYER_DEACTIVATED, data: null });
@@ -87,6 +93,47 @@ describe("SkillRatingPage", () => {
     expect(playerColumn()).toEqual(["Ada", "Cy"]);
     // The retired player is still rated, so the fit does not change when they leave
     expect(mockWorkerState.result?.curves.map((curve) => curve.playerId).sort()).toEqual(["Ada", "Bo", "Cy"]);
+
+    fireEvent.click(screen.getByLabelText("Include retired players"));
+    // The retired row carries a "retired" badge next to the name
+    expect(playerColumn()).toHaveLength(3);
+    expect(playerColumn().some((name) => name?.startsWith("Bo"))).toBe(true);
+  });
+
+  it("hides an unranked player from the list until it is asked for", () => {
+    // 'Cy' plays 2 games, below the 5 a ranked place needs
+    const events: EventType[] = [player("Ada"), player("Bo"), player("Cy")];
+    for (let day = 0; day < 6; day++) {
+      events.push(game("Ada", "Bo", day));
+    }
+    events.push(game("Ada", "Cy", 7), game("Bo", "Cy", 7));
+
+    renderPage(events);
+
+    expect(playerColumn()).not.toContain("Cy");
+
+    fireEvent.click(screen.getByLabelText("Include unranked players"));
+    expect(playerColumn()).toContain("Cy");
+  });
+
+  it("adds every player in the filter, and clears the selection", () => {
+    const events: EventType[] = [player("Ada"), player("Bo"), player("Cy")];
+    for (let day = 0; day < 6; day++) {
+      events.push(game("Ada", "Bo", day), game("Bo", "Cy", day), game("Ada", "Cy", day));
+    }
+
+    renderPage(events);
+
+    fireEvent.click(screen.getByText("Clear all"));
+    expect(selectedNames()).toEqual([]);
+
+    fireEvent.click(screen.getByText("Add all"));
+    expect(selectedNames().sort()).toEqual(["Ada", "Bo", "Cy"]);
+
+    // No upper limit, so the whole filter can go on the chart
+    fireEvent.click(screen.getByLabelText("Include unranked players"));
+    fireEvent.click(screen.getByText("Add all"));
+    expect(selectedNames().length).toBe(playerColumn().length);
   });
 
   it("says how many games carry a score", () => {
@@ -110,17 +157,6 @@ describe("SkillRatingPage", () => {
     expect(screen.getByText(/A set score is recorded on/)).toHaveTextContent(
       "A set score is recorded on 1 of 4 games, and the points of each set on 1.",
     );
-  });
-
-  it("offers a switch for the set and point scores", () => {
-    const events: EventType[] = [player("Ada"), player("Bo")];
-    for (let day = 0; day < 3; day++) {
-      events.push(game("Ada", "Bo", day));
-    }
-
-    renderPage(events);
-
-    expect(screen.getByLabelText("Use set and point scores")).toBeChecked();
   });
 
   it("shows the progress bar while the fit runs", () => {

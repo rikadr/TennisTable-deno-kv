@@ -17,24 +17,25 @@ import { useWindowSize } from "usehooks-ts";
 import { classNames } from "../../../common/class-names";
 import { fmtNum } from "../../../common/number-utils";
 import { stringToColor } from "../../../common/string-to-color";
-import { relativeTimeStringShort } from "../../../common/date-utils";
+import { relativeTimeString, relativeTimeStringShort } from "../../../common/date-utils";
 import { useEventDbContext } from "../../../wrappers/event-db-context";
 import { useWhrWorker } from "../../../hooks/use-whr-worker";
-import { DEFAULT_LEVEL_WEIGHTS, GAME_LEVEL_ONLY, WhrPlayerCurve } from "../../../client/client-db/whr";
+import { WhrPlayerCurve } from "../../../client/client-db/whr";
 import { ProfilePicture } from "../../player/profile-picture";
-
-/** More curves than this on one chart cannot be told apart. */
-const MAX_SELECTED = 8;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const TREND_DAYS = 90;
 
-const DRIFT_PRESETS = [
-  { label: "Stable", driftPerDay: 1 },
-  { label: "Slow", driftPerDay: 4 },
-  { label: "Normal", driftPerDay: 8 },
-  { label: "Fast", driftPerDay: 16 },
-];
+/**
+ * How far a rating may move in one day, as a standard deviation in Elo points.
+ * A high value follows a change in form, and it also follows a run of luck. The
+ * points of a curve are then noisy, but the trend of a curve is readable, which
+ * is what this page is for.
+ */
+const DRIFT_PER_DAY = 16;
+
+/** More curves than this make a legend longer than it is useful. */
+const MAX_LEGEND_SERIES = 12;
 
 type ChartRow = {
   time: number;
@@ -51,6 +52,8 @@ type PlayerSummary = {
   /** Rating change over the last 90 days, when the player has a rating that far back. */
   trend: number | undefined;
   active: boolean;
+  /** Enough games to hold a place on the leaderboard. */
+  ranked: boolean;
 };
 
 /** Short axis tick. Includes the year only when the range covers more than one. */
@@ -62,7 +65,7 @@ function axisTick(time: number, spansYears: boolean): string {
   });
 }
 
-function summarize(curve: WhrPlayerCurve, active: boolean): PlayerSummary {
+function summarize(curve: WhrPlayerCurve, active: boolean, gameLimitForRanked: number): PlayerSummary {
   const last = curve.points[curve.points.length - 1];
   const trendFrom = curve.points.filter((point) => point.time <= last.time - TREND_DAYS * DAY_MS).pop();
 
@@ -74,6 +77,7 @@ function summarize(curve: WhrPlayerCurve, active: boolean): PlayerSummary {
     lastPlayed: last.time,
     trend: trendFrom ? last.rating - trendFrom.rating : undefined,
     active,
+    ranked: curve.totalGames >= gameLimitForRanked,
   };
 }
 
@@ -81,23 +85,21 @@ export const SkillRatingPage: React.FC = () => {
   const context = useEventDbContext();
   const { width = 0 } = useWindowSize();
 
-  const [driftPerDay, setDriftPerDay] = useState(DRIFT_PRESETS[1].driftPerDay);
   const [showRetired, setShowRetired] = useState(false);
-  const [useScores, setUseScores] = useState(true);
+  const [showUnranked, setShowUnranked] = useState(false);
   const [selected, setSelected] = useState<string[] | null>(null);
 
-  const { result, progress } = useWhrWorker(
-    useMemo(
-      () => ({ driftPerDay, levelWeights: useScores ? DEFAULT_LEVEL_WEIGHTS : GAME_LEVEL_ONLY }),
-      [driftPerDay, useScores],
-    ),
-  );
+  const { result, progress } = useWhrWorker(useMemo(() => ({ driftPerDay: DRIFT_PER_DAY }), []));
 
   const summaries = useMemo<PlayerSummary[]>(() => {
     if (!result) return [];
     return result.curves
       .map((curve) =>
-        summarize(curve, context.eventStore.playersProjector.getPlayer(curve.playerId)?.active === true),
+        summarize(
+          curve,
+          context.eventStore.playersProjector.getPlayer(curve.playerId)?.active === true,
+          context.client.gameLimitForRanked,
+        ),
       )
       .sort((a, b) => b.rating - a.rating);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -107,7 +109,7 @@ export const SkillRatingPage: React.FC = () => {
   const activeSelection = useMemo(() => {
     if (selected !== null) return selected;
     return summaries
-      .filter((summary) => summary.active)
+      .filter((summary) => summary.active && summary.ranked)
       .slice(0, 5)
       .map((summary) => summary.playerId);
   }, [selected, summaries]);
@@ -148,7 +150,6 @@ export const SkillRatingPage: React.FC = () => {
     setSelected(() => {
       const current = activeSelection;
       if (current.includes(playerId)) return current.filter((id) => id !== playerId);
-      if (current.length >= MAX_SELECTED) return current;
       return [...current, playerId];
     });
 
@@ -177,8 +178,9 @@ export const SkillRatingPage: React.FC = () => {
     );
   }
 
-  const selectable = summaries.filter((summary) => showRetired || summary.active);
-  const atCap = activeSelection.length >= MAX_SELECTED;
+  const selectable = summaries.filter(
+    (summary) => (showRetired || summary.active) && (showUnranked || summary.ranked),
+  );
 
   return (
     <div className="max-w-5xl mx-auto bg-primary-background rounded-lg p-2 md:p-4 text-primary-text">
@@ -192,33 +194,28 @@ export const SkillRatingPage: React.FC = () => {
 
       {/* Controls */}
       <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 mb-4">
-        <div className="flex items-center gap-2">
-          <span className="text-xs md:text-sm text-primary-text/80">Rating moves:</span>
-          <div className="flex gap-1">
-            {DRIFT_PRESETS.map((preset) => (
-              <button
-                key={preset.label}
-                onClick={() => setDriftPerDay(preset.driftPerDay)}
-                className={classNames(
-                  "px-2.5 py-1 rounded text-xs md:text-sm font-medium transition-colors",
-                  driftPerDay === preset.driftPerDay
-                    ? "bg-secondary-background text-secondary-text"
-                    : "border border-primary-text/20 hover:bg-secondary-background/50",
-                )}
-              >
-                {preset.label}
-              </button>
-            ))}
-          </div>
-        </div>
         <label className="flex items-center gap-2 text-xs md:text-sm text-primary-text/80">
-          <input type="checkbox" checked={useScores} onChange={(e) => setUseScores(e.target.checked)} />
-          Use set and point scores
+          <input type="checkbox" checked={showUnranked} onChange={(e) => setShowUnranked(e.target.checked)} />
+          Include unranked players
         </label>
         <label className="flex items-center gap-2 text-xs md:text-sm text-primary-text/80">
           <input type="checkbox" checked={showRetired} onChange={(e) => setShowRetired(e.target.checked)} />
-          Show retired players
+          Include retired players
         </label>
+        <div className="flex gap-1">
+          <button
+            onClick={() => setSelected(selectable.map((summary) => summary.playerId))}
+            className="px-2.5 py-1 rounded text-xs md:text-sm font-medium border border-primary-text/20 hover:bg-secondary-background/50 transition-colors"
+          >
+            Add all
+          </button>
+          <button
+            onClick={() => setSelected([])}
+            className="px-2.5 py-1 rounded text-xs md:text-sm font-medium border border-primary-text/20 hover:bg-secondary-background/50 transition-colors"
+          >
+            Clear all
+          </button>
+        </div>
       </div>
 
       {/* Chart */}
@@ -242,11 +239,13 @@ export const SkillRatingPage: React.FC = () => {
             stroke="rgb(var(--color-primary-text))"
             tick={{ fontSize: 11 }}
           />
-          <Tooltip animationDuration={0} content={<RatingTooltip spansYears={spansYears} />} />
-          <Legend
-            formatter={(value: string) => <span className="text-primary-text text-xs md:text-sm">{value}</span>}
-            iconType="plainline"
-          />
+          <Tooltip animationDuration={0} content={<RatingTooltip />} />
+          {activeSelection.length <= MAX_LEGEND_SERIES && (
+            <Legend
+              formatter={(value: string) => <span className="text-primary-text text-xs md:text-sm">{value}</span>}
+              iconType="plainline"
+            />
+          )}
           <ReferenceLine
             y={1000}
             stroke="rgb(var(--color-primary-text))"
@@ -291,9 +290,9 @@ export const SkillRatingPage: React.FC = () => {
       {activeSelection.length === 0 && (
         <p className="text-center text-primary-text/60 text-sm mt-2">Select a player below to see a curve.</p>
       )}
-      {atCap && (
+      {activeSelection.length > MAX_LEGEND_SERIES && (
         <p className="text-center text-primary-text/60 text-xs mt-1">
-          {MAX_SELECTED} players is the maximum. Remove one to add another.
+          {activeSelection.length} players on the chart. The colour of a row in the table matches its curve.
         </p>
       )}
 
@@ -317,11 +316,11 @@ export const SkillRatingPage: React.FC = () => {
               return (
                 <tr
                   key={summary.playerId}
+                  data-selected={isSelected}
                   onClick={() => toggle(summary.playerId)}
                   className={classNames(
                     "cursor-pointer transition-colors",
                     isSelected ? "bg-primary-text/10" : "hover:bg-primary-text/5",
-                    !isSelected && atCap && "opacity-60",
                   )}
                 >
                   <td className="py-1 px-1 xs:px-2 md:px-3 text-right w-[1%] whitespace-nowrap font-medium">
@@ -372,9 +371,8 @@ export const SkillRatingPage: React.FC = () => {
           a curve can change when new games arrive.
         </p>
         <p>
-          "Rating moves" sets how far a rating may move per day. A faster setting follows a change in form sooner, and it
-          also follows a run of luck. Stable holds a curve almost flat, which predicts new games slightly better but
-          hides a real change in form.
+          A curve follows a change in form closely, so it also follows a run of luck. Read the trend of a curve, not a
+          single point. The band of one player shows how exact each point is.
         </p>
         <p>
           The game result decides whether a rating goes up or down. The sets and the points then refine it. A set score
@@ -388,11 +386,7 @@ export const SkillRatingPage: React.FC = () => {
   );
 };
 
-const RatingTooltip: React.FC<{ spansYears?: boolean } & TooltipProps<ValueType, NameType>> = ({
-  active,
-  payload,
-  label,
-}) => {
+const RatingTooltip: React.FC<TooltipProps<ValueType, NameType>> = ({ active, payload, label }) => {
   if (!active || !payload || payload.length === 0) return null;
 
   const rows = payload.filter((item) => typeof item.value === "number");
@@ -401,7 +395,7 @@ const RatingTooltip: React.FC<{ spansYears?: boolean } & TooltipProps<ValueType,
   return (
     <div className="p-2 bg-primary-background ring-1 ring-primary-text rounded-lg text-primary-text text-sm">
       <p className="text-primary-text/70 text-xs mb-1">
-        {typeof label === "number" ? new Date(label).toLocaleDateString("nb-NO") : ""}
+        {typeof label === "number" ? relativeTimeString(new Date(label)) : ""}
       </p>
       {rows.map((item) => (
         <p key={item.name} className="flex items-center gap-2">

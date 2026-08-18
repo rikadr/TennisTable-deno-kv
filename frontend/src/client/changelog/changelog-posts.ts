@@ -50,7 +50,7 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
       "A new page under Simulations shows a skill curve for each player. A win by a large margin counts for more, and the rating does not change when a player retires.",
     body: [
       text(
-        "The page is at Simulations, Skill rating over time. Select up to 8 players to compare their curves. Select one player to also see the uncertainty of the rating.",
+        "The page is at Simulations, Skill rating over time. Select any number of players to compare their curves. Select one player to also see the uncertainty of the rating. A filter adds the unranked and the retired players to the list.",
       ),
       text(
         "The method is Whole History Rating. It fits every game in the history at once, and it gives each player one rating per day they played. A rating of 1 000 is the skill of a new player. This anchor keeps the numbers comparable between 2024 and today.",
