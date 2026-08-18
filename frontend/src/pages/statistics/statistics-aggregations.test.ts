@@ -1,3 +1,4 @@
+import { EventType, EventTypeEnum } from "../../client/client-db/event-store/event-types";
 import { Game } from "../../client/client-db/event-store/projectors/games-projector";
 import { Player } from "../../client/client-db/event-store/projectors/players-projector";
 import { Elo } from "../../client/client-db/elo";
@@ -269,16 +270,27 @@ describe("trackedShareTrend", () => {
 });
 
 describe("pairingCoverage", () => {
-  const active = new Set(["alice", "bob", "carol"]);
-  const ranked = new Set(["alice", "bob"]);
+  const created = (id: string, time: number): EventType => ({
+    time,
+    stream: id,
+    type: EventTypeEnum.PLAYER_CREATED,
+    data: { name: id },
+  });
+  const deactivated = (id: string, time: number): EventType => ({
+    time,
+    stream: id,
+    type: EventTypeEnum.PLAYER_DEACTIVATED,
+    data: null,
+  });
+  const threePlayers = [created("alice", 1), created("bob", 2), created("carol", 3)];
 
   it("reports the active players and the ranked players as two series", () => {
     const played = [game({ winner: "alice", loser: "bob" })];
 
-    const coverage = pairingCoverage(played, active, ranked)!;
+    const coverage = pairingCoverage(played, threePlayers, 1)!;
 
     // Three active players make three pairs, and one of them has met. The two
-    // ranked players make the one pair, and it has met.
+    // players with a game make the one ranked pair, and it has met.
     expect(coverage.now.all).toBeCloseTo(33.333);
     expect(coverage.now.ranked).toBe(100);
   });
@@ -289,37 +301,62 @@ describe("pairingCoverage", () => {
       game({ playedAt: new Date(2024, 1, 5).getTime(), winner: "alice", loser: "bob" }),
     ];
 
-    const { trend } = pairingCoverage(played, active, ranked)!;
+    const { trend } = pairingCoverage(played, threePlayers, 1)!;
 
     expect(trend.map((point) => point.period)).toEqual(["2024-01", "2024-02"]);
-    // January only has the game against the unranked player.
+    // In January only alice and carol have a game, so they are the ranked pair.
     expect(trend[0].all).toBeCloseTo(33.333);
-    expect(trend[0].ranked).toBe(0);
+    expect(trend[0].ranked).toBe(100);
+    // In February all three are ranked, and two of their three pairs have met.
     expect(trend[1].all).toBeCloseTo(66.667);
-    expect(trend[1].ranked).toBe(100);
+    expect(trend[1].ranked).toBeCloseTo(66.667);
+  });
+
+  it("measures every month against the players of that month", () => {
+    const played = [
+      game({ playedAt: new Date(2024, 0, 5).getTime(), winner: "alice", loser: "bob" }),
+      game({ playedAt: new Date(2024, 1, 5).getTime(), winner: "alice", loser: "carol" }),
+    ];
+    // Dave joins in February, so he adds pairs to February and not to January.
+    const events = [...threePlayers, created("dave", new Date(2024, 1, 1).getTime())];
+
+    const { trend } = pairingCoverage(played, events, 1)!;
+
+    // January: three players, three pairs, one met.
+    expect(trend[0].all).toBeCloseTo(33.333);
+    // February: four players, six pairs, two met.
+    expect(trend[1].all).toBeCloseTo(33.333);
+    expect(trend[1].timestamp).toBe(new Date(2024, 1, 1).getTime());
+  });
+
+  it("plots a month that holds no game", () => {
+    const played = [
+      game({ playedAt: new Date(2024, 0, 5).getTime(), winner: "alice", loser: "bob" }),
+      game({ playedAt: new Date(2024, 2, 5).getTime(), winner: "alice", loser: "carol" }),
+    ];
+
+    const { trend } = pairingCoverage(played, threePlayers, 1)!;
+
+    expect(trend.map((point) => point.period)).toEqual(["2024-01", "2024-02", "2024-03"]);
+    expect(trend[1].all).toBeCloseTo(33.333);
   });
 
   it("counts a pair once, whichever way round it played", () => {
-    const played = [
-      game({ winner: "alice", loser: "bob" }),
-      game({ winner: "bob", loser: "alice" }),
-    ];
+    const played = [game({ winner: "alice", loser: "bob" }), game({ winner: "bob", loser: "alice" })];
 
-    expect(pairingCoverage(played, active, ranked)!.now.all).toBeCloseTo(33.333);
+    expect(pairingCoverage(played, threePlayers, 1)!.now.all).toBeCloseTo(33.333);
   });
 
   it("leaves out a player who is no longer active", () => {
-    const played = [game({ winner: "alice", loser: "dave" })];
+    const played = [game({ winner: "alice", loser: "bob" })];
+    const events = [...threePlayers, deactivated("bob", new Date(2024, 5, 1).getTime())];
 
-    // Dave is not in the active set, so the game adds no pair at all.
-    expect(pairingCoverage(played, active, ranked)!.now.all).toBe(0);
+    // Bob is out, so the pair he played is gone and alice and carol have not met.
+    expect(pairingCoverage(played, events, 1)!.now.all).toBe(0);
   });
 
-  it("says nothing when either group is too small to make a pair", () => {
-    const played = [game({ winner: "alice", loser: "bob" })];
-
-    expect(pairingCoverage(played, active, new Set(["alice"]))).toBeUndefined();
-    expect(pairingCoverage(played, new Set(["alice"]), ranked)).toBeUndefined();
+  it("says nothing when there is no game to measure", () => {
+    expect(pairingCoverage([], threePlayers, 1)).toBeUndefined();
   });
 });
 

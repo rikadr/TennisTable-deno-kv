@@ -41,7 +41,10 @@ export const LeagueTab: React.FC = () => {
   const activeIds = useMemo(() => new Set(context.players.map((player) => player.id)), [context]);
 
   const ratings = useMemo(() => ratingDistribution(rankedPlayers.map((player) => player.elo)), [rankedPlayers]);
-  const coverage = useMemo(() => pairingCoverage(context.games, activeIds, rankedIds), [context, activeIds, rankedIds]);
+  const coverage = useMemo(
+    () => pairingCoverage(context.games, context.events, context.client.gameLimitForRanked),
+    [context],
+  );
   const mix = useMemo(() => rankedMix(context.games, rankedIds), [context, rankedIds]);
   const movement = useMemo(() => {
     // The cached map holds every player ever created. The leaderboard this tile
