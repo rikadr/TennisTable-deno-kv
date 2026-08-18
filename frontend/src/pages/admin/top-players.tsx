@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { relativeTimeStringShort } from "../../common/date-utils";
-import { Period, PERIOD_LABELS, getPeriodKey, getPeriodTimestamp, formatPeriod, pairingKey } from "./period-utils";
+import { Period, PERIOD_LABELS, getPeriodKey, getPeriodTimestamp, formatPeriod, pairingKey } from "../../common/period-utils";
 
 type Metric = "games" | "pairings" | "achievements";
 
