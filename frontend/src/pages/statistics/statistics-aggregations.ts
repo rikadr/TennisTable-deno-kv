@@ -32,7 +32,8 @@ import { Elo } from "../../client/client-db/elo";
 import { isTrackedGame } from "../../client/client-db/achievements";
 import { Game } from "../../client/client-db/event-store/projectors/games-projector";
 import { Player } from "../../client/client-db/event-store/projectors/players-projector";
-import { getPeriodKey, getPeriodTimestamp, Period } from "../../common/period-utils";
+import { EventType, EventTypeEnum } from "../../client/client-db/event-store/event-types";
+import { advancePeriod, getPeriodKey, getPeriodStart, getPeriodTimestamp, Period } from "../../common/period-utils";
 import { gameTimingStats, serveStats } from "../game/game-tracking-stats";
 
 /** A group of games smaller than this gets no shares. */
@@ -619,65 +620,121 @@ function possiblePairs(playerCount: number): number {
 
 const pairKey = (winner: string, loser: string): string => [winner, loser].sort().join("|");
 
+/** The events that change which players are active. */
+const ACTIVATION_EVENTS: EventTypeEnum[] = [
+  EventTypeEnum.PLAYER_CREATED,
+  EventTypeEnum.PLAYER_DEACTIVATED,
+  EventTypeEnum.PLAYER_REACTIVATED,
+];
+
 /**
  * How much of the league has met, for every active player and for the ranked
  * players on their own. A pair counts once, whichever way round it played.
  *
- * Both lines measure against the players of today, so a point reads "of the
- * pairs that exist now, this share had met by that month". One basis for both
- * lines is what makes them comparable. The admin diversity chart instead
- * rebuilds the group of players active in each week, which answers the
- * different question of how connected the league was at the time.
+ * Every month uses the players of that month. The events rebuild the group of
+ * active players at the end of the month, and a player of that group counts as
+ * ranked when they have enough games against the others in it. So a point
+ * reads "of the pairs that existed then, this share had met". This is the same
+ * measure as the admin diversity chart, by month instead of by week.
  *
- * Only the active players count. A retired player can never meet anybody new,
- * so a line that counted them could only fall.
+ * Only the active players count. A retired player can never meet anybody new.
  */
 export function pairingCoverage(
   games: Game[],
-  activePlayerIds: Set<string>,
-  rankedPlayerIds: Set<string>,
+  events: EventType[],
+  gameLimitForRanked: number,
 ): PairingCoverage | undefined {
-  if (activePlayerIds.size < 2 || rankedPlayerIds.size < 2) return undefined;
-  const possibleAll = possiblePairs(activePlayerIds.size);
-  const possibleRanked = possiblePairs(rankedPlayerIds.size);
+  if (games.length === 0) return undefined;
 
-  const metAll = new Set<string>();
-  const metRanked = new Set<string>();
-  const trend: CoveragePoint[] = [];
-  let currentMonth: string | undefined;
-  let currentTimestamp = 0;
+  const activationEvents = events
+    .filter((event) => ACTIVATION_EVENTS.includes(event.type))
+    .sort((a, b) => a.time - b.time);
 
-  const pointSoFar = (period: string, timestamp: number): CoveragePoint => ({
-    period,
-    timestamp,
-    all: percent(metAll.size, possibleAll),
-    ranked: percent(metRanked.size, possibleRanked),
-  });
+  /** Every pair that has met, whether or not both players are still active. */
+  const met = new Set<string>();
+  /** How many games each player has played against each opponent. */
+  const gamesAgainst = new Map<string, Map<string, number>>();
+  const active = new Set<string>();
 
-  for (const game of games) {
-    const date = new Date(game.playedAt);
-    const month = getPeriodKey(date, "month");
-    if (currentMonth !== undefined && month !== currentMonth) {
-      trend.push(pointSoFar(currentMonth, currentTimestamp));
+  let gameIndex = 0;
+  let eventIndex = 0;
+
+  const readGamesBefore = (end: number): void => {
+    while (gameIndex < games.length && games[gameIndex].playedAt < end) {
+      const game = games[gameIndex++];
+      met.add(pairKey(game.winner, game.loser));
+
+      const winnerCounts = gamesAgainst.get(game.winner) ?? new Map<string, number>();
+      winnerCounts.set(game.loser, (winnerCounts.get(game.loser) ?? 0) + 1);
+      gamesAgainst.set(game.winner, winnerCounts);
+
+      const loserCounts = gamesAgainst.get(game.loser) ?? new Map<string, number>();
+      loserCounts.set(game.winner, (loserCounts.get(game.winner) ?? 0) + 1);
+      gamesAgainst.set(game.loser, loserCounts);
     }
-    currentMonth = month;
-    currentTimestamp = getPeriodTimestamp(date, "month");
-
-    if (activePlayerIds.has(game.winner) && activePlayerIds.has(game.loser)) {
-      metAll.add(pairKey(game.winner, game.loser));
-    }
-    if (rankedPlayerIds.has(game.winner) && rankedPlayerIds.has(game.loser)) {
-      metRanked.add(pairKey(game.winner, game.loser));
-    }
-  }
-  if (currentMonth !== undefined) {
-    trend.push(pointSoFar(currentMonth, currentTimestamp));
-  }
-
-  return {
-    now: { all: percent(metAll.size, possibleAll), ranked: percent(metRanked.size, possibleRanked) },
-    trend,
   };
+
+  const readEventsBefore = (end: number): void => {
+    while (eventIndex < activationEvents.length && activationEvents[eventIndex].time < end) {
+      const event = activationEvents[eventIndex++];
+      if (event.type === EventTypeEnum.PLAYER_DEACTIVATED) {
+        active.delete(event.stream);
+      } else {
+        active.add(event.stream);
+      }
+    }
+  };
+
+  /** The share of the pairs of `group` that have met. */
+  const shareMet = (group: Set<string>): number => {
+    if (group.size < 2) return 0;
+    let pairsMet = 0;
+    for (const pair of met) {
+      const [one, other] = pair.split("|");
+      if (group.has(one) && group.has(other)) pairsMet++;
+    }
+    return percent(pairsMet, possiblePairs(group.size));
+  };
+
+  /** The active players with enough games against the other active players. */
+  const rankedOf = (activePlayers: Set<string>): Set<string> => {
+    const ranked = new Set<string>();
+    for (const playerId of activePlayers) {
+      const opponents = gamesAgainst.get(playerId);
+      if (opponents === undefined) continue;
+      let played = 0;
+      for (const [opponentId, count] of opponents) {
+        if (activePlayers.has(opponentId)) played += count;
+      }
+      if (played >= gameLimitForRanked) ranked.add(playerId);
+    }
+    return ranked;
+  };
+
+  const trend: CoveragePoint[] = [];
+  const lastMonth = getPeriodTimestamp(new Date(games[games.length - 1].playedAt), "month");
+  let month = getPeriodStart(new Date(games[0].playedAt), "month");
+
+  while (month.getTime() <= lastMonth) {
+    const monthEnd = advancePeriod(month, "month").getTime();
+    readGamesBefore(monthEnd);
+    readEventsBefore(monthEnd);
+
+    trend.push({
+      period: getPeriodKey(month, "month"),
+      timestamp: month.getTime(),
+      all: shareMet(active),
+      ranked: shareMet(rankedOf(active)),
+    });
+
+    month = advancePeriod(month, "month");
+  }
+
+  // The trend stops at the last game, the same way the admin chart does. A
+  // player who left after that game still has to leave the tiles, so the two
+  // values for today read every event that is left.
+  readEventsBefore(Number.POSITIVE_INFINITY);
+  return { now: { all: shareMet(active), ranked: shareMet(rankedOf(active)) }, trend };
 }
 
 export type RankedMix = {
