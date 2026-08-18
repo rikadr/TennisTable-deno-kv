@@ -42,6 +42,32 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
+    slug: "game-details-set-and-situation-graphs",
+    title: "2 new graphs on game details",
+    date: "2026-08-18",
+    tags: ["feature-update"],
+    summary:
+      "The game details page has 2 new graphs for a game tracked live. They show the points of both players through each set, and how the 2 players compare in 5 situations.",
+    body: [
+      text(
+        "Points through each set gives 1 square graph per set. A line climbs by 1 for each point its player wins. The gap between the 2 lines is the lead, and a steep run is a streak. The line of the game loser is dashed.",
+      ),
+      text(
+        "Points won by situation puts both players on 1 shape. Each axis is the percent of that situation's points the player won. The larger shape on an axis is the player who owned the situation.",
+      ),
+      list(
+        "All points: every point of the game",
+        "Own serve: the points the player served",
+        "Their serve: the points the opponent served",
+        "Long points: the slower half of the points",
+        "Short points: the faster half of the points",
+      ),
+      text(
+        "The graph of the time each point took is gone. It showed the pace of the game, but it told you little about the play.",
+      ),
+    ],
+  },
+  {
     slug: "skill-rating-over-time",
     title: "Skill rating over time",
     date: "2026-08-18",
@@ -130,7 +156,7 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
         "The game details page shows the duration of the game, the time it started, the average time between 2 points, and the longest pause. For each player it shows the percent of points won on their own serve, and the longest run of points in a row.",
       ),
       text(
-        "A table gives every set: the score, who served the first point, the time the set took, and the break before it. A graph below the win % graph shows the time each point took. Each bar has the colour of the player who won the point.",
+        "A table gives every set: the score, who served the first point, the time the set took, and the break before it.",
       ),
       text(
         "The time between 2 points includes everything that happens between the rallies. A player can collect the ball or speak. Read the value as the pace of the game, not as the length of a rally.",

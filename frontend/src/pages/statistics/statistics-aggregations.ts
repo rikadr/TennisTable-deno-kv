@@ -414,7 +414,7 @@ export function paceAndServe(games: Game[]): PaceAndServe | undefined {
     gaps.push(timing.averagePointGapMs);
     pointsPerGame.push(score.pointSequences.reduce((total, set) => total + set.length, 0));
 
-    const serves = serveStats(score.pointSequences, score.tracking.firstServers);
+    const serves = serveStats(score.pointSequences, score.tracking);
     served += serves.winner.served + serves.loser.served;
     wonOnServe += serves.winner.won + serves.loser.won;
   }
