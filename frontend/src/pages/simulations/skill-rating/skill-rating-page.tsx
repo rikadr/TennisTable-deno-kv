@@ -30,6 +30,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 const TREND_DAYS = 90;
 
 const DRIFT_PRESETS = [
+  { label: "Stable", driftPerDay: 1 },
   { label: "Slow", driftPerDay: 4 },
   { label: "Normal", driftPerDay: 8 },
   { label: "Fast", driftPerDay: 16 },
@@ -372,7 +373,8 @@ export const SkillRatingPage: React.FC = () => {
         </p>
         <p>
           "Rating moves" sets how far a rating may move per day. A faster setting follows a change in form sooner, and it
-          also reacts more to a run of luck.
+          also follows a run of luck. Stable holds a curve almost flat, which predicts new games slightly better but
+          hides a real change in form.
         </p>
         <p>
           The game result decides whether a rating goes up or down. The sets and the points then refine it. A set score

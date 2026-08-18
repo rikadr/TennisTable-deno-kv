@@ -431,6 +431,60 @@ describe("Whr", () => {
     });
   });
 
+  it("agrees with the 1v1 win chance predictor", () => {
+    // The rating scale must mean the same thing as the predictor on the player
+    // pages: a gap of 400 points is a 10 to 1 win ratio. If the scale or a level
+    // slope drifts, the two stop lining up.
+    const trueRating: Record<string, number> = { s: 1350, a: 1230, b: 1120, c: 1000, d: 890, e: 760 };
+    const ids = Object.keys(trueRating);
+    const random = makeRandom(23);
+
+    // The predictor weights a game by its age, with a half life of 120 days, so
+    // the games need a realistic date. A fixed one keeps the test repeatable.
+    const firstDay = Math.floor(Date.UTC(2026, 6, 1) / DAY_MS);
+    const referenceTime = Date.UTC(2026, 6, 10);
+
+    const events: EventType[] = ids.map((id) => player(id));
+    for (let i = 0; i < ids.length; i++) {
+      for (let j = i + 1; j < ids.length; j++) {
+        const [one, two] = [ids[i], ids[j]];
+        const chance = 1 / (1 + Math.pow(10, (trueRating[two] - trueRating[one]) / 400));
+        for (let round = 0; round < 40; round++) {
+          const oneWins = random() < chance;
+          events.push(game(oneWins ? one : two, oneWins ? two : one, firstDay + (round % 5)));
+        }
+      }
+    }
+
+    const table = new TennisTable({ events, referenceTime });
+    const result = table.whr.compute();
+    const ratings = new Map(
+      result.curves.map((curve) => [curve.playerId, curve.points[curve.points.length - 1].rating]),
+    );
+
+    let compared = 0;
+    let sameFavourite = 0;
+    let totalGap = 0;
+    for (let i = 0; i < ids.length; i++) {
+      for (let j = i + 1; j < ids.length; j++) {
+        const predicted = table.predictions.getPredictedFraction(ids[i], ids[j]);
+        const one = ratings.get(ids[i])!;
+        const two = ratings.get(ids[j])!;
+        if (!predicted || predicted.confidence < 0.1) continue;
+
+        const fromRating = 1 / (1 + Math.pow(10, (two - one) / 400));
+        if ((fromRating > 0.5) === (predicted.fraction > 0.5)) sameFavourite++;
+        totalGap += Math.abs(fromRating - predicted.fraction);
+        compared++;
+      }
+    }
+
+    expect(compared).toBeGreaterThan(10);
+    expect(sameFavourite / compared).toBeGreaterThan(0.85);
+    // On the real league the average difference is 6 to 9 percentage points
+    expect(totalGap / compared).toBeLessThan(0.15);
+  });
+
   it("reports the configuration it used", () => {
     const result = compute([player("a"), player("b"), game("a", "b")], { driftPerDay: 12 });
 

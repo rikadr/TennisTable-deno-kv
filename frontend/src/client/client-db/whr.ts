@@ -98,7 +98,17 @@ export const GAME_LEVEL_ONLY: WhrLevelWeights = { game: 1, set: 0, point: 0 };
 export const DEFAULT_LEVEL_WEIGHTS: WhrLevelWeights = { game: 1, set: 0.5, point: 0.25 };
 
 export type WhrConfig = {
-  /** How much a player's skill can drift in Elo points over one day, as a standard deviation. */
+  /**
+   * How much a player's skill can drift in Elo points over one day, as a
+   * standard deviation.
+   *
+   * Measured against the real league: a fit on the first 75% of the games, used
+   * to predict the last 505 games, gives a log loss of 0.4969 at 1, 0.4980 at 2,
+   * 0.5047 at 4, 0.5244 at 8 and 0.5634 at 16. A lower value predicts a little
+   * better, but it also flattens the curve until a real change in form no longer
+   * shows. The default keeps the movement visible. Every value up to 8 still
+   * predicts better than the Elo leaderboard, which scores 0.5498.
+   */
   driftPerDay: number;
   /** Uncertainty in Elo points of the prior on a player's first rating. */
   newPlayerUncertainty: number;
