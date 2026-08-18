@@ -9,6 +9,7 @@ import {
   MIN_GAMES_FOR_SHARES,
   MIN_GAMES_PER_BUCKET,
   paceAndServe,
+  pairingCoverage,
   percent,
   PreGameStanding,
   rankedMix,
@@ -264,6 +265,61 @@ describe("trackedShareTrend", () => {
 
     expect(trend.map((point) => point.period)).toEqual(["2024-01"]);
     expect(trend[0].share).toBe(50);
+  });
+});
+
+describe("pairingCoverage", () => {
+  const active = new Set(["alice", "bob", "carol"]);
+  const ranked = new Set(["alice", "bob"]);
+
+  it("reports the active players and the ranked players as two series", () => {
+    const played = [game({ winner: "alice", loser: "bob" })];
+
+    const coverage = pairingCoverage(played, active, ranked)!;
+
+    // Three active players make three pairs, and one of them has met. The two
+    // ranked players make the one pair, and it has met.
+    expect(coverage.now.all).toBeCloseTo(33.333);
+    expect(coverage.now.ranked).toBe(100);
+  });
+
+  it("carries both values on every point of the trend", () => {
+    const played = [
+      game({ playedAt: new Date(2024, 0, 5).getTime(), winner: "alice", loser: "carol" }),
+      game({ playedAt: new Date(2024, 1, 5).getTime(), winner: "alice", loser: "bob" }),
+    ];
+
+    const { trend } = pairingCoverage(played, active, ranked)!;
+
+    expect(trend.map((point) => point.period)).toEqual(["2024-01", "2024-02"]);
+    // January only has the game against the unranked player.
+    expect(trend[0].all).toBeCloseTo(33.333);
+    expect(trend[0].ranked).toBe(0);
+    expect(trend[1].all).toBeCloseTo(66.667);
+    expect(trend[1].ranked).toBe(100);
+  });
+
+  it("counts a pair once, whichever way round it played", () => {
+    const played = [
+      game({ winner: "alice", loser: "bob" }),
+      game({ winner: "bob", loser: "alice" }),
+    ];
+
+    expect(pairingCoverage(played, active, ranked)!.now.all).toBeCloseTo(33.333);
+  });
+
+  it("leaves out a player who is no longer active", () => {
+    const played = [game({ winner: "alice", loser: "dave" })];
+
+    // Dave is not in the active set, so the game adds no pair at all.
+    expect(pairingCoverage(played, active, ranked)!.now.all).toBe(0);
+  });
+
+  it("says nothing when either group is too small to make a pair", () => {
+    const played = [game({ winner: "alice", loser: "bob" })];
+
+    expect(pairingCoverage(played, active, new Set(["alice"]))).toBeUndefined();
+    expect(pairingCoverage(played, new Set(["alice"]), ranked)).toBeUndefined();
   });
 });
 

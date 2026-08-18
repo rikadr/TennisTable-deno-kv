@@ -597,45 +597,87 @@ export function ratingDistribution(ratings: number[]): RatingBucket[] {
   }));
 }
 
-export type PairingCoverage = {
-  /** Share of the possible pairs of ranked players that have played each other. */
-  coverage: number;
-  /** The same share per month, so the trend is visible. */
-  trend: TrendPoint[];
+export type CoveragePoint = {
+  period: string;
+  timestamp: number;
+  /** Share of the possible pairs of active players that had met. */
+  all: number;
+  /** The same share among the ranked players only. */
+  ranked: number;
 };
 
-/**
- * How much of the league has met. A pair counts once, whichever way round it
- * played, and only pairs of currently ranked players count.
- */
-export function pairingCoverage(games: Game[], rankedPlayerIds: Set<string>): PairingCoverage | undefined {
-  const playerCount = rankedPlayerIds.size;
-  if (playerCount < 2) return undefined;
-  const possible = (playerCount * (playerCount - 1)) / 2;
+export type PairingCoverage = {
+  /** Where each line stands now. */
+  now: { all: number; ranked: number };
+  trend: CoveragePoint[];
+};
 
-  const played = new Set<string>();
-  const trend: TrendPoint[] = [];
+/** The number of pairs a group of players can make. */
+function possiblePairs(playerCount: number): number {
+  return (playerCount * (playerCount - 1)) / 2;
+}
+
+const pairKey = (winner: string, loser: string): string => [winner, loser].sort().join("|");
+
+/**
+ * How much of the league has met, for every active player and for the ranked
+ * players on their own. A pair counts once, whichever way round it played.
+ *
+ * Both lines measure against the players of today, so a point reads "of the
+ * pairs that exist now, this share had met by that month". One basis for both
+ * lines is what makes them comparable. The admin diversity chart instead
+ * rebuilds the group of players active in each week, which answers the
+ * different question of how connected the league was at the time.
+ *
+ * Only the active players count. A retired player can never meet anybody new,
+ * so a line that counted them could only fall.
+ */
+export function pairingCoverage(
+  games: Game[],
+  activePlayerIds: Set<string>,
+  rankedPlayerIds: Set<string>,
+): PairingCoverage | undefined {
+  if (activePlayerIds.size < 2 || rankedPlayerIds.size < 2) return undefined;
+  const possibleAll = possiblePairs(activePlayerIds.size);
+  const possibleRanked = possiblePairs(rankedPlayerIds.size);
+
+  const metAll = new Set<string>();
+  const metRanked = new Set<string>();
+  const trend: CoveragePoint[] = [];
   let currentMonth: string | undefined;
   let currentTimestamp = 0;
+
+  const pointSoFar = (period: string, timestamp: number): CoveragePoint => ({
+    period,
+    timestamp,
+    all: percent(metAll.size, possibleAll),
+    ranked: percent(metRanked.size, possibleRanked),
+  });
 
   for (const game of games) {
     const date = new Date(game.playedAt);
     const month = getPeriodKey(date, "month");
     if (currentMonth !== undefined && month !== currentMonth) {
-      trend.push({ period: currentMonth, timestamp: currentTimestamp, share: percent(played.size, possible) });
+      trend.push(pointSoFar(currentMonth, currentTimestamp));
     }
     currentMonth = month;
     currentTimestamp = getPeriodTimestamp(date, "month");
 
+    if (activePlayerIds.has(game.winner) && activePlayerIds.has(game.loser)) {
+      metAll.add(pairKey(game.winner, game.loser));
+    }
     if (rankedPlayerIds.has(game.winner) && rankedPlayerIds.has(game.loser)) {
-      played.add([game.winner, game.loser].sort().join("|"));
+      metRanked.add(pairKey(game.winner, game.loser));
     }
   }
   if (currentMonth !== undefined) {
-    trend.push({ period: currentMonth, timestamp: currentTimestamp, share: percent(played.size, possible) });
+    trend.push(pointSoFar(currentMonth, currentTimestamp));
   }
 
-  return { coverage: percent(played.size, possible), trend };
+  return {
+    now: { all: percent(metAll.size, possibleAll), ranked: percent(metRanked.size, possibleRanked) },
+    trend,
+  };
 }
 
 export type RankedMix = {

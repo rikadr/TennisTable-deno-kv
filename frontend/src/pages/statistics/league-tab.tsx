@@ -1,10 +1,28 @@
 import React, { useMemo } from "react";
-import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Legend,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { ContentCard } from "../player/content-card";
 import { NotEnoughGames, ShareBar, StatTile, StatTileRow } from "./stat-tile";
 import { ACCENT_COLOR, AXIS_COLOR, percentLabel, percentTick, SERIES_COLOR, TooltipCard } from "./percent-chart";
-import { GAP_GROUP_SIZE, pairingCoverage, rankedMix, rankMovement, ratingDistribution } from "./statistics-aggregations";
+import {
+  CoveragePoint,
+  GAP_GROUP_SIZE,
+  pairingCoverage,
+  rankedMix,
+  rankMovement,
+  ratingDistribution,
+} from "./statistics-aggregations";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const MOVEMENT_WINDOW_DAYS = 30;
@@ -20,26 +38,32 @@ export const LeagueTab: React.FC = () => {
   const rankedPlayers = useMemo(() => context.leaderboard.getLeaderboard().rankedPlayers, [context]);
   const rankedIds = useMemo(() => new Set(rankedPlayers.map((player) => player.id)), [rankedPlayers]);
 
+  const activeIds = useMemo(() => new Set(context.players.map((player) => player.id)), [context]);
+
   const ratings = useMemo(() => ratingDistribution(rankedPlayers.map((player) => player.elo)), [rankedPlayers]);
-  const coverage = useMemo(() => pairingCoverage(context.games, rankedIds), [context, rankedIds]);
+  const coverage = useMemo(() => pairingCoverage(context.games, activeIds, rankedIds), [context, activeIds, rankedIds]);
   const mix = useMemo(() => rankedMix(context.games, rankedIds), [context, rankedIds]);
   const movement = useMemo(() => {
     // The cached map holds every player ever created. The leaderboard this tile
     // describes shows the active ones only, so a deactivated player must not
     // take up a place in either ranking.
-    const active = new Set(context.players.map((entry) => entry.id));
     const summaries = Array.from(context.leaderboard.getCachedLeaderboardMap().values()).filter((summary) =>
-      active.has(summary.id),
+      activeIds.has(summary.id),
     );
     return rankMovement(summaries, Date.now() - MOVEMENT_WINDOW_DAYS * DAY_MS, context.client.gameLimitForRanked);
-  }, [context]);
+  }, [context, activeIds]);
 
   return (
     <div className="flex flex-col gap-4">
       <StatTileRow>
         <StatTile
           label="Of the possible pairs have met"
-          value={coverage === undefined ? "–" : percentLabel(coverage.coverage)}
+          value={coverage === undefined ? "–" : percentLabel(coverage.now.all)}
+          note="between active players"
+        />
+        <StatTile
+          label="Of the ranked pairs have met"
+          value={coverage === undefined ? "–" : percentLabel(coverage.now.ranked)}
           note="between ranked players"
         />
         <StatTile
@@ -83,7 +107,7 @@ export const LeagueTab: React.FC = () => {
 
       <ContentCard
         title="How much of the league has met"
-        description="Share of the possible pairs of ranked players that have played each other, month by month."
+        description="Share of the possible pairs of players that have played each other, month by month. The ranked line counts only the players who have enough games to be ranked."
       >
         {coverage === undefined || coverage.trend.length === 0 ? (
           <NotEnoughGames what="ranked players" />
@@ -101,17 +125,21 @@ export const LeagueTab: React.FC = () => {
                 height={70}
               />
               <YAxis stroke={AXIS_COLOR} tick={{ fontSize: 11 }} domain={[0, 100]} tickFormatter={percentTick} />
+              <Legend verticalAlign="top" height={28} iconType="line" />
               <Tooltip
                 content={({ active, payload, label }) => {
                   if (!active || !payload?.length) return null;
+                  const point = payload[0].payload as CoveragePoint;
                   return (
                     <TooltipCard title={formatMonth(String(label))}>
-                      <p>{percentLabel(Number(payload[0].value))} of the pairs had met</p>
+                      <p>{percentLabel(point.all)} of all the pairs had met</p>
+                      <p className="opacity-80">{percentLabel(point.ranked)} of the ranked pairs had met</p>
                     </TooltipCard>
                   );
                 }}
               />
-              <Line type="monotone" dataKey="share" stroke={SERIES_COLOR} strokeWidth={3} dot={false} activeDot={{ r: 5, fill: ACCENT_COLOR }} />
+              <Line type="monotone" dataKey="all" name="All players" stroke={SERIES_COLOR} strokeWidth={3} dot={false} />
+              <Line type="monotone" dataKey="ranked" name="Ranked players" stroke={ACCENT_COLOR} strokeWidth={3} dot={false} />
             </LineChart>
           </ResponsiveContainer>
         )}
