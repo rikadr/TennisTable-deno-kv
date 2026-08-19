@@ -15,6 +15,13 @@ export function useHallOfFameHistoryWorker() {
   const [progress, setProgress] = useState(0);
   const [failed, setFailed] = useState(false);
 
+  // The events are read through a ref so `startComputation` stays stable. The
+  // query refetches on window focus and returns a new array every time, so a
+  // dependency on the events themselves would terminate the worker and restart
+  // the simulation from 0% every time the tab regains focus.
+  const eventsRef = useRef(context.events);
+  eventsRef.current = context.events;
+
   useEffect(() => {
     return () => {
       workerRef.current?.terminate();
@@ -51,13 +58,22 @@ export function useHallOfFameHistoryWorker() {
         }
       });
 
+      // Without these the graph waits on a progress bar forever if the
+      // simulation throws or runs out of memory part way through.
+      const fail = (error: unknown) => {
+        console.error("Hall of fame history simulation failed", error);
+        setFailed(true);
+      };
+      worker.addEventListener("error", fail);
+      worker.addEventListener("messageerror", fail);
+
       const message: WorkerMessage = {
         type: "start-hall-of-fame-history",
-        data: { playerId, events: context.events, now: Date.now() },
+        data: { playerId, events: eventsRef.current, now: Date.now() },
       };
       worker.postMessage(message);
     },
-    [context.events],
+    [],
   );
 
   return { startComputation, result, progress, failed, isDone: result !== undefined };

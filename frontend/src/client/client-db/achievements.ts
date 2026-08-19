@@ -104,6 +104,17 @@ export class Achievements {
   private hasCalculated = false;
 
   achievementMap: Map<string, Achievement[]> = new Map();
+
+  /** The moment the achievements are awarded for: the reference time of a
+   * projection of a past state, or the real clock for the live state. Read
+   * lazily so the live state always uses the current time.
+   *
+   * Only the awarding rules use this. The progression figures below are the
+   * live attempt of the player who is looking at the Progress tab ("games won
+   * today", "wins in the last 90 minutes"), so they stay on the real clock. */
+  get #now(): number {
+    return this.parent.referenceTime ?? Date.now();
+  }
   // Highest Elo gain each player has achieved from a win where BOTH
   // players were ranked at the time. Used for David progression.
   bestDavidGain: Map<string, number> = new Map();
@@ -1079,7 +1090,7 @@ export class Achievements {
     // Award Perfect Day for each undefeated 5+ game day, in day order. Days
     // that have not fully elapsed are skipped: more games can still be played,
     // and a single loss would nullify the day.
-    const todayStart = dayStartOf(Date.now());
+    const todayStart = dayStartOf(this.#now);
     for (const [playerId, days] of perDay) {
       const sortedDays = Array.from(days.entries()).sort((a, b) => a[0] - b[0]);
       for (const [day, stats] of sortedDays) {
@@ -2611,7 +2622,7 @@ export class Achievements {
       const tournamentId = t.tournamentConfig.id;
 
       // Only award participation if the tournament has started
-      if (t.tournamentConfig.startDate > Date.now()) return;
+      if (t.tournamentConfig.startDate > this.#now) return;
 
       // Check participation for all players in the tournament
       t.tournamentConfig.playerOrder?.forEach((playerId) => {
@@ -2749,7 +2760,7 @@ export class Achievements {
 
       // The remaining season achievements read the FINAL leaderboard, so
       // they only exist once the season has ended.
-      if (Date.now() > s.end && leaderboard.length > 0) {
+      if (this.#now > s.end && leaderboard.length > 0) {
         const winner = leaderboard[0].playerId;
         this.#addAchievement(winner, this.#createAchievement("season-winner", winner, s.end, { seasonStart: s.start }));
 

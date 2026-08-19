@@ -86,7 +86,7 @@ export const HallOfFameScoreOverTime: React.FC<{ playerId: string; playerName: s
   if (failed) {
     return (
       <p className="text-primary-text text-sm">
-        The score over time needs a web worker, and this browser does not support one.
+        The score over time did not finish. The graph needs a web worker. Reload the page to try again.
       </p>
     );
   }
