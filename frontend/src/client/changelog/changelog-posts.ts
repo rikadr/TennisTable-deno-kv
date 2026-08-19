@@ -148,7 +148,7 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
       text("Open the Statistics page from the Other item in the menu. It has four tabs:"),
       list(
         "Activity shows the busy months, weeks, days of the week and times of the day.",
-        "Games shows how many games record the sets, the points and every point. It also shows the pace and the serve.",
+        "Games shows one section per level of detail: the game, the set, the point and the fully tracked game. A section gives only the statistics that its level makes possible, and the share of the games it covers.",
         "Matchups shows the rating gap between the two players, and how often the weaker player wins.",
         "League shows the rating spread, the pairs of players who have met, and the movement on the leaderboard.",
       ),
@@ -156,7 +156,7 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
         "Each chart uses a percent axis. The chart of the days of the week gives the share of all games. The charts with many groups compare each group to the busiest group, which reads 100%.",
       ),
       text(
-        "The page shows the difference between periods and matchups. It does not show how many games the league plays, and it does not show how many games a player plays.",
+        "The page shows the difference between periods and matchups. It gives the pace of the whole league in games per day, week and month. It never shows how many games one player plays.",
       ),
     ],
   },

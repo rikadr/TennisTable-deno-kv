@@ -118,22 +118,56 @@ describe("StatisticsPage", () => {
     expect(screen.getAllByText(/^\d+%$/).length).toBeGreaterThan(0);
   });
 
-  it("renders the games tab", () => {
+  it("renders the games tab as one section per level of detail", () => {
     renderTab("games");
+
+    expect(screen.getByRole("heading", { name: "Game level" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Set level" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Point level" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Fully tracked games" })).toBeInTheDocument();
+
+    // Each section but the first says which share of the games it covers.
+    expect(screen.getByText("Games that record sets")).toBeInTheDocument();
+    expect(screen.getByText("Games that record the points of each set")).toBeInTheDocument();
+    expect(screen.getByText("Games tracked point by point")).toBeInTheDocument();
+    // The map of the four levels stands over the sections.
     expect(screen.getByText("How much detail we record")).toBeInTheDocument();
-    expect(screen.getByText("Tracked games over time")).toBeInTheDocument();
-    expect(screen.getByText("Pace and serve")).toBeInTheDocument();
   });
 
-  it("shows the games tab statistics on one tracked game", () => {
+  it("shows a statistic of every level on one tracked game", () => {
     // The page held every statistic back until the period had 10 games. One
     // game that records the statistic is now enough.
     renderTab("games", buildEvents(1));
 
-    expect(screen.getByText("Sets recorded")).toBeInTheDocument();
-    expect(screen.getByText("Median game length")).toBeInTheDocument();
+    expect(screen.getByText("Games per day")).toBeInTheDocument();
+    expect(screen.getByText("Median rating gap")).toBeInTheDocument();
+    expect(screen.getByText("Sets won by the game winner")).toBeInTheDocument();
     expect(screen.getByText("Median points in a set")).toBeInTheDocument();
+    expect(screen.getByText("Median game length")).toBeInTheDocument();
+    expect(screen.getByText("To close a set")).toBeInTheDocument();
     expect(screen.queryByText(/Not enough/)).not.toBeInTheDocument();
+  });
+
+  it("draws the charts of the games tab", () => {
+    const { container } = renderTab("games");
+
+    // The detail chart, the set score pie, the sets played bars, the losing
+    // score bars and the points of a game line.
+    expect(countMarks(container, ".recharts-surface")).toBe(5);
+    expect(countMarks(container, ".recharts-area")).toBeGreaterThan(0);
+    expect(countMarks(container, ".recharts-pie-sector")).toBeGreaterThan(0);
+    expect(countMarks(container, ".recharts-bar-rectangle")).toBeGreaterThan(0);
+    expect(countMarks(container, ".recharts-reference-line")).toBeGreaterThan(0);
+  });
+
+  it("shows no coverage bar for a period that holds no game", () => {
+    // 0% recorded would say that nothing was recorded, when nothing was played.
+    renderTab("games", buildEvents(0));
+
+    expect(screen.getByRole("heading", { name: "Set level" })).toBeInTheDocument();
+    expect(screen.queryByText("Games that record sets")).not.toBeInTheDocument();
+    expect(screen.queryByText("Games tracked point by point")).not.toBeInTheDocument();
+    expect(screen.getAllByText(/Not enough/).length).toBeGreaterThan(0);
   });
 
   it("renders the matchups tab", () => {
