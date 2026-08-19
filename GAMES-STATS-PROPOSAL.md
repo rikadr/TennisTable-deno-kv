@@ -20,28 +20,42 @@ Status legend: `built` = on the branch now, `old` = was on the page before,
 
 ---
 
-## Level 1 — Game level
+## Level 1 — Game level — DECIDED
 *Winner, loser, time. Every game. Ratings count as game level, since elo is
 derived from results only.*
 
-| id | Statistic | What it tells you | Status |
-|----|-----------|-------------------|--------|
-| G1 | Share of games won by the higher rated player | Does the rating hold up | new ↔ Matchups |
-| G2 | Median rating gap in a game | Do we play equals or mismatches | new ↔ Matchups |
-| G3 | Share of games between players within 50 rating points | How much of the league is a close matchup | new |
-| G4 | The pair played before (in the period) | How much of the league is repeat fixtures | built |
-| G5 | Rematch within the hour | How much of the league is one session at the table | built |
-| G6 | Revenge: the loser of the previous game wins the rematch | Does losing get avenged | built |
-| G7 | The winner won their previous game | Does form carry between games | built |
-| G8 | Median days between two games of the same pair | How often a rivalry meets | new |
-| G9 | Share of games that are the first ever meeting of the pair | How much new ground the league covers | new ↔ League |
-| G10 | Median elo points moved in a game | How much a single game is worth | new |
-| G11 | Share of games that changed a leaderboard position | How often a result matters to the table | new |
-| G12 | Share of games that changed the top 3 | How often the top of the table moves | new |
-| G13 | Share of games played by two ranked players | Who the league is between | new ↔ League |
-| G14 | Median length of a session of a pair ⚠️ | Best of 3, best of 5, or one game | needs a count |
-| G15 | Share of games that ended a run of 3 wins or more | How often a run is broken | new |
-| G16 | Share of games won by a player rated 200 or more below the opponent | How often a big upset happens | new ↔ Matchups |
+Kept: **G2, G8, G9, G13**. Scrapped: G1, G3, G4, G5, G6, G7, G10, G11, G12,
+G14, G15, G16. G4-G7 are built on the branch, so `gameLevelStats` and its tests
+get deleted when we implement this.
+
+| id | Statistic | Shape | Note |
+|----|-----------|-------|------|
+| G2 | Median rating gap in a game | tile | The gap before the game, from `forEachGameWithPreGameStanding`. Absolute, so it never reads as a sign. |
+| G8 | Median days since the pair last played | tile | Over the games of the period that are not a first meeting. |
+| G9 | Share of games that are the first ever meeting of the pair | tile | "Ever" is over the whole history, so a game in the period counts as a first meeting only if the pair never played before it. |
+| G13 | Both ranked / one ranked / neither ranked | chart | The three shares add up to 100. Ranked is measured **at the time of the game**. |
+
+**G13 in detail.** A player is ranked when they have played
+`gameLimitForRanked` games, so ranked at the time of a game means they had
+played that many before it. `forEachGameWithPreGameStanding` already reports
+the games each player had played before a game, so this needs no new walk of
+the history. Deactivation stops mattering: the question is what the player was
+on the day, not whether they are still in the league.
+
+The League tab has the same three shares today, but measured against the
+leaderboard of **today** and against the active players of today, so its
+numbers will not match. We should move the statistic here and remove it from
+League, rather than print two different values for "both ranked" on one page.
+
+### Open decisions for level 1
+
+1. **G13 chart.** A 100% stacked bar for the selected period, or a stacked area
+   per month over the whole history? The second shows the league maturing as
+   players cross the ranked limit, but it ignores the period selector, the way
+   the tracked-share chart already does. I suggest the stacked area.
+2. **G13 in League.** Remove it there, or leave the two versions? I suggest
+   removing it there.
+3. **Section shape.** 3 tiles and 1 chart. Good?
 
 ## Level 2 — Set level
 *Games that record `setsWon`. No order and no points, so only the sets and who
