@@ -76,17 +76,12 @@ Kept: **S5, S7, S8**. Scrapped: S1, S2, S3, S4 (S8 carries all four) and S6.
 | S7 | Games by the number of sets they hold: 1, 2, 3, 4, 5 | chart | The relative quantity of each, as a share of the games with sets. |
 | S8 | The set score of a game: 2-0, 2-1, 3-0, 3-1, 3-2, 1-0… | pie | Read from the winner, so 2-1 and 1-2 are one slice. The slices add up to 100%. |
 
-**S7 and S8 overlap.** The number of sets in a game is the sum of the scoreline,
-so S7 is S8 grouped. Only a total of 3 splits two ways, into 2-1 and 3-0. Both
-charts are worth having only if they are read differently: S8 for the exact
-score, S7 for how long a game runs. If we want one chart instead, a bar per
-scoreline ordered by the number of sets gives both readings at once.
+**S7 and S8 stay two charts.** They are read differently: S8 for the exact
+score, S7 for how long a game runs. S8 is a pie, S7 is a bar chart.
 
-**Open decisions for level 2**
-
-1. **S8 grouping.** An unusual scoreline (4-3, 5-2) makes a thin slice. Roll
-   everything past the common ones into "other", or keep every scoreline?
-2. **S7 and S8 together, or one merged chart?**
+**Open decision for level 2:** an unusual scoreline (4-3, 5-2) makes a thin
+slice of the pie. Roll everything past the common ones into "other", or keep
+every scoreline? Default if we do not decide: keep every scoreline.
 
 ## Level 3 — Point level
 *Games that record `setPoints`. The sets are in the order they were played, so
