@@ -124,34 +124,44 @@ the card must say so.
 **P4 has no buckets.** The line plots every total that games hold, one point per
 total. The line is spiky, which is true to the data.
 
-## Level 4 — Fully tracked games
+## Level 4 — Fully tracked games — DECIDED
 *Games with `pointSequences` and `tracking`: every point in order, its time,
 and who served it.*
 
-| id | Statistic | What it tells you | Status |
-|----|-----------|-------------------|--------|
-| T1 | Median game length | How long a game takes | built, old |
-| T2 | Median time per point | The pace of play | built, old |
-| T3 | Median break between two sets | How long we stand around | built |
-| T4 | Points won by the server | What a serve is worth | built, old |
-| T5 | The player who won the last point wins the next | Do points come in runs | built |
-| T6 | The first point of a set wins the set | Is the start of a set worth anything | built |
-| T7 | Median longest run of points in a game | How streaky a game is | new |
-| T8 | Win probability from a set score (chart: at 8-5, x% win the set) | The real value of a lead | new |
-| T9 | Sets won after being 5 points down | How alive a set is when you are behind | new |
-| T10 | Sets where the loser held a set point | How many sets are nearly stolen | new |
-| T11 | Points won on serve at deuce, against normal play | Does the serve matter more when it is tight | new |
-| T12 | Median seconds per point at deuce, against normal play | Do we slow down when it is tight | new |
-| T13 | Median lead changes in a set | How much a set swings | new |
-| T14 | Tracked on the live screen | Which tracker we use | built, old |
-| T15 | Share of the games of each month that are tracked (line chart) | Are we recording more over time | built, old |
-| T16 | Tracked games with a correction | How much to trust the times | new, admin-ish |
-| T17 ★ | Average set points a set winner needs to close the set | How hard it is to finish a set | new |
-| T18 ★ | Average match points a game winner needs to close the game | How hard it is to finish a game | new |
-| T19 ★ | **The difference between T18 and T17** | Whether closing a game is harder than closing a set | new |
-| T20 ★ | Set points converted, against match points converted | The same, as two conversion rates | new |
-| T21 ★ | Games where the game loser held a match point | How often a game is nearly stolen | new |
-| T22 ★ | Sets where the set loser held a set point | How often a set is nearly stolen | new (was T10) |
+Kept: **T1, T2, T4, T6, T7, T12, T15 (rebuilt), T16 (rebuilt), T17-T22**.
+Scrapped: T3, T5, T8, T9, T11, T13, T14.
+
+| id | Statistic | Shape | Note |
+|----|-----------|-------|------|
+| T1 | Median game length | tile | |
+| T2 | Median time per point | tile | |
+| T4 | The serve, as a ratio | tile | Points the server wins against points the server loses. "The server wins 1.1 points for every 1 they lose." |
+| T6 | The first point of a set wins the set | tile | |
+| T7 | Median longest run of points in a game | tile | Low value is expected. Keep it and see. |
+| T12 | Time per point at deuce, as a ratio | tile | The median seconds per point at deuce against the median outside deuce. Framed like P10: "a point at deuce takes 1.3 times as long." |
+| T15 | The four levels of detail over time | stacked line chart | Replaces the tracked share line. One band per level (no score, sets, points, tracked), so the four add up to 100% of the games of the month. |
+| T16 | Average corrections in a tracked game | tile | How much a tracked log is edited by hand, so how far to trust the times. |
+| T17 | Average set points a set winner needs to close the set | one widget | T17, T18 and T19 belong together and read as one thing. |
+| T18 | Average match points a game winner needs to close the game | one widget | |
+| T19 | The difference between T18 and T17 | one widget | The headline of the group: closing a game costs this many more chances than closing a set. |
+| T20 | Set points converted, against match points converted | tile | The same idea as two conversion rates. It can join the T17-T19 widget if it fits. |
+| T21 | Games where the game loser held a match point | tile | |
+| T22 | Sets where the set loser held a set point | tile | |
+
+**T15 is not really a level 4 statistic.** It describes how much detail every
+game records, so it belongs at the top of the tab as the map of the four
+sections, not at the bottom inside the last one. Proposal: move it above level 1
+as the introduction of the tab.
+
+**Open decisions for level 4**
+
+1. **T15 position.** Top of the tab as an introduction, or bottom of level 4?
+   I suggest the top.
+2. **Sets that never meet the rule.** A set is marked won by hand, so a recorded
+   set does not always meet the 11 and 2 rule. A set that ends at 8-5 holds no
+   set point. Leave those sets out of T17-T22, or count them as closed on the
+   first set point? I suggest leaving them out and saying so on the card.
+3. **T20 in the T17-T19 widget**, or as its own tile?
 
 ---
 
