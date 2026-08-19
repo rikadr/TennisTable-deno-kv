@@ -56,6 +56,13 @@ League, rather than print two different values for "both ranked" on one page.
 2. **G13 in League.** Remove it there, or leave the two versions? I suggest
    removing it there.
 3. **Section shape.** 3 tiles and 1 chart. Good?
+4. **The pace statistic** (games per day, week and month) is not decided. It
+   conflicts with the privacy rule of the file: A the literal averages and a
+   repeal of the rule, B the pace as a ratio to the usual pace, C the share of
+   days with a game.
+5. **Level 1 stays small here.** Many game level statistics fit better in
+   another tab, or in a chart of the busiest periods like the one on the admin
+   statistics page. That is separate work, not this section.
 
 ## Level 2 — Set level
 *Games that record `setsWon`. No order and no points, so only the sets and who
