@@ -68,8 +68,7 @@ League, rather than print two different values for "both ranked" on one page.
 *Games that record `setsWon`. No order and no points, so only the sets and who
 won them.*
 
-Kept: **S5, S7, S8**. Scrapped: S1, S2, S3, S4 (S8 carries all four). S6 is not
-decided, see below.
+Kept: **S5, S7, S8**. Scrapped: S1, S2, S3, S4 (S8 carries all four) and S6.
 
 | id | Statistic | Shape | Note |
 |----|-----------|-------|------|
@@ -88,11 +87,6 @@ scoreline ordered by the number of sets gives both readings at once.
 1. **S8 grouping.** An unusual scoreline (4-3, 5-2) makes a thin slice. Roll
    everything past the common ones into "other", or keep every scoreline?
 2. **S7 and S8 together, or one merged chart?**
-3. **S6.** Whitewash share by rating gap group: for each 50 point gap group,
-   the share of the games where the loser won no set. It answers whether a
-   rating gap predicts a one sided game. It needs the elo walk and a minimum
-   group size, and it sits close to the upset chart of the Matchups tab. Keep
-   or drop?
 
 ## Level 3 — Point level
 *Games that record `setPoints`. The sets are in the order they were played, so
