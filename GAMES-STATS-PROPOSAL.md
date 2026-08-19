@@ -16,7 +16,7 @@ Pick, cut and add. Reply with ids (`G3`, `S1`, `P4`…) plus anything missing.
   pairing coverage. Overlap is marked ↔ so we can decide to move or drop.
 
 Status legend: `built` = on the branch now, `old` = was on the page before,
-`new` = would need a new aggregation.
+`new` = would need a new aggregation. ★ = asked for by Rikard.
 
 ---
 
@@ -40,6 +40,8 @@ derived from results only.*
 | G12 | Share of games that changed the top 3 | How often the top of the table moves | new |
 | G13 | Share of games played by two ranked players | Who the league is between | new ↔ League |
 | G14 | Median length of a session of a pair ⚠️ | Best of 3, best of 5, or one game | needs a count |
+| G15 | Share of games that ended a run of 3 wins or more | How often a run is broken | new |
+| G16 | Share of games won by a player rated 200 or more below the opponent | How often a big upset happens | new ↔ Matchups |
 
 ## Level 2 — Set level
 *Games that record `setsWon`. No order and no points, so only the sets and who
@@ -53,7 +55,18 @@ won them.*
 | S4 | Median sets in a game | The format mix, as one number | built |
 | S5 | Share of all sets that the game winner won | Dominance, at set level | new |
 | S6 | Whitewash share by rating gap group (chart) | Does a rating gap predict a whitewash | new |
-| S7 | Share of games that reach 3 sets, 4 sets, 5 sets (bar chart) | The shape of a game, as a distribution | new |
+| S7 | Share of games that reach 3 sets, 4 sets, 5 sets (bar chart) | The shape of a game, as a distribution | new — absorbed by S8 |
+| S8 ★ | **Pie chart of the set score of a game: 2-0, 2-1, 3-0, 3-1, 3-2, 1-0…** | The shape of a game, as the scoreline people say out loud | new |
+
+**S8 in detail.** The score is always read from the winner: a game is 2-1 and
+never 1-2, so the two are one slice. Each slice is the share of the games with
+sets that ended on that scoreline. The slices cover 100% of the games with sets,
+so the pie is the whole format mix and the whitewash rate in one picture — S1,
+S3 and S4 become readable from it, and we can drop them as tiles if the pie
+carries them.
+
+Decision needed: an unusual scoreline (a 4-3, a 5-2) makes a thin slice. Group
+everything past the common ones into "other", or keep every scoreline?
 
 ## Level 3 — Point level
 *Games that record `setPoints`. The sets are in the order they were played, so
@@ -96,8 +109,38 @@ and who served it.*
 | T14 | Tracked on the live screen | Which tracker we use | built, old |
 | T15 | Share of the games of each month that are tracked (line chart) | Are we recording more over time | built, old |
 | T16 | Tracked games with a correction | How much to trust the times | new, admin-ish |
+| T17 ★ | Average set points a set winner needs to close the set | How hard it is to finish a set | new |
+| T18 ★ | Average match points a game winner needs to close the game | How hard it is to finish a game | new |
+| T19 ★ | **The difference between T18 and T17** | Whether closing a game is harder than closing a set | new |
+| T20 ★ | Set points converted, against match points converted | The same, as two conversion rates | new |
+| T21 ★ | Games where the game loser held a match point | How often a game is nearly stolen | new |
+| T22 ★ | Sets where the set loser held a set point | How often a set is nearly stolen | new (was T10) |
 
 ---
+
+## Definitions for the set point and match point statistics (T17-T22)
+
+The rules the app already uses, from `live-game-win-probability.ts`: a set is
+first to 11 and won by 2, and a match is first to N sets. For a finished game N
+is the set count of the winner, so the match format is known in hindsight.
+
+- **Set point.** A point where the player who is ahead wins the set by winning
+  it. The player is at 10 or more and leads by 1 or more. At 10-10 nobody is at
+  set point; at 11-10 only the leader is. So at most one player holds set point
+  at a time, and no point is counted twice.
+- **Match point.** A set point of a player who has won N-1 sets already. In a
+  deciding set both players can hold a match point, in turn.
+- **T17 and T18** count the set points and match points the eventual winner
+  held before converting. 1 means the first one went in. 4 means three were
+  missed first.
+- **T19** is the number that answers the question: a set takes x set points to
+  close, a game takes y match points, and y - x is the price of the moment.
+
+**Decision needed.** A set is marked won by hand, so a recorded set does not
+always meet the 11 and 2 rule. A set that ends at 8-5, or at 11-10, holds no set
+point under the rule. Leave those sets out of T17-T22, or count them as a set
+that was closed on the first set point? I suggest leaving them out and saying so
+in the description of the card.
 
 ## Open questions before we cut
 
