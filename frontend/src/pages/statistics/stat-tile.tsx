@@ -39,3 +39,29 @@ export const ShareBar: React.FC<{ label: string; share: number; description?: st
     {description && <span className="text-xs text-primary-text/60">{description}</span>}
   </div>
 );
+
+/**
+ * One bar split into shares that add up to 100. Use it where the groups are
+ * parts of one whole, such as the three ranked mixes of a game, or the two
+ * sides of a single question.
+ */
+export const StackedShareBar: React.FC<{ segments: { label: string; share: number; color: string }[] }> = ({
+  segments,
+}) => (
+  <div className="flex flex-col gap-2">
+    <div className="flex h-6 w-full rounded-full overflow-hidden bg-secondary-background/30">
+      {segments.map((segment) => (
+        <div key={segment.label} style={{ width: `${segment.share}%`, backgroundColor: segment.color }} />
+      ))}
+    </div>
+    <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-primary-text/80">
+      {segments.map((segment) => (
+        <span key={segment.label} className="flex items-center gap-1.5">
+          <span className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: segment.color }} />
+          {segment.label}
+          <span className="tabular-nums font-semibold">{percentLabel(segment.share)}</span>
+        </span>
+      ))}
+    </div>
+  </div>
+);

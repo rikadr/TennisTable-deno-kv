@@ -1,6 +1,20 @@
 # Games tab — candidate statistics per detail level
 
-Working document. Not committed as part of the feature; delete when we are done.
+Working document. **The statistics below are built.** What is left open is
+listed here, and nothing else in this file is waiting on a decision.
+
+**Still open**
+
+1. The pace statistic of level 1 (games per day, week and month). It conflicts
+   with the privacy rule, so it is not built. Options: A the literal averages
+   and a repeal of the rule, B the pace as a ratio to the usual pace, C the
+   share of days with a game.
+2. The thin slices of the set score pie. With the real data 4 of the 8 scores
+   are under 0,25%, so they are a hair on the pie and a line in the legend.
+   Group them into "other", or keep every score? They are kept for now.
+3. G13 sits on the League tab as well, measured against the leaderboard of
+   today instead of the day of the game, so the two cards give different
+   numbers. Removing the League one was proposed and not decided.
 
 Pick, cut and add. Reply with ids (`G3`, `S1`, `P4`…) plus anything missing.
 

@@ -148,7 +148,7 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
       text("Open the Statistics page from the Other item in the menu. It has four tabs:"),
       list(
         "Activity shows the busy months, weeks, days of the week and times of the day.",
-        "Games shows one section per level of detail: the game, the set, the point and the fully tracked game. Each section says which share of the games it covers.",
+        "Games shows one section per level of detail: the game, the set, the point and the fully tracked game. A section gives only the statistics that its level makes possible, and the share of the games it covers.",
         "Matchups shows the rating gap between the two players, and how often the weaker player wins.",
         "League shows the rating spread, the pairs of players who have met, and the movement on the leaderboard.",
       ),

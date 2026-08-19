@@ -6,6 +6,7 @@ import {
   GapView,
   activityTrend,
   detailLevels,
+  detailLevelTrend,
   forEachGameWithPreGameStanding,
   gameLevelStats,
   MIN_GAMES_PER_BUCKET,
@@ -19,7 +20,6 @@ import {
   setLevelStats,
   timeOfDayShares,
   trackedLevelStats,
-  trackedShareTrend,
   upsetRate,
   weakerPlayer,
   weekdayShares,
@@ -191,7 +191,6 @@ describe("detailLevels", () => {
     expect(levels.withSets).toBe(100);
     expect(levels.withPoints).toBe(100);
     expect(levels.tracked).toBe(100);
-    expect(levels.trackedOnLiveScreen).toBe(100);
   });
 
   it("nests strictly: tracked is inside points, which is inside sets", () => {
@@ -207,76 +206,169 @@ describe("detailLevels", () => {
     expect(levels.withSets).toBe(90);
     expect(levels.withPoints).toBe(70);
     expect(levels.tracked).toBe(40);
-    expect(levels.tracked).toBeLessThanOrEqual(levels.withPoints);
-    expect(levels.withPoints).toBeLessThanOrEqual(levels.withSets);
-    expect(levels.trackedOnLiveScreen).toBe(100);
+  });
+});
+
+describe("detailLevelTrend", () => {
+  const sets = { setsWon: { gameWinner: 2, gameLoser: 0 } };
+  const points = { ...sets, setPoints: [{ gameWinner: 11, gameLoser: 5 }] };
+  const tracked = {
+    ...points,
+    pointSequences: ["WWWWWWWWWWWLLLLL"],
+    tracking: {
+      version: 1 as const,
+      source: "track-game" as const,
+      startedAt: 1,
+      pointDeltas: [new Array(16).fill(10)],
+      endedAfter: 10,
+      firstServers: "W",
+      corrections: 0,
+    },
+  };
+
+  it("splits every month four ways, and the four shares add up to 100", () => {
+    const played = [
+      game({ playedAt: MONDAY, score: tracked }),
+      game({ playedAt: MONDAY + DAY_MS, score: points }),
+      game({ playedAt: MONDAY + 2 * DAY_MS, score: sets }),
+      game({ playedAt: MONDAY + 3 * DAY_MS }),
+    ];
+
+    const trend = detailLevelTrend(played);
+
+    expect(trend).toHaveLength(1);
+    expect(trend[0]).toMatchObject({ tracked: 25, points: 25, sets: 25, noScore: 25 });
+    expect(trend[0].tracked + trend[0].points + trend[0].sets + trend[0].noScore).toBe(100);
+  });
+
+  it("plots every month that holds a game, oldest first", () => {
+    const played = [
+      game({ playedAt: new Date(2024, 0, 10).getTime(), score: tracked }),
+      game({ playedAt: new Date(2024, 2, 10).getTime() }),
+    ];
+
+    const trend = detailLevelTrend(played);
+
+    expect(trend.map((point) => point.period)).toEqual(["2024-01", "2024-03"]);
+    expect(trend[0].tracked).toBe(100);
+    expect(trend[1].noScore).toBe(100);
   });
 });
 
 describe("gameLevelStats", () => {
-  const HOUR_MS = 60 * 60 * 1000;
+  const players = [player("alice"), player("bob"), player("carol")];
 
-  it("stays silent for a period that holds no game", () => {
-    expect(gameLevelStats([])).toBeUndefined();
+  it("stays silent when the period holds no game", () => {
+    expect(gameLevelStats([], players, 3, 0)).toBeUndefined();
+    expect(gameLevelStats(games(2), players, 3, MONDAY + DAY_MS)).toBeUndefined();
   });
 
-  it("reads the rematches, the revenges and the form of the winner", () => {
+  it("reads the rating gap of the games of the period only", () => {
+    // Alice beats bob twice before the period, so the two are apart when the
+    // period starts and the gap of the third game is the widest.
     const played = [
       game({ winner: "alice", loser: "bob", playedAt: MONDAY }),
-      // A rematch 10 minutes later, and the loser of the first game wins it.
-      game({ winner: "bob", loser: "alice", playedAt: MONDAY + 10 * 60 * 1000 }),
-      game({ winner: "carol", loser: "dave", playedAt: MONDAY + 2 * HOUR_MS }),
-      // The pair meets again, too late to be the same session at the table.
-      game({ winner: "alice", loser: "bob", playedAt: MONDAY + 5 * HOUR_MS }),
-      game({ winner: "alice", loser: "carol", playedAt: MONDAY + 6 * HOUR_MS }),
+      game({ winner: "alice", loser: "bob", playedAt: MONDAY + DAY_MS }),
+      game({ winner: "alice", loser: "bob", playedAt: MONDAY + 2 * DAY_MS }),
     ];
 
-    const stats = gameLevelStats(played)!;
+    const all = gameLevelStats(played, players, 3, 0)!;
+    const last = gameLevelStats(played, players, 3, MONDAY + 2 * DAY_MS)!;
 
-    expect(stats.rematchOfThePair).toBe(40);
-    expect(stats.revenge).toBe(100);
-    expect(stats.sameSession).toBe(20);
-    // Alice is the only winner who won the game she played before.
-    expect(stats.winnerWonThePreviousGame).toBeCloseTo(100 / 3);
+    expect(all.medianRatingGap).toBeGreaterThan(0);
+    expect(last.medianRatingGap).toBeGreaterThan(all.medianRatingGap);
   });
 
-  it("leaves out the shares that the period holds no game for", () => {
-    const stats = gameLevelStats([game({ winner: "alice", loser: "bob" })])!;
+  it("counts a first meeting over the whole history, not over the period", () => {
+    const played = [
+      game({ winner: "alice", loser: "bob", playedAt: MONDAY }),
+      game({ winner: "alice", loser: "bob", playedAt: MONDAY + 2 * DAY_MS }),
+      game({ winner: "alice", loser: "carol", playedAt: MONDAY + 3 * DAY_MS }),
+    ];
 
-    expect(stats.rematchOfThePair).toBe(0);
-    expect(stats.sameSession).toBe(0);
-    expect(stats.revenge).toBeUndefined();
-    expect(stats.winnerWonThePreviousGame).toBeUndefined();
+    // The period holds the last two games. One of them repeats a pair that met
+    // before the period, so it is not a first meeting.
+    const stats = gameLevelStats(played, players, 3, MONDAY + DAY_MS)!;
+
+    expect(stats.firstMeeting).toBe(50);
+    expect(stats.medianDaysSinceThePairPlayed).toBe(2);
+  });
+
+  it("leaves out the days since the pair played when every game is a first meeting", () => {
+    const stats = gameLevelStats([game({ winner: "alice", loser: "bob" })], players, 3, 0)!;
+
+    expect(stats.firstMeeting).toBe(100);
+    expect(stats.medianDaysSinceThePairPlayed).toBeUndefined();
+  });
+
+  it("splits the games by how many players were ranked on the day", () => {
+    // The limit is 2 games, so a player is ranked from their third game on.
+    const played = [
+      game({ winner: "alice", loser: "bob", playedAt: MONDAY }),
+      game({ winner: "alice", loser: "bob", playedAt: MONDAY + DAY_MS }),
+      game({ winner: "alice", loser: "carol", playedAt: MONDAY + 2 * DAY_MS }),
+      game({ winner: "alice", loser: "bob", playedAt: MONDAY + 3 * DAY_MS }),
+    ];
+
+    const stats = gameLevelStats(played, players, 2, 0)!;
+
+    // Game 1: neither. Game 2: alice and bob have 1 each, so neither. Game 3:
+    // alice has 2 and carol none. Game 4: alice and bob have enough.
+    expect(stats.rankedMix.neitherRanked).toBe(50);
+    expect(stats.rankedMix.oneRanked).toBe(25);
+    expect(stats.rankedMix.bothRanked).toBe(25);
+    const mix = stats.rankedMix;
+    expect(mix.bothRanked + mix.oneRanked + mix.neitherRanked).toBe(100);
   });
 });
 
 describe("setLevelStats", () => {
-  it("reports the share of games the loser lost without a set", () => {
+  it("stays silent when no game records a set", () => {
+    expect(setLevelStats(games(50))).toBeUndefined();
+  });
+
+  it("gives the share of the sets that the game winners won", () => {
     const played = [
-      ...games(6, { score: { setsWon: { gameWinner: 2, gameLoser: 0 } } }),
-      ...games(4, { score: { setsWon: { gameWinner: 2, gameLoser: 1 } } }),
+      ...games(1, { score: { setsWon: { gameWinner: 2, gameLoser: 0 } } }),
+      ...games(1, { score: { setsWon: { gameWinner: 2, gameLoser: 1 } } }),
     ];
 
     const stats = setLevelStats(played)!;
 
-    expect(stats.whitewash).toBe(60);
-    // The loser stopped one set short in the 2-1 games, so the last set decided.
-    expect(stats.decider).toBe(40);
-    expect(stats.singleSet).toBe(0);
-    expect(stats.medianSetsPlayed).toBe(2);
+    // The winners took 4 of the 5 sets played: 2 of 2, then 2 of 3.
+    expect(stats.setsWonByTheWinner).toBe(80);
   });
 
-  it("counts a game of one set as a single set and never as a decider", () => {
-    const stats = setLevelStats(games(2, { score: { setsWon: { gameWinner: 1, gameLoser: 0 } } }))!;
+  it("groups the games by the number of sets they hold", () => {
+    const played = [
+      ...games(6, { score: { setsWon: { gameWinner: 2, gameLoser: 0 } } }),
+      ...games(2, { score: { setsWon: { gameWinner: 2, gameLoser: 1 } } }),
+      ...games(2, { score: { setsWon: { gameWinner: 1, gameLoser: 0 } } }),
+    ];
 
-    expect(stats.singleSet).toBe(100);
-    expect(stats.decider).toBe(0);
-    expect(stats.whitewash).toBe(100);
-    expect(stats.medianSetsPlayed).toBe(1);
+    const stats = setLevelStats(played)!;
+
+    expect(stats.bySetsPlayed).toEqual([
+      { setsPlayed: 1, share: 20 },
+      { setsPlayed: 2, share: 60 },
+      { setsPlayed: 3, share: 20 },
+    ]);
+    expect(stats.bySetsPlayed.reduce((sum, entry) => sum + entry.share, 0)).toBe(100);
   });
 
-  it("stays silent when no game records a set", () => {
-    expect(setLevelStats(games(50))).toBeUndefined();
+  it("reads the score from the winner, so 2-1 and 1-2 are one score", () => {
+    const played = [
+      ...games(3, { score: { setsWon: { gameWinner: 2, gameLoser: 1 } } }),
+      ...games(1, { score: { setsWon: { gameWinner: 3, gameLoser: 0 } } }),
+    ];
+
+    const stats = setLevelStats(played)!;
+
+    expect(stats.byScore).toEqual([
+      { score: "2-1", setsPlayed: 3, share: 75 },
+      { score: "3-0", setsPlayed: 3, share: 25 },
+    ]);
+    expect(stats.byScore.reduce((sum, slice) => sum + slice.share, 0)).toBe(100);
   });
 });
 
@@ -303,7 +395,7 @@ describe("pointLevelStats", () => {
     expect(stats.medianSetMargin).toBe(4.5);
     expect(stats.medianPointsPerGame).toBe(37);
     expect(stats.pointsWonByTheWinner).toBeCloseTo((23 / 37) * 100);
-    expect(stats.wonWithFewerPoints).toBe(0);
+    expect(stats.lessIsMore).toBe(0);
   });
 
   it("finds the games the winner won with fewer points than the loser", () => {
@@ -320,41 +412,86 @@ describe("pointLevelStats", () => {
 
     const stats = pointLevelStats(played)!;
 
-    expect(stats.wonWithFewerPoints).toBe(100);
+    expect(stats.lessIsMore).toBe(100);
     expect(stats.pointsWonByTheWinner).toBeCloseTo((24 / 53) * 100);
+    // The winner lost the second set, so the first set went to the winner.
+    expect(stats.firstSetWinnerWins).toBe(100);
   });
-});
 
-describe("trackedShareTrend", () => {
-  const tracked = {
-    setsWon: { gameWinner: 1, gameLoser: 0 },
-    setPoints: [{ gameWinner: 11, gameLoser: 0 }],
-    pointSequences: ["WWWWWWWWWWW"],
-    tracking: {
-      version: 1 as const,
-      source: "track-game" as const,
-      startedAt: 1,
-      pointDeltas: [new Array(11).fill(10)],
-      endedAfter: 10,
-      firstServers: "W",
-      corrections: 0,
-    },
-  };
+  it("counts a game that the loser of the first set won", () => {
+    const played = games(1, {
+      score: {
+        setsWon: { gameWinner: 2, gameLoser: 1 },
+        setPoints: [
+          { gameWinner: 5, gameLoser: 11 },
+          { gameWinner: 11, gameLoser: 5 },
+          { gameWinner: 11, gameLoser: 5 },
+        ],
+      },
+    });
 
-  it("plots every month that holds a game", () => {
-    const january = games(10, { playedAt: new Date(2024, 0, 5).getTime() }).map((entry, index) => ({
-      ...entry,
-      playedAt: entry.playedAt + index,
-      score: index < 5 ? tracked : undefined,
-    }));
-    // February holds 2 games, and neither of them is tracked.
-    const february = games(2, { playedAt: new Date(2024, 1, 5).getTime() });
+    expect(pointLevelStats(played)!.firstSetWinnerWins).toBe(0);
+  });
 
-    const trend = trackedShareTrend([...january, ...february]);
+  it("measures a match deciding set against the sets that decide nothing", () => {
+    // The last set of a 2-1 game decides the match. Here it reaches deuce every
+    // time, and no other set does.
+    const played = games(4, {
+      score: {
+        setsWon: { gameWinner: 2, gameLoser: 1 },
+        setPoints: [
+          { gameWinner: 11, gameLoser: 2 },
+          { gameWinner: 2, gameLoser: 11 },
+          { gameWinner: 12, gameLoser: 10 },
+        ],
+      },
+    });
 
-    expect(trend.map((point) => point.period)).toEqual(["2024-01", "2024-02"]);
-    expect(trend[0].share).toBe(50);
-    expect(trend[1].share).toBe(0);
+    const stats = pointLevelStats(played)!;
+
+    // A deciding set reaches deuce 100% of the time, the rest 0%, so there is
+    // nothing to divide by and the ratio is left out.
+    expect(stats.deuceRatioOfDecidingSets).toBeUndefined();
+
+    const mixed = pointLevelStats([
+      ...played,
+      ...games(4, {
+        score: {
+          setsWon: { gameWinner: 2, gameLoser: 1 },
+          setPoints: [
+            { gameWinner: 12, gameLoser: 10 },
+            { gameWinner: 2, gameLoser: 11 },
+            { gameWinner: 11, gameLoser: 2 },
+          ],
+        },
+      }),
+    ])!;
+
+    // Deciding sets reach deuce half the time, the other sets a quarter.
+    expect(mixed.deuceRatioOfDecidingSets).toBeCloseTo(2);
+  });
+
+  it("gives the distribution of the points of a game and of the losing set score", () => {
+    const played = [
+      ...games(3, {
+        score: { setsWon: { gameWinner: 1, gameLoser: 0 }, setPoints: [{ gameWinner: 11, gameLoser: 5 }] },
+      }),
+      ...games(1, {
+        score: { setsWon: { gameWinner: 1, gameLoser: 0 }, setPoints: [{ gameWinner: 12, gameLoser: 10 }] },
+      }),
+    ];
+
+    const stats = pointLevelStats(played)!;
+
+    expect(stats.pointsPerGame).toEqual([
+      { points: 16, share: 75 },
+      { points: 22, share: 25 },
+    ]);
+    // 11 buckets: the scores 0 to 9, and one for a set that reached deuce.
+    expect(stats.losingSetScores).toHaveLength(11);
+    expect(stats.losingSetScores.find((entry) => entry.label === "5")!.share).toBe(75);
+    expect(stats.losingSetScores.find((entry) => entry.label === "deuce")!.share).toBe(25);
+    expect(stats.losingSetScores.reduce((sum, entry) => sum + entry.share, 0)).toBe(100);
   });
 });
 
@@ -465,11 +602,47 @@ describe("rankedMix", () => {
 });
 
 describe("trackedLevelStats", () => {
+  /** A tracked game, with one entry per set of the point sequences. */
+  function trackedGame(pointSequences: string[], options?: { deltas?: number[][]; corrections?: number }): Game {
+    const setPoints = pointSequences.map((sequence) => {
+      const winner = sequence.split("").filter((point) => point === "W").length;
+      return { gameWinner: winner, gameLoser: sequence.length - winner };
+    });
+    const setsWon = setPoints.reduce(
+      (sets, set) =>
+        set.gameWinner > set.gameLoser
+          ? { gameWinner: sets.gameWinner + 1, gameLoser: sets.gameLoser }
+          : { gameWinner: sets.gameWinner, gameLoser: sets.gameLoser + 1 },
+      { gameWinner: 0, gameLoser: 0 },
+    );
+    return game({
+      score: {
+        setsWon,
+        setPoints,
+        pointSequences,
+        tracking: {
+          version: 1,
+          source: "track-game",
+          startedAt: 1,
+          pointDeltas: options?.deltas ?? pointSequences.map((sequence) => new Array(sequence.length).fill(100)),
+          endedAfter: 10,
+          firstServers: "W".repeat(pointSequences.length),
+          corrections: options?.corrections ?? 0,
+        },
+      },
+    });
+  }
+
+  /** 11-2 to the game winner, with no set point for the loser. */
+  const CLEAN_SET = "WWWWWWWWWWWLL";
+  /** 11-2 to the game loser. */
+  const CLEAN_SET_TO_THE_LOSER = "LLLLLLLLLLLWW";
+
   it("stays silent when no game is tracked", () => {
     expect(trackedLevelStats(games(50))).toBeUndefined();
   });
 
-  it("reports medians and the share of points won by the server", () => {
+  it("reports medians and the ratio of the points won on serve", () => {
     const played = games(1, {
       score: {
         setsWon: { gameWinner: 1, gameLoser: 0 },
@@ -483,7 +656,7 @@ describe("trackedLevelStats", () => {
           pointDeltas: [[50, 100, 100, 100]],
           endedAfter: 10,
           firstServers: "W",
-          corrections: 0,
+          corrections: 2,
         },
       },
     });
@@ -492,48 +665,88 @@ describe("trackedLevelStats", () => {
 
     expect(stats.medianGameDurationMs).toBe(35_000);
     expect(stats.medianPointGapMs).toBe(10_000);
-    expect(stats.pointsWonOnServe).toBe(50);
-    // The players take every point from each other, so no point follows a point
-    // of the same player, and one set carries no break.
-    expect(stats.pointAfterAWonPoint).toBe(0);
-    expect(stats.medianSetBreakMs).toBeUndefined();
+    // Each player won one of the two points they served.
+    expect(stats.serveRatio).toBe(1);
+    expect(stats.averageCorrections).toBe(2);
+    // The players take every point from each other, so the longest run is 1.
+    expect(stats.medianLongestRun).toBe(1);
   });
 
-  it("reads the breaks, the runs and the first point of every set", () => {
-    const played = games(1, {
-      score: {
-        setsWon: { gameWinner: 2, gameLoser: 1 },
-        setPoints: [
-          { gameWinner: 3, gameLoser: 1 },
-          { gameWinner: 1, gameLoser: 3 },
-          { gameWinner: 3, gameLoser: 1 },
-        ],
-        pointSequences: ["WWWL", "WLLL", "LWWW"],
-        tracking: {
-          version: 1,
-          source: "live-game",
-          startedAt: 1,
-          // The first delta of a set is the break before it.
-          pointDeltas: [
-            [10, 20, 20, 20],
-            [300, 20, 20, 20],
-            [600, 20, 20, 20],
-          ],
-          endedAfter: 10,
-          firstServers: "WWW",
-          corrections: 0,
-        },
-      },
-    });
+  it("reads the first point of every set", () => {
+    // Set 1 and set 3 go to the player who scored first, set 2 does not.
+    const played = [trackedGame([CLEAN_SET, "WLLLLLLLLLLL", CLEAN_SET_TO_THE_LOSER])];
+
+    expect(trackedLevelStats(played)!.firstPointWinsTheSet).toBeCloseTo((2 / 3) * 100);
+  });
+
+  it("counts the set points each side held and how often they went in", () => {
+    // The winner reaches 10-0, then lets 5 points go before closing at 11-5.
+    // Every point played from 10-0 on is a set point, so there are 6 of them.
+    const played = [trackedGame(["WWWWWWWWWWLLLLLW"])];
 
     const stats = trackedLevelStats(played)!;
 
-    // Breaks of 30s and 60s before the second and the third set.
-    expect(stats.medianSetBreakMs).toBe(45_000);
-    // The player who scored the first point won set 1, but lost set 2 and set 3.
-    expect(stats.firstPointWinsTheSet).toBeCloseTo((1 / 3) * 100);
-    // 2 of the 3 point pairs of each set go to the same player.
-    expect(stats.pointAfterAWonPoint).toBeCloseTo((2 / 3) * 100);
+    expect(stats.setPointsToClose).toBe(6);
+    // The loser never reached 10, so no set point of theirs was blown.
+    expect(stats.setPointForTheSetLoser).toBe(0);
+    // 6 set points, 1 of them converted.
+    expect(stats.setPointConversion).toBeCloseTo(100 / 6);
+  });
+
+  it("finds the set the loser of it held a set point in", () => {
+    // The loser of the set reaches 10-9 and holds a set point, then loses.
+    const played = [trackedGame(["WWWWWWWWWLLLLLLLLLLWWW"])];
+
+    const stats = trackedLevelStats(played)!;
+
+    expect(stats.setPointForTheSetLoser).toBe(100);
+  });
+
+  it("counts a set point as a match point only when the player is one set from the match", () => {
+    // A best of 3: the winner takes set 1, loses set 2, and closes set 3. Only
+    // the set points of set 3 are match points for them.
+    const played = [trackedGame([CLEAN_SET, CLEAN_SET_TO_THE_LOSER, "WWWWWWWWWWLLLLLW"])];
+
+    const stats = trackedLevelStats(played)!;
+
+    expect(stats.matchPointsToClose).toBe(6);
+    expect(stats.matchPointConversion).toBeCloseTo(100 / 6);
+    // The loser of the game held one set in hand, but never a match point.
+    expect(stats.matchPointForTheLoser).toBe(0);
+  });
+
+  it("finds the games where the loser held a match point", () => {
+    // 1-1 in sets, so both players are one set from the match in set 3. The
+    // loser leads 10-9 there and lets it go.
+    const played = [trackedGame([CLEAN_SET, CLEAN_SET_TO_THE_LOSER, "WWWWWWWWWLLLLLLLLLLWWW"])];
+
+    const stats = trackedLevelStats(played)!;
+
+    expect(stats.matchPointForTheLoser).toBe(100);
+  });
+
+  it("leaves out a set that was marked won at a score the rule does not accept", () => {
+    // The set stops at 8-5, so nobody ever held a set point in it.
+    const played = [trackedGame(["WWWWWWWWLLLLL"])];
+
+    const stats = trackedLevelStats(played)!;
+
+    expect(stats.setPointsToClose).toBeUndefined();
+    expect(stats.setPointConversion).toBeUndefined();
+    expect(stats.matchPointsToClose).toBeUndefined();
+    expect(stats.matchPointForTheLoser).toBeUndefined();
+  });
+
+  it("measures the pace at deuce against the pace outside it", () => {
+    // Every point of the set takes 1 second, except the points played from
+    // 10-10 on, which take 3 seconds each.
+    const sequence = "WWWWWWWWWWLLLLLLLLLLWW";
+    const deltas = sequence.split("").map((_, index) => (index >= 20 ? 30 : 10));
+    const played = [trackedGame([sequence], { deltas: [deltas] })];
+
+    const stats = trackedLevelStats(played)!;
+
+    expect(stats.deucePaceRatio).toBeCloseTo(3);
   });
 });
 
@@ -752,7 +965,8 @@ describe("the privacy rule", () => {
       timeOfDayShares(played),
       activityTrend(played, "month"),
       detailLevels(played),
-      gameLevelStats(played),
+      detailLevelTrend(played),
+      gameLevelStats(played, players, 3, 0),
       setLevelStats(games(10, { score: { setsWon: { gameWinner: 2, gameLoser: 0 } } })),
       pointLevelStats(
         games(10, {

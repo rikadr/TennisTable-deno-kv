@@ -130,7 +130,8 @@ describe("StatisticsPage", () => {
     expect(screen.getByText("Games that record sets")).toBeInTheDocument();
     expect(screen.getByText("Games that record the points of each set")).toBeInTheDocument();
     expect(screen.getByText("Games tracked point by point")).toBeInTheDocument();
-    expect(screen.getByText("Tracked games over time")).toBeInTheDocument();
+    // The map of the four levels stands over the sections.
+    expect(screen.getByText("How much detail we record")).toBeInTheDocument();
   });
 
   it("shows a statistic of every level on one tracked game", () => {
@@ -138,11 +139,24 @@ describe("StatisticsPage", () => {
     // game that records the statistic is now enough.
     renderTab("games", buildEvents(1));
 
-    expect(screen.getByText("The pair played before")).toBeInTheDocument();
-    expect(screen.getByText("Loser won no set")).toBeInTheDocument();
+    expect(screen.getByText("Median rating gap")).toBeInTheDocument();
+    expect(screen.getByText("Sets won by the game winner")).toBeInTheDocument();
     expect(screen.getByText("Median points in a set")).toBeInTheDocument();
     expect(screen.getByText("Median game length")).toBeInTheDocument();
+    expect(screen.getByText("To close a set")).toBeInTheDocument();
     expect(screen.queryByText(/Not enough/)).not.toBeInTheDocument();
+  });
+
+  it("draws the charts of the games tab", () => {
+    const { container } = renderTab("games");
+
+    // The detail chart, the set score pie, the sets played bars, the losing
+    // score bars and the points of a game line.
+    expect(countMarks(container, ".recharts-surface")).toBe(5);
+    expect(countMarks(container, ".recharts-area")).toBeGreaterThan(0);
+    expect(countMarks(container, ".recharts-pie-sector")).toBeGreaterThan(0);
+    expect(countMarks(container, ".recharts-bar-rectangle")).toBeGreaterThan(0);
+    expect(countMarks(container, ".recharts-reference-line")).toBeGreaterThan(0);
   });
 
   it("renders the matchups tab", () => {

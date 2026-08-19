@@ -37,7 +37,7 @@ import { Game } from "../../client/client-db/event-store/projectors/games-projec
 import { Player } from "../../client/client-db/event-store/projectors/players-projector";
 import { EventType, EventTypeEnum } from "../../client/client-db/event-store/event-types";
 import { advancePeriod, getPeriodKey, getPeriodStart, getPeriodTimestamp, Period } from "../../common/period-utils";
-import { gameTimingStats, serveStats } from "../game/game-tracking-stats";
+import { gameTimingStats, longestStreaks, serveStats } from "../game/game-tracking-stats";
 
 /** A rating gap bucket with fewer games than this is not plotted. */
 export const MIN_GAMES_PER_BUCKET = 20;
@@ -304,8 +304,18 @@ export function minuteOfDayLabel(minuteOfDay: number): string {
 }
 
 // ---------------------------------------------------------------------------
-// Games: how much detail we record
+// Games: how much detail every game records
 // ---------------------------------------------------------------------------
+//
+// A game always records a winner and a loser. It can also record the sets, the
+// points of each set, and the point by point log with its times. The levels
+// nest strictly, and the Games tab shows one section per level. See
+// `validateScoreGame` in the games projector.
+//
+// EVERY SHARE IS OVER THE GAMES OF ITS OWN LEVEL. A point level percentage is a
+// share of the games that record points, and never of all the games: we do not
+// know what a game without points would have contributed, so it cannot sit in
+// the denominator. Each function below filters to its own level first.
 
 export type DetailLevels = {
   /** Share of games that record how many sets each player won. */
@@ -314,208 +324,404 @@ export type DetailLevels = {
   withPoints: number;
   /** Share of games that record every point as it was scored. */
   tracked: number;
-  /** Of the tracked games, the share logged on the wall mounted live screen. */
-  trackedOnLiveScreen: number;
 };
 
-/**
- * The three levels of detail a game can record. They nest strictly: points
- * require sets, and a point by point log requires points. See
- * `validateScoreGame` in the games projector.
- */
+/** How much of the period reaches each level. The section headers print these. */
 export function detailLevels(games: Game[]): DetailLevels | undefined {
   if (games.length === 0) return undefined;
 
   const withSets = games.filter((game) => game.score !== undefined);
   const withPoints = withSets.filter((game) => game.score?.setPoints !== undefined);
   const tracked = withPoints.filter(isTrackedGame);
-  const onLiveScreen = tracked.filter((game) => game.score?.tracking?.source === "live-game");
 
   return {
     withSets: percent(withSets.length, games.length),
     withPoints: percent(withPoints.length, games.length),
     tracked: percent(tracked.length, games.length),
-    trackedOnLiveScreen: percent(onLiveScreen.length, tracked.length),
   };
 }
 
-/** The tracked share per month, so the trend of how much we record is visible. */
-export function trackedShareTrend(games: Game[]): TrendPoint[] {
-  const buckets = new Map<string, { timestamp: number; total: number; tracked: number }>();
+export type DetailLevelPoint = {
+  period: string;
+  timestamp: number;
+  /** The four shares of the month. They add up to 100. */
+  noScore: number;
+  sets: number;
+  points: number;
+  tracked: number;
+};
+
+/**
+ * The four levels of detail per month, as shares of the games of that month.
+ * The bands stack to 100, so the chart shows how the recording has moved from
+ * a bare result towards a full point by point log.
+ */
+export function detailLevelTrend(games: Game[]): DetailLevelPoint[] {
+  const buckets = new Map<
+    string,
+    { timestamp: number; played: number; noScore: number; sets: number; points: number; tracked: number }
+  >();
+
   for (const game of games) {
     const date = new Date(game.playedAt);
     const key = getPeriodKey(date, "month");
-    const bucket = buckets.get(key) ?? { timestamp: getPeriodTimestamp(date, "month"), total: 0, tracked: 0 };
-    bucket.total++;
-    if (isTrackedGame(game)) bucket.tracked++;
+    const bucket = buckets.get(key) ?? {
+      timestamp: getPeriodTimestamp(date, "month"),
+      played: 0,
+      noScore: 0,
+      sets: 0,
+      points: 0,
+      tracked: 0,
+    };
+    bucket.played++;
+    if (game.score === undefined) bucket.noScore++;
+    else if (game.score.setPoints === undefined) bucket.sets++;
+    else if (isTrackedGame(game)) bucket.tracked++;
+    else bucket.points++;
     buckets.set(key, bucket);
   }
-  // Every month the map holds has at least one game, so every month is plotted.
+
   return Array.from(buckets)
     .map(([period, bucket]) => ({
       period,
       timestamp: bucket.timestamp,
-      share: percent(bucket.tracked, bucket.total),
+      noScore: percent(bucket.noScore, bucket.played),
+      sets: percent(bucket.sets, bucket.played),
+      points: percent(bucket.points, bucket.played),
+      tracked: percent(bucket.tracked, bucket.played),
     }))
     .sort((a, b) => a.timestamp - b.timestamp);
 }
 
 // ---------------------------------------------------------------------------
-// Games: one function per level of detail a game records
+// Level 1: the game level. Winner, loser and time, so every game.
 // ---------------------------------------------------------------------------
-//
-// A game always records a winner and a loser. It can also record the sets, the
-// points of each set, and the point by point log with its times. The levels
-// nest strictly, so each function below reads the games of one level and of
-// every level under it. See `validateScoreGame` in the games projector.
 
 export type GameLevelStats = {
-  /** Share of the games where the two players already played in the period. */
-  rematchOfThePair: number;
-  /** Of those rematches, the share the loser of the previous game wins. */
-  revenge?: number;
-  /** Of the games where the winner played before, the share where they won it. */
-  winnerWonThePreviousGame?: number;
-  /** Share of the games where the same two players also played within the hour. */
-  sameSession: number;
+  /** Median rating gap between the two players, before the game. */
+  medianRatingGap: number;
+  /** Median days since the same pair last played, over the games that repeat a pair. */
+  medianDaysSinceThePairPlayed?: number;
+  /** Share of the games that are the first ever meeting of the pair. */
+  firstMeeting: number;
+  /** The three shares add up to 100. Ranked is measured at the time of the game. */
+  rankedMix: { bothRanked: number; oneRanked: number; neitherRanked: number };
 };
 
-/** Two games of the same pair within this time are one session at the table. */
-export const SESSION_GAP_MS = 60 * 60 * 1000;
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 /**
- * What the winner and the loser alone tell us. Every game records this level,
- * so these shares cover the whole period.
+ * What the winner and the loser alone tell us.
  *
- * A "previous game" is a game of the same period, so a short period reads the
- * form inside that period only.
+ * The whole history walks, because the rating of a game, the previous meeting
+ * of a pair and the experience of a player all come from the games before it.
+ * Only the games from `cutoff` on are aggregated.
  */
-export function gameLevelStats(games: Game[]): GameLevelStats | undefined {
-  if (games.length === 0) return undefined;
+export function gameLevelStats(
+  games: Game[],
+  players: Player[],
+  gameLimitForRanked: number,
+  cutoff: number,
+): GameLevelStats | undefined {
+  const gaps: number[] = [];
+  const daysSince: number[] = [];
+  const lastMeeting = new Map<string, number>();
+  let played = 0;
+  let firstMeetings = 0;
+  let bothRanked = 0;
+  let oneRanked = 0;
+  let neitherRanked = 0;
 
-  const ordered = [...games].sort((a, b) => a.playedAt - b.playedAt);
-  const lastMeeting = new Map<string, { winner: string; playedAt: number }>();
-  const lastResult = new Map<string, "win" | "loss">();
-
-  let rematches = 0;
-  let revenges = 0;
-  let sameSession = 0;
-  let winnerPlayedBefore = 0;
-  let winnerOnAWin = 0;
-
-  for (const game of ordered) {
+  forEachGameWithPreGameStanding(games, players, (game, standing) => {
     const key = pairKey(game.winner, game.loser);
-    const meeting = lastMeeting.get(key);
-    if (meeting !== undefined) {
-      rematches++;
-      if (meeting.winner === game.loser) revenges++;
-      if (game.playedAt - meeting.playedAt <= SESSION_GAP_MS) sameSession++;
-    }
+    const met = lastMeeting.get(key);
+    lastMeeting.set(key, game.playedAt);
+    if (game.playedAt < cutoff) return;
 
-    const previous = lastResult.get(game.winner);
-    if (previous !== undefined) {
-      winnerPlayedBefore++;
-      if (previous === "win") winnerOnAWin++;
-    }
+    played++;
+    gaps.push(Math.abs(standing.elo.winner - standing.elo.loser));
+    if (met === undefined) firstMeetings++;
+    else daysSince.push((game.playedAt - met) / DAY_MS);
 
-    lastMeeting.set(key, { winner: game.winner, playedAt: game.playedAt });
-    lastResult.set(game.winner, "win");
-    lastResult.set(game.loser, "loss");
-  }
+    const ranked =
+      (standing.played.winner >= gameLimitForRanked ? 1 : 0) +
+      (standing.played.loser >= gameLimitForRanked ? 1 : 0);
+    if (ranked === 2) bothRanked++;
+    else if (ranked === 1) oneRanked++;
+    else neitherRanked++;
+  });
+
+  if (played === 0) return undefined;
 
   return {
-    rematchOfThePair: percent(rematches, ordered.length),
-    revenge: rematches === 0 ? undefined : percent(revenges, rematches),
-    winnerWonThePreviousGame: winnerPlayedBefore === 0 ? undefined : percent(winnerOnAWin, winnerPlayedBefore),
-    sameSession: percent(sameSession, ordered.length),
+    medianRatingGap: median(gaps) ?? 0,
+    medianDaysSinceThePairPlayed: median(daysSince),
+    firstMeeting: percent(firstMeetings, played),
+    rankedMix: {
+      bothRanked: percent(bothRanked, played),
+      oneRanked: percent(oneRanked, played),
+      neitherRanked: percent(neitherRanked, played),
+    },
   };
 }
 
+// ---------------------------------------------------------------------------
+// Level 2: the set level. Games that record how many sets each player won.
+// ---------------------------------------------------------------------------
+
 export type SetLevelStats = {
-  /** Share of the games with sets where the loser won no set at all. */
-  whitewash: number;
-  /** Share of the games with sets that the last set decided. */
-  decider: number;
-  /** Share of the games with sets that are played as a single set. */
-  singleSet: number;
-  medianSetsPlayed: number;
+  /** Share of all the sets of these games that the game winners won. */
+  setsWonByTheWinner: number;
+  /** Share of the games per number of sets they hold. */
+  bySetsPlayed: { setsPlayed: number; share: number }[];
+  /** Share of the games per set score, read from the winner: 2-0, 2-1, 3-1… */
+  byScore: { score: string; setsPlayed: number; share: number }[];
 };
 
-/** What the sets tell us, over the games that record how many sets each won. */
 export function setLevelStats(games: Game[]): SetLevelStats | undefined {
   const withSets = games.filter((game) => game.score !== undefined);
   if (withSets.length === 0) return undefined;
 
   const setsWon = withSets.map((game) => game.score!.setsWon);
-  const whitewashes = setsWon.filter((sets) => sets.gameLoser === 0);
-  // The winner needed the last set, so the loser stopped one set short of them.
-  const deciders = setsWon.filter((sets) => sets.gameWinner >= 2 && sets.gameLoser === sets.gameWinner - 1);
-  const singles = setsWon.filter((sets) => sets.gameWinner === 1 && sets.gameLoser === 0);
+  const wonByTheWinner = setsWon.reduce((sum, sets) => sum + sets.gameWinner, 0);
+  const allSets = setsWon.reduce((sum, sets) => sum + sets.gameWinner + sets.gameLoser, 0);
+
+  const perLength = new Map<number, number>();
+  const perScore = new Map<string, { setsPlayed: number; played: number }>();
+  for (const sets of setsWon) {
+    const length = sets.gameWinner + sets.gameLoser;
+    perLength.set(length, (perLength.get(length) ?? 0) + 1);
+    // The score always reads from the winner, so 2-1 and 1-2 are one entry.
+    const score = `${sets.gameWinner}-${sets.gameLoser}`;
+    const entry = perScore.get(score) ?? { setsPlayed: length, played: 0 };
+    entry.played++;
+    perScore.set(score, entry);
+  }
 
   return {
-    whitewash: percent(whitewashes.length, withSets.length),
-    decider: percent(deciders.length, withSets.length),
-    singleSet: percent(singles.length, withSets.length),
-    medianSetsPlayed: median(setsWon.map((sets) => sets.gameWinner + sets.gameLoser)) ?? 0,
+    setsWonByTheWinner: percent(wonByTheWinner, allSets),
+    bySetsPlayed: Array.from(perLength)
+      .map(([setsPlayed, played]) => ({ setsPlayed, share: percent(played, withSets.length) }))
+      .sort((a, b) => a.setsPlayed - b.setsPlayed),
+    byScore: Array.from(perScore)
+      .map(([score, entry]) => ({
+        score,
+        setsPlayed: entry.setsPlayed,
+        share: percent(entry.played, withSets.length),
+      }))
+      .sort((a, b) => a.setsPlayed - b.setsPlayed || a.score.localeCompare(b.score)),
   };
 }
 
+// ---------------------------------------------------------------------------
+// Level 3: the point level. Games that record the points of each set.
+// ---------------------------------------------------------------------------
+
+/** Both players at this many points or more is a deuce, at every level. */
+export const DEUCE_POINTS = 10;
+
 export type PointLevelStats = {
-  /** Share of the sets that reach deuce, so both players got to 10 or more. */
+  /** Share of the sets that reach deuce. */
   setsToDeuce: number;
   medianPointsPerSet: number;
   medianSetMargin: number;
-  medianPointsPerGame: number;
-  /** Share of the points of these games that the winner of the game won. */
+  /** Share of all the points of these games that the game winner won. */
   pointsWonByTheWinner: number;
-  /** Share of the games that the winner won with fewer points than the loser. */
-  wonWithFewerPoints: number;
+  /** Share of the games the winner won with fewer points than the loser. */
+  lessIsMore: number;
+  /** Share of the games won by the player who won the first set. */
+  firstSetWinnerWins: number;
+  /**
+   * How much more often a match deciding set reaches deuce than a set that
+   * decides nothing. 1.4 means 1.4 times as often. The two pools never overlap.
+   */
+  deuceRatioOfDecidingSets?: number;
+  medianPointsPerGame: number;
+  /** Share of the games per total points played. One entry per total. */
+  pointsPerGame: { points: number; share: number }[];
+  /** Share of the sets per score of the set loser, and a deuce group. */
+  losingSetScores: { label: string; share: number }[];
 };
 
-/** What the points tell us, over the games that record the points of each set. */
+/** A game is match deciding in its last set when the loser stopped one set short. */
+function hasDecidingSet(score: { setsWon: { gameWinner: number; gameLoser: number } }): boolean {
+  return score.setsWon.gameLoser === score.setsWon.gameWinner - 1;
+}
+
 export function pointLevelStats(games: Game[]): PointLevelStats | undefined {
   const withPoints = games.filter((game) => (game.score?.setPoints?.length ?? 0) > 0);
   if (withPoints.length === 0) return undefined;
 
   const sets = withPoints.flatMap((game) => game.score!.setPoints!);
-  const deuceSets = sets.filter((set) => set.gameWinner >= 10 && set.gameLoser >= 10);
+  const deuceSets = sets.filter((set) => set.gameWinner >= DEUCE_POINTS && set.gameLoser >= DEUCE_POINTS);
 
-  const gameTotals = withPoints.map((game) =>
+  const totals = withPoints.map((game) =>
     game.score!.setPoints!.reduce(
       (total, set) => ({ winner: total.winner + set.gameWinner, loser: total.loser + set.gameLoser }),
       { winner: 0, loser: 0 },
     ),
   );
-  const wonByTheWinner = gameTotals.reduce((total, points) => total + points.winner, 0);
-  const allPoints = gameTotals.reduce((total, points) => total + points.winner + points.loser, 0);
-  const fewerPoints = gameTotals.filter((points) => points.winner < points.loser);
+  const wonByTheWinner = totals.reduce((sum, points) => sum + points.winner, 0);
+  const allPoints = totals.reduce((sum, points) => sum + points.winner + points.loser, 0);
+  const fewerPoints = totals.filter((points) => points.winner < points.loser);
+  const firstSetToTheWinner = withPoints.filter((game) => {
+    const first = game.score!.setPoints![0];
+    return first.gameWinner > first.gameLoser;
+  });
+
+  // The last set of a game the loser lost by one set decided the match. Every
+  // other set of every game is the pool it is measured against.
+  let decidingSets = 0;
+  let decidingDeuce = 0;
+  let otherSets = 0;
+  let otherDeuce = 0;
+  for (const game of withPoints) {
+    const setPoints = game.score!.setPoints!;
+    const decidingIndex = hasDecidingSet(game.score!) ? setPoints.length - 1 : -1;
+    for (let index = 0; index < setPoints.length; index++) {
+      const set = setPoints[index];
+      const isDeuce = set.gameWinner >= DEUCE_POINTS && set.gameLoser >= DEUCE_POINTS;
+      if (index === decidingIndex) {
+        decidingSets++;
+        if (isDeuce) decidingDeuce++;
+      } else {
+        otherSets++;
+        if (isDeuce) otherDeuce++;
+      }
+    }
+  }
+  const otherDeuceShare = percent(otherDeuce, otherSets);
+  const deuceRatioOfDecidingSets =
+    decidingSets === 0 || otherSets === 0 || otherDeuceShare === 0
+      ? undefined
+      : percent(decidingDeuce, decidingSets) / otherDeuceShare;
+
+  const perTotal = new Map<number, number>();
+  for (const points of totals) {
+    const total = points.winner + points.loser;
+    perTotal.set(total, (perTotal.get(total) ?? 0) + 1);
+  }
+
+  const perLosingScore = new Map<string, number>();
+  for (const set of sets) {
+    const losing = Math.min(set.gameWinner, set.gameLoser);
+    const label = losing >= DEUCE_POINTS ? "deuce" : String(losing);
+    perLosingScore.set(label, (perLosingScore.get(label) ?? 0) + 1);
+  }
+  const losingScoreLabels = [...Array.from({ length: DEUCE_POINTS }, (_, score) => String(score)), "deuce"];
 
   return {
     setsToDeuce: percent(deuceSets.length, sets.length),
     medianPointsPerSet: median(sets.map((set) => set.gameWinner + set.gameLoser)) ?? 0,
     medianSetMargin: median(sets.map((set) => Math.abs(set.gameWinner - set.gameLoser))) ?? 0,
-    medianPointsPerGame: median(gameTotals.map((points) => points.winner + points.loser)) ?? 0,
     pointsWonByTheWinner: percent(wonByTheWinner, allPoints),
-    wonWithFewerPoints: percent(fewerPoints.length, withPoints.length),
+    lessIsMore: percent(fewerPoints.length, withPoints.length),
+    firstSetWinnerWins: percent(firstSetToTheWinner.length, withPoints.length),
+    deuceRatioOfDecidingSets,
+    medianPointsPerGame: median(totals.map((points) => points.winner + points.loser)) ?? 0,
+    pointsPerGame: Array.from(perTotal)
+      .map(([points, played]) => ({ points, share: percent(played, withPoints.length) }))
+      .sort((a, b) => a.points - b.points),
+    losingSetScores: losingScoreLabels.map((label) => ({
+      label,
+      share: percent(perLosingScore.get(label) ?? 0, sets.length),
+    })),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Level 4: the tracked games. Every point in order, with its time and server.
+// ---------------------------------------------------------------------------
+
+/** A set is won at 11 points and 2 clear, the rule the live game tracker uses. */
+export const POINTS_TO_WIN_SET = 11;
+const CLEAR_POINTS_TO_WIN_SET = 2;
+
+/** True when the score means the set is over under the 11 and 2 rule. */
+function setIsWon(winner: number, loser: number): boolean {
+  return Math.max(winner, loser) >= POINTS_TO_WIN_SET && Math.abs(winner - loser) >= CLEAR_POINTS_TO_WIN_SET;
+}
+
+type SetWalk = {
+  /**
+   * Set points each side held. A player is at set point at 10 or more with a
+   * lead of 1 or more, so the two sides never hold one at the same time.
+   */
+  setPoints: { winner: number; loser: number };
+  /** "W" when the game winner won the set. */
+  setWinner: "W" | "L";
+  /** False when the set was marked won at a score the rule does not accept. */
+  won: boolean;
+  /** Index of the point that ended the set, or the length of the sequence. */
+  endedAt: number;
+};
+
+/**
+ * Replays one set point by point and reports the set points each side held.
+ *
+ * A set is marked won by hand, so a sequence can hold points after the set was
+ * already won under the rule. The replay stops at the point that won it.
+ */
+function walkSet(sequence: string): SetWalk {
+  let winner = 0;
+  let loser = 0;
+  const setPoints = { winner: 0, loser: 0 };
+  let endedAt = sequence.length;
+
+  for (let index = 0; index < sequence.length; index++) {
+    if (winner >= DEUCE_POINTS && winner - loser >= 1) setPoints.winner++;
+    else if (loser >= DEUCE_POINTS && loser - winner >= 1) setPoints.loser++;
+
+    if (sequence[index] === "W") winner++;
+    else loser++;
+
+    if (setIsWon(winner, loser)) {
+      endedAt = index + 1;
+      break;
+    }
+  }
+
+  return {
+    setPoints,
+    setWinner: winner > loser ? "W" : "L",
+    won: setIsWon(winner, loser),
+    endedAt,
   };
 }
 
 export type TrackedLevelStats = {
   medianGameDurationMs: number;
   medianPointGapMs: number;
-  /** Median break between the last point of a set and the first of the next. */
-  medianSetBreakMs?: number;
-  /** Share of the points won by the player who served them. */
-  pointsWonOnServe: number;
-  /** Share of the points won by the player who won the point before, in a set. */
-  pointAfterAWonPoint: number;
+  /** Points the server wins for every point the server loses. */
+  serveRatio?: number;
   /** Share of the sets won by the player who scored the first point of the set. */
   firstPointWinsTheSet: number;
+  /** Median longest run of points in a row inside a game. */
+  medianLongestRun: number;
+  /** How much longer a point at deuce takes than a point outside deuce. */
+  deucePaceRatio?: number;
+  /** Points undone while tracking, per tracked game. */
+  averageCorrections: number;
+  /** Set points the set winner held, on average, including the one that won it. */
+  setPointsToClose?: number;
+  /** Match points the game winner held, on average, including the one that won it. */
+  matchPointsToClose?: number;
+  /** Share of the set points that were converted. */
+  setPointConversion?: number;
+  /** Share of the match points that were converted. */
+  matchPointConversion?: number;
+  /** Share of the games where the game loser held a match point. */
+  matchPointForTheLoser?: number;
+  /** Share of the sets where the set loser held a set point. */
+  setPointForTheSetLoser?: number;
 };
 
 /**
- * What the point by point log tells us. Only a tracked game carries the times
- * and the serves, so this level covers that subset.
+ * What the point by point log tells us.
+ *
+ * The set point and match point statistics leave out a set that was marked won
+ * at a score the 11 and 2 rule does not accept, because such a set holds no set
+ * point. The card says so.
  */
 export function trackedLevelStats(games: Game[]): TrackedLevelStats | undefined {
   const tracked = games.filter(isTrackedGame);
@@ -523,57 +729,125 @@ export function trackedLevelStats(games: Game[]): TrackedLevelStats | undefined 
 
   const durations: number[] = [];
   const gaps: number[] = [];
-  const setBreaks: number[] = [];
+  const longestRuns: number[] = [];
+  const corrections: number[] = [];
+  const deuceSeconds: number[] = [];
+  const otherSeconds: number[] = [];
   let served = 0;
   let wonOnServe = 0;
-  let pointPairs = 0;
-  let repeatedPoints = 0;
   let setsPlayed = 0;
   let setsWonFromTheFirstPoint = 0;
 
+  let setsClosed = 0;
+  let setPointsHeld = 0;
+  let setPointsOfTheSetWinner = 0;
+  let setsLoserHeldSetPoint = 0;
+  let gamesClosed = 0;
+  let matchPointsHeld = 0;
+  let matchPointsOfTheGameWinner = 0;
+  let gamesLoserHeldMatchPoint = 0;
+
   for (const game of tracked) {
     const score = game.score;
-    if (!score?.tracking || !score.pointSequences) continue;
-    const timing = gameTimingStats(score.tracking);
-    durations.push(timing.durationMs);
-    gaps.push(timing.averagePointGapMs);
+    if (!score?.pointSequences) continue;
 
-    // The first delta of a set is the break since the last point of the game,
-    // so every set but the first carries one break.
-    for (const deltas of score.tracking.pointDeltas.slice(1)) {
-      if (deltas.length > 0) setBreaks.push(deltas[0] * 100);
+    if (score.tracking) {
+      const timing = gameTimingStats(score.tracking);
+      durations.push(timing.durationMs);
+      gaps.push(timing.averagePointGapMs);
+      corrections.push(score.tracking.corrections);
+
+      const serves = serveStats(score.pointSequences, score.tracking);
+      served += serves.winner.served + serves.loser.served;
+      wonOnServe += serves.winner.won + serves.loser.won;
     }
 
-    const serves = serveStats(score.pointSequences, score.tracking);
-    served += serves.winner.served + serves.loser.served;
-    wonOnServe += serves.winner.won + serves.loser.won;
+    const streaks = longestStreaks(score.pointSequences);
+    longestRuns.push(Math.max(streaks.winner, streaks.loser));
 
-    for (const sequence of score.pointSequences) {
+    // The match is a first to N, and N is the sets the winner ended on.
+    const setsToWin = score.setsWon.gameWinner;
+    let setsForTheWinner = 0;
+    let setsForTheLoser = 0;
+    const matchPointsInTheGame = { winner: 0, loser: 0 };
+    let gameClosed = false;
+
+    for (let setIndex = 0; setIndex < score.pointSequences.length; setIndex++) {
+      const sequence = score.pointSequences[setIndex];
       if (sequence.length === 0) continue;
-      setsPlayed++;
-      const toTheWinner = sequence.split("").filter((point) => point === "W").length;
-      const setWinner = toTheWinner > sequence.length - toTheWinner ? "W" : "L";
-      if (sequence[0] === setWinner) setsWonFromTheFirstPoint++;
+      const walk = walkSet(sequence);
 
-      // A run of points is read inside a set. The break between two sets ends
-      // the run, so the pairs do not cross a set.
-      for (let index = 1; index < sequence.length; index++) {
-        pointPairs++;
-        if (sequence[index] === sequence[index - 1]) repeatedPoints++;
+      setsPlayed++;
+      if (sequence[0] === walk.setWinner) setsWonFromTheFirstPoint++;
+
+      // The times of the points, split by whether the set was at deuce.
+      const deltas = score.tracking?.pointDeltas[setIndex];
+      if (deltas) {
+        let winnerPoints = 0;
+        let loserPoints = 0;
+        for (let index = 0; index < walk.endedAt; index++) {
+          const atDeuce = winnerPoints >= DEUCE_POINTS && loserPoints >= DEUCE_POINTS;
+          // The first delta of a set is the break before it, not a point gap.
+          if (index > 0) (atDeuce ? deuceSeconds : otherSeconds).push((deltas[index] ?? 0) / 10);
+          if (sequence[index] === "W") winnerPoints++;
+          else loserPoints++;
+        }
       }
+
+      const atMatchPoint = {
+        winner: setsForTheWinner === setsToWin - 1,
+        loser: setsForTheLoser === setsToWin - 1,
+      };
+
+      if (walk.won) {
+        setsClosed++;
+        setPointsHeld += walk.setPoints.winner + walk.setPoints.loser;
+        const ofTheSetWinner = walk.setWinner === "W" ? walk.setPoints.winner : walk.setPoints.loser;
+        const ofTheSetLoser = walk.setWinner === "W" ? walk.setPoints.loser : walk.setPoints.winner;
+        setPointsOfTheSetWinner += ofTheSetWinner;
+        if (ofTheSetLoser > 0) setsLoserHeldSetPoint++;
+
+        if (atMatchPoint.winner) matchPointsInTheGame.winner += walk.setPoints.winner;
+        if (atMatchPoint.loser) matchPointsInTheGame.loser += walk.setPoints.loser;
+        // The set that a player at match point wins is the set that ends the game.
+        if (walk.setWinner === "W" && atMatchPoint.winner) gameClosed = true;
+      }
+
+      if (walk.setWinner === "W") setsForTheWinner++;
+      else setsForTheLoser++;
+    }
+
+    if (gameClosed) {
+      gamesClosed++;
+      matchPointsHeld += matchPointsInTheGame.winner + matchPointsInTheGame.loser;
+      matchPointsOfTheGameWinner += matchPointsInTheGame.winner;
+      if (matchPointsInTheGame.loser > 0) gamesLoserHeldMatchPoint++;
     }
   }
+
+  const pointsLostOnServe = served - wonOnServe;
+  const medianDeuceSeconds = median(deuceSeconds);
+  const medianOtherSeconds = median(otherSeconds);
 
   return {
     medianGameDurationMs: median(durations) ?? 0,
     medianPointGapMs: median(gaps) ?? 0,
-    medianSetBreakMs: median(setBreaks),
-    pointsWonOnServe: percent(wonOnServe, served),
-    pointAfterAWonPoint: percent(repeatedPoints, pointPairs),
+    serveRatio: pointsLostOnServe === 0 ? undefined : wonOnServe / pointsLostOnServe,
     firstPointWinsTheSet: percent(setsWonFromTheFirstPoint, setsPlayed),
+    medianLongestRun: median(longestRuns) ?? 0,
+    deucePaceRatio:
+      medianDeuceSeconds === undefined || medianOtherSeconds === undefined || medianOtherSeconds === 0
+        ? undefined
+        : medianDeuceSeconds / medianOtherSeconds,
+    averageCorrections: average(corrections) ?? 0,
+    setPointsToClose: setsClosed === 0 ? undefined : setPointsOfTheSetWinner / setsClosed,
+    matchPointsToClose: gamesClosed === 0 ? undefined : matchPointsOfTheGameWinner / gamesClosed,
+    setPointConversion: setPointsHeld === 0 ? undefined : percent(setsClosed, setPointsHeld),
+    matchPointConversion: matchPointsHeld === 0 ? undefined : percent(gamesClosed, matchPointsHeld),
+    matchPointForTheLoser: gamesClosed === 0 ? undefined : percent(gamesLoserHeldMatchPoint, gamesClosed),
+    setPointForTheSetLoser: setsClosed === 0 ? undefined : percent(setsLoserHeldSetPoint, setsClosed),
   };
 }
-
 // ---------------------------------------------------------------------------
 // Matchups: who plays whom, and who wins
 // ---------------------------------------------------------------------------
