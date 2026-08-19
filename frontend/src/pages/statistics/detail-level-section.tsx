@@ -7,8 +7,12 @@ type Props = {
   title: string;
   /** Which games the numbers of the section come from. */
   description: string;
-  /** Share of the games of the period that record this level of detail. */
-  coverage?: { label: string; share: number };
+  /**
+   * Share of the games of the period that record this level of detail. A period
+   * that holds no game has no coverage to show: a bar of 0% would say that
+   * nothing was recorded, when nothing was played.
+   */
+  coverage?: { label: string; share: number } | false;
   children: React.ReactNode;
 };
 

@@ -160,6 +160,16 @@ describe("StatisticsPage", () => {
     expect(countMarks(container, ".recharts-reference-line")).toBeGreaterThan(0);
   });
 
+  it("shows no coverage bar for a period that holds no game", () => {
+    // 0% recorded would say that nothing was recorded, when nothing was played.
+    renderTab("games", buildEvents(0));
+
+    expect(screen.getByRole("heading", { name: "Set level" })).toBeInTheDocument();
+    expect(screen.queryByText("Games that record sets")).not.toBeInTheDocument();
+    expect(screen.queryByText("Games tracked point by point")).not.toBeInTheDocument();
+    expect(screen.getAllByText(/Not enough/).length).toBeGreaterThan(0);
+  });
+
   it("renders the matchups tab", () => {
     const { container } = renderTab("matchups");
     expect(screen.getByText("Rating gap of the matchups")).toBeInTheDocument();

@@ -33,11 +33,12 @@ export const ShareBar: React.FC<{ label: string; share: number; description?: st
       <span>{label}</span>
       <span className="font-semibold tabular-nums">{percentLabel(share)}</span>
     </div>
-    {/* The track is the faded colour and the fill is the solid one. The other
-        way round, a theme that paints the fill in the colour of the page makes
-        the empty part of the bar read as the value. */}
+    {/* The fill is the text colour, which every theme keeps readable on the
+        page, and the track is a faded surface. The other way round, a theme
+        that paints the fill in the colour of the page makes the empty part of
+        the bar read as the value. */}
     <div className="h-3 w-full rounded-full bg-secondary-background/30 overflow-hidden">
-      <div className="h-full rounded-full bg-secondary-background" style={{ width: `${share}%` }} />
+      <div className="h-full rounded-full bg-primary-text" style={{ width: `${share}%` }} />
     </div>
     {description && <span className="text-xs text-primary-text/60">{description}</span>}
   </div>

@@ -184,7 +184,9 @@ export const GamesTab: React.FC<{ range: TimeRange; setRange: (range: TimeRange)
 
           <ContentCard
             title="Ranked and unranked"
-            description={`A player is ranked from their game number ${context.client.gameLimitForRanked}. This counts each player as they stood on the day of the game.`}
+            description={`A player is ranked once they have played ${context.client.gameLimitForRanked} games, so from game number ${
+              context.client.gameLimitForRanked + 1
+            }. This counts each player as they stood before the game.`}
           >
             {gameLevel === undefined ? (
               <NotEnoughGames />
@@ -204,7 +206,7 @@ export const GamesTab: React.FC<{ range: TimeRange; setRange: (range: TimeRange)
           level={2}
           title="Set level"
           description="From the games that record how many sets each player won."
-          coverage={{ label: "Games that record sets", share: detail?.withSets ?? 0 }}
+          coverage={detail && { label: "Games that record sets", share: detail.withSets }}
         >
           <ContentCard
             title="The set score"
@@ -235,7 +237,7 @@ export const GamesTab: React.FC<{ range: TimeRange; setRange: (range: TimeRange)
           level={3}
           title="Point level"
           description="From the games that record the points of each set. The sets are in the order they were played, so the first set and the deciding set are known here."
-          coverage={{ label: "Games that record the points of each set", share: detail?.withPoints ?? 0 }}
+          coverage={detail && { label: "Games that record the points of each set", share: detail.withPoints }}
         >
           <ContentCard title="Inside a set" description="Over every set these games record.">
             {pointLevel === undefined ? (
@@ -260,7 +262,7 @@ export const GamesTab: React.FC<{ range: TimeRange; setRange: (range: TimeRange)
                   <StatTile
                     label="Deuce in a match deciding set"
                     value={ratioLabel(pointLevel.deuceRatioOfDecidingSets)}
-                    note="as often as in a set that decides nothing"
+                    note="as often as in a set that is not the decider"
                   />
                 </StatTileRow>
                 <LosingScoreChart data={pointLevel.losingSetScores} />
@@ -325,7 +327,7 @@ export const GamesTab: React.FC<{ range: TimeRange; setRange: (range: TimeRange)
           level={4}
           title="Fully tracked games"
           description="From the games that record every point as it was scored, with its time and its server."
-          coverage={{ label: "Games tracked point by point", share: detail?.tracked ?? 0 }}
+          coverage={detail && { label: "Games tracked point by point", share: detail.tracked }}
         >
           <ContentCard
             title="Closing a set and closing a game"

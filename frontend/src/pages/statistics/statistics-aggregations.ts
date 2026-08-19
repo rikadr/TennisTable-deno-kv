@@ -570,8 +570,13 @@ export type PointLevelStats = {
   /** Share of the games won by the player who won the first set. */
   firstSetWinnerWins: number;
   /**
-   * How much more often a match deciding set reaches deuce than a set that
-   * decides nothing. 1.4 means 1.4 times as often. The two pools never overlap.
+   * How much more often a match deciding set reaches deuce than every other
+   * set. 1.4 means 1.4 times as often, and the two pools never overlap.
+   *
+   * A match deciding set is the last set of a game where the loser stopped one
+   * set short, so both players could still win the match when the set started.
+   * The last set of a game that ended 2-0 also won the match, but only for the
+   * player who was already ahead, so it belongs to the other pool.
    */
   deuceRatioOfDecidingSets?: number;
   medianPointsPerGame: number;
