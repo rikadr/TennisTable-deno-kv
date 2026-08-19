@@ -1,7 +1,7 @@
 import React, { useMemo } from "react";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { HallOfFameFactorKey } from "../../client/client-db/hall-of-fame";
-import { FACTORS } from "../hall-of-fame/hall-of-fame-player-page";
+import { FACTORS } from "../hall-of-fame/hall-of-fame-factors";
 import { fmtNum } from "../../common/number-utils";
 
 export const HallOfFameCategoryBalance: React.FC = () => {

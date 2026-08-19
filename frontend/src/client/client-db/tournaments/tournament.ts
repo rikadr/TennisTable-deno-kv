@@ -50,13 +50,29 @@ export class Tournament {
   private static readonly RECENT_WINNER_THRESHOLD = 2 * ONE_WEEK;
   private static readonly SIGNUP_PERIOD = 2 * ONE_WEEK;
 
-  constructor(tournamentConfig: TournamentConfig, games: Game[], skippedGames: SkippedGame[], signedUp: SignUp[]) {
+  /** The moment this tournament is seen from: the reference time of a projection
+   * of a past state, or the real clock for the live state. Read lazily so the
+   * live state always uses the current time. */
+  get #time(): number {
+    return this.#referenceTime ?? Date.now();
+  }
+
+  readonly #referenceTime: number | undefined;
+
+  constructor(
+    tournamentConfig: TournamentConfig,
+    games: Game[],
+    skippedGames: SkippedGame[],
+    signedUp: SignUp[],
+    referenceTime?: number,
+  ) {
     this.tournamentConfig = tournamentConfig;
     this.#games = games;
     this.skippedGames = skippedGames;
     this.signedUp = signedUp;
+    this.#referenceTime = referenceTime;
 
-    if (this.tournamentConfig.startDate > Date.now()) {
+    if (this.tournamentConfig.startDate > this.#time) {
       return; // Not started. No need to calculate bracket or group play
     }
     if (this.tournamentConfig.groupPlay) {
@@ -91,21 +107,21 @@ export class Tournament {
   }
 
   get recentWinner(): string | undefined {
-    if (this.startDate > Date.now()) return undefined; // Has not started
+    if (this.startDate > this.#time) return undefined; // Has not started
     if (this.endDate === undefined) return undefined; // Has not ended
     if (this.winner === undefined) return undefined; // Has no winner
-    if (Date.now() - this.endDate > Tournament.RECENT_WINNER_THRESHOLD) return undefined; // Not recent
+    if (this.#time - this.endDate > Tournament.RECENT_WINNER_THRESHOLD) return undefined; // Not recent
     return this.winner;
   }
 
   get inSignupPeriod(): boolean {
-    if (this.startDate < Date.now()) return false; // Has started
-    if (this.startDate - Tournament.SIGNUP_PERIOD > Date.now()) return false; // Not yet in signup period
+    if (this.startDate < this.#time) return false; // Has started
+    if (this.startDate - Tournament.SIGNUP_PERIOD > this.#time) return false; // Not yet in signup period
     return true;
   }
 
   get hasPendingGames(): boolean {
-    if (this.startDate > Date.now()) return false; // Not started
+    if (this.startDate > this.#time) return false; // Not started
     if (this.endDate !== undefined) return false; // Has ended
 
     // Check group play
@@ -159,7 +175,7 @@ export class Tournament {
       doubleElimination?: boolean;
     }
     | undefined {
-    if (this.startDate > Date.now()) return; // Not started
+    if (this.startDate > this.#time) return; // Not started
     if (this.endDate !== undefined) return; // Has ended
 
     const players = [player1, player2];
@@ -205,7 +221,7 @@ export class Tournament {
       games: { oponent: string; player1: string; player2: string }[];
     }
     | undefined {
-    if (this.startDate > Date.now()) return; // Not started
+    if (this.startDate > this.#time) return; // Not started
     if (this.endDate !== undefined) return; // Has ended
 
     const games: { oponent: string; player1: string; player2: string }[] = [];
@@ -249,7 +265,7 @@ export class Tournament {
     player1: string;
     player2: string;
   }[] {
-    if (this.startDate > Date.now()) return []; // Not started
+    if (this.startDate > this.#time) return []; // Not started
     if (this.endDate !== undefined) return []; // Has ended
 
     const games: {

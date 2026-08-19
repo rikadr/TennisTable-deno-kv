@@ -42,6 +42,50 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
+    slug: "tournament-points-in-a-past-state",
+    title: "Correct tournament points in a past state",
+    date: "2026-08-19",
+    tags: ["bug-fix"],
+    summary:
+      "The app gave tournament points for a tournament that had not started, or that no person had created yet, when it calculated a state at a time in the past.",
+    body: [
+      text(
+        "A tournament now gives points only from the day it starts. The tournament logic uses the time of the state that the page shows. Before this change it used the current time, so a tournament with a later start date still built a bracket and gave points.",
+      ),
+      text(
+        "A second fault gave points for a tournament that did not exist yet. Some old signup events are earlier than the create event of their tournament. The app made a tournament from the signup alone, with no name and no start date, and put every game ever played into it.",
+      ),
+      text(
+        "The scores of today do not change. The pages that show a past state do change: the Hall of Fame score over time, and the Hall of Fame comparison on the What Changed page.",
+      ),
+    ],
+  },
+  {
+    slug: "hall-of-fame-score-over-time",
+    title: "Hall of Fame score over time",
+    date: "2026-08-19",
+    tags: ["feature-update", "technical"],
+    summary:
+      "The Hall of Fame player page has a new view. It shows a graph of the score of the player at up to 100 points in time.",
+    body: [
+      text(
+        "The toggle above the score has a new option: Score over time. The graph starts on the day the player joined and ends now.",
+      ),
+      text(
+        "A second toggle selects what the graph shows. Cumulative gives the score as it was at each point. Delta gives the points the player gained in each period. A section picker filters both to the total score or to 1 of the 9 sections.",
+      ),
+      list(
+        "The first point is the day the player was created.",
+        "The last point is now.",
+        "The points are never closer than 1 day, and never more than 100 in total.",
+        "Delta groups the points into a maximum of 25 periods, so the bars stay readable.",
+      ),
+      text(
+        "The app projects the full state of every player at each timestamp and scores the player against it. The score depends on what all other players did, so each point needs a complete calculation. The work runs in a web worker and shows a progress bar.",
+      ),
+    ],
+  },
+  {
     slug: "game-details-set-and-situation-graphs",
     title: "2 new graphs on game details",
     date: "2026-08-18",

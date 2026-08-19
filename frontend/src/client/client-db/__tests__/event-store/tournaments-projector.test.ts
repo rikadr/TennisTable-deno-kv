@@ -54,6 +54,44 @@ function undoSkipEvent(stream: string, skipId: string, time = 8000): TournamentU
 }
 
 describe("TournamentsProjector projection", () => {
+  // Old data has signups that predate the create event of their tournament, and
+  // a state projected at a point in time inside that window must not treat the
+  // placeholder record as a tournament. Its start date of 0 would sweep every
+  // game ever played into a bracket and hand out scores for a tournament that
+  // did not exist yet.
+  it("hides a tournament that has no create event yet", () => {
+    const projector = new TournamentsProjector();
+    projector.signup(signupEvent("t1", "p1"));
+
+    expect(projector.getTournamentConfig("t1")).toBeUndefined();
+    expect(projector.getTournamentConfigs()).toEqual([]);
+  });
+
+  it("hides a tournament known only from a skipped game", () => {
+    const projector = new TournamentsProjector();
+    projector.skipGame(skipEvent("t1", "s1", "p1", "p2"));
+
+    expect(projector.getTournamentConfigs()).toEqual([]);
+  });
+
+  it("shows the tournament once its create event arrives after a signup", () => {
+    const projector = new TournamentsProjector();
+    projector.signup(signupEvent("t1", "p1"));
+    projector.createTournament(createEvent("t1", { name: "Spring Cup" }));
+
+    expect(projector.getTournamentConfigs().map((config) => config.name)).toEqual(["Spring Cup"]);
+    expect(projector.getTournamentConfig("t1")?.startDate).toBe(FUTURE_START);
+    // The signup from before the create event is kept
+    expect(projector.getTournamentSignups("t1").map((signup) => signup.player)).toEqual(["p1"]);
+  });
+
+  it("keeps hiding a tournament that only an update event touched", () => {
+    const projector = new TournamentsProjector();
+    projector.updateTournament(updateEvent("t1", { name: "Renamed" }));
+
+    expect(projector.getTournamentConfigs()).toEqual([]);
+  });
+
   it("creates a tournament with its full config", () => {
     const projector = new TournamentsProjector();
     projector.createTournament(

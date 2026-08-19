@@ -199,3 +199,58 @@ describe("Tournament progression scoring for double elimination", () => {
     ]);
   });
 });
+
+// Old data has signups that predate the create event of their tournament. In the
+// window between the two, the tournament used to project as a placeholder with a
+// start date of 0, which swept every game ever played into its bracket. A score
+// at a point in time inside that window then counted a tournament that did not
+// exist yet, and the score dropped again when the real create event arrived.
+describe("Hall of Fame tournament progression with a signup before the create event", () => {
+  const PLAYER = "p1";
+  const OTHER = "p2";
+  const SIGNUP_TIME = 1_000;
+  const CREATE_TIME = 500_000;
+  const TOURNAMENT_START = 600_000;
+
+  const events: EventType[] = [
+    { time: 100, stream: PLAYER, type: EventTypeEnum.PLAYER_CREATED, data: { name: "P1" } },
+    { time: 200, stream: OTHER, type: EventTypeEnum.PLAYER_CREATED, data: { name: "P2" } },
+    {
+      time: SIGNUP_TIME,
+      stream: "late-tournament",
+      type: EventTypeEnum.TOURNAMENT_SIGNUP,
+      data: { player: PLAYER },
+    },
+    {
+      time: 2_000,
+      stream: "g1",
+      type: EventTypeEnum.GAME_CREATED,
+      data: { playedAt: 2_000, winner: PLAYER, loser: OTHER },
+    },
+    {
+      time: CREATE_TIME,
+      stream: "late-tournament",
+      type: EventTypeEnum.TOURNAMENT_CREATED,
+      data: { name: "Late Cup", startDate: TOURNAMENT_START, groupPlay: false },
+    },
+  ];
+
+  const scoreAt = (time: number) => {
+    const upTo = events.filter((event) =>
+      event.type === EventTypeEnum.GAME_CREATED ? event.data.playedAt <= time : event.time <= time,
+    );
+    return new TennisTable({ events: upTo, referenceTime: time }).hallOfFame.getScoreForAnyPlayer(PLAYER)?.score
+      .tournamentProgression;
+  };
+
+  it("gives no tournament points while only the signup is known", () => {
+    const score = scoreAt(CREATE_TIME - 1);
+    expect(score?.score).toBe(0);
+    expect(score?.tournaments).toEqual([]);
+  });
+
+  it("gives no tournament points before the tournament starts", () => {
+    const score = scoreAt(TOURNAMENT_START - 1);
+    expect(score?.score).toBe(0);
+  });
+});

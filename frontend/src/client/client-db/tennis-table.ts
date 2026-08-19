@@ -14,6 +14,7 @@ import { Seasons } from "./seasons/seasons";
 import { PredictionsHistory } from "./predictions-history";
 import { Predictions } from "./predictions";
 import { HallOfFame } from "./hall-of-fame";
+import { HallOfFameHistory } from "./hall-of-fame-history";
 import { Whr } from "./whr";
 
 export class TennisTable {
@@ -21,6 +22,12 @@ export class TennisTable {
   // Data from db
   // --------------------------------------------------------------------------
   readonly events: EventType[];
+
+  /** The moment this projection represents, or undefined for the live state.
+   * Set when the app state is projected at a point in the past, so logic that
+   * asks "has this happened yet" compares against that moment and not the
+   * real clock. */
+  readonly referenceTime: number | undefined;
 
   // --------------------------------------------------------------------------
   // Client configuration
@@ -49,10 +56,12 @@ export class TennisTable {
   predictions: Predictions;
   predictionsHistory: PredictionsHistory;
   hallOfFame: HallOfFame;
+  hallOfFameHistory: HallOfFameHistory;
   whr: Whr;
 
   constructor(data: { events: EventType[]; gameLimitForRankedOverride?: number; referenceTime?: number }) {
     this.events = data.events;
+    this.referenceTime = data.referenceTime;
     if (data.gameLimitForRankedOverride !== undefined) {
       this.client.gameLimitForRanked = data.gameLimitForRankedOverride;
     }
@@ -71,6 +80,7 @@ export class TennisTable {
     this.predictions = new Predictions(this, data.referenceTime);
     this.predictionsHistory = new PredictionsHistory(this);
     this.hallOfFame = new HallOfFame(this);
+    this.hallOfFameHistory = new HallOfFameHistory(this);
     this.whr = new Whr(this);
   }
 
