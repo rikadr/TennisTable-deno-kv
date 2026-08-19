@@ -8,6 +8,11 @@ Pick, cut and add. Reply with ids (`G3`, `S1`, `P4`…) plus anything missing.
 
 - **No counts.** The page may only show shares, medians and averages — never
   "412 games" or "9 players". Anything that needs a raw count is marked ⚠️.
+- **Every share is over the games of its own level.** A point level percentage
+  is a share of the games that record points, never of all the games. We do not
+  know what a game without points would have contributed, so it cannot sit in
+  the denominator. The same holds at every level, and each section prints the
+  share of the games it covers so the reader knows the pool.
 - **Levels nest.** Sets ⊃ points ⊃ tracked. A stat belongs to the *lowest*
   level that can produce it. `medianPointsPerGame` for example does not need
   tracking, only `setPoints`, so it is a point-level stat.
@@ -83,24 +88,39 @@ score, S7 for how long a game runs. S8 is a pie, S7 is a bar chart.
 slice of the pie. Roll everything past the common ones into "other", or keep
 every scoreline? Default if we do not decide: keep every scoreline.
 
-## Level 3 — Point level
+## Level 3 — Point level — DECIDED
 *Games that record `setPoints`. The sets are in the order they were played, so
-first set and deciding set are known here.*
+the first set and the deciding set are known here.*
 
-| id | Statistic | What it tells you | Status |
-|----|-----------|-------------------|--------|
-| P1 | Sets that reach deuce (both at 10 or more) | How often a set gets tight | built, old |
-| P2 | Median points in a set | The size of a set | built, old |
-| P3 | Median winning margin in a set | How close a set is | built, old |
-| P4 | Median points in a game | The size of a game | built (moved from tracked) |
-| P5 | Share of the points won by the game winner | Dominance, at point level | built |
-| P6 | Games won with fewer points than the loser | How often the scoreboard lies | built |
-| P7 | The winner of the first set wins the game | Is the first set the game | new |
-| P8 | Games the winner lost the first set of (comeback) | How often a game turns around | new (inverse of P7) |
-| P9 | Distribution of the losing score of a set: 0…9, deuce (bar chart) | The most common way a set ends | new |
-| P10 | Deciding sets that reach deuce, against all sets | Is the last set tighter than the rest | new |
-| P11 | Median point margin by rating gap group (chart) | How much a rating gap is worth in points | new ↔ Matchups |
-| P12 | Sets won to 0 or to 1 | How often a set is a walkover | new |
+Kept: **P1-P10**. Scrapped: P11, and P12 (the P9 chart carries it).
+
+| id | Statistic | Shape | Note |
+|----|-----------|-------|------|
+| P1 | Sets that reach deuce | tile | Both players at 10 or more. |
+| P2 | Median points in a set | tile | |
+| P3 | Median winning margin in a set | tile | |
+| P4 | Distribution of the points in a game | line chart | A line over the buckets of the total points of a game, with a reference line at the median, so the reader sees the spread on each side of it. The y axis is the share of the games, never a count. |
+| P5 | Share of the points won by the game winner | tile | |
+| P6 | Games won with fewer points than the loser | tile | Name it after the **Less is More** achievement, which awards exactly this. Link the card to the achievement. |
+| P7 | The winner of the first set wins the game | tile | |
+| P8 | Games where the winner lost the first set | tile | 100 minus P7. Show one of the two, framed the way that reads best. |
+| P9 | Distribution of the losing score of a set: 0-9 and deuce | bar chart | The most common way a set ends. |
+| P10 | Match deciding sets against the other sets, as a ratio | tile | "A match deciding set reaches deuce 1.4 times as often as a set that decides nothing." The two pools do not overlap: a deciding set is never in the comparison pool. |
+
+**P10 in detail.** A match deciding set is the last set of a game where the
+loser ended one set short of the winner, so both players could still win the
+match when it started. Every other set is the comparison pool. The number
+printed is the deuce rate of the deciding sets divided by the deuce rate of the
+rest.
+
+**Open decisions for level 3**
+
+1. **P7 and P8 are one number.** Which framing do we print: the first set wins
+   the game, or the winner lost the first set?
+2. **P7 and P8 in a game of one set.** The first set is also the last one, so
+   the statistic is trivially true. Leave games of one set out? I suggest yes.
+3. **P4 buckets.** Points in a game run from about 20 to over 100. Buckets of 5
+   points, or of 10?
 
 ## Level 4 — Fully tracked games
 *Games with `pointSequences` and `tracking`: every point in order, its time,
