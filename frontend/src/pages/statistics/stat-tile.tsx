@@ -10,8 +10,11 @@ export const StatTile: React.FC<{ label: string; value: string; note?: string }>
   </div>
 );
 
-export const StatTileRow: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">{children}</div>
+/** The wide layout of a row, so a row of 3 tiles fills its width too. */
+const ROW_COLUMNS = { 3: "md:grid-cols-3", 4: "md:grid-cols-4" } as const;
+
+export const StatTileRow: React.FC<{ columns?: 3 | 4; children: React.ReactNode }> = ({ columns = 4, children }) => (
+  <div className={`grid grid-cols-2 ${ROW_COLUMNS[columns]} gap-2`}>{children}</div>
 );
 
 /** Shown instead of a chart when a period holds no game with the statistic. */
