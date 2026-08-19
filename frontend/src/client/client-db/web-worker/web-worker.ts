@@ -1,4 +1,5 @@
 import { EventType } from "../event-store/event-types";
+import { HallOfFameHistoryResult } from "../hall-of-fame-history";
 import { PredictionHistoryEntry } from "../predictions-history";
 import { ExpectedLeaderboard } from "../simulations";
 import { TennisTable } from "../tennis-table";
@@ -28,7 +29,13 @@ export type WorkerMessage =
   | { type: "predictions-history-complete" }
   | { type: "start-whr"; data: { events: EventType[]; config?: Partial<WhrConfig> } }
   | { type: "whr-progress"; data: { progress: number } }
-  | { type: "whr-result"; data: { result: WhrResult } };
+  | { type: "whr-result"; data: { result: WhrResult } }
+  | {
+      type: "start-hall-of-fame-history";
+      data: { playerId: string; events: EventType[]; now: number };
+    }
+  | { type: "hall-of-fame-history-progress"; data: { progress: number } }
+  | { type: "hall-of-fame-history-result"; data: { result: HallOfFameHistoryResult } };
 
 // eslint-disable-next-line no-restricted-globals
 const scope = self as unknown as DedicatedWorkerGlobalScope;
@@ -90,6 +97,17 @@ function handleWorkerMessage(message: WorkerMessage) {
       );
       setTimeout(() => postWorkerMessage({ type: "predictions-history-complete" }), 1000);
       break;
+
+    case "start-hall-of-fame-history": {
+      const tennisTableForHallOfFame = new TennisTable({ events: message.data.events });
+      const result = tennisTableForHallOfFame.hallOfFameHistory.computeForPlayer(
+        message.data.playerId,
+        message.data.now,
+        (progress) => postWorkerMessage({ type: "hall-of-fame-history-progress", data: { progress } }),
+      );
+      postWorkerMessage({ type: "hall-of-fame-history-result", data: { result } });
+      break;
+    }
 
     case "start-whr": {
       const tennisTableForWhr = new TennisTable({ events: message.data.events });

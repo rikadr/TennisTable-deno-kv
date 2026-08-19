@@ -6,8 +6,10 @@ import { HallOfFameScoreBreakdown } from "../../client/client-db/hall-of-fame";
 import { fmtNum } from "../../common/number-utils";
 import { classNames } from "../../common/class-names";
 import { useLocalStorage } from "../../hooks/use-local-storage";
+import { FACTORS } from "./hall-of-fame-factors";
+import { HallOfFameScoreOverTime } from "./hall-of-fame-score-over-time";
 
-type ViewMode = "total" | "compared";
+type ViewMode = "total" | "compared" | "overTime";
 const VIEW_MODE_STORAGE_KEY = "hall-of-fame-player-view-mode";
 
 type FactorKey = keyof Omit<HallOfFameScoreBreakdown, "total">;
@@ -236,24 +238,13 @@ function renderDetails(breakdown: HallOfFameScoreBreakdown, key: FactorKey): Rea
   }
 }
 
-export const FACTORS: { key: FactorKey; emoji: string; name: string }[] = [
-  { key: "peakElo", emoji: "🔥", name: "All-Time High" },
-  { key: "podiumTime", emoji: "🥉", name: "Time at the Top" },
-  { key: "experience", emoji: "🏓", name: "Experience" },
-  { key: "dataVolume", emoji: "📊", name: "Data Volume" },
-  { key: "longevity", emoji: "📅", name: "Activity" },
-  { key: "seasonPerformance", emoji: "🍁", name: "Seasons" },
-  { key: "tournamentProgression", emoji: "🏆", name: "Tournaments" },
-  { key: "socialDiversity", emoji: "👥", name: "Social Diversity" },
-  { key: "achievementsEarned", emoji: "🎖️", name: "Achievements" },
-];
-
 export const HallOfFamePlayerPage: React.FC = () => {
   const { playerId } = useParams<{ playerId: string }>();
   const navigate = useNavigate();
   const context = useEventDbContext();
   const [storedViewMode, setStoredViewMode] = useLocalStorage(VIEW_MODE_STORAGE_KEY, "total");
-  const viewMode: ViewMode = storedViewMode === "compared" ? "compared" : "total";
+  const viewMode: ViewMode =
+    storedViewMode === "compared" ? "compared" : storedViewMode === "overTime" ? "overTime" : "total";
 
   if (!playerId) {
     return <div className="text-primary-text text-center p-8">Player not found</div>;
@@ -346,12 +337,13 @@ export const HallOfFamePlayerPage: React.FC = () => {
           <div
             role="tablist"
             aria-label="Score view mode"
-            className="inline-flex bg-secondary-background rounded-full p-1 mb-4"
+            className="flex flex-wrap gap-1 bg-secondary-background rounded-full p-1 mb-4"
           >
             {(
               [
                 { value: "total" as const, label: "Section of total" },
                 { value: "compared" as const, label: "Compared to all" },
+                { value: "overTime" as const, label: "Score over time" },
               ]
             ).map((option) => {
               const isActiveOption = viewMode === option.value;
@@ -387,6 +379,9 @@ export const HallOfFamePlayerPage: React.FC = () => {
             </button>
           </div>
 
+          {viewMode === "overTime" ? (
+            <HallOfFameScoreOverTime playerId={entry.playerId} playerName={entry.playerName} />
+          ) : (
           <div className="space-y-6">
             {segments.map((segment) => (
               <div key={segment.key} className="ring-1 ring-secondary-background rounded-xl p-3">
@@ -419,8 +414,10 @@ export const HallOfFamePlayerPage: React.FC = () => {
               </div>
             ))}
           </div>
+          )}
 
           {/* Total */}
+          {viewMode !== "overTime" && (
           <div className="mt-6 pt-4 border-t border-secondary-background flex justify-between items-center">
             <span className="text-primary-text font-bold text-sm uppercase tracking-wide">
               Final Hall of Fame Score
@@ -432,6 +429,7 @@ export const HallOfFamePlayerPage: React.FC = () => {
               {fmtNum(entry.score.total)} pts
             </span>
           </div>
+          )}
         </div>
       </div>
     </div>

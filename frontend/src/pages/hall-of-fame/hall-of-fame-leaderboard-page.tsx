@@ -5,7 +5,7 @@ import { ProfilePicture } from "../player/profile-picture";
 import { fmtNum } from "../../common/number-utils";
 import { classNames } from "../../common/class-names";
 import { HallOfFameEntry, HallOfFameFactorKey } from "../../client/client-db/hall-of-fame";
-import { FACTORS } from "./hall-of-fame-player-page";
+import { FACTORS } from "./hall-of-fame-factors";
 
 type CategoryOption = HallOfFameFactorKey | "all";
 type SortBy = "category" | "total";

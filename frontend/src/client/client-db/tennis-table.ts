@@ -14,6 +14,7 @@ import { Seasons } from "./seasons/seasons";
 import { PredictionsHistory } from "./predictions-history";
 import { Predictions } from "./predictions";
 import { HallOfFame } from "./hall-of-fame";
+import { HallOfFameHistory } from "./hall-of-fame-history";
 import { Whr } from "./whr";
 
 export class TennisTable {
@@ -49,6 +50,7 @@ export class TennisTable {
   predictions: Predictions;
   predictionsHistory: PredictionsHistory;
   hallOfFame: HallOfFame;
+  hallOfFameHistory: HallOfFameHistory;
   whr: Whr;
 
   constructor(data: { events: EventType[]; gameLimitForRankedOverride?: number; referenceTime?: number }) {
@@ -71,6 +73,7 @@ export class TennisTable {
     this.predictions = new Predictions(this, data.referenceTime);
     this.predictionsHistory = new PredictionsHistory(this);
     this.hallOfFame = new HallOfFame(this);
+    this.hallOfFameHistory = new HallOfFameHistory(this);
     this.whr = new Whr(this);
   }
 
