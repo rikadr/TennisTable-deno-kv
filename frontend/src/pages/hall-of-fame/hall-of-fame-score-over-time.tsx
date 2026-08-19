@@ -16,13 +16,13 @@ import {
 import { NameType, ValueType } from "recharts/types/component/DefaultTooltipContent";
 import { HallOfFameFactorKey } from "../../client/client-db/hall-of-fame";
 import { HISTORY_MAX_POINTS } from "../../client/client-db/hall-of-fame-history";
-import { classNames } from "../../common/class-names";
 import { dateString } from "../../common/date-utils";
 import { fmtNum } from "../../common/number-utils";
 import { PillSelect } from "../../common/pill-select";
 import { ONE_YEAR } from "../../common/time-in-ms";
 import { useHallOfFameHistoryWorker } from "../../hooks/use-hall-of-fame-history-worker";
 import { useLocalStorage } from "../../hooks/use-local-storage";
+import { deltaBars } from "./hall-of-fame-delta-bars";
 import { FACTORS } from "./hall-of-fame-factors";
 
 type GraphMode = "cumulative" | "delta";
@@ -59,6 +59,10 @@ export const HallOfFameScoreOverTime: React.FC<{ playerId: string; playerName: s
     });
   }, [points, series]);
 
+  const deltaData = useMemo(() => deltaBars(graphData), [graphData]);
+
+  const chartData = mode === "delta" ? deltaData : graphData;
+
   const spansMoreThanAYear = useMemo(() => {
     if (graphData.length < 2) return false;
     return graphData[graphData.length - 1].time - graphData[0].time > ONE_YEAR;
@@ -73,11 +77,11 @@ export const HallOfFameScoreOverTime: React.FC<{ playerId: string; playerName: s
   const seriesLabel = series === "total" ? "Total score" : FACTORS.find((f) => f.key === series)?.name ?? "";
 
   const summary = useMemo(() => {
-    if (graphData.length === 0) return undefined;
+    if (graphData.length === 0 || chartData.length === 0) return undefined;
     const current = graphData[graphData.length - 1].cumulative;
-    const best = graphData.reduce((top, point) => (point.delta > top.delta ? point : top), graphData[0]);
+    const best = chartData.reduce((top, point) => (point.delta > top.delta ? point : top), chartData[0]);
     return { current, best };
-  }, [graphData]);
+  }, [graphData, chartData]);
 
   if (failed) {
     return (
@@ -159,7 +163,7 @@ export const HallOfFameScoreOverTime: React.FC<{ playerId: string; playerName: s
               <XAxis
                 dataKey="time"
                 tickFormatter={formatTick}
-                interval={Math.max(0, Math.floor(graphData.length / 5))}
+                interval={Math.max(0, Math.floor(chartData.length / 5))}
                 stroke="rgb(var(--color-primary-text))"
                 fontSize={11}
                 tickLine={false}
@@ -189,7 +193,7 @@ export const HallOfFameScoreOverTime: React.FC<{ playerId: string; playerName: s
               />
             </LineChart>
           ) : (
-            <BarChart data={graphData} margin={{ top: 5, right: 8, left: -12, bottom: 0 }}>
+            <BarChart data={deltaData} margin={{ top: 5, right: 8, left: -12, bottom: 0 }}>
               <CartesianGrid
                 strokeDasharray="1 4"
                 vertical={false}
@@ -199,7 +203,7 @@ export const HallOfFameScoreOverTime: React.FC<{ playerId: string; playerName: s
               <XAxis
                 dataKey="time"
                 tickFormatter={formatTick}
-                interval={Math.max(0, Math.floor(graphData.length / 5))}
+                interval={Math.max(0, Math.floor(chartData.length / 5))}
                 stroke="rgb(var(--color-primary-text))"
                 fontSize={11}
                 tickLine={false}
@@ -223,11 +227,8 @@ export const HallOfFameScoreOverTime: React.FC<{ playerId: string; playerName: s
               />
               <ReferenceLine y={0} stroke="rgb(var(--color-primary-text))" opacity={0.3} />
               <Bar dataKey="delta" animationDuration={400}>
-                {graphData.map((point) => (
-                  <Cell
-                    key={point.time}
-                    fill={point.delta < 0 ? NEGATIVE_COLOR : "rgb(var(--color-primary-text))"}
-                  />
+                {deltaData.map((bar) => (
+                  <Cell key={bar.time} fill={bar.delta < 0 ? NEGATIVE_COLOR : "rgb(var(--color-primary-text))"} />
                 ))}
               </Bar>
             </BarChart>
@@ -244,14 +245,20 @@ export const HallOfFameScoreOverTime: React.FC<{ playerId: string; playerName: s
             Best period: <span className="font-bold">{fmtNum(summary.best.delta, { signedPositive: true })} pts</span>{" "}
             {dateString(summary.best.time)}
           </span>
-          <span className={classNames("bg-secondary-background/50 text-secondary-text/75 px-2 py-1 rounded")}>
-            {graphData.length} points, {mode === "delta" ? "gain per period" : "score at each point"}
+          <span className="bg-secondary-background/50 text-secondary-text/75 px-2 py-1 rounded">
+            {mode === "delta"
+              ? `${deltaData.length} periods, gain in each`
+              : `${graphData.length} points, score at each`}
           </span>
         </div>
       )}
     </div>
   );
 };
+
+// Day and month only, for the start of a period whose end already names the year.
+const shortDate = (time: number) =>
+  new Date(time).toLocaleDateString("nb-NO", { day: "numeric", month: "short" });
 
 const ScoreTooltip = ({
   active,
@@ -260,11 +267,15 @@ const ScoreTooltip = ({
   seriesLabel,
 }: TooltipProps<ValueType, NameType> & { mode: GraphMode; seriesLabel: string }) => {
   if (!active || !payload || payload.length === 0) return null;
-  const data = payload[0].payload as { time: number; cumulative: number; delta: number };
+  const data = payload[0].payload as { time: number; from?: number; cumulative: number; delta: number };
 
   return (
     <div className="p-3 bg-primary-background/95 backdrop-blur-sm ring-1 ring-primary-text/20 rounded-lg text-primary-text shadow-lg">
-      <div className="text-xs opacity-60 mb-1">{dateString(data.time)}</div>
+      <div className="text-xs opacity-60 mb-1">
+        {mode === "delta" && data.from !== undefined
+          ? `${shortDate(data.from)} – ${dateString(data.time)}`
+          : dateString(data.time)}
+      </div>
       <div className="font-bold text-lg">
         {mode === "delta"
           ? `${fmtNum(data.delta, { signedPositive: true })} pts`
@@ -273,8 +284,8 @@ const ScoreTooltip = ({
       <div className="text-xs opacity-75">{seriesLabel}</div>
       <div className="text-xs opacity-60 mt-1">
         {mode === "delta"
-          ? `${fmtNum(data.cumulative)} pts in total`
-          : `${fmtNum(data.delta, { signedPositive: true })} pts this period`}
+          ? `${fmtNum(data.cumulative)} pts in total after the period`
+          : `${fmtNum(data.delta, { signedPositive: true })} pts since the previous point`}
       </div>
     </div>
   );
