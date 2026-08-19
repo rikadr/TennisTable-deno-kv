@@ -13,6 +13,12 @@
  * inside this file, so a count never reaches a component prop, a chart dataset
  * or the DOM, and it cannot be read back out of the React devtools.
  *
+ * THE ONE EXCEPTION IS `leaguePace`. It gives the games of the whole league per
+ * day, per week and per month. The risk the rule protects against is a manager
+ * who reads the games of one player, and a rate over the whole league does not
+ * name a player or let anyone work back to one. So league volume is allowed,
+ * and the games of one player are still never returned.
+ *
  * A function needs one game only. It gives the shares of the games it has, and
  * an empty group gets no shares at all. The caller shows "not enough games"
  * instead. A small group can read 0% or 100%, which is the true share of the
@@ -463,6 +469,38 @@ export function gameLevelStats(
       neitherRanked: percent(neitherRanked, played),
     },
   };
+}
+
+/** The length of an average month, so a rate per month is not off by a day. */
+const DAYS_IN_A_MONTH = 365.25 / 12;
+
+export type LeaguePace = {
+  /** Games the league plays on an average day of the period. */
+  perDay: number;
+  perWeek: number;
+  perMonth: number;
+};
+
+/**
+ * How much the league plays, as a rate over the period.
+ *
+ * The period runs from `from` to `to`, and a period that starts before the
+ * first game starts at that game instead, so the years before the league
+ * existed do not drag the rate down. A period shorter than a day counts as one
+ * day, so the day that has just started does not read as a huge rate.
+ *
+ * This is the one function of this file that carries the volume of the league.
+ * See the header: a rate over the whole league names nobody.
+ */
+export function leaguePace(games: Game[], from: number, to: number): LeaguePace | undefined {
+  if (games.length === 0) return undefined;
+
+  const firstGame = Math.min(...games.map((game) => game.playedAt));
+  const start = Math.max(from, firstGame);
+  const days = Math.max(1, (to - start) / DAY_MS);
+  const perDay = games.length / days;
+
+  return { perDay, perWeek: perDay * 7, perMonth: perDay * DAYS_IN_A_MONTH };
 }
 
 // ---------------------------------------------------------------------------

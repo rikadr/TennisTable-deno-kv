@@ -139,6 +139,7 @@ describe("StatisticsPage", () => {
     // game that records the statistic is now enough.
     renderTab("games", buildEvents(1));
 
+    expect(screen.getByText("Games per day")).toBeInTheDocument();
     expect(screen.getByText("Median rating gap")).toBeInTheDocument();
     expect(screen.getByText("Sets won by the game winner")).toBeInTheDocument();
     expect(screen.getByText("Median points in a set")).toBeInTheDocument();

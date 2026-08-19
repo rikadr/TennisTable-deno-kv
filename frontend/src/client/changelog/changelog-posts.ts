@@ -156,7 +156,7 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
         "Each chart uses a percent axis. The chart of the days of the week gives the share of all games. The charts with many groups compare each group to the busiest group, which reads 100%.",
       ),
       text(
-        "The page shows the difference between periods and matchups. It does not show how many games the league plays, and it does not show how many games a player plays.",
+        "The page shows the difference between periods and matchups. It gives the pace of the whole league in games per day, week and month. It never shows how many games one player plays.",
       ),
     ],
   },

@@ -47,8 +47,8 @@ export const StatisticsPage: React.FC = () => {
         <div className="text-center">
           <h1 className="text-2xl md:text-4xl text-primary-text">Statistics</h1>
           <p className="text-sm md:text-base text-primary-text/70 mt-1">
-            How the league plays, as shares and medians. The page shows the differences between days, times and
-            matchups, and never how many games anybody plays.
+            How the league plays: the shares, the medians and the pace of the whole league. The page never shows how
+            many games one player plays.
           </p>
         </div>
 

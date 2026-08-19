@@ -5,10 +5,10 @@ listed here, and nothing else in this file is waiting on a decision.
 
 **Still open**
 
-1. The pace statistic of level 1 (games per day, week and month). It conflicts
-   with the privacy rule, so it is not built. Options: A the literal averages
-   and a repeal of the rule, B the pace as a ratio to the usual pace, C the
-   share of days with a game.
+1. ~~The pace statistic of level 1.~~ **Decided and built.** The literal
+   averages: games per day, per week and per month over the period. A rate over
+   the whole league names nobody, so the privacy rule now carries this one
+   documented exception, and the page and the changelog say what the page shows.
 2. The thin slices of the set score pie. With the real data 4 of the 8 scores
    are under 0,25%, so they are a hair on the pie and a line in the legend.
    Group them into "other", or keep every score? They are kept for now.

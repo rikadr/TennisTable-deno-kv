@@ -7,7 +7,7 @@ import { ContentCard } from "../player/content-card";
 import { durationString, gapString } from "../game/game-tracking-stats";
 import { NotEnoughGames, StackedShareBar, StatTile, StatTileRow } from "./stat-tile";
 import { DetailLevelSection } from "./detail-level-section";
-import { ACCENT_COLOR, percentLabel, ratioLabel, SERIES_COLOR, seriesColor } from "./percent-chart";
+import { percentLabel, ratioLabel, SPREAD_COLORS } from "./percent-chart";
 import {
   DetailLevelChart,
   DetailLevelLegend,
@@ -20,6 +20,7 @@ import {
   detailLevels,
   detailLevelTrend,
   gameLevelStats,
+  leaguePace,
   pointLevelStats,
   setLevelStats,
   trackedLevelStats,
@@ -52,14 +53,14 @@ const ClosingOutCard: React.FC<{ stats: TrackedLevelStats }> = ({ stats }) => {
             chances: setPointsToClose,
             unit: "set points",
             conversion: stats.setPointConversion,
-            color: SERIES_COLOR,
+            color: "rgb(var(--color-secondary-text))",
           },
           {
             title: "To close a game",
             chances: matchPointsToClose,
             unit: "match points",
             conversion: stats.matchPointConversion,
-            color: ACCENT_COLOR,
+            color: "rgba(var(--color-secondary-text),0.45)",
           },
         ].map((side) => (
           <div
@@ -107,6 +108,7 @@ export const GamesTab: React.FC<{ range: TimeRange; setRange: (range: TimeRange)
     () => gameLevelStats(context.games, context.allPlayers, context.client.gameLimitForRanked, cutoff),
     [context, cutoff],
   );
+  const pace = useMemo(() => leaguePace(gamesInRange, cutoff, Date.now()), [gamesInRange, cutoff]);
   const setLevel = useMemo(() => setLevelStats(gamesInRange), [gamesInRange]);
   const pointLevel = useMemo(() => pointLevelStats(gamesInRange), [gamesInRange]);
   const trackedLevel = useMemo(() => trackedLevelStats(gamesInRange), [gamesInRange]);
@@ -141,6 +143,21 @@ export const GamesTab: React.FC<{ range: TimeRange; setRange: (range: TimeRange)
           title="Game level"
           description="From the winner and the loser of every game. The rating belongs here too, because it is built from results alone."
         >
+          <ContentCard
+            title="How much the league plays"
+            description="The games of the whole league, as a rate over the period. A period that starts before the first game starts at that game."
+          >
+            {pace === undefined ? (
+              <NotEnoughGames />
+            ) : (
+              <StatTileRow columns={3}>
+                <StatTile label="Games per day" value={orDash(fmtNum(pace.perDay, { digits: 1 }))} />
+                <StatTile label="Games per week" value={orDash(fmtNum(pace.perWeek, { digits: 1 }))} />
+                <StatTile label="Games per month" value={orDash(fmtNum(pace.perMonth, { digits: 0 }))} />
+              </StatTileRow>
+            )}
+          </ContentCard>
+
           <ContentCard title="The matchup" description="Who meets whom, and how far apart they stand.">
             {gameLevel === undefined ? (
               <NotEnoughGames />
@@ -174,9 +191,9 @@ export const GamesTab: React.FC<{ range: TimeRange; setRange: (range: TimeRange)
             ) : (
               <StackedShareBar
                 segments={[
-                  { label: "Both ranked", share: gameLevel.rankedMix.bothRanked, color: seriesColor(0) },
-                  { label: "One ranked", share: gameLevel.rankedMix.oneRanked, color: seriesColor(1) },
-                  { label: "Neither ranked", share: gameLevel.rankedMix.neitherRanked, color: seriesColor(2) },
+                  { label: "Both ranked", share: gameLevel.rankedMix.bothRanked, color: SPREAD_COLORS[0] },
+                  { label: "One ranked", share: gameLevel.rankedMix.oneRanked, color: SPREAD_COLORS[1] },
+                  { label: "Neither ranked", share: gameLevel.rankedMix.neitherRanked, color: SPREAD_COLORS[2] },
                 ]}
               />
             )}
@@ -282,12 +299,12 @@ export const GamesTab: React.FC<{ range: TimeRange; setRange: (range: TimeRange)
                       {
                         label: "The winner of the first set wins",
                         share: pointLevel.firstSetWinnerWins,
-                        color: seriesColor(0),
+                        color: SPREAD_COLORS[0],
                       },
                       {
                         label: "The loser of the first set wins",
                         share: 100 - pointLevel.firstSetWinnerWins,
-                        color: seriesColor(1),
+                        color: SPREAD_COLORS[1],
                       },
                     ]}
                   />

@@ -17,7 +17,17 @@ import {
   YAxis,
 } from "recharts";
 import { fmtNum } from "../../common/number-utils";
-import { ACCENT_COLOR, AXIS_COLOR, LEVEL_COLORS, percentLabel, percentTick, seriesColor, SERIES_COLOR, TooltipCard } from "./percent-chart";
+import {
+  AXIS_COLOR,
+  HIGHLIGHT_COLOR,
+  LEVEL_COLORS,
+  percentLabel,
+  percentTick,
+  seriesColor,
+  MUTED_SERIES_COLOR,
+  SERIES_COLOR,
+  TooltipCard,
+} from "./percent-chart";
 import { DetailLevelPoint, PointLevelStats, SetLevelStats } from "./statistics-aggregations";
 
 const formatMonth = (key: string): string => {
@@ -180,7 +190,7 @@ export const LosingScoreChart: React.FC<{ data: PointLevelStats["losingSetScores
       />
       <Bar dataKey="share" radius={[4, 4, 0, 0]} isAnimationActive={false}>
         {data.map((entry) => (
-          <Cell key={entry.label} fill={entry.label === "deuce" ? ACCENT_COLOR : SERIES_COLOR} />
+          <Cell key={entry.label} fill={entry.label === "deuce" ? HIGHLIGHT_COLOR : MUTED_SERIES_COLOR} />
         ))}
       </Bar>
     </BarChart>
@@ -216,7 +226,7 @@ export const PointsPerGameChart: React.FC<{ data: PointLevelStats["pointsPerGame
       />
       <ReferenceLine
         x={median}
-        stroke={ACCENT_COLOR}
+        stroke={HIGHLIGHT_COLOR}
         strokeDasharray="4 4"
         label={{
           value: `Median ${fmtNum(median, { digits: 0 })}`,
@@ -231,7 +241,7 @@ export const PointsPerGameChart: React.FC<{ data: PointLevelStats["pointsPerGame
         stroke={SERIES_COLOR}
         strokeWidth={2}
         dot={false}
-        activeDot={{ r: 4, fill: ACCENT_COLOR }}
+        activeDot={{ r: 4, fill: HIGHLIGHT_COLOR }}
         isAnimationActive={false}
       />
     </LineChart>

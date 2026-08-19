@@ -9,6 +9,7 @@ import {
   detailLevelTrend,
   forEachGameWithPreGameStanding,
   gameLevelStats,
+  leaguePace,
   MIN_GAMES_PER_BUCKET,
   pairingCoverage,
   percent,
@@ -319,6 +320,43 @@ describe("gameLevelStats", () => {
     expect(stats.rankedMix.bothRanked).toBe(25);
     const mix = stats.rankedMix;
     expect(mix.bothRanked + mix.oneRanked + mix.neitherRanked).toBe(100);
+  });
+});
+
+describe("leaguePace", () => {
+  const HOUR_MS = 60 * 60 * 1000;
+
+  it("says nothing when the period holds no game", () => {
+    expect(leaguePace([], 0, MONDAY)).toBeUndefined();
+  });
+
+  it("gives the rate over the period, not over the games", () => {
+    const played = games(20).map((entry, index) => ({ ...entry, playedAt: MONDAY + index * HOUR_MS }));
+
+    const pace = leaguePace(played, MONDAY, MONDAY + 10 * DAY_MS)!;
+
+    expect(pace.perDay).toBe(2);
+    expect(pace.perWeek).toBe(14);
+    expect(pace.perMonth).toBeCloseTo(2 * (365.25 / 12));
+  });
+
+  it("starts at the first game when the period starts before it", () => {
+    // The period is 10 days, but the first game is on day 5, so the rate is
+    // over the 5 days the league has existed.
+    const played = games(10).map((entry, index) => ({
+      ...entry,
+      playedAt: MONDAY + 5 * DAY_MS + index * HOUR_MS,
+    }));
+
+    const pace = leaguePace(played, MONDAY, MONDAY + 10 * DAY_MS)!;
+
+    expect(pace.perDay).toBe(2);
+  });
+
+  it("counts a period shorter than a day as one day", () => {
+    const played = games(4).map((entry, index) => ({ ...entry, playedAt: MONDAY + index * HOUR_MS }));
+
+    expect(leaguePace(played, MONDAY, MONDAY + 4 * HOUR_MS)!.perDay).toBe(4);
   });
 });
 
@@ -967,6 +1005,8 @@ describe("the privacy rule", () => {
       detailLevels(played),
       detailLevelTrend(played),
       gameLevelStats(played, players, 3, 0),
+      // `leaguePace` is left out on purpose: it is the documented exception and
+      // carries the games of the whole league. See the header of the file.
       setLevelStats(games(10, { score: { setsWon: { gameWinner: 2, gameLoser: 0 } } })),
       pointLevelStats(
         games(10, {
