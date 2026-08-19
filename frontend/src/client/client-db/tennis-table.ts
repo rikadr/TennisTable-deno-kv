@@ -23,6 +23,12 @@ export class TennisTable {
   // --------------------------------------------------------------------------
   readonly events: EventType[];
 
+  /** The moment this projection represents, or undefined for the live state.
+   * Set when the app state is projected at a point in the past, so logic that
+   * asks "has this happened yet" compares against that moment and not the
+   * real clock. */
+  readonly referenceTime: number | undefined;
+
   // --------------------------------------------------------------------------
   // Client configuration
   // --------------------------------------------------------------------------
@@ -55,6 +61,7 @@ export class TennisTable {
 
   constructor(data: { events: EventType[]; gameLimitForRankedOverride?: number; referenceTime?: number }) {
     this.events = data.events;
+    this.referenceTime = data.referenceTime;
     if (data.gameLimitForRankedOverride !== undefined) {
       this.client.gameLimitForRanked = data.gameLimitForRankedOverride;
     }

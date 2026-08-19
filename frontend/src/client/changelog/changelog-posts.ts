@@ -42,6 +42,25 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
+    slug: "tournament-points-in-a-past-state",
+    title: "Correct tournament points in a past state",
+    date: "2026-08-19",
+    tags: ["bug-fix"],
+    summary:
+      "The app gave tournament points for a tournament that had not started, or that no person had created yet, when it calculated a state at a time in the past.",
+    body: [
+      text(
+        "A tournament now gives points only from the day it starts. The tournament logic uses the time of the state that the page shows. Before this change it used the current time, so a tournament with a later start date still built a bracket and gave points.",
+      ),
+      text(
+        "A second fault gave points for a tournament that did not exist yet. Some old signup events are earlier than the create event of their tournament. The app made a tournament from the signup alone, with no name and no start date, and put every game ever played into it.",
+      ),
+      text(
+        "The scores of today do not change. The pages that show a past state do change: the Hall of Fame score over time, and the Hall of Fame comparison on the What Changed page.",
+      ),
+    ],
+  },
+  {
     slug: "hall-of-fame-score-over-time",
     title: "Hall of Fame score over time",
     date: "2026-08-19",

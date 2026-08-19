@@ -25,6 +25,15 @@ export type TournamentConfig = {
 type Tournament = {
   id: string;
   config: TournamentConfig;
+  /**
+   * Whether a TOURNAMENT_CREATED event has been projected for this id. Any
+   * tournament event creates the record, so a signup or a skipped game alone
+   * leaves a placeholder config behind: no name, and a start date of 0 that
+   * would sweep every game ever played into the tournament. Old data has
+   * signups that predate their create event, and a state projected at a point
+   * in time inside that window must not treat the placeholder as a tournament.
+   */
+  created: boolean;
   signups: Map<string, SignUp>;
   skippedGames: Map<string, SkippedGame>;
 };
@@ -44,12 +53,12 @@ export class TournamentsProjector {
   }
 
   getTournamentConfigs(): TournamentConfig[] {
-    return this.tournaments.filter((t) => !t.config.deleted).map((t) => t.config);
+    return this.tournaments.filter((t) => t.created && !t.config.deleted).map((t) => t.config);
   }
 
   getTournamentConfig(tournamentId: string): TournamentConfig | undefined {
     const tournament = this.#tournamentsMap.get(tournamentId);
-    if (!tournament || tournament.config.deleted) return undefined;
+    if (!tournament || !tournament.created || tournament.config.deleted) return undefined;
     return tournament.config;
   }
 
@@ -69,6 +78,7 @@ export class TournamentsProjector {
     this.#tournamentsMap.set(tournamentId, {
       id: tournamentId,
       config: { id: tournamentId, name: "", startDate: 0, groupPlay: false, doubleElimination: false, deleted: false },
+      created: false,
       signups: new Map(),
       skippedGames: new Map(),
     });
@@ -79,6 +89,7 @@ export class TournamentsProjector {
 
   createTournament(event: TournamentCreated) {
     const tournament = this.#getOrCreateTournament(event.stream);
+    tournament.created = true;
     tournament.config = {
       id: event.stream,
       name: event.data.name,

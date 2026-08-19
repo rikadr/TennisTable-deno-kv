@@ -41,6 +41,7 @@ export class Tournaments {
       this.parent.games.filter((g) => g.playedAt >= tournament.startDate),
       this.parent.eventStore.tournamentsProjector.getTournamentSkippedGames(tournament.id),
       this.parent.eventStore.tournamentsProjector.getTournamentSignups(tournament.id),
+      this.parent.referenceTime,
     );
   }
 
