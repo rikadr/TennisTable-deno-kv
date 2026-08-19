@@ -64,30 +64,35 @@ League, rather than print two different values for "both ranked" on one page.
    another tab, or in a chart of the busiest periods like the one on the admin
    statistics page. That is separate work, not this section.
 
-## Level 2 — Set level
+## Level 2 — Set level — DECIDED
 *Games that record `setsWon`. No order and no points, so only the sets and who
 won them.*
 
-| id | Statistic | What it tells you | Status |
-|----|-----------|-------------------|--------|
-| S1 | Loser won no set (whitewash) | How often a game is one sided | built, old |
-| S2 | The last set decided it (loser one set short) | How often a game goes the distance | built |
-| S3 | Played as a single set | The format mix of the league | built |
-| S4 | Median sets in a game | The format mix, as one number | built |
-| S5 | Share of all sets that the game winner won | Dominance, at set level | new |
-| S6 | Whitewash share by rating gap group (chart) | Does a rating gap predict a whitewash | new |
-| S7 | Share of games that reach 3 sets, 4 sets, 5 sets (bar chart) | The shape of a game, as a distribution | new — absorbed by S8 |
-| S8 ★ | **Pie chart of the set score of a game: 2-0, 2-1, 3-0, 3-1, 3-2, 1-0…** | The shape of a game, as the scoreline people say out loud | new |
+Kept: **S5, S7, S8**. Scrapped: S1, S2, S3, S4 (S8 carries all four). S6 is not
+decided, see below.
 
-**S8 in detail.** The score is always read from the winner: a game is 2-1 and
-never 1-2, so the two are one slice. Each slice is the share of the games with
-sets that ended on that scoreline. The slices cover 100% of the games with sets,
-so the pie is the whole format mix and the whitewash rate in one picture — S1,
-S3 and S4 become readable from it, and we can drop them as tiles if the pie
-carries them.
+| id | Statistic | Shape | Note |
+|----|-----------|-------|------|
+| S5 | Share of all the sets that the game winners won | tile | Over the games with sets. Always above 50%, and it reads as dominance. |
+| S7 | Games by the number of sets they hold: 1, 2, 3, 4, 5 | chart | The relative quantity of each, as a share of the games with sets. |
+| S8 | The set score of a game: 2-0, 2-1, 3-0, 3-1, 3-2, 1-0… | pie | Read from the winner, so 2-1 and 1-2 are one slice. The slices add up to 100%. |
 
-Decision needed: an unusual scoreline (a 4-3, a 5-2) makes a thin slice. Group
-everything past the common ones into "other", or keep every scoreline?
+**S7 and S8 overlap.** The number of sets in a game is the sum of the scoreline,
+so S7 is S8 grouped. Only a total of 3 splits two ways, into 2-1 and 3-0. Both
+charts are worth having only if they are read differently: S8 for the exact
+score, S7 for how long a game runs. If we want one chart instead, a bar per
+scoreline ordered by the number of sets gives both readings at once.
+
+**Open decisions for level 2**
+
+1. **S8 grouping.** An unusual scoreline (4-3, 5-2) makes a thin slice. Roll
+   everything past the common ones into "other", or keep every scoreline?
+2. **S7 and S8 together, or one merged chart?**
+3. **S6.** Whitewash share by rating gap group: for each 50 point gap group,
+   the share of the games where the loser won no set. It answers whether a
+   rating gap predicts a one sided game. It needs the elo walk and a minimum
+   group size, and it sits close to the upset chart of the Matchups tab. Keep
+   or drop?
 
 ## Level 3 — Point level
 *Games that record `setPoints`. The sets are in the order they were played, so
