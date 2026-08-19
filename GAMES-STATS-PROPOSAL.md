@@ -113,14 +113,16 @@ match when it started. Every other set is the comparison pool. The number
 printed is the deuce rate of the deciding sets divided by the deuce rate of the
 rest.
 
-**Open decisions for level 3**
+**P7 and P8 are one visual.** They are the same number from the two sides, so
+they become one bar that shows the ratio: the share of the games won by the
+player who won the first set, against the share won by the player who lost it.
 
-1. **P7 and P8 are one number.** Which framing do we print: the first set wins
-   the game, or the winner lost the first set?
-2. **P7 and P8 in a game of one set.** The first set is also the last one, so
-   the statistic is trivially true. Leave games of one set out? I suggest yes.
-3. **P4 buckets.** Points in a game run from about 20 to over 100. Buckets of 5
-   points, or of 10?
+Games of one set stay in. In such a game the first set is the game, so it always
+counts on the "won the first set" side and lifts that share. The description of
+the card must say so.
+
+**P4 has no buckets.** The line plots every total that games hold, one point per
+total. The line is spiky, which is true to the data.
 
 ## Level 4 — Fully tracked games
 *Games with `pointSequences` and `tracking`: every point in order, its time,
