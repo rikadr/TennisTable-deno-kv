@@ -16,7 +16,7 @@ import { CARD_SURFACE, fill, panelTint, ROW_SURFACE, softFill, textOn } from "..
 import { getServeInfo, Server } from "../../common/serve-tracker";
 import { ServeTrackerDisplay } from "../../common/serve-tracker-display";
 import { BadSide, badSideLabel, nextSetBadSide } from "../../common/table-sides";
-import { TableSideSelector } from "../../common/table-sides-display";
+import { TableSideDisplay } from "../../common/table-sides-display";
 import { LiveGamePredictionCard } from "../live-game/live-game-prediction-card";
 import { computeLiveWinPrediction } from "../live-game/live-game-win-probability";
 import { Predictions } from "../../client/client-db/predictions";
@@ -446,7 +446,8 @@ export const TrackGamePage: React.FC = () => {
               </div>
               {/* Which side of the table the players have this set */}
               <div className="mt-1.5 tall:mt-2">
-                <TableSideSelector
+                <TableSideDisplay
+                  currentSet={currentSetScore}
                   badSide={badSide}
                   player1Name={context.playerName(player1)}
                   player2Name={context.playerName(player2)}

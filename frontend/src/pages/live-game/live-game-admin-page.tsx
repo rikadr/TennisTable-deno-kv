@@ -27,7 +27,7 @@ import ConfettiExplosion from "react-confetti-explosion";
 import { Server } from "../../common/serve-tracker";
 import { ServeTrackerDisplay } from "../../common/serve-tracker-display";
 import { BadSide, badSideLabel, nextSetBadSide } from "../../common/table-sides";
-import { TableSideSelector } from "../../common/table-sides-display";
+import { TableSideDisplay } from "../../common/table-sides-display";
 import { appendPoint, removeLastPoint, toEventTrackingData, trackingNow } from "../../common/point-sequences";
 
 type Stage = "scoring" | "confirm";
@@ -390,7 +390,8 @@ export const LiveGameAdminPage: React.FC = () => {
             </div>
             {/* Which side of the table the players have this set */}
             <div className="mt-1.5 tall:mt-2">
-              <TableSideSelector
+              <TableSideDisplay
+                currentSet={localState.currentSet}
                 badSide={localState.badSide}
                 player1Name={context.playerName(localState.player1Id)}
                 player2Name={context.playerName(localState.player2Id)}

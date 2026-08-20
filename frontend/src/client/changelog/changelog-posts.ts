@@ -50,10 +50,10 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
       "A tracked game records the player who has the bad side of the table in each set. The game details page shows the side of every set.",
     body: [
       text(
-        "The game tracker and the live game admin page have a selector below the serve tracker. It gives 3 options: player 1 has the bad side, player 2 has the bad side, or the 2 sides are equally good. A second press on the selected option removes the record.",
+        "The game tracker and the live game admin page have a selector below the serve tracker. It gives 3 options: the first player has the bad side, the 2 sides are equally good, or the second player has the bad side.",
       ),
       text(
-        "After each set the tracker moves the bad side to the other player, because the players usually change sides. Correct it when the players keep the same side.",
+        "The side locks with the first point of the set, the same as the first server. After each set the tracker moves the bad side to the other player, because the players usually change sides. Correct it at 0-0 when the players keep the same side.",
       ),
       text(
         'The `GAME_SCORE` event stores one char per set, from the side of the game winner: "G" for the good side, "B" for the bad side and "N" for 2 equal sides. A game stores the sides only when every set has one.',
