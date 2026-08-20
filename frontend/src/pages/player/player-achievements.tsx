@@ -1,7 +1,7 @@
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { dateString, daysBetweenCeiled, monthString, relativeTimeString } from "../../common/date-utils";
 import { classNames } from "../../common/class-names";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Achievement,
   AchievementProgression,
@@ -14,10 +14,15 @@ import {
   STREAK_RECORD_FLOOR,
   UPSET_RECORD_FLOOR,
 } from "../../client/client-db/achievements";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { fmtNum } from "../../common/number-utils";
 import { usePlayerLinkSearch } from "../../hooks/use-player-link-search";
 import { achievementProgressPercentage } from "../../common/achievement-progress";
+import {
+  PLAYER_ACHIEVEMENT_PARAM,
+  PLAYER_ACHIEVEMENTS_TAB_PARAM,
+  playerAchievementRowId,
+} from "./player-achievement-link";
 import {
   ACHIEVEMENT_GROUPS,
   ACHIEVEMENT_TYPE_TO_GROUP_ID,
@@ -415,7 +420,20 @@ const tabs: { id: TabType; label: string }[] = [
 
 export const PlayerAchievements: React.FC<Props> = ({ playerId }) => {
   const context = useEventDbContext();
-  const [activeTab, setActiveTab] = useState<TabType>("earned");
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // The sub-tab lives in the url, so a link can point at the Progress tab.
+  const activeTab = (searchParams.get(PLAYER_ACHIEVEMENTS_TAB_PARAM) as TabType) || "earned";
+
+  const setActiveTab = (tab: TabType) => {
+    setSearchParams((previous) => {
+      const params = new URLSearchParams(previous);
+      params.set(PLAYER_ACHIEVEMENTS_TAB_PARAM, tab);
+      // The highlighted achievement belongs to the tab you leave.
+      params.delete(PLAYER_ACHIEVEMENT_PARAM);
+      return params;
+    });
+  };
 
   context.achievements.calculateAchievements();
 
@@ -903,10 +921,21 @@ const progressFilterOptions: { value: ProgressFilter; label: string }[] = [
 const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
   const context = useEventDbContext();
   const search = usePlayerLinkSearch();
+  const [searchParams] = useSearchParams();
   const [sort, setSort] = useState<ProgressSort>("default");
   const [filter, setFilter] = useState<ProgressFilter>("all");
   const [query, setQuery] = useState("");
   const normalizedQuery = query.trim().toLowerCase();
+
+  // A link can name one achievement. Its row is marked and scrolled to, which
+  // keeps the neighbouring achievements in view.
+  const highlightedType = searchParams.get(PLAYER_ACHIEVEMENT_PARAM);
+
+  useEffect(() => {
+    if (!highlightedType) return;
+    const row = document.getElementById(playerAchievementRowId(highlightedType));
+    row?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [highlightedType]);
 
   const gameLimitForRanked = context.client.gameLimitForRanked;
 
@@ -1099,9 +1128,11 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
         return (
           <div
             key={type}
+            id={playerAchievementRowId(type)}
             className={classNames(
               "bg-background-secondary rounded-lg overflow-hidden border border-secondary-text transition-colors relative",
               hasEarned && "bg-gradient-to-b from-green-400 via-green-500 to-green-600",
+              highlightedType === type && "ring-2 ring-offset-2 ring-secondary-text ring-offset-secondary-background",
             )}
           >
             {/* Progress bar background.

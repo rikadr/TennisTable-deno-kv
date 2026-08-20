@@ -8,6 +8,7 @@ import { classNames } from "../../common/class-names";
 import { achievementProgressPercentage } from "../../common/achievement-progress";
 import { AchievementType } from "../../client/client-db/achievements";
 import { ALL_ACHIEVEMENTS } from "./use-achievements-filter";
+import { playerAchievementProgressLink } from "../player/player-achievement-link";
 
 interface ProgressListProps {
   selectedType: string;
@@ -140,7 +141,7 @@ export const ProgressList: React.FC<ProgressListProps> = ({ selectedType }) => {
                       #{index + 1}
                     </div>
 
-                    <Link to={`/player/${player.id}`} className="shrink-0">
+                    <Link to={playerAchievementProgressLink(player.id, selectedType)} className="shrink-0">
                       <ProfilePicture playerId={player.id} size={45} border={3} />
                     </Link>
 
@@ -148,8 +149,8 @@ export const ProgressList: React.FC<ProgressListProps> = ({ selectedType }) => {
                       <div className="flex justify-between items-center mb-1">
                         <div className="flex items-center gap-2">
                           <Link
-                            to={`/player/${player.id}`}
-                            className="font-semibold hover:text-accent transition-colors"
+                            to={playerAchievementProgressLink(player.id, selectedType)}
+                            className="font-semibold hover:underline"
                           >
                             {player.name}
                           </Link>
