@@ -16,12 +16,15 @@ import { AXIS_COLOR, SERIES_COLOR } from "../statistics/percent-chart";
 import { dateString, relativeTimeString } from "../../common/date-utils";
 import { fmtNum } from "../../common/number-utils";
 import { classNames } from "../../common/class-names";
-import { achievementDetails, MonthBucket } from "./achievement-stats";
+import { achievementDetails, MonthBucket, ValueSummary } from "./achievement-stats";
 import { playersProgressForType } from "./progress-rows";
+import { AchievementFacts } from "./achievement-facts";
 import { playerAchievementProgressLink } from "../player/player-achievement-link";
 import { achievementsLink } from "./use-achievements-filter";
 
 const CLOSEST_PLAYERS = 3;
+/** Above this many earnings the spread reads better as a histogram. */
+const VALUE_BARS_MAX = 12;
 
 /** fmtNum returns undefined for an undefined number, which no tile can show. */
 const orDash = (value: string | undefined): string => value ?? "–";
@@ -39,6 +42,7 @@ export const AchievementDetails: React.FC<Props> = ({ type, earnedCount, onShowP
   const label = getAchievementLabel(type, context.client.gameLimitForRanked);
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const now = Date.now();
 
   // The order of the player's Progress tab, so the two pages read the
   // achievements in the same order. The ends join, so Next always has one.
@@ -165,7 +169,7 @@ export const AchievementDetails: React.FC<Props> = ({ type, earnedCount, onShowP
           {details.recordHistory && details.recordHistory.length > 0 && details.values && (
             <Section title="The record over time">
               <div className="space-y-1">
-                {[...details.recordHistory].reverse().map((step, index) => (
+                {[...details.recordHistory].reverse().map((step) => (
                   <div
                     key={`${step.at}-${step.value}`}
                     className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 rounded-lg px-3 py-2 bg-secondary-background text-secondary-text"
@@ -175,9 +179,7 @@ export const AchievementDetails: React.FC<Props> = ({ type, earnedCount, onShowP
                     <span className="text-xs opacity-70 whitespace-nowrap">
                       {dateString(step.at)}
                       {step.heldUntil === undefined
-                        ? index === 0
-                          ? " — stands today"
-                          : ""
+                        ? ` — ${standsToday(step.at, now)}`
                         : ` — held ${heldFor(step.at, step.heldUntil)}`}
                     </span>
                   </div>
@@ -186,8 +188,9 @@ export const AchievementDetails: React.FC<Props> = ({ type, earnedCount, onShowP
             </Section>
           )}
 
-          {/* Values */}
-          {details.values && (
+          {/* The spread of the values. A record only ever climbs, so its steps
+              are the record chart above, not a spread. */}
+          {details.values && !details.recordHistory && (
             <Section title={details.values.metric.label}>
               <StatTileRow columns={3}>
                 <StatTile
@@ -202,7 +205,14 @@ export const AchievementDetails: React.FC<Props> = ({ type, earnedCount, onShowP
                 />
                 <StatTile label="Average" value={details.values.metric.format(details.values.average)} />
               </StatTileRow>
-              {details.values.buckets.length > 1 && <CountChart data={details.values.buckets} name="Earnings" />}
+              {/* One bar per earning while they are few: a distinct value for
+                  every earning makes every bar of a histogram 1 tall, which
+                  shows no spread at all. */}
+              {details.values.measured.length <= VALUE_BARS_MAX ? (
+                <ValueBars values={details.values} playerName={playerName} />
+              ) : (
+                details.values.buckets.length > 1 && <CountChart data={details.values.buckets} name="Earnings" />
+              )}
             </Section>
           )}
 
@@ -212,24 +222,28 @@ export const AchievementDetails: React.FC<Props> = ({ type, earnedCount, onShowP
               {details.topHolders.map((holder, index) => (
                 <div
                   key={holder.playerId}
-                  className="flex items-center gap-3 rounded-lg px-3 py-2 bg-secondary-background text-secondary-text"
+                  className="rounded-lg px-3 py-2 bg-secondary-background text-secondary-text"
                 >
-                  <span className="w-6 text-right opacity-60 font-bold">#{index + 1}</span>
-                  <Link to={playerAchievementProgressLink(holder.playerId, type)} className="shrink-0">
-                    <ProfilePicture playerId={holder.playerId} size={28} border={2} />
-                  </Link>
-                  <Link
-                    to={playerAchievementProgressLink(holder.playerId, type)}
-                    className="flex-1 font-medium hover:underline truncate"
-                  >
-                    {playerName(holder.playerId)}
-                  </Link>
-                  {details.isReachievable && (
-                    <span className="text-sm tabular-nums">
-                      {fmtNum(holder.count)}×
-                    </span>
-                  )}
-                  <span className="text-xs opacity-70 whitespace-nowrap">{dateString(holder.latestAt)}</span>
+                  <div className="flex items-center gap-3">
+                    <span className="w-6 text-right opacity-60 font-bold">#{index + 1}</span>
+                    <Link to={playerAchievementProgressLink(holder.playerId, type)} className="shrink-0">
+                      <ProfilePicture playerId={holder.playerId} size={28} border={2} />
+                    </Link>
+                    <Link
+                      to={playerAchievementProgressLink(holder.playerId, type)}
+                      className="flex-1 font-medium hover:underline truncate"
+                    >
+                      {playerName(holder.playerId)}
+                    </Link>
+                    {details.isReachievable && <span className="text-sm tabular-nums">{fmtNum(holder.count)}×</span>}
+                    <span className="text-xs opacity-70 whitespace-nowrap">{dateString(holder.latestAt)}</span>
+                  </div>
+                  {/* What the holder did to earn it, in the words the recent
+                      list uses. A repeatable achievement describes the latest
+                      of their earnings. */}
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1 pl-9">
+                    <AchievementFacts achievement={holder.latest} />
+                  </div>
                 </div>
               ))}
             </div>
@@ -417,6 +431,32 @@ const CountRows: React.FC<{ rows: { key: string; label: string; count: number }[
   </div>
 );
 
+/**
+ * A bar per earning, longest first. The length of a bar is the value against
+ * the highest one, so the spread of the values is the shape of the block.
+ */
+const ValueBars: React.FC<{ values: ValueSummary; playerName: (playerId: string) => string }> = ({
+  values,
+  playerName,
+}) => (
+  <div className="flex flex-col gap-1.5">
+    {values.measured.map((measured) => (
+      <div key={`${measured.playerId}-${measured.at}`} className="flex flex-col gap-0.5">
+        <div className="flex items-baseline justify-between gap-2 text-sm">
+          <span className="truncate">{playerName(measured.playerId)}</span>
+          <span className="font-semibold tabular-nums whitespace-nowrap">{values.metric.format(measured.value)}</span>
+        </div>
+        <div className="h-2.5 w-full rounded-full bg-secondary-background/30 overflow-hidden">
+          <div
+            className="h-full rounded-full bg-primary-text"
+            style={{ width: `${values.highest.value > 0 ? (measured.value / values.highest.value) * 100 : 100}%` }}
+          />
+        </div>
+      </div>
+    ))}
+  </div>
+);
+
 /** A bar per bucket. Used for the months and for the spread of the values. */
 export const CountChart: React.FC<{ data: { label: string; count: number }[]; name: string }> = ({ data, name }) => (
   <ResponsiveContainer width="100%" height={200}>
@@ -458,6 +498,12 @@ function daysAgoLabel(days: number | undefined): string {
 function dayLabel(days: number): string {
   const rounded = Math.round(days);
   return `${fmtNum(rounded)} day${rounded === 1 ? "" : "s"}`;
+}
+
+/** How long the record that still stands has stood. */
+function standsToday(from: number, now: number): string {
+  const days = Math.round((now - from) / (24 * 60 * 60 * 1000));
+  return days < 1 ? "stands today" : `stands today after ${fmtNum(days)} day${days === 1 ? "" : "s"}`;
 }
 
 function heldFor(from: number, to: number): string {

@@ -189,7 +189,22 @@ describe("recordHistory", () => {
 describe("valueBuckets", () => {
   const metric = { label: "Games", format: (value: number) => `${value}` };
 
-  it("gives a bucket to every value while the values are few", () => {
+  it("spreads values that are not whole numbers over ranges", () => {
+    // Days to a chase are all distinct, so a bucket for each of them would
+    // make every bar 1 tall and show no spread.
+    const buckets = valueBuckets([12.4, 88.1, 190.6, 351.9], metric);
+
+    expect(buckets).toHaveLength(8);
+    expect(buckets.reduce((sum, bucket) => sum + bucket.count, 0)).toBe(4);
+  });
+
+  it("spreads whole numbers that sit far apart over ranges", () => {
+    const buckets = valueBuckets([10, 400, 1200], metric);
+
+    expect(buckets).toHaveLength(8);
+  });
+
+  it("gives a bucket to every value while the values are few and close", () => {
     expect(valueBuckets([3, 3, 4, 6], metric)).toEqual([
       { label: "3", count: 2 },
       { label: "4", count: 1 },
@@ -232,7 +247,10 @@ describe("achievementDetails", () => {
     expect(result.rarity.earnings).toBe(3);
     expect(result.rarity.holders).toBe(2);
     expect(result.holderShare).toBe(50);
+    // The row describes the latest earning, whose date it shows.
     expect(result.topHolders[0]).toMatchObject({ playerId: "alice", count: 2 });
+    expect(result.topHolders[0].latest.earnedAt).toBe(START + 2 * DAY_MS);
+    expect(result.topHolders[1]).toMatchObject({ playerId: "bob", count: 1 });
     expect(result.first?.earnedAt).toBe(START + DAY_MS);
     expect(result.latest?.earnedAt).toBe(START + 10 * DAY_MS);
     expect(result.daysSinceLatest).toBe(20);

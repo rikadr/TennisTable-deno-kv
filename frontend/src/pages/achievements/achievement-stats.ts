@@ -212,7 +212,17 @@ export function rarityRanking(
   return ranking;
 }
 
-export type HolderRow = { playerId: string; count: number; latestAt: number };
+export type HolderRow = {
+  playerId: string;
+  count: number;
+  latestAt: number;
+  /**
+   * The holder's latest earning. The row describes it in full — the players a
+   * Full House beat, the days a Best Friends took — the same way the recent
+   * list describes an earning.
+   */
+  latest: Achievement;
+};
 export type MonthBucket = { monthKey: string; timestamp: number; count: number };
 export type ValueBucket = { label: string; count: number };
 export type CountRow = { key: string; count: number };
@@ -232,11 +242,15 @@ export type TimeToEarn = {
   slowest: { playerId: string; days: number };
 };
 
+export type MeasuredValue = { value: number; playerId: string; at: number };
+
 export type ValueSummary = {
   metric: AchievementMetric;
-  highest: { value: number; playerId: string; at: number };
-  lowest: { value: number; playerId: string; at: number };
+  highest: MeasuredValue;
+  lowest: MeasuredValue;
   average: number;
+  /** Every earning that has a value, highest first. */
+  measured: MeasuredValue[];
   buckets: ValueBucket[];
 };
 
@@ -316,12 +330,16 @@ function topHolders(earnings: Achievement[]): HolderRow[] {
     const row = byPlayer.get(achievement.earnedBy);
     if (row) {
       row.count += 1;
-      row.latestAt = Math.max(row.latestAt, achievement.earnedAt);
+      if (achievement.earnedAt >= row.latestAt) {
+        row.latestAt = achievement.earnedAt;
+        row.latest = achievement;
+      }
     } else {
       byPlayer.set(achievement.earnedBy, {
         playerId: achievement.earnedBy,
         count: 1,
         latestAt: achievement.earnedAt,
+        latest: achievement,
       });
     }
   });
@@ -427,18 +445,24 @@ function valueSummary(type: AchievementType, earnings: Achievement[]): ValueSumm
     highest: sorted[sorted.length - 1],
     lowest: sorted[0],
     average: measured.reduce((sum, item) => sum + item.value, 0) / measured.length,
+    measured: [...sorted].reverse(),
     buckets: valueBuckets(sorted.map((item) => item.value), metric),
   };
 }
 
 /**
- * A bucket per distinct value while the values are few, which keeps a streak
- * length or a win count on its own bar. More values than that fall into
- * VALUE_BUCKETS ranges of equal width.
+ * A bucket per distinct value where the values are whole numbers that sit
+ * close together, which keeps a streak length or a win count on its own bar.
+ * Everything else falls into VALUE_BUCKETS ranges of equal width — a measure
+ * such as the days a chase took has a distinct value for every earning, and a
+ * bucket for each of them would make every bar 1 tall.
  */
 export function valueBuckets(sortedValues: number[], metric: AchievementMetric): ValueBucket[] {
   const distinct = [...new Set(sortedValues)];
-  if (distinct.length <= VALUE_BUCKETS) {
+  const areWholeAndClose =
+    distinct.every((value) => Number.isInteger(value)) &&
+    distinct[distinct.length - 1] - distinct[0] < VALUE_BUCKETS * 2;
+  if (distinct.length <= VALUE_BUCKETS && areWholeAndClose) {
     return distinct.map((value) => ({
       label: metric.format(value),
       count: sortedValues.filter((other) => other === value).length,

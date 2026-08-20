@@ -44,9 +44,11 @@ const START = new Date(2024, 0, 1, 12, 0).getTime();
 const PLAYERS = ["alice", "bob", "carol"];
 
 /**
- * Three days of play, 40 days apart, with 3, then 4, then 5 games. Alice plays
+ * Four days of play, 40 days apart, with 3, then 4, then 5 games. Alice plays
  * every game of a day, so each day beats the Hero of the Day record of the day
- * before it — a record that moves across three months.
+ * before it — a record that moves across three months. The fourth day has 5
+ * games again, which ties the record and sets no new one, and Alice wins them
+ * all for a Perfect Day.
  */
 function buildEvents(): EventType[] {
   const events: EventType[] = PLAYERS.map((id, index) => ({
@@ -58,13 +60,14 @@ function buildEvents(): EventType[] {
 
   let game = 0;
   [
-    { dayOffset: 0, games: 3 },
-    { dayOffset: 40, games: 4 },
-    { dayOffset: 80, games: 5 },
-  ].forEach(({ dayOffset, games }) => {
+    { dayOffset: 0, games: 3, aliceOnly: false },
+    { dayOffset: 40, games: 4, aliceOnly: false },
+    { dayOffset: 80, games: 5, aliceOnly: false },
+    { dayOffset: 120, games: 5, aliceOnly: true },
+  ].forEach(({ dayOffset, games, aliceOnly }) => {
     for (let index = 0; index < games; index++) {
       const opponent = index % 2 === 0 ? "bob" : "carol";
-      const aliceWins = game % 3 !== 2;
+      const aliceWins = aliceOnly || game % 3 !== 2;
       events.push({
         time: 1000 + game,
         stream: `game-${game}`,
@@ -112,10 +115,10 @@ function renderPage(url: string, element: React.ReactElement) {
   );
 }
 
-/** Recharts draws its bars as SVG with no accessible role. */
-function countBars(container: HTMLElement): number {
+/** Recharts draws its marks as SVG with no accessible role. */
+function countMarks(container: HTMLElement, selector: string): number {
   // eslint-disable-next-line testing-library/no-container, testing-library/no-node-access
-  return container.querySelectorAll(".recharts-bar-rectangle").length;
+  return container.querySelectorAll(selector).length;
 }
 
 function currentUrl(): string {
@@ -189,15 +192,41 @@ describe("navigation from the achievements page", () => {
     expect(screen.queryByRole("heading", { name: "Time to earn it" })).not.toBeInTheDocument();
   });
 
-  it("shows the record over time, and the pace, for a league record", () => {
+  it("lists the record over time, and no spread of the values", () => {
     const { container } = renderPage("/achievements?filter=hero-of-the-day&view=details", <AchievementsPage />);
 
     expect(screen.getByRole("heading", { name: "The record over time" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Games in the day" })).toBeInTheDocument();
+    // Each step of the record carries its own value, in the unit it is
+    // measured in, so the section needs no separate unit.
+    expect(screen.getAllByText("5 games").length).toBeGreaterThan(0);
     expect(screen.getByText("Can be earned again")).toBeInTheDocument();
+    // A record only climbs, so its highest and average say nothing.
+    expect(screen.queryByText("Highest")).not.toBeInTheDocument();
+    expect(screen.queryByText("Average")).not.toBeInTheDocument();
+
+    // The record that stands says how long it has stood.
+    expect(screen.getByText(/stands today after \d+ days/)).toBeInTheDocument();
+    // The records it replaced say how long each of them held.
+    expect(screen.getAllByText(/held \d+ days/).length).toBe(2);
+
     // The three days of play are 40 days apart, so the record spans months.
     expect(screen.getByRole("heading", { name: "Earned per month" })).toBeInTheDocument();
-    expect(countBars(container)).toBeGreaterThan(0);
+    expect(countMarks(container, ".recharts-bar-rectangle")).toBeGreaterThan(0);
+  });
+
+  it("keeps the spread of the values for an achievement that holds no record", () => {
+    renderPage("/achievements?filter=perfect-day&view=details", <AchievementsPage />);
+
+    expect(screen.queryByRole("heading", { name: "The record over time" })).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Wins in the day" })).toBeInTheDocument();
+    expect(screen.getByText("Highest")).toBeInTheDocument();
+  });
+
+  it("describes what each holder did to earn it", () => {
+    renderPage("/achievements?filter=hero-of-the-day&view=details", <AchievementsPage />);
+
+    // The same words the recent list uses for a Hero of the Day.
+    expect(screen.getAllByText(/games in one day/).length).toBeGreaterThan(0);
   });
 
   it("steps to the previous and the next achievement in the progress tab order", async () => {
@@ -231,7 +260,7 @@ describe("navigation from the achievements page", () => {
     expect(screen.getByRole("heading", { name: "Rarest" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Never earned" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Most decorated players" })).toBeInTheDocument();
-    expect(countBars(container)).toBeGreaterThan(0);
+    expect(countMarks(container, ".recharts-bar-rectangle")).toBeGreaterThan(0);
   });
 
   it("points a player in the progress list at their progress for that achievement", () => {
