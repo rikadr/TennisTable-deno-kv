@@ -204,10 +204,7 @@ function renderDetails(breakdown: HallOfFameScoreBreakdown, key: FactorKey): Rea
       ];
       return (
         <div className="text-primary-text text-xs space-y-1.5">
-          <p className="italic">
-            Days spent at the top of the ranked leaderboard. A higher place gives more points per day. Each day counts
-            once, at the best place held that day. Only counts while at least 5 players are ranked.
-          </p>
+          <p className="italic">Days spent at the top of the ranked leaderboard.</p>
           <div className="flex flex-wrap gap-1.5">
             {podiumTiers.map((tier) => (
               <span
