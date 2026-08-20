@@ -44,7 +44,7 @@ export const AchievementsList: React.FC<AchievementsListProps> = ({ achievements
                     <Link
                       to={achievementsFilterLink(searchParams, achievement.type)}
                       title={`Show only ${label.title}`}
-                      className="font-semibold text-primary-text whitespace-nowrap hover:text-accent hover:underline transition-colors"
+                      className="font-semibold text-primary-text whitespace-nowrap hover:underline"
                     >
                       {label.title}
                     </Link>

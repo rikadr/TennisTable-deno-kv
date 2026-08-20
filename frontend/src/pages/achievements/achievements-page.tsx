@@ -98,11 +98,13 @@ export const AchievementsPage: React.FC = () => {
           <button
             onClick={() => setShowProgress(!showProgress)}
             type="button"
+            // Each state pairs a background with the text color of the same
+            // theme level, so the label stays readable in every theme.
             className={classNames(
               "px-4 py-2 rounded text-sm font-medium border transition-colors",
               showProgress
-                ? "bg-accent text-white border-accent"
-                : "bg-secondary-background text-secondary-text border-primary-text hover:border-accent",
+                ? "bg-tertiary-background text-tertiary-text border-tertiary-text/40 hover:border-tertiary-text"
+                : "bg-secondary-background text-secondary-text border-secondary-text/40 hover:border-secondary-text",
             )}
           >
             {showProgress ? "Show Recent Achievements" : "Show Everyone's Progress"}
