@@ -178,6 +178,28 @@ describe("recordHistory", () => {
     expect(steps[2].heldUntil).toBeUndefined();
   });
 
+  it("holds a player who matches the record in the step of that record", () => {
+    // Leap Frog awards a jump that equals the standing record. The record did
+    // not change, so the step keeps its time and takes the second holder.
+    const steps = recordHistory([
+      heroOfTheDay("alice", START, 4),
+      heroOfTheDay("bob", START + 5 * DAY_MS, 4),
+      heroOfTheDay("carol", START + 9 * DAY_MS, 6),
+    ]);
+
+    expect(steps).toHaveLength(2);
+    expect(steps[0]).toMatchObject({ value: 4, holders: ["alice", "bob"], at: START });
+    expect(steps[0].heldUntil).toBe(START + 9 * DAY_MS);
+    expect(steps[1]).toMatchObject({ value: 6, holders: ["carol"] });
+  });
+
+  it("names a player once in a step they reached twice", () => {
+    const steps = recordHistory([heroOfTheDay("alice", START, 4), heroOfTheDay("alice", START + DAY_MS, 4)]);
+
+    expect(steps).toHaveLength(1);
+    expect(steps[0].holders).toEqual(["alice"]);
+  });
+
   it("holds both players of one record in a single step", () => {
     // A Shootout record goes to both players of the game.
     const steps = recordHistory([shootout("alice", START, 64), shootout("bob", START, 64)]);

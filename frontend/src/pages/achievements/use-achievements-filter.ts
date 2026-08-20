@@ -1,4 +1,6 @@
 import { useSearchParams } from "react-router-dom";
+import { AchievementType } from "../../client/client-db/achievements";
+import { ACHIEVEMENT_LABELS } from "../player/player-achievements";
 
 export const ACHIEVEMENTS_FILTER_PARAM = "filter";
 export const ACHIEVEMENTS_VIEW_PARAM = "view";
@@ -26,7 +28,11 @@ export const ACHIEVEMENTS_VIEWS: { id: AchievementsView; label: string }[] = [
 export function useAchievementsFilter() {
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const selectedType = searchParams.get(ACHIEVEMENTS_FILTER_PARAM) ?? ALL_ACHIEVEMENTS;
+  // A url can name an achievement that does not exist, from a typo or from a
+  // link to a type the app no longer has. It reads as no filter at all, which
+  // every view can show.
+  const typeParam = searchParams.get(ACHIEVEMENTS_FILTER_PARAM);
+  const selectedType = typeParam !== null && isAchievementType(typeParam) ? typeParam : ALL_ACHIEVEMENTS;
   const viewParam = searchParams.get(ACHIEVEMENTS_VIEW_PARAM);
   const view: AchievementsView = ACHIEVEMENTS_VIEWS.some((candidate) => candidate.id === viewParam)
     ? (viewParam as AchievementsView)
@@ -41,6 +47,11 @@ export function useAchievementsFilter() {
   }
 
   return { selectedType, view, setSelectedType, setView };
+}
+
+/** Whether a name from the url is an achievement the app knows. */
+export function isAchievementType(type: string): type is AchievementType {
+  return Object.prototype.hasOwnProperty.call(ACHIEVEMENT_LABELS, type);
 }
 
 /**

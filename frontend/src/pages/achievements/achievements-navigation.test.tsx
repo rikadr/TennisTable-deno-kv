@@ -253,6 +253,13 @@ describe("navigation from the achievements page", () => {
     expect(currentUrl()).not.toBe("/achievements?filter=first-game&view=details");
   });
 
+  it("reads a filter naming no achievement as no filter at all", () => {
+    // A typo, or a link to a type the app no longer has.
+    renderPage("/achievements?filter=not-an-achievement&view=details", <AchievementsPage />);
+
+    expect(screen.getByRole("heading", { name: "Achievements in the league" })).toBeInTheDocument();
+  });
+
   it("shows the league stats when the details view names no achievement", () => {
     const { container } = renderPage("/achievements?view=details", <AchievementsPage />);
 

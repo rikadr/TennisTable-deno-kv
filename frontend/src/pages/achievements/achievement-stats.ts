@@ -534,8 +534,11 @@ export function valueBuckets(sortedValues: number[], metric: AchievementMetric):
 }
 
 /**
- * The record over time. Both players of a game earn some records, so earnings
- * that share a time and a value are one step of the record.
+ * The record over time. A step is one value of the record, and it holds every
+ * player who reached that value: both players of a game earn some records at
+ * once, and Leap Frog awards a jump that equals the standing record, which
+ * matches the record rather than replacing it. A step keeps the time it was
+ * first set, so the step that stands says how long the record has stood.
  */
 export function recordHistory(earnings: Achievement[]): RecordStep[] {
   const steps: RecordStep[] = [];
@@ -543,8 +546,8 @@ export function recordHistory(earnings: Achievement[]): RecordStep[] {
     const value = achievementValue(achievement);
     if (value === undefined) return;
     const previous = steps[steps.length - 1];
-    if (previous && previous.at === achievement.earnedAt && previous.value === value) {
-      previous.holders.push(achievement.earnedBy);
+    if (previous && previous.value === value) {
+      if (!previous.holders.includes(achievement.earnedBy)) previous.holders.push(achievement.earnedBy);
       return;
     }
     steps.push({ value, holders: [achievement.earnedBy], at: achievement.earnedAt });
