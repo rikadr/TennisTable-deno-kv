@@ -285,7 +285,7 @@ export const ACHIEVEMENT_LABELS: Record<AchievementType, { title: string; descri
   },
   "leap-frog": {
     title: "Leap Frog",
-    description: "Jump more leaderboard ranks in a single game than anyone before you",
+    description: "Jump as many leaderboard ranks in a single game as anyone before you",
     icon: "🐸",
   },
   "david": {
@@ -375,7 +375,8 @@ export const ACHIEVEMENT_LABELS: Record<AchievementType, { title: string; descri
   },
   "party-pooper": {
     title: "Party Pooper",
-    description: "Hand a player their first loss of a day they had already won 5 or more games — spoiling their Perfect Day",
+    description:
+      "Hand a player their first loss of a day they had already won 4 or more games, spoiling their Perfect Day",
     icon: "💩",
   },
   "earliest-game": {

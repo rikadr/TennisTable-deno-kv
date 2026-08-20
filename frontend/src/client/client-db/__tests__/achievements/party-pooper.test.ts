@@ -2,8 +2,9 @@ import { EventType, EventTypeEnum } from "../../event-store/event-types";
 import { TennisTable } from "../../tennis-table";
 
 // Party Pooper: hand an opponent their first loss of a day on which they had
-// already won 5 or more games — destroying the Perfect Day they had secured.
-// Awarded immediately, once per opponent per day.
+// already won 4 or more games — taking the Perfect Day their next win would
+// have earned, or destroying the one they had already secured. Awarded
+// immediately, once per opponent per day.
 
 describe("Party Pooper Achievement", () => {
   const baseEvents: EventType[] = [
@@ -65,10 +66,25 @@ describe("Party Pooper Achievement", () => {
     expect(tt.achievements.getAchievements("player-1").filter((a) => a.type === "perfect-day")).toHaveLength(0);
   });
 
-  it("does NOT award when the opponent had only 4 wins", () => {
+  it("awards on 4 wins, the win that would have earned the Perfect Day", () => {
     const events: EventType[] = [
       ...baseEvents,
       ...winsOnDay(2024, 0, 15, "player-1", ["player-2", "player-3", "player-2", "player-3"], "w"),
+      gameAt(2024, 0, 15, 15, "player-3", "player-1"),
+    ];
+
+    const tt = new TennisTable({ events });
+    tt.achievements.calculateAchievements();
+
+    const awards = tt.achievements.getAchievements("player-3").filter((a) => a.type === "party-pooper");
+    expect(awards).toHaveLength(1);
+    expect(awards[0].data.opponentWins).toBe(4);
+  });
+
+  it("does NOT award when the opponent had only 3 wins", () => {
+    const events: EventType[] = [
+      ...baseEvents,
+      ...winsOnDay(2024, 0, 15, "player-1", ["player-2", "player-3", "player-2"], "w"),
       gameAt(2024, 0, 15, 15, "player-3", "player-1"),
     ];
 

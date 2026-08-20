@@ -69,11 +69,11 @@ export const YIN_YANG_RECORD_FLOOR = 5;
 export const GIANT_HUNTING_TARGET = 3;
 
 // Wins an opponent must have in a still-undefeated day for beating them to
-// count as "Party Pooper". It matches Perfect Day's win requirement on
-// purpose: at this count with zero losses the opponent's Perfect Day was
-// already secured pending the end of the day, so the loss provably
-// destroyed one.
-export const PARTY_POOPER_MIN_WINS = 5;
+// count as "Party Pooper". It is one below Perfect Day's win requirement on
+// purpose: at this count the opponent's next win earns the Perfect Day, so
+// the loss takes one they were about to get, and at any count above it the
+// loss destroys one they had already secured.
+export const PARTY_POOPER_MIN_WINS = 4;
 
 // Largest deficit to the season winner's final score that still earns "So
 // Close", as a fraction of the winner's score. Every non-winner within the
@@ -1402,7 +1402,17 @@ export class Achievements {
     // Reset when a qualifying win lands on a new day.
     const giantDayState = new Map<
       string,
-      { day: number; count: number; giants: { opponent: string; opponentRank: number; playerRank: number }[] }
+      {
+        day: number;
+        count: number;
+        giants: {
+          opponent: string;
+          opponentRank: number;
+          playerRank: number;
+          opponentElo: number;
+          playerElo: number;
+        }[];
+      }
     >();
 
     // Per-player map of opponent → net Elo gained from that opponent.
@@ -1644,6 +1654,10 @@ export class Achievements {
           opponent: game.loser,
           opponentRank: loserRankBefore,
           playerRank: winnerRankBefore,
+          // The Elo update of this game comes later, so both scores are the
+          // pre-match ones — the gap the player closed to win.
+          opponentElo: loser.elo,
+          playerElo: winner.elo,
         });
         this.lastGiantDay.set(game.winner, { day, count: giantState.count });
         if (giantState.count > (this.bestGiantDayCount.get(game.winner) ?? 0)) {
@@ -1770,11 +1784,12 @@ export class Achievements {
       }
 
       // Leap Frog: awarded to a winner who jumps leaderboard ranks in a
-      // single game and, in doing so, beats the league-wide record for the
+      // single game and, in doing so, reaches the league-wide record for the
       // biggest jump. Requires being ranked both before and after — a first
       // appearance on the leaderboard isn't a "jump". The first qualifying
-      // jump of ≥ 2 ranks establishes the record; afterwards only a
-      // strictly larger jump earns the award again.
+      // jump of ≥ 2 ranks establishes the record; afterwards a jump that
+      // equals the record earns the award again, and only a larger jump
+      // raises the record.
       if (winnerRankBefore !== null && winnerRankAfter !== null) {
         const ranksJumped = winnerRankBefore - winnerRankAfter;
         // Track the winner's personal best jump for the progression view.
@@ -1782,9 +1797,10 @@ export class Achievements {
           this.bestRankJump.set(game.winner, ranksJumped);
         }
         const currentRecord = this.leapFrogRecord.ranksJumped;
-        const beatsRecord =
-          currentRecord === undefined ? ranksJumped >= 2 : ranksJumped > currentRecord;
-        if (beatsRecord) {
+        // 2 ranks is the floor, and it is also the smallest record there can
+        // be, so one comparison covers the first jump and every jump after.
+        const reachesRecord = ranksJumped >= (currentRecord ?? 2);
+        if (reachesRecord) {
           // Leapfrogged players: ranked active players whose pre-match Elo
           // was above the winner's pre-match Elo but who now sit below
           // the winner's post-match Elo. Only winner and loser had their
@@ -1813,7 +1829,11 @@ export class Achievements {
               previousRecord: currentRecord,
             }),
           );
-          this.leapFrogRecord = { ranksJumped, holder: game.winner };
+          // Equalling the record earns the award but leaves the record, and
+          // its holder, where they are.
+          if (currentRecord === undefined || ranksJumped > currentRecord) {
+            this.leapFrogRecord = { ranksJumped, holder: game.winner };
+          }
         }
       }
 
@@ -2963,10 +2983,12 @@ export class Achievements {
       // Giant Hunting resets at local midnight: current is today's wins over
       // higher-ranked opponents, best the most in any single day.
       "giant-hunting": { current: 0, target: GIANT_HUNTING_TARGET, best: 0, earned: 0 },
+      // Leap Frog is earned by reaching the record, not by passing it, so the
+      // target IS the record.
       "leap-frog": {
         earned: 0,
         current: 0,
-        target: this.leapFrogRecord.ranksJumped === undefined ? undefined : this.leapFrogRecord.ranksJumped + 1,
+        target: this.leapFrogRecord.ranksJumped,
         recordHolder: this.leapFrogRecord.holder,
       },
       // David / Goliath chase a fractional Elo record, so unlike the integer
@@ -4101,11 +4123,18 @@ type AchievementDefinitions = {
   "on-the-record": undefined;
   // Won GIANT_HUNTING_TARGET games against higher-ranked opponents within
   // one local calendar day. `day` is that day's local midnight; `giants` the
-  // wins that filled the day's tally, each with the pre-match ranks of both
-  // players — the same opponent can appear more than once.
+  // wins that filled the day's tally, each with the pre-match ranks and
+  // scores of both players — the same opponent can appear more than once.
   "giant-hunting": {
     day: number;
-    giants: { opponent: string; opponentRank: number; playerRank: number }[];
+    giants: {
+      opponent: string;
+      opponentRank: number;
+      playerRank: number;
+      /** Both scores are the pre-match ones. */
+      opponentElo: number;
+      playerElo: number;
+    }[];
   };
   // Handed an opponent their first loss of a day they had already won
   // PARTY_POOPER_MIN_WINS or more games — destroying the Perfect Day they

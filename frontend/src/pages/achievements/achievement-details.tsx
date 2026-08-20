@@ -64,7 +64,9 @@ export const AchievementDetails: React.FC<Props> = ({ type, earnedCount, onShowP
   const details = useMemo(() => {
     const allAchievements = [...context.achievements.achievementMap.values()].flat();
     const firstGameByPlayer = new Map<string, number>();
+    let firstGameAt = Date.now();
     context.games.forEach((game) => {
+      firstGameAt = Math.min(firstGameAt, game.playedAt);
       [game.winner, game.loser].forEach((playerId) => {
         const known = firstGameByPlayer.get(playerId);
         if (known === undefined || game.playedAt < known) firstGameByPlayer.set(playerId, game.playedAt);
@@ -77,6 +79,7 @@ export const AchievementDetails: React.FC<Props> = ({ type, earnedCount, onShowP
       allTypes: Object.keys(ACHIEVEMENT_LABELS) as AchievementType[],
       playerCount: context.allPlayers.length,
       firstGameByPlayer,
+      firstGameAt,
       now: Date.now(),
     });
   }, [context.achievements.achievementMap, context.games, context.allPlayers, type]);

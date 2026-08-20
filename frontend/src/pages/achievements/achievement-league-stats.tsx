@@ -23,8 +23,10 @@ export const AchievementLeagueStats: React.FC<Props> = ({ detailsLink }) => {
       leagueAchievementStats({
         allAchievements: [...context.achievements.achievementMap.values()].flat(),
         allTypes: Object.keys(ACHIEVEMENT_LABELS) as AchievementType[],
+        firstGameAt: context.games.reduce((first, game) => Math.min(first, game.playedAt), Date.now()),
+        now: Date.now(),
       }),
-    [context.achievements.achievementMap],
+    [context.achievements.achievementMap, context.games],
   );
 
   return (

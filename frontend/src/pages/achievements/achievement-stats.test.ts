@@ -121,7 +121,7 @@ describe("achievementValue", () => {
     ).toBe(120);
   });
 
-  it("reads the widest rank gap of a Giant Hunting day", () => {
+  it("reads the widest score gap of a Giant Hunting day", () => {
     expect(
       achievementValue({
         type: "giant-hunting",
@@ -130,12 +130,12 @@ describe("achievementValue", () => {
         data: {
           day: 0,
           giants: [
-            { opponent: "bob", opponentRank: 2, playerRank: 5 },
-            { opponent: "carol", opponentRank: 1, playerRank: 9 },
+            { opponent: "bob", opponentRank: 2, playerRank: 5, opponentElo: 1100, playerElo: 1020 },
+            { opponent: "carol", opponentRank: 1, playerRank: 9, opponentElo: 1250, playerElo: 1020 },
           ],
         },
       }),
-    ).toBe(8);
+    ).toBe(230);
   });
 
   it("has no value for an achievement that measures nothing", () => {
@@ -222,7 +222,7 @@ describe("valueBuckets", () => {
 });
 
 describe("achievementDetails", () => {
-  const allTypes = ["first-game", "hero-of-the-day", "retired"] as AchievementType[];
+  const allTypes = ["first-game", "hero-of-the-day", "retired", "season-opener"] as AchievementType[];
 
   function details(achievements: Achievement[], type: AchievementType, now = START + 30 * DAY_MS) {
     return achievementDetails({
@@ -234,6 +234,7 @@ describe("achievementDetails", () => {
         ["alice", START],
         ["bob", START],
       ]),
+      firstGameAt: START,
       now,
     });
   }
@@ -290,13 +291,61 @@ describe("achievementDetails", () => {
     expect(result.timeToEarn).toBeUndefined();
   });
 
-  it("counts a month with no earning between two that have one", () => {
+  it("counts every month of the league, from its first game to today", () => {
+    // The league starts in January and the earnings are in February and
+    // April. The months with none of them are part of the answer.
+    const result = achievementDetails({
+      type: "hero-of-the-day",
+      allAchievements: [
+        heroOfTheDay("alice", new Date(2024, 1, 15).getTime(), 4),
+        heroOfTheDay("alice", new Date(2024, 3, 15).getTime(), 6),
+      ],
+      allTypes,
+      playerCount: 4,
+      firstGameByPlayer: new Map([["alice", START]]),
+      firstGameAt: new Date(2024, 0, 5).getTime(),
+      now: new Date(2024, 4, 20).getTime(),
+    });
+
+    expect(result.perMonth.map((bucket) => bucket.count)).toEqual([0, 1, 0, 1, 0]);
+  });
+
+  it("lists no opponents for an achievement both players of a game earn", () => {
     const result = details(
-      [heroOfTheDay("alice", new Date(2024, 0, 15).getTime(), 4), heroOfTheDay("alice", new Date(2024, 2, 15).getTime(), 6)],
-      "hero-of-the-day",
+      [
+        { type: "season-opener", earnedBy: "alice", earnedAt: START, data: { seasonStart: 0, gameId: "g", opponent: "bob" } },
+        { type: "season-opener", earnedBy: "bob", earnedAt: START, data: { seasonStart: 0, gameId: "g", opponent: "alice" } },
+      ],
+      "season-opener",
     );
 
-    expect(result.perMonth.map((bucket) => bucket.count)).toEqual([1, 0, 1]);
+    // The opponents would only mirror the holders.
+    expect(result.topOpponents).toEqual([]);
+    expect(result.topHolders).toHaveLength(2);
+  });
+
+  it("lists the seasons only where they hold different counts", () => {
+    const opener = (earnedBy: string, earnedAt: number, seasonStart: number): Achievement => ({
+      type: "season-opener",
+      earnedBy,
+      earnedAt,
+      data: { seasonStart, gameId: `g${seasonStart}`, opponent: "someone" },
+    });
+
+    // Two seasons, 2 earnings each: the same number every time, so a season
+    // breakdown compares nothing.
+    expect(
+      details([opener("alice", 1, 10), opener("bob", 2, 10), opener("alice", 3, 20), opener("carol", 4, 20)], "season-opener")
+        .perSeason,
+    ).toEqual([]);
+
+    // A season that differs from another is worth listing.
+    expect(
+      details([opener("alice", 1, 10), opener("bob", 2, 10), opener("alice", 3, 20)], "season-opener").perSeason,
+    ).toEqual([
+      { key: "10", count: 2 },
+      { key: "20", count: 1 },
+    ]);
   });
 
   it("holds nothing but the counts for an achievement nobody earned", () => {
@@ -322,6 +371,8 @@ describe("leagueAchievementStats", () => {
     const stats = leagueAchievementStats({
       allAchievements: [firstGame("alice", 1), firstGame("bob", 2), heroOfTheDay("alice", 3, 4)],
       allTypes,
+      firstGameAt: START,
+      now: START,
     });
 
     expect(stats.totalEarnings).toBe(3);
@@ -335,6 +386,8 @@ describe("leagueAchievementStats", () => {
     const stats = leagueAchievementStats({
       allAchievements: [firstGame("alice", 1), firstGame("bob", 2), heroOfTheDay("alice", 3, 4)],
       allTypes,
+      firstGameAt: START,
+      now: START,
     });
 
     expect(stats.rarest[0].type).toBe("hero-of-the-day");
@@ -351,6 +404,8 @@ describe("leagueAchievementStats", () => {
         heroOfTheDay("bob", 5, 6),
       ],
       allTypes,
+      firstGameAt: START,
+      now: START,
     });
 
     expect(stats.topPlayers).toEqual([

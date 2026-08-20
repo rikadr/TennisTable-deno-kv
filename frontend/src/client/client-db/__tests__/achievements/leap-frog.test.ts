@@ -1,12 +1,13 @@
 import { TennisTable } from "../../tennis-table";
 import { EventType, EventTypeEnum } from "../../event-store/event-types";
 
-// Leap Frog is a record-beating achievement (like Marathon Set): it is
-// awarded to a winner whose single-game leaderboard jump BEATS the league's
-// standing record for the biggest jump. The first qualifying jump of >= 2
-// ranks establishes the record; afterwards only a strictly larger jump earns
-// the award again. Each award records how many ranks were jumped, the from /
-// to rank, and the players that were leapfrogged.
+// Leap Frog is a record achievement (like Marathon Set): it is awarded to a
+// winner whose single-game leaderboard jump REACHES the league's standing
+// record for the biggest jump. The first qualifying jump of >= 2 ranks
+// establishes the record; afterwards a jump that equals the record earns the
+// award again, and only a larger jump raises the record. Each award records
+// how many ranks were jumped, the from / to rank, and the players that were
+// leapfrogged.
 
 describe("Leap Frog Achievement", () => {
   const createPlayer = (id: string, time: number): EventType => ({
@@ -120,10 +121,10 @@ describe("Leap Frog Achievement", () => {
     expect(tt.achievements.leapFrogRecord).toStrictEqual({ ranksJumped: 2, holder: "x0" });
   });
 
-  it("only re-awards when a jump beats the standing record (record-beating chain)", () => {
+  it("re-awards a jump that reaches the standing record (record chain)", () => {
     // Clusters of 3 → 6 → 9 make x0/x1/x2 jump 2 → 5 → 8. A fourth challenger
-    // over the same (ungrown) 9-cluster can only tie/undershoot the record, so
-    // it earns nothing.
+    // over the same (ungrown) 9-cluster makes the same 8-rank jump, which
+    // equals the record.
     const { events, challengerIds } = buildScenario([3, 6, 9, 9]);
 
     const tt = new TennisTable({ events, gameLimitForRankedOverride: 1 });
@@ -136,17 +137,15 @@ describe("Leap Frog Achievement", () => {
       .map((a) => a.data as { ranksJumped: number; previousRecord?: number });
 
     const jumps = chain.map((d) => d.ranksJumped);
-    expect(jumps).toStrictEqual([2, 5, 8]);
+    expect(jumps).toStrictEqual([2, 5, 8, 8]);
 
-    // Every award beat the previous record: each >= 2, strictly increasing,
-    // and previousRecord links to the prior award's jump (undefined for the
-    // first).
-    expect(jumps.every((j) => j >= 2)).toBe(true);
-    expect(jumps.every((j, i) => i === 0 || j > jumps[i - 1])).toBe(true);
-    expect(chain.map((d) => d.previousRecord)).toStrictEqual([undefined, ...jumps.slice(0, -1)]);
+    // Each award reached the record standing at the time, and previousRecord
+    // links to it (undefined for the first).
+    expect(chain.map((d) => d.previousRecord)).toStrictEqual([undefined, 2, 5, 8]);
 
-    // The 4th challenger did not beat the standing record of 8 → no award.
-    expect(leaps(tt, "x3")).toHaveLength(0);
+    // The 4th challenger equalled the record, so the award is theirs and the
+    // record stays where it was set.
+    expect(leaps(tt, "x3")).toHaveLength(1);
     expect(tt.achievements.leapFrogRecord).toStrictEqual({ ranksJumped: 8, holder: "x2" });
   });
 
@@ -159,20 +158,20 @@ describe("Leap Frog Achievement", () => {
 
     const x1 = tt.achievements.getPlayerProgression("x1")["leap-frog"];
     expect(x1.current).toBe(5); // its own biggest jump
-    expect(x1.target).toBe(6); // one beyond the record of 5 it now holds
+    expect(x1.target).toBe(5); // the record of 5 it now holds — reaching it earns
     expect(x1.recordHolder).toBe("x1");
     expect(x1.earned).toBe(1);
 
     const x0 = tt.achievements.getPlayerProgression("x0")["leap-frog"];
     expect(x0.current).toBe(2);
-    expect(x0.target).toBe(6);
+    expect(x0.target).toBe(5);
     expect(x0.recordHolder).toBe("x1");
     expect(x0.earned).toBe(1);
 
     // A cluster member that only ever lost never jumped → no progress.
     const c0 = tt.achievements.getPlayerProgression("c0")["leap-frog"];
     expect(c0.current).toBe(0);
-    expect(c0.target).toBe(6);
+    expect(c0.target).toBe(5);
     expect(c0.recordHolder).toBe("x1");
     expect(c0.earned).toBe(0);
   });

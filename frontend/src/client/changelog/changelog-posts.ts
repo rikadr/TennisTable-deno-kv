@@ -42,6 +42,25 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
+    slug: "leap-frog-and-party-pooper-rules",
+    title: "New rules for Leap Frog and Party Pooper",
+    date: "2026-08-20",
+    tags: ["feature-update"],
+    summary:
+      "Leap Frog now goes to a jump that equals the league record. Party Pooper now needs an opponent with 4 wins, not 5.",
+    body: [
+      text(
+        "Leap Frog 🐸 goes to a player who jumps as many leaderboard ranks in one game as the league record. Before this change the jump had to be larger than the record. A jump that equals the record earns the achievement, and only a larger jump raises the record.",
+      ),
+      text(
+        "Party Pooper 💩 goes to a player who hands an opponent the first loss of a day the opponent won 4 or more games. The count was 5 before. At 4 wins the next win earns the opponent a Perfect Day, so the loss takes a Perfect Day they were about to get.",
+      ),
+      text(
+        "The app calculates the achievements from the full game history. Players get the new awards for the games they played before this change.",
+      ),
+    ],
+  },
+  {
     slug: "achievement-details-view",
     title: "Details view on the achievements page",
     date: "2026-08-20",

@@ -22,7 +22,9 @@ export type AchievementMetric = {
 const days = (value: number) => `${fmtNum(Math.round(value))} day${Math.round(value) === 1 ? "" : "s"}`;
 const games = (value: number) => `${fmtNum(value)} game${value === 1 ? "" : "s"}`;
 const points = (value: number) => `${fmtNum(value)} point${value === 1 ? "" : "s"}`;
-const score = (value: number) => `${fmtNum(value, { digits: 1 })} Score`;
+// fmtNum with no digits: whole numbers for a score, decimals only where the
+// value is small enough for them to carry information.
+const score = (value: number) => `${fmtNum(value)} Score`;
 const timeOfDay = (minutesIntoDay: number) => {
   const hours = Math.floor(minutesIntoDay / 60);
   const minutes = Math.round(minutesIntoDay % 60);
@@ -48,7 +50,7 @@ export const ACHIEVEMENT_METRICS: Partial<Record<AchievementType, AchievementMet
   "shootout": { label: "Points in the counted sets", format: points },
   "less-is-more": { label: "Points behind the loser", format: points },
   "leap-frog": { label: "Ranks jumped", format: (value) => `${fmtNum(value)} rank${value === 1 ? "" : "s"}` },
-  "giant-hunting": { label: "Largest rank gap", format: (value) => `${fmtNum(value)} ranks` },
+  "giant-hunting": { label: "Largest Score gap", format: score },
   "earliest-game": { label: "Time of the game", format: timeOfDay },
   "latest-game": { label: "Time of the game", format: timeOfDay },
   "perfect-day": { label: "Wins in the day", format: games },
@@ -106,9 +108,9 @@ export function achievementValue(achievement: Achievement): number | undefined {
     case "leap-frog":
       return achievement.data.ranksJumped;
     case "giant-hunting":
-      // The day's biggest upset by rank. A better rank is a lower number, so
-      // the gap the player closed is their own rank less the opponent's.
-      return Math.max(...achievement.data.giants.map((giant) => giant.playerRank - giant.opponentRank));
+      // The day's biggest upset: the largest score the player gave away and
+      // still won.
+      return Math.max(...achievement.data.giants.map((giant) => giant.opponentElo - giant.playerElo));
     case "earliest-game":
     case "latest-game":
       return achievement.data.minutesIntoDay;
@@ -164,6 +166,21 @@ export const RECORD_ACHIEVEMENTS: AchievementType[] = [
   "leap-frog",
   "earliest-game",
   "latest-game",
+];
+
+/**
+ * The achievements both players of a game earn. Each holder is the opponent of
+ * another holder, so a list of the opponents only mirrors the list of the
+ * holders and says nothing new.
+ */
+export const MUTUAL_ACHIEVEMENTS: AchievementType[] = [
+  "season-opener",
+  "milestone-game",
+  "earliest-game",
+  "latest-game",
+  "shootout",
+  "reunion",
+  "nice-game",
 ];
 
 export type RarityEntry = {
@@ -287,9 +304,11 @@ export function achievementDetails(input: {
   playerCount: number;
   /** The first game of each player, for the time it takes to earn. */
   firstGameByPlayer: Map<string, number>;
+  /** The first game of the league, where the months start. */
+  firstGameAt: number;
   now: number;
 }): AchievementDetails {
-  const { type, allAchievements, allTypes, playerCount, firstGameByPlayer, now } = input;
+  const { type, allAchievements, allTypes, playerCount, firstGameByPlayer, firstGameAt, now } = input;
   const earnings = allAchievements
     .filter((achievement) => achievement.type === type)
     .sort((a, b) => a.earnedAt - b.earnedAt);
@@ -310,16 +329,20 @@ export function achievementDetails(input: {
     // night is 1 day old this morning, not 0.
     daysSinceLatest: latest ? calendarDaysBetween(latest.earnedAt, now) : undefined,
     topHolders: topHolders(earnings),
-    topOpponents: topOpponents(earnings),
-    perMonth: perMonth(earnings),
+    topOpponents: MUTUAL_ACHIEVEMENTS.includes(type) ? [] : topOpponents(earnings),
+    perMonth: perMonth(earnings, firstGameAt, now),
     timeToEarn: timeToEarn(earnings, firstGameByPlayer),
     values: valueSummary(type, earnings),
     recordHistory: RECORD_ACHIEVEMENTS.includes(type) ? recordHistory(earnings) : undefined,
-    perTournament: groupCount(earnings, (achievement) =>
-      achievement.data && "tournamentId" in achievement.data ? achievement.data.tournamentId : undefined,
+    perTournament: whereTheCountsDiffer(
+      groupCount(earnings, (achievement) =>
+        achievement.data && "tournamentId" in achievement.data ? achievement.data.tournamentId : undefined,
+      ),
     ),
-    perSeason: groupCount(earnings, (achievement) =>
-      achievement.data && "seasonStart" in achievement.data ? String(achievement.data.seasonStart) : undefined,
+    perSeason: whereTheCountsDiffer(
+      groupCount(earnings, (achievement) =>
+        achievement.data && "seasonStart" in achievement.data ? String(achievement.data.seasonStart) : undefined,
+      ),
     ),
   };
 }
@@ -348,11 +371,24 @@ function topHolders(earnings: Achievement[]): HolderRow[] {
     .slice(0, HOLDER_ROWS);
 }
 
-/** Who was on the other side. Only the types that name an opponent have one. */
+/**
+ * Who was on the other side. Only the types that name an opponent have one,
+ * and a mutual achievement has none worth listing.
+ */
 function topOpponents(earnings: Achievement[]): CountRow[] {
   return groupCount(earnings, (achievement) =>
     achievement.data && "opponent" in achievement.data ? achievement.data.opponent : undefined,
   ).slice(0, OPPONENT_ROWS);
+}
+
+/**
+ * A breakdown says something only where the counts differ. Season Opener goes
+ * to both players of the first game of every season, and Season Winner to one
+ * player of every season, so a row for each season carries the same number
+ * every time and nothing to compare.
+ */
+function whereTheCountsDiffer(rows: CountRow[]): CountRow[] {
+  return rows.length > 1 && rows.some((row) => row.count !== rows[0].count) ? rows : [];
 }
 
 function groupCount(earnings: Achievement[], key: (achievement: Achievement) => string | undefined): CountRow[] {
@@ -367,20 +403,24 @@ function groupCount(earnings: Achievement[], key: (achievement: Achievement) => 
     .sort((a, b) => b.count - a.count || a.key.localeCompare(b.key));
 }
 
-/** One bucket per month from the first earning to the last, gaps included. */
-export function perMonth(earnings: Achievement[]): MonthBucket[] {
-  if (earnings.length === 0) return [];
-
+/**
+ * One bucket per month of the whole league, from the month of its first game
+ * to the month of `to`. The months with no earning are part of the answer —
+ * they say the achievement went unearned — so the range covers the league and
+ * not only the months the achievement was earned in.
+ */
+export function perMonth(earnings: Achievement[], from: number, to: number): MonthBucket[] {
   const counts = new Map<string, number>();
   earnings.forEach((achievement) => {
     counts.set(monthKey(achievement.earnedAt), (counts.get(monthKey(achievement.earnedAt)) ?? 0) + 1);
   });
 
-  const start = new Date(earnings[0].earnedAt);
-  const end = new Date(earnings[earnings.length - 1].earnedAt);
+  const start = new Date(from);
+  const end = new Date(to);
   const month = new Date(start.getFullYear(), start.getMonth(), 1);
+  const lastMonth = new Date(end.getFullYear(), end.getMonth(), 1).getTime();
   const buckets: MonthBucket[] = [];
-  while (month.getTime() <= new Date(end.getFullYear(), end.getMonth(), 1).getTime()) {
+  while (month.getTime() <= lastMonth) {
     const key = `${month.getFullYear()}-${String(month.getMonth() + 1).padStart(2, "0")}`;
     buckets.push({ monthKey: key, timestamp: month.getTime(), count: counts.get(key) ?? 0 });
     month.setMonth(month.getMonth() + 1);
@@ -530,8 +570,11 @@ const LEAGUE_ROWS = 5;
 export function leagueAchievementStats(input: {
   allAchievements: Achievement[];
   allTypes: AchievementType[];
+  /** The first game of the league, where the months start. */
+  firstGameAt: number;
+  now: number;
 }): LeagueAchievementStats {
-  const { allAchievements, allTypes } = input;
+  const { allAchievements, allTypes, firstGameAt, now } = input;
   const ranking = [...rarityRanking(allAchievements, allTypes).values()];
   const earned = ranking.filter((entry) => entry.holders > 0);
 
@@ -555,6 +598,6 @@ export function leagueAchievementStats(input: {
       .map(([playerId, row]) => ({ playerId, types: row.types.size, earnings: row.earnings }))
       .sort((a, b) => b.types - a.types || b.earnings - a.earnings)
       .slice(0, LEAGUE_ROWS),
-    perMonth: perMonth([...allAchievements].sort((a, b) => a.earnedAt - b.earnedAt)),
+    perMonth: perMonth(allAchievements, firstGameAt, now),
   };
 }
