@@ -1,4 +1,5 @@
 import {
+  alignBadSides,
   BadSide,
   badSideLabel,
   badSideName,
@@ -63,6 +64,27 @@ describe("badSideLabel", () => {
   it("labels equal sides, and gives no label for an unrecorded set", () => {
     expect(badSideLabel("neutral", "Ada", "Bo")).toBe("Equal sides");
     expect(badSideLabel(null, "Ada", "Bo")).toBe(null);
+  });
+
+  it("gives no label for a set past the end of a side list", () => {
+    // A game tracked before the sides existed has fewer sides than sets.
+    const badSides: BadSide[] = [];
+    expect(badSideLabel(badSides[0], "Ada", "Bo")).toBe(null);
+  });
+});
+
+describe("alignBadSides", () => {
+  it("pads a short side list with a null per set", () => {
+    expect(alignBadSides([], 2)).toEqual([null, null]);
+    expect(alignBadSides([1], 3)).toEqual([1, null, null]);
+  });
+
+  it("keeps a list that already covers every set", () => {
+    expect(alignBadSides([1, "neutral"], 2)).toEqual([1, "neutral"]);
+  });
+
+  it("cuts a list that is longer than the sets", () => {
+    expect(alignBadSides([1, 2], 1)).toEqual([1]);
   });
 });
 

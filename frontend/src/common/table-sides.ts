@@ -58,12 +58,27 @@ export function winnerSideOfSet(winnerSides: string | undefined, setIndex: numbe
 
 /**
  * A label for one tracked set: who has the bad side, or that the sides are
- * equally good. Null when the set has no recorded side.
+ * equally good. Null when the set has no recorded side — including a set past
+ * the end of a side list, which a game tracked before the sides existed has.
  */
-export function badSideLabel(badSide: BadSide, player1Name: string, player2Name: string): string | null {
-  if (badSide === null) return null;
+export function badSideLabel(
+  badSide: BadSide | undefined,
+  player1Name: string,
+  player2Name: string,
+): string | null {
+  if (badSide === 1) return `${player1Name} on the bad side`;
+  if (badSide === 2) return `${player2Name} on the bad side`;
   if (badSide === "neutral") return "Equal sides";
-  return `${badSide === 1 ? player1Name : player2Name} on the bad side`;
+  return null;
+}
+
+/**
+ * The sides of `setCount` completed sets, with a null for every set that has
+ * none. A game that was tracked before the sides existed has fewer sides than
+ * sets, and padding keeps every later side with its own set.
+ */
+export function alignBadSides(badSides: BadSide[], setCount: number): BadSide[] {
+  return Array.from({ length: setCount }, (_, index) => badSides[index] ?? null);
 }
 
 /** The name of the player who had the bad side, or "Equal" for a neutral set. */

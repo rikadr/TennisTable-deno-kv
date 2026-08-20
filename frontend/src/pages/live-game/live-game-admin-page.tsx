@@ -26,7 +26,7 @@ import { LiveGamePredictionCard } from "./live-game-prediction-card";
 import ConfettiExplosion from "react-confetti-explosion";
 import { Server } from "../../common/serve-tracker";
 import { ServeTrackerDisplay } from "../../common/serve-tracker-display";
-import { BadSide, badSideLabel, nextSetBadSide } from "../../common/table-sides";
+import { alignBadSides, BadSide, badSideLabel, nextSetBadSide } from "../../common/table-sides";
 import { TableSideDisplay } from "../../common/table-sides-display";
 import { appendPoint, removeLastPoint, toEventTrackingData, trackingNow } from "../../common/point-sequences";
 
@@ -171,7 +171,12 @@ export const LiveGameAdminPage: React.FC = () => {
       completedSetSequences: [...localState!.completedSetSequences, localState!.currentSetSequence],
       completedSetPointTimes: [...localState!.completedSetPointTimes, localState!.currentSetPointTimes],
       completedSetFirstServers: [...localState!.completedSetFirstServers, localState!.firstServer],
-      completedSetBadSides: [...localState!.completedSetBadSides, localState!.badSide],
+      // The sides are padded first, because a game that was started before the
+      // sides existed has none for the sets it already played.
+      completedSetBadSides: [
+        ...alignBadSides(localState!.completedSetBadSides, localState!.completedSets.length),
+        localState!.badSide,
+      ],
       currentSetSequence: "",
       currentSetPointTimes: [],
       // Alternate who serves first in the next set, per table tennis convention.
