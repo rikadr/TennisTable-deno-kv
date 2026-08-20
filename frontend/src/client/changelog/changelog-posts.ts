@@ -42,6 +42,36 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
+    slug: "achievement-details-view",
+    title: "Details view on the achievements page",
+    date: "2026-08-20",
+    tags: ["feature-update"],
+    summary:
+      "The achievements page gets 3 views: Recent, Details and Progress. Details shows the stats of one achievement, or of all achievements together.",
+    body: [
+      text(
+        "The achievements page now has 3 views of the same achievement. Recent lists every time players earn it, newest first. Details shows its stats. Progress shows how close each player is to it. The filter selects the achievement, and it applies to all 3 views.",
+      ),
+      list(
+        "How many times players earn it, and how many players hold it.",
+        "Its rarity rank, such as 7th rarest of 70, by the number of players who hold it.",
+        "The players who hold it most, and the players closest to earning it.",
+        "The first time and the last time a player earns it.",
+        "How many times players earn it each month.",
+        "The typical time from a player's first game to the achievement.",
+        "The highest, the lowest and the average value, for an achievement that measures one.",
+        "The record over time, for an achievement that holds a league record.",
+        "Each record step shows the value, the holder, and how long the record stands.",
+      ),
+      text(
+        "Select All Achievements in the filter to see the whole league: the rarest and the most common achievements, the achievements nobody earns, the players with the most achievements, and the achievements earned each month.",
+      ),
+      text(
+        "Click the name of an achievement in the Recent list to open its Details view. The view and the achievement are in the url, so you can share a link.",
+      ),
+    ],
+  },
+  {
     slug: "tournament-points-in-a-past-state",
     title: "Correct tournament points in a past state",
     date: "2026-08-19",

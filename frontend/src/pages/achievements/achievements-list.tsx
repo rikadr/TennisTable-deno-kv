@@ -6,7 +6,7 @@ import { getAchievementLabel } from "../player/player-achievements";
 import { dateString, daysBetweenCeiled, relativeTimeString } from "../../common/date-utils";
 import { ProfilePicture } from "../player/profile-picture";
 import { fmtNum } from "../../common/number-utils";
-import { achievementsFilterLink } from "./use-achievements-filter";
+import { achievementsLink } from "./use-achievements-filter";
 
 interface AchievementsListProps {
   achievements: Achievement[];
@@ -42,8 +42,8 @@ export const AchievementsList: React.FC<AchievementsListProps> = ({ achievements
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-baseline gap-2 overflow-hidden">
                     <Link
-                      to={achievementsFilterLink(searchParams, achievement.type)}
-                      title={`Show only ${label.title}`}
+                      to={achievementsLink(searchParams, { type: achievement.type, view: "details" })}
+                      title={`${label.title} stats`}
                       className="font-semibold text-primary-text whitespace-nowrap hover:underline"
                     >
                       {label.title}

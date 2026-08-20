@@ -2,61 +2,78 @@ import { useSearchParams } from "react-router-dom";
 
 export const ACHIEVEMENTS_FILTER_PARAM = "filter";
 export const ACHIEVEMENTS_VIEW_PARAM = "view";
-export const ACHIEVEMENTS_PROGRESS_VIEW = "progress";
 
 /** The value that means "no type filter". */
 export const ALL_ACHIEVEMENTS = "all";
 
 /**
- * The selected type and the view live in the url, so a filtered list survives a
- * reload and can be shared as a link. The filter is pushed to the history, so
- * the browser back button returns to the previous filter. The view toggle
- * replaces the entry, since it is a display choice and not a place to go back
- * to.
+ * The three views of the achievements page. "recent" is the default and needs
+ * no param: the list of every earning, newest first.
+ */
+export type AchievementsView = "recent" | "details" | "progress";
+
+export const ACHIEVEMENTS_VIEWS: { id: AchievementsView; label: string }[] = [
+  { id: "recent", label: "Recent" },
+  { id: "details", label: "Details" },
+  { id: "progress", label: "Progress" },
+];
+
+/**
+ * The selected type and the view live in the url, so a view of the page
+ * survives a reload and can be shared as a link. Both are pushed to the
+ * history, so the browser back button returns to the view you came from.
  */
 export function useAchievementsFilter() {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const selectedType = searchParams.get(ACHIEVEMENTS_FILTER_PARAM) ?? ALL_ACHIEVEMENTS;
-  const showProgress = searchParams.get(ACHIEVEMENTS_VIEW_PARAM) === ACHIEVEMENTS_PROGRESS_VIEW;
+  const viewParam = searchParams.get(ACHIEVEMENTS_VIEW_PARAM);
+  const view: AchievementsView = ACHIEVEMENTS_VIEWS.some((candidate) => candidate.id === viewParam)
+    ? (viewParam as AchievementsView)
+    : "recent";
 
   function setSelectedType(type: string) {
-    setSearchParams((previous) => achievementsFilterParams(previous, type));
+    setSearchParams((previous) => achievementsParams(previous, { type }));
   }
 
-  function setShowProgress(progress: boolean) {
-    setSearchParams(
-      (previous) => {
-        const params = new URLSearchParams(previous);
-        if (progress) {
-          params.set(ACHIEVEMENTS_VIEW_PARAM, ACHIEVEMENTS_PROGRESS_VIEW);
-        } else {
-          params.delete(ACHIEVEMENTS_VIEW_PARAM);
-        }
-        return params;
-      },
-      { replace: true },
-    );
+  function setView(next: AchievementsView) {
+    setSearchParams((previous) => achievementsParams(previous, { view: next }));
   }
 
-  return { selectedType, showProgress, setSelectedType, setShowProgress };
+  return { selectedType, view, setSelectedType, setView };
 }
 
-/** The url params for a type filter, and it keeps the other params. */
-export function achievementsFilterParams(current: URLSearchParams, type: string): URLSearchParams {
+/**
+ * The url params of the page, with the given changes applied. A param at its
+ * default value is left out, which keeps a shared link short.
+ */
+export function achievementsParams(
+  current: URLSearchParams,
+  changes: { type?: string; view?: AchievementsView },
+): URLSearchParams {
   const params = new URLSearchParams(current);
-  if (type === ALL_ACHIEVEMENTS) {
-    params.delete(ACHIEVEMENTS_FILTER_PARAM);
-  } else {
-    params.set(ACHIEVEMENTS_FILTER_PARAM, type);
+
+  if (changes.type !== undefined) {
+    if (changes.type === ALL_ACHIEVEMENTS) params.delete(ACHIEVEMENTS_FILTER_PARAM);
+    else params.set(ACHIEVEMENTS_FILTER_PARAM, changes.type);
   }
+
+  if (changes.view !== undefined) {
+    if (changes.view === "recent") params.delete(ACHIEVEMENTS_VIEW_PARAM);
+    else params.set(ACHIEVEMENTS_VIEW_PARAM, changes.view);
+  }
+
   return params;
 }
 
-/** Link target for a type-filtered list, used from the achievement names. */
-export function achievementsFilterLink(current: URLSearchParams, type: string): string {
-  const params = achievementsFilterParams(current, type);
-  // A search-only target keeps the current path. An empty query still needs the
-  // "?", since react-router reads an empty target as the root path.
-  return `?${params.toString()}`;
+/**
+ * Link target inside the achievements page. A search-only target keeps the
+ * current path. An empty query still needs the "?", since react-router reads an
+ * empty target as the root path.
+ */
+export function achievementsLink(
+  current: URLSearchParams,
+  changes: { type?: string; view?: AchievementsView },
+): string {
+  return `?${achievementsParams(current, changes).toString()}`;
 }

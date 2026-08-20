@@ -14,31 +14,67 @@ import { PlayerAchievements } from "../player/player-achievements";
 const scrollIntoView = jest.fn();
 Element.prototype.scrollIntoView = scrollIntoView;
 
-const HOUR_MS = 60 * 60 * 1000;
-const START = new Date(2024, 0, 1, 12, 0).getTime();
+// jsdom has no ResizeObserver, which the recharts container asks for on mount.
+class ResizeObserverStub {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+global.ResizeObserver = ResizeObserverStub;
 
+// Recharts measures its container, which jsdom always reports as zero, so the
+// charts would render nothing. Handing the chart a fixed size instead makes it
+// draw its bars, which is the point of a render test.
+jest.mock("recharts", () => {
+  const actual = jest.requireActual("recharts");
+  const react = jest.requireActual("react");
+  return {
+    ...actual,
+    ResponsiveContainer: ({ children }: { children: React.ReactElement }) =>
+      react.cloneElement(children, { width: 600, height: 200 }),
+  };
+});
+
+const HOUR_MS = 60 * 60 * 1000;
+const DAY_MS = 24 * HOUR_MS;
+const START = new Date(2024, 0, 1, 12, 0).getTime();
+const PLAYERS = ["alice", "bob", "carol"];
+
+/**
+ * Three days of play, 40 days apart, with 3, then 4, then 5 games. Alice plays
+ * every game of a day, so each day beats the Hero of the Day record of the day
+ * before it — a record that moves across three months.
+ */
 function buildEvents(): EventType[] {
-  const players = ["alice", "bob", "carol"];
-  const events: EventType[] = players.map((id, index) => ({
+  const events: EventType[] = PLAYERS.map((id, index) => ({
     time: index + 1,
     stream: id,
     type: EventTypeEnum.PLAYER_CREATED,
     data: { name: id },
   }));
 
-  for (let index = 0; index < 12; index++) {
-    const playedAt = START + index * 5 * HOUR_MS;
-    events.push({
-      time: 1000 + index,
-      stream: `game-${index}`,
-      type: EventTypeEnum.GAME_CREATED,
-      data: {
-        playedAt,
-        winner: players[index % players.length],
-        loser: players[(index + 1) % players.length],
-      },
-    });
-  }
+  let game = 0;
+  [
+    { dayOffset: 0, games: 3 },
+    { dayOffset: 40, games: 4 },
+    { dayOffset: 80, games: 5 },
+  ].forEach(({ dayOffset, games }) => {
+    for (let index = 0; index < games; index++) {
+      const opponent = index % 2 === 0 ? "bob" : "carol";
+      const aliceWins = game % 3 !== 2;
+      events.push({
+        time: 1000 + game,
+        stream: `game-${game}`,
+        type: EventTypeEnum.GAME_CREATED,
+        data: {
+          playedAt: START + dayOffset * DAY_MS + index * 2 * HOUR_MS,
+          winner: aliceWins ? "alice" : opponent,
+          loser: aliceWins ? opponent : "alice",
+        },
+      });
+      game++;
+    }
+  });
   return events;
 }
 
@@ -73,6 +109,12 @@ function renderPage(url: string, element: React.ReactElement) {
   );
 }
 
+/** Recharts draws its bars as SVG with no accessible role. */
+function countBars(container: HTMLElement): number {
+  // eslint-disable-next-line testing-library/no-container, testing-library/no-node-access
+  return container.querySelectorAll(".recharts-bar-rectangle").length;
+}
+
 function currentUrl(): string {
   return screen.getByTestId("location").textContent ?? "";
 }
@@ -89,7 +131,7 @@ function progressRow(type: string): HTMLElement | null {
 describe("navigation from the achievements page", () => {
   beforeEach(() => scrollIntoView.mockClear());
 
-  it("filters the list on the achievement whose name you click", async () => {
+  it("opens the details of the achievement whose name you click", async () => {
     renderPage("/achievements", <AchievementsPage />);
 
     // Every player earns First Game, so the unfiltered list holds more types.
@@ -98,36 +140,71 @@ describe("navigation from the achievements page", () => {
 
     await userEvent.click(screen.getAllByRole("link", { name: "First Game" })[0]);
 
-    expect(currentUrl()).toBe("/achievements?filter=first-game");
-    expect(screen.getAllByRole("link", { name: "First Game" })).toHaveLength(3);
-    expect(screen.queryByRole("link", { name: "Ranked" })).not.toBeInTheDocument();
+    expect(currentUrl()).toBe("/achievements?filter=first-game&view=details");
+    expect(screen.getByRole("heading", { name: "First Game" })).toBeInTheDocument();
+    expect(screen.getByText("Times earned")).toBeInTheDocument();
   });
 
-  it("keeps the filter in the history, so back returns to the unfiltered list", async () => {
-    renderPage("/achievements", <AchievementsPage />);
-
-    await userEvent.click(screen.getAllByRole("link", { name: "First Game" })[0]);
-    expect(currentUrl()).toBe("/achievements?filter=first-game");
-
-    await userEvent.click(screen.getByRole("button", { name: "history back" }));
-    expect(currentUrl()).toBe("/achievements");
-  });
-
-  it("keeps a filter from the dropdown in the history too", async () => {
+  it("filters the recent list on the achievement, and keeps the filter in the history", async () => {
     renderPage("/achievements", <AchievementsPage />);
 
     await userEvent.selectOptions(screen.getByLabelText("Filter:"), "first-game");
     expect(currentUrl()).toBe("/achievements?filter=first-game");
+    expect(screen.getAllByRole("link", { name: "First Game" })).toHaveLength(3);
+    expect(screen.queryByRole("link", { name: "Ranked" })).not.toBeInTheDocument();
 
     await userEvent.click(screen.getByRole("button", { name: "history back" }));
     expect(currentUrl()).toBe("/achievements");
   });
 
-  it("keeps the view when the filter comes from a name in the list", async () => {
-    renderPage("/achievements?view=progress&filter=first-game", <AchievementsPage />);
+  it("switches between the three views, and keeps the achievement", async () => {
+    renderPage("/achievements?filter=first-game", <AchievementsPage />);
 
-    // The progress view names the achievement it lists.
+    await userEvent.click(screen.getByRole("button", { name: "Details" }));
+    expect(currentUrl()).toBe("/achievements?filter=first-game&view=details");
+    expect(screen.getByText("Times earned")).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "Progress" }));
+    expect(currentUrl()).toBe("/achievements?filter=first-game&view=progress");
     expect(screen.getByText("👶 First Game")).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "Recent" }));
+    expect(currentUrl()).toBe("/achievements?filter=first-game");
+  });
+
+  it("shows who holds a one-time achievement, and how rare it is", () => {
+    renderPage("/achievements?filter=first-game&view=details", <AchievementsPage />);
+
+    // Every player earns First Game once, so all three of them hold it.
+    expect(screen.getByText("3 of 3")).toBeInTheDocument();
+    expect(screen.getByText("One time only")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Who holds it" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "First and latest" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Closest to earning it" })).toBeInTheDocument();
+    // Every player earns it in their own first game, so the time to earn it
+    // says nothing and the section stays out.
+    expect(screen.queryByRole("heading", { name: "Time to earn it" })).not.toBeInTheDocument();
+  });
+
+  it("shows the record over time, and the pace, for a league record", () => {
+    const { container } = renderPage("/achievements?filter=hero-of-the-day&view=details", <AchievementsPage />);
+
+    expect(screen.getByRole("heading", { name: "The record over time" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Games in the day" })).toBeInTheDocument();
+    expect(screen.getByText("Can be earned again")).toBeInTheDocument();
+    // The three days of play are 40 days apart, so the record spans months.
+    expect(screen.getByRole("heading", { name: "Earned per month" })).toBeInTheDocument();
+    expect(countBars(container)).toBeGreaterThan(0);
+  });
+
+  it("shows the league stats when the details view names no achievement", () => {
+    const { container } = renderPage("/achievements?view=details", <AchievementsPage />);
+
+    expect(screen.getByRole("heading", { name: "Achievements in the league" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Rarest" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Never earned" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Most decorated players" })).toBeInTheDocument();
+    expect(countBars(container)).toBeGreaterThan(0);
   });
 
   it("points a player in the progress list at their progress for that achievement", () => {
