@@ -43,6 +43,7 @@ import { Game } from "../../client/client-db/event-store/projectors/games-projec
 import { Player } from "../../client/client-db/event-store/projectors/players-projector";
 import { EventType, EventTypeEnum } from "../../client/client-db/event-store/event-types";
 import { advancePeriod, getPeriodKey, getPeriodStart, getPeriodTimestamp, Period } from "../../common/period-utils";
+import { winnerSideOfSet } from "../../common/table-sides";
 import { gameTimingStats, longestStreaks, serveStats } from "../game/game-tracking-stats";
 
 /** A rating gap bucket with fewer games than this is not plotted. */
@@ -891,6 +892,91 @@ export function trackedLevelStats(games: Game[]): TrackedLevelStats | undefined 
     setPointForTheSetLoser: setsClosed === 0 ? undefined : percent(setsLoserHeldSetPoint, setsClosed),
   };
 }
+export type TableSideStats = {
+  /** Share of the tracked games of the period that record the sides. */
+  sidesRecorded: number;
+  /** Share of the recorded sets where the 2 sides are equally good. */
+  neutralSets: number;
+  /** Share of the sets with a worse side won by the player on it. */
+  setsWonOnTheBadSide?: number;
+  /** Share of the points of those sets won by the player on the bad side. */
+  pointsWonOnTheBadSide?: number;
+  /**
+   * Share of the games won by the player who had the bad side in more sets
+   * than their opponent. A game where both players had it equally often, which
+   * every game with an even number of unequal sets is, has no such player and
+   * is left out.
+   */
+  wonWithMoreBadSideSets?: number;
+};
+
+/**
+ * What playing on the bad side of the table costs.
+ *
+ * A tracked game can record which player had the bad side in each set, or that
+ * the 2 sides were equally good. Every set with a worse side has exactly one
+ * player on it, so 50% is the neutral reading of the set and point shares: a
+ * lower share means the bad side really costs sets or points.
+ *
+ * A neutral set holds no bad side, so it only counts towards `neutralSets`.
+ */
+export function tableSideStats(games: Game[]): TableSideStats | undefined {
+  const tracked = games.filter(isTrackedGame);
+  const withSides = tracked.filter((game) => game.score?.tracking?.winnerSides !== undefined);
+  if (withSides.length === 0) return undefined;
+
+  let recordedSets = 0;
+  let neutralSets = 0;
+  let unequalSets = 0;
+  let setsToTheBadSide = 0;
+  let unequalPoints = 0;
+  let pointsToTheBadSide = 0;
+  let unevenGames = 0;
+  let unevenGamesToTheBadSide = 0;
+
+  for (const game of withSides) {
+    const score = game.score!;
+    const sides = score.tracking!.winnerSides;
+    const badSideSets = { winner: 0, loser: 0 };
+
+    for (let setIndex = 0; setIndex < score.pointSequences!.length; setIndex++) {
+      const sequence = score.pointSequences![setIndex];
+      const side = winnerSideOfSet(sides, setIndex);
+      if (side === undefined || sequence.length === 0) continue;
+
+      recordedSets++;
+      if (side === "N") {
+        neutralSets++;
+        continue;
+      }
+
+      const gameWinnerOnTheBadSide = side === "B";
+      const winnerPoints = sequence.split("").filter((point) => point === "W").length;
+      const loserPoints = sequence.length - winnerPoints;
+
+      unequalSets++;
+      unequalPoints += sequence.length;
+      pointsToTheBadSide += gameWinnerOnTheBadSide ? winnerPoints : loserPoints;
+      if ((winnerPoints > loserPoints) === gameWinnerOnTheBadSide) setsToTheBadSide++;
+      if (gameWinnerOnTheBadSide) badSideSets.winner++;
+      else badSideSets.loser++;
+    }
+
+    if (badSideSets.winner !== badSideSets.loser) {
+      unevenGames++;
+      if (badSideSets.winner > badSideSets.loser) unevenGamesToTheBadSide++;
+    }
+  }
+
+  return {
+    sidesRecorded: percent(withSides.length, tracked.length),
+    neutralSets: percent(neutralSets, recordedSets),
+    setsWonOnTheBadSide: unequalSets === 0 ? undefined : percent(setsToTheBadSide, unequalSets),
+    pointsWonOnTheBadSide: unequalPoints === 0 ? undefined : percent(pointsToTheBadSide, unequalPoints),
+    wonWithMoreBadSideSets: unevenGames === 0 ? undefined : percent(unevenGamesToTheBadSide, unevenGames),
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Matchups: who plays whom, and who wins
 // ---------------------------------------------------------------------------

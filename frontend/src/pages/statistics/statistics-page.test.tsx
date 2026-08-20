@@ -72,6 +72,8 @@ function buildEvents(gameCount = 120): EventType[] {
                   pointDeltas: [new Array(15).fill(80)],
                   endedAfter: 20,
                   firstServers: "W",
+                  // Half of the tracked games record the side of the table.
+                  winnerSides: index % 8 === 0 ? "B" : undefined,
                   corrections: 0,
                 },
               }
@@ -145,6 +147,7 @@ describe("StatisticsPage", () => {
     expect(screen.getByText("Median points in a set")).toBeInTheDocument();
     expect(screen.getByText("Median game length")).toBeInTheDocument();
     expect(screen.getByText("To close a set")).toBeInTheDocument();
+    expect(screen.getByText("Points won on the bad side")).toBeInTheDocument();
     expect(screen.queryByText(/Not enough/)).not.toBeInTheDocument();
   });
 
