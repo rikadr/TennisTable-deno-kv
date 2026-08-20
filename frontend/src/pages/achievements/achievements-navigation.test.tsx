@@ -7,6 +7,9 @@ import { ImageKitContext } from "../../wrappers/image-kit-context";
 import { TennisTable } from "../../client/client-db/tennis-table";
 import { EventType, EventTypeEnum } from "../../client/client-db/event-store/event-types";
 import { AchievementsPage } from "./achievements-page";
+import { ACHIEVEMENT_LABELS } from "../player/player-achievements";
+import { orderAchievementTypes } from "../player/achievement-groups";
+import { AchievementType } from "../../client/client-db/achievements";
 import { PlayerAchievements } from "../player/player-achievements";
 
 // jsdom implements no scrolling, so the progress row cannot scroll itself into
@@ -195,6 +198,30 @@ describe("navigation from the achievements page", () => {
     // The three days of play are 40 days apart, so the record spans months.
     expect(screen.getByRole("heading", { name: "Earned per month" })).toBeInTheDocument();
     expect(countBars(container)).toBeGreaterThan(0);
+  });
+
+  it("steps to the previous and the next achievement in the progress tab order", async () => {
+    // Getting Started is the first group: First Game, then Ranked.
+    renderPage("/achievements?filter=ranked&view=details", <AchievementsPage />);
+
+    await userEvent.click(screen.getByRole("link", { name: "First Game" }));
+    expect(currentUrl()).toBe("/achievements?filter=first-game&view=details");
+
+    // The first achievement of all steps back to the last one.
+    const orderedTypes = orderAchievementTypes(Object.keys(ACHIEVEMENT_LABELS));
+    const last = ACHIEVEMENT_LABELS[orderedTypes[orderedTypes.length - 1] as AchievementType];
+    await userEvent.click(screen.getByRole("link", { name: last.title }));
+    expect(currentUrl()).toBe(`/achievements?filter=${orderedTypes[orderedTypes.length - 1]}&view=details`);
+  });
+
+  it("goes to another achievement at random", async () => {
+    renderPage("/achievements?filter=first-game&view=details", <AchievementsPage />);
+
+    await userEvent.click(screen.getByRole("button", { name: /Random/ }));
+
+    // Some other achievement, and never the one it started on.
+    expect(currentUrl()).toMatch(/^\/achievements\?filter=.+&view=details$/);
+    expect(currentUrl()).not.toBe("/achievements?filter=first-game&view=details");
   });
 
   it("shows the league stats when the details view names no achievement", () => {

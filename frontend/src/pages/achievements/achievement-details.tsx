@@ -1,18 +1,25 @@
 import React, { useMemo } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { AchievementType } from "../../client/client-db/achievements";
 import { ACHIEVEMENT_LABELS, getAchievementLabel } from "../player/player-achievements";
-import { ACHIEVEMENT_GROUPS, ACHIEVEMENT_TYPE_TO_GROUP_ID, OTHER_ACHIEVEMENT_GROUP } from "../player/achievement-groups";
+import {
+  ACHIEVEMENT_GROUPS,
+  ACHIEVEMENT_TYPE_TO_GROUP_ID,
+  orderAchievementTypes,
+  OTHER_ACHIEVEMENT_GROUP,
+} from "../player/achievement-groups";
 import { ProfilePicture } from "../player/profile-picture";
 import { StatTile, StatTileRow } from "../statistics/stat-tile";
 import { AXIS_COLOR, SERIES_COLOR } from "../statistics/percent-chart";
 import { dateString, relativeTimeString } from "../../common/date-utils";
 import { fmtNum } from "../../common/number-utils";
+import { classNames } from "../../common/class-names";
 import { achievementDetails, MonthBucket } from "./achievement-stats";
 import { playersProgressForType } from "./progress-rows";
 import { playerAchievementProgressLink } from "../player/player-achievement-link";
+import { achievementsLink } from "./use-achievements-filter";
 
 const CLOSEST_PLAYERS = 3;
 
@@ -30,6 +37,25 @@ type Props = {
 export const AchievementDetails: React.FC<Props> = ({ type, earnedCount, onShowProgress, onShowRecent }) => {
   const context = useEventDbContext();
   const label = getAchievementLabel(type, context.client.gameLimitForRanked);
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+
+  // The order of the player's Progress tab, so the two pages read the
+  // achievements in the same order. The ends join, so Next always has one.
+  const ordered = useMemo(
+    () => orderAchievementTypes(Object.keys(ACHIEVEMENT_LABELS)) as AchievementType[],
+    [],
+  );
+  const position = ordered.indexOf(type);
+  const previousType = ordered[(position - 1 + ordered.length) % ordered.length];
+  const nextType = ordered[(position + 1) % ordered.length];
+
+  const detailsLink = (target: AchievementType) => achievementsLink(searchParams, { type: target, view: "details" });
+
+  function goToRandom() {
+    const others = ordered.filter((candidate) => candidate !== type);
+    navigate(detailsLink(others[Math.floor(Math.random() * others.length)]));
+  }
 
   const details = useMemo(() => {
     const allAchievements = [...context.achievements.achievementMap.values()].flat();
@@ -69,6 +95,24 @@ export const AchievementDetails: React.FC<Props> = ({ type, earnedCount, onShowP
 
   return (
     <div className="max-w-3xl mx-auto flex flex-col gap-6 text-primary-text">
+      {/* Walk the achievements in the order of the player's Progress tab. */}
+      <nav className="flex items-center gap-2">
+        <NavButton to={detailsLink(previousType)} label={ACHIEVEMENT_LABELS[previousType].title}>
+          <span aria-hidden>←</span> {ACHIEVEMENT_LABELS[previousType].icon}
+        </NavButton>
+        <button
+          onClick={goToRandom}
+          type="button"
+          title="A random achievement"
+          className="px-3 py-2 rounded-lg text-sm bg-secondary-background text-secondary-text border border-secondary-text hover:opacity-80 transition-opacity"
+        >
+          🎲 <span className="hidden xs:inline">Random</span>
+        </button>
+        <NavButton to={detailsLink(nextType)} label={ACHIEVEMENT_LABELS[nextType].title} alignEnd>
+          {ACHIEVEMENT_LABELS[nextType].icon} <span aria-hidden>→</span>
+        </NavButton>
+      </nav>
+
       {/* Identity */}
       <div className="flex items-start gap-4">
         <div className="text-5xl shrink-0">{label.icon}</div>
@@ -307,6 +351,32 @@ export const AchievementDetails: React.FC<Props> = ({ type, earnedCount, onShowP
     </div>
   );
 };
+
+/**
+ * A step to the achievement before or after this one. The name of the target
+ * is the accessible name, and it shows from the sm breakpoint up — a phone has
+ * room for the icon and the arrow alone.
+ */
+const NavButton: React.FC<{ to: string; label: string; alignEnd?: boolean; children: React.ReactNode }> = ({
+  to,
+  label,
+  alignEnd,
+  children,
+}) => (
+  <Link
+    to={to}
+    aria-label={label}
+    title={label}
+    className={classNames(
+      "flex-1 min-w-0 flex items-center gap-2 px-3 py-2 rounded-lg text-sm bg-secondary-background text-secondary-text border border-secondary-text hover:opacity-80 transition-opacity",
+      alignEnd ? "justify-end" : "justify-start",
+    )}
+  >
+    {!alignEnd && children}
+    <span className="truncate hidden sm:inline">{label}</span>
+    {alignEnd && children}
+  </Link>
+);
 
 const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
   <section className="flex flex-col gap-2">

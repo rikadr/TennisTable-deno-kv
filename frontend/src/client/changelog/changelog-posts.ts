@@ -67,7 +67,7 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
         "Select All Achievements in the filter to see the whole league: the rarest and the most common achievements, the achievements nobody earns, the players with the most achievements, and the achievements earned each month.",
       ),
       text(
-        "Click the name of an achievement in the Recent list to open its Details view. The view and the achievement are in the url, so you can share a link.",
+        "Click the name of an achievement in the Recent list to open its Details view. Buttons in the Details view go to the previous, the next, or a random achievement. The view and the achievement are in the url, so you can share a link.",
       ),
     ],
   },
