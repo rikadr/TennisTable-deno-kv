@@ -1,53 +1,15 @@
 import { useMemo } from "react";
-import { useSearchParams } from "react-router-dom";
 import { classNames } from "../../common/class-names";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { Achievement, AchievementType } from "../../client/client-db/achievements";
 import { ACHIEVEMENT_LABELS } from "../player/player-achievements";
 import { AchievementsList } from "./achievements-list";
 import { ProgressList } from "./progress-list";
-
-const FILTER_PARAM = "filter";
-const VIEW_PARAM = "view";
-const PROGRESS_VIEW = "progress";
+import { ALL_ACHIEVEMENTS, useAchievementsFilter } from "./use-achievements-filter";
 
 export const AchievementsPage: React.FC = () => {
   const context = useEventDbContext();
-  const [searchParams, setSearchParams] = useSearchParams();
-
-  // Filter and view live in the url so they survive reloads and can be shared
-  const selectedType = searchParams.get(FILTER_PARAM) ?? "all";
-  const showProgress = searchParams.get(VIEW_PARAM) === PROGRESS_VIEW;
-
-  const setSelectedType = (type: string) => {
-    setSearchParams(
-      (previous) => {
-        const params = new URLSearchParams(previous);
-        if (type === "all") {
-          params.delete(FILTER_PARAM);
-        } else {
-          params.set(FILTER_PARAM, type);
-        }
-        return params;
-      },
-      { replace: true },
-    );
-  };
-
-  const setShowProgress = (progress: boolean) => {
-    setSearchParams(
-      (previous) => {
-        const params = new URLSearchParams(previous);
-        if (progress) {
-          params.set(VIEW_PARAM, PROGRESS_VIEW);
-        } else {
-          params.delete(VIEW_PARAM);
-        }
-        return params;
-      },
-      { replace: true },
-    );
-  };
+  const { selectedType, showProgress, setSelectedType, setShowProgress } = useAchievementsFilter();
 
   context.achievements.calculateAchievements();
 
@@ -83,7 +45,7 @@ export const AchievementsPage: React.FC = () => {
   const filteredAchievements = useMemo(() => {
     let filtered = allAchievements;
 
-    if (selectedType !== "all") {
+    if (selectedType !== ALL_ACHIEVEMENTS) {
       filtered = filtered.filter((a) => a.type === selectedType);
     }
 
@@ -119,7 +81,7 @@ export const AchievementsPage: React.FC = () => {
               }}
               className="px-3 py-2 bg-secondary-background text-secondary-text border border-primary-text rounded text-sm min-w-[200px]"
             >
-              <option value="all">
+              <option value={ALL_ACHIEVEMENTS}>
                 All Achievements ({allAchievements.length})
               </option>
               {achievementTypes.map((type) => {

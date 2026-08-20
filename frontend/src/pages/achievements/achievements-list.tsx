@@ -1,11 +1,12 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { Achievement } from "../../client/client-db/achievements";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { getAchievementLabel } from "../player/player-achievements";
 import { dateString, daysBetweenCeiled, relativeTimeString } from "../../common/date-utils";
 import { ProfilePicture } from "../player/profile-picture";
 import { fmtNum } from "../../common/number-utils";
+import { achievementsFilterLink } from "./use-achievements-filter";
 
 interface AchievementsListProps {
   achievements: Achievement[];
@@ -13,6 +14,7 @@ interface AchievementsListProps {
 
 export const AchievementsList: React.FC<AchievementsListProps> = ({ achievements }) => {
   const context = useEventDbContext();
+  const [searchParams] = useSearchParams();
 
   if (achievements.length === 0) {
     return (
@@ -39,7 +41,13 @@ export const AchievementsList: React.FC<AchievementsListProps> = ({ achievements
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-baseline gap-2 overflow-hidden">
-                    <h3 className="font-semibold text-primary-text whitespace-nowrap">{label.title}</h3>
+                    <Link
+                      to={achievementsFilterLink(searchParams, achievement.type)}
+                      title={`Show only ${label.title}`}
+                      className="font-semibold text-primary-text whitespace-nowrap hover:text-accent hover:underline transition-colors"
+                    >
+                      {label.title}
+                    </Link>
                     <p className="text-xs opacity-70 truncate hidden sm:block">{label.description}</p>
                   </div>
                   <div className="text-[10px] whitespace-nowrap opacity-60 text-right shrink-0">
@@ -53,7 +61,7 @@ export const AchievementsList: React.FC<AchievementsListProps> = ({ achievements
                     className="rounded-full w-fit flex items-center bg-primary-background/50 ring-1 ring-primary-text/10"
                   >
                     <Link
-                      to={"/player/" + achievement.earnedBy}
+                      to={`/player/${achievement.earnedBy}?tab=achievements`}
                       className="flex gap-2 items-center pr-3 p-0.5 "
                     >
                       <ProfilePicture playerId={achievement.earnedBy} size={18} border={1} />

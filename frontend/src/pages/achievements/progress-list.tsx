@@ -7,6 +7,7 @@ import { fmtNum } from "../../common/number-utils";
 import { classNames } from "../../common/class-names";
 import { achievementProgressPercentage } from "../../common/achievement-progress";
 import { AchievementType } from "../../client/client-db/achievements";
+import { ALL_ACHIEVEMENTS } from "./use-achievements-filter";
 
 interface ProgressListProps {
   selectedType: string;
@@ -27,7 +28,7 @@ export const ProgressList: React.FC<ProgressListProps> = ({ selectedType }) => {
   // Retired players are included — their progress history is as real as
   // anyone's — and tagged as retired in the list.
   const playersProgress = useMemo(() => {
-    if (selectedType === "all") return [];
+    if (selectedType === ALL_ACHIEVEMENTS) return [];
 
     const activeIds = new Set(context.players.map((player) => player.id));
     const players = context.allPlayers;
@@ -85,7 +86,7 @@ export const ProgressList: React.FC<ProgressListProps> = ({ selectedType }) => {
 
   return (
     <div className="max-w-3xl mx-auto">
-      {selectedType === "all" ? (
+      {selectedType === ALL_ACHIEVEMENTS ? (
         <div className="text-center py-12 bg-background-secondary rounded-lg border border-primary-text/20">
           <div className="text-5xl mb-4">👆</div>
           <h3 className="text-xl font-semibold mb-2">Select an achievement</h3>
