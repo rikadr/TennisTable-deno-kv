@@ -4,6 +4,7 @@ import {
   AchievementType,
 } from "../../client/client-db/achievements";
 import { fmtNum } from "../../common/number-utils";
+import { calendarDaysBetween } from "../../common/date-utils";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -291,7 +292,9 @@ export function achievementDetails(input: {
     isReachievable: ACHIEVEMENT_IS_REACHIEVABLE[type],
     first,
     latest,
-    daysSinceLatest: latest ? Math.floor((now - latest.earnedAt) / DAY_MS) : undefined,
+    // Calendar days, not elapsed time: an achievement earned at 23:00 last
+    // night is 1 day old this morning, not 0.
+    daysSinceLatest: latest ? calendarDaysBetween(latest.earnedAt, now) : undefined,
     topHolders: topHolders(earnings),
     topOpponents: topOpponents(earnings),
     perMonth: perMonth(earnings),

@@ -239,6 +239,19 @@ describe("achievementDetails", () => {
     expect(result.isReachievable).toBe(true);
   });
 
+  it("counts the last earning in calendar days, not in elapsed time", () => {
+    const lastNight = new Date(2024, 0, 10, 23, 0).getTime();
+    const thisMorning = new Date(2024, 0, 11, 9, 0).getTime();
+
+    // 10 hours apart, but one calendar day: the earning was yesterday.
+    const result = details([heroOfTheDay("alice", lastNight, 4)], "hero-of-the-day", thisMorning);
+    expect(result.daysSinceLatest).toBe(1);
+
+    // Earlier the same day is still today, however many hours ago it was.
+    const earlierToday = new Date(2024, 0, 11, 1, 0).getTime();
+    expect(details([heroOfTheDay("alice", earlierToday, 4)], "hero-of-the-day", thisMorning).daysSinceLatest).toBe(0);
+  });
+
   it("measures the time from a player's first game to their first earning", () => {
     const result = details(
       [heroOfTheDay("alice", START + 4 * DAY_MS, 4), heroOfTheDay("bob", START + 10 * DAY_MS, 5)],

@@ -422,8 +422,12 @@ export const PlayerAchievements: React.FC<Props> = ({ playerId }) => {
   const context = useEventDbContext();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // The sub-tab lives in the url, so a link can point at the Progress tab.
-  const activeTab = (searchParams.get(PLAYER_ACHIEVEMENTS_TAB_PARAM) as TabType) || "earned";
+  // The sub-tab lives in the url, so a link can point at the Progress tab. A
+  // url that names an achievement but no sub-tab opens the Progress tab, since
+  // that is the tab the achievement is in.
+  const namesAchievement = searchParams.get(PLAYER_ACHIEVEMENT_PARAM) !== null;
+  const activeTab =
+    (searchParams.get(PLAYER_ACHIEVEMENTS_TAB_PARAM) as TabType) || (namesAchievement ? "progress" : "earned");
 
   const setActiveTab = (tab: TabType) => {
     setSearchParams((previous) => {
@@ -924,12 +928,17 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
   const [searchParams] = useSearchParams();
   const [sort, setSort] = useState<ProgressSort>("default");
   const [filter, setFilter] = useState<ProgressFilter>("all");
-  const [query, setQuery] = useState("");
+  // A link can name one achievement. The search field starts on it, so the tab
+  // opens on that achievement alone, and the row is marked and scrolled to.
+  // Clear the search field to get the whole list back.
+  const highlightedType = searchParams.get(PLAYER_ACHIEVEMENT_PARAM);
+  const [query, setQuery] = useState(highlightedType ?? "");
   const normalizedQuery = query.trim().toLowerCase();
 
-  // A link can name one achievement. Its row is marked and scrolled to, which
-  // keeps the neighbouring achievements in view.
-  const highlightedType = searchParams.get(PLAYER_ACHIEVEMENT_PARAM);
+  // Follows the url, so a second link into the tab searches its achievement.
+  useEffect(() => {
+    setQuery(highlightedType ?? "");
+  }, [highlightedType]);
 
   useEffect(() => {
     if (!highlightedType) return;
@@ -986,7 +995,10 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
       items = items.filter(
         (item) =>
           item.label.title.toLowerCase().includes(normalizedQuery) ||
-          item.label.description.toLowerCase().includes(normalizedQuery),
+          item.label.description.toLowerCase().includes(normalizedQuery) ||
+          // The type is the name a link and a url use, such as
+          // "streak-player-20", so a search on it finds the achievement.
+          item.type.toLowerCase().includes(normalizedQuery),
       );
     }
 
@@ -1132,7 +1144,7 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
             className={classNames(
               "bg-background-secondary rounded-lg overflow-hidden border border-secondary-text transition-colors relative",
               hasEarned && "bg-gradient-to-b from-green-400 via-green-500 to-green-600",
-              highlightedType === type && "ring-2 ring-offset-2 ring-secondary-text ring-offset-secondary-background",
+              highlightedType === type && "ring-4 ring-secondary-text",
             )}
           >
             {/* Progress bar background.

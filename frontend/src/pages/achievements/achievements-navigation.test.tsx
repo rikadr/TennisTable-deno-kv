@@ -220,19 +220,54 @@ describe("navigation from the achievements page", () => {
 describe("a player's achievements from a link", () => {
   beforeEach(() => scrollIntoView.mockClear());
 
-  it("opens on the progress tab and scrolls to the achievement", () => {
+  it("opens on the progress tab, searches the achievement and scrolls to it", () => {
     renderPage(
       "/player/alice?tab=achievements&achievementTab=progress&achievement=first-game",
       <PlayerAchievements playerId="alice" />,
     );
 
     // The progress tab, and not the earned tab, holds the search field.
-    expect(screen.getByLabelText("Search achievements by name or description")).toBeInTheDocument();
+    const search = screen.getByLabelText("Search achievements by name or description");
+    expect(search).toHaveValue("first-game");
+    // The search holds the list to the achievement the link names.
+    expect(screen.getByText("First Game")).toBeInTheDocument();
+    expect(screen.queryByText("Humiliation Streak")).not.toBeInTheDocument();
 
     const row = progressRow("first-game");
     expect(row).toBeInTheDocument();
-    expect(row).toHaveClass("ring-2");
+    expect(row).toHaveClass("ring-4");
     expect(scrollIntoView).toHaveBeenCalledTimes(1);
+  });
+
+  it("opens the progress tab for a url that names an achievement and no tab", () => {
+    renderPage("/player/alice?tab=achievements&achievement=streak-player-20", <PlayerAchievements playerId="alice" />);
+
+    expect(screen.getByLabelText("Search achievements by name or description")).toHaveValue("streak-player-20");
+    expect(screen.getByText("Humiliation Streak")).toBeInTheDocument();
+    expect(progressRow("streak-player-20")).toHaveClass("ring-4");
+  });
+
+  it("matches the type of an achievement typed into the search", async () => {
+    renderPage("/player/alice?tab=achievements&achievementTab=progress", <PlayerAchievements playerId="alice" />);
+
+    // The type is the name the url and the links use, and it holds no words
+    // of the title "Humiliation Streak".
+    await userEvent.type(screen.getByLabelText("Search achievements by name or description"), "streak-player-20");
+
+    expect(screen.getByText("Humiliation Streak")).toBeInTheDocument();
+    expect(screen.queryByText("First Game")).not.toBeInTheDocument();
+  });
+
+  it("shows the whole list again when the search is cleared", async () => {
+    renderPage(
+      "/player/alice?tab=achievements&achievementTab=progress&achievement=first-game",
+      <PlayerAchievements playerId="alice" />,
+    );
+
+    await userEvent.clear(screen.getByLabelText("Search achievements by name or description"));
+
+    expect(screen.getByText("First Game")).toBeInTheDocument();
+    expect(screen.getByText("Humiliation Streak")).toBeInTheDocument();
   });
 
   it("opens on the earned tab when the link names no achievement", () => {

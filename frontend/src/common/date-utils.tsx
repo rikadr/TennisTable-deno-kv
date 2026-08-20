@@ -121,6 +121,20 @@ export function daysBetweenCeiled(from: number, to: number): number {
   return Math.ceil((to - from) / (24 * 60 * 60 * 1000));
 }
 
+/**
+ * Whole calendar days from one time to another, in the browser's timezone. Use
+ * it to tell the days apart: a game 20 hours ago at 23:00 yesterday is 1 day
+ * ago, not 0. For the length of a span, use the elapsed time instead.
+ */
+export function calendarDaysBetween(from: number, to: number): number {
+  const start = new Date(from);
+  start.setHours(0, 0, 0, 0);
+  const end = new Date(to);
+  end.setHours(0, 0, 0, 0);
+  // Rounded, because a day of a summer time change is 23 or 25 hours long.
+  return Math.round((end.getTime() - start.getTime()) / (24 * 60 * 60 * 1000));
+}
+
 interface FormatDistanceOptions {
   includeSeconds?: boolean;
   addSuffix?: boolean;

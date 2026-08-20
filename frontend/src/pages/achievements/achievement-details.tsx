@@ -101,13 +101,7 @@ export const AchievementDetails: React.FC<Props> = ({ type, earnedCount, onShowP
         />
         <StatTile
           label="Last earned"
-          value={
-            details.daysSinceLatest === undefined
-              ? "Never"
-              : details.daysSinceLatest === 0
-                ? "Today"
-                : `${fmtNum(details.daysSinceLatest)} days ago`
-          }
+          value={daysAgoLabel(details.daysSinceLatest)}
           note={details.latest ? playerName(details.latest.earnedBy) : "Nobody has earned this"}
         />
       </StatTileRow>
@@ -381,6 +375,14 @@ function ordinal(rank: number): string {
   const rest = rank % 100;
   if (rest >= 11 && rest <= 13) return `${rank}th`;
   return `${rank}${["th", "st", "nd", "rd"][rank % 10] ?? "th"}`;
+}
+
+/** The day of the latest earning, counted in calendar days. */
+function daysAgoLabel(days: number | undefined): string {
+  if (days === undefined) return "Never";
+  if (days === 0) return "Today";
+  if (days === 1) return "Yesterday";
+  return `${fmtNum(days)} days ago`;
 }
 
 function dayLabel(days: number): string {
