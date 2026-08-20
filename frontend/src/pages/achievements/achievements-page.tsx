@@ -6,48 +6,19 @@ import { Achievement, AchievementType } from "../../client/client-db/achievement
 import { ACHIEVEMENT_LABELS } from "../player/player-achievements";
 import { AchievementsList } from "./achievements-list";
 import { ProgressList } from "./progress-list";
-
-const FILTER_PARAM = "filter";
-const VIEW_PARAM = "view";
-const PROGRESS_VIEW = "progress";
+import { AchievementDetails } from "./achievement-details";
+import { AchievementLeagueStats } from "./achievement-league-stats";
+import {
+  ACHIEVEMENTS_VIEWS,
+  achievementsLink,
+  ALL_ACHIEVEMENTS,
+  useAchievementsFilter,
+} from "./use-achievements-filter";
 
 export const AchievementsPage: React.FC = () => {
   const context = useEventDbContext();
-  const [searchParams, setSearchParams] = useSearchParams();
-
-  // Filter and view live in the url so they survive reloads and can be shared
-  const selectedType = searchParams.get(FILTER_PARAM) ?? "all";
-  const showProgress = searchParams.get(VIEW_PARAM) === PROGRESS_VIEW;
-
-  const setSelectedType = (type: string) => {
-    setSearchParams(
-      (previous) => {
-        const params = new URLSearchParams(previous);
-        if (type === "all") {
-          params.delete(FILTER_PARAM);
-        } else {
-          params.set(FILTER_PARAM, type);
-        }
-        return params;
-      },
-      { replace: true },
-    );
-  };
-
-  const setShowProgress = (progress: boolean) => {
-    setSearchParams(
-      (previous) => {
-        const params = new URLSearchParams(previous);
-        if (progress) {
-          params.set(VIEW_PARAM, PROGRESS_VIEW);
-        } else {
-          params.delete(VIEW_PARAM);
-        }
-        return params;
-      },
-      { replace: true },
-    );
-  };
+  const [searchParams] = useSearchParams();
+  const { selectedType, view, setSelectedType, setView } = useAchievementsFilter();
 
   context.achievements.calculateAchievements();
 
@@ -83,7 +54,7 @@ export const AchievementsPage: React.FC = () => {
   const filteredAchievements = useMemo(() => {
     let filtered = allAchievements;
 
-    if (selectedType !== "all") {
+    if (selectedType !== ALL_ACHIEVEMENTS) {
       filtered = filtered.filter((a) => a.type === selectedType);
     }
 
@@ -93,68 +64,77 @@ export const AchievementsPage: React.FC = () => {
 
   return (
     <div className="flex flex-col h-full text-primary-text bg-primary-background">
-      {/* Header with filter */}
-      <div className="p-6 border-b border-primary-text">
+      {/* Header with the filter and the three views */}
+      <div className="p-6 pb-0 border-b border-primary-text">
         <div className="flex items-center justify-between mb-4">
-          <h1 className="text-2xl font-bold text-primary-text">
-            All Achievements
-          </h1>
-          <div className="text-sm">
-            {filteredAchievements.length} achievement
-            {filteredAchievements.length !== 1 && "s"}
-          </div>
+          <h1 className="text-2xl font-bold text-primary-text">All Achievements</h1>
+          {view === "recent" && (
+            <div className="text-sm">
+              {filteredAchievements.length} achievement
+              {filteredAchievements.length !== 1 && "s"}
+            </div>
+          )}
         </div>
 
-        {/* Filter dropdown and Progress toggle */}
-        <div className="flex flex-wrap items-center gap-4">
-          <div className="flex items-center gap-3">
-            <label htmlFor="achievement-filter" className="text-sm font-medium">
-              Filter:
-            </label>
-            <select
-              id="achievement-filter"
-              value={selectedType}
-              onChange={(e) => {
-                setSelectedType(e.target.value);
-              }}
-              className="px-3 py-2 bg-secondary-background text-secondary-text border border-primary-text rounded text-sm min-w-[200px]"
-            >
-              <option value="all">
-                All Achievements ({allAchievements.length})
-              </option>
-              {achievementTypes.map((type) => {
-                const label = ACHIEVEMENT_LABELS[type];
-                return (
-                  <option key={type} value={type}>
-                    {label.icon} {label.title} ({achievementCounts[type] ?? 0})
-                  </option>
-                );
-              })}
-            </select>
-          </div>
-
-          <button
-            onClick={() => setShowProgress(!showProgress)}
-            type="button"
-            className={classNames(
-              "px-4 py-2 rounded text-sm font-medium border transition-colors",
-              showProgress
-                ? "bg-accent text-white border-accent"
-                : "bg-secondary-background text-secondary-text border-primary-text hover:border-accent",
-            )}
+        <div className="flex items-center gap-3 mb-4">
+          <label htmlFor="achievement-filter" className="text-sm font-medium">
+            Filter:
+          </label>
+          <select
+            id="achievement-filter"
+            value={selectedType}
+            onChange={(e) => setSelectedType(e.target.value)}
+            className="px-3 py-2 bg-secondary-background text-secondary-text border border-secondary-text rounded text-sm min-w-[200px]"
           >
-            {showProgress ? "Show Recent Achievements" : "Show Everyone's Progress"}
-          </button>
+            <option value={ALL_ACHIEVEMENTS}>All Achievements ({allAchievements.length})</option>
+            {achievementTypes.map((type) => {
+              const label = ACHIEVEMENT_LABELS[type];
+              return (
+                <option key={type} value={type}>
+                  {label.icon} {label.title} ({achievementCounts[type] ?? 0})
+                </option>
+              );
+            })}
+          </select>
+        </div>
+
+        {/* The three views of the same achievement: its earnings, its stats,
+            and everyone's progress towards it. */}
+        <div className="flex space-x-2 overflow-x-auto flex-nowrap scrollbar-hide">
+          {ACHIEVEMENTS_VIEWS.map((candidate) => (
+            <button
+              key={candidate.id}
+              onClick={() => setView(candidate.id)}
+              className={classNames(
+                "flex items-center py-2 px-4 border-b-4 font-medium text-sm transition-colors shrink-0 whitespace-nowrap",
+                view === candidate.id
+                  ? "text-primary-text border-primary-text"
+                  : "text-primary-text/80 border-transparent hover:text-primary-text hover:border-primary-text border-dotted",
+              )}
+            >
+              {candidate.label}
+            </button>
+          ))}
         </div>
       </div>
 
       {/* Content Area */}
       <div className="flex-1 overflow-y-auto p-6">
-        {showProgress ? (
-          <ProgressList selectedType={selectedType} />
-        ) : (
-          <AchievementsList achievements={filteredAchievements} />
-        )}
+        {view === "recent" && <AchievementsList achievements={filteredAchievements} />}
+        {view === "details" &&
+          (selectedType === ALL_ACHIEVEMENTS ? (
+            <AchievementLeagueStats
+              detailsLink={(type) => achievementsLink(searchParams, { type, view: "details" })}
+            />
+          ) : (
+            <AchievementDetails
+              type={selectedType as AchievementType}
+              earnedCount={filteredAchievements.length}
+              onShowProgress={() => setView("progress")}
+              onShowRecent={() => setView("recent")}
+            />
+          ))}
+        {view === "progress" && <ProgressList selectedType={selectedType} />}
       </div>
     </div>
   );

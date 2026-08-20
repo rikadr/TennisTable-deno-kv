@@ -5,8 +5,10 @@ import { ACHIEVEMENT_LABELS, getAchievementLabel } from "../player/player-achiev
 import { ProfilePicture } from "../player/profile-picture";
 import { fmtNum } from "../../common/number-utils";
 import { classNames } from "../../common/class-names";
-import { achievementProgressPercentage } from "../../common/achievement-progress";
 import { AchievementType } from "../../client/client-db/achievements";
+import { ALL_ACHIEVEMENTS } from "./use-achievements-filter";
+import { playerAchievementProgressLink } from "../player/player-achievement-link";
+import { playersProgressForType } from "./progress-rows";
 
 interface ProgressListProps {
   selectedType: string;
@@ -23,69 +25,14 @@ export const ProgressList: React.FC<ProgressListProps> = ({ selectedType }) => {
     selectedType === "anniversary" ||
     selectedType === "season-opener";
 
-  // Calculate progress for all players when a specific type is selected.
-  // Retired players are included — their progress history is as real as
-  // anyone's — and tagged as retired in the list.
-  const playersProgress = useMemo(() => {
-    if (selectedType === "all") return [];
-
-    const activeIds = new Set(context.players.map((player) => player.id));
-    const players = context.allPlayers;
-    return players
-      .map((player) => {
-        const progression = context.achievements.getPlayerProgression(player.id);
-        const specificProgression = progression[selectedType as keyof typeof progression];
-
-        // Safely extract current and target if they exist. Some progression
-        // shapes have no target (record chases before a record exists), so
-        // narrowed values still need an undefined fallback.
-        let current = 0;
-        let target = 0;
-        let percent = 0;
-        let earned = 0;
-
-        if (specificProgression && "earned" in specificProgression) {
-          earned = specificProgression.earned ?? 0;
-        }
-
-        if (
-          specificProgression &&
-          "target" in specificProgression &&
-          "current" in specificProgression
-        ) {
-          current = specificProgression.current ?? 0;
-          target = specificProgression.target ?? 0;
-        } else if (specificProgression && "earned" in specificProgression) {
-          current = earned;
-          // For achievements without target (just 'earned' count), we can treat 1 as target if earned > 0
-          // or just display the count. For sorting purpose, use earned.
-          target = 1;
-        }
-
-        if (target > 0) {
-          percent = Math.round(achievementProgressPercentage(selectedType, current, target));
-        }
-
-        return {
-          player,
-          isRetired: !activeIds.has(player.id),
-          current,
-          target,
-          percent,
-          earned,
-          progression: specificProgression,
-        };
-      })
-      .sort((a, b) => {
-        // Sort by percent desc, then by current value desc
-        if (b.percent !== a.percent) return b.percent - a.percent;
-        return b.current - a.current;
-      });
-  }, [context.players, context.allPlayers, context.achievements, selectedType]);
+  const playersProgress = useMemo(
+    () => (selectedType === ALL_ACHIEVEMENTS ? [] : playersProgressForType(context, selectedType)),
+    [context, selectedType],
+  );
 
   return (
     <div className="max-w-3xl mx-auto">
-      {selectedType === "all" ? (
+      {selectedType === ALL_ACHIEVEMENTS ? (
         <div className="text-center py-12 bg-background-secondary rounded-lg border border-primary-text/20">
           <div className="text-5xl mb-4">👆</div>
           <h3 className="text-xl font-semibold mb-2">Select an achievement</h3>
@@ -139,7 +86,7 @@ export const ProgressList: React.FC<ProgressListProps> = ({ selectedType }) => {
                       #{index + 1}
                     </div>
 
-                    <Link to={`/player/${player.id}`} className="shrink-0">
+                    <Link to={playerAchievementProgressLink(player.id, selectedType)} className="shrink-0">
                       <ProfilePicture playerId={player.id} size={45} border={3} />
                     </Link>
 
@@ -147,8 +94,8 @@ export const ProgressList: React.FC<ProgressListProps> = ({ selectedType }) => {
                       <div className="flex justify-between items-center mb-1">
                         <div className="flex items-center gap-2">
                           <Link
-                            to={`/player/${player.id}`}
-                            className="font-semibold hover:text-accent transition-colors"
+                            to={playerAchievementProgressLink(player.id, selectedType)}
+                            className="font-semibold hover:underline"
                           >
                             {player.name}
                           </Link>

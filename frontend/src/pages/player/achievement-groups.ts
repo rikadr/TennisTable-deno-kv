@@ -150,3 +150,18 @@ export const OTHER_ACHIEVEMENT_GROUP: AchievementGroup = {
 export const ACHIEVEMENT_TYPE_TO_GROUP_ID = new Map<string, string>(
   ACHIEVEMENT_GROUPS.flatMap((group) => group.types.map((type) => [type, group.id] as const)),
 );
+
+/**
+ * The achievement types in the order the player's Progress tab lists them: the
+ * groups in order, the types of a group in the group's own order, and last the
+ * types in no group, in the order they are given.
+ *
+ * The achievements page walks this order with its Previous and Next buttons,
+ * so the two pages read the achievements in the same order.
+ */
+export function orderAchievementTypes(types: string[]): string[] {
+  const given = new Set(types);
+  const grouped = ACHIEVEMENT_GROUPS.flatMap((group) => group.types.filter((type) => given.has(type)));
+  const isGrouped = new Set(grouped);
+  return [...grouped, ...types.filter((type) => !isGrouped.has(type))];
+}
