@@ -4,6 +4,7 @@ import {
   achievementValue,
   ACHIEVEMENT_METRICS,
   leagueAchievementStats,
+  MUTUAL_ACHIEVEMENTS,
   rarityRanking,
   RECORD_ACHIEVEMENTS,
   recordHistory,
@@ -222,7 +223,7 @@ describe("valueBuckets", () => {
 });
 
 describe("achievementDetails", () => {
-  const allTypes = ["first-game", "hero-of-the-day", "retired", "season-opener"] as AchievementType[];
+  const allTypes = ["first-game", "hero-of-the-day", "retired", "season-opener", "kingslayer"] as AchievementType[];
 
   function details(achievements: Achievement[], type: AchievementType, now = START + 30 * DAY_MS) {
     return achievementDetails({
@@ -308,6 +309,41 @@ describe("achievementDetails", () => {
     });
 
     expect(result.perMonth.map((bucket) => bucket.count)).toEqual([0, 1, 0, 1, 0]);
+  });
+
+  it("names every type whose award goes to both players of a game", () => {
+    // The award of each of these names game.winner and game.loser under one
+    // condition, so every holder is another holder's opponent.
+    expect([...MUTUAL_ACHIEVEMENTS].sort()).toEqual(
+      [
+        "best-friends",
+        "earliest-game",
+        "latest-game",
+        "milestone-game",
+        "nice-game",
+        "photo-finish",
+        "reunion",
+        "season-opener",
+        "shootout",
+      ].sort(),
+    );
+  });
+
+  it("lists the opponents of an achievement one player earns", () => {
+    const kingslayer = (earnedBy: string, opponent: string, earnedAt: number): Achievement => ({
+      type: "kingslayer",
+      earnedBy,
+      earnedAt,
+      data: { opponent, gameId: `g${earnedAt}` },
+    });
+
+    expect(
+      details([kingslayer("alice", "bob", 1), kingslayer("carol", "bob", 2), kingslayer("alice", "dave", 3)], "kingslayer")
+        .topOpponents,
+    ).toEqual([
+      { key: "bob", count: 2 },
+      { key: "dave", count: 1 },
+    ]);
   });
 
   it("lists no opponents for an achievement both players of a game earn", () => {

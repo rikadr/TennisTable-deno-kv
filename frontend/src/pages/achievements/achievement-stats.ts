@@ -169,9 +169,15 @@ export const RECORD_ACHIEVEMENTS: AchievementType[] = [
 ];
 
 /**
- * The achievements both players of a game earn. Each holder is the opponent of
- * another holder, so a list of the opponents only mirrors the list of the
- * holders and says nothing new.
+ * The achievements both players of a game always earn. Each holder is the
+ * opponent of another holder, so a list of the opponents only mirrors the list
+ * of the holders and says nothing new.
+ *
+ * A type belongs here when its award in client-db/achievements.ts names both
+ * game.winner and game.loser under one condition. First Game and Ranked award
+ * each player on their own count, so a game rarely gives both, and they stay
+ * out. A type whose data holds no opponent needs no entry — it lists no
+ * opponents either way.
  */
 export const MUTUAL_ACHIEVEMENTS: AchievementType[] = [
   "season-opener",
@@ -181,6 +187,8 @@ export const MUTUAL_ACHIEVEMENTS: AchievementType[] = [
   "shootout",
   "reunion",
   "nice-game",
+  "best-friends",
+  "photo-finish",
 ];
 
 export type RarityEntry = {
