@@ -36,7 +36,7 @@ export const CompletedSetsList: React.FC<Props> = ({
             <div key={index} className="flex items-center justify-between px-3 py-2 bg-gray-50 rounded-lg text-sm">
               <div className="flex flex-col">
                 <span className="font-semibold text-gray-700">Set {index + 1}</span>
-                {sideLabel && <span className="text-xs text-gray-400">🚧 {sideLabel}</span>}
+                {sideLabel && <span className="text-xs text-gray-400">😵 {sideLabel}</span>}
               </div>
               <div className="flex items-center gap-3">
                 <div className="w-5 text-right">{setWinner === 1 && "🏆"}</div>

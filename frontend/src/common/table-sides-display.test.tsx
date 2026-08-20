@@ -56,20 +56,20 @@ describe("TableSideDisplay", () => {
     renderDisplay({ badSide: 1, currentSet: { player1: 0, player2: 1 }, onSelect: jest.fn() });
 
     expect(screen.queryAllByRole("button")).toHaveLength(0);
-    expect(screen.getByText("🚧 Ada on the bad side")).toBeInTheDocument();
+    expect(screen.getByText("😵 Ada on the bad side")).toBeInTheDocument();
   });
 
   it("says that a locked set has no side", () => {
     renderDisplay({ badSide: null, currentSet: { player1: 1, player2: 0 }, onSelect: jest.fn() });
 
     expect(screen.queryAllByRole("button")).toHaveLength(0);
-    expect(screen.getByText("🚧 No bad side recorded for this set")).toBeInTheDocument();
+    expect(screen.getByText("😵 No bad side recorded for this set")).toBeInTheDocument();
   });
 
   it("shows no selector at all without a select handler", () => {
     renderDisplay({ badSide: "neutral" });
 
     expect(screen.queryAllByRole("button")).toHaveLength(0);
-    expect(screen.getByText("🚧 Equal sides")).toBeInTheDocument();
+    expect(screen.getByText("😵 Equal sides")).toBeInTheDocument();
   });
 });

@@ -49,7 +49,7 @@ export const TableSideDisplay: React.FC<TableSideDisplayProps> = ({
     const toggle = (option: BadSide) => onSelect(badSide === option ? null : option);
     return (
       <div className="flex flex-wrap items-center justify-center gap-2">
-        <span className="text-xs text-gray-400">🚧 Bad side:</span>
+        <span className="text-xs text-gray-400">😵 Bad side:</span>
         <button
           onClick={() => toggle(1)}
           title={`${player1Name} has the bad side of the table`}
@@ -82,7 +82,7 @@ export const TableSideDisplay: React.FC<TableSideDisplayProps> = ({
 
   // The set is locked. Show the side it was given, or say that it has none.
   if (label === null) {
-    return <div className="text-center text-xs text-gray-400">🚧 No bad side recorded for this set</div>;
+    return <div className="text-center text-xs text-gray-400">😵 No bad side recorded for this set</div>;
   }
 
   return (
@@ -91,7 +91,7 @@ export const TableSideDisplay: React.FC<TableSideDisplayProps> = ({
         className={classNames(PILL, badSide === "neutral" && "bg-gray-700 text-white")}
         style={badSide === "neutral" ? undefined : fill(badSide === 1 ? player1Color : player2Color)}
       >
-        🚧 {label}
+        😵 {label}
       </div>
     </div>
   );
