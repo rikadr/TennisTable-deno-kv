@@ -31,6 +31,14 @@ export type LiveGameState = {
   completedSetFirstServers: (1 | 2)[];
   /** Which player (1 or 2) served the first point of the current set. */
   firstServer: 1 | 2;
+  /**
+   * Who had the bad side of the table in each completed set: 1 or 2 for that
+   * player, "neutral" when the 2 sides are equally good, and null when nobody
+   * recorded the sides.
+   */
+  completedSetBadSides: (1 | 2 | "neutral" | null)[];
+  /** Who has the bad side of the table in the current set. */
+  badSide: 1 | 2 | "neutral" | null;
   /** How many points were undone while tracking this match. */
   corrections: number;
   startedAt: number | null;

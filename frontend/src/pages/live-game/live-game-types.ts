@@ -1,3 +1,5 @@
+import { BadSide } from "../../common/table-sides";
+
 export type LiveGameSetPoint = {
   player1: number;
   player2: number;
@@ -27,6 +29,13 @@ export type LiveGameState = {
   completedSetFirstServers: (1 | 2)[];
   /** Which player (1 or 2) served the first point of the current set. */
   firstServer: 1 | 2;
+  /** Who had the bad side of the table in each completed set. */
+  completedSetBadSides: BadSide[];
+  /**
+   * Who has the bad side of the table in the current set. Null until somebody
+   * records it, because the sides are not known for every game.
+   */
+  badSide: BadSide;
   /** How many points were undone while tracking this match. */
   corrections: number;
   startedAt: number | null;
@@ -48,6 +57,8 @@ export const emptyLiveGame: LiveGameState = {
   completedSetPointTimes: [],
   completedSetFirstServers: [],
   firstServer: 1,
+  completedSetBadSides: [],
+  badSide: null,
   corrections: 0,
   startedAt: null,
   endedAt: null,

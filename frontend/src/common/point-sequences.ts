@@ -5,12 +5,14 @@
  * set as a string of "1"/"2" chars — one char per point, in the order the
  * points were scored, naming the player slot that won the point. Next to each
  * sequence the tracker keeps the time of every point, and per set who served
- * first. When the game is saved all of it is re-encoded from the game winner's
- * perspective ("W"/"L") to match how a GAME_SCORE event stores its setPoints.
+ * first and who had the bad side of the table. When the game is saved all of it
+ * is re-encoded from the game winner's perspective ("W"/"L") to match how a
+ * GAME_SCORE event stores its setPoints.
  */
 
 import { GameTracking } from "../client/client-db/event-store/event-types";
 import { Server } from "./serve-tracker";
+import { BadSide, encodeWinnerSides } from "./table-sides";
 
 export type TrackedSetPoints = { player1: number; player2: number };
 
@@ -75,6 +77,11 @@ export function toEventTrackingData(params: {
   trackedSets: TrackedSet[];
   /** Who served the first point of each completed set. */
   firstServers: Server[];
+  /**
+   * Who had the bad side of the table in each completed set. The sides are only
+   * saved when every set has one, because a set without one says nothing.
+   */
+  badSides: BadSide[];
   player1IsGameWinner: boolean;
   source: GameTracking["source"];
   /** Epoch ms tracking started, and when the match was ended. */
@@ -82,7 +89,7 @@ export function toEventTrackingData(params: {
   endedAt: number | null;
   corrections: number;
 }): { pointSequences: string[]; tracking: GameTracking } | undefined {
-  const { completedSets, trackedSets, firstServers, player1IsGameWinner, startedAt, endedAt } = params;
+  const { completedSets, trackedSets, firstServers, badSides, player1IsGameWinner, startedAt, endedAt } = params;
   if (startedAt === null || endedAt === null) return undefined;
   if (completedSets.length === 0) return undefined;
   if (trackedSets.length !== completedSets.length) return undefined;
@@ -114,6 +121,11 @@ export function toEventTrackingData(params: {
     }),
   );
 
+  // One side per set or nothing: a game with a side missing keeps the rest of
+  // its tracking data and drops the sides.
+  const winnerSides =
+    badSides.length === completedSets.length ? encodeWinnerSides(badSides, gameWinnerSlot) : undefined;
+
   return {
     pointSequences,
     tracking: {
@@ -123,6 +135,7 @@ export function toEventTrackingData(params: {
       pointDeltas,
       endedAfter: Math.max(0, Math.round((endedAt - startedAt) / 100) - previousTenths),
       firstServers: firstServers.map((server) => (server === gameWinnerSlot ? "W" : "L")).join(""),
+      ...(winnerSides ? { winnerSides } : {}),
       corrections: params.corrections,
     },
   };

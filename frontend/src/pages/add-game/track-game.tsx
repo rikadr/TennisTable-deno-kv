@@ -15,6 +15,8 @@ import { stringToColor } from "../../common/string-to-color";
 import { CARD_SURFACE, fill, panelTint, ROW_SURFACE, softFill, textOn } from "../../common/player-color-styles";
 import { getServeInfo, Server } from "../../common/serve-tracker";
 import { ServeTrackerDisplay } from "../../common/serve-tracker-display";
+import { BadSide, badSideLabel, nextSetBadSide } from "../../common/table-sides";
+import { TableSideSelector } from "../../common/table-sides-display";
 import { LiveGamePredictionCard } from "../live-game/live-game-prediction-card";
 import { computeLiveWinPrediction } from "../live-game/live-game-win-probability";
 import { Predictions } from "../../client/client-db/predictions";
@@ -45,6 +47,8 @@ interface MatchData {
   trackedSets: TrackedSet[];
   /** Who served the first point of each completed set. */
   firstServers: Server[];
+  /** Who had the bad side of the table in each completed set. */
+  badSides: BadSide[];
 }
 
 type Stage = "player-selection" | "scoring" | "summary";
@@ -63,6 +67,7 @@ export const TrackGamePage: React.FC = () => {
     setPoints: [],
     trackedSets: [],
     firstServers: [],
+    badSides: [],
   });
   const [currentSetScore, setCurrentSetScore] = useState<SetPoint>({
     player1: 0,
@@ -71,6 +76,9 @@ export const TrackGamePage: React.FC = () => {
   // The points of the current set, in the order they were scored.
   const [currentTrackedSet, setCurrentTrackedSet] = useState<TrackedSet>(emptyTrackedSet);
   const [firstServer, setFirstServer] = useState<Server>(1);
+  // Who has the bad side of the table in the set being played. Null until the
+  // operator records it, and the sides are only saved when every set has one.
+  const [badSide, setBadSide] = useState<BadSide>(null);
   // Epoch ms the match started, when it was ended, and how many points were
   // undone. Saved with the game so its timeline can be replayed.
   const [startedAt, setStartedAt] = useState<number | null>(null);
@@ -143,12 +151,16 @@ export const TrackGamePage: React.FC = () => {
       setPoints: [...(prev.setPoints || []), newSetPoint],
       trackedSets: [...prev.trackedSets, currentTrackedSet],
       firstServers: [...prev.firstServers, firstServer],
+      badSides: [...prev.badSides, badSide],
     }));
 
     setCurrentSetScore({ player1: 0, player2: 0 });
     setCurrentTrackedSet(emptyTrackedSet);
     // Alternate who serves first in the next set, per table tennis convention.
     setFirstServer((prev) => (prev === 1 ? 2 : 1));
+    // The players change sides after every set, so the bad side moves to the
+    // other player. The operator can correct it if this pair does not change.
+    setBadSide(nextSetBadSide);
   };
 
   const startMatch = () => {
@@ -188,6 +200,7 @@ export const TrackGamePage: React.FC = () => {
       completedSets: setPointsForValidation,
       trackedSets: matchData.trackedSets,
       firstServers: matchData.firstServers,
+      badSides: matchData.badSides,
       player1IsGameWinner: player1 === winner,
       source: "track-game",
       startedAt,
@@ -300,6 +313,8 @@ export const TrackGamePage: React.FC = () => {
         completedSetPointTimes: matchData.trackedSets.map((set) => [...set.pointTimes]),
         completedSetFirstServers: [...matchData.firstServers],
         firstServer,
+        completedSetBadSides: [...matchData.badSides],
+        badSide,
         corrections,
         // Keep the original start so the timeline stays continuous across the
         // handover. Only a match that skipped the scoring screen starts now.
@@ -324,10 +339,12 @@ export const TrackGamePage: React.FC = () => {
       setPoints: [],
       trackedSets: [],
       firstServers: [],
+      badSides: [],
     });
     setCurrentSetScore({ player1: 0, player2: 0 });
     setCurrentTrackedSet(emptyTrackedSet);
     setFirstServer(1);
+    setBadSide(null);
     setStartedAt(null);
     setEndedAt(null);
     setCorrections(0);
@@ -425,6 +442,17 @@ export const TrackGamePage: React.FC = () => {
                   player1Color={player1Color}
                   player2Color={player2Color}
                   onSelectFirstServer={setFirstServer}
+                />
+              </div>
+              {/* Which side of the table the players have this set */}
+              <div className="mt-1.5 tall:mt-2">
+                <TableSideSelector
+                  badSide={badSide}
+                  player1Name={context.playerName(player1)}
+                  player2Name={context.playerName(player2)}
+                  player1Color={player1Color}
+                  player2Color={player2Color}
+                  onSelect={setBadSide}
                 />
               </div>
             </div>
@@ -565,9 +593,17 @@ export const TrackGamePage: React.FC = () => {
               <div className="space-y-2">
                 {matchData.setPoints.map((set, index) => {
                   const setWinner = set.player1 > set.player2 ? 1 : 2;
+                  const sideLabel = badSideLabel(
+                    matchData.badSides[index],
+                    context.playerName(player1),
+                    context.playerName(player2),
+                  );
                   return (
                     <div key={index} className="flex items-center justify-between px-3 py-2 bg-gray-50 rounded-lg text-sm">
-                      <span className="font-semibold text-gray-700">Set {index + 1}</span>
+                      <div className="flex flex-col">
+                        <span className="font-semibold text-gray-700">Set {index + 1}</span>
+                        {sideLabel && <span className="text-xs text-gray-400">🚧 {sideLabel}</span>}
+                      </div>
                       <div className="flex items-center gap-3">
                         <div className="w-5">{setWinner === 1 && "🏆"}</div>
                         <div className="w-16 flex items-center justify-between text-lg">
@@ -680,9 +716,17 @@ export const TrackGamePage: React.FC = () => {
                 <div className="space-y-2">
                   {matchData.setPoints.map((set, index) => {
                     const setWinner = set.player1 > set.player2 ? 1 : 2;
+                    const sideLabel = badSideLabel(
+                      matchData.badSides[index],
+                      context.playerName(player1),
+                      context.playerName(player2),
+                    );
                     return (
                       <div key={index} className="flex items-center justify-between px-3 py-2 bg-gray-50 rounded-lg text-sm">
-                        <span className="font-semibold text-gray-700">Set {index + 1}</span>
+                        <div className="flex flex-col">
+                          <span className="font-semibold text-gray-700">Set {index + 1}</span>
+                          {sideLabel && <span className="text-xs text-gray-400">🚧 {sideLabel}</span>}
+                        </div>
                         <div className="flex items-center gap-3">
                           <div className="w-5">{setWinner === 1 && "🏆"}</div>
                           <div className="w-16 flex items-center justify-between text-lg">

@@ -65,6 +65,13 @@ export type GameTracking = {
    */
   firstServers: string;
   /**
+   * Which side of the table the game winner had in each set, one char per set:
+   * "G" = the good side, "B" = the bad side, "N" = the 2 sides are equally
+   * good. The game loser had the other side. Left out when the sides were not
+   * recorded, so an older game keeps the rest of its tracking data.
+   */
+  winnerSides?: string;
+  /**
    * How many points were undone while tracking. A high count means the log was
    * corrected by hand, so its times are less trustworthy.
    */

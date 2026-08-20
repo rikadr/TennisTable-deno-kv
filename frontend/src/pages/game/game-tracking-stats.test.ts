@@ -73,6 +73,15 @@ describe("setBreakdown", () => {
     expect(setBreakdown(pointSequences, tracking()).map((set) => set.firstServer)).toEqual(["W", "L"]);
   });
 
+  it("reads the table side of each set", () => {
+    const sets = setBreakdown(pointSequences, tracking({ winnerSides: "BN" }));
+    expect(sets.map((set) => set.winnerSide)).toEqual(["B", "N"]);
+  });
+
+  it("gives no table side for a game that does not record the sides", () => {
+    expect(setBreakdown(pointSequences, tracking()).map((set) => set.winnerSide)).toEqual([undefined, undefined]);
+  });
+
   it("returns no rows for a game with no sets", () => {
     expect(setBreakdown([], tracking({ pointDeltas: [], firstServers: "" }))).toEqual([]);
   });

@@ -1,6 +1,7 @@
 import React from "react";
 import { GameTracking } from "../../client/client-db/event-store/event-types";
 import { clockTimeString } from "../../common/date-utils";
+import { badSideName } from "../../common/table-sides";
 import { fmtNum } from "../../common/number-utils";
 import {
   durationString,
@@ -56,8 +57,9 @@ export const TrackingStats: React.FC<{
 };
 
 /**
- * Every set of a tracked game: the score, who served the first point, how long
- * the set took, and the break before it started.
+ * Every set of a tracked game: the score, who served the first point, who had
+ * the bad side of the table, how long the set took, and the break before it
+ * started.
  */
 export const SetBreakdownTable: React.FC<{
   tracking: GameTracking;
@@ -67,6 +69,8 @@ export const SetBreakdownTable: React.FC<{
 }> = ({ tracking, pointSequences, winnerName, loserName }) => {
   const sets = setBreakdown(pointSequences, tracking);
   if (sets.length === 0) return null;
+  // Games tracked before the sides were recorded have no side column at all.
+  const hasSides = sets.some((set) => set.winnerSide !== undefined);
 
   return (
     <div className="rounded-lg bg-secondary-background text-secondary-text p-3 overflow-x-auto">
@@ -77,6 +81,7 @@ export const SetBreakdownTable: React.FC<{
             <th className="font-normal pb-1 pr-2">Set</th>
             <th className="font-normal pb-1 pr-2">Score</th>
             <th className="font-normal pb-1 pr-2 whitespace-nowrap">First serve</th>
+            {hasSides && <th className="font-normal pb-1 pr-2 whitespace-nowrap">Bad side</th>}
             <th className="font-normal pb-1 pr-2 text-right">Time</th>
             <th className="font-normal pb-1 pr-2 text-right">Break</th>
             {/* The game's longest pause is in the card above, so a narrow
@@ -94,6 +99,11 @@ export const SetBreakdownTable: React.FC<{
               <td className="py-1.5 pr-2 truncate max-w-[8rem]">
                 {set.firstServer === "W" ? winnerName : loserName}
               </td>
+              {hasSides && (
+                <td className="py-1.5 pr-2 truncate max-w-[8rem]">
+                  {set.winnerSide ? badSideName(set.winnerSide, winnerName, loserName) : "–"}
+                </td>
+              )}
               <td className="py-1.5 pr-2 text-right whitespace-nowrap">{durationString(set.durationMs)}</td>
               <td className="py-1.5 pr-2 text-right whitespace-nowrap">{gapString(set.breakBeforeMs)}</td>
               <td className="py-1.5 text-right whitespace-nowrap hidden sm:table-cell">
@@ -106,6 +116,7 @@ export const SetBreakdownTable: React.FC<{
       <p className="mt-2 text-xs opacity-70">
         The score is from the game winner's side. The break is the time before the first point of the set — for set 1,
         the time from the start of tracking.
+        {hasSides && " The bad side is the worse side of the table, and \"Equal\" means the 2 sides are equally good."}
       </p>
     </div>
   );

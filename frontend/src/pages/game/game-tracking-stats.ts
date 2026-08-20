@@ -8,6 +8,7 @@
 
 import { GameTracking } from "../../client/client-db/event-store/event-types";
 import { getServeInfo, Server } from "../../common/serve-tracker";
+import { WinnerSide, winnerSideOfSet } from "../../common/table-sides";
 
 const TENTH_MS = 100;
 
@@ -51,6 +52,11 @@ export type SetBreakdown = {
   wonByGameWinner: boolean;
   /** Who served the first point of the set. */
   firstServer: "W" | "L";
+  /**
+   * The side of the table the game winner had, or undefined when the game does
+   * not record the sides.
+   */
+  winnerSide: WinnerSide | undefined;
   /** Ms from the first point of the set to its last point. */
   durationMs: number;
   /** Ms between the last point of the previous set and the first of this one. */
@@ -74,6 +80,7 @@ export function setBreakdown(pointSequences: string[], tracking: GameTracking): 
       points: { winner: winnerPoints, loser: sequence.length - winnerPoints },
       wonByGameWinner: winnerPoints > sequence.length - winnerPoints,
       firstServer: tracking.firstServers[index] === "W" ? "W" : "L",
+      winnerSide: winnerSideOfSet(tracking.winnerSides, index),
       durationMs: gaps.reduce((sum, gap) => sum + gap, 0) * TENTH_MS,
       breakBeforeMs: (deltas[0] ?? 0) * TENTH_MS,
       longestPointGapMs: gaps.length === 0 ? 0 : Math.max(...gaps) * TENTH_MS,

@@ -1,3 +1,4 @@
+import { WINNER_SIDES_PATTERN } from "../../../../common/table-sides";
 import { GameCreated, GameDeleted, GameScore, GameTracking } from "../event-types";
 import { ValidatorResponse } from "./validator-types";
 
@@ -36,6 +37,16 @@ function validateTracking(tracking: GameTracking, pointSequences: string[]): str
   }
   if (/^[WL]*$/.test(tracking.firstServers) === false) {
     return "Tracking data is invalid. Only 'W' and 'L' first servers are allowed";
+  }
+  // The sides of the table are optional, because a game can be tracked without
+  // them. A game that has them must have one side per set.
+  if (tracking.winnerSides !== undefined) {
+    if (tracking.winnerSides.length !== pointSequences.length) {
+      return "Tracking data is invalid. There must be one table side per set";
+    }
+    if (WINNER_SIDES_PATTERN.test(tracking.winnerSides) === false) {
+      return "Tracking data is invalid. Only 'G', 'B' and 'N' table sides are allowed";
+    }
   }
   if (isCount(tracking.endedAfter) === false) {
     return "Tracking data is invalid. Ended after must be a positive whole number";

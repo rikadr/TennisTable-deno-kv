@@ -42,6 +42,28 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
+    slug: "table-sides-on-tracked-games",
+    title: "Tracked games record the side of the table",
+    date: "2026-08-20",
+    tags: ["feature-update", "technical"],
+    summary:
+      "A tracked game records the player who has the bad side of the table in each set. The game details page shows the side of every set.",
+    body: [
+      text(
+        "The game tracker and the live game admin page have a selector below the serve tracker. It gives 3 options: player 1 has the bad side, player 2 has the bad side, or the 2 sides are equally good. A second press on the selected option removes the record.",
+      ),
+      text(
+        "After each set the tracker moves the bad side to the other player, because the players usually change sides. Correct it when the players keep the same side.",
+      ),
+      text(
+        'The `GAME_SCORE` event stores one char per set, from the side of the game winner: "G" for the good side, "B" for the bad side and "N" for 2 equal sides. A game stores the sides only when every set has one.',
+      ),
+      text(
+        "The set by set table on the game details page has a new Bad side column. A game tracked before this change does not show the column.",
+      ),
+    ],
+  },
+  {
     slug: "leap-frog-and-party-pooper-rules",
     title: "New rules for Leap Frog and Party Pooper",
     date: "2026-08-20",
