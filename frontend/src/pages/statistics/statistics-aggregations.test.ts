@@ -19,6 +19,7 @@ import {
   pointLevelStats,
   ratingGapDistribution,
   setLevelStats,
+  tableSideStats,
   timeOfDayShares,
   trackedLevelStats,
   upsetRate,
@@ -785,6 +786,107 @@ describe("trackedLevelStats", () => {
     const stats = trackedLevelStats(played)!;
 
     expect(stats.deucePaceRatio).toBeCloseTo(3);
+  });
+});
+
+describe("tableSideStats", () => {
+  /** A tracked game with a recorded side per set, or none when sides is undefined. */
+  function sidedGame(pointSequences: string[], winnerSides?: string): Game {
+    const setPoints = pointSequences.map((sequence) => {
+      const winner = sequence.split("").filter((point) => point === "W").length;
+      return { gameWinner: winner, gameLoser: sequence.length - winner };
+    });
+    const setsWon = setPoints.reduce(
+      (sets, set) =>
+        set.gameWinner > set.gameLoser
+          ? { gameWinner: sets.gameWinner + 1, gameLoser: sets.gameLoser }
+          : { gameWinner: sets.gameWinner, gameLoser: sets.gameLoser + 1 },
+      { gameWinner: 0, gameLoser: 0 },
+    );
+    return game({
+      score: {
+        setsWon,
+        setPoints,
+        pointSequences,
+        tracking: {
+          version: 1,
+          source: "track-game",
+          startedAt: 1,
+          pointDeltas: pointSequences.map((sequence) => new Array(sequence.length).fill(100)),
+          endedAfter: 10,
+          firstServers: "W".repeat(pointSequences.length),
+          winnerSides,
+          corrections: 0,
+        },
+      },
+    });
+  }
+
+  /** 11-2 to the game winner. */
+  const SET_TO_THE_WINNER = "WWWWWWWWWWWLL";
+  /** 11-2 to the game loser. */
+  const SET_TO_THE_LOSER = "LLLLLLLLLLLWW";
+
+  it("stays silent when no tracked game records the sides", () => {
+    expect(tableSideStats([...games(10), sidedGame([SET_TO_THE_WINNER])])).toBeUndefined();
+  });
+
+  it("gives the sets and the points the player on the bad side won", () => {
+    // Set 1: the game winner is on the bad side and takes 11 of 13 points.
+    // Set 2: the game loser is on the bad side and takes 11 of 13 points.
+    // The bad side wins both sets, with 22 of the 26 points.
+    const played = [sidedGame([SET_TO_THE_WINNER, SET_TO_THE_LOSER], "BG")];
+
+    const stats = tableSideStats(played)!;
+
+    expect(stats.setsWonOnTheBadSide).toBe(100);
+    expect(stats.pointsWonOnTheBadSide).toBeCloseTo((22 / 26) * 100);
+  });
+
+  it("counts a neutral set apart, and not as a set with a bad side", () => {
+    const played = [sidedGame([SET_TO_THE_WINNER, SET_TO_THE_LOSER], "NB")];
+
+    const stats = tableSideStats(played)!;
+
+    expect(stats.neutralSets).toBe(50);
+    // Only set 2 has a bad side. The game winner is on it and loses the set.
+    expect(stats.setsWonOnTheBadSide).toBe(0);
+    expect(stats.pointsWonOnTheBadSide).toBeCloseTo((2 / 13) * 100);
+  });
+
+  it("holds every share back when every recorded set is neutral", () => {
+    const stats = tableSideStats([sidedGame([SET_TO_THE_WINNER], "N")])!;
+
+    expect(stats.neutralSets).toBe(100);
+    expect(stats.setsWonOnTheBadSide).toBeUndefined();
+    expect(stats.pointsWonOnTheBadSide).toBeUndefined();
+    expect(stats.wonWithMoreBadSideSets).toBeUndefined();
+  });
+
+  it("finds the games won with more sets on the bad side than the opponent", () => {
+    // The game winner has the bad side in 2 of the 3 sets and wins the game.
+    const uneven = sidedGame([SET_TO_THE_WINNER, SET_TO_THE_LOSER, SET_TO_THE_WINNER], "BGB");
+    // Both players have the bad side once, so the game has no player with more.
+    const even = sidedGame([SET_TO_THE_WINNER, SET_TO_THE_WINNER], "BG");
+
+    expect(tableSideStats([uneven])!.wonWithMoreBadSideSets).toBe(100);
+    expect(tableSideStats([even])!.wonWithMoreBadSideSets).toBeUndefined();
+  });
+
+  it("measures the coverage over the tracked games only", () => {
+    const played = [
+      sidedGame([SET_TO_THE_WINNER], "B"),
+      sidedGame([SET_TO_THE_WINNER]),
+      ...games(10),
+    ];
+
+    expect(tableSideStats(played)!.sidesRecorded).toBe(50);
+  });
+
+  it("reports shares and never a count", () => {
+    const stats = tableSideStats([sidedGame([SET_TO_THE_WINNER], "B")])!;
+
+    expect(Object.values(stats).every((value) => value === undefined || (value >= 0 && value <= 100))).toBe(true);
   });
 });
 

@@ -61,6 +61,9 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
       text(
         "The set by set table on the game details page has a new Bad side column. A game tracked before this change does not show the column.",
       ),
+      text(
+        "The statistics page shows what the bad side costs. The Games tab has a card with the share of the sets and the points that the player on the bad side wins, over all games that record the sides.",
+      ),
     ],
   },
   {
