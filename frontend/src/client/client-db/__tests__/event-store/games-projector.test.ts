@@ -403,6 +403,31 @@ describe("validateScoreGame", () => {
     expect(result.message).toBe("Tracking data is invalid. Only 'W' and 'L' first servers are allowed");
   });
 
+  it("accepts tracking data without table sides", () => {
+    expect(projector.validateScoreGame(trackedScoreEvent({ winnerSides: undefined })).valid).toBe(true);
+  });
+
+  it("accepts a table side for every set", () => {
+    for (const winnerSides of ["G", "B", "N"]) {
+      expect(projector.validateScoreGame(trackedScoreEvent({ winnerSides })).valid).toBe(true);
+    }
+  });
+
+  it("rejects a table side list that does not cover every set", () => {
+    const result = projector.validateScoreGame(trackedScoreEvent({ winnerSides: "GB" }));
+    expectInvalid(result);
+    expect(result.message).toBe("Tracking data is invalid. There must be one table side per set");
+    const empty = projector.validateScoreGame(trackedScoreEvent({ winnerSides: "" }));
+    expectInvalid(empty);
+    expect(empty.message).toBe("Tracking data is invalid. There must be one table side per set");
+  });
+
+  it("rejects a table side that is not G, B or N", () => {
+    const result = projector.validateScoreGame(trackedScoreEvent({ winnerSides: "W" }));
+    expectInvalid(result);
+    expect(result.message).toBe("Tracking data is invalid. Only 'G', 'B' and 'N' table sides are allowed");
+  });
+
   it("rejects a negative end delta and a negative correction count", () => {
     const endedAfter = projector.validateScoreGame(trackedScoreEvent({ endedAfter: -1 }));
     expectInvalid(endedAfter);

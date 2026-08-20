@@ -26,6 +26,8 @@ import { LiveGamePredictionCard } from "./live-game-prediction-card";
 import ConfettiExplosion from "react-confetti-explosion";
 import { Server } from "../../common/serve-tracker";
 import { ServeTrackerDisplay } from "../../common/serve-tracker-display";
+import { alignBadSides, BadSide, badSideLabel, nextSetBadSide } from "../../common/table-sides";
+import { TableSideDisplay } from "../../common/table-sides-display";
 import { appendPoint, removeLastPoint, toEventTrackingData, trackingNow } from "../../common/point-sequences";
 
 type Stage = "scoring" | "confirm";
@@ -103,6 +105,8 @@ export const LiveGameAdminPage: React.FC = () => {
       completedSetPointTimes: [],
       completedSetFirstServers: [],
       firstServer: localState!.firstServer,
+      completedSetBadSides: [],
+      badSide: localState!.badSide,
       corrections: 0,
       startedAt: trackingNow(),
       endedAt: null,
@@ -113,6 +117,10 @@ export const LiveGameAdminPage: React.FC = () => {
 
   function setFirstServer(player: Server) {
     pushState({ ...localState!, firstServer: player });
+  }
+
+  function setBadSide(badSide: BadSide) {
+    pushState({ ...localState!, badSide });
   }
 
   function addPoint(player: 1 | 2) {
@@ -163,10 +171,19 @@ export const LiveGameAdminPage: React.FC = () => {
       completedSetSequences: [...localState!.completedSetSequences, localState!.currentSetSequence],
       completedSetPointTimes: [...localState!.completedSetPointTimes, localState!.currentSetPointTimes],
       completedSetFirstServers: [...localState!.completedSetFirstServers, localState!.firstServer],
+      // The sides are padded first, because a game that was started before the
+      // sides existed has none for the sets it already played.
+      completedSetBadSides: [
+        ...alignBadSides(localState!.completedSetBadSides, localState!.completedSets.length),
+        localState!.badSide,
+      ],
       currentSetSequence: "",
       currentSetPointTimes: [],
       // Alternate who serves first in the next set, per table tennis convention.
       firstServer: localState!.firstServer === 1 ? 2 : 1,
+      // The players change sides after every set, so the bad side moves to the
+      // other player. The admin can correct it if this pair does not change.
+      badSide: nextSetBadSide(localState!.badSide),
     });
   }
 
@@ -183,6 +200,8 @@ export const LiveGameAdminPage: React.FC = () => {
       completedSetPointTimes: [],
       completedSetFirstServers: [],
       firstServer: 1,
+      completedSetBadSides: [],
+      badSide: null,
       corrections: 0,
       // The match restarts, so its timeline restarts with it.
       startedAt: trackingNow(),
@@ -243,6 +262,7 @@ export const LiveGameAdminPage: React.FC = () => {
         pointTimes: localState!.completedSetPointTimes[index] ?? [],
       })),
       firstServers: localState!.completedSetFirstServers,
+      badSides: localState!.completedSetBadSides,
       player1IsGameWinner: player1Won,
       source: "live-game",
       startedAt: localState!.startedAt,
@@ -373,6 +393,18 @@ export const LiveGameAdminPage: React.FC = () => {
                 onSelectFirstServer={setFirstServer}
               />
             </div>
+            {/* Which side of the table the players have this set */}
+            <div className="mt-1.5 tall:mt-2">
+              <TableSideDisplay
+                currentSet={localState.currentSet}
+                badSide={localState.badSide}
+                player1Name={context.playerName(localState.player1Id)}
+                player2Name={context.playerName(localState.player2Id)}
+                player1Color={player1Color}
+                player2Color={player2Color}
+                onSelect={setBadSide}
+              />
+            </div>
 
             <div className="grid grid-cols-2 gap-2 tall:gap-3 mt-2 tall:mt-3">
               <PlayerScoreControls
@@ -422,6 +454,9 @@ export const LiveGameAdminPage: React.FC = () => {
 
           <CompletedSetsList
             sets={localState.completedSets}
+            badSides={localState.completedSetBadSides}
+            player1Name={context.playerName(localState.player1Id)}
+            player2Name={context.playerName(localState.player2Id)}
             player1Color={player1Color}
             player2Color={player2Color}
           />
@@ -582,9 +617,17 @@ const ConfirmView: React.FC<{
             <div className="space-y-2">
               {localState.completedSets.map((set, index) => {
                 const setWinner = set.player1 > set.player2 ? 1 : 2;
+                const sideLabel = badSideLabel(
+                  localState.completedSetBadSides[index],
+                  context.playerName(localState.player1Id),
+                  context.playerName(localState.player2Id),
+                );
                 return (
                   <div key={index} className="flex items-center justify-between px-3 py-2 bg-gray-50 rounded-lg text-sm">
-                    <span className="font-semibold text-gray-700">Set {index + 1}</span>
+                    <div className="flex flex-col">
+                      <span className="font-semibold text-gray-700">Set {index + 1}</span>
+                      {sideLabel && <span className="text-xs text-gray-400">😵 {sideLabel}</span>}
+                    </div>
                     <div className="flex items-center gap-3">
                       <div className="w-5">{setWinner === 1 && "🏆"}</div>
                       <div className="w-16 flex items-center justify-between text-lg">

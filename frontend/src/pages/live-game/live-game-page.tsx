@@ -11,6 +11,7 @@ import { LiveGamePredictionCard } from "./live-game-prediction-card";
 import { LiveGameSetPoint } from "./live-game-types";
 import { Server } from "../../common/serve-tracker";
 import { ServeTrackerDisplay } from "../../common/serve-tracker-display";
+import { BadSide } from "../../common/table-sides";
 
 // Fallback poll in case the WebSocket drops — primary updates come from
 // the LIVE_GAME broadcast handled in WebSocketRefetcher. The poll also runs
@@ -70,6 +71,7 @@ export const LiveGamePage: React.FC = () => {
           setsWon={state.setsWon}
           currentSet={state.currentSet}
           completedSets={state.completedSets}
+          badSides={state.completedSetBadSides ?? []}
           firstServer={state.firstServer ?? 1}
           player1Name={context.playerName(state.player1Id)}
           player2Name={context.playerName(state.player2Id)}
@@ -82,6 +84,7 @@ export const LiveGamePage: React.FC = () => {
           player2Id={state.player2Id!}
           setsWon={state.setsWon}
           completedSets={state.completedSets}
+          badSides={state.completedSetBadSides ?? []}
           player1Name={context.playerName(state.player1Id)}
           player2Name={context.playerName(state.player2Id)}
         />
@@ -96,6 +99,8 @@ type ScoreboardProps = {
   setsWon: { player1: number; player2: number };
   currentSet: LiveGameSetPoint;
   completedSets: LiveGameSetPoint[];
+  /** Who had the bad side of the table in each completed set. */
+  badSides: BadSide[];
   firstServer: Server;
   player1Name: string;
   player2Name: string;
@@ -107,6 +112,7 @@ const LiveScoreboard: React.FC<ScoreboardProps> = ({
   setsWon,
   currentSet,
   completedSets,
+  badSides,
   firstServer,
   player1Name,
   player2Name,
@@ -187,7 +193,14 @@ const LiveScoreboard: React.FC<ScoreboardProps> = ({
         completedSets={completedSets}
       />
 
-      <CompletedSetsList sets={completedSets} player1Color={player1Color} player2Color={player2Color} />
+      <CompletedSetsList
+        sets={completedSets}
+        badSides={badSides}
+        player1Name={player1Name}
+        player2Name={player2Name}
+        player1Color={player1Color}
+        player2Color={player2Color}
+      />
     </div>
   );
 };
@@ -197,6 +210,8 @@ type FinishedScoreboardProps = {
   player2Id: string;
   setsWon: { player1: number; player2: number };
   completedSets: LiveGameSetPoint[];
+  /** Who had the bad side of the table in each completed set. */
+  badSides: BadSide[];
   player1Name: string;
   player2Name: string;
 };
@@ -206,6 +221,7 @@ const FinishedScoreboard: React.FC<FinishedScoreboardProps> = ({
   player2Id,
   setsWon,
   completedSets,
+  badSides,
   player1Name,
   player2Name,
 }) => {
@@ -258,7 +274,14 @@ const FinishedScoreboard: React.FC<FinishedScoreboardProps> = ({
         </div>
       </div>
 
-      <CompletedSetsList sets={completedSets} player1Color={player1Color} player2Color={player2Color} />
+      <CompletedSetsList
+        sets={completedSets}
+        badSides={badSides}
+        player1Name={player1Name}
+        player2Name={player2Name}
+        player1Color={player1Color}
+        player2Color={player2Color}
+      />
     </div>
   );
 };

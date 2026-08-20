@@ -59,6 +59,12 @@ export type GameTracking = {
   endedAfter: number;
   /** Who served the first point of each set: "W" = game winner, "L" = game loser. */
   firstServers: string;
+  /**
+   * Which side of the table the game winner had in each set: "G" = the good
+   * side, "B" = the bad side, "N" = the 2 sides are equally good. Left out when
+   * the sides were not recorded.
+   */
+  winnerSides?: string;
   /** How many points were undone while tracking. */
   corrections: number;
 };
