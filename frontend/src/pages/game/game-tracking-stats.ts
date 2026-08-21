@@ -68,13 +68,13 @@ export type SetBreakdown = {
 /**
  * One row per set: the score, who served it first, and how long it took. The
  * first delta of a set is the break before it, so it is the break time and not
- * part of the duration of the set. The side of each set comes from its
- * `setPoints` entry.
+ * part of the duration of the set. The side of each set comes from the
+ * `gameWinnerSides` list of the score.
  */
 export function setBreakdown(
   pointSequences: string[],
   tracking: GameTracking,
-  setPoints: GameScore["data"]["setPoints"],
+  gameWinnerSides: GameScore["data"]["gameWinnerSides"],
 ): SetBreakdown[] {
   return pointSequences.map((sequence, index) => {
     const deltas = tracking.pointDeltas[index] ?? [];
@@ -85,7 +85,7 @@ export function setBreakdown(
       points: { winner: winnerPoints, loser: sequence.length - winnerPoints },
       wonByGameWinner: winnerPoints > sequence.length - winnerPoints,
       firstServer: tracking.firstServers[index] === "W" ? "W" : "L",
-      winnerSide: setPoints?.[index]?.gameWinnerSide,
+      winnerSide: gameWinnerSides?.[index] ?? undefined,
       durationMs: gaps.reduce((sum, gap) => sum + gap, 0) * TENTH_MS,
       breakBeforeMs: (deltas[0] ?? 0) * TENTH_MS,
       longestPointGapMs: gaps.length === 0 ? 0 : Math.max(...gaps) * TENTH_MS,

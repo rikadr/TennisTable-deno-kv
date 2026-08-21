@@ -892,7 +892,7 @@ export function trackedLevelStats(games: Game[]): TrackedLevelStats | undefined 
   };
 }
 export type TableSideStats = {
-  /** Share of the games of the period with set points that record the sides. */
+  /** Share of the games of the period with a score that record the sides. */
   sidesRecorded: number;
   /** Share of the recorded sets where the 2 sides are equally good. */
   neutralSets: number;
@@ -912,20 +912,20 @@ export type TableSideStats = {
 /**
  * What playing on the bad side of the table costs.
  *
- * Any game that records its set points can record which player had the bad
- * side in each set, or that the 2 sides were equally good — a tracker does it
- * live, and the add game form takes what the players remember. Every set with
- * a worse side has exactly one player on it, so 50% is the neutral reading of
- * the set and point shares: a lower share means the bad side really costs sets
- * or points.
+ * Any game with a score can record which player had the bad side in each set,
+ * or that the 2 sides were equally good — a tracker does it live, and the add
+ * game form takes what the players remember, with or without the points of
+ * each set. Every set with a worse side has exactly one player on it, so 50%
+ * is the neutral reading of the set and point shares: a lower share means the
+ * bad side really costs sets or points.
  *
  * A neutral set holds no bad side, so it only counts towards `neutralSets`.
+ * The set and point shares need the points of the set, so a set with a side
+ * but no points counts only towards the game-level share.
  */
 export function tableSideStats(games: Game[]): TableSideStats | undefined {
-  const withSetPoints = games.filter((game) => game.score?.setPoints !== undefined);
-  const withSides = withSetPoints.filter((game) =>
-    game.score!.setPoints!.some((set) => set.gameWinnerSide !== undefined),
-  );
+  const withScore = games.filter((game) => game.score !== undefined);
+  const withSides = withScore.filter((game) => game.score!.gameWinnerSides?.some((side) => side !== null));
   if (withSides.length === 0) return undefined;
 
   let recordedSets = 0;
@@ -940,9 +940,10 @@ export function tableSideStats(games: Game[]): TableSideStats | undefined {
   for (const game of withSides) {
     const badSideSets = { winner: 0, loser: 0 };
 
-    for (const set of game.score!.setPoints!) {
-      const side = set.gameWinnerSide;
-      if (side === undefined) continue;
+    const sides = game.score!.gameWinnerSides!;
+    for (let setIndex = 0; setIndex < sides.length; setIndex++) {
+      const side = sides[setIndex];
+      if (side === null) continue;
 
       recordedSets++;
       if (side === "N") {
@@ -951,13 +952,18 @@ export function tableSideStats(games: Game[]): TableSideStats | undefined {
       }
 
       const gameWinnerOnTheBadSide = side === "B";
+      if (gameWinnerOnTheBadSide) badSideSets.winner++;
+      else badSideSets.loser++;
+
+      // Who won the set, and its points, are only known when the game
+      // records the points of each set.
+      const set = game.score!.setPoints?.[setIndex];
+      if (set === undefined) continue;
 
       unequalSets++;
       unequalPoints += set.gameWinner + set.gameLoser;
       pointsToTheBadSide += gameWinnerOnTheBadSide ? set.gameWinner : set.gameLoser;
       if ((set.gameWinner > set.gameLoser) === gameWinnerOnTheBadSide) setsToTheBadSide++;
-      if (gameWinnerOnTheBadSide) badSideSets.winner++;
-      else badSideSets.loser++;
     }
 
     if (badSideSets.winner !== badSideSets.loser) {
@@ -967,7 +973,7 @@ export function tableSideStats(games: Game[]): TableSideStats | undefined {
   }
 
   return {
-    sidesRecorded: percent(withSides.length, withSetPoints.length),
+    sidesRecorded: percent(withSides.length, withScore.length),
     neutralSets: percent(neutralSets, recordedSets),
     setsWonOnTheBadSide: unequalSets === 0 ? undefined : percent(setsToTheBadSide, unequalSets),
     pointsWonOnTheBadSide: unequalPoints === 0 ? undefined : percent(pointsToTheBadSide, unequalPoints),

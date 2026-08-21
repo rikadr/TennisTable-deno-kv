@@ -64,11 +64,11 @@ export const TrackingStats: React.FC<{
 export const SetBreakdownTable: React.FC<{
   tracking: GameTracking;
   pointSequences: string[];
-  setPoints: GameScore["data"]["setPoints"];
+  gameWinnerSides: GameScore["data"]["gameWinnerSides"];
   winnerName: string;
   loserName: string;
-}> = ({ tracking, pointSequences, setPoints, winnerName, loserName }) => {
-  const sets = setBreakdown(pointSequences, tracking, setPoints);
+}> = ({ tracking, pointSequences, gameWinnerSides, winnerName, loserName }) => {
+  const sets = setBreakdown(pointSequences, tracking, gameWinnerSides);
   if (sets.length === 0) return null;
   // Games tracked before the sides were recorded have no side column at all.
   const hasSides = sets.some((set) => set.winnerSide !== undefined);
@@ -124,16 +124,18 @@ export const SetBreakdownTable: React.FC<{
 };
 
 /**
- * Every set of a game that records the sides but has no tracking data: the
- * score and who had the bad side of the table. A game entered by hand can
- * record the sides next to its set points, and this is all it knows per set.
+ * Every set of a game that records the sides but has no tracking data: who had
+ * the bad side of the table, and the score of the set when the game records
+ * its set points. A game entered by hand can record the sides with only the
+ * sets won, so the score column is there only when there is a score to show.
  */
 export const SetSidesTable: React.FC<{
-  setPoints: NonNullable<GameScore["data"]["setPoints"]>;
+  gameWinnerSides: NonNullable<GameScore["data"]["gameWinnerSides"]>;
+  setPoints: GameScore["data"]["setPoints"];
   winnerName: string;
   loserName: string;
-}> = ({ setPoints, winnerName, loserName }) => {
-  if (setPoints.every((set) => set.gameWinnerSide === undefined)) return null;
+}> = ({ gameWinnerSides, setPoints, winnerName, loserName }) => {
+  const hasPoints = setPoints !== undefined;
 
   return (
     <div className="rounded-lg bg-secondary-background text-secondary-text p-3 overflow-x-auto">
@@ -142,27 +144,33 @@ export const SetSidesTable: React.FC<{
         <thead className="opacity-70">
           <tr className="text-left">
             <th className="font-normal pb-1 pr-2">Set</th>
-            <th className="font-normal pb-1 pr-2">Score</th>
+            {hasPoints && <th className="font-normal pb-1 pr-2">Score</th>}
             <th className="font-normal pb-1 whitespace-nowrap">Bad side</th>
           </tr>
         </thead>
         <tbody>
-          {setPoints.map((set, index) => (
+          {gameWinnerSides.map((side, index) => (
             <tr key={index} className="border-t border-secondary-text/20">
               <td className="py-1.5 pr-2">{index + 1}</td>
-              <td className="py-1.5 pr-2 font-semibold whitespace-nowrap">
-                {set.gameWinner}-{set.gameLoser} {set.gameWinner > set.gameLoser ? "🏆" : ""}
-              </td>
+              {hasPoints && (
+                <td className="py-1.5 pr-2 font-semibold whitespace-nowrap">
+                  {setPoints[index]
+                    ? `${setPoints[index].gameWinner}-${setPoints[index].gameLoser} ${
+                        setPoints[index].gameWinner > setPoints[index].gameLoser ? "🏆" : ""
+                      }`
+                    : "–"}
+                </td>
+              )}
               <td className="py-1.5 truncate max-w-[8rem]">
-                {set.gameWinnerSide ? badSideName(set.gameWinnerSide, winnerName, loserName) : "–"}
+                {side ? badSideName(side, winnerName, loserName) : "–"}
               </td>
             </tr>
           ))}
         </tbody>
       </table>
       <p className="mt-2 text-xs opacity-70">
-        The score is from the game winner's side. The bad side is the worse side of the table, and "Equal" means the 2
-        sides are equally good.
+        {hasPoints && "The score is from the game winner's side. "}
+        The bad side is the worse side of the table, and "Equal" means the 2 sides are equally good.
       </p>
     </div>
   );

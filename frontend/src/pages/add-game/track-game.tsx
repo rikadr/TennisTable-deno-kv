@@ -218,12 +218,16 @@ export const TrackGamePage: React.FC = () => {
         },
         setPoints:
           setPointsForValidation.length > 0
-            ? setPointsForValidation.map((set, index) => ({
+            ? setPointsForValidation.map((set) => ({
                 gameWinner: player1 === winner ? set.player1 : set.player2,
                 gameLoser: player1 === winner ? set.player2 : set.player1,
-                gameWinnerSide: gameWinnerSideOfBadSide(matchData.badSides[index] ?? null, player1 === winner ? 1 : 2),
               }))
             : undefined,
+        gameWinnerSides: matchData.badSides.some((side) => side !== null)
+          ? setPointsForValidation.map((_, index) =>
+              gameWinnerSideOfBadSide(matchData.badSides[index] ?? null, player1 === winner ? 1 : 2),
+            )
+          : undefined,
         pointSequences: trackingData?.pointSequences,
         tracking: trackingData?.tracking,
       },

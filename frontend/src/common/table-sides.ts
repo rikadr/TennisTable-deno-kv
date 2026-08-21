@@ -6,7 +6,7 @@
  * set, but not every pair does it. While a game is tracked or entered the side
  * is kept as the player slot that has the bad side. When the game is saved each
  * set's side is re-encoded from the game winner's perspective, the same way the
- * point sequences are, onto the set's `setPoints` entry.
+ * point sequences are, into the `gameWinnerSides` list of the GAME_SCORE event.
  */
 
 import { Server } from "./serve-tracker";
@@ -19,9 +19,9 @@ import { Server } from "./serve-tracker";
 export type BadSide = 1 | 2 | "neutral" | null;
 
 /**
- * The side the game winner had in one set, as the `gameWinnerSide` of a
- * `setPoints` entry of a GAME_SCORE event: "G" = the good side, "B" = the bad
- * side, "N" = the 2 sides are equally good.
+ * The side the game winner had in one set, as one entry of the
+ * `gameWinnerSides` list of a GAME_SCORE event: "G" = the good side, "B" = the
+ * bad side, "N" = the 2 sides are equally good.
  */
 export type WinnerSide = "G" | "B" | "N";
 
@@ -37,19 +37,19 @@ export function nextSetBadSide(badSide: BadSide): BadSide {
 }
 
 /**
- * Encodes the bad side of one set from the game winner's perspective, or
- * undefined when the set has no recorded side. Each set is on its own, so the
- * players can record the sides they remember and leave the rest out.
+ * Encodes the bad side of one set from the game winner's perspective, or null
+ * when the set has no recorded side. Each set is on its own, so the players
+ * can record the sides they remember and leave the rest out.
  */
-export function gameWinnerSideOfBadSide(badSide: BadSide, gameWinnerSlot: Server): WinnerSide | undefined {
-  if (badSide === null) return undefined;
+export function gameWinnerSideOfBadSide(badSide: BadSide, gameWinnerSlot: Server): WinnerSide | null {
+  if (badSide === null) return null;
   if (badSide === "neutral") return "N";
   return badSide === gameWinnerSlot ? "B" : "G";
 }
 
 /** The inverse of `gameWinnerSideOfBadSide`: the player slot that had the bad side. */
-export function badSideOfGameWinnerSide(side: WinnerSide | undefined, gameWinnerSlot: Server): BadSide {
-  if (side === undefined) return null;
+export function badSideOfGameWinnerSide(side: WinnerSide | null | undefined, gameWinnerSlot: Server): BadSide {
+  if (side === null || side === undefined) return null;
   if (side === "N") return "neutral";
   const gameLoserSlot: Server = gameWinnerSlot === 1 ? 2 : 1;
   return side === "B" ? gameWinnerSlot : gameLoserSlot;

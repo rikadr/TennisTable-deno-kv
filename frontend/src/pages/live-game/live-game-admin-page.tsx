@@ -277,15 +277,16 @@ export const LiveGameAdminPage: React.FC = () => {
         setsWon: { gameWinner: winnerSets, gameLoser: loserSets },
         setPoints:
           localState!.completedSets.length > 0
-            ? localState!.completedSets.map((set, index) => ({
+            ? localState!.completedSets.map((set) => ({
                 gameWinner: player1Won ? set.player1 : set.player2,
                 gameLoser: player1Won ? set.player2 : set.player1,
-                gameWinnerSide: gameWinnerSideOfBadSide(
-                  localState!.completedSetBadSides[index] ?? null,
-                  player1Won ? 1 : 2,
-                ),
               }))
             : undefined,
+        gameWinnerSides: localState!.completedSetBadSides.some((side) => side !== null)
+          ? localState!.completedSets.map((_, index) =>
+              gameWinnerSideOfBadSide(localState!.completedSetBadSides[index] ?? null, player1Won ? 1 : 2),
+            )
+          : undefined,
         pointSequences: trackingData?.pointSequences,
         tracking: trackingData?.tracking,
       },

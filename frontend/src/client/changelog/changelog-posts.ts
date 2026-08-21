@@ -56,10 +56,10 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
         "The side locks with the first point of the set, the same as the first server. After each set the tracker moves the bad side to the other player, because the players usually change sides. Correct it at 0-0 when the players keep the same side.",
       ),
       text(
-        "The add game form has the same selector below the points of each set. Select the side for the sets you remember, and leave the other sets empty. The sides need the individual set points.",
+        "The add game form has the same selector below the points of each set. Select the side for the sets you remember, and leave the other sets empty. The sides do not need the set points — the sets won are enough.",
       ),
       text(
-        'The `GAME_SCORE` event stores the side of each set on its `setPoints` entry, as `gameWinnerSide`: "G" for the good side, "B" for the bad side and "N" for 2 equal sides. A set without a recorded side stores nothing.',
+        'The `GAME_SCORE` event stores one side per set in `gameWinnerSides`, from the side of the game winner: "G" for the good side, "B" for the bad side, "N" for 2 equal sides and null for a set nobody recorded. The list is independent of the set points.',
       ),
       text(
         "The game details page shows the side of every set, also for a game without tracking data. The statistics page shows what the bad side costs: the Games tab has a card with the share of the sets and the points that the player on the bad side wins, over all games that record the sides.",

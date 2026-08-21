@@ -188,18 +188,19 @@ export const GameDetailsPage: React.FC = () => {
               <SetBreakdownTable
                 tracking={game.score.tracking}
                 pointSequences={game.score.pointSequences}
-                setPoints={game.score.setPoints}
+                gameWinnerSides={game.score.gameWinnerSides}
                 winnerName={context.playerName(game.winner)}
                 loserName={context.playerName(game.loser)}
               />
             </div>
           )}
 
-          {/* A game entered by hand can still record the sides of the table
-              next to its set points */}
-          {!game.score?.tracking && game.score?.setPoints && (
+          {/* A game entered by hand can still record the sides of the table,
+              with or without the points of each set */}
+          {!game.score?.tracking && game.score?.gameWinnerSides && (
             <div className="px-2 xs:px-4 pb-3">
               <SetSidesTable
+                gameWinnerSides={game.score.gameWinnerSides}
                 setPoints={game.score.setPoints}
                 winnerName={context.playerName(game.winner)}
                 loserName={context.playerName(game.loser)}

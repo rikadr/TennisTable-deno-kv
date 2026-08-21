@@ -118,8 +118,10 @@ const SetPoints: React.FC<{
               <SetPointsInput playerId={player2} playerIndex="player2" setIndex={index} setPoints={setPoints} />
             </div>
             {/* The players often remember who had the worse side of the table.
-                One press per set records it, and it needs the set points. */}
-            <div className="pb-1">
+                One press per set records it, with or without the set points.
+                The points row overflows its fixed height, so the margin keeps
+                the pills clear of the inputs. */}
+            <div className="mt-3 pb-1">
               <TableSidePicker
                 badSide={set.badSide}
                 player1Name={context.playerName(player1)}

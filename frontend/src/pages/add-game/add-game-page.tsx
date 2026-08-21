@@ -91,11 +91,8 @@ export const AddGamePageV2: React.FC = () => {
       return;
     }
 
-    // The side of a set is stored on its set points, so it cannot travel alone.
-    if (setPointsAreSet === false && setPoints.some((set) => set.badSide !== null)) {
-      setValidationError("The table sides need the individual set points. Add the points or remove the sides.");
-      return;
-    }
+    // The sides are independent of the points: only the sets won are needed.
+    const sidesAreSet = setPoints.some((set) => set.badSide !== null);
 
     const gameScoreEvent: GameScore = {
       type: EventTypeEnum.GAME_SCORE,
@@ -110,8 +107,10 @@ export const AddGamePageV2: React.FC = () => {
           ? setPoints.map((set) => ({
               gameWinner: player1 === winner ? set.player1! : set.player2!,
               gameLoser: player1 === winner ? set.player2! : set.player1!,
-              gameWinnerSide: gameWinnerSideOfBadSide(set.badSide, player1 === winner ? 1 : 2),
             }))
+          : undefined,
+        gameWinnerSides: sidesAreSet
+          ? setPoints.map((set) => gameWinnerSideOfBadSide(set.badSide, player1 === winner ? 1 : 2))
           : undefined,
       },
     };

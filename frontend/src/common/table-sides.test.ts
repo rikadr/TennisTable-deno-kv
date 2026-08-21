@@ -33,9 +33,9 @@ describe("gameWinnerSideOfBadSide", () => {
     expect(gameWinnerSideOfBadSide("neutral", 2)).toBe("N");
   });
 
-  it("returns undefined for a set with no recorded side", () => {
-    expect(gameWinnerSideOfBadSide(null, 1)).toBeUndefined();
-    expect(gameWinnerSideOfBadSide(null, 2)).toBeUndefined();
+  it("returns null for a set with no recorded side", () => {
+    expect(gameWinnerSideOfBadSide(null, 1)).toBeNull();
+    expect(gameWinnerSideOfBadSide(null, 2)).toBeNull();
   });
 });
 

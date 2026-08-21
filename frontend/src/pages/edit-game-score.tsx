@@ -20,14 +20,15 @@ export const EditGameSore: React.FC = () => {
   const [winnerSets, setWinnerSets] = useState(game?.score?.setsWon.gameWinner ?? 0);
   const [loserSets, setLoserSets] = useState(game?.score?.setsWon.gameLoser ?? 0);
   // Player 1 of the form is the game winner, so the winner's side decodes
-  // against slot 1.
-  const [setPoints, setSetPoints] = useState<ManualSetPoints[]>(
-    game?.score?.setPoints?.map(({ gameWinner, gameLoser, gameWinnerSide }) => ({
-      player1: gameWinner,
-      player2: gameLoser,
-      badSide: badSideOfGameWinnerSide(gameWinnerSide, 1),
-    })) ?? [],
-  );
+  // against slot 1. The sides list covers every set, with or without points.
+  const [setPoints, setSetPoints] = useState<ManualSetPoints[]>(() => {
+    const totalSets = (game?.score?.setsWon.gameWinner ?? 0) + (game?.score?.setsWon.gameLoser ?? 0);
+    return Array.from({ length: totalSets }, (_, index) => ({
+      player1: game?.score?.setPoints?.[index]?.gameWinner,
+      player2: game?.score?.setPoints?.[index]?.gameLoser,
+      badSide: badSideOfGameWinnerSide(game?.score?.gameWinnerSides?.[index], 1),
+    }));
+  });
   const [validationError, setValidationError] = useState("");
 
   const invalidScore = (winnerSets === loserSets && winnerSets > 0) || loserSets > winnerSets;
@@ -36,10 +37,9 @@ export const EditGameSore: React.FC = () => {
     loserSets === game?.score?.setsWon.gameLoser &&
     setPoints.every(({ player1, player2, badSide }, index) => {
       return (
-        game.score?.setPoints &&
-        game.score.setPoints[index].gameWinner === player1 &&
-        game.score.setPoints[index].gameLoser === player2 &&
-        game.score.setPoints[index].gameWinnerSide === gameWinnerSideOfBadSide(badSide, 1)
+        game.score?.setPoints?.[index]?.gameWinner === player1 &&
+        game.score?.setPoints?.[index]?.gameLoser === player2 &&
+        (game.score?.gameWinnerSides?.[index] ?? null) === gameWinnerSideOfBadSide(badSide, 1)
       );
     });
 
@@ -59,11 +59,8 @@ export const EditGameSore: React.FC = () => {
       return;
     }
 
-    // The side of a set is stored on its set points, so it cannot travel alone.
-    if (setPointsAreSet === false && setPoints.some((set) => set.badSide !== null)) {
-      setValidationError("The table sides need the individual set points. Add the points or remove the sides.");
-      return;
-    }
+    // The sides are independent of the points: only the sets won are needed.
+    const sidesAreSet = setPoints.some((set) => set.badSide !== null);
 
     const gameScoreEvent: GameScore = {
       type: EventTypeEnum.GAME_SCORE,
@@ -72,12 +69,9 @@ export const EditGameSore: React.FC = () => {
       data: {
         setsWon: { gameWinner: winnerSets, gameLoser: loserSets },
         setPoints: setPointsAreSet
-          ? setPoints.map((set) => ({
-              gameWinner: set.player1!,
-              gameLoser: set.player2!,
-              gameWinnerSide: gameWinnerSideOfBadSide(set.badSide, 1),
-            }))
+          ? setPoints.map((set) => ({ gameWinner: set.player1!, gameLoser: set.player2! }))
           : undefined,
+        gameWinnerSides: sidesAreSet ? setPoints.map((set) => gameWinnerSideOfBadSide(set.badSide, 1)) : undefined,
       },
     };
 

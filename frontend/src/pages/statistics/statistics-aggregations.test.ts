@@ -792,18 +792,13 @@ describe("trackedLevelStats", () => {
 describe("tableSideStats", () => {
   /**
    * A game with per-set points and a recorded side per set — one char of
-   * `winnerSides` per set, or no side where the string ends. The game has no
+   * `winnerSides` per set, or a null where the string ends. The game has no
    * tracking data, the way a game entered by hand records its sides.
    */
   function sidedGame(pointSequences: string[], winnerSides?: string): Game {
-    const setPoints = pointSequences.map((sequence, index) => {
+    const setPoints = pointSequences.map((sequence) => {
       const winner = sequence.split("").filter((point) => point === "W").length;
-      const side = winnerSides?.[index] as "G" | "B" | "N" | undefined;
-      return {
-        gameWinner: winner,
-        gameLoser: sequence.length - winner,
-        ...(side ? { gameWinnerSide: side } : {}),
-      };
+      return { gameWinner: winner, gameLoser: sequence.length - winner };
     });
     const setsWon = setPoints.reduce(
       (sets, set) =>
@@ -812,7 +807,16 @@ describe("tableSideStats", () => {
           : { gameWinner: sets.gameWinner, gameLoser: sets.gameLoser + 1 },
       { gameWinner: 0, gameLoser: 0 },
     );
-    return game({ score: { setsWon, setPoints } });
+    const gameWinnerSides = pointSequences.map(
+      (_, index) => (winnerSides?.[index] as "G" | "B" | "N" | undefined) ?? null,
+    );
+    return game({
+      score: {
+        setsWon,
+        setPoints,
+        gameWinnerSides: winnerSides === undefined ? undefined : gameWinnerSides,
+      },
+    });
   }
 
   /** 11-2 to the game winner. */
@@ -876,7 +880,24 @@ describe("tableSideStats", () => {
     expect(stats.pointsWonOnTheBadSide).toBeCloseTo((11 / 13) * 100);
   });
 
-  it("measures the coverage over the games with set points only", () => {
+  it("counts a game that records the sides without the set points", () => {
+    // Sets won 2-1 with sides but no points: the game-level share works, and
+    // the set and point shares have nothing to read.
+    const noPoints = game({
+      score: { setsWon: { gameWinner: 2, gameLoser: 1 }, gameWinnerSides: ["B", "G", "B"] },
+    });
+
+    const stats = tableSideStats([noPoints])!;
+
+    expect(stats.sidesRecorded).toBe(100);
+    expect(stats.neutralSets).toBe(0);
+    expect(stats.setsWonOnTheBadSide).toBeUndefined();
+    expect(stats.pointsWonOnTheBadSide).toBeUndefined();
+    // The game winner had the bad side in 2 of the 3 sets and won the game.
+    expect(stats.wonWithMoreBadSideSets).toBe(100);
+  });
+
+  it("measures the coverage over the games with a score only", () => {
     const played = [
       sidedGame([SET_TO_THE_WINNER], "B"),
       sidedGame([SET_TO_THE_WINNER]),
