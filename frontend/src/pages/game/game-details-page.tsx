@@ -11,7 +11,7 @@ import { Fraction } from "../../client/client-db/predictions";
 import { WinPercentGraph } from "../add-game/win-percent-graph";
 import { replayWinPercentHistory } from "./game-win-replay";
 import { pointSituations, setProgressions } from "./game-tracking-stats";
-import { SetBreakdownTable, TrackingStats } from "./game-tracking-panels";
+import { SetBreakdownTable, SetSidesTable, TrackingStats } from "./game-tracking-panels";
 import { SetScoreGraphs } from "./set-score-graphs";
 import { PointSituationRadar } from "./point-situation-radar";
 
@@ -188,6 +188,19 @@ export const GameDetailsPage: React.FC = () => {
               <SetBreakdownTable
                 tracking={game.score.tracking}
                 pointSequences={game.score.pointSequences}
+                setPoints={game.score.setPoints}
+                winnerName={context.playerName(game.winner)}
+                loserName={context.playerName(game.loser)}
+              />
+            </div>
+          )}
+
+          {/* A game entered by hand can still record the sides of the table
+              next to its set points */}
+          {!game.score?.tracking && game.score?.setPoints && (
+            <div className="px-2 xs:px-4 pb-3">
+              <SetSidesTable
+                setPoints={game.score.setPoints}
                 winnerName={context.playerName(game.winner)}
                 loserName={context.playerName(game.loser)}
               />

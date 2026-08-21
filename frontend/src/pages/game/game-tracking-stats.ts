@@ -6,9 +6,9 @@
  * previous point, so anything absolute is rebuilt by summing them.
  */
 
-import { GameTracking } from "../../client/client-db/event-store/event-types";
+import { GameScore, GameTracking } from "../../client/client-db/event-store/event-types";
 import { getServeInfo, Server } from "../../common/serve-tracker";
-import { WinnerSide, winnerSideOfSet } from "../../common/table-sides";
+import { WinnerSide } from "../../common/table-sides";
 
 const TENTH_MS = 100;
 
@@ -68,9 +68,14 @@ export type SetBreakdown = {
 /**
  * One row per set: the score, who served it first, and how long it took. The
  * first delta of a set is the break before it, so it is the break time and not
- * part of the duration of the set.
+ * part of the duration of the set. The side of each set comes from its
+ * `setPoints` entry, where the projector puts it for old and new games alike.
  */
-export function setBreakdown(pointSequences: string[], tracking: GameTracking): SetBreakdown[] {
+export function setBreakdown(
+  pointSequences: string[],
+  tracking: GameTracking,
+  setPoints: GameScore["data"]["setPoints"],
+): SetBreakdown[] {
   return pointSequences.map((sequence, index) => {
     const deltas = tracking.pointDeltas[index] ?? [];
     const gaps = deltas.slice(1);
@@ -80,7 +85,7 @@ export function setBreakdown(pointSequences: string[], tracking: GameTracking): 
       points: { winner: winnerPoints, loser: sequence.length - winnerPoints },
       wonByGameWinner: winnerPoints > sequence.length - winnerPoints,
       firstServer: tracking.firstServers[index] === "W" ? "W" : "L",
-      winnerSide: winnerSideOfSet(tracking.winnerSides, index),
+      winnerSide: setPoints?.[index]?.gameWinnerSide,
       durationMs: gaps.reduce((sum, gap) => sum + gap, 0) * TENTH_MS,
       breakBeforeMs: (deltas[0] ?? 0) * TENTH_MS,
       longestPointGapMs: gaps.length === 0 ? 0 : Math.max(...gaps) * TENTH_MS,

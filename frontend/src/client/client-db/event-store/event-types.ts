@@ -1,3 +1,5 @@
+import { WinnerSide } from "../../../common/table-sides";
+
 export enum EventTypeEnum {
   // Player events
   PLAYER_CREATED = "PLAYER_CREATED",
@@ -65,10 +67,12 @@ export type GameTracking = {
    */
   firstServers: string;
   /**
-   * Which side of the table the game winner had in each set, one char per set:
-   * "G" = the good side, "B" = the bad side, "N" = the 2 sides are equally
-   * good. The game loser had the other side. Left out when the sides were not
-   * recorded, so an older game keeps the rest of its tracking data.
+   * The old location of the table sides, one char per set: "G", "B" or "N"
+   * from the game winner's perspective. New events store the side of each set
+   * on its `setPoints` entry as `gameWinnerSide` instead, so any game with set
+   * points can record the sides, not only a tracked one. Kept because stored
+   * events are immutable — the projector moves it onto `setPoints` when it
+   * projects an old event.
    */
   winnerSides?: string;
   /**
@@ -82,7 +86,17 @@ export type GameScore = GenericEvent<
   EventTypeEnum.GAME_SCORE,
   {
     setsWon: { gameWinner: number; gameLoser: number };
-    setPoints?: { gameWinner: number; gameLoser: number }[];
+    setPoints?: {
+      gameWinner: number;
+      gameLoser: number;
+      /**
+       * Which side of the table the game winner had in this set: "G" = the
+       * good side, "B" = the bad side, "N" = the 2 sides are equally good. The
+       * game loser had the other side. Left out when nobody recorded the side
+       * of this set — the players enter what they remember, set by set.
+       */
+      gameWinnerSide?: WinnerSide;
+    }[];
     /**
      * Point-by-point log, one string per set in the order the sets were played.
      * Each char is one point in the order it was scored: "W" = point to the game

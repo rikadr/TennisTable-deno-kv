@@ -33,6 +33,54 @@ type TableSideDisplayProps = {
  * the set is 0-0 a press on the selected option removes it again, so a set the
  * operator does not know goes back to no record.
  */
+/**
+ * The selectable pill row on its own: who has the bad side, "Equal" for 2
+ * equally good sides, and a press on the selected option to remove it again.
+ * The trackers show it while the current set is 0-0, and the add game form
+ * shows it for every set the players enter by hand.
+ */
+export const TableSidePicker: React.FC<{
+  badSide: BadSide;
+  player1Name: string;
+  player2Name: string;
+  player1Color: string;
+  player2Color: string;
+  onSelect: (badSide: BadSide) => void;
+}> = ({ badSide, player1Name, player2Name, player1Color, player2Color, onSelect }) => {
+  const toggle = (option: BadSide) => onSelect(badSide === option ? null : option);
+  return (
+    <div className="flex flex-wrap items-center justify-center gap-2">
+      <span className="text-xs text-gray-400">😵 Bad side:</span>
+      <button
+        onClick={() => toggle(1)}
+        title={`${player1Name} has the bad side of the table`}
+        className={classNames(PILL, badSide === 1 ? "hover:brightness-95" : UNSELECTED_PILL)}
+        style={badSide === 1 ? fill(player1Color) : undefined}
+      >
+        {player1Name}
+      </button>
+      <button
+        onClick={() => toggle("neutral")}
+        title="Both sides of the table are equally good"
+        className={classNames(
+          PILL,
+          badSide === "neutral" ? "bg-gray-700 text-white hover:brightness-125" : UNSELECTED_PILL,
+        )}
+      >
+        Equal
+      </button>
+      <button
+        onClick={() => toggle(2)}
+        title={`${player2Name} has the bad side of the table`}
+        className={classNames(PILL, badSide === 2 ? "hover:brightness-95" : UNSELECTED_PILL)}
+        style={badSide === 2 ? fill(player2Color) : undefined}
+      >
+        {player2Name}
+      </button>
+    </div>
+  );
+};
+
 export const TableSideDisplay: React.FC<TableSideDisplayProps> = ({
   currentSet,
   badSide,
@@ -46,37 +94,15 @@ export const TableSideDisplay: React.FC<TableSideDisplayProps> = ({
   const label = badSideLabel(badSide, player1Name, player2Name);
 
   if (onSelect && isSetEmpty) {
-    const toggle = (option: BadSide) => onSelect(badSide === option ? null : option);
     return (
-      <div className="flex flex-wrap items-center justify-center gap-2">
-        <span className="text-xs text-gray-400">😵 Bad side:</span>
-        <button
-          onClick={() => toggle(1)}
-          title={`${player1Name} has the bad side of the table`}
-          className={classNames(PILL, badSide === 1 ? "hover:brightness-95" : UNSELECTED_PILL)}
-          style={badSide === 1 ? fill(player1Color) : undefined}
-        >
-          {player1Name}
-        </button>
-        <button
-          onClick={() => toggle("neutral")}
-          title="Both sides of the table are equally good"
-          className={classNames(
-            PILL,
-            badSide === "neutral" ? "bg-gray-700 text-white hover:brightness-125" : UNSELECTED_PILL,
-          )}
-        >
-          Equal
-        </button>
-        <button
-          onClick={() => toggle(2)}
-          title={`${player2Name} has the bad side of the table`}
-          className={classNames(PILL, badSide === 2 ? "hover:brightness-95" : UNSELECTED_PILL)}
-          style={badSide === 2 ? fill(player2Color) : undefined}
-        >
-          {player2Name}
-        </button>
-      </div>
+      <TableSidePicker
+        badSide={badSide}
+        player1Name={player1Name}
+        player2Name={player2Name}
+        player1Color={player1Color}
+        player2Color={player2Color}
+        onSelect={onSelect}
+      />
     );
   }
 

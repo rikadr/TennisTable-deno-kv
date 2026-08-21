@@ -790,11 +790,20 @@ describe("trackedLevelStats", () => {
 });
 
 describe("tableSideStats", () => {
-  /** A tracked game with a recorded side per set, or none when sides is undefined. */
+  /**
+   * A game with per-set points and a recorded side per set — one char of
+   * `winnerSides` per set, or no side where the string ends. The game has no
+   * tracking data, the way a game entered by hand records its sides.
+   */
   function sidedGame(pointSequences: string[], winnerSides?: string): Game {
-    const setPoints = pointSequences.map((sequence) => {
+    const setPoints = pointSequences.map((sequence, index) => {
       const winner = sequence.split("").filter((point) => point === "W").length;
-      return { gameWinner: winner, gameLoser: sequence.length - winner };
+      const side = winnerSides?.[index] as "G" | "B" | "N" | undefined;
+      return {
+        gameWinner: winner,
+        gameLoser: sequence.length - winner,
+        ...(side ? { gameWinnerSide: side } : {}),
+      };
     });
     const setsWon = setPoints.reduce(
       (sets, set) =>
@@ -803,23 +812,7 @@ describe("tableSideStats", () => {
           : { gameWinner: sets.gameWinner, gameLoser: sets.gameLoser + 1 },
       { gameWinner: 0, gameLoser: 0 },
     );
-    return game({
-      score: {
-        setsWon,
-        setPoints,
-        pointSequences,
-        tracking: {
-          version: 1,
-          source: "track-game",
-          startedAt: 1,
-          pointDeltas: pointSequences.map((sequence) => new Array(sequence.length).fill(100)),
-          endedAfter: 10,
-          firstServers: "W".repeat(pointSequences.length),
-          winnerSides,
-          corrections: 0,
-        },
-      },
-    });
+    return game({ score: { setsWon, setPoints } });
   }
 
   /** 11-2 to the game winner. */
@@ -827,7 +820,7 @@ describe("tableSideStats", () => {
   /** 11-2 to the game loser. */
   const SET_TO_THE_LOSER = "LLLLLLLLLLLWW";
 
-  it("stays silent when no tracked game records the sides", () => {
+  it("stays silent when no game records the sides", () => {
     expect(tableSideStats([...games(10), sidedGame([SET_TO_THE_WINNER])])).toBeUndefined();
   });
 
@@ -873,7 +866,17 @@ describe("tableSideStats", () => {
     expect(tableSideStats([even])!.wonWithMoreBadSideSets).toBeUndefined();
   });
 
-  it("measures the coverage over the tracked games only", () => {
+  it("counts only the sets with a recorded side when a game records some", () => {
+    // Only set 1 has a side: the game winner is on the bad side and wins it.
+    const played = [sidedGame([SET_TO_THE_WINNER, SET_TO_THE_LOSER], "B")];
+
+    const stats = tableSideStats(played)!;
+
+    expect(stats.setsWonOnTheBadSide).toBe(100);
+    expect(stats.pointsWonOnTheBadSide).toBeCloseTo((11 / 13) * 100);
+  });
+
+  it("measures the coverage over the games with set points only", () => {
     const played = [
       sidedGame([SET_TO_THE_WINNER], "B"),
       sidedGame([SET_TO_THE_WINNER]),

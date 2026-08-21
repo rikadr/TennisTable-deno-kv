@@ -60,9 +60,9 @@ export type GameTracking = {
   /** Who served the first point of each set: "W" = game winner, "L" = game loser. */
   firstServers: string;
   /**
-   * Which side of the table the game winner had in each set: "G" = the good
-   * side, "B" = the bad side, "N" = the 2 sides are equally good. Left out when
-   * the sides were not recorded.
+   * The old location of the table sides, one char per set: "G", "B" or "N"
+   * from the game winner's perspective. New events store the side of each set
+   * on its `setPoints` entry as `gameWinnerSide` instead.
    */
   winnerSides?: string;
   /** How many points were undone while tracking. */
@@ -73,7 +73,16 @@ export type GameScore = GenericEvent<
   EventTypeEnum.GAME_SCORE,
   {
     setsWon: { gameWinner: number; gameLoser: number };
-    setPoints?: { gameWinner: number; gameLoser: number }[];
+    setPoints?: {
+      gameWinner: number;
+      gameLoser: number;
+      /**
+       * Which side of the table the game winner had in this set: "G" = the
+       * good side, "B" = the bad side, "N" = the 2 sides are equally good.
+       * Left out when nobody recorded the side of this set.
+       */
+      gameWinnerSide?: "G" | "B" | "N";
+    }[];
     /**
      * Point-by-point log, one string per set in the order the sets were played.
      * Each char is one point in the order it was scored: "W" = point to the game

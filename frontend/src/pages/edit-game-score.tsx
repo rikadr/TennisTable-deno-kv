@@ -2,8 +2,9 @@ import { useEffect, useState } from "react";
 import { classNames } from "../common/class-names";
 import { useTennisParams } from "../hooks/use-tennis-params";
 import { useEventDbContext } from "../wrappers/event-db-context";
-import { StepAddScore } from "./add-game/step-add-score";
+import { ManualSetPoints, StepAddScore } from "./add-game/step-add-score";
 import { EventTypeEnum, GameScore } from "../client/client-db/event-store/event-types";
+import { badSideOfGameWinnerSide, gameWinnerSideOfBadSide } from "../common/table-sides";
 import { useEventMutation } from "../hooks/use-event-mutation";
 import { queryClient } from "../common/query-client";
 import { useNavigate } from "react-router-dom";
@@ -18,8 +19,14 @@ export const EditGameSore: React.FC = () => {
 
   const [winnerSets, setWinnerSets] = useState(game?.score?.setsWon.gameWinner ?? 0);
   const [loserSets, setLoserSets] = useState(game?.score?.setsWon.gameLoser ?? 0);
-  const [setPoints, setSetPoints] = useState<{ player1?: number; player2?: number }[]>(
-    game?.score?.setPoints?.map(({ gameWinner, gameLoser }) => ({ player1: gameWinner, player2: gameLoser })) ?? [],
+  // Player 1 of the form is the game winner, so the winner's side decodes
+  // against slot 1.
+  const [setPoints, setSetPoints] = useState<ManualSetPoints[]>(
+    game?.score?.setPoints?.map(({ gameWinner, gameLoser, gameWinnerSide }) => ({
+      player1: gameWinner,
+      player2: gameLoser,
+      badSide: badSideOfGameWinnerSide(gameWinnerSide, 1),
+    })) ?? [],
   );
   const [validationError, setValidationError] = useState("");
 
@@ -27,11 +34,12 @@ export const EditGameSore: React.FC = () => {
   const unchangedScore =
     winnerSets === game?.score?.setsWon.gameWinner &&
     loserSets === game?.score?.setsWon.gameLoser &&
-    setPoints.every(({ player1, player2 }, index) => {
+    setPoints.every(({ player1, player2, badSide }, index) => {
       return (
         game.score?.setPoints &&
         game.score.setPoints[index].gameWinner === player1 &&
-        game.score.setPoints[index].gameLoser === player2
+        game.score.setPoints[index].gameLoser === player2 &&
+        game.score.setPoints[index].gameWinnerSide === gameWinnerSideOfBadSide(badSide, 1)
       );
     });
 
@@ -51,6 +59,12 @@ export const EditGameSore: React.FC = () => {
       return;
     }
 
+    // The side of a set is stored on its set points, so it cannot travel alone.
+    if (setPointsAreSet === false && setPoints.some((set) => set.badSide !== null)) {
+      setValidationError("The table sides need the individual set points. Add the points or remove the sides.");
+      return;
+    }
+
     const gameScoreEvent: GameScore = {
       type: EventTypeEnum.GAME_SCORE,
       time: now,
@@ -58,7 +72,11 @@ export const EditGameSore: React.FC = () => {
       data: {
         setsWon: { gameWinner: winnerSets, gameLoser: loserSets },
         setPoints: setPointsAreSet
-          ? setPoints.map((set) => ({ gameWinner: set.player1!, gameLoser: set.player2! }))
+          ? setPoints.map((set) => ({
+              gameWinner: set.player1!,
+              gameLoser: set.player2!,
+              gameWinnerSide: gameWinnerSideOfBadSide(set.badSide, 1),
+            }))
           : undefined,
       },
     };
@@ -89,9 +107,10 @@ export const EditGameSore: React.FC = () => {
     } else if (setPoints.length < totalSets) {
       // Set added
       const setsAdded = totalSets - setPoints.length;
-      const newSets = new Array<{ player1?: number; player2?: number }>(setsAdded).fill({
+      const newSets = new Array<ManualSetPoints>(setsAdded).fill({
         player1: undefined,
         player2: undefined,
+        badSide: null,
       });
       setSetPoints((prev) => [...prev, ...newSets]);
     } else if (setPoints.length > totalSets) {

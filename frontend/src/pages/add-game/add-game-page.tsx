@@ -5,7 +5,8 @@ import { StepIndicator } from "./step-indicator";
 import { StepNavigator } from "./step-navigator";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { StepSelectWinner } from "./step-select-winner";
-import { StepAddScore } from "./step-add-score";
+import { ManualSetPoints, StepAddScore } from "./step-add-score";
+import { gameWinnerSideOfBadSide } from "../../common/table-sides";
 import { EventTypeEnum, GameCreated, GameScore } from "../../client/client-db/event-store/event-types";
 import { newId } from "../../common/nani-id";
 import { useEventMutation } from "../../hooks/use-event-mutation";
@@ -30,7 +31,7 @@ export const AddGamePageV2: React.FC = () => {
   const [winner, setWinner] = useState<string | null>(null);
   const [player1Sets, setPlayer1Sets] = useState(0);
   const [player2Sets, setPlayer2Sets] = useState(0);
-  const [setPoints, setSetPoints] = useState<{ player1?: number; player2?: number }[]>([]);
+  const [setPoints, setSetPoints] = useState<ManualSetPoints[]>([]);
   const [gameSuccessfullyAdded, setGameSuccessfullyAdded] = useState(false);
   const [validationError, setValidationError] = useState("");
 
@@ -90,6 +91,12 @@ export const AddGamePageV2: React.FC = () => {
       return;
     }
 
+    // The side of a set is stored on its set points, so it cannot travel alone.
+    if (setPointsAreSet === false && setPoints.some((set) => set.badSide !== null)) {
+      setValidationError("The table sides need the individual set points. Add the points or remove the sides.");
+      return;
+    }
+
     const gameScoreEvent: GameScore = {
       type: EventTypeEnum.GAME_SCORE,
       time: gameCreatedEvent.time + 1,
@@ -103,6 +110,7 @@ export const AddGamePageV2: React.FC = () => {
           ? setPoints.map((set) => ({
               gameWinner: player1 === winner ? set.player1! : set.player2!,
               gameLoser: player1 === winner ? set.player2! : set.player1!,
+              gameWinnerSide: gameWinnerSideOfBadSide(set.badSide, player1 === winner ? 1 : 2),
             }))
           : undefined,
       },
@@ -151,9 +159,10 @@ export const AddGamePageV2: React.FC = () => {
     } else if (setPoints.length < totalSets) {
       // Set added
       const setsAdded = totalSets - setPoints.length;
-      const newSets = new Array<{ player1?: number; player2?: number }>(setsAdded).fill({
+      const newSets = new Array<ManualSetPoints>(setsAdded).fill({
         player1: undefined,
         player2: undefined,
+        badSide: null,
       });
       setSetPoints((prev) => [...prev, ...newSets]);
     } else if (setPoints.length > totalSets) {

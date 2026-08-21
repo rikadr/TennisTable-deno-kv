@@ -15,7 +15,7 @@ import { stringToColor } from "../../common/string-to-color";
 import { CARD_SURFACE, fill, panelTint, ROW_SURFACE, softFill, textOn } from "../../common/player-color-styles";
 import { getServeInfo, Server } from "../../common/serve-tracker";
 import { ServeTrackerDisplay } from "../../common/serve-tracker-display";
-import { BadSide, badSideLabel, nextSetBadSide } from "../../common/table-sides";
+import { BadSide, badSideLabel, gameWinnerSideOfBadSide, nextSetBadSide } from "../../common/table-sides";
 import { TableSideDisplay } from "../../common/table-sides-display";
 import { LiveGamePredictionCard } from "../live-game/live-game-prediction-card";
 import { computeLiveWinPrediction } from "../live-game/live-game-win-probability";
@@ -200,7 +200,6 @@ export const TrackGamePage: React.FC = () => {
       completedSets: setPointsForValidation,
       trackedSets: matchData.trackedSets,
       firstServers: matchData.firstServers,
-      badSides: matchData.badSides,
       player1IsGameWinner: player1 === winner,
       source: "track-game",
       startedAt,
@@ -219,9 +218,10 @@ export const TrackGamePage: React.FC = () => {
         },
         setPoints:
           setPointsForValidation.length > 0
-            ? setPointsForValidation.map((set) => ({
+            ? setPointsForValidation.map((set, index) => ({
                 gameWinner: player1 === winner ? set.player1 : set.player2,
                 gameLoser: player1 === winner ? set.player2 : set.player1,
+                gameWinnerSide: gameWinnerSideOfBadSide(matchData.badSides[index] ?? null, player1 === winner ? 1 : 2),
               }))
             : undefined,
         pointSequences: trackingData?.pointSequences,

@@ -1,12 +1,12 @@
 /**
- * Which side of the table the players had in each set of a tracked game.
+ * Which side of the table the players had in each set of a game.
  *
  * One side of a table is often worse than the other, because of the light, the
  * space behind it or a draught. The players usually change sides after every
- * set, but not every pair does it. While a game is tracked the side is kept as
- * the player slot that has the bad side. When the game is saved it is
- * re-encoded from the game winner's perspective, the same way the point
- * sequences are.
+ * set, but not every pair does it. While a game is tracked or entered the side
+ * is kept as the player slot that has the bad side. When the game is saved each
+ * set's side is re-encoded from the game winner's perspective, the same way the
+ * point sequences are, onto the set's `setPoints` entry.
  */
 
 import { Server } from "./serve-tracker";
@@ -19,13 +19,13 @@ import { Server } from "./serve-tracker";
 export type BadSide = 1 | 2 | "neutral" | null;
 
 /**
- * The side the game winner had in one set, as one char of the `winnerSides`
- * string of a GAME_SCORE event: "G" = the good side, "B" = the bad side,
- * "N" = the 2 sides are equally good.
+ * The side the game winner had in one set, as the `gameWinnerSide` of a
+ * `setPoints` entry of a GAME_SCORE event: "G" = the good side, "B" = the bad
+ * side, "N" = the 2 sides are equally good.
  */
 export type WinnerSide = "G" | "B" | "N";
 
-/** Every char a stored `winnerSides` string can hold. */
+/** Every char a legacy `winnerSides` string can hold. */
 export const WINNER_SIDES_PATTERN = /^[GBN]*$/;
 
 /**
@@ -40,17 +40,29 @@ export function nextSetBadSide(badSide: BadSide): BadSide {
 }
 
 /**
- * Encodes the bad side of every set from the game winner's perspective. Returns
- * undefined when a set has no recorded side, so the game keeps the rest of its
- * tracking data instead of storing a side nobody recorded.
+ * Encodes the bad side of one set from the game winner's perspective, or
+ * undefined when the set has no recorded side. Each set is on its own, so the
+ * players can record the sides they remember and leave the rest out.
  */
-export function encodeWinnerSides(badSides: BadSide[], gameWinnerSlot: Server): string | undefined {
-  if (badSides.length === 0) return undefined;
-  if (badSides.some((side) => side === null)) return undefined;
-  return badSides.map((side) => (side === "neutral" ? "N" : side === gameWinnerSlot ? "B" : "G")).join("");
+export function gameWinnerSideOfBadSide(badSide: BadSide, gameWinnerSlot: Server): WinnerSide | undefined {
+  if (badSide === null) return undefined;
+  if (badSide === "neutral") return "N";
+  return badSide === gameWinnerSlot ? "B" : "G";
 }
 
-/** The side the game winner had in one set, or undefined when it is not recorded. */
+/** The inverse of `gameWinnerSideOfBadSide`: the player slot that had the bad side. */
+export function badSideOfGameWinnerSide(side: WinnerSide | undefined, gameWinnerSlot: Server): BadSide {
+  if (side === undefined) return null;
+  if (side === "N") return "neutral";
+  const gameLoserSlot: Server = gameWinnerSlot === 1 ? 2 : 1;
+  return side === "B" ? gameWinnerSlot : gameLoserSlot;
+}
+
+/**
+ * The side the game winner had in one set of a legacy `winnerSides` string, or
+ * undefined when it is not recorded. Only the projector reads the string — it
+ * moves each char onto the set's `setPoints` entry when it projects the event.
+ */
 export function winnerSideOfSet(winnerSides: string | undefined, setIndex: number): WinnerSide | undefined {
   const side = winnerSides?.[setIndex];
   return side === "G" || side === "B" || side === "N" ? side : undefined;

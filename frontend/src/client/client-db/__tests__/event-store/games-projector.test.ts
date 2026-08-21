@@ -80,6 +80,44 @@ describe("GamesProjector projection", () => {
     projector.setScore(scoreEvent("game-2", score));
     expect(projector.getGameById("game-2")).toBeUndefined();
   });
+
+  it("keeps the table sides of a new event on its setPoints entries", () => {
+    const projector = new GamesProjector();
+    projector.createGame(createEvent("game-1", 1000, "player-1", "player-2"));
+    const score: GameScore["data"] = {
+      setsWon: { gameWinner: 2, gameLoser: 0 },
+      setPoints: [
+        { gameWinner: 11, gameLoser: 5, gameWinnerSide: "B" },
+        { gameWinner: 11, gameLoser: 7 },
+      ],
+    };
+
+    projector.setScore(scoreEvent("game-1", score));
+    expect(projector.getGameById("game-1")!.score).toEqual(score);
+  });
+
+  it("moves the table sides of an old event onto its setPoints entries", () => {
+    const projector = new GamesProjector();
+    projector.createGame(createEvent("game-1", 1000, "player-1", "player-2"));
+    projector.setScore(
+      scoreEvent("game-1", {
+        setsWon: { gameWinner: 2, gameLoser: 1 },
+        setPoints: [
+          { gameWinner: 11, gameLoser: 5 },
+          { gameWinner: 9, gameLoser: 11 },
+          { gameWinner: 11, gameLoser: 7 },
+        ],
+        pointSequences: ["W", "L", "W"],
+        tracking: tracking(["W", "L", "W"], { winnerSides: "GNB" }),
+      }),
+    );
+
+    expect(projector.getGameById("game-1")!.score!.setPoints).toEqual([
+      { gameWinner: 11, gameLoser: 5, gameWinnerSide: "G" },
+      { gameWinner: 9, gameLoser: 11, gameWinnerSide: "N" },
+      { gameWinner: 11, gameLoser: 7, gameWinnerSide: "B" },
+    ]);
+  });
 });
 
 describe("validateCreateGame", () => {
@@ -195,6 +233,30 @@ describe("validateScoreGame", () => {
     );
     expectInvalid(result);
     expect(result.message).toBe("Points are invalid. No sets can be tied");
+  });
+
+  it("accepts a table side on a setPoints entry, and a set without one", () => {
+    const result = projector.validateScoreGame(
+      scoreEvent("game-1", {
+        setsWon: { gameWinner: 2, gameLoser: 0 },
+        setPoints: [
+          { gameWinner: 11, gameLoser: 5, gameWinnerSide: "B" },
+          { gameWinner: 11, gameLoser: 7 },
+        ],
+      }),
+    );
+    expect(result).toEqual({ valid: true });
+  });
+
+  it("rejects a setPoints table side that is not G, B or N", () => {
+    const result = projector.validateScoreGame(
+      scoreEvent("game-1", {
+        setsWon: { gameWinner: 1, gameLoser: 0 },
+        setPoints: [{ gameWinner: 11, gameLoser: 5, gameWinnerSide: "W" as "G" }],
+      }),
+    );
+    expectInvalid(result);
+    expect(result.message).toBe("Table sides are invalid. Only 'G', 'B' and 'N' sides are allowed");
   });
 
   it("rejects set points where the loser wins as many sets as the winner", () => {

@@ -43,11 +43,11 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
     slug: "table-sides-on-tracked-games",
-    title: "Tracked games record the side of the table",
+    title: "Games record the side of the table",
     date: "2026-08-20",
     tags: ["feature-update", "technical"],
     summary:
-      "A tracked game records the player who has the bad side of the table in each set. The game details page shows the side of every set.",
+      "A game records the player who has the bad side of the table in each set. The trackers record it live, and the add game form takes it with the set points.",
     body: [
       text(
         "The game tracker and the live game admin page have a selector below the serve tracker. It gives 3 options: the first player has the bad side, the 2 sides are equally good, or the second player has the bad side.",
@@ -56,13 +56,13 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
         "The side locks with the first point of the set, the same as the first server. After each set the tracker moves the bad side to the other player, because the players usually change sides. Correct it at 0-0 when the players keep the same side.",
       ),
       text(
-        'The `GAME_SCORE` event stores one char per set, from the side of the game winner: "G" for the good side, "B" for the bad side and "N" for 2 equal sides. A game stores the sides only when every set has one.',
+        "The add game form has the same selector below the points of each set. Select the side for the sets you remember, and leave the other sets empty. The sides need the individual set points.",
       ),
       text(
-        "The set by set table on the game details page has a new Bad side column. A game tracked before this change does not show the column.",
+        'The `GAME_SCORE` event stores the side of each set on its `setPoints` entry, as `gameWinnerSide`: "G" for the good side, "B" for the bad side and "N" for 2 equal sides. A set without a recorded side stores nothing.',
       ),
       text(
-        "The statistics page shows what the bad side costs. The Games tab has a card with the share of the sets and the points that the player on the bad side wins, over all games that record the sides.",
+        "The game details page shows the side of every set, also for a game without tracking data. The statistics page shows what the bad side costs: the Games tab has a card with the share of the sets and the points that the player on the bad side wins, over all games that record the sides.",
       ),
     ],
   },
