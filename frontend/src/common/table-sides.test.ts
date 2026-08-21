@@ -1,5 +1,6 @@
 import {
   alignBadSides,
+  autoFillBadSides,
   BadSide,
   badSideLabel,
   badSideName,
@@ -17,6 +18,36 @@ describe("nextSetBadSide", () => {
   it("keeps a neutral or unrecorded set as it is", () => {
     expect(nextSetBadSide("neutral")).toBe("neutral");
     expect(nextSetBadSide(null)).toBe(null);
+  });
+});
+
+describe("autoFillBadSides", () => {
+  it("fills every set, alternating from the first picked set", () => {
+    expect(autoFillBadSides([null, null, null], 0, 1)).toEqual([1, 2, 1]);
+    expect(autoFillBadSides([null, null, null], 0, 2)).toEqual([2, 1, 2]);
+  });
+
+  it("alternates backwards as well when a later set is picked first", () => {
+    expect(autoFillBadSides([null, null, null], 1, 1)).toEqual([2, 1, 2]);
+    expect(autoFillBadSides([null, null, null, null], 2, 2)).toEqual([2, 1, 2, 1]);
+  });
+
+  it("fills every set with equal sides when equal is picked first", () => {
+    expect(autoFillBadSides([null, null, null], 1, "neutral")).toEqual(["neutral", "neutral", "neutral"]);
+  });
+
+  it("changes only the picked set once another set has a side", () => {
+    expect(autoFillBadSides([2, null, null], 1, 1)).toEqual([2, 1, null]);
+    expect(autoFillBadSides(["neutral", "neutral", "neutral"], 1, 1)).toEqual(["neutral", 1, "neutral"]);
+  });
+
+  it("fills again when the only set with a side is picked anew", () => {
+    expect(autoFillBadSides([1, null, null], 0, 2)).toEqual([2, 1, 2]);
+  });
+
+  it("removes only the picked set's side, and never fills on removal", () => {
+    expect(autoFillBadSides([1, 2, 1], 1, null)).toEqual([1, null, 1]);
+    expect(autoFillBadSides([1, null, null], 0, null)).toEqual([null, null, null]);
   });
 });
 

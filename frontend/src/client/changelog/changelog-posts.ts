@@ -56,7 +56,7 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
         "The side locks with the first point of the set, the same as the first server. After each set the tracker moves the bad side to the other player, because the players usually change sides. Correct it at 0-0 when the players keep the same side.",
       ),
       text(
-        "The add game form and the edit score page have the same selector below the points of each set. Select the side for the sets you remember, and leave the other sets empty. The sides do not need the set points — the sets won are enough. An edit that changes only the sides keeps the point log of a tracked game.",
+        "The add game form and the edit score page have the same selector below the points of each set. The first side you select fills all the sets, and the other sets alternate from it. A selection of equal sides fills every set with equal sides. Correct the sets that did not follow the pattern, or remove the sides you do not know. The sides do not need the set points — the sets won are enough. An edit that changes only the sides keeps the point log of a tracked game.",
       ),
       text(
         'The `GAME_SCORE` event stores one side per set in `gameWinnerSides`, from the side of the game winner: "G" for the good side, "B" for the bad side, "N" for 2 equal sides and null for a set nobody recorded. The list is independent of the set points.',

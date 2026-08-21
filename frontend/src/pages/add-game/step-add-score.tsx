@@ -2,7 +2,7 @@ import { useEventDbContext } from "../../wrappers/event-db-context";
 import { ProfilePicture } from "../player/profile-picture";
 import { stringToColor } from "../../common/string-to-color";
 import { classNames } from "../../common/class-names";
-import { BadSide } from "../../common/table-sides";
+import { autoFillBadSides, BadSide } from "../../common/table-sides";
 import { TableSidePicker } from "../../common/table-sides-display";
 
 /**
@@ -90,8 +90,18 @@ const SetPoints: React.FC<{
   const anyPointsSet = setPoints.setPoints.some((set) => set.player1 !== undefined || set.player2 !== undefined);
   const anySideSet = setPoints.setPoints.some((set) => set.badSide !== null);
 
+  // The first side picked fills every set, alternating from the picked one
+  // (equal fills equal everywhere). Once any other set has a side, a pick
+  // changes its own set only.
   function handleSelectSide(setIndex: number, badSide: BadSide) {
-    setPoints.setSetPoints((prev) => prev.map((set, index) => (index === setIndex ? { ...set, badSide } : set)));
+    setPoints.setSetPoints((prev) => {
+      const filled = autoFillBadSides(
+        prev.map((set) => set.badSide),
+        setIndex,
+        badSide,
+      );
+      return prev.map((set, index) => (set.badSide === filled[index] ? set : { ...set, badSide: filled[index] }));
+    });
   }
 
   return (
@@ -118,9 +128,10 @@ const SetPoints: React.FC<{
               <SetPointsInput playerId={player2} playerIndex="player2" setIndex={index} setPoints={setPoints} />
             </div>
             {/* The players often remember who had the worse side of the table.
-                One press per set records it, with or without the set points.
-                The points row overflows its fixed height, so the margin keeps
-                the pills clear of the inputs. */}
+                The first press fills every set, and after that one press per
+                set corrects it, with or without the set points. The points row
+                overflows its fixed height, so the margin keeps the pills clear
+                of the inputs. */}
             <div className="mt-3 pb-1">
               <TableSidePicker
                 badSide={set.badSide}
