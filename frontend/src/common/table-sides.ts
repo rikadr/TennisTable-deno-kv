@@ -37,6 +37,27 @@ export function nextSetBadSide(badSide: BadSide): BadSide {
 }
 
 /**
+ * The sides of every set after one set's side is picked by hand, as on the add
+ * game and edit score forms. The first pick fills the whole game: the players
+ * usually change sides after every set, so the other sets alternate from the
+ * picked set, backwards as well as forwards. "neutral" has nothing to
+ * alternate, so it fills every set. The fill only runs while every other set
+ * is empty — after that a pick changes its own set only, so a correction does
+ * not overwrite the rest. Removing a side (null) never fills.
+ */
+export function autoFillBadSides(sides: BadSide[], setIndex: number, badSide: BadSide): BadSide[] {
+  const otherSetsEmpty = sides.every((side, index) => index === setIndex || side === null);
+  if (badSide === null || otherSetsEmpty === false) {
+    return sides.map((side, index) => (index === setIndex ? badSide : side));
+  }
+  if (badSide === "neutral") {
+    return sides.map(() => "neutral");
+  }
+  const otherPlayer: BadSide = badSide === 1 ? 2 : 1;
+  return sides.map((_, index) => ((index - setIndex) % 2 === 0 ? badSide : otherPlayer));
+}
+
+/**
  * Encodes the bad side of one set from the game winner's perspective, or null
  * when the set has no recorded side. Each set is on its own, so the players
  * can record the sides they remember and leave the rest out.
