@@ -1,4 +1,3 @@
-import { WINNER_SIDES_PATTERN, winnerSideOfSet } from "../../../../common/table-sides";
 import { GameCreated, GameDeleted, GameScore, GameTracking } from "../event-types";
 import { ValidatorResponse } from "./validator-types";
 
@@ -38,17 +37,6 @@ function validateTracking(tracking: GameTracking, pointSequences: string[]): str
   if (/^[WL]*$/.test(tracking.firstServers) === false) {
     return "Tracking data is invalid. Only 'W' and 'L' first servers are allowed";
   }
-  // The legacy location of the table sides. New events store the side of each
-  // set on its setPoints entry, but an old event that has the string must
-  // still hold one side per set.
-  if (tracking.winnerSides !== undefined) {
-    if (tracking.winnerSides.length !== pointSequences.length) {
-      return "Tracking data is invalid. There must be one table side per set";
-    }
-    if (WINNER_SIDES_PATTERN.test(tracking.winnerSides) === false) {
-      return "Tracking data is invalid. Only 'G', 'B' and 'N' table sides are allowed";
-    }
-  }
   if (isCount(tracking.endedAfter) === false) {
     return "Tracking data is invalid. Ended after must be a positive whole number";
   }
@@ -59,24 +47,6 @@ function validateTracking(tracking: GameTracking, pointSequences: string[]): str
 }
 
 export type Game = { id: string; playedAt: number; winner: string; loser: string; score?: GameScore["data"] };
-
-/**
- * Moves the table sides of an old event onto its `setPoints` entries. Events
- * written before the sides moved store them as one string on the tracking
- * data, and stored events are immutable — so the projection carries the side
- * of each set where every reader looks for it: `setPoints[i].gameWinnerSide`.
- */
-function scoreWithUpliftedSides(score: GameScore["data"]): GameScore["data"] {
-  const legacySides = score.tracking?.winnerSides;
-  if (legacySides === undefined || score.setPoints === undefined) return score;
-  return {
-    ...score,
-    setPoints: score.setPoints.map((set, setIndex) => {
-      const side = winnerSideOfSet(legacySides, setIndex);
-      return side === undefined ? set : { gameWinnerSide: side, ...set };
-    }),
-  };
-}
 
 export class GamesProjector {
   #gamesMap = new Map<string, Game>();
@@ -102,7 +72,7 @@ export class GamesProjector {
 
   setScore(event: GameScore) {
     if (this.#gamesMap.has(event.stream)) {
-      this.#gamesMap.get(event.stream)!.score = scoreWithUpliftedSides(event.data);
+      this.#gamesMap.get(event.stream)!.score = event.data;
     }
   }
 

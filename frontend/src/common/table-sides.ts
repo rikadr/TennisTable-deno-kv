@@ -25,9 +25,6 @@ export type BadSide = 1 | 2 | "neutral" | null;
  */
 export type WinnerSide = "G" | "B" | "N";
 
-/** Every char a legacy `winnerSides` string can hold. */
-export const WINNER_SIDES_PATTERN = /^[GBN]*$/;
-
 /**
  * The bad side of the next set. The players change sides after every set, so
  * the bad side moves to the other player. A neutral or unrecorded set keeps its
@@ -56,16 +53,6 @@ export function badSideOfGameWinnerSide(side: WinnerSide | undefined, gameWinner
   if (side === "N") return "neutral";
   const gameLoserSlot: Server = gameWinnerSlot === 1 ? 2 : 1;
   return side === "B" ? gameWinnerSlot : gameLoserSlot;
-}
-
-/**
- * The side the game winner had in one set of a legacy `winnerSides` string, or
- * undefined when it is not recorded. Only the projector reads the string — it
- * moves each char onto the set's `setPoints` entry when it projects the event.
- */
-export function winnerSideOfSet(winnerSides: string | undefined, setIndex: number): WinnerSide | undefined {
-  const side = winnerSides?.[setIndex];
-  return side === "G" || side === "B" || side === "N" ? side : undefined;
 }
 
 /**

@@ -69,7 +69,7 @@ export type SetBreakdown = {
  * One row per set: the score, who served it first, and how long it took. The
  * first delta of a set is the break before it, so it is the break time and not
  * part of the duration of the set. The side of each set comes from its
- * `setPoints` entry, where the projector puts it for old and new games alike.
+ * `setPoints` entry.
  */
 export function setBreakdown(
   pointSequences: string[],

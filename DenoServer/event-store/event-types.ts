@@ -59,12 +59,6 @@ export type GameTracking = {
   endedAfter: number;
   /** Who served the first point of each set: "W" = game winner, "L" = game loser. */
   firstServers: string;
-  /**
-   * The old location of the table sides, one char per set: "G", "B" or "N"
-   * from the game winner's perspective. New events store the side of each set
-   * on its `setPoints` entry as `gameWinnerSide` instead.
-   */
-  winnerSides?: string;
   /** How many points were undone while tracking. */
   corrections: number;
 };

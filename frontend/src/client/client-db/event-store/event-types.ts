@@ -67,15 +67,6 @@ export type GameTracking = {
    */
   firstServers: string;
   /**
-   * The old location of the table sides, one char per set: "G", "B" or "N"
-   * from the game winner's perspective. New events store the side of each set
-   * on its `setPoints` entry as `gameWinnerSide` instead, so any game with set
-   * points can record the sides, not only a tracked one. Kept because stored
-   * events are immutable — the projector moves it onto `setPoints` when it
-   * projects an old event.
-   */
-  winnerSides?: string;
-  /**
    * How many points were undone while tracking. A high count means the log was
    * corrected by hand, so its times are less trustworthy.
    */

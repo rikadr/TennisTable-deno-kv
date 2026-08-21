@@ -6,7 +6,6 @@ import {
   badSideOfGameWinnerSide,
   gameWinnerSideOfBadSide,
   nextSetBadSide,
-  winnerSideOfSet,
 } from "./table-sides";
 
 describe("nextSetBadSide", () => {
@@ -48,20 +47,6 @@ describe("badSideOfGameWinnerSide", () => {
         expect(badSideOfGameWinnerSide(gameWinnerSideOfBadSide(side, slot), slot)).toBe(side);
       }
     }
-  });
-});
-
-describe("winnerSideOfSet", () => {
-  it("reads the side of one set", () => {
-    expect(winnerSideOfSet("GBN", 0)).toBe("G");
-    expect(winnerSideOfSet("GBN", 1)).toBe("B");
-    expect(winnerSideOfSet("GBN", 2)).toBe("N");
-  });
-
-  it("returns undefined for a game or a set without sides", () => {
-    expect(winnerSideOfSet(undefined, 0)).toBeUndefined();
-    expect(winnerSideOfSet("GB", 2)).toBeUndefined();
-    expect(winnerSideOfSet("X", 0)).toBeUndefined();
   });
 });
 
