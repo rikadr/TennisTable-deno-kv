@@ -1,5 +1,4 @@
 import { appendPoint, removeLastPoint, toEventTrackingData, TrackedSet } from "./point-sequences";
-import { BadSide } from "./table-sides";
 
 describe("appendPoint", () => {
   it("appends the player's digit and the time of the point", () => {
@@ -40,7 +39,6 @@ describe("toEventTrackingData", () => {
     completedSets,
     trackedSets,
     firstServers: [1, 2] as (1 | 2)[],
-    badSides: [1, 2] as BadSide[],
     source: "track-game" as const,
     startedAt,
     endedAt: startedAt + 120_000,
@@ -88,32 +86,6 @@ describe("toEventTrackingData", () => {
     expect(toEventTrackingData({ ...params, player1IsGameWinner: false })?.tracking.firstServers).toBe("LW");
   });
 
-  it("encodes the bad side of each set from the game winner's perspective", () => {
-    // Player 1 has the bad side in set 1, player 2 in set 2.
-    expect(toEventTrackingData({ ...params, player1IsGameWinner: true })?.tracking.winnerSides).toBe("BG");
-    expect(toEventTrackingData({ ...params, player1IsGameWinner: false })?.tracking.winnerSides).toBe("GB");
-  });
-
-  it("encodes a set with 2 equally good sides as N", () => {
-    const badSides: BadSide[] = ["neutral", "neutral"];
-    expect(toEventTrackingData({ ...params, badSides, player1IsGameWinner: true })?.tracking.winnerSides).toBe("NN");
-  });
-
-  it("leaves out the sides when a set has none, and keeps the rest of the data", () => {
-    const tracking = toEventTrackingData({ ...params, badSides: [1, null], player1IsGameWinner: true })?.tracking;
-    expect(tracking?.winnerSides).toBeUndefined();
-    expect(tracking?.firstServers).toBe("WL");
-  });
-
-  it("leaves out the sides when they do not count up to the completed sets", () => {
-    expect(
-      toEventTrackingData({ ...params, badSides: [1], player1IsGameWinner: true })?.tracking.winnerSides,
-    ).toBeUndefined();
-    expect(
-      toEventTrackingData({ ...params, badSides: [], player1IsGameWinner: true })?.tracking.winnerSides,
-    ).toBeUndefined();
-  });
-
   it("keeps the source and the correction count", () => {
     const tracking = toEventTrackingData({ ...params, player1IsGameWinner: true })?.tracking;
     expect(tracking?.version).toBe(1);
@@ -128,7 +100,6 @@ describe("toEventTrackingData", () => {
         completedSets: [],
         trackedSets: [],
         firstServers: [],
-        badSides: [],
         player1IsGameWinner: true,
       }),
     ).toBeUndefined();

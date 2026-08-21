@@ -2,14 +2,24 @@ import { useEventDbContext } from "../../wrappers/event-db-context";
 import { ProfilePicture } from "../player/profile-picture";
 import { stringToColor } from "../../common/string-to-color";
 import { classNames } from "../../common/class-names";
+import { BadSide } from "../../common/table-sides";
+import { TableSidePicker } from "../../common/table-sides-display";
+
+/**
+ * One set as the add game form collects it: the points of both players, and
+ * who had the bad side of the table — null when the players do not remember.
+ */
+export type ManualSetPoints = { player1?: number; player2?: number; badSide: BadSide };
+
+type SetPointsState = {
+  setPoints: ManualSetPoints[];
+  setSetPoints: React.Dispatch<React.SetStateAction<ManualSetPoints[]>>;
+};
 
 export const StepAddScore: React.FC<{
   player1: { id: string; sets: number; setSets: (sets: number) => void };
   player2: { id: string; sets: number; setSets: (sets: number) => void };
-  setPoints: {
-    setPoints: { player1?: number; player2?: number }[];
-    setSetPoints: React.Dispatch<React.SetStateAction<{ player1?: number; player2?: number }[]>>;
-  };
+  setPoints: SetPointsState;
   winner: string;
   invalidScore: boolean;
 }> = ({ player1, player2, setPoints, winner, invalidScore }) => {
@@ -40,10 +50,7 @@ const SetPointsInput: React.FC<{
   playerId: string;
   setIndex: number;
   playerIndex: "player1" | "player2";
-  setPoints: {
-    setPoints: { player1?: number; player2?: number }[];
-    setSetPoints: React.Dispatch<React.SetStateAction<{ player1?: number; player2?: number }[]>>;
-  };
+  setPoints: SetPointsState;
 }> = ({ playerId, setIndex, playerIndex, setPoints: { setPoints, setSetPoints } }) => {
   const context = useEventDbContext();
   const currentPoints = setPoints[setIndex][playerIndex];
@@ -77,22 +84,25 @@ const SetPointsInput: React.FC<{
 const SetPoints: React.FC<{
   player1: string;
   player2: string;
-  setPoints: {
-    setPoints: { player1?: number; player2?: number }[];
-    setSetPoints: React.Dispatch<React.SetStateAction<{ player1?: number; player2?: number }[]>>;
-  };
+  setPoints: SetPointsState;
 }> = ({ player1, player2, setPoints }) => {
+  const context = useEventDbContext();
   const anyPointsSet = setPoints.setPoints.some((set) => set.player1 !== undefined || set.player2 !== undefined);
+  const anySideSet = setPoints.setPoints.some((set) => set.badSide !== null);
+
+  function handleSelectSide(setIndex: number, badSide: BadSide) {
+    setPoints.setSetPoints((prev) => prev.map((set, index) => (index === setIndex ? { ...set, badSide } : set)));
+  }
 
   return (
     <div className="text-primary-text">
       <div className="grid grid-cols-1 gap-2">
-        {setPoints.setPoints.map((_, index) => (
+        {setPoints.setPoints.map((set, index) => (
           <div
             key={index}
             className={classNames(
               "bg-secondary-background text-secondary-text rounded-lg px-4 py-2",
-              anyPointsSet === false && "opacity-50",
+              anyPointsSet === false && anySideSet === false && "opacity-50",
             )}
           >
             {index === 0 && (
@@ -106,6 +116,20 @@ const SetPoints: React.FC<{
               <SetPointsInput playerId={player1} playerIndex="player1" setIndex={index} setPoints={setPoints} />
               <span className="text-2xl font-bold text-secondary-text mt-5">-</span>
               <SetPointsInput playerId={player2} playerIndex="player2" setIndex={index} setPoints={setPoints} />
+            </div>
+            {/* The players often remember who had the worse side of the table.
+                One press per set records it, with or without the set points.
+                The points row overflows its fixed height, so the margin keeps
+                the pills clear of the inputs. */}
+            <div className="mt-3 pb-1">
+              <TableSidePicker
+                badSide={set.badSide}
+                player1Name={context.playerName(player1)}
+                player2Name={context.playerName(player2)}
+                player1Color={stringToColor(player1)}
+                player2Color={stringToColor(player2)}
+                onSelect={(badSide) => handleSelectSide(index, badSide)}
+              />
             </div>
           </div>
         ))}

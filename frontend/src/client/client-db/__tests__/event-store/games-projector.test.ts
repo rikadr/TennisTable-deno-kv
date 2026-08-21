@@ -80,6 +80,18 @@ describe("GamesProjector projection", () => {
     projector.setScore(scoreEvent("game-2", score));
     expect(projector.getGameById("game-2")).toBeUndefined();
   });
+
+  it("keeps the table sides of a score as they are stored", () => {
+    const projector = new GamesProjector();
+    projector.createGame(createEvent("game-1", 1000, "player-1", "player-2"));
+    const score: GameScore["data"] = {
+      setsWon: { gameWinner: 2, gameLoser: 0 },
+      gameWinnerSides: ["B", null],
+    };
+
+    projector.setScore(scoreEvent("game-1", score));
+    expect(projector.getGameById("game-1")!.score).toEqual(score);
+  });
 });
 
 describe("validateCreateGame", () => {
@@ -195,6 +207,63 @@ describe("validateScoreGame", () => {
     );
     expectInvalid(result);
     expect(result.message).toBe("Points are invalid. No sets can be tied");
+  });
+
+  it("accepts table sides without set points, with a null for a set nobody recorded", () => {
+    const result = projector.validateScoreGame(
+      scoreEvent("game-1", {
+        setsWon: { gameWinner: 2, gameLoser: 1 },
+        gameWinnerSides: ["B", null, "G"],
+      }),
+    );
+    expect(result).toEqual({ valid: true });
+  });
+
+  it("accepts table sides together with set points", () => {
+    const result = projector.validateScoreGame(
+      scoreEvent("game-1", {
+        setsWon: { gameWinner: 2, gameLoser: 0 },
+        setPoints: [
+          { gameWinner: 11, gameLoser: 5 },
+          { gameWinner: 11, gameLoser: 7 },
+        ],
+        gameWinnerSides: ["B", "N"],
+      }),
+    );
+    expect(result).toEqual({ valid: true });
+  });
+
+  it("rejects a table side list that does not cover every set", () => {
+    const result = projector.validateScoreGame(
+      scoreEvent("game-1", {
+        setsWon: { gameWinner: 2, gameLoser: 1 },
+        gameWinnerSides: ["B", "G"],
+      }),
+    );
+    expectInvalid(result);
+    expect(result.message).toBe("Table sides are invalid. There must be one side per set");
+  });
+
+  it("rejects a table side that is not G, B, N or null", () => {
+    const result = projector.validateScoreGame(
+      scoreEvent("game-1", {
+        setsWon: { gameWinner: 1, gameLoser: 0 },
+        gameWinnerSides: ["W" as "G"],
+      }),
+    );
+    expectInvalid(result);
+    expect(result.message).toBe("Table sides are invalid. Only 'G', 'B', 'N' and null sides are allowed");
+  });
+
+  it("rejects a table side list where no set has a side", () => {
+    const result = projector.validateScoreGame(
+      scoreEvent("game-1", {
+        setsWon: { gameWinner: 1, gameLoser: 0 },
+        gameWinnerSides: [null],
+      }),
+    );
+    expectInvalid(result);
+    expect(result.message).toBe("If no sides are recorded, the gameWinnerSides should not be included in the event data");
   });
 
   it("rejects set points where the loser wins as many sets as the winner", () => {
@@ -401,31 +470,6 @@ describe("validateScoreGame", () => {
     const result = projector.validateScoreGame(trackedScoreEvent({ firstServers: "1" }));
     expectInvalid(result);
     expect(result.message).toBe("Tracking data is invalid. Only 'W' and 'L' first servers are allowed");
-  });
-
-  it("accepts tracking data without table sides", () => {
-    expect(projector.validateScoreGame(trackedScoreEvent({ winnerSides: undefined })).valid).toBe(true);
-  });
-
-  it("accepts a table side for every set", () => {
-    for (const winnerSides of ["G", "B", "N"]) {
-      expect(projector.validateScoreGame(trackedScoreEvent({ winnerSides })).valid).toBe(true);
-    }
-  });
-
-  it("rejects a table side list that does not cover every set", () => {
-    const result = projector.validateScoreGame(trackedScoreEvent({ winnerSides: "GB" }));
-    expectInvalid(result);
-    expect(result.message).toBe("Tracking data is invalid. There must be one table side per set");
-    const empty = projector.validateScoreGame(trackedScoreEvent({ winnerSides: "" }));
-    expectInvalid(empty);
-    expect(empty.message).toBe("Tracking data is invalid. There must be one table side per set");
-  });
-
-  it("rejects a table side that is not G, B or N", () => {
-    const result = projector.validateScoreGame(trackedScoreEvent({ winnerSides: "W" }));
-    expectInvalid(result);
-    expect(result.message).toBe("Tracking data is invalid. Only 'G', 'B' and 'N' table sides are allowed");
   });
 
   it("rejects a negative end delta and a negative correction count", () => {

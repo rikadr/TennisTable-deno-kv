@@ -53,7 +53,7 @@ describe("setBreakdown", () => {
   const pointSequences = ["WWLW", "LWLL"];
 
   it("reads the score and the winner of each set from the winner's side", () => {
-    const sets = setBreakdown(pointSequences, tracking());
+    const sets = setBreakdown(pointSequences, tracking(), undefined);
     expect(sets.map((set) => set.points)).toEqual([
       { winner: 3, loser: 1 },
       { winner: 1, loser: 3 },
@@ -62,7 +62,7 @@ describe("setBreakdown", () => {
   });
 
   it("splits the first delta of a set off as the break before it", () => {
-    const sets = setBreakdown(pointSequences, tracking());
+    const sets = setBreakdown(pointSequences, tracking(), undefined);
     // Set 1 starts 100 tenths in and runs 50 + 70 + 60 tenths.
     expect(sets[0]).toMatchObject({ breakBeforeMs: 10_000, durationMs: 18_000, longestPointGapMs: 7_000 });
     // Set 2 starts after a 600 tenth break and runs 55 + 200 + 45 tenths.
@@ -70,20 +70,27 @@ describe("setBreakdown", () => {
   });
 
   it("reads the first server of each set", () => {
-    expect(setBreakdown(pointSequences, tracking()).map((set) => set.firstServer)).toEqual(["W", "L"]);
+    expect(setBreakdown(pointSequences, tracking(), undefined).map((set) => set.firstServer)).toEqual(["W", "L"]);
   });
 
-  it("reads the table side of each set", () => {
-    const sets = setBreakdown(pointSequences, tracking({ winnerSides: "BN" }));
+  it("reads the table side of each set from the gameWinnerSides list", () => {
+    const sets = setBreakdown(pointSequences, tracking(), ["B", "N"]);
     expect(sets.map((set) => set.winnerSide)).toEqual(["B", "N"]);
   });
 
-  it("gives no table side for a game that does not record the sides", () => {
-    expect(setBreakdown(pointSequences, tracking()).map((set) => set.winnerSide)).toEqual([undefined, undefined]);
+  it("gives no table side for a game or a set that does not record the sides", () => {
+    expect(setBreakdown(pointSequences, tracking(), undefined).map((set) => set.winnerSide)).toEqual([
+      undefined,
+      undefined,
+    ]);
+    expect(setBreakdown(pointSequences, tracking(), ["B", null]).map((set) => set.winnerSide)).toEqual([
+      "B",
+      undefined,
+    ]);
   });
 
   it("returns no rows for a game with no sets", () => {
-    expect(setBreakdown([], tracking({ pointDeltas: [], firstServers: "" }))).toEqual([]);
+    expect(setBreakdown([], tracking({ pointDeltas: [], firstServers: "" }), undefined)).toEqual([]);
   });
 });
 

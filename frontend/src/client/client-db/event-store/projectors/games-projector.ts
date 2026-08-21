@@ -1,4 +1,3 @@
-import { WINNER_SIDES_PATTERN } from "../../../../common/table-sides";
 import { GameCreated, GameDeleted, GameScore, GameTracking } from "../event-types";
 import { ValidatorResponse } from "./validator-types";
 
@@ -37,16 +36,6 @@ function validateTracking(tracking: GameTracking, pointSequences: string[]): str
   }
   if (/^[WL]*$/.test(tracking.firstServers) === false) {
     return "Tracking data is invalid. Only 'W' and 'L' first servers are allowed";
-  }
-  // The sides of the table are optional, because a game can be tracked without
-  // them. A game that has them must have one side per set.
-  if (tracking.winnerSides !== undefined) {
-    if (tracking.winnerSides.length !== pointSequences.length) {
-      return "Tracking data is invalid. There must be one table side per set";
-    }
-    if (WINNER_SIDES_PATTERN.test(tracking.winnerSides) === false) {
-      return "Tracking data is invalid. Only 'G', 'B' and 'N' table sides are allowed";
-    }
   }
   if (isCount(tracking.endedAfter) === false) {
     return "Tracking data is invalid. Ended after must be a positive whole number";
@@ -127,6 +116,25 @@ export class GamesProjector {
 
     if (event.data.setPoints && event.data.setPoints.some((set) => set.gameWinner === set.gameLoser)) {
       return { valid: false, message: "Points are invalid. No sets can be tied" };
+    }
+
+    // The sides of the table are independent of the set points: a player can
+    // record the sides they remember with only the sets won. One entry per
+    // set, and null for a set nobody recorded.
+    if (event.data.gameWinnerSides !== undefined) {
+      const totalSets = event.data.setsWon.gameWinner + event.data.setsWon.gameLoser;
+      if (event.data.gameWinnerSides.length !== totalSets) {
+        return { valid: false, message: "Table sides are invalid. There must be one side per set" };
+      }
+      if (event.data.gameWinnerSides.some((side) => side !== null && /^[GBN]$/.test(side) === false)) {
+        return { valid: false, message: "Table sides are invalid. Only 'G', 'B', 'N' and null sides are allowed" };
+      }
+      if (event.data.gameWinnerSides.every((side) => side === null)) {
+        return {
+          valid: false,
+          message: "If no sides are recorded, the gameWinnerSides should not be included in the event data",
+        };
+      }
     }
 
     const gameWinnerSetPointsWins = event.data.setPoints?.reduce((wins, set) => {

@@ -2,8 +2,9 @@ import { useEffect, useState } from "react";
 import { classNames } from "../common/class-names";
 import { useTennisParams } from "../hooks/use-tennis-params";
 import { useEventDbContext } from "../wrappers/event-db-context";
-import { StepAddScore } from "./add-game/step-add-score";
+import { ManualSetPoints, StepAddScore } from "./add-game/step-add-score";
 import { EventTypeEnum, GameScore } from "../client/client-db/event-store/event-types";
+import { badSideOfGameWinnerSide, gameWinnerSideOfBadSide } from "../common/table-sides";
 import { useEventMutation } from "../hooks/use-event-mutation";
 import { queryClient } from "../common/query-client";
 import { useNavigate } from "react-router-dom";
@@ -18,22 +19,35 @@ export const EditGameSore: React.FC = () => {
 
   const [winnerSets, setWinnerSets] = useState(game?.score?.setsWon.gameWinner ?? 0);
   const [loserSets, setLoserSets] = useState(game?.score?.setsWon.gameLoser ?? 0);
-  const [setPoints, setSetPoints] = useState<{ player1?: number; player2?: number }[]>(
-    game?.score?.setPoints?.map(({ gameWinner, gameLoser }) => ({ player1: gameWinner, player2: gameLoser })) ?? [],
-  );
+  // Player 1 of the form is the game winner, so the winner's side decodes
+  // against slot 1. The sides list covers every set, with or without points.
+  const [setPoints, setSetPoints] = useState<ManualSetPoints[]>(() => {
+    const totalSets = (game?.score?.setsWon.gameWinner ?? 0) + (game?.score?.setsWon.gameLoser ?? 0);
+    return Array.from({ length: totalSets }, (_, index) => ({
+      player1: game?.score?.setPoints?.[index]?.gameWinner,
+      player2: game?.score?.setPoints?.[index]?.gameLoser,
+      badSide: badSideOfGameWinnerSide(game?.score?.gameWinnerSides?.[index], 1),
+    }));
+  });
   const [validationError, setValidationError] = useState("");
 
   const invalidScore = (winnerSets === loserSets && winnerSets > 0) || loserSets > winnerSets;
-  const unchangedScore =
+  // The form has no point-level detail, so an edit can only keep the stored
+  // point-by-point log while the sets and points it describes are unchanged.
+  // An edit that only changes the sides keeps the log of a tracked game.
+  const pointDataUnchanged =
     winnerSets === game?.score?.setsWon.gameWinner &&
     loserSets === game?.score?.setsWon.gameLoser &&
-    setPoints.every(({ player1, player2 }, index) => {
-      return (
-        game.score?.setPoints &&
-        game.score.setPoints[index].gameWinner === player1 &&
-        game.score.setPoints[index].gameLoser === player2
-      );
-    });
+    setPoints.every(
+      ({ player1, player2 }, index) =>
+        game.score?.setPoints?.[index]?.gameWinner === player1 &&
+        game.score?.setPoints?.[index]?.gameLoser === player2,
+    );
+  const unchangedScore =
+    pointDataUnchanged &&
+    setPoints.every(
+      ({ badSide }, index) => (game?.score?.gameWinnerSides?.[index] ?? null) === gameWinnerSideOfBadSide(badSide, 1),
+    );
 
   async function submitScore() {
     setValidationError("");
@@ -51,6 +65,9 @@ export const EditGameSore: React.FC = () => {
       return;
     }
 
+    // The sides are independent of the points: only the sets won are needed.
+    const sidesAreSet = setPoints.some((set) => set.badSide !== null);
+
     const gameScoreEvent: GameScore = {
       type: EventTypeEnum.GAME_SCORE,
       time: now,
@@ -60,6 +77,9 @@ export const EditGameSore: React.FC = () => {
         setPoints: setPointsAreSet
           ? setPoints.map((set) => ({ gameWinner: set.player1!, gameLoser: set.player2! }))
           : undefined,
+        gameWinnerSides: sidesAreSet ? setPoints.map((set) => gameWinnerSideOfBadSide(set.badSide, 1)) : undefined,
+        pointSequences: pointDataUnchanged ? game.score?.pointSequences : undefined,
+        tracking: pointDataUnchanged ? game.score?.tracking : undefined,
       },
     };
 
@@ -89,9 +109,10 @@ export const EditGameSore: React.FC = () => {
     } else if (setPoints.length < totalSets) {
       // Set added
       const setsAdded = totalSets - setPoints.length;
-      const newSets = new Array<{ player1?: number; player2?: number }>(setsAdded).fill({
+      const newSets = new Array<ManualSetPoints>(setsAdded).fill({
         player1: undefined,
         player2: undefined,
+        badSide: null,
       });
       setSetPoints((prev) => [...prev, ...newSets]);
     } else if (setPoints.length > totalSets) {
@@ -102,9 +123,10 @@ export const EditGameSore: React.FC = () => {
     }
   }, [winnerSets, loserSets, setPoints.length]);
 
-  // Editing replaces the score event, and the edit form has no point-level
-  // detail — so a point-by-point log from live tracking is lost on save.
+  // Editing replaces the score event. The stored point-by-point log survives
+  // only while the sets and points are unchanged, so warn when they are not.
   const hasPointSequences = (game?.score?.pointSequences?.length ?? 0) > 0;
+  const discardsPointLog = hasPointSequences && pointDataUnchanged === false;
 
   if (!game) return null;
   return (
@@ -134,10 +156,10 @@ export const EditGameSore: React.FC = () => {
         {validationError && <div className="bg-black text-red-500 text-center">Error: {validationError}</div>}
       </div>
       <div className="p-6 bg-secondary-background">
-        {hasPointSequences && (
+        {discardsPointLog && (
           <div className="mb-3 p-3 bg-amber-100 border border-amber-400 text-amber-800 rounded-lg text-sm">
-            ⚠️ This game was tracked live, point by point. If you save an edited score, the point-by-point data of
-            this game is discarded.
+            ⚠️ This game was tracked live, point by point. If you save a changed score, the point-by-point data of
+            this game is discarded. A change to only the table sides keeps it.
           </div>
         )}
         <div className="flex space-x-3">

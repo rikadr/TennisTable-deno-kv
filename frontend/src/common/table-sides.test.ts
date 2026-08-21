@@ -3,9 +3,9 @@ import {
   BadSide,
   badSideLabel,
   badSideName,
-  encodeWinnerSides,
+  badSideOfGameWinnerSide,
+  gameWinnerSideOfBadSide,
   nextSetBadSide,
-  winnerSideOfSet,
 } from "./table-sides";
 
 describe("nextSetBadSide", () => {
@@ -20,38 +20,33 @@ describe("nextSetBadSide", () => {
   });
 });
 
-describe("encodeWinnerSides", () => {
+describe("gameWinnerSideOfBadSide", () => {
   it("encodes the side of the game winner as G or B", () => {
-    // Player 1 has the bad side in set 1 and player 2 in set 2.
-    expect(encodeWinnerSides([1, 2], 1)).toBe("BG");
-    expect(encodeWinnerSides([1, 2], 2)).toBe("GB");
+    expect(gameWinnerSideOfBadSide(1, 1)).toBe("B");
+    expect(gameWinnerSideOfBadSide(2, 1)).toBe("G");
+    expect(gameWinnerSideOfBadSide(1, 2)).toBe("G");
+    expect(gameWinnerSideOfBadSide(2, 2)).toBe("B");
   });
 
   it("encodes 2 equally good sides as N", () => {
-    expect(encodeWinnerSides(["neutral", 1, "neutral"], 1)).toBe("NBN");
+    expect(gameWinnerSideOfBadSide("neutral", 1)).toBe("N");
+    expect(gameWinnerSideOfBadSide("neutral", 2)).toBe("N");
   });
 
-  it("returns undefined when a set has no recorded side", () => {
-    expect(encodeWinnerSides([1, null], 1)).toBeUndefined();
-    expect(encodeWinnerSides([null], 1)).toBeUndefined();
-  });
-
-  it("returns undefined for a game with no sets", () => {
-    expect(encodeWinnerSides([], 1)).toBeUndefined();
+  it("returns null for a set with no recorded side", () => {
+    expect(gameWinnerSideOfBadSide(null, 1)).toBeNull();
+    expect(gameWinnerSideOfBadSide(null, 2)).toBeNull();
   });
 });
 
-describe("winnerSideOfSet", () => {
-  it("reads the side of one set", () => {
-    expect(winnerSideOfSet("GBN", 0)).toBe("G");
-    expect(winnerSideOfSet("GBN", 1)).toBe("B");
-    expect(winnerSideOfSet("GBN", 2)).toBe("N");
-  });
-
-  it("returns undefined for a game or a set without sides", () => {
-    expect(winnerSideOfSet(undefined, 0)).toBeUndefined();
-    expect(winnerSideOfSet("GB", 2)).toBeUndefined();
-    expect(winnerSideOfSet("X", 0)).toBeUndefined();
+describe("badSideOfGameWinnerSide", () => {
+  it("is the inverse of gameWinnerSideOfBadSide for every side and slot", () => {
+    const sides: BadSide[] = [1, 2, "neutral", null];
+    for (const slot of [1, 2] as const) {
+      for (const side of sides) {
+        expect(badSideOfGameWinnerSide(gameWinnerSideOfBadSide(side, slot), slot)).toBe(side);
+      }
+    }
   });
 });
 
@@ -105,7 +100,7 @@ describe("a set of sides through the whole flow", () => {
       sides.push(badSide);
       badSide = nextSetBadSide(badSide);
     }
-    expect(encodeWinnerSides(sides, 1)).toBe("BGB");
-    expect(encodeWinnerSides(sides, 2)).toBe("GBG");
+    expect(sides.map((side) => gameWinnerSideOfBadSide(side, 1))).toEqual(["B", "G", "B"]);
+    expect(sides.map((side) => gameWinnerSideOfBadSide(side, 2))).toEqual(["G", "B", "G"]);
   });
 });

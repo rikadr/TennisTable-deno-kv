@@ -64,6 +64,8 @@ function buildEvents(gameCount = 120): EventType[] {
             ? {
                 setsWon: { gameWinner: 1, gameLoser: 0 },
                 setPoints: [{ gameWinner: 11, gameLoser: 4 }],
+                // Half of the tracked games record the side of the table.
+                gameWinnerSides: index % 8 === 0 ? ["B" as const] : undefined,
                 pointSequences: ["WWWWLWWWWLWWLWL"],
                 tracking: {
                   version: 1,
@@ -72,8 +74,6 @@ function buildEvents(gameCount = 120): EventType[] {
                   pointDeltas: [new Array(15).fill(80)],
                   endedAfter: 20,
                   firstServers: "W",
-                  // Half of the tracked games record the side of the table.
-                  winnerSides: index % 8 === 0 ? "B" : undefined,
                   corrections: 0,
                 },
               }

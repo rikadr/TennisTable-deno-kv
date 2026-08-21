@@ -43,7 +43,6 @@ import { Game } from "../../client/client-db/event-store/projectors/games-projec
 import { Player } from "../../client/client-db/event-store/projectors/players-projector";
 import { EventType, EventTypeEnum } from "../../client/client-db/event-store/event-types";
 import { advancePeriod, getPeriodKey, getPeriodStart, getPeriodTimestamp, Period } from "../../common/period-utils";
-import { winnerSideOfSet } from "../../common/table-sides";
 import { gameTimingStats, longestStreaks, serveStats } from "../game/game-tracking-stats";
 
 /** A rating gap bucket with fewer games than this is not plotted. */
@@ -893,7 +892,7 @@ export function trackedLevelStats(games: Game[]): TrackedLevelStats | undefined 
   };
 }
 export type TableSideStats = {
-  /** Share of the tracked games of the period that record the sides. */
+  /** Share of the games of the period with a score that record the sides. */
   sidesRecorded: number;
   /** Share of the recorded sets where the 2 sides are equally good. */
   neutralSets: number;
@@ -913,16 +912,20 @@ export type TableSideStats = {
 /**
  * What playing on the bad side of the table costs.
  *
- * A tracked game can record which player had the bad side in each set, or that
- * the 2 sides were equally good. Every set with a worse side has exactly one
- * player on it, so 50% is the neutral reading of the set and point shares: a
- * lower share means the bad side really costs sets or points.
+ * Any game with a score can record which player had the bad side in each set,
+ * or that the 2 sides were equally good — a tracker does it live, and the add
+ * game form takes what the players remember, with or without the points of
+ * each set. Every set with a worse side has exactly one player on it, so 50%
+ * is the neutral reading of the set and point shares: a lower share means the
+ * bad side really costs sets or points.
  *
  * A neutral set holds no bad side, so it only counts towards `neutralSets`.
+ * The set and point shares need the points of the set, so a set with a side
+ * but no points counts only towards the game-level share.
  */
 export function tableSideStats(games: Game[]): TableSideStats | undefined {
-  const tracked = games.filter(isTrackedGame);
-  const withSides = tracked.filter((game) => game.score?.tracking?.winnerSides !== undefined);
+  const withScore = games.filter((game) => game.score !== undefined);
+  const withSides = withScore.filter((game) => game.score!.gameWinnerSides?.some((side) => side !== null));
   if (withSides.length === 0) return undefined;
 
   let recordedSets = 0;
@@ -935,14 +938,12 @@ export function tableSideStats(games: Game[]): TableSideStats | undefined {
   let unevenGamesToTheBadSide = 0;
 
   for (const game of withSides) {
-    const score = game.score!;
-    const sides = score.tracking!.winnerSides;
     const badSideSets = { winner: 0, loser: 0 };
 
-    for (let setIndex = 0; setIndex < score.pointSequences!.length; setIndex++) {
-      const sequence = score.pointSequences![setIndex];
-      const side = winnerSideOfSet(sides, setIndex);
-      if (side === undefined || sequence.length === 0) continue;
+    const sides = game.score!.gameWinnerSides!;
+    for (let setIndex = 0; setIndex < sides.length; setIndex++) {
+      const side = sides[setIndex];
+      if (side === null) continue;
 
       recordedSets++;
       if (side === "N") {
@@ -951,15 +952,18 @@ export function tableSideStats(games: Game[]): TableSideStats | undefined {
       }
 
       const gameWinnerOnTheBadSide = side === "B";
-      const winnerPoints = sequence.split("").filter((point) => point === "W").length;
-      const loserPoints = sequence.length - winnerPoints;
-
-      unequalSets++;
-      unequalPoints += sequence.length;
-      pointsToTheBadSide += gameWinnerOnTheBadSide ? winnerPoints : loserPoints;
-      if ((winnerPoints > loserPoints) === gameWinnerOnTheBadSide) setsToTheBadSide++;
       if (gameWinnerOnTheBadSide) badSideSets.winner++;
       else badSideSets.loser++;
+
+      // Who won the set, and its points, are only known when the game
+      // records the points of each set.
+      const set = game.score!.setPoints?.[setIndex];
+      if (set === undefined) continue;
+
+      unequalSets++;
+      unequalPoints += set.gameWinner + set.gameLoser;
+      pointsToTheBadSide += gameWinnerOnTheBadSide ? set.gameWinner : set.gameLoser;
+      if ((set.gameWinner > set.gameLoser) === gameWinnerOnTheBadSide) setsToTheBadSide++;
     }
 
     if (badSideSets.winner !== badSideSets.loser) {
@@ -969,7 +973,7 @@ export function tableSideStats(games: Game[]): TableSideStats | undefined {
   }
 
   return {
-    sidesRecorded: percent(withSides.length, tracked.length),
+    sidesRecorded: percent(withSides.length, withScore.length),
     neutralSets: percent(neutralSets, recordedSets),
     setsWonOnTheBadSide: unequalSets === 0 ? undefined : percent(setsToTheBadSide, unequalSets),
     pointsWonOnTheBadSide: unequalPoints === 0 ? undefined : percent(pointsToTheBadSide, unequalPoints),

@@ -1,3 +1,5 @@
+import { WinnerSide } from "../../../common/table-sides";
+
 export enum EventTypeEnum {
   // Player events
   PLAYER_CREATED = "PLAYER_CREATED",
@@ -65,13 +67,6 @@ export type GameTracking = {
    */
   firstServers: string;
   /**
-   * Which side of the table the game winner had in each set, one char per set:
-   * "G" = the good side, "B" = the bad side, "N" = the 2 sides are equally
-   * good. The game loser had the other side. Left out when the sides were not
-   * recorded, so an older game keeps the rest of its tracking data.
-   */
-  winnerSides?: string;
-  /**
    * How many points were undone while tracking. A high count means the log was
    * corrected by hand, so its times are less trustworthy.
    */
@@ -83,6 +78,15 @@ export type GameScore = GenericEvent<
   {
     setsWon: { gameWinner: number; gameLoser: number };
     setPoints?: { gameWinner: number; gameLoser: number }[];
+    /**
+     * Which side of the table the game winner had in each set, one entry per
+     * set in the order the sets were played: "G" = the good side, "B" = the
+     * bad side, "N" = the 2 sides are equally good, null = nobody recorded
+     * the side of that set. The game loser had the other side. Independent of
+     * `setPoints`, so a game can record the sides without the points of each
+     * set. Left out when no set has a recorded side.
+     */
+    gameWinnerSides?: (WinnerSide | null)[];
     /**
      * Point-by-point log, one string per set in the order the sets were played.
      * Each char is one point in the order it was scored: "W" = point to the game

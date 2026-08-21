@@ -233,6 +233,56 @@ export const GamesTab: React.FC<{ range: TimeRange; setRange: (range: TimeRange)
               </div>
             )}
           </ContentCard>
+
+          <ContentCard
+            title="The bad side of the table"
+            description="A game with a score can record which player had the bad side of the table in each set, or that the 2 sides were equal. Every set with a worse side has one player on it, so 50% means the side costs nothing."
+          >
+            {tableSides === undefined ? (
+              <NotEnoughGames what="games with sides" />
+            ) : (
+              <div className="flex flex-col gap-3">
+                {tableSides.setsWonOnTheBadSide !== undefined && (
+                  <StackedShareBar
+                    segments={[
+                      {
+                        label: "The bad side wins the set",
+                        share: tableSides.setsWonOnTheBadSide,
+                        color: SPREAD_COLORS[0],
+                      },
+                      {
+                        label: "The good side wins the set",
+                        share: 100 - tableSides.setsWonOnTheBadSide,
+                        color: SPREAD_COLORS[1],
+                      },
+                    ]}
+                  />
+                )}
+                <StatTileRow>
+                  <StatTile
+                    label="Points won on the bad side"
+                    value={tableSides.pointsWonOnTheBadSide === undefined ? "–" : percentLabel(tableSides.pointsWonOnTheBadSide)}
+                    note="of the points of the sets with a worse side"
+                  />
+                  <StatTile
+                    label="More sets on the bad side, and the game"
+                    value={tableSides.wonWithMoreBadSideSets === undefined ? "–" : percentLabel(tableSides.wonWithMoreBadSideSets)}
+                    note="of the games where one player had the bad side more often, that player won"
+                  />
+                  <StatTile
+                    label="Sets with equal sides"
+                    value={percentLabel(tableSides.neutralSets)}
+                    note="of the sets with recorded sides"
+                  />
+                  <StatTile
+                    label="Games that record the sides"
+                    value={percentLabel(tableSides.sidesRecorded)}
+                    note="of the games with a score in this period"
+                  />
+                </StatTileRow>
+              </div>
+            )}
+          </ContentCard>
         </DetailLevelSection>
 
         <DetailLevelSection
@@ -388,56 +438,6 @@ export const GamesTab: React.FC<{ range: TimeRange; setRange: (range: TimeRange)
                   note="points undone while tracking, on average"
                 />
               </StatTileRow>
-            )}
-          </ContentCard>
-
-          <ContentCard
-            title="The bad side of the table"
-            description="A tracked game can record which player had the bad side of the table in each set, or that the 2 sides were equal. Every set with a worse side has one player on it, so 50% means the side costs nothing."
-          >
-            {tableSides === undefined ? (
-              <NotEnoughGames what="tracked games with sides" />
-            ) : (
-              <div className="flex flex-col gap-3">
-                {tableSides.setsWonOnTheBadSide !== undefined && (
-                  <StackedShareBar
-                    segments={[
-                      {
-                        label: "The bad side wins the set",
-                        share: tableSides.setsWonOnTheBadSide,
-                        color: SPREAD_COLORS[0],
-                      },
-                      {
-                        label: "The good side wins the set",
-                        share: 100 - tableSides.setsWonOnTheBadSide,
-                        color: SPREAD_COLORS[1],
-                      },
-                    ]}
-                  />
-                )}
-                <StatTileRow>
-                  <StatTile
-                    label="Points won on the bad side"
-                    value={tableSides.pointsWonOnTheBadSide === undefined ? "–" : percentLabel(tableSides.pointsWonOnTheBadSide)}
-                    note="of the points of the sets with a worse side"
-                  />
-                  <StatTile
-                    label="More sets on the bad side, and the game"
-                    value={tableSides.wonWithMoreBadSideSets === undefined ? "–" : percentLabel(tableSides.wonWithMoreBadSideSets)}
-                    note="of the games where one player had the bad side more often, that player won"
-                  />
-                  <StatTile
-                    label="Sets with equal sides"
-                    value={percentLabel(tableSides.neutralSets)}
-                    note="of the sets with recorded sides"
-                  />
-                  <StatTile
-                    label="Games that record the sides"
-                    value={percentLabel(tableSides.sidesRecorded)}
-                    note="of the tracked games in this period"
-                  />
-                </StatTileRow>
-              </div>
             )}
           </ContentCard>
         </DetailLevelSection>

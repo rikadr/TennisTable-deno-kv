@@ -26,7 +26,7 @@ import { LiveGamePredictionCard } from "./live-game-prediction-card";
 import ConfettiExplosion from "react-confetti-explosion";
 import { Server } from "../../common/serve-tracker";
 import { ServeTrackerDisplay } from "../../common/serve-tracker-display";
-import { alignBadSides, BadSide, badSideLabel, nextSetBadSide } from "../../common/table-sides";
+import { alignBadSides, BadSide, badSideLabel, gameWinnerSideOfBadSide, nextSetBadSide } from "../../common/table-sides";
 import { TableSideDisplay } from "../../common/table-sides-display";
 import { appendPoint, removeLastPoint, toEventTrackingData, trackingNow } from "../../common/point-sequences";
 
@@ -262,7 +262,6 @@ export const LiveGameAdminPage: React.FC = () => {
         pointTimes: localState!.completedSetPointTimes[index] ?? [],
       })),
       firstServers: localState!.completedSetFirstServers,
-      badSides: localState!.completedSetBadSides,
       player1IsGameWinner: player1Won,
       source: "live-game",
       startedAt: localState!.startedAt,
@@ -283,6 +282,11 @@ export const LiveGameAdminPage: React.FC = () => {
                 gameLoser: player1Won ? set.player2 : set.player1,
               }))
             : undefined,
+        gameWinnerSides: localState!.completedSetBadSides.some((side) => side !== null)
+          ? localState!.completedSets.map((_, index) =>
+              gameWinnerSideOfBadSide(localState!.completedSetBadSides[index] ?? null, player1Won ? 1 : 2),
+            )
+          : undefined,
         pointSequences: trackingData?.pointSequences,
         tracking: trackingData?.tracking,
       },
