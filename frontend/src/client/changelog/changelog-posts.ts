@@ -146,7 +146,7 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
         "The toggle above the score has a new option: Score over time. The graph starts on the day the player joined and ends now.",
       ),
       text(
-        "A second toggle selects what the graph shows. Cumulative gives the score as it was at each point. Delta gives the points the player gained in each period. A section picker filters both to the total score or to 1 of the 9 sections.",
+        "A second toggle selects what the graph shows. Cumulative stacks the 9 sections as areas, with a solid color for each section. The top edge of the stack is the total score. A legend below the graph shows which color is which section. Delta gives the points the player gained in each period. A section picker filters both to the total score or to 1 of the 9 sections.",
       ),
       list(
         "The first point is the day the player was created.",

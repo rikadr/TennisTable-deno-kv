@@ -1,11 +1,11 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
+  Area,
+  AreaChart,
   Bar,
   BarChart,
   CartesianGrid,
   Cell,
-  Line,
-  LineChart,
   ReferenceLine,
   ResponsiveContainer,
   Tooltip,
@@ -59,6 +59,11 @@ export const HallOfFameScoreOverTime: React.FC<{ playerId: string; playerName: s
     });
   }, [points, series]);
 
+  const stackedData = useMemo(() => {
+    if (!points) return [];
+    return points.map((point) => ({ time: point.time, total: point.total, ...point.factors }));
+  }, [points]);
+
   const deltaData = useMemo(() => deltaBars(graphData), [graphData]);
 
   const chartData = mode === "delta" ? deltaData : graphData;
@@ -74,7 +79,8 @@ export const HallOfFameScoreOverTime: React.FC<{ playerId: string; playerName: s
       spansMoreThanAYear ? { month: "short", year: "2-digit" } : { day: "numeric", month: "short" },
     );
 
-  const seriesLabel = series === "total" ? "Total score" : FACTORS.find((f) => f.key === series)?.name ?? "";
+  const sectionFactor = series === "total" ? undefined : FACTORS.find((f) => f.key === series);
+  const seriesLabel = sectionFactor?.name ?? "Total score";
 
   const summary = useMemo(() => {
     if (graphData.length === 0 || chartData.length === 0) return undefined;
@@ -153,7 +159,10 @@ export const HallOfFameScoreOverTime: React.FC<{ playerId: string; playerName: s
       <div className="w-full h-[300px] md:h-[400px]">
         <ResponsiveContainer width="100%" height="100%">
           {mode === "cumulative" ? (
-            <LineChart data={graphData} margin={{ top: 5, right: 8, left: -12, bottom: 0 }}>
+            <AreaChart
+              data={series === "total" ? stackedData : graphData}
+              margin={{ top: 5, right: 8, left: -12, bottom: 0 }}
+            >
               <CartesianGrid
                 strokeDasharray="1 4"
                 vertical={false}
@@ -181,17 +190,43 @@ export const HallOfFameScoreOverTime: React.FC<{ playerId: string; playerName: s
                 axisLine={false}
                 opacity={0.6}
               />
-              <Tooltip content={<ScoreTooltip mode={mode} seriesLabel={seriesLabel} />} />
-              <Line
-                type="monotone"
-                dataKey="cumulative"
-                stroke="rgb(var(--color-primary-text))"
-                strokeWidth={3}
-                dot={false}
-                activeDot={{ r: 5, strokeWidth: 0 }}
-                animationDuration={400}
+              <Tooltip
+                content={
+                  series === "total" ? (
+                    <StackedTooltip />
+                  ) : (
+                    <ScoreTooltip mode={mode} seriesLabel={seriesLabel} />
+                  )
+                }
               />
-            </LineChart>
+              {series === "total" ? (
+                FACTORS.map((factor) => (
+                  <Area
+                    key={factor.key}
+                    type="monotone"
+                    dataKey={factor.key}
+                    stackId="score"
+                    name={factor.name}
+                    fill={factor.color}
+                    fillOpacity={1}
+                    stroke="#ffffff"
+                    strokeWidth={0.5}
+                    animationDuration={400}
+                  />
+                ))
+              ) : (
+                <Area
+                  type="monotone"
+                  dataKey="cumulative"
+                  fill={sectionFactor?.color}
+                  fillOpacity={1}
+                  stroke={sectionFactor?.color}
+                  strokeWidth={2}
+                  activeDot={{ r: 5, strokeWidth: 0 }}
+                  animationDuration={400}
+                />
+              )}
+            </AreaChart>
           ) : (
             <BarChart data={deltaData} margin={{ top: 5, right: 8, left: -12, bottom: 0 }}>
               <CartesianGrid
@@ -236,6 +271,17 @@ export const HallOfFameScoreOverTime: React.FC<{ playerId: string; playerName: s
         </ResponsiveContainer>
       </div>
 
+      {mode === "cumulative" && series === "total" && (
+        <div className="flex flex-wrap gap-x-3 gap-y-1.5">
+          {FACTORS.map((factor) => (
+            <span key={factor.key} className="flex items-center gap-1.5 text-xs text-primary-text">
+              <span className="w-3 h-3 rounded-sm shrink-0" style={{ backgroundColor: factor.color }} />
+              {factor.emoji} {factor.name}
+            </span>
+          ))}
+        </div>
+      )}
+
       {summary && (
         <div className="flex flex-wrap gap-2 text-xs">
           <span className="bg-secondary-background text-secondary-text px-2 py-1 rounded">
@@ -259,6 +305,27 @@ export const HallOfFameScoreOverTime: React.FC<{ playerId: string; playerName: s
 // Day and month only, for the start of a period whose end already names the year.
 const shortDate = (time: number) =>
   new Date(time).toLocaleDateString("nb-NO", { day: "numeric", month: "short" });
+
+const StackedTooltip = ({ active, payload }: TooltipProps<ValueType, NameType>) => {
+  if (!active || !payload || payload.length === 0) return null;
+  const data = payload[0].payload as { time: number; total: number } & Record<HallOfFameFactorKey, number>;
+
+  return (
+    <div className="p-3 bg-primary-background/95 backdrop-blur-sm ring-1 ring-primary-text/20 rounded-lg text-primary-text shadow-lg">
+      <div className="text-xs opacity-60 mb-1">{dateString(data.time)}</div>
+      <div className="font-bold text-lg">{fmtNum(data.total)} pts</div>
+      <div className="mt-1 space-y-0.5">
+        {[...FACTORS].reverse().map((factor) => (
+          <div key={factor.key} className="flex items-center gap-1.5 text-xs">
+            <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ backgroundColor: factor.color }} />
+            <span className="opacity-75">{factor.name}</span>
+            <span className="ml-auto pl-4 font-bold">{fmtNum(data[factor.key])}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
 
 const ScoreTooltip = ({
   active,
