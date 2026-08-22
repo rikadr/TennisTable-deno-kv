@@ -1,5 +1,10 @@
 // Jest setup file - runs before all tests
+import { TextDecoder, TextEncoder } from "util";
 import "@testing-library/jest-dom";
+
+// jsdom does not implement TextEncoder/TextDecoder, which react-router v7 needs
+global.TextEncoder = TextEncoder as typeof global.TextEncoder;
+global.TextDecoder = TextDecoder as typeof global.TextDecoder;
 
 // Tests are written against the guest client config, so REACT_APP_CLIENT stays unset.
 process.env.REACT_APP_API_BASE_URL = "http://localhost:8000";
