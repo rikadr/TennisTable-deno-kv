@@ -46,6 +46,14 @@ double Engine::step() {
   if (rpm_ > cfg_.engine.revLimitRpm) sparkEnabled_ = false;
   else if (rpm_ < cfg_.engine.revLimitRpm - 200.0) sparkEnabled_ = true;
 
+  // Deceleration fuel cut: closed throttle at speed. Real ECUs stop
+  // fuel entirely and resume near idle.
+  if (throttle_ < 0.06 && rpm_ > 2200.0) fuelCut_ = true;
+  else if (throttle_ > 0.12 || rpm_ < 1600.0) fuelCut_ = false;
+  const bool fire = sparkEnabled_ && !fuelCut_;
+  const double popChance =
+      !fire ? cfg_.combustion.overrunPopChance : 0.0;
+
   exhaust_.beginSample();
   intake_.beginSample();
 
@@ -63,6 +71,7 @@ double Engine::step() {
   for (int i = 0; i < n; ++i) {
     cylinders_[i].setVariationScale(varScale);
     cylinders_[i].setSparkAdvance(spark);
+    cylinders_[i].setOverrun(popChance, cfg_.combustion.overrunPopHeat);
     PortState exPort;
     exPort.basePressurePa = cfg_.exhaust.ambientPressurePa;
     exPort.incomingWave = exhaust_.portIncoming(i);
@@ -79,7 +88,7 @@ double Engine::step() {
 
     const CylinderOutputs out = cylinders_[i].step(
         cycleDeg_, dTheta, dt_, inPort, exPort, cfg_.intake.manifoldTempK,
-        sparkEnabled_);
+        fire);
 
     // Convert mass flow to volume velocity in each duct.
     const double uEx = out.mdotExhaust / exhaust_.portDensity(i);

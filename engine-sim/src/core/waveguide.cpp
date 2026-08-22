@@ -39,7 +39,7 @@ void WaveguidePipe::init(double lengthM, double diameterM, double tempK,
   delay_ = lengthM * fs / c_;
   if (delay_ < 4.0) delay_ = 4.0;
   baseGain_ = std::exp(-lossPerMeter * lengthM) * (1.0 - extraLoss);
-  gainF_ = gainB_ = baseGain_;
+  gainF_ = gainB_ = gainTargetF_ = gainTargetB_ = baseGain_;
   lengthM_ = lengthM;
   lpF_.setCutoff(lossCutoffHz, fs);
   lpB_.setCutoff(lossCutoffHz, fs);
@@ -102,6 +102,7 @@ void RadiationEnd::init(double pipeRadiusM, double soundSpeed, double fs,
 void RadiationEnd::process(WaveguidePipe* pipe) {
   const double pin = pipe->outB();
   // Quadratic jet loss, gated by the previous sample's exit Mach number.
+  convection_ += 3e-4 * (convTarget_ - convection_);
   const double att = 1.0 / (1.0 + nlLoss_ * std::fabs(prevMach_));
   const double refl = -reflGain_ * convection_ * att * lp_.process(pin);
   pipe->inB(refl);

@@ -66,6 +66,8 @@ SimConfig loadConfig(const std::string& path) {
     get(b, "combustion_efficiency", c.combustion.combustionEfficiency);
     get(b, "cycle_variation", c.combustion.cycleVariation);
     get(b, "idle_variation_boost", c.combustion.idleVariationBoost);
+    get(b, "overrun_pop_chance", c.combustion.overrunPopChance);
+    get(b, "overrun_pop_heat", c.combustion.overrunPopHeat);
     get(b, "wall_temp_k", c.combustion.wallTempK);
     get(b, "wall_h_w_m2k", c.combustion.wallH);
   }

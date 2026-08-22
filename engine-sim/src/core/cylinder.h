@@ -38,6 +38,12 @@ class Cylinder {
                        double intakeTempK, bool sparkEnabled);
 
   void setVariationScale(double s) { varScale_ = s; }
+  // Overrun/limiter pops: when the spark is cut, popChance of the cycles
+  // ignite late in the cycle instead, with popHeat of a normal charge.
+  void setOverrun(double popChance, double popHeat) {
+    popChance_ = popChance;
+    popHeat_ = popHeat;
+  }
   void setSparkAdvance(double advDeg) {
     sparkAngleDeg_ = 720.0 - advDeg;
     if (sparkAngleDeg_ >= 720.0) sparkAngleDeg_ -= 720.0;
@@ -71,6 +77,9 @@ class Cylinder {
   double cycleVar_ = 0.04;
   double varScale_ = 1.0;
   double burnProgressDeg_ = -1.0;  // < 0 means not burning
+  double popPendingDeg_ = -1.0;    // countdown to a scheduled late burn
+  double popChance_ = 0.0;
+  double popHeat_ = 0.3;
   double burnDurDeg_ = 55.0;
   double qTotal_ = 0.0;
   double prevXb_ = 0.0;

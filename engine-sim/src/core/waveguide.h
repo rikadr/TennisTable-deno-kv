@@ -125,6 +125,8 @@ class WaveguidePipe {
       f = fwd_.readFrac(delay_ - dF);
       b = bwd_.readFrac(delay_ - dB);
     }
+    gainF_ += 3e-4 * (gainTargetF_ - gainF_);
+    gainB_ += 3e-4 * (gainTargetB_ - gainB_);
     outB_ = gainF_ * lpF_.process(f);
     outA_ = gainB_ * lpB_.process(b);
   }
@@ -150,9 +152,11 @@ class WaveguidePipe {
   // Extra attenuation from grazing mean flow, set from the engine's mean
   // exhaust flow. Downstream-traveling waves (forward, with the flow)
   // lose far less than upstream-traveling waves (against the flow).
+  // Targets only; propagate() glides toward them (~35 ms) so stepped
+  // updates cannot create audible zipper modulation.
   void setFlowGain(double fwdFactor, double bwdFactor) {
-    gainF_ = baseGain_ * fwdFactor;
-    gainB_ = baseGain_ * bwdFactor;
+    gainTargetF_ = baseGain_ * fwdFactor;
+    gainTargetB_ = baseGain_ * bwdFactor;
   }
   double lengthM() const { return lengthM_; }
 
@@ -172,6 +176,8 @@ class WaveguidePipe {
   double delay_ = 8.0;
   double gainF_ = 1.0;
   double gainB_ = 1.0;
+  double gainTargetF_ = 1.0;
+  double gainTargetB_ = 1.0;
   double baseGain_ = 1.0;
   double lengthM_ = 0.1;
   double z0_ = 1.0;
@@ -262,7 +268,7 @@ class RadiationEnd {
   void setMeanMach(double m) {
     if (m < 0.0) m = 0.0;
     if (m > 0.5) m = 0.5;
-    convection_ = (1.0 - m) / ((1.0 + m) * (1.0 + m));
+    convTarget_ = (1.0 - m) / ((1.0 + m) * (1.0 + m));
   }
   void clear();
 
@@ -270,6 +276,7 @@ class RadiationEnd {
   OnePoleLP lp_;
   double reflGain_ = 0.985;
   double convection_ = 1.0;
+  double convTarget_ = 1.0;
   double radiated_ = 0.0;
   double prevU_ = 0.0;
   double diffNorm_ = 1.0;

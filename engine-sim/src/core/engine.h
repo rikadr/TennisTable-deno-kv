@@ -44,6 +44,7 @@ class Engine {
   double throttle_ = 0.1;
   double manifoldPa_ = 40000.0;
   bool sparkEnabled_ = true;
+  bool fuelCut_ = false;
 
   std::vector<Cylinder> cylinders_;
   std::vector<OnePoleLP> flowNoiseLp_;

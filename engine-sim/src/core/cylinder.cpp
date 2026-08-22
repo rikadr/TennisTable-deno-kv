@@ -184,7 +184,22 @@ CylinderOutputs Cylinder::step(double globalCycleDeg, double dThetaDeg,
       burnProgressDeg_ = 0.0;
       prevXb_ = 0.0;
     } else {
-      burnProgressDeg_ = -1.0;  // misfire (rev limiter cut)
+      burnProgressDeg_ = -1.0;  // fuel or spark cut: no normal burn
+      // Overrun pop: unburned charge ignites late, with the exhaust
+      // valve open, producing the pop through the normal gas path.
+      if (popChance_ > 0.0 && rng_.uniform() < popChance_) {
+        popPendingDeg_ = 150.0 + 130.0 * rng_.uniform();
+      }
+    }
+  }
+
+  if (popPendingDeg_ >= 0.0) {
+    popPendingDeg_ -= dThetaDeg;
+    if (popPendingDeg_ < 0.0) {
+      qTotal_ = m_ * heatPerKgAir_ * popHeat_ * (0.5 + rng_.uniform());
+      burnDurDeg_ = 18.0 + 22.0 * rng_.uniform();
+      burnProgressDeg_ = 0.0;
+      prevXb_ = 0.0;
     }
   }
 

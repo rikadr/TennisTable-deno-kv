@@ -39,6 +39,10 @@ struct CombustionConfig {
   // Effective variation = cycleVariation * (1 + idleVariationBoost *
   // (1 - manifold/ambient)).
   double idleVariationBoost = 0.0;
+  // Overrun pops: during deceleration fuel cut (and limiter cut), a
+  // fraction of cycles burns late, while the exhaust valve is open.
+  double overrunPopChance = 0.0;
+  double overrunPopHeat = 0.3;   // fraction of a normal charge
   double wallTempK = 450.0;
   double wallH = 500.0;  // W/(m^2 K)
 };

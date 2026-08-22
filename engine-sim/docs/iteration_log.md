@@ -283,3 +283,27 @@ single-threaded. Sandbox CPU: Intel Xeon @ 2.80 GHz (4 vCPU).
 - configs/2gr_fe.json modernized: idle spark retard, idle variation
   boost, duct loss corner 1600 Hz, directional flow damping, Geiger
   sources off, level recalibrated.
+
+## Iteration 15 (user feedback: interference, Geiger idle, dynamics, pops)
+
+- "Electronic interference at high revs": REAL DSP BUG. The grazing-flow
+  gains and the exit convection factor stepped once every 64 samples,
+  a 1500 Hz zipper modulation. Both now glide per-sample (~35 ms).
+  Verified: the top spectral peaks at 6400 rpm are engine orders and
+  cycle-rate sidebands only.
+- "Geiger clicks, no rumble": the flat per-metre loss damped 100-300 Hz
+  as hard as HF, but wall losses are physically tiny at low frequency.
+  Flat loss cut to 0.08-0.12 on listening configs; the HF corner does
+  the damping. The 100-300 Hz modes now ring a few cycles per pop.
+- "Are you adding compression?": no dynamics processor exists; the
+  soft limiter was engaging on peaks. Recalibrated so only the loudest
+  overrun bangs touch it. The idle-to-WOT RMS span is still ~6-10 dB
+  against a real ~25-30 dB; chain dumps show the remaining gap sits in
+  the source span (port pulses +20 dB, real ~+30 dB) and the
+  muffler-path attenuation of WOT harmonics. OPEN ITEM.
+- NEW physics: deceleration fuel cut (DFCO, throttle < 6% above
+  2200 rpm, resume below 1600) with stochastic late burns: popChance of
+  cut cycles ignite 150-280 deg late with 0.5-1.5 x popHeat of a
+  normal charge, while the exhaust valve is open. The pop travels
+  through the normal gas path. Also fires when banging the limiter.
+  Knobs: combustion.overrun_pop_chance / overrun_pop_heat.

@@ -49,7 +49,9 @@
   "wall_temp_k": 460.0,
   "wall_h_w_m2k": 500.0,
   "idle_variation_boost": 3.5,
-  "spark_advance_idle_deg": 5.0
+  "spark_advance_idle_deg": 5.0,
+  "overrun_pop_chance": 0.55,
+  "overrun_pop_heat": 0.4
  },
  "valvetrain": {
   "intake_duration_deg": 242.0,
@@ -110,7 +112,7 @@
    0.9
   ],
   "steepening_gain": 1.0,
-  "loss_per_meter": 0.25,
+  "loss_per_meter": 0.08,
   "loss_cutoff_hz": 1400.0,
   "exit_loss": 0.03,
   "radiation_reflection": 0.985,
