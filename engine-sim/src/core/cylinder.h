@@ -1,0 +1,76 @@
+#pragma once
+#include "core/config.h"
+#include "core/gas.h"
+#include "core/kinematics.h"
+#include "core/util.h"
+#include "core/valve.h"
+
+namespace enginesim {
+
+// Port conditions the cylinder sees this sample, and the flow it returns.
+struct PortState {
+  double absPressurePa = 101325.0;  // waveguide pressure at the port
+  double gasTempK = 300.0;          // duct gas temperature (for backflow)
+  double density = 1.2;             // duct gas density
+};
+
+struct CylinderOutputs {
+  double mdotExhaust = 0.0;  // kg/s, positive out of the cylinder
+  double mdotIntake = 0.0;   // kg/s, positive into the cylinder
+  double pressurePa = 0.0;
+  double tempK = 0.0;
+  bool valveEvent = false;   // an intake or exhaust valve opened or closed
+};
+
+// One cylinder: crank-angle volume, ideal-gas energy balance, Wiebe heat
+// release, wall heat loss, and compressible valve flow on both ports.
+class Cylinder {
+ public:
+  void init(const SimConfig& cfg, int index, double phaseDeg, uint64_t seed);
+
+  // Advance by dThetaDeg of crank rotation over dt seconds.
+  // intakeManifoldPa is the quasi-static manifold pressure from throttle.
+  CylinderOutputs step(double globalCycleDeg, double dThetaDeg, double dt,
+                       const PortState& intakePort, const PortState& exhaustPort,
+                       double intakeManifoldPa, double intakeTempK,
+                       bool sparkEnabled);
+
+  double phaseDeg() const { return phaseDeg_; }
+  double pressurePa() const { return p_; }
+  double tempK() const { return t_; }
+
+ private:
+  double wiebeX(double tau) const;
+
+  CrankGeometry geom_;
+  CamLobe intakeCam_, exhaustCam_;
+  ValveGeometry intakeValve_, exhaustValve_;
+
+  double phaseDeg_ = 0.0;   // this cylinder's TDC-firing offset in the cycle
+  double prevLocalDeg_ = 0.0;
+
+  // Gas state.
+  double m_ = 4e-4;  // kg
+  double t_ = 400.0; // K
+  double p_ = 101325.0;
+
+  // Combustion state.
+  double wiebeA_ = 5.0, wiebeM_ = 2.0;
+  double burnBaseDeg_ = 55.0;
+  double sparkAngleDeg_ = 698.0;  // cycle angle where burn starts
+  double heatPerKgAir_ = 2.8e6;
+  double combEff_ = 0.96;
+  double cycleVar_ = 0.04;
+  double burnProgressDeg_ = -1.0;  // < 0 means not burning
+  double burnDurDeg_ = 55.0;
+  double qTotal_ = 0.0;
+  double prevXb_ = 0.0;
+
+  // Walls.
+  double wallTempK_ = 450.0;
+  double wallH_ = 500.0;
+
+  Rng rng_{1};
+};
+
+}  // namespace enginesim
