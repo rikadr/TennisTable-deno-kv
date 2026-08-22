@@ -116,9 +116,9 @@
   "radiation_reflection": 0.985,
   "flow_noise_gain": 0.0,
   "flow_noise_cutoff_hz": 3000.0,
-  "flow_damping": 6.0,
-  "exit_nl_loss": 30.0,
-  "pipe_nl_loss": 20.0
+  "flow_damping": 3.0,
+  "exit_nl_loss": 3.0,
+  "pipe_nl_loss": 1.0
  },
  "mechanical": {
   "valvetrain_gain": 0.0,

@@ -38,8 +38,8 @@ void WaveguidePipe::init(double lengthM, double diameterM, double tempK,
   z0_ = rho_ * c_ / area_;
   delay_ = lengthM * fs / c_;
   if (delay_ < 4.0) delay_ = 4.0;
-  gain_ = std::exp(-lossPerMeter * lengthM) * (1.0 - extraLoss);
-  baseGain_ = gain_;
+  baseGain_ = std::exp(-lossPerMeter * lengthM) * (1.0 - extraLoss);
+  gainF_ = gainB_ = baseGain_;
   lengthM_ = lengthM;
   lpF_.setCutoff(lossCutoffHz, fs);
   lpB_.setCutoff(lossCutoffHz, fs);

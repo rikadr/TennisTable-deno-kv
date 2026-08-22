@@ -144,16 +144,22 @@ void ExhaustSystem::setMeanFlow(double mdotTotal) {
   if (flowDamping_ <= 0.0) return;
   // Runners see 1/n of the flow, bank pipes 1/banks, the rest sees all
   // of it (dual exit splits it again). M = mdot / (rho S c).
+  // Upstream-traveling waves fight the flow and lose flowDamping_ per
+  // Mach-metre; downstream-traveling waves ride it and lose little.
+  const double kUp = flowDamping_;
+  const double kDown = 0.15 * flowDamping_;
   const double perRunner = mdotTotal / std::max<size_t>(1, runners_.size());
   for (auto& r : runners_) {
     const double m = perRunner / (r->density() * r->area() * r->soundSpeed());
-    r->setFlowGain(std::exp(-flowDamping_ * m * r->lengthM()));
+    r->setFlowGain(std::exp(-kDown * m * r->lengthM()),
+                   std::exp(-kUp * m * r->lengthM()));
   }
   for (auto& p : pipes_) {
     double share = mdotTotal;
     if (p->area() < 0.9 * tailpipes_[0]->area() * 4.0) share *= split;
     const double m = share / (p->density() * p->area() * p->soundSpeed());
-    p->setFlowGain(std::exp(-flowDamping_ * m * p->lengthM()));
+    p->setFlowGain(std::exp(-kDown * m * p->lengthM()),
+                   std::exp(-kUp * m * p->lengthM()));
   }
 }
 

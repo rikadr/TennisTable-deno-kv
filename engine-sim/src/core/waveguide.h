@@ -125,8 +125,8 @@ class WaveguidePipe {
       f = fwd_.readFrac(delay_ - dF);
       b = bwd_.readFrac(delay_ - dB);
     }
-    outB_ = gain_ * lpF_.process(f);
-    outA_ = gain_ * lpB_.process(b);
+    outB_ = gainF_ * lpF_.process(f);
+    outA_ = gainB_ * lpB_.process(b);
   }
 
   static constexpr double kMaxShift = 1.5;  // samples, shock saturation
@@ -148,8 +148,12 @@ class WaveguidePipe {
   }
 
   // Extra attenuation from grazing mean flow, set from the engine's mean
-  // exhaust flow. factor multiplies the per-traversal gain.
-  void setFlowGain(double factor) { gain_ = baseGain_ * factor; }
+  // exhaust flow. Downstream-traveling waves (forward, with the flow)
+  // lose far less than upstream-traveling waves (against the flow).
+  void setFlowGain(double fwdFactor, double bwdFactor) {
+    gainF_ = baseGain_ * fwdFactor;
+    gainB_ = baseGain_ * bwdFactor;
+  }
   double lengthM() const { return lengthM_; }
 
   double impedance() const { return z0_; }   // rho c / S, acoustic ohms
@@ -166,7 +170,8 @@ class WaveguidePipe {
   DelayLine fwd_, bwd_;
   OnePoleLP lpF_, lpB_;
   double delay_ = 8.0;
-  double gain_ = 1.0;
+  double gainF_ = 1.0;
+  double gainB_ = 1.0;
   double baseGain_ = 1.0;
   double lengthM_ = 0.1;
   double z0_ = 1.0;

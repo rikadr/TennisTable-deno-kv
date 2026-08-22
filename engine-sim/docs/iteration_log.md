@@ -263,3 +263,23 @@ single-threaded. Sandbox CPU: Intel Xeon @ 2.80 GHz (4 vCPU).
   idle reference 8.0 -> 4.4 dB (target < 3).
 - The straight-pipe config inherits the tuned header geometry (same
   physical parts), keeps open tips and no microphone low-pass.
+
+## Iteration 14 (V6 renders exposed two load-path bugs)
+
+- Rendering the Toyota 2GR-FE with the modern physics showed an
+  INVERTED level ladder: idle louder than WOT redline. Chain dump:
+  port waves scale correctly with load (+20 dB), but the exit AC flow
+  at WOT was 4x SMALLER than at idle.
+- Cause 1: grazing-flow damping applied to both travel directions.
+  At WOT mean flow this stacked to roughly -30 dB across the network.
+  Physically the mean flow attenuates upstream-traveling waves and
+  barely touches downstream-traveling ones. Fix: directional flow
+  gains (kDown = 0.15 kUp); flow_damping recalibrated to 3.
+- Cause 2: pipe_nl_loss 20 and exit_nl_loss 30 were about 20x beyond
+  the physical quadratic-resistance scale (zeta ~ 1); at WOT wave
+  amplitudes they removed ~18 dB per traversal. Set to 1 and 3.
+- Result: V6 RMS ladder now monotonic (-30.7 / -26.0 / -21.9 dB at
+  650 / 3000 / 6400). The same fixes apply to both R8 configs.
+- configs/2gr_fe.json modernized: idle spark retard, idle variation
+  boost, duct loss corner 1600 Hz, directional flow damping, Geiger
+  sources off, level recalibrated.

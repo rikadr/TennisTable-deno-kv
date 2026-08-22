@@ -39,7 +39,9 @@
   "combustion_efficiency": 0.96,
   "cycle_variation": 0.04,
   "wall_temp_k": 450.0,
-  "wall_h_w_m2k": 500.0
+  "wall_h_w_m2k": 500.0,
+  "spark_advance_idle_deg": 5.0,
+  "idle_variation_boost": 3.5
  },
  "valvetrain": {
   "intake_duration_deg": 235.0,
@@ -104,20 +106,27 @@
   "tailpipe_diameter_m": 0.054,
   "tailpipe_temp_k": 550.0,
   "steepening_gain": 1.0,
-  "loss_per_meter": 0.06,
-  "loss_cutoff_hz": 8000.0
+  "loss_per_meter": 0.25,
+  "loss_cutoff_hz": 1600.0,
+  "exit_nl_loss": 3.0,
+  "pipe_nl_loss": 1.0,
+  "flow_damping": 3.0,
+  "flow_noise_gain": 0.0,
+  "radiation_reflection": 0.985
  },
  "mechanical": {
-  "valvetrain_gain": 0.008,
+  "valvetrain_gain": 0.0,
   "tick_bandpass_hz": 3200.0
  },
  "output": {
   "sample_rate": 48000,
   "internal_oversample": 2,
   "exhaust_gain": 1.0,
-  "intake_gain": 0.12,
+  "intake_gain": 0.08,
   "mechanical_gain": 1.0,
-  "master_gain": 0.0015,
-  "limiter_drive": 1.0
+  "master_gain": 0.006,
+  "limiter_drive": 1.0,
+  "mic_highpass_hz": 30.0,
+  "mic_lowpass_hz": 0.0
  }
 }
