@@ -1,6 +1,6 @@
 {
  "name": "toyota_2gr_fe",
- "comment": "Toyota 2GR-FE, 3.5 L 60-degree V6, naturally aspirated. Exhaust geometry is a tuning estimate for a transverse sedan (Camry style) until reference recordings fix the car. See docs/iteration_log.md for every changed value.",
+ "comment": "Toyota 2GR-FE 3.5 V6, sports cat-back: straight-through absorptive muffler, no reactive chambers. The double-chamber stock muffler blocks 150-300 Hz (verified with --pulse-test), which is the audible presence band of an engine; a stock Camry idle is nearly silent and makes a lifeless demo.",
  "engine": {
   "cylinders": 6,
   "layout": "V",
@@ -84,32 +84,19 @@
   ],
   "bank_pipe_diameter_m": 0.054,
   "bank_pipe_temp_k": 900.0,
-  "mid_pipe_length_m": 0.5,
+  "mid_pipe_length_m": 0.8,
   "mid_pipe_diameter_m": 0.057,
   "mid_pipe_temp_k": 750.0,
-  "chambers": [
-   {
-    "length_m": 0.3,
-    "diameter_m": 0.15,
-    "temp_k": 700.0,
-    "absorption": 0.15
-   },
-   {
-    "length_m": 0.45,
-    "diameter_m": 0.2,
-    "temp_k": 650.0,
-    "absorption": 0.35
-   }
-  ],
+  "chambers": [],
   "connect_pipe_length_m": 0.6,
   "connect_pipe_diameter_m": 0.054,
   "connect_pipe_temp_k": 700.0,
-  "tailpipe_length_m": 0.35,
+  "tailpipe_length_m": 0.45,
   "tailpipe_diameter_m": 0.054,
   "tailpipe_temp_k": 550.0,
   "steepening_gain": 1.0,
   "loss_per_meter": 0.1,
-  "loss_cutoff_hz": 1600.0,
+  "loss_cutoff_hz": 900.0,
   "exit_nl_loss": 3.0,
   "pipe_nl_loss": 1.0,
   "flow_damping": 3.0,
@@ -126,7 +113,7 @@
   "exhaust_gain": 1.0,
   "intake_gain": 0.08,
   "mechanical_gain": 1.0,
-  "master_gain": 0.0022,
+  "master_gain": 0.0002,
   "limiter_drive": 1.0,
   "mic_highpass_hz": 30.0,
   "mic_lowpass_hz": 0.0

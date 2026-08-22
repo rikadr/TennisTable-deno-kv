@@ -13,11 +13,14 @@
 #include <string>
 
 #include "core/config.h"
+#include "core/exhaust_system.h"
 #include "core/gas.h"
 #include "core/kinematics.h"
 #include "core/renderer.h"
+#include "core/resampler.h"
 #include "core/waveguide.h"
 #include "core/wav.h"
+#include <vector>
 
 #ifdef ENGINESIM_REALTIME
 namespace enginesim { int runRealtime(const SimConfig& cfg, uint64_t seed); }
@@ -115,6 +118,7 @@ int main(int argc, char** argv) {
   bool haveSweep = false;
   bool wantRealtime = false;
   bool wantGui = false;
+  bool pulseTest = false;
 
   for (int i = 1; i < argc; ++i) {
     const std::string a = argv[i];
@@ -147,6 +151,7 @@ int main(int argc, char** argv) {
     else if (a == "--stats") statsPath = next();
     else if (a == "--stub-tone") opt.stubTone = true;
     else if (a == "--rev") opt.revProfile = true;
+    else if (a == "--pulse-test") { pulseTest = true; }
     else if (a == "--dump") opt.dumpPath = next();
     else if (a == "--profile") opt.profile = true;
     else if (a == "--selftest") return selftest();
@@ -190,6 +195,41 @@ int main(int argc, char** argv) {
     std::fprintf(stderr, "built without ENGINESIM_REALTIME\n");
     return 1;
 #endif
+  }
+
+  if (pulseTest) {
+    // Network isolation test: one synthetic blowdown pulse into runner 0,
+    // all other ports still. Writes the radiated response.
+    ExhaustSystem ex;
+    ex.init(cfg, cfg.internalRate());
+    const double fs = cfg.internalRate();
+    const int n = static_cast<int>(fs * 2.0);
+    const int pw = static_cast<int>(0.005 * fs);   // 5 ms pulse
+    std::vector<double> outv;
+    outv.reserve(n / cfg.output.internalOversample + 8);
+    HalfBandDecimator deci;
+    for (int i = 0; i < n; ++i) {
+      ex.beginSample();
+      double u0 = 0.0;
+      if (i < pw) {
+        const double x = static_cast<double>(i) / pw;
+        const double p = 5000.0 * (0.5 - 0.5 * std::cos(2.0 * kPi * x));
+        u0 = p / ex.portImpedance(0);
+      }
+      for (int c2 = 0; c2 < cfg.engine.cylinders; ++c2)
+        ex.setPortFlow(c2, c2 == 0 ? u0 : 0.0);
+      const double rad = ex.finishSample();
+      double y;
+      if (cfg.output.internalOversample == 2) {
+        if (deci.push(rad, y)) outv.push_back(y * 2e-4);
+      } else {
+        outv.push_back(rad * 2e-4);
+      }
+    }
+    writeWav16(outPath.empty() ? "out/pulse_test.wav" : outPath, outv,
+               cfg.output.sampleRate);
+    std::printf("pulse test written\n");
+    return 0;
   }
 
   if (outPath.empty()) {

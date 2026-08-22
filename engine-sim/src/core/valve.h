@@ -12,6 +12,11 @@ struct CamLobe {
   double centerlineDeg = 0.0;
   double durationDeg = 235.0;
   double maxLiftM = 0.010;
+  // Shape exponent on the raised-cosine bell. 1 is the plain bell,
+  // whose zero initial slope opens the valve far slower than a real
+  // profile; 0.6-0.8 cracks the valve open fast off the seat, which is
+  // what gives the blowdown pulse its front.
+  double shapePower = 1.0;
 
   // Exact lift at cycle angle (deg in [0, 720)).
   double liftExact(double cycleDeg) const {
@@ -23,7 +28,7 @@ struct CamLobe {
     if (d <= -half || d >= half) return 0.0;
     const double x = (d + half) / durationDeg;  // 0..1 across the event
     const double c = 0.5 - 0.5 * std::cos(kTwoPi * x);
-    return maxLiftM * c;
+    return maxLiftM * std::pow(c, shapePower);
   }
 
   // Tabulated lift with linear interpolation; call buildTable() first.

@@ -10,6 +10,8 @@ void Cylinder::init(const SimConfig& cfg, int index, double phaseDeg,
   geom_.set(cfg.engine.boreMm * 1e-3, cfg.engine.strokeMm * 1e-3,
             cfg.engine.rodLengthMm * 1e-3, cfg.engine.compressionRatio);
 
+  intakeCam_.shapePower = cfg.valvetrain.liftShapePower;
+  exhaustCam_.shapePower = cfg.valvetrain.liftShapePower;
   intakeCam_.centerlineDeg = cfg.valvetrain.intakeCenterlineAtdcDeg + 360.0;
   intakeCam_.durationDeg = cfg.valvetrain.intakeDurationDeg;
   intakeCam_.maxLiftM = cfg.valvetrain.intakeLiftMm * 1e-3;
@@ -216,7 +218,7 @@ CylinderOutputs Cylinder::step(double globalCycleDeg, double dThetaDeg,
   // --- Wall heat loss ---
   const double height = v / geom_.boreArea;
   const double aWall = 2.5 * geom_.boreArea + boreCircumference_ * height;
-  const double dQWall = wallH_ * aWall * (t_ - wallTempK_) * dt;
+  const double dQWall = wallH_ * wallHScale_ * aWall * (t_ - wallTempK_) * dt;
 
   // --- Energy balance ---
   // dU = -P dV + dQ_comb - dQ_wall + h_in dm_in - h_out dm_out.

@@ -68,10 +68,16 @@ void ExhaustSystem::init(const SimConfig& cfg, double fs) {
     for (size_t ci = 0; ci < x.chambers.size(); ++ci) {
       const auto& ch = x.chambers[ci];
       auto chamber = std::make_unique<WaveguidePipe>();
+      // Absorptive packing works on high frequencies only; below about
+      // 300 Hz it is nearly transparent. A broadband per-traversal loss
+      // here multiplies over the many internal bounces and annihilates
+      // the 100-300 Hz band (measured with the pulse test). So the
+      // absorption sets the low-pass corner, and the broadband part
+      // stays small (perforation friction).
       chamber->init(ch.lengthM, ch.diameterM, ch.tempK, ambientPa_, fs,
                     x.lossPerMeter,
                     x.lossCutoffHz * (1.0 - 0.7 * ch.absorption),
-                    ch.absorption, 0.0);
+                    0.08 * ch.absorption, 0.0);
       Junction j;
       j.addPortB(prev);
       j.addPortA(chamber.get());
@@ -129,6 +135,7 @@ void ExhaustSystem::init(const SimConfig& cfg, double fs) {
 
   for (auto& j : junctions_) j.finalize();
   flowDamping_ = x.flowDamping;
+  portRefl_ = x.portReflection;
   nBanks_ = nBanks;
 }
 

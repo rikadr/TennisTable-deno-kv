@@ -30,6 +30,7 @@ class Engine {
   double debugCylPressure() const { return dbgCylP_; }
   double debugPortWave() const { return dbgPortW_; }
   double debugExitU() const { return dbgExitU_; }
+  double debugMdotEx() const { return dbgMdotEx_; }
   double lastIntakeRad() const { return lastIntake_; }
   double internalRate() const { return fs_; }
 
@@ -58,6 +59,7 @@ class Engine {
   double dbgCylP_ = 0.0;
   double dbgPortW_ = 0.0;
   double dbgExitU_ = 0.0;
+  double dbgMdotEx_ = 0.0;
   double emaMdot_ = 0.0;
   int flowUpdateCounter_ = 0;
 };

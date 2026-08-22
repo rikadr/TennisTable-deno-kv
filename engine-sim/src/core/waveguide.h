@@ -120,10 +120,18 @@ class WaveguidePipe {
       // Re-read at the shifted position. A first-order Taylor version
       // (x + delta * dx) amplified high frequencies instead of shifting
       // them; a true shifted read keeps the spectrum tilt physical.
-      const double dF = kMaxShift * softSat(steepK_ * f / kMaxShift);
-      const double dB = kMaxShift * softSat(steepK_ * b / kMaxShift);
-      f = fwd_.readFrac(delay_ - dF);
-      b = bwd_.readFrac(delay_ - dB);
+      // The shift saturates at maxShift_ (a fraction of the line delay,
+      // the physical crest advance before a shock forms). An earlier
+      // 1.5-sample cap was ~100x below the physical scale and removed
+      // the front-steepening that gives exhaust pulses their attack.
+      const double dF = maxShift_ * softSat(steepK_ * f / maxShift_);
+      const double dB = maxShift_ * softSat(steepK_ * b / maxShift_);
+      double rF = delay_ - dF;
+      double rB = delay_ - dB;
+      if (rF < 2.0) rF = 2.0;
+      if (rB < 2.0) rB = 2.0;
+      f = fwd_.readFrac(rF);
+      b = bwd_.readFrac(rB);
     }
     gainF_ += 3e-4 * (gainTargetF_ - gainF_);
     gainB_ += 3e-4 * (gainTargetB_ - gainB_);
@@ -131,7 +139,6 @@ class WaveguidePipe {
     outA_ = gainB_ * lpB_.process(b);
   }
 
-  static constexpr double kMaxShift = 1.5;  // samples, shock saturation
 
   // Wave arriving at each end (after propagate()).
   double outA() const { return outA_; }
@@ -187,6 +194,7 @@ class WaveguidePipe {
   double c_ = 340.0;
   double outA_ = 0.0, outB_ = 0.0;
   double steepK_ = 0.0;   // steepening correction, samples per Pa
+  double maxShift_ = 1.5; // shift saturation, samples (12% of the delay)
   double nlLossK_ = 0.0;  // distributed nonlinear loss, 1/Pa
   int delayInt_ = 8;         // static-path integer delay
   double coefs_[4] = {0.0, 1.0, 0.0, 0.0};  // static-path Lagrange coefs

@@ -180,7 +180,7 @@ std::vector<double> renderAudio(const SimConfig& cfg, const RenderOptions& opt,
   int64_t dumpLeft = 0;
   if (!opt.dumpPath.empty() && !opt.stubTone) {
     dump = std::fopen(opt.dumpPath.c_str(), "w");
-    if (dump) std::fprintf(dump, "cylP,portW,exitU,rad\n");
+    if (dump) std::fprintf(dump, "cylP,portW,exitU,rad,mdotEx\n");
     dumpLeft = static_cast<int64_t>(0.5 * fsInt);
   }
   const auto t0 = std::chrono::steady_clock::now();
@@ -226,9 +226,10 @@ std::vector<double> renderAudio(const SimConfig& cfg, const RenderOptions& opt,
       s = 0.0;
     }
     if (dump && capture && dumpLeft > 0) {
-      std::fprintf(dump, "%.6g,%.6g,%.6g,%.6g\n", engine.debugCylPressure(),
-                   engine.debugPortWave(), engine.debugExitU(),
-                   engine.lastExhaustRad());
+      std::fprintf(dump, "%.6g,%.6g,%.6g,%.6g,%.6g\n",
+                   engine.debugCylPressure(), engine.debugPortWave(),
+                   engine.debugExitU(), engine.lastExhaustRad(),
+                   engine.debugMdotEx());
       --dumpLeft;
     }
     s = dc.process(s);

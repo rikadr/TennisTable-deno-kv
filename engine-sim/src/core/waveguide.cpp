@@ -1,5 +1,6 @@
 #include "core/waveguide.h"
 
+#include <algorithm>
 #include <cassert>
 #include <stdexcept>
 #include <cmath>
@@ -43,8 +44,9 @@ void WaveguidePipe::init(double lengthM, double diameterM, double tempK,
   lengthM_ = lengthM;
   lpF_.setCutoff(lossCutoffHz, fs);
   lpB_.setCutoff(lossCutoffHz, fs);
-  fwd_.init(static_cast<int>(delay_) + 12);
-  bwd_.init(static_cast<int>(delay_) + 12);
+  maxShift_ = std::max(1.5, 0.12 * delay_);
+  fwd_.init(static_cast<int>(delay_ + maxShift_) + 12);
+  bwd_.init(static_cast<int>(delay_ + maxShift_) + 12);
 
   // Physical steepening: wave speed is c + ((gamma+1)/2) u with
   // u = p / (rho c). A pressure p shortens the transit time by

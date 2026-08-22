@@ -83,6 +83,7 @@ SimConfig loadConfig(const std::string& path) {
     get(v, "exhaust_valve_diameter_mm", c.valvetrain.exhaustValveDiameterMm);
     get(v, "valves_per_port", c.valvetrain.valvesPerPort);
     get(v, "discharge_coefficient", c.valvetrain.dischargeCoefficient);
+    get(v, "lift_shape_power", c.valvetrain.liftShapePower);
   }
   if (j.contains("intake")) {
     const auto& i = j.at("intake");
@@ -115,6 +116,7 @@ SimConfig loadConfig(const std::string& path) {
     get(x, "tailpipe_temp_k", c.exhaust.tailpipeTempK);
     get(x, "dual_exit", c.exhaust.dualExit);
     get(x, "exit_loss", c.exhaust.exitLoss);
+    get(x, "port_reflection", c.exhaust.portReflection);
     get(x, "flow_noise_gain", c.exhaust.flowNoiseGain);
     get(x, "flow_damping", c.exhaust.flowDamping);
     get(x, "exit_nl_loss", c.exhaust.exitNlLoss);

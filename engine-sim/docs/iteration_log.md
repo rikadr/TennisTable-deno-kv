@@ -307,3 +307,38 @@ single-threaded. Sandbox CPU: Intel Xeon @ 2.80 GHz (4 vCPU).
   normal charge, while the exhaust valve is open. The pop travels
   through the normal gas path. Also fires when banging the limiter.
   Knobs: combustion.overrun_pop_chance / overrun_pop_heat.
+
+## Iteration 16 (the Geiger signature, root-caused)
+
+- The user uploaded the rejected idle render as a hard negative
+  reference. Measurement: 62% of its energy below 100 Hz (inaudible on
+  common playback), 2% at 100-300 Hz where a real engine's audible
+  presence lives (the real R8 idle: 57%). The "Geiger" percept is the
+  sparse >300 Hz residue of pulses whose body is inaudible.
+- New isolation tool: --pulse-test injects one clean 5 ms pulse into
+  runner 0 with the engine off and analyzes the radiated response.
+  Bisection: full network passes 1% of the pulse energy at 150-300 Hz;
+  without the two expansion chambers, 70%. The double-chamber reactive
+  muffler annihilates the presence band - physically correct (a stock
+  Camry idles near-silent), which made the stock-muffler demo config
+  inherently lifeless.
+- Fixes and findings on the way:
+  - Chamber absorption is now frequency-dependent (packing absorbs
+    high frequencies only); the broadband per-traversal loss multiplied
+    over internal bounces and was unphysical.
+  - Port reflection: a closed valve reflects ~0.8, not 1.0
+    (exhaust.port_reflection); softens runner-stub combs.
+  - Woschni-style wall-heat scaling with piston speed (idle P_EVO was
+    already thermodynamically plausible; kept as correct physics).
+  - Steepening shift cap raised from 1.5 samples (~100x below physical)
+    to 12% of each line delay; cam lift gains a shape exponent
+    (lift_shape_power 0.7) for a real crack-open ramp.
+- The V6 demo config becomes a straight-through sports cat-back
+  (no reactive chambers, loss corner 900 Hz):
+  idle bands 7/61/23/8 vs the real car 16/57/18/5;
+  pulse-character metric 4.8 vs the real recording 4.3;
+  idle-to-WOT RMS span 19.4 dB (was ~6).
+- New sanity gate in run_cycle.py ("presence_ok"): the lowest-rpm
+  steady render must hold at least 20% of its energy at 100-300 Hz and
+  at most 55% below 100 Hz. The rejected signature can no longer pass
+  a cycle silently.

@@ -181,6 +181,16 @@ def main():
         for m in agg["renders"].values() if not m.get("is_sweep"))
     agg["sanity"]["firing_freq_ok"] = firing_ok
 
+    # Presence gate (anti-Geiger): the user rejected renders whose energy
+    # hid below 100 Hz with nothing in the audible 100-300 Hz presence
+    # band. The lowest-rpm steady render must carry the presence band.
+    low = min((m for m in agg["renders"].values() if not m.get("is_sweep")),
+              key=lambda m: m.get("rpm", 1e9), default=None)
+    if low is not None and "band_shares" in low:
+        b = low["band_shares"]  # 20-100/100-300/300-800/800-2k/2k-6k
+        agg["sanity"]["presence_ok"] = bool(b[1] >= 0.20 and b[0] <= 0.55)
+    
+
     with open(os.path.join(rdir, "metrics.json"), "w") as f:
         json.dump(agg, f, indent=1)
 

@@ -32,7 +32,7 @@ class ExhaustSystem {
   // Must be called once per cylinder per sample.
   void setPortFlow(int cyl, double u, double extraP = 0.0) {
     auto& r = *runners_[cyl];
-    r.inA(r.outA() + r.impedance() * u + extraP);
+    r.inA(portRefl_ * r.outA() + r.impedance() * u + extraP);
   }
   double runnerArea(int cyl) const { return runners_[cyl]->area(); }
   // Diagnostics: outgoing wave entering runner 0 and exit volume velocity.
@@ -62,6 +62,7 @@ class ExhaustSystem {
   std::vector<RadiationEnd> radiations_;
   std::vector<double> tailMix_;
   double ambientPa_ = 101325.0;
+  double portRefl_ = 0.8;
   double flowDamping_ = 0.0;
   int nBanks_ = 2;
 };

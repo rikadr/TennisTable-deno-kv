@@ -38,6 +38,11 @@ class Cylinder {
                        double intakeTempK, bool sparkEnabled);
 
   void setVariationScale(double s) { varScale_ = s; }
+  // Woschni-style scaling: heat transfer follows the charge motion,
+  // which follows the piston speed. The engine sets this from rpm as
+  // (cm / 8 m/s)^0.8. A constant coefficient over-cools slow idle
+  // cycles so badly that no blowdown pressure survives to EVO.
+  void setWallHScale(double s) { wallHScale_ = s; }
   // Overrun/limiter pops: when the spark is cut, popChance of the cycles
   // ignite late in the cycle instead, with popHeat of a normal charge.
   void setOverrun(double popChance, double popHeat) {
@@ -87,6 +92,7 @@ class Cylinder {
   // Walls.
   double wallTempK_ = 450.0;
   double wallH_ = 500.0;
+  double wallHScale_ = 1.0;
   double boreCircumference_ = 0.3;
 
   // Cached lifts from the previous step (valve event detection).

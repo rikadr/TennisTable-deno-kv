@@ -58,6 +58,7 @@ struct ValvetrainConfig {
   double exhaustValveDiameterMm = 32.0;
   int valvesPerPort = 2;
   double dischargeCoefficient = 0.65;
+  double liftShapePower = 0.7;
 };
 
 struct IntakeConfig {
@@ -102,6 +103,12 @@ struct ExhaustConfig {
   std::vector<double> tailMix = {1.0, 0.35};
   double exitLoss = 0.0;             // extra broadband loss in the tailpipe
   double radiationReflection = 0.985;
+  // Reflection magnitude at the cylinder port (valve + port cavity).
+  // A closed valve does not reflect perfectly: the convoluted port
+  // passage and heat transfer absorb part of the wave. Full reflection
+  // (1.0) makes the runner stubs comb-filter the sound with deep
+  // notches; real ports sit near 0.7-0.9.
+  double portReflection = 0.8;
   // Turbulence noise injected at each exhaust port, scaled by the local
   // dynamic pressure 0.5 rho u^2 of the port jet.
   double flowNoiseGain = 0.0;

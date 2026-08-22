@@ -67,9 +67,15 @@ double Engine::step() {
       cfg_.combustion.sparkAdvanceIdleDeg +
       (cfg_.combustion.sparkAdvanceDeg - cfg_.combustion.sparkAdvanceIdleDeg) *
           std::clamp((load - 0.3) / 0.6, 0.0, 1.0);
+  // Mean piston speed for the Woschni-style wall heat scaling.
+  const double meanPistonSpeed =
+      2.0 * cfg_.engine.strokeMm * 1e-3 * rpm_ / 60.0;
+  const double hScale =
+      std::clamp(std::pow(meanPistonSpeed / 8.0, 0.8), 0.15, 3.0);
   double mechTrig = 0.0;
   for (int i = 0; i < n; ++i) {
     cylinders_[i].setVariationScale(varScale);
+    cylinders_[i].setWallHScale(hScale);
     cylinders_[i].setSparkAdvance(spark);
     cylinders_[i].setOverrun(popChance, cfg_.combustion.overrunPopHeat);
     PortState exPort;
@@ -107,6 +113,7 @@ double Engine::step() {
     intake_.setPortFlow(i, uIn);
 
     if (out.valveEvent) mechTrig += 0.4 + 0.6 * (rpm_ / cfg_.engine.redlineRpm);
+    if (i == 0) dbgMdotEx_ = out.mdotExhaust;
     if (out.mdotExhaust > 0.0) mdotExTotal += out.mdotExhaust;
   }
 

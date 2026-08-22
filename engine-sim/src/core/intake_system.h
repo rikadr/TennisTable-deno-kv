@@ -23,7 +23,7 @@ class IntakeSystem {
 
   void setPortFlow(int cyl, double u) {
     auto& r = *runners_[cyl];
-    r.inA(r.outA() + r.impedance() * u);
+    r.inA(0.8 * r.outA() + r.impedance() * u);
   }
 
   // Returns the radiated intake noise. throttle in [0,1] scales how much
