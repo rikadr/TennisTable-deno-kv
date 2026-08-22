@@ -17,10 +17,7 @@ class IntakeSystem {
 
   void beginSample();
 
-  double portAbsPressure(int cyl, double u, double manifoldPa) const {
-    const auto& r = *runners_[cyl];
-    return manifoldPa + 2.0 * r.outA() + r.impedance() * u;
-  }
+  double portIncoming(int cyl) const { return runners_[cyl]->outA(); }
   double portImpedance(int cyl) const { return runners_[cyl]->impedance(); }
   double portDensity(int cyl) const { return runners_[cyl]->density(); }
 

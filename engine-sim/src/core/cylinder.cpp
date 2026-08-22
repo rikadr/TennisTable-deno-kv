@@ -52,11 +52,55 @@ double Cylinder::wiebeX(double tau) const {
   return 1.0 - std::exp(-wiebeA_ * std::pow(tau, wiebeM_ + 1.0));
 }
 
+namespace {
+
+// Solve the coupled valve/duct flow. The duct pressure rises (or falls)
+// with the flow itself: P_port = base + 2 p_in + Z0 * mdot / rho.
+// Positive result: flow from the cylinder into the duct.
+// Negative result: backflow from the duct into the cylinder.
+double solvePortFlow(double area, double pCyl, double tCyl,
+                     const PortState& port) {
+  if (area <= 0.0) return 0.0;
+  const double pStill = port.basePressurePa + 2.0 * port.incomingWave;
+  const double zOverRho = port.impedance / port.density;
+
+  if (pCyl >= pStill) {
+    // Outflow. The choked branch does not depend on the duct pressure.
+    const double g = kGammaCyl;
+    const double prCrit = std::pow(2.0 / (g + 1.0), g / (g - 1.0));
+    const double mdotChoked = orificeMassFlow(area, pCyl, tCyl, 0.0, g);
+    if (pStill + zOverRho * mdotChoked <= prCrit * pCyl) return mdotChoked;
+    // Subsonic: damped fixed point on mdot. The map is contracting
+    // because the duct back-pressure rises slowly with mdot.
+    double mdot = 0.5 * mdotChoked;
+    for (int it = 0; it < 6; ++it) {
+      double pPort = pStill + zOverRho * mdot;
+      if (pPort > pCyl) pPort = pCyl;
+      const double f = orificeMassFlow(area, pCyl, tCyl, pPort, g);
+      mdot = 0.5 * (mdot + f);
+    }
+    return mdot;
+  }
+
+  // Backflow: the duct is the upstream side, and drawing flow out of it
+  // lowers the duct pressure.
+  const double g = kGammaCyl;
+  double mdot = 0.0;
+  for (int it = 0; it < 6; ++it) {
+    double pPort = pStill - zOverRho * mdot;
+    if (pPort < pCyl) pPort = pCyl;
+    const double f = orificeMassFlow(area, pPort, port.gasTempK, pCyl, g);
+    mdot = 0.5 * (mdot + f);
+  }
+  return -mdot;
+}
+
+}  // namespace
+
 CylinderOutputs Cylinder::step(double globalCycleDeg, double dThetaDeg,
                                double dt, const PortState& intakePort,
                                const PortState& exhaustPort,
-                               double intakeManifoldPa, double intakeTempK,
-                               bool sparkEnabled) {
+                               double intakeTempK, bool sparkEnabled) {
   CylinderOutputs out;
   const double localDeg = wrapAngle(globalCycleDeg - phaseDeg_, 720.0);
   const double thetaRad = deg2rad(localDeg);
@@ -76,27 +120,12 @@ CylinderOutputs Cylinder::step(double globalCycleDeg, double dThetaDeg,
   const double aIn = intakeValve_.effectiveArea(liftIn);
   const double aEx = exhaustValve_.effectiveArea(liftEx);
 
-  // Intake: the port sits at manifold pressure plus the runner acoustics.
-  double mdotIn = 0.0;
-  if (aIn > 0.0) {
-    const double pPort = intakePort.absPressurePa;
-    if (pPort >= p_) {
-      mdotIn = orificeMassFlow(aIn, pPort, intakeTempK, p_, kGammaCyl);
-    } else {
-      mdotIn = -orificeMassFlow(aIn, p_, t_, pPort, kGammaCyl);
-    }
-  }
+  // Intake: positive flow enters the cylinder from the runner.
+  // The solver's sign convention is cylinder-to-duct, so negate.
+  double mdotIn = -solvePortFlow(aIn, p_, t_, intakePort);
 
   // Exhaust: positive flow leaves the cylinder into the runner.
-  double mdotEx = 0.0;
-  if (aEx > 0.0) {
-    const double pPort = exhaustPort.absPressurePa;
-    if (p_ >= pPort) {
-      mdotEx = orificeMassFlow(aEx, p_, t_, pPort, kGammaCyl);
-    } else {
-      mdotEx = -orificeMassFlow(aEx, pPort, exhaustPort.gasTempK, p_, kGammaCyl);
-    }
-  }
+  double mdotEx = solvePortFlow(aEx, p_, t_, exhaustPort);
 
   // Bound the mass change for stability.
   const double maxDm = 0.2 * m_;
@@ -162,7 +191,6 @@ CylinderOutputs Cylinder::step(double globalCycleDeg, double dThetaDeg,
   p_ = m_ * kGasR * t_ / vNext;
   prevLocalDeg_ = localDeg;
 
-  (void)intakeManifoldPa;
   out.mdotExhaust = mdotEx;
   out.mdotIntake = mdotIn;
   out.pressurePa = p_;

@@ -1,89 +1,123 @@
 {
-  "name": "toyota_2gr_fe",
-  "comment": "Toyota 2GR-FE, 3.5 L 60-degree V6, naturally aspirated. Exhaust geometry is a tuning estimate for a transverse sedan (Camry style) until reference recordings fix the car. See docs/iteration_log.md for every changed value.",
-  "engine": {
-    "cylinders": 6,
-    "layout": "V",
-    "v_angle_deg": 60.0,
-    "bore_mm": 94.0,
-    "stroke_mm": 83.0,
-    "rod_length_mm": 147.5,
-    "compression_ratio": 10.8,
-    "firing_order": [1, 2, 3, 4, 5, 6],
-    "bank_of_cylinder": [0, 1, 0, 1, 0, 1],
-    "even_fire": true,
-    "idle_rpm": 650.0,
-    "redline_rpm": 6500.0,
-    "rev_limit_rpm": 6600.0
-  },
-  "combustion": {
-    "wiebe_a": 5.0,
-    "wiebe_m": 2.0,
-    "burn_duration_deg": 55.0,
-    "spark_advance_deg": 22.0,
-    "heat_per_kg_air_j": 2800000.0,
-    "combustion_efficiency": 0.96,
-    "cycle_variation": 0.04,
-    "wall_temp_k": 450.0,
-    "wall_h_w_m2k": 500.0
-  },
-  "valvetrain": {
-    "intake_duration_deg": 235.0,
-    "exhaust_duration_deg": 235.0,
-    "intake_lift_mm": 10.0,
-    "exhaust_lift_mm": 10.0,
-    "intake_centerline_atdc_deg": 110.0,
-    "exhaust_centerline_atdc_deg": 250.0,
-    "intake_valve_diameter_mm": 37.0,
-    "exhaust_valve_diameter_mm": 32.0,
-    "valves_per_port": 2,
-    "discharge_coefficient": 0.65
-  },
-  "intake": {
-    "manifold_temp_k": 330.0,
-    "runner_length_m": 0.32,
-    "runner_diameter_m": 0.042,
-    "plenum_length_m": 0.35,
-    "plenum_diameter_m": 0.12,
-    "radiation_gain": 0.25
-  },
-  "exhaust": {
-    "ambient_pressure_pa": 101325.0,
-    "ambient_temp_k": 293.0,
-    "runner_lengths_m": [0.24, 0.26, 0.18, 0.2, 0.21, 0.23],
-    "runner_diameter_m": 0.038,
-    "runner_temp_k": 1050.0,
-    "bank_pipe_lengths_m": [0.9, 1.1],
-    "bank_pipe_diameter_m": 0.054,
-    "bank_pipe_temp_k": 900.0,
-    "mid_pipe_length_m": 0.5,
-    "mid_pipe_diameter_m": 0.057,
-    "mid_pipe_temp_k": 750.0,
-    "chambers": [
-      { "length_m": 0.3, "diameter_m": 0.15, "temp_k": 700.0, "absorption": 0.15 },
-      { "length_m": 0.45, "diameter_m": 0.2, "temp_k": 650.0, "absorption": 0.35 }
-    ],
-    "connect_pipe_length_m": 0.6,
-    "connect_pipe_diameter_m": 0.054,
-    "connect_pipe_temp_k": 700.0,
-    "tailpipe_length_m": 0.35,
-    "tailpipe_diameter_m": 0.054,
-    "tailpipe_temp_k": 550.0,
-    "steepening_gain": 1.0,
-    "loss_per_meter": 0.06,
-    "loss_cutoff_hz": 8000.0
-  },
-  "mechanical": {
-    "valvetrain_gain": 0.008,
-    "tick_bandpass_hz": 3200.0
-  },
-  "output": {
-    "sample_rate": 48000,
-    "internal_oversample": 2,
-    "exhaust_gain": 1.0,
-    "intake_gain": 0.12,
-    "mechanical_gain": 1.0,
-    "master_gain": 6e-05,
-    "limiter_drive": 1.0
-  }
+ "name": "toyota_2gr_fe",
+ "comment": "Toyota 2GR-FE, 3.5 L 60-degree V6, naturally aspirated. Exhaust geometry is a tuning estimate for a transverse sedan (Camry style) until reference recordings fix the car. See docs/iteration_log.md for every changed value.",
+ "engine": {
+  "cylinders": 6,
+  "layout": "V",
+  "v_angle_deg": 60.0,
+  "bore_mm": 94.0,
+  "stroke_mm": 83.0,
+  "rod_length_mm": 147.5,
+  "compression_ratio": 10.8,
+  "firing_order": [
+   1,
+   2,
+   3,
+   4,
+   5,
+   6
+  ],
+  "bank_of_cylinder": [
+   0,
+   1,
+   0,
+   1,
+   0,
+   1
+  ],
+  "even_fire": true,
+  "idle_rpm": 650.0,
+  "redline_rpm": 6500.0,
+  "rev_limit_rpm": 6600.0
+ },
+ "combustion": {
+  "wiebe_a": 5.0,
+  "wiebe_m": 2.0,
+  "burn_duration_deg": 55.0,
+  "spark_advance_deg": 22.0,
+  "heat_per_kg_air_j": 2800000.0,
+  "combustion_efficiency": 0.96,
+  "cycle_variation": 0.04,
+  "wall_temp_k": 450.0,
+  "wall_h_w_m2k": 500.0
+ },
+ "valvetrain": {
+  "intake_duration_deg": 235.0,
+  "exhaust_duration_deg": 235.0,
+  "intake_lift_mm": 10.0,
+  "exhaust_lift_mm": 10.0,
+  "intake_centerline_atdc_deg": 110.0,
+  "exhaust_centerline_atdc_deg": 250.0,
+  "intake_valve_diameter_mm": 37.0,
+  "exhaust_valve_diameter_mm": 32.0,
+  "valves_per_port": 2,
+  "discharge_coefficient": 0.65
+ },
+ "intake": {
+  "manifold_temp_k": 330.0,
+  "runner_length_m": 0.32,
+  "runner_diameter_m": 0.042,
+  "plenum_length_m": 0.35,
+  "plenum_diameter_m": 0.12,
+  "radiation_gain": 0.25
+ },
+ "exhaust": {
+  "ambient_pressure_pa": 101325.0,
+  "ambient_temp_k": 293.0,
+  "runner_lengths_m": [
+   0.24,
+   0.26,
+   0.18,
+   0.2,
+   0.21,
+   0.23
+  ],
+  "runner_diameter_m": 0.038,
+  "runner_temp_k": 1050.0,
+  "bank_pipe_lengths_m": [
+   0.9,
+   1.1
+  ],
+  "bank_pipe_diameter_m": 0.054,
+  "bank_pipe_temp_k": 900.0,
+  "mid_pipe_length_m": 0.5,
+  "mid_pipe_diameter_m": 0.057,
+  "mid_pipe_temp_k": 750.0,
+  "chambers": [
+   {
+    "length_m": 0.3,
+    "diameter_m": 0.15,
+    "temp_k": 700.0,
+    "absorption": 0.15
+   },
+   {
+    "length_m": 0.45,
+    "diameter_m": 0.2,
+    "temp_k": 650.0,
+    "absorption": 0.35
+   }
+  ],
+  "connect_pipe_length_m": 0.6,
+  "connect_pipe_diameter_m": 0.054,
+  "connect_pipe_temp_k": 700.0,
+  "tailpipe_length_m": 0.35,
+  "tailpipe_diameter_m": 0.054,
+  "tailpipe_temp_k": 550.0,
+  "steepening_gain": 1.0,
+  "loss_per_meter": 0.06,
+  "loss_cutoff_hz": 8000.0
+ },
+ "mechanical": {
+  "valvetrain_gain": 0.008,
+  "tick_bandpass_hz": 3200.0
+ },
+ "output": {
+  "sample_rate": 48000,
+  "internal_oversample": 2,
+  "exhaust_gain": 1.0,
+  "intake_gain": 0.12,
+  "mechanical_gain": 1.0,
+  "master_gain": 0.0015,
+  "limiter_drive": 1.0
+ }
 }

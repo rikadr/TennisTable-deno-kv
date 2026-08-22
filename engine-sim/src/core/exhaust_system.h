@@ -23,10 +23,6 @@ class ExhaustSystem {
   // Wave arriving at cylinder i's port, and the port's absolute pressure
   // if volume velocity U enters the runner there.
   double portIncoming(int cyl) const { return runners_[cyl]->outA(); }
-  double portAbsPressure(int cyl, double u) const {
-    const auto& r = *runners_[cyl];
-    return ambientPa_ + 2.0 * r.outA() + r.impedance() * u;
-  }
   double portImpedance(int cyl) const { return runners_[cyl]->impedance(); }
   double portDensity(int cyl) const { return runners_[cyl]->density(); }
   double portTempK(int cyl) const { return runners_[cyl]->tempK(); }

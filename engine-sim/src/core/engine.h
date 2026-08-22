@@ -42,8 +42,6 @@ class Engine {
   bool sparkEnabled_ = true;
 
   std::vector<Cylinder> cylinders_;
-  std::vector<double> prevExhaustU_;
-  std::vector<double> prevIntakeU_;
   ExhaustSystem exhaust_;
   IntakeSystem intake_;
   MechanicalNoise mech_;

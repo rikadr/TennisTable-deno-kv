@@ -1,0 +1,118 @@
+<!doctype html><meta charset="utf-8">
+<title>enginesim report 20260822_101955</title>
+<style>
+ body { font-family: system-ui, sans-serif; margin: 2rem; max-width: 1100px; }
+ table { border-collapse: collapse; margin: 0.6rem 0 1.4rem; }
+ td, th { border: 1px solid #ccc; padding: 4px 10px; text-align: right; }
+ th { background: #f2f2f2; }
+ td:first-child, th:first-child { text-align: left; }
+ .good { color: #0a7a0a; font-weight: 600; }
+ .bad { color: #c22; font-weight: 600; }
+ .same { color: #999; }
+ img { max-width: 100%; border: 1px solid #ddd; margin: 4px 0; }
+ audio { width: 260px; vertical-align: middle; }
+ .pass { color: #0a7a0a; } .fail { color: #c22; }
+ h2 { margin-top: 2.2rem; border-bottom: 2px solid #eee; }
+ .meta { color: #666; }
+</style>
+<h1>enginesim verification report</h1>
+<p class="meta">cycle 20260822_101955 &middot; git a9ca437 &middot;
+label: baseline after implicit port coupling fix &middot;
+cpu: Intel(R) Xeon(R) Processor @ 2.80GHz
+&middot; first cycle, no previous run</p>
+
+<h2>Sanity</h2><table><tr><th>check</th><th>value</th></tr>
+<tr><td>deterministic</td><td class="pass">PASS</td></tr>
+<tr><td>nan_free</td><td class="pass">PASS</td></tr>
+<tr><td>below_full_scale</td><td class="pass">PASS</td></tr>
+<tr><td>rtf_60s</td><td class="">3.78</td></tr>
+<tr><td>rtf_ok</td><td class="fail">FAIL</td></tr>
+<tr><td>firing_freq_ok</td><td class="pass">PASS</td></tr>
+</table>
+<h2>2gr_fe_650</h2>
+<p>current best<br><audio controls src='../../renders/best/2gr_fe_650.wav'></audio></p>
+<p class='meta'>No reference recording for this point (refs/ is empty or lacks this rpm).</p>
+<table><tr><th>metric</th><th>value</th><th>vs prev</th></tr>
+<tr><td>firing freq error %</td><td>0.019</td><td></td></tr>
+<tr><td>half-order level dB</td><td>-11.2</td><td></td></tr>
+<tr><td>HNR dB</td><td>13.3</td><td></td></tr>
+<tr><td>crest dB</td><td>14.6</td><td></td></tr>
+<tr><td>centroid Hz</td><td>2699</td><td></td></tr>
+<tr><td>flatness</td><td>0.0005</td><td></td></tr>
+<tr><td>max_abs</td><td>0.274</td><td></td></tr>
+<tr><td>rtf</td><td>3.850</td><td></td></tr>
+<tr><td>peak_cyl_pressure_bar</td><td>16.860</td><td></td></tr>
+</table>
+<img src='2gr_fe_650_spec.png' alt='spectrogram 2gr_fe_650'>
+<h2>2gr_fe_1500</h2>
+<p>current best<br><audio controls src='../../renders/best/2gr_fe_1500.wav'></audio></p>
+<p class='meta'>No reference recording for this point (refs/ is empty or lacks this rpm).</p>
+<table><tr><th>metric</th><th>value</th><th>vs prev</th></tr>
+<tr><td>firing freq error %</td><td>0.038</td><td></td></tr>
+<tr><td>half-order level dB</td><td>-2.2</td><td></td></tr>
+<tr><td>HNR dB</td><td>12.7</td><td></td></tr>
+<tr><td>crest dB</td><td>14.4</td><td></td></tr>
+<tr><td>centroid Hz</td><td>2831</td><td></td></tr>
+<tr><td>flatness</td><td>0.0013</td><td></td></tr>
+<tr><td>max_abs</td><td>0.235</td><td></td></tr>
+<tr><td>rtf</td><td>3.510</td><td></td></tr>
+<tr><td>peak_cyl_pressure_bar</td><td>36.610</td><td></td></tr>
+</table>
+<img src='2gr_fe_1500_spec.png' alt='spectrogram 2gr_fe_1500'>
+<h2>2gr_fe_3000</h2>
+<p>current best<br><audio controls src='../../renders/best/2gr_fe_3000.wav'></audio></p>
+<p class='meta'>No reference recording for this point (refs/ is empty or lacks this rpm).</p>
+<table><tr><th>metric</th><th>value</th><th>vs prev</th></tr>
+<tr><td>firing freq error %</td><td>0.035</td><td></td></tr>
+<tr><td>half-order level dB</td><td>-0.8</td><td></td></tr>
+<tr><td>HNR dB</td><td>12.7</td><td></td></tr>
+<tr><td>crest dB</td><td>13.6</td><td></td></tr>
+<tr><td>centroid Hz</td><td>2723</td><td></td></tr>
+<tr><td>flatness</td><td>0.0012</td><td></td></tr>
+<tr><td>max_abs</td><td>0.388</td><td></td></tr>
+<tr><td>rtf</td><td>3.340</td><td></td></tr>
+<tr><td>peak_cyl_pressure_bar</td><td>52.310</td><td></td></tr>
+</table>
+<img src='2gr_fe_3000_spec.png' alt='spectrogram 2gr_fe_3000'>
+<h2>2gr_fe_4500</h2>
+<p>current best<br><audio controls src='../../renders/best/2gr_fe_4500.wav'></audio></p>
+<p class='meta'>No reference recording for this point (refs/ is empty or lacks this rpm).</p>
+<table><tr><th>metric</th><th>value</th><th>vs prev</th></tr>
+<tr><td>firing freq error %</td><td>0.034</td><td></td></tr>
+<tr><td>half-order level dB</td><td>2.9</td><td></td></tr>
+<tr><td>HNR dB</td><td>13.0</td><td></td></tr>
+<tr><td>crest dB</td><td>10.6</td><td></td></tr>
+<tr><td>centroid Hz</td><td>2686</td><td></td></tr>
+<tr><td>flatness</td><td>0.0016</td><td></td></tr>
+<tr><td>max_abs</td><td>0.967</td><td></td></tr>
+<tr><td>rtf</td><td>3.200</td><td></td></tr>
+<tr><td>peak_cyl_pressure_bar</td><td>68.990</td><td></td></tr>
+</table>
+<img src='2gr_fe_4500_spec.png' alt='spectrogram 2gr_fe_4500'>
+<h2>2gr_fe_6400</h2>
+<p>current best<br><audio controls src='../../renders/best/2gr_fe_6400.wav'></audio></p>
+<p class='meta'>No reference recording for this point (refs/ is empty or lacks this rpm).</p>
+<table><tr><th>metric</th><th>value</th><th>vs prev</th></tr>
+<tr><td>firing freq error %</td><td>0.034</td><td></td></tr>
+<tr><td>half-order level dB</td><td>0.9</td><td></td></tr>
+<tr><td>HNR dB</td><td>14.8</td><td></td></tr>
+<tr><td>crest dB</td><td>12.1</td><td></td></tr>
+<tr><td>centroid Hz</td><td>2298</td><td></td></tr>
+<tr><td>flatness</td><td>0.0012</td><td></td></tr>
+<tr><td>max_abs</td><td>0.504</td><td></td></tr>
+<tr><td>rtf</td><td>3.090</td><td></td></tr>
+<tr><td>peak_cyl_pressure_bar</td><td>94.500</td><td></td></tr>
+</table>
+<img src='2gr_fe_6400_spec.png' alt='spectrogram 2gr_fe_6400'>
+<h2>2gr_fe_sweep_800_7000</h2>
+<p class='meta'>No reference recording for this point (refs/ is empty or lacks this rpm).</p>
+<table><tr><th>metric</th><th>value</th><th>vs prev</th></tr>
+<tr><td>HNR dB</td><td>12.7</td><td></td></tr>
+<tr><td>crest dB</td><td>14.1</td><td></td></tr>
+<tr><td>centroid Hz</td><td>2540</td><td></td></tr>
+<tr><td>flatness</td><td>0.0016</td><td></td></tr>
+<tr><td>max_abs</td><td>0.995</td><td></td></tr>
+<tr><td>rtf</td><td>3.720</td><td></td></tr>
+<tr><td>peak_cyl_pressure_bar</td><td>98.830</td><td></td></tr>
+</table>
+<img src='2gr_fe_sweep_800_7000_spec.png' alt='spectrogram 2gr_fe_sweep_800_7000'>

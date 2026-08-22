@@ -13,8 +13,6 @@ void Engine::init(const SimConfig& cfg, uint64_t seed) {
 
   const int n = cfg.engine.cylinders;
   cylinders_.assign(static_cast<size_t>(n), Cylinder());
-  prevExhaustU_.assign(static_cast<size_t>(n), 0.0);
-  prevIntakeU_.assign(static_cast<size_t>(n), 0.0);
 
   // Even-fire: the k-th cylinder in the firing order reaches TDC-firing at
   // k * 720 / n cycle degrees.
@@ -50,27 +48,28 @@ double Engine::step() {
   double mechTrig = 0.0;
   for (int i = 0; i < n; ++i) {
     PortState exPort;
-    exPort.absPressurePa = exhaust_.portAbsPressure(i, prevExhaustU_[i]);
+    exPort.basePressurePa = cfg_.exhaust.ambientPressurePa;
+    exPort.incomingWave = exhaust_.portIncoming(i);
+    exPort.impedance = exhaust_.portImpedance(i);
     exPort.gasTempK = exhaust_.portTempK(i);
     exPort.density = exhaust_.portDensity(i);
 
     PortState inPort;
-    inPort.absPressurePa =
-        intake_.portAbsPressure(i, prevIntakeU_[i], manifoldPa_);
+    inPort.basePressurePa = manifoldPa_;
+    inPort.incomingWave = intake_.portIncoming(i);
+    inPort.impedance = intake_.portImpedance(i);
     inPort.gasTempK = cfg_.intake.manifoldTempK;
     inPort.density = intake_.portDensity(i);
 
     const CylinderOutputs out = cylinders_[i].step(
-        cycleDeg_, dTheta, dt_, inPort, exPort, manifoldPa_,
-        cfg_.intake.manifoldTempK, sparkEnabled_);
+        cycleDeg_, dTheta, dt_, inPort, exPort, cfg_.intake.manifoldTempK,
+        sparkEnabled_);
 
     // Convert mass flow to volume velocity in each duct.
     const double uEx = out.mdotExhaust / exhaust_.portDensity(i);
     const double uIn = -out.mdotIntake / intake_.portDensity(i);
     exhaust_.setPortFlow(i, uEx);
     intake_.setPortFlow(i, uIn);
-    prevExhaustU_[i] = uEx;
-    prevIntakeU_[i] = uIn;
 
     if (out.valveEvent) mechTrig += 0.4 + 0.6 * (rpm_ / cfg_.engine.redlineRpm);
   }

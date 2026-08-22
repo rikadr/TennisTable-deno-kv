@@ -7,11 +7,15 @@
 
 namespace enginesim {
 
-// Port conditions the cylinder sees this sample, and the flow it returns.
+// Port conditions the cylinder sees this sample. The port's absolute
+// pressure depends on the flow itself: P = base + 2 p_in + Z0 U. The
+// cylinder solves the coupled valve/line equation implicitly.
 struct PortState {
-  double absPressurePa = 101325.0;  // waveguide pressure at the port
-  double gasTempK = 300.0;          // duct gas temperature (for backflow)
-  double density = 1.2;             // duct gas density
+  double basePressurePa = 101325.0;  // ambient (exhaust) or manifold (intake)
+  double incomingWave = 0.0;         // p- arriving at the port
+  double impedance = 1.0;            // Z0 = rho c / S of the duct
+  double gasTempK = 300.0;           // duct gas temperature (for backflow)
+  double density = 1.2;              // duct gas density
 };
 
 struct CylinderOutputs {
@@ -29,11 +33,9 @@ class Cylinder {
   void init(const SimConfig& cfg, int index, double phaseDeg, uint64_t seed);
 
   // Advance by dThetaDeg of crank rotation over dt seconds.
-  // intakeManifoldPa is the quasi-static manifold pressure from throttle.
   CylinderOutputs step(double globalCycleDeg, double dThetaDeg, double dt,
                        const PortState& intakePort, const PortState& exhaustPort,
-                       double intakeManifoldPa, double intakeTempK,
-                       bool sparkEnabled);
+                       double intakeTempK, bool sparkEnabled);
 
   double phaseDeg() const { return phaseDeg_; }
   double pressurePa() const { return p_; }

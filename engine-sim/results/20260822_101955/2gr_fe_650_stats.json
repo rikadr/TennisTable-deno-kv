@@ -1,0 +1,15 @@
+{
+  "config": "toyota_2gr_fe",
+  "rpm_start": 650.0,
+  "rpm_end": 650.0,
+  "duration_s": 6.000,
+  "throttle": 0.100,
+  "seed": 42,
+  "sample_rate": 48000,
+  "samples": 288000,
+  "max_abs": 0.274320,
+  "nan_count": 0,
+  "peak_cyl_pressure_bar": 16.86,
+  "wall_s": 1.560,
+  "rtf": 3.85
+}
