@@ -147,6 +147,7 @@ int main(int argc, char** argv) {
     else if (a == "--stats") statsPath = next();
     else if (a == "--stub-tone") opt.stubTone = true;
     else if (a == "--rev") opt.revProfile = true;
+    else if (a == "--dump") opt.dumpPath = next();
     else if (a == "--profile") opt.profile = true;
     else if (a == "--selftest") return selftest();
     else if (a == "--realtime") wantRealtime = true;

@@ -197,6 +197,29 @@ def pulse_envelope(x, f_fire):
     }
 
 
+BAND_EDGES = [(20, 100), (100, 300), (300, 800), (800, 2000), (2000, 6000)]
+
+
+def band_shares(x):
+    """Fraction of spectral energy in each perceptual band."""
+    S = np.abs(np.fft.rfft(x * np.hanning(len(x)))) ** 2
+    fr = np.fft.rfftfreq(len(x), 1.0 / SR)
+    tot = S[fr >= 20].sum() + 1e-30
+    return [float(S[(fr >= a) & (fr < b)].sum() / tot) for a, b in BAND_EDGES]
+
+
+def cycle_contrast(x, f_cycle):
+    """Peak-to-median of the cycle-averaged envelope: how pulse-gated
+    the sound is versus a continuous drone."""
+    cyc = int(SR / f_cycle)
+    n = len(x) // cyc
+    if n < 4:
+        return None
+    prof = np.abs(x[:n * cyc]).reshape(n, cyc).mean(axis=0)
+    sm = prof.reshape(60, -1).mean(axis=1) if cyc >= 60 else prof
+    return float(np.max(sm) / (np.median(sm) + 1e-12))
+
+
 def crest_factor_db(x):
     rms = np.sqrt(np.mean(x ** 2)) + 1e-12
     return float(20 * np.log10(np.max(np.abs(x)) / rms))
@@ -250,8 +273,12 @@ def analyze(render_path, rpm, cylinders, ref_path=None, sweep=None):
         pe = pulse_envelope(x, f0)
         if pe:
             m["pulse"] = pe
+        cc = cycle_contrast(x, f0 / (cylinders / 2.0))
+        if cc:
+            m["cycle_contrast"] = cc
 
     m["crest_factor_db"] = crest_factor_db(x)
+    m["band_shares"] = band_shares(x)
     m["hnr_db"] = hnr_db(x)
     m.update({"shape_" + k if k.endswith("_mean") else k: v
               for k, v in spectral_shape(x).items()})
@@ -289,6 +316,13 @@ def analyze(render_path, rpm, cylinders, ref_path=None, sweep=None):
         m["ref_flatness_mean"] = rshape["flatness_mean"]
         m["ref_hnr_db"] = hnr_db(r)
         m["ref_crest_factor_db"] = crest_factor_db(r)
+        m["ref_band_shares"] = band_shares(r)
+        m["band_l1"] = float(np.sum(np.abs(
+            np.array(m["band_shares"]) - np.array(m["ref_band_shares"]))))
+        if not is_sweep:
+            rcc = cycle_contrast(r, m["firing_hz_expected"] / (cylinders / 2.0))
+            if rcc:
+                m["ref_cycle_contrast"] = rcc
     return m, x
 
 
@@ -320,7 +354,8 @@ def main():
 
     keys = ["firing_hz_expected", "firing_hz_measured", "firing_hz_error_pct",
             "half_order_ratio_db", "harmonic_rms_err_db", "crest_factor_db",
-            "hnr_db", "shape_centroid_hz_mean", "mel_l1", "mfcc_cosine"]
+            "hnr_db", "shape_centroid_hz_mean", "mel_l1", "mfcc_cosine",
+            "band_l1", "cycle_contrast", "ref_cycle_contrast"]
     print(f"== {name} ==")
     for k in keys:
         if k in m:

@@ -18,6 +18,7 @@ struct RenderOptions {
   bool stubTone = false;     // bypass physics; test the harness
   bool profile = false;
   bool revProfile = false;   // human-style neutral rev pattern
+  std::string dumpPath;      // CSV dump of internal signals (diagnostic)
 };
 
 struct RenderStats {

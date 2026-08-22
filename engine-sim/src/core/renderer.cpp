@@ -176,6 +176,13 @@ std::vector<double> renderAudio(const SimConfig& cfg, const RenderOptions& opt,
   double jitter = 0.0;
 
   stats = RenderStats();
+  FILE* dump = nullptr;
+  int64_t dumpLeft = 0;
+  if (!opt.dumpPath.empty() && !opt.stubTone) {
+    dump = std::fopen(opt.dumpPath.c_str(), "w");
+    if (dump) std::fprintf(dump, "cylP,portW,exitU,rad\n");
+    dumpLeft = static_cast<int64_t>(0.5 * fsInt);
+  }
   const auto t0 = std::chrono::steady_clock::now();
 
   const int64_t total = warmupSamples + renderSamples;
@@ -218,6 +225,12 @@ std::vector<double> renderAudio(const SimConfig& cfg, const RenderOptions& opt,
       ++stats.nanCount;
       s = 0.0;
     }
+    if (dump && capture && dumpLeft > 0) {
+      std::fprintf(dump, "%.6g,%.6g,%.6g,%.6g\n", engine.debugCylPressure(),
+                   engine.debugPortWave(), engine.debugExitU(),
+                   engine.lastExhaustRad());
+      --dumpLeft;
+    }
     s = dc.process(s);
     if (useMicHp) s -= micHpLp.process(s);
     if (useMicLp) s = micLp.process(s);
@@ -241,6 +254,7 @@ std::vector<double> renderAudio(const SimConfig& cfg, const RenderOptions& opt,
     }
   }
 
+  if (dump) std::fclose(dump);
   const auto t1 = std::chrono::steady_clock::now();
   stats.wallS = std::chrono::duration<double>(t1 - t0).count();
   stats.sampleCount = static_cast<int64_t>(outBuf.size());

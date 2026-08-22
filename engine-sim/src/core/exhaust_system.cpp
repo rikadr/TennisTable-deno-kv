@@ -22,7 +22,7 @@ void ExhaustSystem::init(const SimConfig& cfg, double fs) {
                       double st) {
     auto p = std::make_unique<WaveguidePipe>();
     p->init(len, dia, temp, ambientPa_, fs, x.lossPerMeter, x.lossCutoffHz,
-            extraLoss, st);
+            extraLoss, st, x.pipeNlLoss);
     WaveguidePipe* raw = p.get();
     pipes_.push_back(std::move(p));
     return raw;
@@ -31,7 +31,8 @@ void ExhaustSystem::init(const SimConfig& cfg, double fs) {
   for (int i = 0; i < n; ++i) {
     auto p = std::make_unique<WaveguidePipe>();
     p->init(x.runnerLengthsM[i], x.runnerDiameterM, x.runnerTempK,
-            ambientPa_, fs, x.lossPerMeter, x.lossCutoffHz, 0.0, steep);
+            ambientPa_, fs, x.lossPerMeter, x.lossCutoffHz, 0.0, steep,
+            x.pipeNlLoss);
     runners_.push_back(std::move(p));
   }
 
@@ -98,7 +99,8 @@ void ExhaustSystem::init(const SimConfig& cfg, double fs) {
     tailpipes_.push_back(tail);
     RadiationEnd r;
     r.init(x.tailpipeDiameterM * 0.5, tail->soundSpeed(), fs,
-           x.radiationReflection);
+           x.radiationReflection, x.exitNlLoss,
+           tail->density() * tail->soundSpeed() * tail->soundSpeed());
     radiations_.push_back(r);
     return first;
   };
@@ -131,6 +133,14 @@ void ExhaustSystem::init(const SimConfig& cfg, double fs) {
 }
 
 void ExhaustSystem::setMeanFlow(double mdotTotal) {
+  // Exit convection loss (independent of flow_damping).
+  const double split = tailMix_.size() > 1 ? 0.5 : 1.0;
+  for (size_t i = 0; i < radiations_.size(); ++i) {
+    const auto* t = tailpipes_[i];
+    const double m =
+        mdotTotal * split / (t->density() * t->area() * t->soundSpeed());
+    radiations_[i].setMeanMach(m);
+  }
   if (flowDamping_ <= 0.0) return;
   // Runners see 1/n of the flow, bank pipes 1/banks, the rest sees all
   // of it (dual exit splits it again). M = mdot / (rho S c).
@@ -139,7 +149,6 @@ void ExhaustSystem::setMeanFlow(double mdotTotal) {
     const double m = perRunner / (r->density() * r->area() * r->soundSpeed());
     r->setFlowGain(std::exp(-flowDamping_ * m * r->lengthM()));
   }
-  const double split = tailMix_.size() > 1 ? 0.5 : 1.0;
   for (auto& p : pipes_) {
     double share = mdotTotal;
     if (p->area() < 0.9 * tailpipes_[0]->area() * 4.0) share *= split;

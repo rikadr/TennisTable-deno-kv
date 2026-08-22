@@ -93,7 +93,7 @@ class WaveguidePipe {
   // physical delay modulation, 0 disables it.
   void init(double lengthM, double diameterM, double tempK, double ambientPa,
             double fs, double lossPerMeter, double lossCutoffHz,
-            double extraLoss, double steepening);
+            double extraLoss, double steepening, double nlLoss = 0.0);
 
   // Phase 1: read both delay lines. Call once per sample before any write.
   // Inline: this runs for every pipe at the internal rate.
@@ -110,6 +110,12 @@ class WaveguidePipe {
   void propagate() {
     double f = fwd_.read4(delayInt_, coefs_);
     double b = bwd_.read4(delayInt_, coefs_);
+    if (nlLossK_ > 0.0) {
+      // Distributed turbulent dissipation: large waves lose more per
+      // traversal (loss ~ |u|, the quadratic acoustic resistance).
+      f /= 1.0 + nlLossK_ * (f < 0 ? -f : f);
+      b /= 1.0 + nlLossK_ * (b < 0 ? -b : b);
+    }
     if (steepK_ > 0.0) {
       // Re-read at the shifted position. A first-order Taylor version
       // (x + delta * dx) amplified high frequencies instead of shifting
@@ -170,6 +176,7 @@ class WaveguidePipe {
   double c_ = 340.0;
   double outA_ = 0.0, outB_ = 0.0;
   double steepK_ = 0.0;   // steepening correction, samples per Pa
+  double nlLossK_ = 0.0;  // distributed nonlinear loss, 1/Pa
   int delayInt_ = 8;         // static-path integer delay
   double coefs_[4] = {0.0, 1.0, 0.0, 0.0};  // static-path Lagrange coefs
 };
@@ -235,18 +242,35 @@ class Junction {
 // 1 kHz; the absolute microphone distance folds into master_gain.
 class RadiationEnd {
  public:
+  // nlLoss scales the quadratic exit-jet dissipation: the reflection
+  // weakens by 1 / (1 + nlLoss * |M|) with M the instantaneous exit
+  // Mach number. This is the classic orifice/jet loss; it damps the
+  // system hard while a pulse flows and leaves it free between pulses,
+  // which separates the pops from the drone.
   void init(double pipeRadiusM, double soundSpeed, double fs,
-            double reflectionGain = 0.985);
+            double reflectionGain = 0.985, double nlLoss = 0.0,
+            double rhoC2 = 1.4e5);
   void process(WaveguidePipe* pipe);
   double radiated() const { return radiated_; }
+  // Mean-flow convection: the exit reflection falls as
+  // (1 - M) / (1 + M)^2 with the mean exit Mach number.
+  void setMeanMach(double m) {
+    if (m < 0.0) m = 0.0;
+    if (m > 0.5) m = 0.5;
+    convection_ = (1.0 - m) / ((1.0 + m) * (1.0 + m));
+  }
   void clear();
 
  private:
   OnePoleLP lp_;
   double reflGain_ = 0.985;
+  double convection_ = 1.0;
   double radiated_ = 0.0;
   double prevU_ = 0.0;
   double diffNorm_ = 1.0;
+  double nlLoss_ = 0.0;
+  double invRhoC2_ = 1.0 / 1.4e5;
+  double prevMach_ = 0.0;
 };
 
 }  // namespace enginesim

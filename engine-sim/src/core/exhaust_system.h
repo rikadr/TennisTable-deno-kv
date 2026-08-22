@@ -35,6 +35,14 @@ class ExhaustSystem {
     r.inA(r.outA() + r.impedance() * u + extraP);
   }
   double runnerArea(int cyl) const { return runners_[cyl]->area(); }
+  // Diagnostics: outgoing wave entering runner 0 and exit volume velocity.
+  double debugPortWave() const {
+    return runners_[0]->outA();
+  }
+  double debugExitU() const {
+    const auto* t = tailpipes_[0];
+    return (t->outB()) / t->impedance();
+  }
 
   // Update the grazing-flow attenuation from the engine's mean exhaust
   // mass flow (kg/s). Cheap; call every few dozen samples.

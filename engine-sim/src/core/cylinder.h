@@ -38,6 +38,10 @@ class Cylinder {
                        double intakeTempK, bool sparkEnabled);
 
   void setVariationScale(double s) { varScale_ = s; }
+  void setSparkAdvance(double advDeg) {
+    sparkAngleDeg_ = 720.0 - advDeg;
+    if (sparkAngleDeg_ >= 720.0) sparkAngleDeg_ -= 720.0;
+  }
 
   double phaseDeg() const { return phaseDeg_; }
   double pressurePa() const { return p_; }

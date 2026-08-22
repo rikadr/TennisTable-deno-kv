@@ -23,6 +23,8 @@ KEY_METRICS = [
     ("mfcc_cosine", "MFCC cosine", "%.4f", False),
     ("pulse_envelope_l2", "pulse env L2", "%.4f", False),
     ("hnr_db", "HNR dB", "%.1f", None),
+    ("band_l1", "band balance L1", "%.3f", False),
+    ("cycle_contrast", "cycle contrast", "%.2f", None),
     ("crest_factor_db", "crest dB", "%.1f", None),
     ("shape_centroid_hz_mean", "centroid Hz", "%.0f", None),
     ("shape_flatness_mean", "flatness", "%.4f", None),

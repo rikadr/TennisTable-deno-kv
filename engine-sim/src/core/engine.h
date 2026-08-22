@@ -27,6 +27,9 @@ class Engine {
   double crankCycleDeg() const { return cycleDeg_; }
   double cylinderPressure(int i) const { return cylinders_[i].pressurePa(); }
   double lastExhaustRad() const { return lastExhaust_; }
+  double debugCylPressure() const { return dbgCylP_; }
+  double debugPortWave() const { return dbgPortW_; }
+  double debugExitU() const { return dbgExitU_; }
   double lastIntakeRad() const { return lastIntake_; }
   double internalRate() const { return fs_; }
 
@@ -51,6 +54,9 @@ class Engine {
 
   double lastExhaust_ = 0.0;
   double lastIntake_ = 0.0;
+  double dbgCylP_ = 0.0;
+  double dbgPortW_ = 0.0;
+  double dbgExitU_ = 0.0;
   double emaMdot_ = 0.0;
   int flowUpdateCounter_ = 0;
 };

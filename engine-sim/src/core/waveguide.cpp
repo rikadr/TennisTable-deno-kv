@@ -30,7 +30,7 @@ void OnePoleLP::setCutoff(double fcHz, double fs) {
 void WaveguidePipe::init(double lengthM, double diameterM, double tempK,
                          double ambientPa, double fs, double lossPerMeter,
                          double lossCutoffHz, double extraLoss,
-                         double steepening) {
+                         double steepening, double nlLoss) {
   tempK_ = tempK;
   c_ = speedOfSound(kGammaPipe, tempK);
   rho_ = gasDensity(ambientPa, tempK);
@@ -51,6 +51,9 @@ void WaveguidePipe::init(double lengthM, double diameterM, double tempK,
   // tau0 * ((gamma+1)/2) * p / (rho c^2) samples.
   const double physK = (kGammaPipe + 1.0) * 0.5 / (rho_ * c_ * c_);
   steepK_ = steepening * physK * delay_;
+  // Loss ~ k * |u|/c per traversal: normalize by rho c^2 so nlLoss is a
+  // dimensionless coefficient like the exit jet loss, scaled by length.
+  nlLossK_ = nlLoss * lengthM / (rho_ * c_ * c_);
 
   // Static-path interpolation coefficients for the fixed delay.
   delayInt_ = static_cast<int>(delay_);
@@ -80,8 +83,11 @@ void Junction::finalize() {
 }
 
 void RadiationEnd::init(double pipeRadiusM, double soundSpeed, double fs,
-                        double reflectionGain) {
+                        double reflectionGain, double nlLoss, double rhoC2) {
   reflGain_ = reflectionGain;
+  nlLoss_ = nlLoss;
+  invRhoC2_ = 1.0 / rhoC2;
+  prevMach_ = 0.0;
   // |R| of an unflanged open pipe falls with ka. Match the one-pole corner
   // to ka = 1, f = c / (2 pi a). Above this, energy radiates instead of
   // reflecting. See docs/research.md, Levine-Schwinger section.
@@ -95,10 +101,13 @@ void RadiationEnd::init(double pipeRadiusM, double soundSpeed, double fs,
 
 void RadiationEnd::process(WaveguidePipe* pipe) {
   const double pin = pipe->outB();
-  const double refl = -reflGain_ * lp_.process(pin);
+  // Quadratic jet loss, gated by the previous sample's exit Mach number.
+  const double att = 1.0 / (1.0 + nlLoss_ * std::fabs(prevMach_));
+  const double refl = -reflGain_ * convection_ * att * lp_.process(pin);
   pipe->inB(refl);
   // Exit volume velocity (up to the constant Z0) and its derivative.
   const double u = pin - refl;
+  prevMach_ = u * invRhoC2_;
   radiated_ = diffNorm_ * (u - prevU_);
   prevU_ = u;
 }
@@ -107,6 +116,7 @@ void RadiationEnd::clear() {
   lp_.clear();
   radiated_ = 0.0;
   prevU_ = 0.0;
+  prevMach_ = 0.0;
 }
 
 }  // namespace enginesim

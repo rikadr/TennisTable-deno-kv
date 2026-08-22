@@ -48,7 +48,8 @@
   "cycle_variation": 0.04,
   "wall_temp_k": 460.0,
   "wall_h_w_m2k": 500.0,
-  "idle_variation_boost": 3.5
+  "idle_variation_boost": 3.5,
+  "spark_advance_idle_deg": 5.0
  },
  "valvetrain": {
   "intake_duration_deg": 242.0,
@@ -74,22 +75,22 @@
   "ambient_pressure_pa": 101325.0,
   "ambient_temp_k": 293.0,
   "runner_lengths_m": [
-   0.42,
-   0.4,
-   0.44,
-   0.41,
-   0.43,
-   0.4,
-   0.43,
-   0.41,
-   0.44,
-   0.42
+   0.336,
+   0.32,
+   0.352,
+   0.328,
+   0.344,
+   0.32,
+   0.344,
+   0.328,
+   0.352,
+   0.336
   ],
   "runner_diameter_m": 0.04,
   "runner_temp_k": 1100.0,
   "bank_pipe_lengths_m": [
-   0.5,
-   0.52
+   0.245,
+   0.2548
   ],
   "bank_pipe_diameter_m": 0.06,
   "bank_pipe_temp_k": 950.0,
@@ -109,16 +110,18 @@
    0.9
   ],
   "steepening_gain": 1.0,
-  "loss_per_meter": 0.1,
-  "loss_cutoff_hz": 2200.0,
+  "loss_per_meter": 0.25,
+  "loss_cutoff_hz": 1400.0,
   "exit_loss": 0.03,
   "radiation_reflection": 0.985,
-  "flow_noise_gain": 1.0,
+  "flow_noise_gain": 0.0,
   "flow_noise_cutoff_hz": 3000.0,
-  "flow_damping": 6.0
+  "flow_damping": 6.0,
+  "exit_nl_loss": 30.0,
+  "pipe_nl_loss": 20.0
  },
  "mechanical": {
-  "valvetrain_gain": 0.002,
+  "valvetrain_gain": 0.0,
   "tick_bandpass_hz": 3600.0
  },
  "output": {
@@ -130,7 +133,7 @@
   "master_gain": 0.00025,
   "limiter_drive": 1.0,
   "mic_highpass_hz": 30.0,
-  "mic_lowpass_hz": 0.0
+  "mic_lowpass_hz": 3000.0
  },
  "verification": {
   "ref_prefix": "r8_v10_straight",

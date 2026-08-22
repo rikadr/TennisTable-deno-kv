@@ -1,5 +1,6 @@
 #include "core/engine.h"
 
+#include <algorithm>
 #include <cmath>
 
 namespace enginesim {
@@ -50,12 +51,18 @@ double Engine::step() {
 
   const int n = cfg_.engine.cylinders;
   double mdotExTotal = 0.0;
+  const double load = manifoldPa_ / cfg_.exhaust.ambientPressurePa;
   const double varScale =
-      1.0 + cfg_.combustion.idleVariationBoost *
-                (1.0 - manifoldPa_ / cfg_.exhaust.ambientPressurePa);
+      1.0 + cfg_.combustion.idleVariationBoost * (1.0 - load);
+  // Spark blends from the retarded idle value to full advance with load.
+  const double spark =
+      cfg_.combustion.sparkAdvanceIdleDeg +
+      (cfg_.combustion.sparkAdvanceDeg - cfg_.combustion.sparkAdvanceIdleDeg) *
+          std::clamp((load - 0.3) / 0.6, 0.0, 1.0);
   double mechTrig = 0.0;
   for (int i = 0; i < n; ++i) {
     cylinders_[i].setVariationScale(varScale);
+    cylinders_[i].setSparkAdvance(spark);
     PortState exPort;
     exPort.basePressurePa = cfg_.exhaust.ambientPressurePa;
     exPort.incomingWave = exhaust_.portIncoming(i);
@@ -103,6 +110,9 @@ double Engine::step() {
     exhaust_.setMeanFlow(emaMdot_);
   }
 
+  dbgCylP_ = cylinders_[0].pressurePa();
+  dbgPortW_ = exhaust_.debugPortWave();
+  dbgExitU_ = exhaust_.debugExitU();
   lastExhaust_ = exhaust_.finishSample();
   lastIntake_ = intake_.finishSample(throttle_);
   const double mechOut = mech_.process() * cfg_.output.mechanicalGain;

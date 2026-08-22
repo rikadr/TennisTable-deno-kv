@@ -222,3 +222,44 @@ single-threaded. Sandbox CPU: Intel Xeon @ 2.80 GHz (4 vCPU).
   2/2/11/39% -> 12/11/42/33%; centroid 4335 -> 1260 Hz. At 6000 rpm
   94% of the energy sits in the firing-order band. Firing error 0.08%,
   half orders -3.9 dB.
+
+## Iteration 12 (user listening feedback, round 2)
+
+- The user still heard a vacuum-cleaner whine, a Geiger-counter idle
+  and no explosive pulses ("an engine spinning with no power").
+- Diagnosis with a new --dump mode (per-sample cylinder pressure, port
+  wave, exit flow, radiated): the exit flow carries clean 66.7 Hz
+  firing pulsation (86% of its energy below 100 Hz), but the radiated
+  output was a continuous drone: under-damped 800-2000 Hz duct modes
+  accumulate over many reflections and the d/dt radiation tap weights
+  them up. Band comparison against the reference made it explicit:
+  reference 57% at 100-300 Hz and 5% at 800-2000; the render had 65%
+  at 800-2000.
+- Fixes, all physics:
+  - Idle spark retard (spark_advance_idle_deg 5, blending to full
+    advance with load): combustion ends late at idle, the exhaust
+    valve opens on higher pressure, each blowdown pops.
+  - Exit reflection falls with mean-flow Mach ((1-M)/(1+M)^2) and a
+    quadratic exit-jet loss gated by the instantaneous exit velocity.
+  - Distributed nonlinear (turbulent) loss per pipe (pipe_nl_loss).
+  - Per-traversal loss corner moved to 2000 Hz (stock) / 1400 Hz
+    (straight): stands in for junction flow losses, thermal gradients
+    and catalysts that the model lacks; the 800-2000 Hz share fell
+    from 66% to 4-5% (stock).
+  - Geiger sources muted: valvetrain ticks and port noise had
+    fixed-pitch content unrelated to rpm.
+- New first-class metrics in analyze.py: band_shares/band_l1 (energy
+  balance the log-magnitude metrics under-weighted) and cycle_contrast
+  (pulse-gated versus drone).
+
+## Iteration 13 (R8): geometry search against the idle reference
+
+- tools/geom_search.py: coordinate descent over runner/bank/mid/tail
+  lengths, loss parameters and the recording high-pass, objective =
+  harmonic RMS error + 10 * band-share L1 against the reference.
+- Kept: runner scale 0.8 (0.32-0.35 m), bank pipes 0.245 m, mid 0.2 m,
+  tail 0.15 m, loss_per_meter 0.35, loss corner 2000 Hz, recording
+  high-pass 220 Hz. Objective 15+ -> 7.83; harmonic RMS error at the
+  idle reference 8.0 -> 4.4 dB (target < 3).
+- The straight-pipe config inherits the tuned header geometry (same
+  physical parts), keeps open tips and no microphone low-pass.

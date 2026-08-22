@@ -28,6 +28,10 @@ struct CombustionConfig {
   double wiebeM = 2.0;
   double burnDurationDeg = 55.0;
   double sparkAdvanceDeg = 22.0;
+  // Idle spark is retarded for stability; combustion ends late and the
+  // exhaust valve opens on high pressure (the idle pop). Advance blends
+  // from idle value to sparkAdvanceDeg with manifold pressure.
+  double sparkAdvanceIdleDeg = 6.0;
   double heatPerKgAirJ = 2.8e6;
   double combustionEfficiency = 0.96;
   double cycleVariation = 0.04;
@@ -101,6 +105,10 @@ struct ExhaustConfig {
   // Grazing-flow attenuation: extra loss exp(-k * M * L) per traversal,
   // M from the mean exhaust mass flow through each pipe.
   double flowDamping = 0.0;
+  // Quadratic exit-jet loss coefficient (see RadiationEnd).
+  double exitNlLoss = 0.0;
+  // Distributed nonlinear (turbulent) loss inside every pipe, per metre.
+  double pipeNlLoss = 0.0;
   double steepeningGain = 1.0;
   double lossPerMeter = 0.06;
   double lossCutoffHz = 8000.0;
