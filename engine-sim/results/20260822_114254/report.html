@@ -1,0 +1,144 @@
+<!doctype html><meta charset="utf-8">
+<title>enginesim report 20260822_114254</title>
+<style>
+ body { font-family: system-ui, sans-serif; margin: 2rem; max-width: 1100px; }
+ table { border-collapse: collapse; margin: 0.6rem 0 1.4rem; }
+ td, th { border: 1px solid #ccc; padding: 4px 10px; text-align: right; }
+ th { background: #f2f2f2; }
+ td:first-child, th:first-child { text-align: left; }
+ .good { color: #0a7a0a; font-weight: 600; }
+ .bad { color: #c22; font-weight: 600; }
+ .same { color: #999; }
+ img { max-width: 100%; border: 1px solid #ddd; margin: 4px 0; }
+ audio { width: 260px; vertical-align: middle; }
+ .pass { color: #0a7a0a; } .fail { color: #c22; }
+ h2 { margin-top: 2.2rem; border-bottom: 2px solid #eee; }
+ .meta { color: #666; }
+</style>
+<h1>enginesim verification report</h1>
+<p class="meta">cycle 20260822_114254 &middot; git 4d73a77 &middot;
+label: dissipation physics + geometry search (it12-13) &middot;
+cpu: Intel(R) Xeon(R) Processor @ 2.80GHz
+&middot; compared against 20260822_110416</p>
+
+<h2>Sanity</h2><table><tr><th>check</th><th>value</th></tr>
+<tr><td>deterministic</td><td class="pass">PASS</td></tr>
+<tr><td>nan_free</td><td class="pass">PASS</td></tr>
+<tr><td>below_full_scale</td><td class="pass">PASS</td></tr>
+<tr><td>rtf_60s</td><td class="">4.35</td></tr>
+<tr><td>rtf_ok</td><td class="fail">FAIL</td></tr>
+<tr><td>firing_freq_ok</td><td class="pass">PASS</td></tr>
+</table>
+<h2>r8_v10_800</h2>
+<p>current best<br><audio controls src='../../renders/best/r8_v10_800.wav'></audio> &nbsp; previous best<br><audio controls src='../../renders/prev/r8_v10_800.wav'></audio> &nbsp; reference<br><audio controls src='../../refs/r8_v10_800.wav'></audio></p>
+<table><tr><th>metric</th><th>value</th><th>vs prev</th></tr>
+<tr><td>multi-scale STFT dist</td><td>1.8995</td><td> <span class="bad">+0.031</span></td></tr>
+<tr><td>firing freq error %</td><td>0.034</td><td> <span class="good">+0.025</span></td></tr>
+<tr><td>half-order level dB</td><td>-14.1</td><td></td></tr>
+<tr><td>harmonic RMS err dB</td><td>5.69</td><td> <span class="bad">-2.916</span></td></tr>
+<tr><td>mel L1</td><td>3.3956</td><td> <span class="good">+1.464</span></td></tr>
+<tr><td>MFCC cosine</td><td>0.0445</td><td> <span class="good">+0.021</span></td></tr>
+<tr><td>pulse env L2</td><td>0.3666</td><td> <span class="good">+0.025</span></td></tr>
+<tr><td>HNR dB</td><td>11.3</td><td></td></tr>
+<tr><td>band balance L1</td><td>0.357</td><td></td></tr>
+<tr><td>cycle contrast</td><td>1.64</td><td></td></tr>
+<tr><td>crest dB</td><td>12.1</td><td></td></tr>
+<tr><td>centroid Hz</td><td>557</td><td></td></tr>
+<tr><td>flatness</td><td>0.0000</td><td></td></tr>
+<tr><td>max_abs</td><td>0.128</td><td></td></tr>
+<tr><td>rtf</td><td>4.030</td><td></td></tr>
+<tr><td>peak_cyl_pressure_bar</td><td>11.860</td><td></td></tr>
+</table>
+<img src='r8_v10_800_spec.png' alt='spectrogram r8_v10_800'>
+<h2>r8_v10_1500</h2>
+<p>current best<br><audio controls src='../../renders/best/r8_v10_1500.wav'></audio> &nbsp; previous best<br><audio controls src='../../renders/prev/r8_v10_1500.wav'></audio></p>
+<p class='meta'>No reference recording for this point (refs/ is empty or lacks this rpm).</p>
+<table><tr><th>metric</th><th>value</th><th>vs prev</th></tr>
+<tr><td>firing freq error %</td><td>0.039</td><td> <span class="good">+0.004</span></td></tr>
+<tr><td>half-order level dB</td><td>-15.5</td><td></td></tr>
+<tr><td>HNR dB</td><td>10.6</td><td></td></tr>
+<tr><td>cycle contrast</td><td>1.34</td><td></td></tr>
+<tr><td>crest dB</td><td>13.3</td><td></td></tr>
+<tr><td>centroid Hz</td><td>748</td><td></td></tr>
+<tr><td>flatness</td><td>0.0000</td><td></td></tr>
+<tr><td>max_abs</td><td>0.104</td><td></td></tr>
+<tr><td>rtf</td><td>3.890</td><td></td></tr>
+<tr><td>peak_cyl_pressure_bar</td><td>28.420</td><td></td></tr>
+</table>
+<img src='r8_v10_1500_spec.png' alt='spectrogram r8_v10_1500'>
+<h2>r8_v10_2500</h2>
+<p>current best<br><audio controls src='../../renders/best/r8_v10_2500.wav'></audio> &nbsp; previous best<br><audio controls src='../../renders/prev/r8_v10_2500.wav'></audio></p>
+<p class='meta'>No reference recording for this point (refs/ is empty or lacks this rpm).</p>
+<table><tr><th>metric</th><th>value</th><th>vs prev</th></tr>
+<tr><td>firing freq error %</td><td>0.035</td><td> <span class="bad">-0.001</span></td></tr>
+<tr><td>half-order level dB</td><td>-11.9</td><td></td></tr>
+<tr><td>HNR dB</td><td>18.4</td><td></td></tr>
+<tr><td>cycle contrast</td><td>1.20</td><td></td></tr>
+<tr><td>crest dB</td><td>8.1</td><td></td></tr>
+<tr><td>centroid Hz</td><td>654</td><td></td></tr>
+<tr><td>flatness</td><td>0.0000</td><td></td></tr>
+<tr><td>max_abs</td><td>0.133</td><td></td></tr>
+<tr><td>rtf</td><td>3.790</td><td></td></tr>
+<tr><td>peak_cyl_pressure_bar</td><td>44.090</td><td></td></tr>
+</table>
+<img src='r8_v10_2500_spec.png' alt='spectrogram r8_v10_2500'>
+<h2>r8_v10_4000</h2>
+<p>current best<br><audio controls src='../../renders/best/r8_v10_4000.wav'></audio> &nbsp; previous best<br><audio controls src='../../renders/prev/r8_v10_4000.wav'></audio></p>
+<p class='meta'>No reference recording for this point (refs/ is empty or lacks this rpm).</p>
+<table><tr><th>metric</th><th>value</th><th>vs prev</th></tr>
+<tr><td>firing freq error %</td><td>0.034</td><td> <span class="good">+0.011</span></td></tr>
+<tr><td>half-order level dB</td><td>-13.6</td><td></td></tr>
+<tr><td>HNR dB</td><td>14.9</td><td></td></tr>
+<tr><td>cycle contrast</td><td>1.13</td><td></td></tr>
+<tr><td>crest dB</td><td>10.0</td><td></td></tr>
+<tr><td>centroid Hz</td><td>1049</td><td></td></tr>
+<tr><td>flatness</td><td>0.0001</td><td></td></tr>
+<tr><td>max_abs</td><td>0.058</td><td></td></tr>
+<tr><td>rtf</td><td>3.850</td><td></td></tr>
+<tr><td>peak_cyl_pressure_bar</td><td>70.100</td><td></td></tr>
+</table>
+<img src='r8_v10_4000_spec.png' alt='spectrogram r8_v10_4000'>
+<h2>r8_v10_6000</h2>
+<p>current best<br><audio controls src='../../renders/best/r8_v10_6000.wav'></audio> &nbsp; previous best<br><audio controls src='../../renders/prev/r8_v10_6000.wav'></audio></p>
+<p class='meta'>No reference recording for this point (refs/ is empty or lacks this rpm).</p>
+<table><tr><th>metric</th><th>value</th><th>vs prev</th></tr>
+<tr><td>firing freq error %</td><td>0.034</td><td> <span class="bad">-16.161</span></td></tr>
+<tr><td>half-order level dB</td><td>-11.1</td><td></td></tr>
+<tr><td>HNR dB</td><td>19.7</td><td></td></tr>
+<tr><td>cycle contrast</td><td>1.18</td><td></td></tr>
+<tr><td>crest dB</td><td>7.9</td><td></td></tr>
+<tr><td>centroid Hz</td><td>1182</td><td></td></tr>
+<tr><td>flatness</td><td>0.0000</td><td></td></tr>
+<tr><td>max_abs</td><td>0.086</td><td></td></tr>
+<tr><td>rtf</td><td>3.980</td><td></td></tr>
+<tr><td>peak_cyl_pressure_bar</td><td>99.410</td><td></td></tr>
+</table>
+<img src='r8_v10_6000_spec.png' alt='spectrogram r8_v10_6000'>
+<h2>r8_v10_8000</h2>
+<p>current best<br><audio controls src='../../renders/best/r8_v10_8000.wav'></audio> &nbsp; previous best<br><audio controls src='../../renders/prev/r8_v10_8000.wav'></audio></p>
+<p class='meta'>No reference recording for this point (refs/ is empty or lacks this rpm).</p>
+<table><tr><th>metric</th><th>value</th><th>vs prev</th></tr>
+<tr><td>firing freq error %</td><td>0.034</td><td> <span class="bad">-0.096</span></td></tr>
+<tr><td>half-order level dB</td><td>-12.5</td><td></td></tr>
+<tr><td>HNR dB</td><td>20.2</td><td></td></tr>
+<tr><td>cycle contrast</td><td>1.18</td><td></td></tr>
+<tr><td>crest dB</td><td>9.0</td><td></td></tr>
+<tr><td>centroid Hz</td><td>1531</td><td></td></tr>
+<tr><td>flatness</td><td>0.0001</td><td></td></tr>
+<tr><td>max_abs</td><td>0.097</td><td></td></tr>
+<tr><td>rtf</td><td>3.870</td><td></td></tr>
+<tr><td>peak_cyl_pressure_bar</td><td>99.830</td><td></td></tr>
+</table>
+<img src='r8_v10_8000_spec.png' alt='spectrogram r8_v10_8000'>
+<h2>r8_v10_sweep_1000_8700</h2>
+<p class='meta'>No reference recording for this point (refs/ is empty or lacks this rpm).</p>
+<table><tr><th>metric</th><th>value</th><th>vs prev</th></tr>
+<tr><td>HNR dB</td><td>20.8</td><td></td></tr>
+<tr><td>crest dB</td><td>12.6</td><td></td></tr>
+<tr><td>centroid Hz</td><td>1124</td><td></td></tr>
+<tr><td>flatness</td><td>0.0000</td><td></td></tr>
+<tr><td>max_abs</td><td>0.251</td><td></td></tr>
+<tr><td>rtf</td><td>4.350</td><td></td></tr>
+<tr><td>peak_cyl_pressure_bar</td><td>113.950</td><td></td></tr>
+</table>
+<img src='r8_v10_sweep_1000_8700_spec.png' alt='spectrogram r8_v10_sweep_1000_8700'>

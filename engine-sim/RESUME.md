@@ -53,15 +53,31 @@ Python deps: numpy scipy matplotlib librosa soundfile (pip3 install).
 
 ## Current state (update this section every session)
 
-- Core simulator, waveguide network, CLI, selftest: DONE, first render OK
-  (no NaN, peak cylinder pressure ~95 bar at WOT 3000 rpm).
-- Analysis harness: see tools/. Improvement loop status: see
-  docs/iteration_log.md (latest entry = current best).
-- refs/ is EMPTY. The user must record references per refs/README.md.
-  Until then the loop tunes computable metrics only (firing frequency,
-  half-order absence, pulse shape, sanity, RTF).
-- Known open items: RTF was 5.1x at first measurement (target >= 10x
-  single-threaded in the sandbox); output level low (master_gain).
+- Target engine: Audi R8 V10 5.2 (user-approved change; references
+  found online, see refs/SOURCES.md). Two configs:
+  - configs/r8_v10.json: stock exhaust, tuned against the real idle
+    recording refs/r8_v10_800.wav. This is the metric-loop config.
+  - configs/r8_v10_straight.json: straight-piped listening config the
+    user asked for (X-pipe merge, no chambers, no mic low-pass).
+- The old 2GR-FE config remains at configs/2gr_fe.json (untuned).
+- Core physics complete and iterated 13 times (docs/iteration_log.md):
+  implicit valve-duct coupling, Burgers steepening via shifted reads,
+  d(exit flow)/dt radiation, mean-flow convection at the exit,
+  quadratic exit and pipe losses, flow damping, idle spark retard,
+  load-dependent cycle variation. tools/geom_search.py auto-tunes
+  geometry against a reference (coordinate descent).
+- Realtime layer (miniaudio + SPSC ring) and GUI layer (ImGui + GLFW)
+  build clean with -Wall -Wextra; sandbox compile-checks them (GUI
+  links only where OpenGL exists). docs/realtime_safety.md has the
+  callback call-tree review.
+- Idle-vs-reference scoreboard: harmonic RMS error 4.4 dB (target 3),
+  firing error 0.00-0.14% (PASS), band balance close, stft ~1.2.
+- Open items: RTF ~5 for the V10 (target 10, sandbox CPU); crest
+  factor still below the reference (13-16 vs 18.5); user listening
+  verdict on round 3 pending; rev-demo character at load needs the
+  user's ear.
+- The user asked for renders to be posted into the chat each round
+  (SendUserFile) so they can listen.
 
 ## Working method
 

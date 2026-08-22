@@ -1,5 +1,5 @@
 {
- "results_dir": "20260822_110416",
- "git_rev": "226e181",
- "label": "R8 after iterations 1-5 (damping, exit loss, flow noise, silencer, mic model)"
+ "results_dir": "20260822_114254",
+ "git_rev": "4d73a77",
+ "label": "dissipation physics + geometry search (it12-13)"
 }

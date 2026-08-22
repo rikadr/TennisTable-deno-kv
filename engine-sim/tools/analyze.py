@@ -216,7 +216,11 @@ def cycle_contrast(x, f_cycle):
     if n < 4:
         return None
     prof = np.abs(x[:n * cyc]).reshape(n, cyc).mean(axis=0)
-    sm = prof.reshape(60, -1).mean(axis=1) if cyc >= 60 else prof
+    if cyc >= 60:
+        trim = (cyc // 60) * 60
+        sm = prof[:trim].reshape(60, -1).mean(axis=1)
+    else:
+        sm = prof
     return float(np.max(sm) / (np.median(sm) + 1e-12))
 
 
