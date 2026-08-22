@@ -49,8 +49,13 @@ double Engine::step() {
   intake_.beginSample();
 
   const int n = cfg_.engine.cylinders;
+  double mdotExTotal = 0.0;
+  const double varScale =
+      1.0 + cfg_.combustion.idleVariationBoost *
+                (1.0 - manifoldPa_ / cfg_.exhaust.ambientPressurePa);
   double mechTrig = 0.0;
   for (int i = 0; i < n; ++i) {
+    cylinders_[i].setVariationScale(varScale);
     PortState exPort;
     exPort.basePressurePa = cfg_.exhaust.ambientPressurePa;
     exPort.incomingWave = exhaust_.portIncoming(i);
@@ -86,9 +91,17 @@ double Engine::step() {
     intake_.setPortFlow(i, uIn);
 
     if (out.valveEvent) mechTrig += 0.4 + 0.6 * (rpm_ / cfg_.engine.redlineRpm);
+    if (out.mdotExhaust > 0.0) mdotExTotal += out.mdotExhaust;
   }
 
   if (mechTrig > 0.0) mech_.trigger(mechTrig);
+
+  // Mean exhaust flow for the grazing-flow damping (time constant 0.2 s).
+  emaMdot_ += (mdotExTotal - emaMdot_) * (dt_ / (dt_ + 0.2));
+  if (++flowUpdateCounter_ >= 64) {
+    flowUpdateCounter_ = 0;
+    exhaust_.setMeanFlow(emaMdot_);
+  }
 
   lastExhaust_ = exhaust_.finishSample();
   lastIntake_ = intake_.finishSample(throttle_);

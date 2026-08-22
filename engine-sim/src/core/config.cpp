@@ -64,6 +64,7 @@ SimConfig loadConfig(const std::string& path) {
     get(b, "heat_per_kg_air_j", c.combustion.heatPerKgAirJ);
     get(b, "combustion_efficiency", c.combustion.combustionEfficiency);
     get(b, "cycle_variation", c.combustion.cycleVariation);
+    get(b, "idle_variation_boost", c.combustion.idleVariationBoost);
     get(b, "wall_temp_k", c.combustion.wallTempK);
     get(b, "wall_h_w_m2k", c.combustion.wallH);
   }
@@ -112,6 +113,7 @@ SimConfig loadConfig(const std::string& path) {
     get(x, "dual_exit", c.exhaust.dualExit);
     get(x, "exit_loss", c.exhaust.exitLoss);
     get(x, "flow_noise_gain", c.exhaust.flowNoiseGain);
+    get(x, "flow_damping", c.exhaust.flowDamping);
     get(x, "flow_noise_cutoff_hz", c.exhaust.flowNoiseCutoffHz);
     get(x, "radiation_reflection", c.exhaust.radiationReflection);
     get(x, "tail_mix", c.exhaust.tailMix);

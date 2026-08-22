@@ -1,5 +1,5 @@
 {
- "results_dir": "20260822_101955",
- "git_rev": "a9ca437",
- "label": "baseline after implicit port coupling fix"
+ "results_dir": "20260822_103918",
+ "git_rev": "7d0d5b3",
+ "label": "perf: tables, inlining, warm start, fast-math core; rev profile"
 }

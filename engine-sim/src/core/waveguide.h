@@ -97,24 +97,33 @@ class WaveguidePipe {
 
   // Phase 1: read both delay lines. Call once per sample before any write.
   // Inline: this runs for every pipe at the internal rate.
+  //
+  // Nonlinear steepening is a feedforward Burgers-style correction after
+  // the static delay read: the transit time shortens by
+  // delta = tau0 * ((gamma+1)/2) * p / (rho c^2) samples, so to first
+  // order p(t - tau0 + delta) = p(t - tau0) + delta * dp/dt. The
+  // correction saturates softly at about 1.5 samples: after a shock
+  // front forms, extra amplitude dissipates instead of steepening.
+  // An earlier version modulated the read position of the whole line
+  // from its own output; that FM feedback loop produced strong
+  // subharmonics at load (see docs/iteration_log.md).
   void propagate() {
+    double f = fwd_.read4(delayInt_, coefs_);
+    double b = bwd_.read4(delayInt_, coefs_);
     if (steepK_ > 0.0) {
-      // Estimate local amplitude from the previous outputs, then modulate
-      // the read position. Light smoothing avoids read-tap discontinuities.
-      steepStateF_ += 0.5 * (steepK_ * outB_ - steepStateF_);
-      steepStateB_ += 0.5 * (steepK_ * outA_ - steepStateB_);
-      double dF = delay_ - std::clamp(steepStateF_, -maxMod_, maxMod_);
-      double dB = delay_ - std::clamp(steepStateB_, -maxMod_, maxMod_);
-      if (dF < 2.0) dF = 2.0;
-      if (dB < 2.0) dB = 2.0;
-      outB_ = gain_ * lpF_.process(fwd_.readFrac(dF));
-      outA_ = gain_ * lpB_.process(bwd_.readFrac(dB));
-    } else {
-      // Static delay: precomputed interpolation coefficients.
-      outB_ = gain_ * lpF_.process(fwd_.read4(delayInt_, coefs_));
-      outA_ = gain_ * lpB_.process(bwd_.read4(delayInt_, coefs_));
+      // Re-read at the shifted position. A first-order Taylor version
+      // (x + delta * dx) amplified high frequencies instead of shifting
+      // them; a true shifted read keeps the spectrum tilt physical.
+      const double dF = kMaxShift * softSat(steepK_ * f / kMaxShift);
+      const double dB = kMaxShift * softSat(steepK_ * b / kMaxShift);
+      f = fwd_.readFrac(delay_ - dF);
+      b = bwd_.readFrac(delay_ - dB);
     }
+    outB_ = gain_ * lpF_.process(f);
+    outA_ = gain_ * lpB_.process(b);
   }
+
+  static constexpr double kMaxShift = 1.5;  // samples, shock saturation
 
   // Wave arriving at each end (after propagate()).
   double outA() const { return outA_; }
@@ -124,6 +133,18 @@ class WaveguidePipe {
   // exactly one write per sample.
   void inA(double v) { fwd_.write(v); }
   void inB(double v) { bwd_.write(v); }
+
+  static double softSat(double x) {
+    if (x > 3.0) x = 3.0;
+    if (x < -3.0) x = -3.0;
+    const double x2 = x * x;
+    return x * (27.0 + x2) / (27.0 + 9.0 * x2);
+  }
+
+  // Extra attenuation from grazing mean flow, set from the engine's mean
+  // exhaust flow. factor multiplies the per-traversal gain.
+  void setFlowGain(double factor) { gain_ = baseGain_ * factor; }
+  double lengthM() const { return lengthM_; }
 
   double impedance() const { return z0_; }   // rho c / S, acoustic ohms
   double admittance() const { return 1.0 / z0_; }
@@ -140,16 +161,15 @@ class WaveguidePipe {
   OnePoleLP lpF_, lpB_;
   double delay_ = 8.0;
   double gain_ = 1.0;
+  double baseGain_ = 1.0;
+  double lengthM_ = 0.1;
   double z0_ = 1.0;
   double area_ = 1.0;
   double rho_ = 1.0;
   double tempK_ = 300.0;
   double c_ = 340.0;
   double outA_ = 0.0, outB_ = 0.0;
-  double steepK_ = 0.0;      // delay modulation per Pa
-  double steepStateF_ = 0.0; // smoothed modulation, forward
-  double steepStateB_ = 0.0; // smoothed modulation, backward
-  double maxMod_ = 0.0;      // clamp on delay modulation, samples
+  double steepK_ = 0.0;   // steepening correction, samples per Pa
   int delayInt_ = 8;         // static-path integer delay
   double coefs_[4] = {0.0, 1.0, 0.0, 0.0};  // static-path Lagrange coefs
 };
@@ -203,8 +223,16 @@ class Junction {
 // Open-end radiation termination at a pipe's B end. Low frequencies
 // reflect with sign inversion and magnitude near 1. High frequencies
 // reflect less and radiate more. This approximates the Levine-Schwinger
-// behaviour of an unflanged pipe with a one-pole fit. The radiated()
-// value is the pressure that escapes the pipe mouth.
+// behaviour of an unflanged pipe with a one-pole fit.
+//
+// The radiated() value models the microphone signal: the far-field
+// pressure of a monopole is proportional to the time derivative of the
+// exit volume velocity, p(r,t) = rho/(4 pi r) * dQ/dt. The open end is
+// a velocity antinode, so low frequencies radiate through their large
+// exit flow even though the mouth pressure is small there. Taking the
+// mouth pressure instead (an earlier version) starved the output of
+// bass. The derivative is normalized so the transfer magnitude is 1 at
+// 1 kHz; the absolute microphone distance folds into master_gain.
 class RadiationEnd {
  public:
   void init(double pipeRadiusM, double soundSpeed, double fs,
@@ -217,6 +245,8 @@ class RadiationEnd {
   OnePoleLP lp_;
   double reflGain_ = 0.985;
   double radiated_ = 0.0;
+  double prevU_ = 0.0;
+  double diffNorm_ = 1.0;
 };
 
 }  // namespace enginesim

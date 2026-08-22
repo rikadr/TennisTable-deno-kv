@@ -1,0 +1,15 @@
+{
+  "config": "audi_r8_v10",
+  "rpm_start": 1000.0,
+  "rpm_end": 8700.0,
+  "duration_s": 20.000,
+  "throttle": 1.000,
+  "seed": 42,
+  "sample_rate": 48000,
+  "samples": 960000,
+  "max_abs": 0.236089,
+  "nan_count": 0,
+  "peak_cyl_pressure_bar": 114.99,
+  "wall_s": 3.867,
+  "rtf": 5.17
+}

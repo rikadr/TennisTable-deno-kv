@@ -36,6 +36,10 @@ class ExhaustSystem {
   }
   double runnerArea(int cyl) const { return runners_[cyl]->area(); }
 
+  // Update the grazing-flow attenuation from the engine's mean exhaust
+  // mass flow (kg/s). Cheap; call every few dozen samples.
+  void setMeanFlow(double mdotTotal);
+
   // Phase 3: scatter all junctions, process the radiation end.
   // Returns the radiated pressure at the tailpipe exit.
   double finishSample();
@@ -50,6 +54,8 @@ class ExhaustSystem {
   std::vector<RadiationEnd> radiations_;
   std::vector<double> tailMix_;
   double ambientPa_ = 101325.0;
+  double flowDamping_ = 0.0;
+  int nBanks_ = 2;
 };
 
 }  // namespace enginesim

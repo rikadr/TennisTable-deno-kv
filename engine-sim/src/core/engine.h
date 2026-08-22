@@ -51,6 +51,8 @@ class Engine {
 
   double lastExhaust_ = 0.0;
   double lastIntake_ = 0.0;
+  double emaMdot_ = 0.0;
+  int flowUpdateCounter_ = 0;
 };
 
 }  // namespace enginesim

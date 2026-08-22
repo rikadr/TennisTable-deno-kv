@@ -39,19 +39,18 @@ void WaveguidePipe::init(double lengthM, double diameterM, double tempK,
   delay_ = lengthM * fs / c_;
   if (delay_ < 4.0) delay_ = 4.0;
   gain_ = std::exp(-lossPerMeter * lengthM) * (1.0 - extraLoss);
+  baseGain_ = gain_;
+  lengthM_ = lengthM;
   lpF_.setCutoff(lossCutoffHz, fs);
   lpB_.setCutoff(lossCutoffHz, fs);
-  // The steepening modulation can lengthen the read delay by up to 22%.
-  fwd_.init(static_cast<int>(delay_ * 1.25) + 8);
-  bwd_.init(static_cast<int>(delay_ * 1.25) + 8);
+  fwd_.init(static_cast<int>(delay_) + 12);
+  bwd_.init(static_cast<int>(delay_) + 12);
 
   // Physical steepening: wave speed is c + ((gamma+1)/2) u with
-  // u = p / (rho c). A pressure p therefore scales the transit time by
-  // roughly 1 - ((gamma+1)/2) p / (rho c^2). Convert to delay samples/Pa.
+  // u = p / (rho c). A pressure p shortens the transit time by
+  // tau0 * ((gamma+1)/2) * p / (rho c^2) samples.
   const double physK = (kGammaPipe + 1.0) * 0.5 / (rho_ * c_ * c_);
   steepK_ = steepening * physK * delay_;
-  maxMod_ = 0.22 * delay_;
-  steepStateF_ = steepStateB_ = 0.0;
 
   // Static-path interpolation coefficients for the fixed delay.
   delayInt_ = static_cast<int>(delay_);
@@ -64,7 +63,6 @@ void WaveguidePipe::clear() {
   lpF_.clear();
   lpB_.clear();
   outA_ = outB_ = 0.0;
-  steepStateF_ = steepStateB_ = 0.0;
 }
 
 void Junction::addPortA(WaveguidePipe* p) { ports_.push_back({p, false, 0.0}); }
@@ -90,18 +88,25 @@ void RadiationEnd::init(double pipeRadiusM, double soundSpeed, double fs,
   const double fc = soundSpeed / (kTwoPi * pipeRadiusM);
   lp_.setCutoff(fc, fs);
   radiated_ = 0.0;
+  prevU_ = 0.0;
+  // Unity transfer magnitude at 1 kHz for the first difference.
+  diffNorm_ = fs / (kTwoPi * 1000.0);
 }
 
 void RadiationEnd::process(WaveguidePipe* pipe) {
   const double pin = pipe->outB();
   const double refl = -reflGain_ * lp_.process(pin);
   pipe->inB(refl);
-  radiated_ = pin + refl;
+  // Exit volume velocity (up to the constant Z0) and its derivative.
+  const double u = pin - refl;
+  radiated_ = diffNorm_ * (u - prevU_);
+  prevU_ = u;
 }
 
 void RadiationEnd::clear() {
   lp_.clear();
   radiated_ = 0.0;
+  prevU_ = 0.0;
 }
 
 }  // namespace enginesim

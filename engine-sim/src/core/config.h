@@ -31,6 +31,10 @@ struct CombustionConfig {
   double heatPerKgAirJ = 2.8e6;
   double combustionEfficiency = 0.96;
   double cycleVariation = 0.04;
+  // Combustion variability rises at low load (lean, low turbulence).
+  // Effective variation = cycleVariation * (1 + idleVariationBoost *
+  // (1 - manifold/ambient)).
+  double idleVariationBoost = 0.0;
   double wallTempK = 450.0;
   double wallH = 500.0;  // W/(m^2 K)
 };
@@ -94,6 +98,9 @@ struct ExhaustConfig {
   // dynamic pressure 0.5 rho u^2 of the port jet.
   double flowNoiseGain = 0.0;
   double flowNoiseCutoffHz = 3000.0;
+  // Grazing-flow attenuation: extra loss exp(-k * M * L) per traversal,
+  // M from the mean exhaust mass flow through each pipe.
+  double flowDamping = 0.0;
   double steepeningGain = 1.0;
   double lossPerMeter = 0.06;
   double lossCutoffHz = 8000.0;

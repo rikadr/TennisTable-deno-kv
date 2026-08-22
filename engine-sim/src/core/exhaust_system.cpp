@@ -126,6 +126,26 @@ void ExhaustSystem::init(const SimConfig& cfg, double fs) {
   }
 
   for (auto& j : junctions_) j.finalize();
+  flowDamping_ = x.flowDamping;
+  nBanks_ = nBanks;
+}
+
+void ExhaustSystem::setMeanFlow(double mdotTotal) {
+  if (flowDamping_ <= 0.0) return;
+  // Runners see 1/n of the flow, bank pipes 1/banks, the rest sees all
+  // of it (dual exit splits it again). M = mdot / (rho S c).
+  const double perRunner = mdotTotal / std::max<size_t>(1, runners_.size());
+  for (auto& r : runners_) {
+    const double m = perRunner / (r->density() * r->area() * r->soundSpeed());
+    r->setFlowGain(std::exp(-flowDamping_ * m * r->lengthM()));
+  }
+  const double split = tailMix_.size() > 1 ? 0.5 : 1.0;
+  for (auto& p : pipes_) {
+    double share = mdotTotal;
+    if (p->area() < 0.9 * tailpipes_[0]->area() * 4.0) share *= split;
+    const double m = share / (p->density() * p->area() * p->soundSpeed());
+    p->setFlowGain(std::exp(-flowDamping_ * m * p->lengthM()));
+  }
 }
 
 void ExhaustSystem::beginSample() {

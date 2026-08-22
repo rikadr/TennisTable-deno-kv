@@ -37,6 +37,8 @@ class Cylinder {
                        const PortState& intakePort, const PortState& exhaustPort,
                        double intakeTempK, bool sparkEnabled);
 
+  void setVariationScale(double s) { varScale_ = s; }
+
   double phaseDeg() const { return phaseDeg_; }
   double pressurePa() const { return p_; }
   double tempK() const { return t_; }
@@ -63,6 +65,7 @@ class Cylinder {
   double heatPerKgAir_ = 2.8e6;
   double combEff_ = 0.96;
   double cycleVar_ = 0.04;
+  double varScale_ = 1.0;
   double burnProgressDeg_ = -1.0;  // < 0 means not burning
   double burnDurDeg_ = 55.0;
   double qTotal_ = 0.0;

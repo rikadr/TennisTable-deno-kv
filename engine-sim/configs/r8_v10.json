@@ -47,7 +47,8 @@
   "combustion_efficiency": 0.97,
   "cycle_variation": 0.04,
   "wall_temp_k": 460.0,
-  "wall_h_w_m2k": 500.0
+  "wall_h_w_m2k": 500.0,
+  "idle_variation_boost": 3.5
  },
  "valvetrain": {
   "intake_duration_deg": 242.0,
@@ -125,11 +126,12 @@
   "loss_cutoff_hz": 8000.0,
   "exit_loss": 0.12,
   "radiation_reflection": 0.96,
-  "flow_noise_gain": 3.0,
-  "flow_noise_cutoff_hz": 3000.0
+  "flow_noise_gain": 1.0,
+  "flow_noise_cutoff_hz": 3000.0,
+  "flow_damping": 6.0
  },
  "mechanical": {
-  "valvetrain_gain": 0.008,
+  "valvetrain_gain": 0.002,
   "tick_bandpass_hz": 3600.0
  },
  "output": {
@@ -138,7 +140,7 @@
   "exhaust_gain": 1.0,
   "intake_gain": 0.12,
   "mechanical_gain": 1.0,
-  "master_gain": 0.0015,
+  "master_gain": 0.006,
   "limiter_drive": 1.0,
   "mic_highpass_hz": 140.0,
   "mic_lowpass_hz": 1300.0

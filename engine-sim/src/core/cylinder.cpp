@@ -176,8 +176,9 @@ CylinderOutputs Cylinder::step(double globalCycleDeg, double dThetaDeg,
   if (distPrev < 0.0) distPrev += 720.0;
   if (distNow < distPrev && distNow < 90.0) {
     if (sparkEnabled) {
-      const double vQ = 1.0 + cycleVar_ * rng_.gauss();
-      const double vDur = 1.0 + 0.6 * cycleVar_ * rng_.gauss();
+      const double cv = cycleVar_ * varScale_;
+      const double vQ = 1.0 + cv * rng_.gauss();
+      const double vDur = 1.0 + 0.6 * cv * rng_.gauss();
       qTotal_ = m_ * heatPerKgAir_ * combEff_ * std::max(0.2, vQ);
       burnDurDeg_ = burnBaseDeg_ * std::clamp(vDur, 0.6, 1.6);
       burnProgressDeg_ = 0.0;

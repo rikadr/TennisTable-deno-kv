@@ -1,0 +1,170 @@
+{
+ "name": "audi_r8_v10_straight",
+ "comment": "Audi R8 V10 5.2, straight piped: runners, per-bank 5-into-1 collectors, X pipe, one open tailpipe per side. No chambers, no muffler, no microphone filtering. Listening config requested by the user; the stock-exhaust reference config stays in r8_v10.json.",
+ "engine": {
+  "cylinders": 10,
+  "layout": "V",
+  "v_angle_deg": 90.0,
+  "bore_mm": 84.5,
+  "stroke_mm": 92.8,
+  "rod_length_mm": 154.0,
+  "compression_ratio": 12.5,
+  "firing_order": [
+   1,
+   6,
+   5,
+   10,
+   2,
+   7,
+   3,
+   8,
+   4,
+   9
+  ],
+  "bank_of_cylinder": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   1,
+   1,
+   1,
+   1,
+   1
+  ],
+  "even_fire": true,
+  "idle_rpm": 800.0,
+  "redline_rpm": 8500.0,
+  "rev_limit_rpm": 8700.0
+ },
+ "combustion": {
+  "wiebe_a": 5.0,
+  "wiebe_m": 2.0,
+  "burn_duration_deg": 50.0,
+  "spark_advance_deg": 24.0,
+  "heat_per_kg_air_j": 2500000.0,
+  "combustion_efficiency": 0.97,
+  "cycle_variation": 0.04,
+  "wall_temp_k": 460.0,
+  "wall_h_w_m2k": 500.0,
+  "idle_variation_boost": 3.5
+ },
+ "valvetrain": {
+  "intake_duration_deg": 242.0,
+  "exhaust_duration_deg": 238.0,
+  "intake_lift_mm": 11.0,
+  "exhaust_lift_mm": 10.5,
+  "intake_centerline_atdc_deg": 108.0,
+  "exhaust_centerline_atdc_deg": 252.0,
+  "intake_valve_diameter_mm": 33.0,
+  "exhaust_valve_diameter_mm": 28.0,
+  "valves_per_port": 2,
+  "discharge_coefficient": 0.66
+ },
+ "intake": {
+  "manifold_temp_k": 320.0,
+  "runner_length_m": 0.28,
+  "runner_diameter_m": 0.045,
+  "plenum_length_m": 0.4,
+  "plenum_diameter_m": 0.14,
+  "radiation_gain": 0.2
+ },
+ "exhaust": {
+  "ambient_pressure_pa": 101325.0,
+  "ambient_temp_k": 293.0,
+  "runner_lengths_m": [
+   0.42,
+   0.4,
+   0.44,
+   0.41,
+   0.43,
+   0.4,
+   0.43,
+   0.41,
+   0.44,
+   0.42
+  ],
+  "runner_diameter_m": 0.04,
+  "runner_temp_k": 1100.0,
+  "bank_pipe_lengths_m": [
+   0.5,
+   0.52
+  ],
+  "bank_pipe_diameter_m": 0.06,
+  "bank_pipe_temp_k": 950.0,
+  "mid_pipe_length_m": 0.35,
+  "mid_pipe_diameter_m": 0.065,
+  "mid_pipe_temp_k": 850.0,
+  "chambers": [],
+  "connect_pipe_length_m": 0.15,
+  "connect_pipe_diameter_m": 0.06,
+  "connect_pipe_temp_k": 800.0,
+  "tailpipe_length_m": 0.55,
+  "tailpipe_diameter_m": 0.076,
+  "tailpipe_temp_k": 600.0,
+  "dual_exit": true,
+  "tail_mix": [
+   1.0,
+   0.9
+  ],
+  "steepening_gain": 1.0,
+  "loss_per_meter": 0.1,
+  "loss_cutoff_hz": 2200.0,
+  "exit_loss": 0.03,
+  "radiation_reflection": 0.985,
+  "flow_noise_gain": 1.0,
+  "flow_noise_cutoff_hz": 3000.0,
+  "flow_damping": 6.0
+ },
+ "mechanical": {
+  "valvetrain_gain": 0.002,
+  "tick_bandpass_hz": 3600.0
+ },
+ "output": {
+  "sample_rate": 48000,
+  "internal_oversample": 2,
+  "exhaust_gain": 1.0,
+  "intake_gain": 0.12,
+  "mechanical_gain": 1.0,
+  "master_gain": 0.00025,
+  "limiter_drive": 1.0,
+  "mic_highpass_hz": 30.0,
+  "mic_lowpass_hz": 0.0
+ },
+ "verification": {
+  "ref_prefix": "r8_v10_straight",
+  "steady": [
+   [
+    800,
+    0.05
+   ],
+   [
+    1500,
+    0.25
+   ],
+   [
+    2500,
+    0.4
+   ],
+   [
+    4000,
+    0.6
+   ],
+   [
+    6000,
+    0.8
+   ],
+   [
+    8000,
+    0.95
+   ]
+  ],
+  "sweep": [
+   1000,
+   8700,
+   20.0,
+   1.0
+  ]
+ }
+}

@@ -56,7 +56,6 @@ single-threaded. Sandbox CPU: Intel Xeon @ 2.80 GHz (4 vCPU).
   long, which produces the deep valleys, the resonant bump, the long
   pulse decay and the excess tonality.
 - Change: loss_per_meter 0.06 -> 0.20; chamber absorption 0.25 -> 0.45.
-- Result: pending.
 - Result: KEEP. harmRMS 14.8 -> 12.3. Crest 12.3 -> 16.0. Pulse decay
   10.0 -> 6.2 ms. stft/mel slightly worse (see iteration 3).
 
@@ -118,3 +117,108 @@ single-threaded. Sandbox CPU: Intel Xeon @ 2.80 GHz (4 vCPU).
 | HNR dB | 14.6 | 11.9 | 7.7 |
 | crest dB | 12.3 | 14.2 | 18.5 |
 | centroid Hz | 2374 | 1675 | 1349 |
+
+## Iteration 6 (R8): steepening rework (correctness fix)
+
+- Symptom: firing frequency FAIL at 6000 rpm (16-20% error) and
+  half orders above integer orders at load. Ablation: clean with
+  steepening off.
+- Cause: the whole-line delay modulation driven by the line's own
+  output is an FM feedback loop; at load the modulation saturated its
+  clamp and produced strong subharmonics. A softer clamp did not help.
+- Change: feedforward Burgers-style correction after a static delay
+  read: y = x + delta(x) * (x - x_prev), delta = tau0 * ((gamma+1)/2)
+  * p / (rho c^2) samples, soft-saturated at 1.5 samples (shock
+  formation). Periodic input stays periodic, so no subharmonics.
+- Result: KEEP. 6000 rpm firing error 20% -> 0.003%, half orders
+  +0.8 -> -4.9 dB, idle metrics unchanged. All pipes now use the fast
+  static read path. Master gain recalibrated to 0.006 (8000 rpm WOT
+  peaks at 0.66).
+
+## Iteration 7 (R8): load-dependent cycle variation
+
+- Hypothesis: the reference idle is rough and peaky (HNR 7.7 dB,
+  crest 18.5 dB) because idle combustion is lean and slow, with high
+  cycle-to-cycle variability; our fixed 4% variation is a warm-load
+  number.
+- Change: effective variation = cycle_variation * (1 +
+  idle_variation_boost * (1 - manifold/ambient)); boost swept
+  1.5 / 2.5 / 3.5, kept 3.5 (about 14% at idle, 4% at WOT).
+- Result: KEEP. stft 1.86 -> 1.31 (target 1.20), mel 1.93 -> 1.71,
+  HNR 11.9 -> 10.9, harmRMS 8.2 -> 7.67. Crest unchanged (13-14 vs
+  18.5), still open.
+
+## Iteration 6 (R8): steepening rework, first pass (correctness)
+
+- Symptom: firing frequency FAIL at 6000 rpm (16-20% error), half
+  orders above integer orders at load. Clean with steepening off.
+- Cause: whole-line delay modulation driven by the line's own output is
+  an FM feedback loop; at load it saturated its clamp and produced
+  subharmonics. A soft clamp did not help.
+- Change: static delay read plus a first-order Burgers term
+  y = x + delta * (x - x_prev).
+- Result: subharmonics gone (0.003% firing error at 6000 rpm), but see
+  iteration 9: the Taylor form is a treble amplifier. Superseded.
+
+## Iteration 7 (R8): load-dependent cycle variation
+
+- Hypothesis: idle combustion is lean and slow with high variability;
+  the fixed 4% variation is a load number. The reference idle is rough
+  (HNR 7.7 dB) and ours too clean.
+- Change: effective variation = cycle_variation * (1 + boost *
+  (1 - manifold/ambient)); boost swept 1.5/2.5/3.5, kept 3.5
+  (about 14% at idle, 4% at WOT).
+- Result: KEEP. stft 1.86 -> 1.31, mel 1.93 -> 1.71, HNR 11.9 -> 10.9,
+  harmRMS 8.2 -> 7.7 at the idle reference point.
+
+## Iteration 8 (user listening feedback)
+
+- The user heard: (a) a static high-pitch crunch at idle unrelated to
+  rpm; (b) the rev demo muffled, like a vacuum cleaner; (c) wants a
+  straight-piped configuration, banks merged in an X pipe.
+- (a) was the fixed-frequency valvetrain tick band-pass plus too much
+  port turbulence noise: valvetrain_gain 0.008 -> 0.002,
+  flow_noise_gain 3 -> 1.
+- (b) was the stock-silencer chambers plus the 1300 Hz microphone
+  low-pass calibrated against the muffled stock recording.
+- (c) configs/r8_v10_straight.json: no chambers, open tips, no mic
+  low-pass. The stock-reference config r8_v10.json stays for the
+  metric loop.
+
+## Iteration 9 (R8): steepening as a true shifted read
+
+- Symptom: straight-pipe idle centroid 5.3 kHz; sounds like a vacuum
+  cleaner even unmuffled.
+- Cause: the Taylor form of iteration 6 (y = x + delta * dx) has gain
+  |1 + j delta omega| - it amplifies high frequencies on every
+  traversal instead of time-shifting them.
+- Change: re-read the delay line at the shifted position
+  delay - softsat(k * x, 1.5 samples). Feedforward, bounded, periodic
+  input stays periodic.
+- Result: KEEP. Idle centroid 5348 -> 3051 Hz, 6000 rpm still clean
+  (0.14% firing error, half orders -5.6 dB).
+
+## Iteration 10 (R8): radiate d(exit flow)/dt, not mouth pressure
+
+- Symptom: almost no energy below 300 Hz anywhere (2-4% of total).
+- Cause: the radiation tap took the mouth pressure p+ + p-, which the
+  open-end boundary condition forces toward zero at low frequency. The
+  microphone actually hears the far-field of a monopole:
+  p = rho/(4 pi r) * dQ/dt, and the mouth is a velocity antinode.
+- Change: radiated = d/dt[(p+ - p-)], normalized to unity at 1 kHz.
+- Result: KEEP (with iteration 11; alone it added highs too).
+
+## Iteration 11 (R8): flow-dependent damping and duct HF loss
+
+- Hypothesis: real exhaust resonances are damped by grazing mean flow
+  (dominant loss in real systems, absent in the model), and the
+  fixed-pitch 1-2 kHz duct resonances are the vacuum-cleaner whine.
+  Separately, the per-traversal loss filter at 8 kHz barely touches
+  1-5 kHz, so energy steepening pushes upward is never reabsorbed.
+- Change: per-pipe gain exp(-flow_damping * M * L) updated from the
+  mean exhaust mass flow (flow_damping 6); loss_cutoff_hz 8000 -> 2200
+  on the straight-pipe config (swept 3000/1800/2200).
+- Result: KEEP. Idle bands (20-100/100-300/300-800/800-2000 Hz):
+  2/2/11/39% -> 12/11/42/33%; centroid 4335 -> 1260 Hz. At 6000 rpm
+  94% of the energy sits in the firing-order band. Firing error 0.08%,
+  half orders -3.9 dB.
