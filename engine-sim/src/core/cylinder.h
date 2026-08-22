@@ -71,6 +71,15 @@ class Cylinder {
   // Walls.
   double wallTempK_ = 450.0;
   double wallH_ = 500.0;
+  double boreCircumference_ = 0.3;
+
+  // Cached lifts from the previous step (valve event detection).
+  double prevLiftIn_ = 0.0;
+  double prevLiftEx_ = 0.0;
+
+  // Warm starts for the port-flow fixed point (cylinder-to-duct sign).
+  double warmIn_ = 0.0;
+  double warmEx_ = 0.0;
 
   Rng rng_{1};
 };

@@ -1,4 +1,5 @@
 #pragma once
+#include <algorithm>
 #include <cstddef>
 #include <vector>
 
@@ -15,16 +16,51 @@ class DelayLine {
   void clear();
 
   void write(double v) {
-    buf_[widx_] = v;
+    buf_[widx_] = static_cast<float>(v);
     widx_ = (widx_ + 1) & mask_;
   }
 
   // Value written `delay` samples ago, before this sample's write.
-  // Requires 2 <= delay <= capacity - 4.
-  double readFrac(double delay) const;
+  // Requires 2 <= delay <= capacity - 4. Kept in the header so the hot
+  // loop inlines it.
+  double readFrac(double delay) const {
+    const int di = static_cast<int>(delay);
+    const double f = delay - di;
+    const int i0 = (widx_ - di + 1 + (mask_ + 1) * 2) & mask_;  // d - 1
+    const int i1 = (i0 - 1) & mask_;                            // d
+    const int i2 = (i0 - 2) & mask_;                            // d + 1
+    const int i3 = (i0 - 3) & mask_;                            // d + 2
+    const double x0 = buf_[i0], x1 = buf_[i1];
+    const double x2 = buf_[i2], x3 = buf_[i3];
+    // 3rd-order Lagrange interpolation, f in [0,1) between x1 and x2.
+    const double fm1 = f + 1.0, f0 = f, f1 = f - 1.0, f2 = f - 2.0;
+    const double c0 = -f0 * f1 * f2 / 6.0;
+    const double c1 = fm1 * f1 * f2 / 2.0;
+    const double c2 = -fm1 * f0 * f2 / 2.0;
+    const double c3 = fm1 * f0 * f1 / 6.0;
+    return c0 * x0 + c1 * x1 + c2 * x2 + c3 * x3;
+  }
+
+  // 4-tap read with caller-precomputed Lagrange coefficients for a fixed
+  // fractional delay di + f (coefficients from lagrangeCoefs).
+  double read4(int di, const double* c) const {
+    const int i0 = (widx_ - di + 1 + (mask_ + 1) * 2) & mask_;
+    return c[0] * buf_[i0] + c[1] * buf_[(i0 - 1) & mask_] +
+           c[2] * buf_[(i0 - 2) & mask_] + c[3] * buf_[(i0 - 3) & mask_];
+  }
+
+  static void lagrangeCoefs(double f, double* c) {
+    const double fm1 = f + 1.0, f0 = f, f1 = f - 1.0, f2 = f - 2.0;
+    c[0] = -f0 * f1 * f2 / 6.0;
+    c[1] = fm1 * f1 * f2 / 2.0;
+    c[2] = -fm1 * f0 * f2 / 2.0;
+    c[3] = fm1 * f0 * f1 / 6.0;
+  }
 
  private:
-  std::vector<double> buf_;
+  // float storage: audio-band waves need no more precision, and the
+  // halved footprint keeps every delay line cache-resident.
+  std::vector<float> buf_;
   int widx_ = 0;
   int mask_ = 0;
 };
@@ -60,7 +96,25 @@ class WaveguidePipe {
             double extraLoss, double steepening);
 
   // Phase 1: read both delay lines. Call once per sample before any write.
-  void propagate();
+  // Inline: this runs for every pipe at the internal rate.
+  void propagate() {
+    if (steepK_ > 0.0) {
+      // Estimate local amplitude from the previous outputs, then modulate
+      // the read position. Light smoothing avoids read-tap discontinuities.
+      steepStateF_ += 0.5 * (steepK_ * outB_ - steepStateF_);
+      steepStateB_ += 0.5 * (steepK_ * outA_ - steepStateB_);
+      double dF = delay_ - std::clamp(steepStateF_, -maxMod_, maxMod_);
+      double dB = delay_ - std::clamp(steepStateB_, -maxMod_, maxMod_);
+      if (dF < 2.0) dF = 2.0;
+      if (dB < 2.0) dB = 2.0;
+      outB_ = gain_ * lpF_.process(fwd_.readFrac(dF));
+      outA_ = gain_ * lpB_.process(bwd_.readFrac(dB));
+    } else {
+      // Static delay: precomputed interpolation coefficients.
+      outB_ = gain_ * lpF_.process(fwd_.read4(delayInt_, coefs_));
+      outA_ = gain_ * lpB_.process(bwd_.read4(delayInt_, coefs_));
+    }
+  }
 
   // Wave arriving at each end (after propagate()).
   double outA() const { return outA_; }
@@ -96,6 +150,8 @@ class WaveguidePipe {
   double steepStateF_ = 0.0; // smoothed modulation, forward
   double steepStateB_ = 0.0; // smoothed modulation, backward
   double maxMod_ = 0.0;      // clamp on delay modulation, samples
+  int delayInt_ = 8;         // static-path integer delay
+  double coefs_[4] = {0.0, 1.0, 0.0, 0.0};  // static-path Lagrange coefs
 };
 
 // N-port parallel junction. Pressure is continuous and volume velocity is
@@ -105,8 +161,33 @@ class Junction {
   void addPortA(WaveguidePipe* p);  // pipe joins the junction at its A end
   void addPortB(WaveguidePipe* p);  // pipe joins the junction at its B end
   void finalize();
-  void scatter();
+
+  // Inline: runs for every junction at the internal rate.
+  void scatter() {
+    const int n = static_cast<int>(ports_.size());
+    double pin[kMaxPorts];
+    double acc = 0.0;
+    for (int i = 0; i < n; ++i) {
+      const Port& port = ports_[i];
+      pin[i] = port.atB ? port.pipe->outB() : port.pipe->outA();
+      acc += port.y * pin[i];
+    }
+    const double pj = 2.0 * acc * invSumY_;
+    lastPressure_ = pj;
+    for (int i = 0; i < n; ++i) {
+      const Port& port = ports_[i];
+      const double out = pj - pin[i];
+      if (port.atB) {
+        port.pipe->inB(out);
+      } else {
+        port.pipe->inA(out);
+      }
+    }
+  }
+
   double pressure() const { return lastPressure_; }
+
+  static constexpr int kMaxPorts = 8;
 
  private:
   struct Port {

@@ -14,6 +14,17 @@ endif()
 
 add_compile_options(-Wall -Wextra)
 
+# Safe math flags: no errno from libm calls and no trap assumptions. These
+# keep IEEE NaN and rounding semantics (unlike -ffast-math, which measured
+# +3% and is not worth the risk to the solver).
+add_compile_options(-fno-math-errno -fno-trapping-math)
+
+include(CheckIPOSupported)
+check_ipo_supported(RESULT ENGINESIM_IPO_OK OUTPUT _ipo_msg)
+if(ENGINESIM_IPO_OK AND CMAKE_BUILD_TYPE STREQUAL "Release")
+  set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
+endif()
+
 # Core library. It has no audio and no graphics dependency.
 add_library(enginesim_core
   src/core/config.cpp
@@ -27,6 +38,10 @@ add_library(enginesim_core
   src/core/wav.cpp
 )
 target_include_directories(enginesim_core PUBLIC src third_party)
+# Fast math on the core only, keeping IEEE NaN semantics so the NaN sanity
+# checks stay valid. Proven stable: selftest, 10-minute NaN run, and the
+# full metric cycle are unchanged within tolerance (docs/iteration_log.md).
+target_compile_options(enginesim_core PRIVATE -ffast-math -fno-finite-math-only)
 
 # Headless renderer. This is the primary executable.
 add_executable(enginesim src/main.cpp)

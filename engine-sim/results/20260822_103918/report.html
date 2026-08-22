@@ -1,0 +1,104 @@
+<!doctype html><meta charset="utf-8">
+<title>enginesim report 20260822_103918</title>
+<style>
+ body { font-family: system-ui, sans-serif; margin: 2rem; max-width: 1100px; }
+ table { border-collapse: collapse; margin: 0.6rem 0 1.4rem; }
+ td, th { border: 1px solid #ccc; padding: 4px 10px; text-align: right; }
+ th { background: #f2f2f2; }
+ td:first-child, th:first-child { text-align: left; }
+ .good { color: #0a7a0a; font-weight: 600; }
+ .bad { color: #c22; font-weight: 600; }
+ .same { color: #999; }
+ img { max-width: 100%; border: 1px solid #ddd; margin: 4px 0; }
+ audio { width: 260px; vertical-align: middle; }
+ .pass { color: #0a7a0a; } .fail { color: #c22; }
+ h2 { margin-top: 2.2rem; border-bottom: 2px solid #eee; }
+ .meta { color: #666; }
+</style>
+<h1>enginesim verification report</h1>
+<p class="meta">cycle 20260822_103918 &middot; git 7d0d5b3 &middot;
+label: perf: tables, inlining, warm start, fast-math core; rev profile &middot;
+cpu: Intel(R) Xeon(R) Processor @ 2.80GHz
+&middot; compared against 20260822_101955</p>
+
+<h2>Sanity</h2><table><tr><th>check</th><th>value</th></tr>
+<tr><td>deterministic</td><td class="pass">PASS</td></tr>
+<tr><td>nan_free</td><td class="pass">PASS</td></tr>
+<tr><td>below_full_scale</td><td class="fail">FAIL</td></tr>
+<tr><td>firing_freq_ok</td><td class="pass">PASS</td></tr>
+</table>
+<h2>2gr_fe_650</h2>
+<p>current best<br><audio controls src='../../renders/best/2gr_fe_650.wav'></audio> &nbsp; previous best<br><audio controls src='../../renders/prev/2gr_fe_650.wav'></audio></p>
+<p class='meta'>No reference recording for this point (refs/ is empty or lacks this rpm).</p>
+<table><tr><th>metric</th><th>value</th><th>vs prev</th></tr>
+<tr><td>firing freq error %</td><td>0.018</td><td> <span class="bad">-0.001</span></td></tr>
+<tr><td>half-order level dB</td><td>-6.2</td><td></td></tr>
+<tr><td>HNR dB</td><td>12.8</td><td></td></tr>
+<tr><td>crest dB</td><td>14.5</td><td></td></tr>
+<tr><td>centroid Hz</td><td>2401</td><td></td></tr>
+<tr><td>flatness</td><td>0.0004</td><td></td></tr>
+<tr><td>max_abs</td><td>0.319</td><td></td></tr>
+<tr><td>rtf</td><td>8.200</td><td></td></tr>
+<tr><td>peak_cyl_pressure_bar</td><td>16.730</td><td></td></tr>
+</table>
+<img src='2gr_fe_650_spec.png' alt='spectrogram 2gr_fe_650'>
+<h2>2gr_fe_1500</h2>
+<p>current best<br><audio controls src='../../renders/best/2gr_fe_1500.wav'></audio> &nbsp; previous best<br><audio controls src='../../renders/prev/2gr_fe_1500.wav'></audio></p>
+<p class='meta'>No reference recording for this point (refs/ is empty or lacks this rpm).</p>
+<table><tr><th>metric</th><th>value</th><th>vs prev</th></tr>
+<tr><td>firing freq error %</td><td>0.043</td><td> <span class="good">+0.005</span></td></tr>
+<tr><td>half-order level dB</td><td>-2.8</td><td></td></tr>
+<tr><td>HNR dB</td><td>10.6</td><td></td></tr>
+<tr><td>crest dB</td><td>16.4</td><td></td></tr>
+<tr><td>centroid Hz</td><td>2522</td><td></td></tr>
+<tr><td>flatness</td><td>0.0011</td><td></td></tr>
+<tr><td>max_abs</td><td>0.284</td><td></td></tr>
+<tr><td>rtf</td><td>7.710</td><td></td></tr>
+<tr><td>peak_cyl_pressure_bar</td><td>37.330</td><td></td></tr>
+</table>
+<img src='2gr_fe_1500_spec.png' alt='spectrogram 2gr_fe_1500'>
+<h2>2gr_fe_3000</h2>
+<p>current best<br><audio controls src='../../renders/best/2gr_fe_3000.wav'></audio> &nbsp; previous best<br><audio controls src='../../renders/prev/2gr_fe_3000.wav'></audio></p>
+<p class='meta'>No reference recording for this point (refs/ is empty or lacks this rpm).</p>
+<table><tr><th>metric</th><th>value</th><th>vs prev</th></tr>
+<tr><td>firing freq error %</td><td>0.038</td><td> <span class="good">+0.002</span></td></tr>
+<tr><td>half-order level dB</td><td>-1.3</td><td></td></tr>
+<tr><td>HNR dB</td><td>9.5</td><td></td></tr>
+<tr><td>crest dB</td><td>15.0</td><td></td></tr>
+<tr><td>centroid Hz</td><td>2574</td><td></td></tr>
+<tr><td>flatness</td><td>0.0024</td><td></td></tr>
+<tr><td>max_abs</td><td>0.238</td><td></td></tr>
+<tr><td>rtf</td><td>7.930</td><td></td></tr>
+<tr><td>peak_cyl_pressure_bar</td><td>57.650</td><td></td></tr>
+</table>
+<img src='2gr_fe_3000_spec.png' alt='spectrogram 2gr_fe_3000'>
+<h2>2gr_fe_4500</h2>
+<p>current best<br><audio controls src='../../renders/best/2gr_fe_4500.wav'></audio> &nbsp; previous best<br><audio controls src='../../renders/prev/2gr_fe_4500.wav'></audio></p>
+<p class='meta'>No reference recording for this point (refs/ is empty or lacks this rpm).</p>
+<table><tr><th>metric</th><th>value</th><th>vs prev</th></tr>
+<tr><td>firing freq error %</td><td>0.034</td><td> <span class="good">+0.001</span></td></tr>
+<tr><td>half-order level dB</td><td>2.1</td><td></td></tr>
+<tr><td>HNR dB</td><td>12.9</td><td></td></tr>
+<tr><td>crest dB</td><td>9.5</td><td></td></tr>
+<tr><td>centroid Hz</td><td>2695</td><td></td></tr>
+<tr><td>flatness</td><td>0.0019</td><td></td></tr>
+<tr><td>max_abs</td><td>0.999</td><td></td></tr>
+<tr><td>rtf</td><td>7.580</td><td></td></tr>
+<tr><td>peak_cyl_pressure_bar</td><td>79.760</td><td></td></tr>
+</table>
+<img src='2gr_fe_4500_spec.png' alt='spectrogram 2gr_fe_4500'>
+<h2>2gr_fe_6400</h2>
+<p>current best<br><audio controls src='../../renders/best/2gr_fe_6400.wav'></audio> &nbsp; previous best<br><audio controls src='../../renders/prev/2gr_fe_6400.wav'></audio></p>
+<p class='meta'>No reference recording for this point (refs/ is empty or lacks this rpm).</p>
+<table><tr><th>metric</th><th>value</th><th>vs prev</th></tr>
+<tr><td>firing freq error %</td><td>0.034</td><td> <span class="good">+0.000</span></td></tr>
+<tr><td>half-order level dB</td><td>1.1</td><td></td></tr>
+<tr><td>HNR dB</td><td>15.0</td><td></td></tr>
+<tr><td>crest dB</td><td>12.3</td><td></td></tr>
+<tr><td>centroid Hz</td><td>2297</td><td></td></tr>
+<tr><td>flatness</td><td>0.0012</td><td></td></tr>
+<tr><td>max_abs</td><td>0.517</td><td></td></tr>
+<tr><td>rtf</td><td>8.100</td><td></td></tr>
+<tr><td>peak_cyl_pressure_bar</td><td>94.520</td><td></td></tr>
+</table>
+<img src='2gr_fe_6400_spec.png' alt='spectrogram 2gr_fe_6400'>

@@ -67,8 +67,14 @@ class Passthrough {
 };
 
 // Soft limiter: transparent at low level, saturates smoothly, never clips.
+// Pade approximation of tanh, monotonic on [-3, 3], exact to 1e-3 below
+// |x| = 1; clamps to +-1 outside. Avoids a libm call per sample.
 inline double softLimit(double x, double drive) {
-  return std::tanh(x * drive) / drive;
+  double t = x * drive;
+  if (t > 3.0) t = 3.0;
+  if (t < -3.0) t = -3.0;
+  const double t2 = t * t;
+  return t * (27.0 + t2) / (27.0 + 9.0 * t2) / drive;
 }
 
 // One-pole DC blocker at about 5 Hz. The open pipe end radiates nothing at

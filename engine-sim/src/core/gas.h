@@ -50,4 +50,49 @@ inline double orificeMassFlow(double effAreaM2, double pUpPa, double tUpK,
   return effAreaM2 * pUpPa / std::sqrt(kGasR * tUpK) * phi;
 }
 
+// Fast orifice flow for the cylinder's fixed gamma. The subsonic flow
+// function Phi(pr) is tabulated once; the choked value is a constant.
+// Matches orificeMassFlow(kGammaCyl) within 0.1%.
+class OrificeFlowTable {
+ public:
+  OrificeFlowTable() {
+    const double g = kGammaCyl;
+    prCrit_ = std::pow(2.0 / (g + 1.0), g / (g - 1.0));
+    phiChoked_ = std::sqrt(g) *
+                 std::pow(2.0 / (g + 1.0), (g + 1.0) / (2.0 * (g - 1.0)));
+    for (int i = 0; i < kN; ++i) {
+      const double pr = prCrit_ + (1.0 - prCrit_) * i / (kN - 1);
+      const double a = std::pow(pr, 2.0 / g);
+      const double b = std::pow(pr, (g + 1.0) / g);
+      phi_[i] = std::sqrt(2.0 * g / (g - 1.0) * std::max(0.0, a - b));
+    }
+    invStep_ = (kN - 1) / (1.0 - prCrit_);
+  }
+
+  double prCrit() const { return prCrit_; }
+  double phiChoked() const { return phiChoked_; }
+
+  // Flow function Phi(pr); the caller multiplies by A * P_up / sqrt(R T_up).
+  double phi(double pr) const {
+    if (pr >= 1.0) return 0.0;
+    if (pr <= prCrit_) return phiChoked_;
+    const double x = (pr - prCrit_) * invStep_;
+    const int i = static_cast<int>(x);
+    const double f = x - i;
+    return phi_[i] + f * (phi_[i + 1 < kN ? i + 1 : i] - phi_[i]);
+  }
+
+  double flow(double effAreaM2, double pUpPa, double tUpK, double pDownPa) const {
+    if (effAreaM2 <= 0.0 || pUpPa <= 0.0) return 0.0;
+    return effAreaM2 * pUpPa / std::sqrt(kGasR * tUpK) * phi(pDownPa / pUpPa);
+  }
+
+ private:
+  static constexpr int kN = 1024;
+  double phi_[kN];
+  double prCrit_ = 0.54;
+  double phiChoked_ = 0.67;
+  double invStep_ = 1.0;
+};
+
 }  // namespace enginesim

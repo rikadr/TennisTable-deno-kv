@@ -35,8 +35,15 @@ void Cylinder::init(const SimConfig& cfg, int index, double phaseDeg,
   wallTempK_ = cfg.combustion.wallTempK;
   wallH_ = cfg.combustion.wallH;
 
+  intakeCam_.buildTable();
+  exhaustCam_.buildTable();
+  geom_.buildTables();
+  boreCircumference_ = kPi * cfg.engine.boreMm * 1e-3;
+
   phaseDeg_ = phaseDeg;
   prevLocalDeg_ = wrapAngle(-phaseDeg, 720.0);
+  prevLiftIn_ = intakeCam_.lift(prevLocalDeg_);
+  prevLiftEx_ = exhaustCam_.lift(prevLocalDeg_);
   rng_ = Rng(seed + 0x1000ull * static_cast<uint64_t>(index + 1));
 
   // Start filled with warm residual gas at ambient pressure.
@@ -49,49 +56,71 @@ void Cylinder::init(const SimConfig& cfg, int index, double phaseDeg,
 double Cylinder::wiebeX(double tau) const {
   if (tau <= 0.0) return 0.0;
   if (tau >= 1.0) tau = 1.0;
-  return 1.0 - std::exp(-wiebeA_ * std::pow(tau, wiebeM_ + 1.0));
+  // The common case m = 2 avoids std::pow in the burn loop.
+  const double tp = wiebeM_ == 2.0 ? tau * tau * tau
+                                   : std::pow(tau, wiebeM_ + 1.0);
+  return 1.0 - std::exp(-wiebeA_ * tp);
 }
 
 namespace {
+
+const OrificeFlowTable& flowTable() {
+  static const OrificeFlowTable t;
+  return t;
+}
 
 // Solve the coupled valve/duct flow. The duct pressure rises (or falls)
 // with the flow itself: P_port = base + 2 p_in + Z0 * mdot / rho.
 // Positive result: flow from the cylinder into the duct.
 // Negative result: backflow from the duct into the cylinder.
 double solvePortFlow(double area, double pCyl, double tCyl,
-                     const PortState& port) {
-  if (area <= 0.0) return 0.0;
+                     const PortState& port, double& warmStart) {
+  if (area <= 0.0) { warmStart = 0.0; return 0.0; }
+  const OrificeFlowTable& tab = flowTable();
   const double pStill = port.basePressurePa + 2.0 * port.incomingWave;
   const double zOverRho = port.impedance / port.density;
 
   if (pCyl >= pStill) {
-    // Outflow. The choked branch does not depend on the duct pressure.
-    const double g = kGammaCyl;
-    const double prCrit = std::pow(2.0 / (g + 1.0), g / (g - 1.0));
-    const double mdotChoked = orificeMassFlow(area, pCyl, tCyl, 0.0, g);
-    if (pStill + zOverRho * mdotChoked <= prCrit * pCyl) return mdotChoked;
-    // Subsonic: damped fixed point on mdot. The map is contracting
-    // because the duct back-pressure rises slowly with mdot.
-    double mdot = 0.5 * mdotChoked;
+    // Outflow. A P_up / sqrt(R T_up) is constant across the iteration.
+    const double factor = area * pCyl / std::sqrt(kGasR * tCyl);
+    const double mdotChoked = factor * tab.phiChoked();
+    if (pStill + zOverRho * mdotChoked <= tab.prCrit() * pCyl) {
+      warmStart = mdotChoked;
+      return mdotChoked;
+    }
+    // Subsonic: damped fixed point on mdot, warm-started from the
+    // previous sample. The map is contracting because the duct
+    // back-pressure rises slowly with mdot.
+    const double invPCyl = 1.0 / pCyl;
+    double mdot = warmStart > 0.0 && warmStart < mdotChoked
+                      ? warmStart : 0.5 * mdotChoked;
     for (int it = 0; it < 6; ++it) {
       double pPort = pStill + zOverRho * mdot;
       if (pPort > pCyl) pPort = pCyl;
-      const double f = orificeMassFlow(area, pCyl, tCyl, pPort, g);
-      mdot = 0.5 * (mdot + f);
+      const double f = factor * tab.phi(pPort * invPCyl);
+      const double next = 0.5 * (mdot + f);
+      const bool done = std::fabs(next - mdot) < 1e-4 * (next + 1e-9);
+      mdot = next;
+      if (done) break;
     }
+    warmStart = mdot;
     return mdot;
   }
 
   // Backflow: the duct is the upstream side, and drawing flow out of it
-  // lowers the duct pressure.
-  const double g = kGammaCyl;
-  double mdot = 0.0;
+  // lowers the duct pressure. P_up varies here, so hoist only sqrt(R T).
+  const double invSqrtRT = 1.0 / std::sqrt(kGasR * port.gasTempK);
+  double mdot = warmStart < 0.0 ? -warmStart : 0.0;
   for (int it = 0; it < 6; ++it) {
     double pPort = pStill - zOverRho * mdot;
     if (pPort < pCyl) pPort = pCyl;
-    const double f = orificeMassFlow(area, pPort, port.gasTempK, pCyl, g);
-    mdot = 0.5 * (mdot + f);
+    const double f = area * pPort * invSqrtRT * tab.phi(pCyl / pPort);
+    const double next = 0.5 * (mdot + f);
+    const bool done = std::fabs(next - mdot) < 1e-4 * (next + 1e-9);
+    mdot = next;
+    if (done) break;
   }
+  warmStart = -mdot;
   return -mdot;
 }
 
@@ -102,30 +131,35 @@ CylinderOutputs Cylinder::step(double globalCycleDeg, double dThetaDeg,
                                const PortState& exhaustPort,
                                double intakeTempK, bool sparkEnabled) {
   CylinderOutputs out;
-  const double localDeg = wrapAngle(globalCycleDeg - phaseDeg_, 720.0);
-  const double thetaRad = deg2rad(localDeg);
+  (void)globalCycleDeg;
+  // Incremental local angle: no fmod in the hot path.
+  double localDeg = prevLocalDeg_ + dThetaDeg;
+  if (localDeg >= 720.0) localDeg -= 720.0;
+  double crankDeg = localDeg;
+  if (crankDeg >= 360.0) crankDeg -= 360.0;
 
-  const double v = geom_.volume(thetaRad);
-  const double dv = geom_.dVolume(thetaRad) * deg2rad(dThetaDeg);
+  double v, dvdTheta;
+  geom_.volumeAndDerivFast(crankDeg, v, dvdTheta);
+  const double dv = dvdTheta * deg2rad(dThetaDeg);
   p_ = m_ * kGasR * t_ / v;
 
   // --- Valve lift and flow ---
   const double liftIn = intakeCam_.lift(localDeg);
   const double liftEx = exhaustCam_.lift(localDeg);
-  const double prevLiftIn = intakeCam_.lift(prevLocalDeg_);
-  const double prevLiftEx = exhaustCam_.lift(prevLocalDeg_);
-  out.valveEvent = ((liftIn > 0.0) != (prevLiftIn > 0.0)) ||
-                   ((liftEx > 0.0) != (prevLiftEx > 0.0));
+  out.valveEvent = ((liftIn > 0.0) != (prevLiftIn_ > 0.0)) ||
+                   ((liftEx > 0.0) != (prevLiftEx_ > 0.0));
+  prevLiftIn_ = liftIn;
+  prevLiftEx_ = liftEx;
 
   const double aIn = intakeValve_.effectiveArea(liftIn);
   const double aEx = exhaustValve_.effectiveArea(liftEx);
 
   // Intake: positive flow enters the cylinder from the runner.
   // The solver's sign convention is cylinder-to-duct, so negate.
-  double mdotIn = -solvePortFlow(aIn, p_, t_, intakePort);
+  double mdotIn = -solvePortFlow(aIn, p_, t_, intakePort, warmIn_);
 
   // Exhaust: positive flow leaves the cylinder into the runner.
-  double mdotEx = solvePortFlow(aEx, p_, t_, exhaustPort);
+  double mdotEx = solvePortFlow(aEx, p_, t_, exhaustPort, warmEx_);
 
   // Bound the mass change for stability.
   const double maxDm = 0.2 * m_;
@@ -135,8 +169,11 @@ CylinderOutputs Cylinder::step(double globalCycleDeg, double dThetaDeg,
   mdotEx = dmEx / dt;
 
   // --- Combustion trigger at the spark angle ---
-  const double distNow = wrapAngle(localDeg - sparkAngleDeg_, 720.0);
-  const double distPrev = wrapAngle(prevLocalDeg_ - sparkAngleDeg_, 720.0);
+  // Crossing test without fmod: both distances stay in [0, 720).
+  double distNow = localDeg - sparkAngleDeg_;
+  if (distNow < 0.0) distNow += 720.0;
+  double distPrev = prevLocalDeg_ - sparkAngleDeg_;
+  if (distPrev < 0.0) distPrev += 720.0;
   if (distNow < distPrev && distNow < 90.0) {
     if (sparkEnabled) {
       const double vQ = 1.0 + cycleVar_ * rng_.gauss();
@@ -162,7 +199,7 @@ CylinderOutputs Cylinder::step(double globalCycleDeg, double dThetaDeg,
 
   // --- Wall heat loss ---
   const double height = v / geom_.boreArea;
-  const double aWall = 2.5 * geom_.boreArea + kPi * std::sqrt(4.0 * geom_.boreArea / kPi) * height;
+  const double aWall = 2.5 * geom_.boreArea + boreCircumference_ * height;
   const double dQWall = wallH_ * aWall * (t_ - wallTempK_) * dt;
 
   // --- Energy balance ---
@@ -187,8 +224,7 @@ CylinderOutputs Cylinder::step(double globalCycleDeg, double dThetaDeg,
 
   m_ = mNew;
   t_ = tNew;
-  const double vNext = geom_.volume(deg2rad(wrapAngle(localDeg, 720.0)));
-  p_ = m_ * kGasR * t_ / vNext;
+  p_ = m_ * kGasR * t_ / v;
   prevLocalDeg_ = localDeg;
 
   out.mdotExhaust = mdotEx;

@@ -13,8 +13,8 @@ struct CamLobe {
   double durationDeg = 235.0;
   double maxLiftM = 0.010;
 
-  // Lift at cycle angle (deg in [0, 720)).
-  double lift(double cycleDeg) const {
+  // Exact lift at cycle angle (deg in [0, 720)).
+  double liftExact(double cycleDeg) const {
     double d = cycleDeg - centerlineDeg;
     // Fold into [-360, 360) so the lobe works across the cycle wrap.
     if (d > 360.0) d -= 720.0;
@@ -25,6 +25,26 @@ struct CamLobe {
     const double c = 0.5 - 0.5 * std::cos(kTwoPi * x);
     return maxLiftM * c;
   }
+
+  // Tabulated lift with linear interpolation; call buildTable() first.
+  // The curve is smooth, so 2048 points over 720 degrees stay within
+  // a fraction of a micrometre of the exact value.
+  void buildTable() {
+    for (int i = 0; i <= kTabN; ++i)
+      table_[i] = liftExact(720.0 * i / kTabN);
+  }
+
+  double lift(double cycleDeg) const {
+    const double x = cycleDeg * (kTabN / 720.0);
+    int i = static_cast<int>(x);
+    const double f = x - i;
+    if (i >= kTabN) i = kTabN - 1;
+    return table_[i] + f * (table_[i + 1] - table_[i]);
+  }
+
+ private:
+  static constexpr int kTabN = 2048;
+  double table_[kTabN + 1] = {};
 };
 
 // Poppet valve flow geometry. The effective area is the smaller of the

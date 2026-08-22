@@ -44,6 +44,44 @@ struct CrankGeometry {
                       (crankRadius * crankRadius * s * c) / std::sqrt(under);
     return -boreArea * dx;
   }
+
+  // Volume and dV/dtheta in one pass (shares sin, cos, sqrt).
+  void volumeAndDeriv(double theta, double& vol, double& dVol) const {
+    const double s = std::sin(theta);
+    const double c = std::cos(theta);
+    const double under =
+        rodLength * rodLength - crankRadius * crankRadius * s * s;
+    const double root = std::sqrt(under);
+    const double x = crankRadius * c + root;
+    vol = clearanceVol + boreArea * (crankRadius + rodLength - x);
+    const double dx = -crankRadius * s - (crankRadius * crankRadius * s * c) / root;
+    dVol = -boreArea * dx;
+  }
+
+  // Tabulated volume and derivative over one crank revolution, indexed by
+  // crank angle in degrees. Both curves are smooth; 4096 points keep the
+  // linear-interpolation error below 1e-9 m^3. Call buildTables() once.
+  void buildTables() {
+    for (int i = 0; i <= kTabN; ++i) {
+      const double th = kTwoPi * i / kTabN;
+      volumeAndDeriv(th, volTab_[i], dVolTab_[i]);
+    }
+  }
+
+  // crankDeg must lie in [0, 360).
+  void volumeAndDerivFast(double crankDeg, double& vol, double& dVol) const {
+    const double x = crankDeg * (kTabN / 360.0);
+    int i = static_cast<int>(x);
+    const double f = x - i;
+    if (i >= kTabN) i = kTabN - 1;
+    vol = volTab_[i] + f * (volTab_[i + 1] - volTab_[i]);
+    dVol = dVolTab_[i] + f * (dVolTab_[i + 1] - dVolTab_[i]);
+  }
+
+ private:
+  static constexpr int kTabN = 4096;
+  double volTab_[kTabN + 1] = {};
+  double dVolTab_[kTabN + 1] = {};
 };
 
 }  // namespace enginesim
