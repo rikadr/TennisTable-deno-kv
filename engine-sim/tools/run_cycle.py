@@ -24,11 +24,12 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 BIN = os.path.join(ROOT, "build", "enginesim")
 
-# (rpm, throttle) steady verification points.
-STEADY = [(650, 0.10), (1500, 0.35), (3000, 0.55), (4500, 0.75), (6400, 0.95)]
-SWEEP = (800, 7000, 20.0, 1.0)
 SEED = 42
-ENGINE = "2gr_fe"
+
+# Fallback verification plan; a config's "verification" block overrides it.
+DEFAULT_STEADY = [[650, 0.10], [1500, 0.35], [3000, 0.55], [4500, 0.75],
+                  [6400, 0.95]]
+DEFAULT_SWEEP = [800, 7000, 20.0, 1.0]
 
 
 def run(cmd, **kw):
@@ -71,12 +72,20 @@ def render(cfg, out_wav, stats, rpm=None, sweep=None, duration=6.0,
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--label", default="")
-    ap.add_argument("--config", default="configs/2gr_fe.json")
+    ap.add_argument("--config", default="configs/r8_v10.json")
     ap.add_argument("--quick", action="store_true",
                     help="skip the 60 s RTF render and the sweep")
     ap.add_argument("--no-promote", action="store_true")
     ap.add_argument("--skip-build", action="store_true")
     args = ap.parse_args()
+
+    with open(os.path.join(ROOT, args.config)) as f:
+        cfg = json.load(f)
+    ver = cfg.get("verification", {})
+    steady = ver.get("steady", DEFAULT_STEADY)
+    sweep = ver.get("sweep", DEFAULT_SWEEP)
+    engine = ver.get("ref_prefix", cfg.get("name", "engine"))
+    cylinders = cfg["engine"]["cylinders"]
 
     if not args.skip_build:
         run(["cmake", "-B", "build", "-DCMAKE_BUILD_TYPE=Release"],
@@ -100,15 +109,16 @@ def main():
     }
 
     # --- Steady renders + metrics ---
-    for rpm, thr in STEADY:
-        name = f"{ENGINE}_{rpm}"
+    for rpm, thr in steady:
+        rpm = int(rpm)
+        name = f"{engine}_{rpm}"
         wav = os.path.join(audio, name + ".wav")
         st = os.path.join(rdir, name + "_stats.json")
         render(args.config, wav, st, rpm=rpm, throttle=thr)
-        ref = os.path.join(ROOT, "refs", f"{ENGINE}_{rpm}.wav")
+        ref = os.path.join(ROOT, "refs", f"{engine}_{rpm}.wav")
         cmd = [sys.executable, os.path.join(ROOT, "tools", "analyze.py"),
                "--render", wav, "--rpm", str(rpm), "--out-dir", rdir,
-               "--name", name]
+               "--name", name, "--cylinders", str(cylinders)]
         if os.path.exists(ref):
             cmd += ["--ref", ref]
         run(cmd)
@@ -120,15 +130,17 @@ def main():
 
     # --- Sweep ---
     if not args.quick:
-        a, b, dur, thr = SWEEP
-        name = f"{ENGINE}_sweep_{a}_{b}"
+        a, b, dur, thr = sweep
+        a, b = int(a), int(b)
+        name = f"{engine}_sweep_{a}_{b}"
         wav = os.path.join(audio, name + ".wav")
         st = os.path.join(rdir, name + "_stats.json")
         render(args.config, wav, st, sweep=(a, b), duration=dur, throttle=thr)
         mid = (a + b) / 2
         run([sys.executable, os.path.join(ROOT, "tools", "analyze.py"),
              "--render", wav, "--rpm", str(mid), "--sweep", f"{a}:{b}",
-             "--out-dir", rdir, "--name", name])
+             "--out-dir", rdir, "--name", name,
+             "--cylinders", str(cylinders)])
         with open(os.path.join(rdir, name + "_metrics.json")) as f:
             m = json.load(f)
         with open(st) as f:
@@ -138,8 +150,9 @@ def main():
     # --- Sanity: determinism ---
     d1 = os.path.join(audio, "det_a.wav")
     d2 = os.path.join(audio, "det_b.wav")
+    det_rpm, det_thr = steady[min(2, len(steady) - 1)]
     for d in (d1, d2):
-        render(args.config, d, d + ".json", rpm=3000, throttle=0.55,
+        render(args.config, d, d + ".json", rpm=det_rpm, throttle=det_thr,
                duration=2.0, seed=123)
     agg["sanity"]["deterministic"] = filecmp.cmp(d1, d2, shallow=False)
     os.remove(d1), os.remove(d2)
@@ -154,7 +167,8 @@ def main():
     if not args.quick:
         wav = os.path.join(audio, "rtf_probe.wav")
         st = os.path.join(rdir, "rtf_stats.json")
-        render(args.config, wav, st, rpm=3000, throttle=0.55, duration=60.0)
+        render(args.config, wav, st, rpm=det_rpm, throttle=det_thr,
+               duration=60.0)
         with open(st) as f:
             rtf = json.load(f)["rtf"]
         agg["sanity"]["rtf_60s"] = rtf
@@ -178,10 +192,11 @@ def main():
             shutil.rmtree(prev, ignore_errors=True)
             shutil.move(best, prev)
         os.makedirs(best, exist_ok=True)
-        for rpm, _ in STEADY:
-            src = os.path.join(audio, f"{ENGINE}_{rpm}.wav")
+        for rpm, _ in steady:
+            rpm = int(rpm)
+            src = os.path.join(audio, f"{engine}_{rpm}.wav")
             if os.path.exists(src):
-                shutil.copy(src, os.path.join(best, f"{ENGINE}_{rpm}.wav"))
+                shutil.copy(src, os.path.join(best, f"{engine}_{rpm}.wav"))
         with open(os.path.join(best, "SOURCE.json"), "w") as f:
             json.dump({"results_dir": ts, "git_rev": agg["git_rev"],
                        "label": args.label}, f, indent=1)

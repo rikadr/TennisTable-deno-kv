@@ -1,0 +1,120 @@
+# Iteration log
+
+One entry per change. Keep the numbers. Newest at the bottom.
+Metric shorthand: fErr = firing frequency error %, harmRMS = harmonic
+amplitude RMS error vs reference (dB), stft = multi-scale STFT log-mag
+distance, mel = mel L1, half = half-order level relative to integer
+orders (dB), RTF = real-time factor, 60 s render, Release,
+single-threaded. Sandbox CPU: Intel Xeon @ 2.80 GHz (4 vCPU).
+
+## 2026-08-22 Baseline and infrastructure (2GR-FE target)
+
+- First full build. Selftest passed. First render: fErr 0.005%, no NaN.
+- Diagnostic: half orders at -1.3 dB (far too strong for even fire).
+  Symmetric geometry + no cycle variation: -15.5 dB. Also without
+  steepening: -30.4 dB. Conclusion: half-order energy comes from
+  geometric asymmetry (physical), cycle variation (physical), and the
+  steepening feedback (partly numeric, watch it).
+- BUG FIX (valve-duct coupling): the port pressure used the previous
+  sample's flow and oscillated at Nyquist. Idle-to-redline RMS span was
+  2.7 dB; the implicit solve raised it to 7.5 dB and peak cylinder
+  pressure now scales 17/51/93 bar across 650/3000/6400 rpm.
+- Performance: RTF 3.8 -> 9.0-9.2 (V6) via flow-function and cam and
+  volume tables, no fmod/trig in the hot path, inlined delay reads and
+  junction scatter, warm-started subsonic solver, fast-math (core only,
+  keeps finite-math). RTF target of 10 not reached yet on the sandbox
+  vCPU; every remaining cost scales with the internal rate.
+- Limiter moved after the decimator after a 1.004 full-scale overshoot.
+
+## 2026-08-22 Retarget to Audi R8 V10 5.2 (user-approved online refs)
+
+- User approved sourcing references online and changing the target
+  engine. Candidates measured in docs and refs/SOURCES.md. Chosen:
+  Audi R8 V10 clip (best bandwidth/noise/steadiness combination).
+- The reference idle comb (33.33 Hz spacing = order 2.5 per rev at
+  800 rpm) shows one bank dominates at the microphone. Added a dual-exit
+  exhaust topology (X junction, one chain per bank, tail_mix at the
+  microphone) to reproduce that.
+- configs/r8_v10.json created; verification points moved into the
+  config ("verification" block, read by run_cycle.py).
+- refs/r8_v10_800.wav (steady idle) + r8_v10_full.wav extracted.
+
+### Baseline vs reference, idle 800 rpm (render level normalized to ref)
+
+- fErr 0.002% PASS. half -9.7 dB.
+- harmRMS 14.8 dB (target < 3). stft 1.99. mel 2.69. mfcc 0.053.
+- Render vs ref character: centroid 2374 vs 1349 Hz (too bright),
+  HNR 14.6 vs 7.7 dB (too tonal), crest 12.3 vs 18.5 dB (too flat),
+  pulse decay 10.0 vs 4.9 ms (rings too long). Harmonic valley at
+  h4-h8 and a resonant bump at h9-h13 that the reference lacks.
+
+## Iteration 1 (R8): network damping
+
+- Hypothesis: the waveguide network is under-damped. Real exhausts
+  lose energy to flow separation, turbulence and absorptive packing;
+  the model's loss_per_meter 0.06 and chamber absorption 0.25 ring too
+  long, which produces the deep valleys, the resonant bump, the long
+  pulse decay and the excess tonality.
+- Change: loss_per_meter 0.06 -> 0.20; chamber absorption 0.25 -> 0.45.
+- Result: pending.
+- Result: KEEP. harmRMS 14.8 -> 12.3. Crest 12.3 -> 16.0. Pulse decay
+  10.0 -> 6.2 ms. stft/mel slightly worse (see iteration 3).
+
+## Iteration 2 (R8): exit damping
+
+- Hypothesis: the h11-h12 bump (+20/+23 dB) is the tailpipe half-wave
+  resonance (~800 Hz for the 0.3 m tip) ringing between a hard area
+  step and a reflective open end. Real silencer exits lose energy to
+  flow separation and the idle valve path.
+- Change: new config knobs exit_loss 0.12 (extra tailpipe loss) and
+  radiation_reflection 0.985 -> 0.96.
+- Result: KEEP. harmRMS 12.3 -> 11.2; h11/h12 errors down 5/3 dB.
+
+## Iteration 3 (R8): port jet turbulence noise
+
+- Hypothesis: stft and mel distances degrade as the render gets
+  cleaner; the reference has a broadband turbulence floor between
+  harmonics (HNR 7.7 dB vs our 12-14 dB). Inject band-limited noise at
+  each exhaust port scaled by the port jet dynamic pressure 0.5 rho u^2
+  (a physical source, not output EQ).
+- Change: flow_noise_gain swept 0.6 / 3.0 / 8.0 at idle.
+- Result: PARTIAL KEEP (gain 3.0). At idle the jet is too slow for the
+  mechanism to close the HNR gap (12.3 -> 12.0); it should matter at
+  load. No metric got materially worse at gain 3.0.
+
+## Iteration 4 (R8): silencer structure
+
+- Hypothesis: the h4-h7 valley is the single expansion chamber's
+  quarter-wave transmission notch (~335 Hz), and the h12 bump is the
+  0.3 m tailpipe resonance. The real R8 box is multi-chamber and
+  absorptive with short tips.
+- Change: two staggered chambers (0.25 m and 0.38 m, absorption 0.5)
+  joined by a 0.15 m pipe; tailpipe 0.3 -> 0.15 m.
+- Result: KEEP. harmRMS 11.4 -> 8.96. mel 2.89 -> 2.78.
+
+## Iteration 5 (R8): microphone and recording-chain model
+
+- Hypothesis: the render is too bright (centroid 2445 vs 1349 Hz) even
+  with exhaust-only ablation, and the reference lacks content below
+  ~100 Hz. Both match the recording setup, not the engine: an off-axis
+  microphone hears less high frequency (radiation directivity), and
+  phone recorders cut low frequency. The project brief allows a
+  microphone-position response in the output stage.
+- Change: output.mic_highpass_hz / mic_lowpass_hz one-poles; calibrated
+  90/1600, 140/1300, 180/1600, 140/2000; frozen at 140/1300.
+- Result: KEEP. harmRMS 8.96 -> 8.18, stft 2.79 -> 1.86,
+  mel 2.78 -> 1.94, centroid 1664 (ref 1349).
+- Note: h1 stays +17 dB against the reference. A one-pole cannot make
+  the reference's 67 Hz dip without destroying h2; likely destructive
+  room interference in the recording. Do not chase it with EQ.
+
+### Idle scoreboard after iterations 1-5
+
+| metric | baseline | now | ref/target |
+| --- | --- | --- | --- |
+| harmRMS dB | 14.8 | 8.2 | < 3 |
+| stft | 1.99 | 1.86 | targets.md |
+| mel L1 | 2.69 | 1.94 | - |
+| HNR dB | 14.6 | 11.9 | 7.7 |
+| crest dB | 12.3 | 14.2 | 18.5 |
+| centroid Hz | 2374 | 1675 | 1349 |

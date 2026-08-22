@@ -187,7 +187,7 @@ class Junction {
 
   double pressure() const { return lastPressure_; }
 
-  static constexpr int kMaxPorts = 8;
+  static constexpr int kMaxPorts = 20;
 
  private:
   struct Port {

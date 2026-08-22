@@ -258,6 +258,12 @@ def analyze(render_path, rpm, cylinders, ref_path=None, sweep=None):
 
     if ref_path and os.path.exists(ref_path):
         r = load_mono_48k(ref_path)
+        # The microphone gain of the reference is arbitrary: normalize the
+        # render to the reference RMS before any level-sensitive distance.
+        xr = np.sqrt(np.mean(x ** 2))
+        rr = np.sqrt(np.mean(r ** 2))
+        if xr > 0:
+            x = x * (rr / xr)
         m["stft_distance"] = multiscale_stft_distance(x, r)
         mel, mfcc = mel_l1_and_mfcc(x, r)
         m["mel_l1"] = mel

@@ -6,6 +6,7 @@
 
 #include "core/engine.h"
 #include "core/resampler.h"
+#include "core/waveguide.h"
 #include "core/util.h"
 
 namespace enginesim {
@@ -166,6 +167,11 @@ std::vector<double> renderAudio(const SimConfig& cfg, const RenderOptions& opt,
   HalfBandDecimator deci;
   DcBlocker dc;
   dc.init(fsInt);
+  OnePoleLP micLp, micHpLp;
+  const bool useMicLp = cfg.output.micLowpassHz > 0.0;
+  const bool useMicHp = cfg.output.micHighpassHz > 0.0;
+  if (useMicLp) micLp.setCutoff(cfg.output.micLowpassHz, fsInt);
+  if (useMicHp) micHpLp.setCutoff(cfg.output.micHighpassHz, fsInt);
   Rng jitterRng(opt.seed + 0x77ull);
   double jitter = 0.0;
 
@@ -213,6 +219,8 @@ std::vector<double> renderAudio(const SimConfig& cfg, const RenderOptions& opt,
       s = 0.0;
     }
     s = dc.process(s);
+    if (useMicHp) s -= micHpLp.process(s);
+    if (useMicLp) s = micLp.process(s);
 
     if (!capture) continue;
     double y;

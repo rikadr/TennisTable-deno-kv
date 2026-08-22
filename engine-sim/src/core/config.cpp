@@ -109,6 +109,12 @@ SimConfig loadConfig(const std::string& path) {
     get(x, "tailpipe_length_m", c.exhaust.tailpipeLengthM);
     get(x, "tailpipe_diameter_m", c.exhaust.tailpipeDiameterM);
     get(x, "tailpipe_temp_k", c.exhaust.tailpipeTempK);
+    get(x, "dual_exit", c.exhaust.dualExit);
+    get(x, "exit_loss", c.exhaust.exitLoss);
+    get(x, "flow_noise_gain", c.exhaust.flowNoiseGain);
+    get(x, "flow_noise_cutoff_hz", c.exhaust.flowNoiseCutoffHz);
+    get(x, "radiation_reflection", c.exhaust.radiationReflection);
+    get(x, "tail_mix", c.exhaust.tailMix);
     get(x, "steepening_gain", c.exhaust.steepeningGain);
     get(x, "loss_per_meter", c.exhaust.lossPerMeter);
     get(x, "loss_cutoff_hz", c.exhaust.lossCutoffHz);
@@ -122,6 +128,8 @@ SimConfig loadConfig(const std::string& path) {
     const auto& o = j.at("output");
     get(o, "sample_rate", c.output.sampleRate);
     get(o, "internal_oversample", c.output.internalOversample);
+    get(o, "mic_highpass_hz", c.output.micHighpassHz);
+    get(o, "mic_lowpass_hz", c.output.micLowpassHz);
     get(o, "exhaust_gain", c.output.exhaustGain);
     get(o, "intake_gain", c.output.intakeGain);
     get(o, "mechanical_gain", c.output.mechanicalGain);

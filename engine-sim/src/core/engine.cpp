@@ -25,6 +25,10 @@ void Engine::init(const SimConfig& cfg, uint64_t seed) {
   exhaust_.init(cfg, fs_);
   intake_.init(cfg, fs_);
   mech_.init(cfg, fs_, seed);
+
+  flowNoiseRng_ = Rng(seed + 0xF10Bull);
+  flowNoiseLp_.assign(static_cast<size_t>(n), OnePoleLP());
+  for (auto& lp : flowNoiseLp_) lp.setCutoff(cfg.exhaust.flowNoiseCutoffHz, fs_);
 }
 
 double Engine::step() {
@@ -68,7 +72,17 @@ double Engine::step() {
     // Convert mass flow to volume velocity in each duct.
     const double uEx = out.mdotExhaust / exhaust_.portDensity(i);
     const double uIn = -out.mdotIntake / intake_.portDensity(i);
-    exhaust_.setPortFlow(i, uEx);
+
+    // Port jet turbulence: band-limited noise scaled by the dynamic
+    // pressure of the port jet. Physical source, not output EQ.
+    double noiseP = 0.0;
+    if (cfg_.exhaust.flowNoiseGain > 0.0) {
+      const double uJet = uEx / exhaust_.runnerArea(i);
+      const double q = 0.5 * exhaust_.portDensity(i) * uJet * uJet;
+      noiseP = cfg_.exhaust.flowNoiseGain * q *
+               flowNoiseLp_[i].process(flowNoiseRng_.bipolar());
+    }
+    exhaust_.setPortFlow(i, uEx, noiseP);
     intake_.setPortFlow(i, uIn);
 
     if (out.valveEvent) mechTrig += 0.4 + 0.6 * (rpm_ / cfg_.engine.redlineRpm);

@@ -7,6 +7,7 @@
 #include "core/exhaust_system.h"
 #include "core/intake_system.h"
 #include "core/mechanical.h"
+#include "core/waveguide.h"
 
 namespace enginesim {
 
@@ -42,6 +43,8 @@ class Engine {
   bool sparkEnabled_ = true;
 
   std::vector<Cylinder> cylinders_;
+  std::vector<OnePoleLP> flowNoiseLp_;
+  Rng flowNoiseRng_{1};
   ExhaustSystem exhaust_;
   IntakeSystem intake_;
   MechanicalNoise mech_;

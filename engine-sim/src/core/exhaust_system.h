@@ -28,11 +28,13 @@ class ExhaustSystem {
   double portTempK(int cyl) const { return runners_[cyl]->tempK(); }
 
   // Phase 2: inject the port flow (volume velocity, m^3/s, positive into
-  // the runner). Must be called once per cylinder per sample.
-  void setPortFlow(int cyl, double u) {
+  // the runner) plus an extra pressure source (turbulence noise).
+  // Must be called once per cylinder per sample.
+  void setPortFlow(int cyl, double u, double extraP = 0.0) {
     auto& r = *runners_[cyl];
-    r.inA(r.outA() + r.impedance() * u);
+    r.inA(r.outA() + r.impedance() * u + extraP);
   }
+  double runnerArea(int cyl) const { return runners_[cyl]->area(); }
 
   // Phase 3: scatter all junctions, process the radiation end.
   // Returns the radiated pressure at the tailpipe exit.
@@ -44,8 +46,9 @@ class ExhaustSystem {
   std::vector<std::unique_ptr<WaveguidePipe>> runners_;
   std::vector<std::unique_ptr<WaveguidePipe>> pipes_;  // everything downstream
   std::vector<Junction> junctions_;
-  RadiationEnd radiation_;
-  WaveguidePipe* tailpipe_ = nullptr;
+  std::vector<WaveguidePipe*> tailpipes_;
+  std::vector<RadiationEnd> radiations_;
+  std::vector<double> tailMix_;
   double ambientPa_ = 101325.0;
 };
 

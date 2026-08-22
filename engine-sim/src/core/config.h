@@ -83,6 +83,17 @@ struct ExhaustConfig {
   double tailpipeLengthM = 0.35;
   double tailpipeDiameterM = 0.054;
   double tailpipeTempK = 550.0;
+  // Dual exit: after the bank pipes an X junction feeds one full chain
+  // (mid pipe, chambers, tailpipe) per bank. tailMix weights each exit
+  // at the microphone.
+  bool dualExit = false;
+  std::vector<double> tailMix = {1.0, 0.35};
+  double exitLoss = 0.0;             // extra broadband loss in the tailpipe
+  double radiationReflection = 0.985;
+  // Turbulence noise injected at each exhaust port, scaled by the local
+  // dynamic pressure 0.5 rho u^2 of the port jet.
+  double flowNoiseGain = 0.0;
+  double flowNoiseCutoffHz = 3000.0;
   double steepeningGain = 1.0;
   double lossPerMeter = 0.06;
   double lossCutoffHz = 8000.0;
@@ -96,6 +107,13 @@ struct MechanicalConfig {
 struct OutputConfig {
   int sampleRate = 48000;
   int internalOversample = 2;
+  // Microphone and recording-chain model (one-pole each; 0 disables).
+  // This models the reference recording setup: the off-axis microphone
+  // position (high frequencies beam forward, so off-axis hears less) and
+  // the recorder's low-frequency cut. Calibrated once per reference
+  // setup, then frozen. It is not a tuning EQ.
+  double micHighpassHz = 0.0;
+  double micLowpassHz = 0.0;
   double exhaustGain = 1.0;
   double intakeGain = 0.12;
   double mechanicalGain = 1.0;
