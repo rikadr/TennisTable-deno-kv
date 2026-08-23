@@ -42,6 +42,25 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
+    slug: "correct-start-time-on-tracked-games",
+    title: "Correct start time on tracked games",
+    date: "2026-08-23",
+    tags: ["bug-fix", "technical"],
+    summary:
+      "The game tracker reads the system clock, so a tracked game records the correct start time. A game tracked before this fix can show a start time that is hours too early.",
+    body: [
+      text(
+        "The game tracker and the live game admin page take the time of the start and of each point from the system clock. The start time on the game details page is now correct.",
+      ),
+      text(
+        "The trackers used a clock that counts from the moment the page loads. That clock stops while the device sleeps, so it fell behind the system clock. A page that stayed open between 2 games lost the time the device slept. The next game then recorded a start time that was too early.",
+      ),
+      text(
+        "The start time of a game tracked before this fix can be wrong by hours. The duration, the set times and the breaks of these games stay correct, because the app stores them as the time between 2 points.",
+      ),
+    ],
+  },
+  {
     slug: "table-sides-on-tracked-games",
     title: "Games record the side of the table",
     date: "2026-08-20",
@@ -271,7 +290,7 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
         "The `GAME_SCORE` event stores the start of the match as a full timestamp. Each point after it is the time since the previous point, in tenths of a second. The event also stores who served the first point of each set, which tracker recorded the game, and how many points the person undid.",
       ),
       text(
-        "The game details page shows the duration of the game, the time it started, the average time between 2 points, and the longest pause. For each player it shows the percent of points won on their own serve, and the longest run of points in a row.",
+        "The game details page shows the duration of the game and the time it started. For each player it shows the percent of points won on their own serve, and the longest run of points in a row.",
       ),
       text(
         "A table gives every set: the score, who served the first point, the time the set took, and the break before it.",
