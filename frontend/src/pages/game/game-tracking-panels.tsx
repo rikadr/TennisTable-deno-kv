@@ -31,11 +31,9 @@ export const TrackingStats: React.FC<{
 
   return (
     <div className="rounded-lg bg-secondary-background text-secondary-text p-3">
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-y-2 gap-x-3 text-center">
+      <div className="grid grid-cols-2 gap-y-2 gap-x-3 text-center">
         <StatCell label="Duration" value={durationString(timing.durationMs)} />
         <StatCell label="Started" value={clockTimeString(tracking.startedAt)} />
-        <StatCell label="Between points" value={gapString(timing.averagePointGapMs)} />
-        <StatCell label="Longest pause" value={gapString(timing.longestPointGapMs)} />
       </div>
 
       {/* Per player: points won on their own serve, and their longest run */}
@@ -85,8 +83,8 @@ export const SetBreakdownTable: React.FC<{
             {hasSides && <th className="font-normal pb-1 pr-2 whitespace-nowrap">Bad side</th>}
             <th className="font-normal pb-1 pr-2 text-right">Time</th>
             <th className="font-normal pb-1 pr-2 text-right">Break</th>
-            {/* The game's longest pause is in the card above, so a narrow
-                screen can drop the per-set one and keep the table unclipped. */}
+            {/* The least important column, so a narrow screen drops it and
+                keeps the table unclipped. */}
             <th className="font-normal pb-1 text-right whitespace-nowrap hidden sm:table-cell">Longest pause</th>
           </tr>
         </thead>
