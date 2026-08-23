@@ -210,8 +210,8 @@ export const GameDetailsPage: React.FC = () => {
 
           {/* Everything read off the point-by-point log: the win % over the
               game, the points of each set, and how the two players compare */}
-          <div className="px-2 xs:px-4 pb-4">
-            {winPercentHistory && winPercentHistory.length >= 2 && game.score?.setPoints && game.score.pointSequences ? (
+          {winPercentHistory && winPercentHistory.length >= 2 && game.score?.setPoints && game.score.pointSequences && (
+            <div className="px-2 xs:px-4 pb-4">
               <div className="bg-white rounded-xl shadow-lg p-3 sm:p-4 text-black space-y-3">
                 <WinPercentGraph
                   history={winPercentHistory}
@@ -240,12 +240,8 @@ export const GameDetailsPage: React.FC = () => {
                   />
                 )}
               </div>
-            ) : (
-              <p className="text-center text-sm text-primary-text/60 py-2">
-                This game has no point-by-point log, so there is no win % graph. Only games tracked live record it.
-              </p>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
