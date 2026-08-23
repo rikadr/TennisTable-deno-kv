@@ -150,12 +150,12 @@ export const GameDetailsPage: React.FC = () => {
           <div className="max-w-md mx-auto mt-3 px-4">
             <div className="rounded-lg bg-secondary-background text-secondary-text p-3">
               <h2 className="text-sm font-semibold text-center mb-1">
-                Win % prediction: {context.playerName(game.winner)} beats {context.playerName(game.loser)}
+                Win prediction for {context.playerName(game.winner)}
               </h2>
               <div className="flex justify-center items-center gap-3 text-center">
-                <PredictionCell label="Before the game" prediction={preGamePrediction} />
+                <PredictionCell label="Before" prediction={preGamePrediction} />
                 <span className="text-xl">→</span>
-                <PredictionCell label="After the game" prediction={postGamePrediction} />
+                <PredictionCell label="After" prediction={postGamePrediction} />
               </div>
             </div>
           </div>
