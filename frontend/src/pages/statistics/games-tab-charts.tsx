@@ -197,11 +197,12 @@ export const LosingScoreChart: React.FC<{ data: PointLevelStats["losingSetScores
   </ResponsiveContainer>
 );
 
-/** The points a game holds, one step per total, with the median marked. */
-export const PointsPerGameChart: React.FC<{ data: PointLevelStats["pointsPerGame"]; median: number }> = ({
-  data,
-  median,
-}) => (
+/** The points a game holds, one step per total, with the median of the games
+ * of each number of sets marked. */
+export const PointsPerGameChart: React.FC<{
+  data: PointLevelStats["pointsPerGame"];
+  medians: PointLevelStats["medianPointsPerGameBySets"];
+}> = ({ data, medians }) => (
   <ResponsiveContainer width="100%" height={240}>
     <LineChart data={data} margin={{ top: 24, right: 10, bottom: 20, left: -10 }}>
       <CartesianGrid strokeDasharray="3 3" stroke={AXIS_COLOR} opacity={0.3} />
@@ -224,17 +225,20 @@ export const PointsPerGameChart: React.FC<{ data: PointLevelStats["pointsPerGame
           );
         }}
       />
-      <ReferenceLine
-        x={median}
-        stroke={HIGHLIGHT_COLOR}
-        strokeDasharray="4 4"
-        label={{
-          value: `Median ${fmtNum(median, { digits: 0 })}`,
-          position: "top",
-          fill: AXIS_COLOR,
-          fontSize: 11,
-        }}
-      />
+      {medians.map(({ setsPlayed, median }) => (
+        <ReferenceLine
+          key={setsPlayed}
+          x={median}
+          stroke={HIGHLIGHT_COLOR}
+          strokeDasharray="4 4"
+          label={{
+            value: `${setsPlayed === 1 ? "1 set" : `${setsPlayed} sets`}: ${fmtNum(median, { digits: 0 })}`,
+            position: "top",
+            fill: AXIS_COLOR,
+            fontSize: 11,
+          }}
+        />
+      ))}
       <Line
         type="monotone"
         dataKey="share"

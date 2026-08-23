@@ -532,6 +532,50 @@ describe("pointLevelStats", () => {
     expect(stats.losingSetScores.find((entry) => entry.label === "deuce")!.share).toBe(25);
     expect(stats.losingSetScores.reduce((sum, entry) => sum + entry.share, 0)).toBe(100);
   });
+
+  it("gives the median of the total points for the 2 set counts with the most games", () => {
+    const played = [
+      ...games(3, {
+        score: { setsWon: { gameWinner: 1, gameLoser: 0 }, setPoints: [{ gameWinner: 11, gameLoser: 5 }] },
+      }),
+      ...games(1, {
+        score: {
+          setsWon: { gameWinner: 2, gameLoser: 0 },
+          setPoints: [
+            { gameWinner: 11, gameLoser: 5 },
+            { gameWinner: 11, gameLoser: 7 },
+          ],
+        },
+      }),
+      ...games(1, {
+        score: {
+          setsWon: { gameWinner: 2, gameLoser: 0 },
+          setPoints: [
+            { gameWinner: 11, gameLoser: 9 },
+            { gameWinner: 11, gameLoser: 9 },
+          ],
+        },
+      }),
+      ...games(1, {
+        score: {
+          setsWon: { gameWinner: 2, gameLoser: 1 },
+          setPoints: [
+            { gameWinner: 11, gameLoser: 9 },
+            { gameWinner: 2, gameLoser: 11 },
+            { gameWinner: 11, gameLoser: 9 },
+          ],
+        },
+      }),
+    ];
+
+    const stats = pointLevelStats(played)!;
+
+    // The single 3-set game is not among the 2 most common set counts.
+    expect(stats.medianPointsPerGameBySets).toEqual([
+      { setsPlayed: 1, median: 16 },
+      { setsPlayed: 2, median: 37 },
+    ]);
+  });
 });
 
 describe("pairingCoverage", () => {

@@ -29,7 +29,7 @@ import { PlayersTab } from "./players";
 import { PlayerDiversityChart } from "./player-diversity-chart";
 import { PlayerGameCount } from "./player-game-count";
 import { HallOfFameCategoryBalance } from "./hall-of-fame-category-balance";
-import { PointSequenceMarker } from "../game/point-sequence-marker";
+import { GameMarkers } from "../game/game-markers";
 
 type TabType = "stats" | "games" | "players" | "users" | "events" | "local";
 const tabs: { id: TabType; label: string }[] = [
@@ -346,7 +346,7 @@ export const AdminPage: React.FC = () => {
                         <div className="flex flex-col">
                           <span className="text-xs md:text-base font-bold whitespace-nowrap">
                             {game.score.setsWon.gameWinner}-{game.score.setsWon.gameLoser}
-                            <PointSequenceMarker score={game.score} />
+                            <GameMarkers score={game.score} />
                           </span>
                           {game.score.setPoints && (
                             <span className="text-[10px] md:text-xs whitespace-nowrap">

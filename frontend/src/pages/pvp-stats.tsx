@@ -4,7 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { RelativeTime } from "../common/date-utils";
 import { fmtNum } from "../common/number-utils";
 import { useEffect, useState } from "react";
-import { PointSequenceMarker } from "./game/point-sequence-marker";
+import { GameMarkers } from "./game/game-markers";
 
 type Props = {
   player1?: string;
@@ -109,7 +109,7 @@ export const PvPStats: React.FC<Props> = ({ player1, player2 }) => {
                             {isPlayer1Win
                               ? `${game.score.setsWon.gameWinner} - ${game.score.setsWon.gameLoser}`
                               : `${game.score.setsWon.gameLoser} - ${game.score.setsWon.gameWinner}`}
-                            <PointSequenceMarker score={game.score} />
+                            <GameMarkers score={game.score} />
                           </span>
                         )}
                         {setStrings.length > 0 && (

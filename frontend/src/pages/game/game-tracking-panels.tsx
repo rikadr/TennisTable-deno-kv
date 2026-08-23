@@ -3,14 +3,7 @@ import { GameScore, GameTracking } from "../../client/client-db/event-store/even
 import { clockTimeString } from "../../common/date-utils";
 import { badSideName } from "../../common/table-sides";
 import { fmtNum } from "../../common/number-utils";
-import {
-  durationString,
-  gameTimingStats,
-  gapString,
-  longestStreaks,
-  serveStats,
-  setBreakdown,
-} from "./game-tracking-stats";
+import { durationString, gameTimingStats, longestStreaks, serveStats, setBreakdown } from "./game-tracking-stats";
 
 /**
  * The timeline and serve data of a tracked game. The gaps are the time between
@@ -56,8 +49,7 @@ export const TrackingStats: React.FC<{
 
 /**
  * Every set of a tracked game: the score, who served the first point, who had
- * the bad side of the table, how long the set took, and the break before it
- * started.
+ * the bad side of the table, and how long the set took.
  */
 export const SetBreakdownTable: React.FC<{
   tracking: GameTracking;
@@ -81,11 +73,7 @@ export const SetBreakdownTable: React.FC<{
             <th className="font-normal pb-1 pr-2">Score</th>
             <th className="font-normal pb-1 pr-2 whitespace-nowrap">First serve</th>
             {hasSides && <th className="font-normal pb-1 pr-2 whitespace-nowrap">Bad side</th>}
-            <th className="font-normal pb-1 pr-2 text-right">Time</th>
-            <th className="font-normal pb-1 pr-2 text-right">Break</th>
-            {/* The least important column, so a narrow screen drops it and
-                keeps the table unclipped. */}
-            <th className="font-normal pb-1 text-right whitespace-nowrap hidden sm:table-cell">Longest pause</th>
+            <th className="font-normal pb-1 text-right">Time</th>
           </tr>
         </thead>
         <tbody>
@@ -101,18 +89,11 @@ export const SetBreakdownTable: React.FC<{
                   {set.winnerSide ? badSideName(set.winnerSide, winnerName, loserName) : "–"}
                 </td>
               )}
-              <td className="py-1.5 pr-2 text-right whitespace-nowrap">{durationString(set.durationMs)}</td>
-              <td className="py-1.5 pr-2 text-right whitespace-nowrap">{gapString(set.breakBeforeMs)}</td>
-              <td className="py-1.5 text-right whitespace-nowrap hidden sm:table-cell">
-                {gapString(set.longestPointGapMs)}
-              </td>
+              <td className="py-1.5 text-right whitespace-nowrap">{durationString(set.durationMs)}</td>
             </tr>
           ))}
         </tbody>
       </table>
-      <p className="mt-2 text-xs opacity-70">
-        The break is the time before the first point of the set — for set 1, the time from the start of tracking.
-      </p>
     </div>
   );
 };

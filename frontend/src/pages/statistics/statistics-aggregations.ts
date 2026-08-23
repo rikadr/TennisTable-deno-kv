@@ -580,6 +580,9 @@ export type PointLevelStats = {
    */
   deuceRatioOfDecidingSets?: number;
   medianPointsPerGame: number;
+  /** The median total of points per number of sets played, for the 2 set
+   * counts with the most games, in rising order of sets. */
+  medianPointsPerGameBySets: { setsPlayed: number; median: number }[];
   /** Share of the games per total points played. One entry per total. */
   pointsPerGame: { points: number; share: number }[];
   /** Share of the sets per score of the set loser, and a deuce group. */
@@ -645,6 +648,14 @@ export function pointLevelStats(games: Game[]): PointLevelStats | undefined {
     perTotal.set(total, (perTotal.get(total) ?? 0) + 1);
   }
 
+  const totalsBySets = new Map<number, number[]>();
+  withPoints.forEach((game, index) => {
+    const setsPlayed = game.score!.setPoints!.length;
+    const gameTotals = totalsBySets.get(setsPlayed) ?? [];
+    gameTotals.push(totals[index].winner + totals[index].loser);
+    totalsBySets.set(setsPlayed, gameTotals);
+  });
+
   const perLosingScore = new Map<string, number>();
   for (const set of sets) {
     const losing = Math.min(set.gameWinner, set.gameLoser);
@@ -662,6 +673,11 @@ export function pointLevelStats(games: Game[]): PointLevelStats | undefined {
     firstSetWinnerWins: percent(firstSetToTheWinner.length, withPoints.length),
     deuceRatioOfDecidingSets,
     medianPointsPerGame: median(totals.map((points) => points.winner + points.loser)) ?? 0,
+    medianPointsPerGameBySets: Array.from(totalsBySets)
+      .sort(([setsA, totalsA], [setsB, totalsB]) => totalsB.length - totalsA.length || setsA - setsB)
+      .slice(0, 2)
+      .map(([setsPlayed, gameTotals]) => ({ setsPlayed, median: median(gameTotals) ?? 0 }))
+      .sort((a, b) => a.setsPlayed - b.setsPlayed),
     pointsPerGame: Array.from(perTotal)
       .map(([points, played]) => ({ points, share: percent(played, withPoints.length) }))
       .sort((a, b) => a.points - b.points),

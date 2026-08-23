@@ -366,9 +366,10 @@ export const GamesTab: React.FC<{ range: TimeRange; setRange: (range: TimeRange)
                     A game of one set counts on the first side, because there the first set is the game.
                   </span>
                 </div>
-                <PointsPerGameChart data={pointLevel.pointsPerGame} median={pointLevel.medianPointsPerGame} />
+                <PointsPerGameChart data={pointLevel.pointsPerGame} medians={pointLevel.medianPointsPerGameBySets} />
                 <p className="text-xs text-primary-text/60 text-center">
-                  The share of the games at each total of points, with the median marked.
+                  The share of the games at each total of points, with the median of the games of the 2 most common
+                  numbers of sets marked.
                 </p>
               </div>
             )}

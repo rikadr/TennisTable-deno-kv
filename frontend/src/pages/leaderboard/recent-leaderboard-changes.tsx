@@ -117,7 +117,7 @@ export const RecentLeaderBoardChanges: React.FC<Props> = ({ view }) => {
 
   return (
     <div className="bg-primary-background rounded-lg w-full overflow-hidden">
-      <h1 className="text-2xl text-center mb-4 mt-[27.5px] text-primary-text">Leaderboard changes last 2 days</h1>
+      <h1 className="text-2xl text-center mb-2 mt-3 text-primary-text">Leaderboard changes last 2 days</h1>
       <table className="w-full text-primary-text border-collapse">
         <thead>
           <tr className="text-sm xs:text-lg md:text-xl text-primary-text">

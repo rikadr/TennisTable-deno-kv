@@ -67,7 +67,7 @@ export const RecentGames: React.FC<Props> = ({ view = "overall" }) => {
 
   return (
     <div className="bg-primary-background rounded-lg w-full overflow-hidden">
-      <Link to="/recent-games" className="block text-center mb-4 mt-[27.5px] hover:opacity-80">
+      <Link to="/recent-games" className="flex items-baseline justify-center gap-2 mb-2 mt-3 hover:opacity-80">
         <h1 className="text-2xl text-primary-text">Recent games</h1>
         <span className="text-xs text-primary-text/50 hover:underline">see more</span>
       </Link>
@@ -105,13 +105,13 @@ export const RecentGames: React.FC<Props> = ({ view = "overall" }) => {
                     <div className="truncate font-normal">🏆 {context.playerName(game.winner)}</div>
                   </td>
                   <td className="py-1 px-1 text-right font-medium w-[1%] whitespace-nowrap">
-                    {fmtNum(game.pointsDiff, { digits: 1 })}
+                    {fmtNum(game.pointsDiff, { signedPositive: true })}
                   </td>
                   <td className="py-1 px-2 w-[30%] max-w-0">
                     <div className="truncate font-normal text-right">{context.playerName(game.loser)} 💔</div>
                   </td>
                   <td className="py-1 px-1 text-right w-[1%] whitespace-nowrap">
-                    {game.loserPointsDiff !== undefined ? fmtNum(game.loserPointsDiff, { digits: 1 }) : ""}
+                    {game.loserPointsDiff !== undefined ? fmtNum(game.loserPointsDiff, { signedPositive: true }) : ""}
                   </td>
                   <td className="py-1 px-2 text-right text-xs xs:text-sm md:text-base whitespace-nowrap w-[1%]">
                     <RelativeTime date={new Date(game.playedAt)} variant="short" />
@@ -133,7 +133,7 @@ export const RecentGames: React.FC<Props> = ({ view = "overall" }) => {
                   <div className="truncate font-normal text-right">{context.playerName(game.loser)} 💔</div>
                 </td>
                 <td className="py-1 px-2 text-right font-medium w-[1%] whitespace-nowrap">
-                  +{fmtNum(game.pointsDiff, { digits: 0 })}
+                  {fmtNum(game.pointsDiff, { signedPositive: true })}
                 </td>
                 <td className="py-1 px-2 text-right text-xs xs:text-sm md:text-base whitespace-nowrap w-[1%]">
                   <RelativeTime date={new Date(game.playedAt)} variant="short" />

@@ -291,8 +291,8 @@ export const LeaderBoard: React.FC = () => {
               </tbody>
             </table>
 
-            <h1 className="text-2xl text-center text-primary-text mt-10">Unranked players</h1>
-            <p className="w-full text-center text-primary-text mb-4">
+            <h1 className="text-2xl text-center text-primary-text mt-4">Unranked players</h1>
+            <p className="w-full text-center text-primary-text mb-2">
               Play {context.client.gameLimitForRanked} or more games to get ranked
             </p>
             <table className="w-full text-primary-text border-collapse">

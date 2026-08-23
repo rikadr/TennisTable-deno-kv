@@ -33,8 +33,13 @@ export const RecentAchievements: React.FC<Props> = ({ view = "overall" }) => {
 
   return (
     <div className="bg-primary-background rounded-lg w-full overflow-hidden">
-      <Link to="/achievements" className="block" title="View all achievements">
-        <h1 className="text-2xl text-center mb-4 mt-[27.5px] text-primary-text hover:underline">Recent achievements</h1>
+      <Link
+        to="/achievements"
+        className="flex items-baseline justify-center gap-2 mb-2 mt-3 hover:opacity-80"
+        title="View all achievements"
+      >
+        <h1 className="text-2xl text-primary-text">Recent achievements</h1>
+        <span className="text-xs text-primary-text/50 hover:underline">see more</span>
       </Link>
       <table className="w-full text-primary-text border-collapse">
         <thead>

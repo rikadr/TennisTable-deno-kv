@@ -9,7 +9,7 @@ import { PillSelect } from "../../common/pill-select";
 import { fmtNum } from "../../common/number-utils";
 import { fromDatetimeLocalValue, RelativeTime, toDatetimeLocalValue } from "../../common/date-utils";
 import { eventsUpTo, useStateAt } from "../../hooks/use-state-at";
-import { PointSequenceMarker } from "../game/point-sequence-marker";
+import { GameMarkers } from "../game/game-markers";
 import { Game } from "../../client/client-db/event-store/projectors/games-projector";
 import { Achievement } from "../../client/client-db/achievements";
 import { getAchievementLabel } from "../player/player-achievements";
@@ -699,7 +699,7 @@ export const WhatChangedPage: React.FC = () => {
                               <div className="leading-tight -my-1">
                                 <div className="font-medium">
                                   {game.score.setsWon.gameWinner} - {game.score.setsWon.gameLoser}
-                                  <PointSequenceMarker score={game.score} />
+                                  <GameMarkers score={game.score} />
                                 </div>
                                 {game.score.setPoints && (
                                   <div className="font-light italic text-[10px] md:text-xs whitespace-nowrap leading-none">

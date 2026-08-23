@@ -9,7 +9,7 @@ import { useLocalStorage } from "../../hooks/use-local-storage";
 import { useMediaQuery } from "../../hooks/use-media-query";
 import { session } from "../../services/auth";
 import { ProfilePicture } from "../player/profile-picture";
-import { PointSequenceMarker } from "../game/point-sequence-marker";
+import { GameMarkers } from "../game/game-markers";
 
 type View = "overall" | "season";
 
@@ -95,7 +95,7 @@ export const RecentGamesPage: React.FC = () => {
       <div className="leading-tight -my-1">
         <div className="font-medium">
           {game.score.setsWon.gameWinner} - {game.score.setsWon.gameLoser}
-          <PointSequenceMarker score={game.score} />
+          <GameMarkers score={game.score} />
         </div>
         {game.score.setPoints && (
           <div className="font-light italic text-[10px] md:text-xs whitespace-nowrap leading-none">
@@ -108,7 +108,7 @@ export const RecentGamesPage: React.FC = () => {
 
   return (
     <div className="w-full px-4 flex flex-col items-center">
-      <div className="w-full max-w-2xl md:max-w-4xl">
+      <div className="w-full max-w-2xl">
         <div className="bg-primary-background rounded-lg w-full overflow-hidden">
           <h1 className="text-2xl md:text-4xl text-center mt-2 md:mt-4 text-primary-text">Recent games</h1>
           <p className="text-center text-sm md:text-base text-primary-text/60 mb-1 md:mb-2">
@@ -200,10 +200,10 @@ export const RecentGamesPage: React.FC = () => {
                           </div>
                         </td>
                         <td className="py-1 px-1 md:px-2 text-right font-medium w-[1%] whitespace-nowrap">
-                          {fmtNum(game.pointsDiff, { digits: 1 })}
+                          {fmtNum(game.pointsDiff, { signedPositive: true })}
                         </td>
                         <td className="py-1 px-1 md:px-2 text-right w-[1%] whitespace-nowrap">
-                          {game.loserPointsDiff !== undefined ? fmtNum(game.loserPointsDiff, { digits: 1 }) : ""}
+                          {game.loserPointsDiff !== undefined ? fmtNum(game.loserPointsDiff, { signedPositive: true }) : ""}
                         </td>
                         <td className="py-1 px-1 xs:px-2 md:px-3 text-right whitespace-nowrap w-[1%]">
                           <RelativeTime date={new Date(game.playedAt)} variant="auto" />
@@ -234,7 +234,7 @@ export const RecentGamesPage: React.FC = () => {
                         </div>
                       </td>
                       <td className="py-1 px-1 xs:px-2 md:px-3 text-right font-medium w-[1%] whitespace-nowrap">
-                        +{fmtNum(game.pointsDiff, { digits: 0 })}
+                        {fmtNum(game.pointsDiff, { signedPositive: true })}
                       </td>
                       <td className="py-1 px-1 xs:px-2 md:px-3 text-right whitespace-nowrap w-[1%]">
                         <RelativeTime date={new Date(game.playedAt)} variant="auto" />

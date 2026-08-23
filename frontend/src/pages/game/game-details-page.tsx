@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useEventDbContext } from "../../wrappers/event-db-context";
+import { session } from "../../services/auth";
 import { useTennisParams } from "../../hooks/use-tennis-params";
 import { useStateAt } from "../../hooks/use-state-at";
 import { fmtNum } from "../../common/number-utils";
@@ -26,6 +27,7 @@ import { PointSituationRadar } from "./point-situation-radar";
 export const GameDetailsPage: React.FC = () => {
   const context = useEventDbContext();
   const navigate = useNavigate();
+  const isAdmin = session.isAuthenticated && session.sessionData?.role === "admin";
   const { time } = useTennisParams();
   const playedAt = time !== null && /^\d+$/.test(time) ? Number(time) : undefined;
   const game = useMemo(
@@ -146,9 +148,39 @@ export const GameDetailsPage: React.FC = () => {
             </div>
           </div>
 
+          <div className="flex flex-wrap justify-center gap-2 py-3">
+            <button
+              onClick={() => navigate(`/1v1?player1=${game.winner}&player2=${game.loser}`)}
+              className="px-4 py-1.5 rounded-full text-xs md:text-sm ring-1 ring-secondary-background text-primary-text hover:bg-secondary-background hover:text-secondary-text transition-colors"
+            >
+              👥🥊 Compare 1v1
+            </button>
+            <button
+              onClick={() => navigate(whatChangedLink)}
+              className="px-4 py-1.5 rounded-full text-xs md:text-sm ring-1 ring-secondary-background text-primary-text hover:bg-secondary-background hover:text-secondary-text transition-colors"
+            >
+              ⏳ What this game changed
+            </button>
+            {/* An admin can edit every game; anyone else only a game from the
+                last 7 days, like the edit button in the player page's game list */}
+            {(isAdmin || Date.now() - game.playedAt < 7 * 24 * 60 * 60 * 1000) && (
+              <button
+                onClick={() => navigate(`/game/edit/score?gameId=${game.id}`)}
+                className="px-4 py-1.5 rounded-full text-xs md:text-sm ring-1 ring-secondary-background text-primary-text hover:bg-secondary-background hover:text-secondary-text transition-colors"
+              >
+                Edit game
+              </button>
+            )}
+          </div>
+
           {/* The pairing prediction before and after the game */}
-          <div className="max-w-md mx-auto mt-3 px-4">
-            <div className="rounded-lg bg-secondary-background text-secondary-text p-3">
+          <div className="max-w-md mx-auto px-4 pb-3">
+            <div
+              className="rounded-lg bg-secondary-background text-secondary-text p-3 cursor-pointer hover:bg-secondary-background/80 transition-colors"
+              onClick={() =>
+                navigate(`/player/${game.winner}?tab=predictions&predictionTab=history&compareWith=${game.loser}`)
+              }
+            >
               <h2 className="text-sm font-semibold text-center mb-1">
                 Win prediction for {context.playerName(game.winner)}
               </h2>
@@ -158,21 +190,6 @@ export const GameDetailsPage: React.FC = () => {
                 <PredictionCell label="After" prediction={postGamePrediction} />
               </div>
             </div>
-          </div>
-
-          <div className="flex flex-wrap justify-center gap-2 py-3">
-            <button
-              onClick={() => navigate(`/1v1?player1=${game.winner}&player2=${game.loser}`)}
-              className="px-4 py-1.5 rounded-full text-xs md:text-sm ring-1 ring-secondary-background text-primary-text hover:bg-secondary-background hover:text-secondary-text transition-colors"
-            >
-              Head-to-head stats
-            </button>
-            <button
-              onClick={() => navigate(whatChangedLink)}
-              className="px-4 py-1.5 rounded-full text-xs md:text-sm ring-1 ring-secondary-background text-primary-text hover:bg-secondary-background hover:text-secondary-text transition-colors"
-            >
-              What this game changed →
-            </button>
           </div>
 
           {/* Everything the live tracker recorded: the timeline, the serves,
