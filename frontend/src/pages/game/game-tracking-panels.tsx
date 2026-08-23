@@ -31,11 +31,9 @@ export const TrackingStats: React.FC<{
 
   return (
     <div className="rounded-lg bg-secondary-background text-secondary-text p-3">
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-y-2 gap-x-3 text-center">
+      <div className="grid grid-cols-2 gap-y-2 gap-x-3 text-center">
         <StatCell label="Duration" value={durationString(timing.durationMs)} />
         <StatCell label="Started" value={clockTimeString(tracking.startedAt)} />
-        <StatCell label="Between points" value={gapString(timing.averagePointGapMs)} />
-        <StatCell label="Longest pause" value={gapString(timing.longestPointGapMs)} />
       </div>
 
       {/* Per player: points won on their own serve, and their longest run */}
@@ -85,8 +83,8 @@ export const SetBreakdownTable: React.FC<{
             {hasSides && <th className="font-normal pb-1 pr-2 whitespace-nowrap">Bad side</th>}
             <th className="font-normal pb-1 pr-2 text-right">Time</th>
             <th className="font-normal pb-1 pr-2 text-right">Break</th>
-            {/* The game's longest pause is in the card above, so a narrow
-                screen can drop the per-set one and keep the table unclipped. */}
+            {/* The least important column, so a narrow screen drops it and
+                keeps the table unclipped. */}
             <th className="font-normal pb-1 text-right whitespace-nowrap hidden sm:table-cell">Longest pause</th>
           </tr>
         </thead>
@@ -95,11 +93,9 @@ export const SetBreakdownTable: React.FC<{
             <tr key={set.set} className="border-t border-secondary-text/20">
               <td className="py-1.5 pr-2">{set.set}</td>
               <td className="py-1.5 pr-2 font-semibold whitespace-nowrap">
-                {set.points.winner}-{set.points.loser} {set.wonByGameWinner ? "🏆" : ""}
+                <SetScore gameWinner={set.points.winner} gameLoser={set.points.loser} />
               </td>
-              <td className="py-1.5 pr-2 truncate max-w-[8rem]">
-                {set.firstServer === "W" ? winnerName : loserName}
-              </td>
+              <td className="py-1.5 pr-2 truncate max-w-[8rem]">{set.firstServer === "W" ? winnerName : loserName}</td>
               {hasSides && (
                 <td className="py-1.5 pr-2 truncate max-w-[8rem]">
                   {set.winnerSide ? badSideName(set.winnerSide, winnerName, loserName) : "–"}
@@ -115,9 +111,7 @@ export const SetBreakdownTable: React.FC<{
         </tbody>
       </table>
       <p className="mt-2 text-xs opacity-70">
-        The score is from the game winner's side. The break is the time before the first point of the set — for set 1,
-        the time from the start of tracking.
-        {hasSides && " The bad side is the worse side of the table, and \"Equal\" means the 2 sides are equally good."}
+        The break is the time before the first point of the set — for set 1, the time from the start of tracking.
       </p>
     </div>
   );
@@ -154,27 +148,36 @@ export const SetSidesTable: React.FC<{
               <td className="py-1.5 pr-2">{index + 1}</td>
               {hasPoints && (
                 <td className="py-1.5 pr-2 font-semibold whitespace-nowrap">
-                  {setPoints[index]
-                    ? `${setPoints[index].gameWinner}-${setPoints[index].gameLoser} ${
-                        setPoints[index].gameWinner > setPoints[index].gameLoser ? "🏆" : ""
-                      }`
-                    : "–"}
+                  {setPoints[index] ? (
+                    <SetScore gameWinner={setPoints[index].gameWinner} gameLoser={setPoints[index].gameLoser} />
+                  ) : (
+                    "–"
+                  )}
                 </td>
               )}
-              <td className="py-1.5 truncate max-w-[8rem]">
-                {side ? badSideName(side, winnerName, loserName) : "–"}
-              </td>
+              <td className="py-1.5 truncate max-w-[8rem]">{side ? badSideName(side, winnerName, loserName) : "–"}</td>
             </tr>
           ))}
         </tbody>
       </table>
-      <p className="mt-2 text-xs opacity-70">
-        {hasPoints && "The score is from the game winner's side. "}
-        The bad side is the worse side of the table, and "Equal" means the 2 sides are equally good.
-      </p>
     </div>
   );
 };
+
+/**
+ * A set score with the trophy on the side of the player who won the set. Both
+ * sides reserve the trophy's width, so the score digits line up between rows
+ * whether a trophy is there or not.
+ */
+const SetScore: React.FC<{ gameWinner: number; gameLoser: number }> = ({ gameWinner, gameLoser }) => (
+  <span className="inline-flex items-center gap-1">
+    <span className="inline-block w-[1.5em] text-right">{gameWinner > gameLoser ? "🏆" : ""}</span>
+    <span>
+      {gameWinner}-{gameLoser}
+    </span>
+    <span className="inline-block w-[1.5em] text-left">{gameLoser > gameWinner ? "🏆" : ""}</span>
+  </span>
+);
 
 const StatCell: React.FC<{ label: string; value: string }> = ({ label, value }) => (
   <div className="flex flex-col items-center min-w-0">

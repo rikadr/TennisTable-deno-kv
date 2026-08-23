@@ -29,7 +29,6 @@ import {
   removeLastPoint,
   toEventTrackingData,
   TrackedSet,
-  trackingNow,
 } from "../../common/point-sequences";
 
 interface SetPoint {
@@ -119,7 +118,7 @@ export const TrackGamePage: React.FC = () => {
     const key = `player${player}` as keyof SetPoint;
     const next: SetPoint = { ...currentSetScore, [key]: currentSetScore[key] + 1 };
     setCurrentSetScore(next);
-    const at = trackingNow();
+    const at = Date.now();
     setCurrentTrackedSet((prev) => appendPoint(prev, player as 1 | 2, at));
     setWinPercentHistory((prev) => [...prev, computeWinPercent(next)]);
   };
@@ -164,12 +163,12 @@ export const TrackGamePage: React.FC = () => {
   };
 
   const startMatch = () => {
-    setStartedAt(trackingNow());
+    setStartedAt(Date.now());
     setStage("scoring");
   };
 
   const endMatch = () => {
-    setEndedAt(trackingNow());
+    setEndedAt(Date.now());
     setStage("summary");
   };
 
@@ -303,7 +302,7 @@ export const TrackGamePage: React.FC = () => {
       return;
     }
 
-    const now = trackingNow();
+    const now = Date.now();
     try {
       await updateLiveGame.mutateAsync({
         player1Id: player1,

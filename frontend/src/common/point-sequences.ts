@@ -25,19 +25,6 @@ export type TrackedSet = {
 
 export const emptyTrackedSet: TrackedSet = { sequence: "", pointTimes: [] };
 
-/**
- * Epoch ms from a clock that cannot jump backwards inside one page load. A
- * system clock correction while a game is tracked would otherwise shift the
- * point times, or make them run backwards. Across a page reload this
- * re-anchors on the system clock, which is the best available.
- */
-export function trackingNow(): number {
-  if (typeof performance !== "undefined" && typeof performance.timeOrigin === "number") {
-    return Math.round(performance.timeOrigin + performance.now());
-  }
-  return Date.now();
-}
-
 export function appendPoint(set: TrackedSet, player: 1 | 2, at: number): TrackedSet {
   return { sequence: set.sequence + String(player), pointTimes: [...set.pointTimes, at] };
 }

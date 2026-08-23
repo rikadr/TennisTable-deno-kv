@@ -28,7 +28,7 @@ import { Server } from "../../common/serve-tracker";
 import { ServeTrackerDisplay } from "../../common/serve-tracker-display";
 import { alignBadSides, BadSide, badSideLabel, gameWinnerSideOfBadSide, nextSetBadSide } from "../../common/table-sides";
 import { TableSideDisplay } from "../../common/table-sides-display";
-import { appendPoint, removeLastPoint, toEventTrackingData, trackingNow } from "../../common/point-sequences";
+import { appendPoint, removeLastPoint, toEventTrackingData } from "../../common/point-sequences";
 
 type Stage = "scoring" | "confirm";
 
@@ -108,7 +108,7 @@ export const LiveGameAdminPage: React.FC = () => {
       completedSetBadSides: [],
       badSide: localState!.badSide,
       corrections: 0,
-      startedAt: trackingNow(),
+      startedAt: Date.now(),
       endedAt: null,
       finishedAt: null,
       updatedAt: Date.now(),
@@ -128,7 +128,7 @@ export const LiveGameAdminPage: React.FC = () => {
     const trackedSet = appendPoint(
       { sequence: localState!.currentSetSequence, pointTimes: localState!.currentSetPointTimes },
       player,
-      trackingNow(),
+      Date.now(),
     );
     pushState({
       ...localState!,
@@ -204,7 +204,7 @@ export const LiveGameAdminPage: React.FC = () => {
       badSide: null,
       corrections: 0,
       // The match restarts, so its timeline restarts with it.
-      startedAt: trackingNow(),
+      startedAt: Date.now(),
       endedAt: null,
       updatedAt: Date.now(),
     });
@@ -226,7 +226,7 @@ export const LiveGameAdminPage: React.FC = () => {
       setValidationError("Match is tied — complete another set before saving.");
       return;
     }
-    pushState({ ...localState!, endedAt: trackingNow() });
+    pushState({ ...localState!, endedAt: Date.now() });
     setStage("confirm");
   }
 
