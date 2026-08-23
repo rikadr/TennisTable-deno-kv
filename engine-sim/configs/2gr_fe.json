@@ -43,7 +43,7 @@
   "spark_advance_idle_deg": 8.0,
   "idle_variation_boost": 3.5,
   "overrun_pop_chance": 0.3,
-  "overrun_pop_heat": 0.3
+  "overrun_pop_heat": 0.25
  },
  "valvetrain": {
   "intake_duration_deg": 235.0,
@@ -100,8 +100,9 @@
   "exit_nl_loss": 3.0,
   "pipe_nl_loss": 1.0,
   "flow_damping": 3.0,
-  "flow_noise_gain": 0.0,
-  "radiation_reflection": 0.985
+  "flow_noise_gain": 0.8,
+  "radiation_reflection": 0.985,
+  "flow_noise_cutoff_hz": 4000.0
  },
  "mechanical": {
   "valvetrain_gain": 0.0,

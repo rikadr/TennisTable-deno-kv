@@ -51,7 +51,7 @@
   "idle_variation_boost": 3.5,
   "spark_advance_idle_deg": 5.0,
   "overrun_pop_chance": 0.55,
-  "overrun_pop_heat": 0.4
+  "overrun_pop_heat": 0.3
  },
  "valvetrain": {
   "intake_duration_deg": 242.0,
@@ -96,7 +96,7 @@
   ],
   "bank_pipe_diameter_m": 0.06,
   "bank_pipe_temp_k": 950.0,
-  "mid_pipe_length_m": 0.35,
+  "mid_pipe_length_m": 0.6,
   "mid_pipe_diameter_m": 0.065,
   "mid_pipe_temp_k": 850.0,
   "chambers": [],
@@ -113,11 +113,11 @@
   ],
   "steepening_gain": 1.0,
   "loss_per_meter": 0.08,
-  "loss_cutoff_hz": 1400.0,
+  "loss_cutoff_hz": 1000.0,
   "exit_loss": 0.03,
   "radiation_reflection": 0.985,
-  "flow_noise_gain": 0.0,
-  "flow_noise_cutoff_hz": 3000.0,
+  "flow_noise_gain": 0.8,
+  "flow_noise_cutoff_hz": 4000.0,
   "flow_damping": 3.0,
   "exit_nl_loss": 3.0,
   "pipe_nl_loss": 1.0
@@ -132,7 +132,7 @@
   "exhaust_gain": 1.0,
   "intake_gain": 0.12,
   "mechanical_gain": 1.0,
-  "master_gain": 0.00025,
+  "master_gain": 0.0003,
   "limiter_drive": 1.0,
   "mic_highpass_hz": 30.0,
   "mic_lowpass_hz": 3000.0

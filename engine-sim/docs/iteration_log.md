@@ -342,3 +342,21 @@ single-threaded. Sandbox CPU: Intel Xeon @ 2.80 GHz (4 vCPU).
   steady render must hold at least 20% of its energy at 100-300 Hz and
   at most 55% below 100 Hz. The rejected signature can no longer pass
   a cycle silently.
+
+## Iteration 17 ("it was better - do that")
+
+- WOT timbre: the loss corner, the nl-loss and the steepening cap were
+  all ruled out as the 6400 rpm concentration cause (95-97% in the
+  firing band under every variant). A 25% steepening cap re-created
+  half-order subharmonics (+4.6 dB) and was reverted to 12%. The
+  missing WOT ingredient is the broadband turbulence floor between
+  harmonics: flow noise re-enabled at gain 0.8 / 4 kHz raises the
+  1-4 kHz inter-harmonic floor by 32 dB at WOT while staying inaudible
+  at idle (it scales with jet velocity squared).
+- The +3.4 dB half orders at V6 6400 rpm are the per-bank firing rate
+  (160 Hz) through unequal bank pipes: the physical V6 growl, kept.
+- R8 straight-pipe ported to the round-5 state: loss corner 1000 Hz,
+  flow noise 0.8, longer mid pipe, level recalibrated. Idle bands
+  38/44/10/8 (target shape 16/57/18/5), monotonic idle-to-WOT ladder.
+- Overrun pop heat trimmed (V6 0.25, R8 0.3); the loudest bangs still
+  touch the soft limiter, which is acceptable for backfires.
