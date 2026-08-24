@@ -1,11 +1,13 @@
 import React, { useMemo } from "react";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis, ReferenceLine } from "recharts";
 import { useEventDbContext } from "../../wrappers/event-db-context";
+import { TRAILING_6_MONTHS, trailingAverage } from "../../common/trailing-average";
 
 interface MonthlyData {
   month: string;
   count: number;
   timestamp: number;
+  trailingAverage: number;
 }
 
 export const GamesPerMonthChart: React.FC = () => {
@@ -43,7 +45,7 @@ export const GamesPerMonthChart: React.FC = () => {
     const maxTimestamp = Math.max(...timestamps);
 
     // Generate all months in the range
-    const allMonthsData: MonthlyData[] = [];
+    const allMonthsData: Omit<MonthlyData, "trailingAverage">[] = [];
     const startDate = new Date(minTimestamp);
     const endDate = new Date(maxTimestamp);
 
@@ -68,7 +70,15 @@ export const GamesPerMonthChart: React.FC = () => {
       currentDate.setMonth(currentDate.getMonth() + 1);
     }
 
-    const sortedMonthlyData = allMonthsData.sort((a, b) => a.timestamp - b.timestamp);
+    const orderedMonths = allMonthsData.sort((a, b) => a.timestamp - b.timestamp);
+    const averages = trailingAverage(
+      orderedMonths.map((entry) => entry.count),
+      TRAILING_6_MONTHS.month,
+    );
+    const sortedMonthlyData: MonthlyData[] = orderedMonths.map((entry, index) => ({
+      ...entry,
+      trailingAverage: averages[index],
+    }));
 
     // Filter tournaments that fall within the data range
     const tournaments = context.eventStore.tournamentsProjector.getTournamentConfigs();
@@ -133,6 +143,7 @@ export const GamesPerMonthChart: React.FC = () => {
                   <div className="bg-secondary-background text-secondary-text p-3 rounded-lg shadow-lg border border-secondary-text">
                     <p className="font-semibold">{formatMonth(label as string)}</p>
                     <p>{`Games: ${data.count}`}</p>
+                    <p>{`6 month average: ${data.trailingAverage.toFixed(1)}`}</p>
                   </div>
                 );
               }
@@ -176,6 +187,17 @@ export const GamesPerMonthChart: React.FC = () => {
               r: 6,
               fill: "rgb(var(--color-tertiary-background))",
             }}
+          />
+
+          <Line
+            type="monotone"
+            dataKey="trailingAverage"
+            stroke="rgb(var(--color-primary-text))"
+            strokeWidth={2}
+            strokeDasharray="2 6"
+            strokeLinecap="round"
+            dot={false}
+            activeDot={false}
           />
         </LineChart>
       </ResponsiveContainer>

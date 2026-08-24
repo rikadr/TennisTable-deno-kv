@@ -15,6 +15,7 @@ import {
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { PillSelect } from "../../common/pill-select";
 import { getPeriodKey, Period } from "../../common/period-utils";
+import { TRAILING_6_MONTHS, trailingAverage } from "../../common/trailing-average";
 import { ContentCard } from "../player/content-card";
 import { NotEnoughGames, StatTile, StatTileRow } from "./stat-tile";
 import { ACCENT_COLOR, AXIS_COLOR, percentLabel, percentTick, SERIES_COLOR, TooltipCard } from "./percent-chart";
@@ -26,7 +27,9 @@ import {
   weekdayShares,
 } from "./statistics-aggregations";
 
-const TREND_OPTIONS: { value: Period; label: string }[] = [
+type TrendPeriod = keyof typeof TRAILING_6_MONTHS;
+
+const TREND_OPTIONS: { value: TrendPeriod; label: string }[] = [
   { value: "month", label: "Monthly" },
   { value: "week", label: "Weekly" },
 ];
@@ -49,13 +52,20 @@ const formatPeriodLabel = (key: string, period: Period): string => {
 
 export const ActivityTab: React.FC = () => {
   const context = useEventDbContext();
-  const [period, setPeriod] = useState<Period>("month");
+  const [period, setPeriod] = useState<TrendPeriod>("month");
 
   // `context.games` sorts and returns a new array on every read, so it is
   // pinned here. Depending on it directly would rebuild every chart on every
   // render.
   const games = useMemo(() => context.games, [context]);
-  const trend = useMemo(() => activityTrend(games, period), [games, period]);
+  const trend = useMemo(() => {
+    const points = activityTrend(games, period);
+    const averages = trailingAverage(
+      points.map((point) => point.share),
+      TRAILING_6_MONTHS[period],
+    );
+    return points.map((point, index) => ({ ...point, trailingAverage: averages[index] }));
+  }, [games, period]);
   const weekdays = useMemo(() => weekdayShares(games), [games]);
   const slots = useMemo(() => timeOfDayShares(games), [games]);
   const highlights = useMemo(() => activityHighlights(games), [games]);
@@ -88,7 +98,7 @@ export const ActivityTab: React.FC = () => {
 
       <ContentCard
         title="Activity over time"
-        description="Each period against the busiest one, which reads 100%. The chart shows when the league is busy, not how many games it plays."
+        description="Each period against the busiest one, which reads 100%. The dotted line is the trailing average over 6 months. The chart shows when the league is busy, not how many games it plays."
         action={<PillSelect label="" options={TREND_OPTIONS} value={period} onChange={setPeriod} />}
       >
         <ResponsiveContainer width="100%" height={320}>
@@ -107,9 +117,11 @@ export const ActivityTab: React.FC = () => {
             <Tooltip
               content={({ active, payload, label }) => {
                 if (!active || !payload?.length) return null;
+                const entry = payload[0].payload as { share: number; trailingAverage: number };
                 return (
                   <TooltipCard title={formatPeriodLabel(String(label), period)}>
-                    <p>{percentLabel(Number(payload[0].value))} of the busiest {period}</p>
+                    <p>{percentLabel(entry.share)} of the busiest {period}</p>
+                    <p>{percentLabel(entry.trailingAverage)} on average over 6 months</p>
                   </TooltipCard>
                 );
               }}
@@ -132,6 +144,16 @@ export const ActivityTab: React.FC = () => {
               />
             ))}
             <Line type="monotone" dataKey="share" stroke={SERIES_COLOR} strokeWidth={3} dot={false} activeDot={{ r: 5, fill: ACCENT_COLOR }} />
+            <Line
+              type="monotone"
+              dataKey="trailingAverage"
+              stroke={AXIS_COLOR}
+              strokeWidth={2}
+              strokeDasharray="2 6"
+              strokeLinecap="round"
+              dot={false}
+              activeDot={false}
+            />
           </LineChart>
         </ResponsiveContainer>
       </ContentCard>
