@@ -82,6 +82,7 @@ export const ACHIEVEMENT_GROUPS: AchievementGroup[] = [
       "consistency-is-key",
       "deuce-demon",
       "on-the-record",
+      "bad-side-bandit",
       "photo-finish",
       "marathon-set",
       "shootout",

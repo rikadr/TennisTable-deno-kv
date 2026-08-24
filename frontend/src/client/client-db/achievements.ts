@@ -94,6 +94,41 @@ export function isTrackedGame(game: Game): boolean {
   return (game.score?.pointSequences?.length ?? 0) > 0;
 }
 
+// Career sets won from the bad side of the table for "Bad Side Bandit". One
+// side of a table is often worse than the other, and a game can record which
+// player had it in each set. A set counts when the player on the bad side won
+// it, so the achievement rewards the wins the worse side makes harder — not
+// only taking part in a game where the sides are recorded. Recording the sides
+// is optional and takes effort, so the target is deliberately low.
+export const BAD_SIDE_BANDIT_TARGET = 10;
+
+// The sets of one game that each player won while on the bad side of the
+// table. A set counts only when the game records both its side and its points:
+// the side names who was on the bad side, the points name who won the set. A
+// set with no recorded side, or with 2 equally good sides ("N"), holds no bad
+// side and never counts.
+export function badSideSetsWon(game: Game): { gameWinner: number; gameLoser: number } {
+  const sides = game.score?.gameWinnerSides;
+  const setPoints = game.score?.setPoints;
+  if (sides === undefined || setPoints === undefined) return { gameWinner: 0, gameLoser: 0 };
+
+  let gameWinner = 0;
+  let gameLoser = 0;
+  sides.forEach((side, index) => {
+    if (side !== "B" && side !== "G") return;
+    const set = setPoints[index];
+    if (set === undefined || set.gameWinner === set.gameLoser) return;
+
+    // "B" means the game winner had the bad side, so the set went to the bad
+    // side when the game winner also won the set.
+    const gameWinnerWonSet = set.gameWinner > set.gameLoser;
+    if (gameWinnerWonSet !== (side === "B")) return;
+    if (gameWinnerWonSet) gameWinner++;
+    else gameLoser++;
+  });
+  return { gameWinner, gameLoser };
+}
+
 // Fewest players a season must have for "Full Coverage" — playing everyone
 // in a tiny season is not a feat. Matches the ≥5 cohort gate the rank and
 // full-house achievements use.
@@ -323,6 +358,7 @@ export class Achievements {
         edgeLordCount: number;
         consistencyCount: number;
         deuceSetsWon: number; // Career deuce sets won, for Deuce Demon
+        badSideSetsWon: number; // Career sets won on the bad side, for Bad Side Bandit
         trackedGamesPlayed: number; // Career tracked games played, for On the Record
         opponentsPlayed: Set<string>;
         gamesPerOpponent: Map<string, { count: number; firstGame: number; lastGame: number }>;
@@ -382,6 +418,7 @@ export class Achievements {
           edgeLordCount: 0,
           consistencyCount: 0,
           deuceSetsWon: 0,
+          badSideSetsWon: 0,
           trackedGamesPlayed: 0,
           opponentsPlayed: new Set(),
           gamesPerOpponent: new Map(),
@@ -413,6 +450,7 @@ export class Achievements {
           edgeLordCount: 0,
           consistencyCount: 0,
           deuceSetsWon: 0,
+          badSideSetsWon: 0,
           trackedGamesPlayed: 0,
           opponentsPlayed: new Set(),
           gamesPerOpponent: new Map(),
@@ -762,6 +800,11 @@ export class Achievements {
         // Check for "Deuce Demon": career deuce sets won. Either player can
         // win a qualifying set regardless of who wins the game.
         this.#checkDeuceDemonAchievement(game, winner, loser);
+
+        // Check for "Bad Side Bandit": career sets won from the bad side of
+        // the table. It needs the recorded sides as well as the points, so it
+        // only moves on a game that has both.
+        this.#checkBadSideBanditAchievement(game, winner, loser);
       }
 
       // Check for "On the Record": career games tracked point by point.
@@ -1997,6 +2040,31 @@ export class Achievements {
     applyDeuceSets(game.loser, loserTracker, loserDeuceSets);
   }
 
+  // "Bad Side Bandit": the career count of sets a player won while on the bad
+  // side of the table reaches BAD_SIDE_BANDIT_TARGET. Either player can win a
+  // qualifying set, whoever wins the game, so both counts can move on one game.
+  #checkBadSideBanditAchievement(
+    game: Game,
+    winnerTracker: { badSideSetsWon: number },
+    loserTracker: { badSideSetsWon: number },
+  ) {
+    const setsWon = badSideSetsWon(game);
+
+    const applyBadSideSets = (playerId: string, tracker: { badSideSetsWon: number }, sets: number) => {
+      if (sets === 0) return;
+      const before = tracker.badSideSetsWon;
+      tracker.badSideSetsWon += sets;
+      if (before < BAD_SIDE_BANDIT_TARGET && tracker.badSideSetsWon >= BAD_SIDE_BANDIT_TARGET) {
+        this.#addAchievement(
+          playerId,
+          this.#createAchievement("bad-side-bandit", playerId, game.playedAt, undefined),
+        );
+      }
+    };
+    applyBadSideSets(game.winner, winnerTracker, setsWon.gameWinner);
+    applyBadSideSets(game.loser, loserTracker, setsWon.gameLoser);
+  }
+
   // The sets that count toward a game's Shootout score: its
   // SHOOTOUT_SETS_COUNTED highest-scoring ones (all of them when the game has
   // fewer, earlier sets winning ties), returned in the order they were
@@ -3020,6 +3088,7 @@ export class Achievements {
       "consistency-is-key": { current: 0, target: 5, earned: 0 },
       "deuce-demon": { current: 0, target: DEUCE_DEMON_TARGET, earned: 0 },
       "on-the-record": { current: 0, target: ON_THE_RECORD_TARGET, earned: 0 },
+      "bad-side-bandit": { current: 0, target: BAD_SIDE_BANDIT_TARGET, earned: 0 },
       "photo-finish": { earned: 0 },
       "marathon-set": {
         earned: 0,
@@ -3119,6 +3188,7 @@ export class Achievements {
     let consistencyCount = 0;
     let bestDeuceSetWon = 0;
     let deuceSetsWonCount = 0;
+    let badSideSetsWonCount = 0;
     let trackedGamesPlayedCount = 0;
     const streaksPerOpponent = new Map<string, number>();
     // Highest win streak the player has EVER held against a single opponent —
@@ -3335,6 +3405,11 @@ export class Achievements {
         trackedGamesPlayedCount++;
       }
 
+      // Count the sets this player won on the bad side of the table, whether
+      // they won or lost the game.
+      const badSideSets = badSideSetsWon(game);
+      badSideSetsWonCount += isWinner ? badSideSets.gameWinner : badSideSets.gameLoser;
+
       // Track highest deuce-set winning score this player has won
       // (regardless of overall game outcome — the achievement is
       // awarded to set winners).
@@ -3378,6 +3453,8 @@ export class Achievements {
     // count never resets. Uncap it if a higher tracked-games tier is added,
     // the way Edge Lord keeps the Close Calls count uncapped.
     progression["on-the-record"].current = Math.min(trackedGamesPlayedCount, ON_THE_RECORD_TARGET);
+    // Bad Side Bandit caps at the target for the same reason.
+    progression["bad-side-bandit"].current = Math.min(badSideSetsWonCount, BAD_SIDE_BANDIT_TARGET);
     progression["variety-player"].current = opponentsPlayed.size;
     progression["variety-player"].opponents = opponentsPlayed;
     progression["global-player"].current = opponentsPlayed.size;
@@ -4121,6 +4198,9 @@ type AchievementDefinitions = {
   // Career games tracked point by point reached ON_THE_RECORD_TARGET.
   // A pure counter crossing — no game to point at.
   "on-the-record": undefined;
+  // Career sets won on the bad side of the table reached
+  // BAD_SIDE_BANDIT_TARGET. A pure counter crossing — no game to point at.
+  "bad-side-bandit": undefined;
   // Won GIANT_HUNTING_TARGET games against higher-ranked opponents within
   // one local calendar day. `day` is that day's local midnight; `giants` the
   // wins that filled the day's tally, each with the pre-match ranks and
@@ -4243,6 +4323,7 @@ export const ACHIEVEMENT_IS_REACHIEVABLE: Record<AchievementType, boolean> = {
   "everybodys-opponent": false,
   "deuce-demon": false,
   "on-the-record": false,
+  "bad-side-bandit": false,
   "giant-hunting": true, // Per qualifying day
   "party-pooper": true, // Per spoiled perfect day
   "earliest-game": true, // League records — can be retaken
@@ -4551,6 +4632,7 @@ export type AchievementProgression = {
   "everybodys-opponent": MissingPlayersProgression;
   "deuce-demon": ProgressionWithTarget;
   "on-the-record": ProgressionWithTarget;
+  "bad-side-bandit": ProgressionWithTarget;
   "giant-hunting": ProgressionWithTarget;
   "party-pooper": BaseProgression;
   "earliest-game": TimeOfDayRecordProgression;

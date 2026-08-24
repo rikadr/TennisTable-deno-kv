@@ -42,6 +42,25 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
+    slug: "bad-side-bandit-achievement",
+    title: "New achievement: Bad Side Bandit 😵",
+    date: "2026-08-24",
+    tags: ["feature-update"],
+    summary: "Bad Side Bandit 😵 is a new achievement. Win 10 sets from the bad side of the table.",
+    body: [
+      text(
+        "A game can record the player who has the bad side of the table in each set. A set counts when the player on the bad side wins it. The count is for your career, and you earn the achievement 1 time.",
+      ),
+      text(
+        "A set needs the recorded side and the set points. The side names the player on the bad side, and the points name the player who wins the set. A set with 2 equal sides, or with no recorded side, does not count.",
+      ),
+      text(
+        "The result of the game does not matter. A player who loses the game gets the credit for each set they win from the bad side.",
+      ),
+      text("The Progress tab on the player page shows how many of the 10 sets you have."),
+    ],
+  },
+  {
     slug: "correct-start-time-on-tracked-games",
     title: "Correct start time on tracked games",
     date: "2026-08-23",
