@@ -1,11 +1,13 @@
 import React, { useMemo } from "react";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis, ReferenceLine } from "recharts";
 import { useEventDbContext } from "../../wrappers/event-db-context";
+import { TRAILING_6_MONTHS, trailingAverage } from "../../common/trailing-average";
 
 interface WeeklyData {
   week: string;
   count: number;
   timestamp: number;
+  trailingAverage: number;
 }
 
 export const GamesPerWeekChart: React.FC = () => {
@@ -47,7 +49,7 @@ export const GamesPerWeekChart: React.FC = () => {
     const maxTimestamp = Math.max(...timestamps);
 
     // Generate all weeks in the range
-    const allWeeksData: WeeklyData[] = [];
+    const allWeeksData: Omit<WeeklyData, "trailingAverage">[] = [];
     const startWeek = new Date(minTimestamp);
     const endWeek = new Date(maxTimestamp);
 
@@ -70,7 +72,15 @@ export const GamesPerWeekChart: React.FC = () => {
       currentWeek.setDate(currentWeek.getDate() + 7);
     }
 
-    const sortedWeeklyData = allWeeksData.sort((a, b) => a.timestamp - b.timestamp);
+    const orderedWeeks = allWeeksData.sort((a, b) => a.timestamp - b.timestamp);
+    const averages = trailingAverage(
+      orderedWeeks.map((entry) => entry.count),
+      TRAILING_6_MONTHS.week,
+    );
+    const sortedWeeklyData: WeeklyData[] = orderedWeeks.map((entry, index) => ({
+      ...entry,
+      trailingAverage: averages[index],
+    }));
 
     // Filter tournaments that fall within the data range
     const tournaments = context.eventStore.tournamentsProjector.getTournamentConfigs();
@@ -145,6 +155,7 @@ export const GamesPerWeekChart: React.FC = () => {
                       {formatWeek(label as string)} - {formatWeek(weekEnd.toISOString().split("T")[0])}
                     </p>
                     <p>{`Games: ${data.count}`}</p>
+                    <p>{`6 month average: ${data.trailingAverage.toFixed(1)}`}</p>
                   </div>
                 );
               }
@@ -188,6 +199,17 @@ export const GamesPerWeekChart: React.FC = () => {
               r: 6,
               fill: "rgb(var(--color-tertiary-background))",
             }}
+          />
+
+          <Line
+            type="monotone"
+            dataKey="trailingAverage"
+            stroke="rgb(var(--color-primary-text))"
+            strokeWidth={2}
+            strokeDasharray="2 6"
+            strokeLinecap="round"
+            dot={false}
+            activeDot={false}
           />
         </LineChart>
       </ResponsiveContainer>
