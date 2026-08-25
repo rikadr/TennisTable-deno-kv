@@ -65,6 +65,10 @@ function rgba(channels: string, alpha: number): string {
  * that is never cleared is the usual way to do this, but it leaves a permanent
  * ghost: below about 5/255 the 8 bit alpha multiply rounds back to itself, so the
  * oldest part of the path stops fading and builds up behind the rally.
+ *
+ * The loader this replaced is kept as `PaddleRallyLoader` in `paddle-rally-loader.tsx`.
+ * It is pure SVG and CSS keyframes, and it is there to swap back in if this one ever
+ * needs to go.
  */
 export const PingPongLoader: React.FC = () => {
   const rootRef = useRef<HTMLDivElement>(null);
