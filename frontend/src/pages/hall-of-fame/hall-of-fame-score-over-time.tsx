@@ -24,9 +24,15 @@ import { useHallOfFameHistoryWorker } from "../../hooks/use-hall-of-fame-history
 import { useLocalStorage } from "../../hooks/use-local-storage";
 import { deltaBars } from "./hall-of-fame-delta-bars";
 import { FACTORS } from "./hall-of-fame-factors";
+import { stackedShares } from "./hall-of-fame-stacked-shares";
 
 type GraphMode = "cumulative" | "delta";
 const GRAPH_MODE_STORAGE_KEY = "hall-of-fame-score-over-time-mode";
+
+/** "Absolute" stacks the score in points. "Relative" stacks the share of each
+ * section, so every point in time fills the full height. */
+type StackScale = "absolute" | "relative";
+const STACK_SCALE_STORAGE_KEY = "hall-of-fame-score-over-time-scale";
 
 /** "Total" plus the 9 sections. Filters both the line and the bars. */
 type SeriesKey = "total" | HallOfFameFactorKey;
@@ -40,6 +46,8 @@ export const HallOfFameScoreOverTime: React.FC<{ playerId: string; playerName: s
   const { startComputation, result, progress, failed } = useHallOfFameHistoryWorker();
   const [storedMode, setStoredMode] = useLocalStorage(GRAPH_MODE_STORAGE_KEY, "cumulative");
   const mode: GraphMode = storedMode === "delta" ? "delta" : "cumulative";
+  const [storedScale, setStoredScale] = useLocalStorage(STACK_SCALE_STORAGE_KEY, "absolute");
+  const scale: StackScale = storedScale === "relative" ? "relative" : "absolute";
   const [series, setSeries] = useState<SeriesKey>("total");
 
   useEffect(() => {
@@ -64,9 +72,16 @@ export const HallOfFameScoreOverTime: React.FC<{ playerId: string; playerName: s
     return points.map((point) => ({ time: point.time, total: point.total, ...point.factors }));
   }, [points]);
 
+  const shareData = useMemo(() => (points ? stackedShares(points) : []), [points]);
+
   const deltaData = useMemo(() => deltaBars(graphData), [graphData]);
 
   const chartData = mode === "delta" ? deltaData : graphData;
+
+  /** The sections are only stacked on the total, and only in the cumulative
+   * graph. The relative scale therefore applies to that graph alone. */
+  const stacked = mode === "cumulative" && series === "total";
+  const relative = stacked && scale === "relative";
 
   const spansMoreThanAYear = useMemo(() => {
     if (graphData.length < 2) return false;
@@ -128,7 +143,7 @@ export const HallOfFameScoreOverTime: React.FC<{ playerId: string; playerName: s
         The score of {playerName} as it was at each point in time, from the day the player joined until now.
       </p>
 
-      <div className="flex flex-col xs:flex-row xs:items-end gap-3 xs:justify-between">
+      <div className="flex flex-col xs:flex-row xs:flex-wrap xs:items-end gap-3 xs:justify-between">
         <PillSelect<GraphMode>
           label="Graph"
           options={[
@@ -138,6 +153,17 @@ export const HallOfFameScoreOverTime: React.FC<{ playerId: string; playerName: s
           value={mode}
           onChange={setStoredMode}
         />
+        {stacked && (
+          <PillSelect<StackScale>
+            label="Scale"
+            options={[
+              { value: "absolute", label: "Absolute" },
+              { value: "relative", label: "Relative" },
+            ]}
+            value={scale}
+            onChange={setStoredScale}
+          />
+        )}
         <div className="flex flex-col gap-1">
           <span className="text-xs md:text-sm text-primary-text/60">Section</span>
           <select
@@ -160,7 +186,7 @@ export const HallOfFameScoreOverTime: React.FC<{ playerId: string; playerName: s
         <ResponsiveContainer width="100%" height="100%">
           {mode === "cumulative" ? (
             <AreaChart
-              data={series === "total" ? stackedData : graphData}
+              data={series === "total" ? (relative ? shareData : stackedData) : graphData}
               margin={{ top: 5, right: 8, left: -12, bottom: 0 }}
             >
               <CartesianGrid
@@ -182,8 +208,10 @@ export const HallOfFameScoreOverTime: React.FC<{ playerId: string; playerName: s
               />
               <YAxis
                 type="number"
-                domain={["auto", "auto"]}
-                tickFormatter={(value: number) => fmtNum(value) ?? ""}
+                domain={relative ? [0, 100] : ["auto", "auto"]}
+                tickFormatter={
+                  relative ? (value: number) => `${fmtNum(value) ?? ""}%` : (value: number) => fmtNum(value) ?? ""
+                }
                 stroke="rgb(var(--color-primary-text))"
                 fontSize={11}
                 tickLine={false}
@@ -193,7 +221,7 @@ export const HallOfFameScoreOverTime: React.FC<{ playerId: string; playerName: s
               <Tooltip
                 content={
                   series === "total" ? (
-                    <StackedTooltip />
+                    <StackedTooltip relative={relative} />
                   ) : (
                     <ScoreTooltip mode={mode} seriesLabel={seriesLabel} />
                   )
@@ -271,7 +299,7 @@ export const HallOfFameScoreOverTime: React.FC<{ playerId: string; playerName: s
         </ResponsiveContainer>
       </div>
 
-      {mode === "cumulative" && series === "total" && (
+      {stacked && (
         <div className="flex flex-wrap gap-x-3 gap-y-1.5">
           {FACTORS.map((factor) => (
             <span key={factor.key} className="flex items-center gap-1.5 text-xs text-primary-text">
@@ -294,7 +322,9 @@ export const HallOfFameScoreOverTime: React.FC<{ playerId: string; playerName: s
           <span className="bg-secondary-background/50 text-secondary-text/75 px-2 py-1 rounded">
             {mode === "delta"
               ? `${deltaData.length} periods, gain in each`
-              : `${graphData.length} points, score at each`}
+              : relative
+                ? `${graphData.length} points, share of the score at each`
+                : `${graphData.length} points, score at each`}
           </span>
         </div>
       )}
@@ -306,9 +336,17 @@ export const HallOfFameScoreOverTime: React.FC<{ playerId: string; playerName: s
 const shortDate = (time: number) =>
   new Date(time).toLocaleDateString("nb-NO", { day: "numeric", month: "short" });
 
-const StackedTooltip = ({ active, payload }: TooltipProps<ValueType, NameType>) => {
+const StackedTooltip = ({
+  active,
+  payload,
+  relative,
+}: TooltipProps<ValueType, NameType> & { relative: boolean }) => {
   if (!active || !payload || payload.length === 0) return null;
-  const data = payload[0].payload as { time: number; total: number } & Record<HallOfFameFactorKey, number>;
+  const data = payload[0].payload as {
+    time: number;
+    total: number;
+    absolute?: Record<HallOfFameFactorKey, number>;
+  } & Record<HallOfFameFactorKey, number>;
 
   return (
     <div className="p-3 bg-primary-background/95 backdrop-blur-sm ring-1 ring-primary-text/20 rounded-lg text-primary-text shadow-lg">
@@ -319,7 +357,12 @@ const StackedTooltip = ({ active, payload }: TooltipProps<ValueType, NameType>) 
           <div key={factor.key} className="flex items-center gap-1.5 text-xs">
             <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ backgroundColor: factor.color }} />
             <span className="opacity-75">{factor.name}</span>
-            <span className="ml-auto pl-4 font-bold">{fmtNum(data[factor.key])}</span>
+            <span className="ml-auto pl-4 font-bold">
+              {relative ? `${fmtNum(data[factor.key], { digits: 1 })}%` : fmtNum(data[factor.key])}
+            </span>
+            {relative && data.absolute && (
+              <span className="opacity-60 w-10 text-right">{fmtNum(data.absolute[factor.key])}</span>
+            )}
           </div>
         ))}
       </div>
