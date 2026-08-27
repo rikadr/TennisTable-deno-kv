@@ -132,20 +132,16 @@ export const EditGameSore: React.FC = () => {
 
   if (!game) return null;
   return (
-    <div>
+    // Fixed column from the nav's bottom edge to the keyboard's top edge: the
+    // page never adds document scroll, the buttons stay visible, and only the
+    // middle scrolls. top matches the nav's MENU_HEIGHT.
+    <div className="fixed inset-x-0 top-16 md:top-12 flex flex-col" style={{ bottom: keyboardInset }}>
       {addEventMutation.isSuccess && (
         <div className="flex justify-center">
           <ConfettiExplosion particleCount={250} force={0.8} width={2_000} duration={10_000} />
         </div>
       )}
-      <div
-        className="overflow-y-auto py-8 px-2 xs:px-4 h-16"
-        style={{
-          // 100dvh ignores the on-screen keyboard, so subtract its overlap
-          // to keep the buttons below above the keyboard while typing.
-          height: `max(0px, calc(100dvh - 160.1px - ${window.innerWidth <= 768 ? 64 : 48}px - ${keyboardInset}px))`,
-        }}
-      >
+      <div className="flex-1 min-h-0 overflow-y-auto py-8 px-2 xs:px-4">
         <StepAddScore
           player1={{ id: game.winner, sets: winnerSets, setSets: setWinnerSets }}
           player2={{ id: game.loser, sets: loserSets, setSets: setLoserSets }}
@@ -156,7 +152,7 @@ export const EditGameSore: React.FC = () => {
 
         {validationError && <div className="bg-black text-red-500 text-center">Error: {validationError}</div>}
       </div>
-      <div className="p-6 bg-secondary-background">
+      <div className="p-6 bg-secondary-background shrink-0">
         {discardsPointLog && (
           <div className="mb-3 p-3 bg-amber-100 border border-amber-400 text-amber-800 rounded-lg text-sm">
             ⚠️ This game was tracked live, point by point. If you save a changed score, the point-by-point data of

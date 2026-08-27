@@ -11,7 +11,7 @@ export const StepNavigator: React.FC<{
 }> = ({ currentStep, canProceed, handleNext, handleBack, handleSubmit, isSubmitting, hasSubmitted }) => {
   const isLastStep = currentStep === 3;
   return (
-    <div className="p-6 bg-secondary-background">
+    <div className="p-6 bg-secondary-background shrink-0">
       <div className="flex space-x-3">
         {currentStep > 1 && (
           <button
