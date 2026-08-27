@@ -85,13 +85,15 @@ describe("Hero of the Day achievement", () => {
     });
   });
 
-  it("grows a single award as the record day continues instead of awarding per game", () => {
+  it("grows a single award's game count as the record day continues, earned at the record-taking game", () => {
     const tt = calculate(gamesOnDay(1, "alice", "bob", 12));
 
+    // One award: its game count grows to the day's total of 12, but it stays
+    // earned at the game that took the record (the floor game).
     const aliceAwards = heroAwards(tt, "alice");
     expect(aliceAwards).toHaveLength(1);
     expect(aliceAwards[0].data.gamesPlayed).toBe(12);
-    expect(aliceAwards[0].earnedAt).toBe(at(1, 11));
+    expect(aliceAwards[0].earnedAt).toBe(at(1, GAMES_IN_PERIOD_RECORD_FLOOR - 1));
     expect(tt.achievements.gamesInDayRecord).toStrictEqual({ count: 12, holder: "alice" });
   });
 
