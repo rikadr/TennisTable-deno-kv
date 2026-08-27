@@ -13,6 +13,7 @@ import { useEventMutation } from "../../hooks/use-event-mutation";
 import { queryClient } from "../../common/query-client";
 import { useNavigate } from "react-router-dom";
 import ConfettiExplosion from "react-confetti-explosion";
+import { useVisualViewportHeight } from "../../hooks/use-visual-viewport";
 
 export const ADD_GAME_STEPS = [
   { step: 1, title: "Select Players", icon: "👥" },
@@ -24,6 +25,7 @@ export const AddGamePageV2: React.FC = () => {
   const context = useEventDbContext();
   const addEventMutation = useEventMutation();
   const navigate = useNavigate();
+  const viewportHeight = useVisualViewportHeight();
 
   const params = useTennisParams();
   const [player1, setPlayer1] = useState(params.player1);
@@ -203,10 +205,9 @@ export const AddGamePageV2: React.FC = () => {
       <div
         className="overflow-y-auto py-2 px-2 xs:px-4 h-16"
         style={{
-          height: `calc(100dvh - 160.1px - 48px)`,
-          ...(window.innerWidth <= 768 && {
-            height: `calc(100dvh - 160.1px - 64px)`,
-          }),
+          // The visual viewport shrinks when the on-screen keyboard opens,
+          // unlike 100dvh, so the navigator below stays above the keyboard.
+          height: Math.max(viewportHeight - 160.1 - (window.innerWidth <= 768 ? 64 : 48), 0),
         }}
       >
         {currentStep === 1 && (
