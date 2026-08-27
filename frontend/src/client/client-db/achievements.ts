@@ -346,10 +346,10 @@ export class Achievements {
         openYinYangRecord: StreakRecordAchievement | undefined;
         // Per-period state for the Hero of the Day / Week / Month records:
         // the local calendar period (its start timestamp) the player last
-        // played in, how many games they have played in it so far, and the
-        // Hero award that period's run earned while the player holds the
-        // record with it — grown game by game like the streak records,
-        // cleared when the period ends.
+        // played in, how many games they have played in it so far, and
+        // whether this period's run has already earned its Hero award —
+        // later games grow the record to beat, not the award. Cleared when
+        // the period ends.
         heroOfTheDay: HeroPeriodState;
         heroOfTheWeek: HeroPeriodState;
         heroOfTheMonth: HeroPeriodState;
@@ -410,9 +410,9 @@ export class Achievements {
           yinYangStartedAt: game.playedAt,
           yinYangLastWasWin: undefined,
           openYinYangRecord: undefined,
-          heroOfTheDay: { periodStart: 0, gamesInPeriod: 0, openRecord: undefined },
-          heroOfTheWeek: { periodStart: 0, gamesInPeriod: 0, openRecord: undefined },
-          heroOfTheMonth: { periodStart: 0, gamesInPeriod: 0, openRecord: undefined },
+          heroOfTheDay: { periodStart: 0, gamesInPeriod: 0, recordAwarded: false },
+          heroOfTheWeek: { periodStart: 0, gamesInPeriod: 0, recordAwarded: false },
+          heroOfTheMonth: { periodStart: 0, gamesInPeriod: 0, recordAwarded: false },
           donutCount: 0,
           closeCallsCount: 0,
           edgeLordCount: 0,
@@ -442,9 +442,9 @@ export class Achievements {
           yinYangStartedAt: game.playedAt,
           yinYangLastWasWin: undefined,
           openYinYangRecord: undefined,
-          heroOfTheDay: { periodStart: 0, gamesInPeriod: 0, openRecord: undefined },
-          heroOfTheWeek: { periodStart: 0, gamesInPeriod: 0, openRecord: undefined },
-          heroOfTheMonth: { periodStart: 0, gamesInPeriod: 0, openRecord: undefined },
+          heroOfTheDay: { periodStart: 0, gamesInPeriod: 0, recordAwarded: false },
+          heroOfTheWeek: { periodStart: 0, gamesInPeriod: 0, recordAwarded: false },
+          heroOfTheMonth: { periodStart: 0, gamesInPeriod: 0, recordAwarded: false },
           donutCount: 0,
           closeCallsCount: 0,
           edgeLordCount: 0,
@@ -2440,11 +2440,12 @@ export class Achievements {
   // one player in a single local calendar day / week / month. All three work
   // like the streak records: the first period to reach the record floor
   // establishes the record, after that only playing more games in one period
-  // than the record takes it. While the record holder keeps playing in their
-  // record period the award grows with the period instead of handing out one
-  // per game; once the period ends (or someone else takes the record over) a
-  // later run is a fresh chase. The three periods run independently — a busy
-  // record day also feeds that week's and month's counts.
+  // than the record takes it. The award is pinned to the game that took the
+  // record; while the record holder keeps playing in their record period the
+  // record to beat grows game by game, but the award does not — once the
+  // period ends (or someone else takes the record over) a later run is a
+  // fresh chase. The three periods run independently — a busy record day
+  // also feeds that week's and month's counts.
   #checkHeroAchievements(
     playerId: string,
     tracker: { heroOfTheDay: HeroPeriodState; heroOfTheWeek: HeroPeriodState; heroOfTheMonth: HeroPeriodState },
@@ -2487,7 +2488,7 @@ export class Achievements {
     if (state.periodStart !== periodStart) {
       state.periodStart = periodStart;
       state.gamesInPeriod = 0;
-      state.openRecord = undefined;
+      state.recordAwarded = false;
     }
     state.gamesInPeriod++;
 
@@ -2499,11 +2500,9 @@ export class Achievements {
       return;
     }
 
-    // Same period, still the record holder: grow the award instead of handing
-    // out another one.
-    if (state.openRecord !== undefined && record.holder === playerId) {
-      state.openRecord.data.gamesPlayed = state.gamesInPeriod;
-      state.openRecord.earnedAt = playedAt;
+    // Same period, still the record holder: the award stays at the game that
+    // took the record — later games only grow the record to beat.
+    if (state.recordAwarded && record.holder === playerId) {
       record.count = state.gamesInPeriod;
       return;
     }
@@ -2533,7 +2532,7 @@ export class Achievements {
     this.#addAchievement(playerId, achievement);
     record.count = gamesPlayed;
     record.holder = playerId;
-    state.openRecord = achievement;
+    state.recordAwarded = true;
   }
 
   #checkBackAfterAchievement(playerId: string, lastActiveAt: number, currentGameAt: number) {
@@ -4358,22 +4357,21 @@ type StreakRecordAchievement =
   | GenericAchievement<"longest-lose-streak">
   | GenericAchievement<"yin-yang">;
 
-// The award for holding a games-in-a-period record — grown through the
-// day / week / month while the player still holds the record with it. The
-// three share `gamesPlayed`, so the code that grows one as the period
-// continues can treat them interchangeably.
+// The award for taking a games-in-a-period record — pinned to the game that
+// took the record, however far the period's run grows the record afterwards.
 type HeroRecordAchievement =
   | GenericAchievement<"hero-of-the-day">
   | GenericAchievement<"hero-of-the-week">
   | GenericAchievement<"hero-of-the-month">;
 
 // Per-player, per-period chase state for a Hero record: the period being
-// played (its start timestamp), the games in it so far, and the open award
-// still growing with it (if the player holds the record with this period).
+// played (its start timestamp), the games in it so far, and whether this
+// period's run has already earned its award — later games while the player
+// holds the record grow the record to beat, not the award.
 type HeroPeriodState = {
   periodStart: number;
   gamesInPeriod: number;
-  openRecord: HeroRecordAchievement | undefined;
+  recordAwarded: boolean;
 };
 
 // Progression Types

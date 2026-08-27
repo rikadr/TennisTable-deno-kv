@@ -98,13 +98,15 @@ describe("Hero of the Week achievement", () => {
     });
   });
 
-  it("grows a single award as the record week continues instead of awarding per game", () => {
+  it("pins the single award at the record-taking game while the record week grows the record", () => {
     const tt = calculate([...gamesOnDay(1, "alice", "bob", 6), ...gamesOnDay(5, "alice", "bob", 6)]);
 
+    // The award stays at the game that took the record (the floor game);
+    // the rest of the record week only grows the record to beat.
     const aliceAwards = weekAwards(tt, "alice");
     expect(aliceAwards).toHaveLength(1);
-    expect(aliceAwards[0].data.gamesPlayed).toBe(12);
-    expect(aliceAwards[0].earnedAt).toBe(at(5, 5));
+    expect(aliceAwards[0].data.gamesPlayed).toBe(GAMES_IN_PERIOD_RECORD_FLOOR);
+    expect(aliceAwards[0].earnedAt).toBe(at(1, GAMES_IN_PERIOD_RECORD_FLOOR - 1));
     expect(tt.achievements.gamesInWeekRecord).toStrictEqual({ count: 12, holder: "alice" });
   });
 
@@ -196,13 +198,15 @@ describe("Hero of the Month achievement", () => {
     });
   });
 
-  it("grows a single award as the record month continues instead of awarding per game", () => {
+  it("pins the single award at the record-taking game while the record month grows the record", () => {
     const tt = calculate([...gamesOnDay(1, "alice", "bob", 10), ...gamesOnDay(15, "alice", "bob", 10)]);
 
+    // The award stays at the game that took the record (the floor game);
+    // the rest of the record month only grows the record to beat.
     const aliceAwards = monthAwards(tt, "alice");
     expect(aliceAwards).toHaveLength(1);
-    expect(aliceAwards[0].data.gamesPlayed).toBe(20);
-    expect(aliceAwards[0].earnedAt).toBe(at(15, 9));
+    expect(aliceAwards[0].data.gamesPlayed).toBe(GAMES_IN_PERIOD_RECORD_FLOOR);
+    expect(aliceAwards[0].earnedAt).toBe(at(1, GAMES_IN_PERIOD_RECORD_FLOOR - 1));
     expect(tt.achievements.gamesInMonthRecord).toStrictEqual({ count: 20, holder: "alice" });
   });
 
