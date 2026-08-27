@@ -691,7 +691,7 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
         "All three are league records, the same as Marathon Set and the streak records. A player holds them. The first player with 3 games in a period sets the record for that period. After that you must play more games than the record to take it. Wins and losses both count.",
       ),
       text(
-        "You earn the award at the game that takes the record. More games in the same period increase the record, but they do not change the award. The three records are independent, so one busy day also adds to your week and your month.",
+        "You earn the award at the game that takes the record. If you play more games while you hold the record, the award shows the new game count. It does not become a second award. The three records are independent, so one busy day also adds to your week and your month.",
       ),
       text(
         "The progress view shows your current day, week and month against the records. It also shows your highest count and the holder of each record.",

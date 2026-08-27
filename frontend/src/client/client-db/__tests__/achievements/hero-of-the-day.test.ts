@@ -85,14 +85,14 @@ describe("Hero of the Day achievement", () => {
     });
   });
 
-  it("pins the single award at the record-taking game while the record day grows the record", () => {
+  it("grows a single award's game count as the record day continues, earned at the record-taking game", () => {
     const tt = calculate(gamesOnDay(1, "alice", "bob", 12));
 
-    // The award stays at the game that took the record (the floor game);
-    // the 9 games after it only grow the record to beat.
+    // One award: its game count grows to the day's total of 12, but it stays
+    // earned at the game that took the record (the floor game).
     const aliceAwards = heroAwards(tt, "alice");
     expect(aliceAwards).toHaveLength(1);
-    expect(aliceAwards[0].data.gamesPlayed).toBe(GAMES_IN_PERIOD_RECORD_FLOOR);
+    expect(aliceAwards[0].data.gamesPlayed).toBe(12);
     expect(aliceAwards[0].earnedAt).toBe(at(1, GAMES_IN_PERIOD_RECORD_FLOOR - 1));
     expect(tt.achievements.gamesInDayRecord).toStrictEqual({ count: 12, holder: "alice" });
   });
@@ -116,7 +116,7 @@ describe("Hero of the Day achievement", () => {
     expect(tt.achievements.gamesInDayRecord).toStrictEqual({ count: 13, holder: "alice" });
   });
 
-  it("awards a fresh award for re-passing a record taken over mid-period", () => {
+  it("stops growing a taken-over award and starts a fresh one on re-passing", () => {
     const tt = calculate([
       // Day 1: Alice sets the record at 10.
       ...gamesOnDay(1, "alice", "bob", 10),
@@ -132,7 +132,7 @@ describe("Hero of the Day achievement", () => {
 
     const aliceAwards = heroAwards(tt, "alice");
     expect(aliceAwards).toHaveLength(3);
-    // The day-2 award stays at the game that took the record, at 11.
+    // The day-2 award taken over by Bob stopped growing at 11.
     expect(aliceAwards[1].data).toStrictEqual({
       day: new Date(2024, 0, 2).getTime(),
       gamesPlayed: 11,
