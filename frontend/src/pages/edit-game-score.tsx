@@ -9,13 +9,13 @@ import { useEventMutation } from "../hooks/use-event-mutation";
 import { queryClient } from "../common/query-client";
 import { useNavigate } from "react-router-dom";
 import ConfettiExplosion from "react-confetti-explosion";
-import { useVisualViewportHeight } from "../hooks/use-visual-viewport";
+import { useKeyboardInset } from "../hooks/use-keyboard-inset";
 
 export const EditGameSore: React.FC = () => {
   const context = useEventDbContext();
   const addEventMutation = useEventMutation();
   const navigate = useNavigate();
-  const viewportHeight = useVisualViewportHeight();
+  const keyboardInset = useKeyboardInset();
   const { gameId } = useTennisParams();
   const game = context.eventStore.gamesProjector.getGameById(gameId);
 
@@ -141,9 +141,9 @@ export const EditGameSore: React.FC = () => {
       <div
         className="overflow-y-auto py-8 px-2 xs:px-4 h-16"
         style={{
-          // The visual viewport shrinks when the on-screen keyboard opens,
-          // unlike 100dvh, so the buttons below stay above the keyboard.
-          height: Math.max(viewportHeight - 160.1 - (window.innerWidth <= 768 ? 64 : 48), 0),
+          // 100dvh ignores the on-screen keyboard, so subtract its overlap
+          // to keep the buttons below above the keyboard while typing.
+          height: `max(0px, calc(100dvh - 160.1px - ${window.innerWidth <= 768 ? 64 : 48}px - ${keyboardInset}px))`,
         }}
       >
         <StepAddScore
