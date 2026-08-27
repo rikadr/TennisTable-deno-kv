@@ -13,6 +13,7 @@ import { useEventMutation } from "../../hooks/use-event-mutation";
 import { queryClient } from "../../common/query-client";
 import { useNavigate } from "react-router-dom";
 import ConfettiExplosion from "react-confetti-explosion";
+import { useKeyboardInset } from "../../hooks/use-keyboard-inset";
 
 export const ADD_GAME_STEPS = [
   { step: 1, title: "Select Players", icon: "👥" },
@@ -24,6 +25,7 @@ export const AddGamePageV2: React.FC = () => {
   const context = useEventDbContext();
   const addEventMutation = useEventMutation();
   const navigate = useNavigate();
+  const keyboardInset = useKeyboardInset();
 
   const params = useTennisParams();
   const [player1, setPlayer1] = useState(params.player1);
@@ -193,22 +195,19 @@ export const AddGamePageV2: React.FC = () => {
   }, [player1, player2]);
 
   return (
-    <div>
-      <StepIndicator currentStep={currentStep} />
+    // Fixed column from the nav's bottom edge to the keyboard's top edge: the
+    // page never adds document scroll, the indicator and the navigator stay
+    // visible, and only the middle scrolls. top matches the nav's MENU_HEIGHT.
+    <div className="fixed inset-x-0 top-16 md:top-12 flex flex-col" style={{ bottom: keyboardInset }}>
+      <div className="shrink-0 pt-4">
+        <StepIndicator currentStep={currentStep} />
+      </div>
       {gameSuccessfullyAdded && (
         <div className="flex justify-center">
           <ConfettiExplosion particleCount={250} force={0.8} width={2_000} duration={10_000} />
         </div>
       )}
-      <div
-        className="overflow-y-auto py-2 px-2 xs:px-4 h-16"
-        style={{
-          height: `calc(100dvh - 160.1px - 48px)`,
-          ...(window.innerWidth <= 768 && {
-            height: `calc(100dvh - 160.1px - 64px)`,
-          }),
-        }}
-      >
+      <div className="flex-1 min-h-0 overflow-y-auto py-2 px-2 xs:px-4">
         {currentStep === 1 && (
           <StepSelectPlayers player1={{ id: player1, set: setPlayer1 }} player2={{ id: player2, set: setPlayer2 }} />
         )}
