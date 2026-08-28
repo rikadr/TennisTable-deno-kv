@@ -78,6 +78,18 @@ export function achievementsParams(
 }
 
 /**
+ * Link to the Details view of one achievement, from another page. Links inside
+ * the achievements page use achievementsLink instead, which keeps the rest of
+ * the url.
+ */
+export function achievementDetailsPageLink(type: string): string {
+  const params = new URLSearchParams();
+  params.set(ACHIEVEMENTS_FILTER_PARAM, type);
+  params.set(ACHIEVEMENTS_VIEW_PARAM, "details");
+  return `/achievements?${params.toString()}`;
+}
+
+/**
  * Link target inside the achievements page. A search-only target keeps the
  * current path. An empty query still needs the "?", since react-router reads an
  * empty target as the root path.

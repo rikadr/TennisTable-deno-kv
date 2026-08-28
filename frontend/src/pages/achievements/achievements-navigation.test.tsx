@@ -340,3 +340,29 @@ describe("a player's achievements from a link", () => {
     expect(scrollIntoView).not.toHaveBeenCalled();
   });
 });
+
+describe("navigation from a player's achievements to the details page", () => {
+  it("links an earned achievement's name and icon to its details", async () => {
+    renderPage("/player/alice?tab=achievements", <PlayerAchievements playerId="alice" />);
+
+    expect(screen.getByRole("link", { name: "👶" })).toHaveAttribute(
+      "href",
+      "/achievements?filter=first-game&view=details",
+    );
+
+    await userEvent.click(screen.getByRole("link", { name: "First Game" }));
+    expect(currentUrl()).toBe("/achievements?filter=first-game&view=details");
+  });
+
+  it("links a progress row's name and icon to its details", async () => {
+    renderPage("/player/alice?tab=achievements&achievementTab=progress", <PlayerAchievements playerId="alice" />);
+
+    expect(screen.getByRole("link", { name: "👹" })).toHaveAttribute(
+      "href",
+      "/achievements?filter=streak-player-20&view=details",
+    );
+
+    await userEvent.click(screen.getByRole("link", { name: "Humiliation Streak" }));
+    expect(currentUrl()).toBe("/achievements?filter=streak-player-20&view=details");
+  });
+});
