@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import {
   CartesianGrid,
   Line,
@@ -11,9 +12,12 @@ import {
   ReferenceLine,
 } from "recharts";
 import { classNames } from "../../common/class-names";
+import { RelativeTime } from "../../common/date-utils";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 
 type DiversityMode = "global" | "ranked";
+
+const RECENT_NEW_PAIRS_COUNT = 10;
 
 interface WeeklyData {
   week: string;
@@ -21,6 +25,13 @@ interface WeeklyData {
   possibleDiversity: number;
   coveragePercentage: number;
   timestamp: number;
+}
+
+interface NewPairGame {
+  key: string;
+  winner: string;
+  loser: string;
+  playedAt: number;
 }
 
 export const PlayerDiversityChart: React.FC = () => {
@@ -199,6 +210,22 @@ export const PlayerDiversityChart: React.FC = () => {
     return { weeklyData: allWeeksData, tournamentsInRange };
   }, [context.games, context.events, context.eventStore.tournamentsProjector, context.client.gameLimitForRanked, mode]);
 
+  const recentNewPairs = useMemo<NewPairGame[]>(() => {
+    const seenPairings = new Set<string>();
+    const newPairGames: NewPairGame[] = [];
+
+    // context.games is sorted chronologically, so the first game with a
+    // pairing is the game that created it
+    for (const game of context.games) {
+      const key = [game.winner, game.loser].sort().join("::");
+      if (seenPairings.has(key)) continue;
+      seenPairings.add(key);
+      newPairGames.push({ key, winner: game.winner, loser: game.loser, playedAt: game.playedAt });
+    }
+
+    return newPairGames.slice(-RECENT_NEW_PAIRS_COUNT).reverse();
+  }, [context.games]);
+
   // Format week for display
   const formatWeek = (weekString: string): string => {
     const [year, week] = weekString.split("-W");
@@ -370,6 +397,34 @@ export const PlayerDiversityChart: React.FC = () => {
         {weeklyData[weeklyData.length - 1]?.coveragePercentage.toFixed(1) || 0}% | Tournaments:{" "}
         {tournamentsInRange.length}
       </div>
+
+      {recentNewPairs.length > 0 && (
+        <div className="mt-8">
+          <h3 className="text-lg font-semibold text-center mb-4">{RECENT_NEW_PAIRS_COUNT} Most Recent New Player Pairs</h3>
+          <table className="w-full text-xs md:text-sm border-collapse">
+            <thead>
+              <tr className="bg-secondary-background text-secondary-text">
+                <th className="px-2 py-1 text-left border border-primary-text/20">Winner &amp; Loser</th>
+                <th className="px-2 py-1 text-right border border-primary-text/20">When</th>
+              </tr>
+            </thead>
+            <tbody>
+              {recentNewPairs.map((pair) => (
+                <tr key={pair.key} className="hover:bg-secondary-background/50">
+                  <td className="px-2 py-1 border border-primary-text/20 whitespace-nowrap">
+                    <Link to={`/1v1?player1=${pair.winner}&player2=${pair.loser}`} className="hover:underline">
+                      {context.playerName(pair.winner)} &amp; {context.playerName(pair.loser)}
+                    </Link>
+                  </td>
+                  <td className="px-2 py-1 border border-primary-text/20 text-right whitespace-nowrap">
+                    <RelativeTime date={new Date(pair.playedAt)} variant="auto" />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 };
