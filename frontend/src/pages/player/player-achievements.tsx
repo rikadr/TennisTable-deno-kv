@@ -55,7 +55,7 @@ export const ACHIEVEMENT_LABELS: Record<AchievementType, { title: string; descri
     icon: "🍩",
   },
   "donut-5": {
-    title: "Donut Glutton",
+    title: "Sweet Tooth",
     description: "Won 5 donut sets total",
     icon: "🥯",
   },
