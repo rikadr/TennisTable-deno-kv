@@ -2,6 +2,8 @@ import { useLocalStorage } from "usehooks-ts";
 import { getClientConfig, Theme } from "../client/client-config/get-client-config";
 import { OVERRIDE_THEME_KEY } from "../wrappers/theme-provider";
 import { useState } from "react";
+import { InstallAppSection } from "./settings/install-app-section";
+import { PushNotificationsSection } from "./settings/push-notifications-section";
 
 const NO_OVERRIDE = "No override";
 const LOCAL_STORAGE_KEY = "tennis-table-events";
@@ -49,6 +51,9 @@ export const SettingsPage: React.FC = () => {
         </div>
 
         <div className="divide-y divide-primary-text/10">
+          <InstallAppSection />
+          <PushNotificationsSection />
+
           {/* Cache Management Section */}
           <div className="p-6">
             <div className="flex items-start justify-between">

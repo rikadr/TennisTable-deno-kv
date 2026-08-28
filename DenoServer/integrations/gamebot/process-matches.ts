@@ -3,6 +3,7 @@ import { storeEvent } from "../../event-store/event-store.ts";
 import { EventType, EventTypeEnum } from "../../event-store/event-types.ts";
 import { newId } from "../../event-store/nano-id.ts";
 import { webSocketClientManager } from "../../server.ts";
+import { notifyNewEvent } from "../../push-notifications/push-notifications.ts";
 
 export interface MatchesApiResponse {
   _embedded: {
@@ -93,6 +94,10 @@ export async function processMatchesResponse(response: MatchesApiResponse) {
 
   // webSocketClientManager.broadcastClearCache(); // Maybe too hars to do full refetch?
   webSocketClientManager.broadcastLatestEvent();
+  // Gamebot games come from outside the app, so no device posted them: notify everyone.
+  for (const event of eventsToWrite) {
+    notifyNewEvent(event, null);
+  }
 }
 
 function userIdFromUrl(url?: string): string {

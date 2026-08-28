@@ -1,5 +1,5 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
-import type { Database, LiveGameState, User } from "./database.ts";
+import type { Database, LiveGameState, PushSubscriptionRecord, User } from "./database.ts";
 import type { EventType } from "../event-store/event-types.ts";
 
 interface EventRow {
@@ -272,5 +272,53 @@ export class SupabaseDatabase implements Database {
     if (error) {
       throw new Error(`Failed to set value: ${error.message}`);
     }
+  }
+
+  // Push subscriptions
+
+  async savePushSubscription(record: PushSubscriptionRecord): Promise<void> {
+    const { error } = await this.client.from("push_subscriptions").upsert({
+      client_id: this.clientId,
+      endpoint: record.endpoint,
+      device_id: record.deviceId,
+      subscription: record.subscription,
+      created_at: record.createdAt,
+    });
+    if (error) {
+      throw new Error(`Failed to save push subscription: ${error.message}`);
+    }
+  }
+
+  async deletePushSubscription(endpoint: string): Promise<boolean> {
+    const { data } = await this.client
+      .from("push_subscriptions")
+      .delete()
+      .eq("client_id", this.clientId)
+      .eq("endpoint", endpoint)
+      .select("endpoint");
+    return (data?.length ?? 0) > 0;
+  }
+
+  async getAllPushSubscriptions(): Promise<PushSubscriptionRecord[]> {
+    const { data, error } = await this.client
+      .from("push_subscriptions")
+      .select("endpoint, device_id, subscription, created_at")
+      .eq("client_id", this.clientId);
+    if (error) {
+      throw new Error(`Failed to get push subscriptions: ${error.message}`);
+    }
+
+    const rows = (data ?? []) as {
+      endpoint: string;
+      device_id: string | null;
+      subscription: PushSubscriptionRecord["subscription"];
+      created_at: number;
+    }[];
+    return rows.map((row) => ({
+      endpoint: row.endpoint,
+      deviceId: row.device_id,
+      subscription: row.subscription,
+      createdAt: row.created_at,
+    }));
   }
 }

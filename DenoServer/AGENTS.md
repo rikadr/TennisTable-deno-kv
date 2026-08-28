@@ -8,6 +8,13 @@ The backend is the "Vault". It is a **Thin Server** designed to be simple, fast,
 2.  **Authentication:** Handles user login and session security.
 3.  **Broadcasting:** Pushes new events to connected clients via WebSockets.
 4.  **Image Handling:** Proxies/manages image uploads (ImageKit).
+5.  **Push Notifications:** Sends a Web Push notification to subscribed devices
+    when a new event is stored (`push-notifications/`). Implemented with
+    WebCrypto only (RFC 8291 + VAPID), no dependencies. Disabled unless the
+    `VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY` env vars are set — generate a pair
+    with `deno run scripts/generate-vapid-keys.ts`. The notification text is
+    built only from data inside the event payload; the server still projects
+    nothing.
 
 ## Architecture
 - **Runtime:** Deno.
@@ -24,7 +31,7 @@ The backend is the "Vault". It is a **Thin Server** designed to be simple, fast,
 - **Implementations:** `db/supabase.ts` and `db/sqlite.ts`. Add a method to both
   when you extend the interface.
 - **Schema:** `db/schema.sql`. Tables: `events`, `users`, `live_game`,
-  `key_value`.
+  `key_value`, `push_subscriptions`.
 - **Multi-tenancy:** One database serves every deployment. Every table has a
   `client_id` column from the `CLIENT` env var, and every query filters on it.
   A query without that filter reads another office's data.

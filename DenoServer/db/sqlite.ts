@@ -1,5 +1,5 @@
 import { Database as SqliteDb } from "@db/sqlite";
-import type { Database, LiveGameState, User } from "./database.ts";
+import type { Database, LiveGameState, PushSubscriptionRecord, User } from "./database.ts";
 import type { EventType } from "../event-store/event-types.ts";
 
 interface EventRow {
@@ -53,6 +53,13 @@ export class SqliteDatabase implements Database {
       CREATE TABLE IF NOT EXISTS key_value (
         key   TEXT PRIMARY KEY,
         value TEXT NOT NULL
+      );
+
+      CREATE TABLE IF NOT EXISTS push_subscriptions (
+        endpoint     TEXT PRIMARY KEY,
+        device_id    TEXT,
+        subscription TEXT NOT NULL,
+        created_at   INTEGER NOT NULL
       );
     `);
   }
@@ -191,5 +198,31 @@ export class SqliteDatabase implements Database {
     this.db.prepare(
       "INSERT OR REPLACE INTO key_value (key, value) VALUES (?, ?)",
     ).run(key, JSON.stringify(value));
+  }
+
+  // Push subscriptions
+
+  async savePushSubscription(record: PushSubscriptionRecord): Promise<void> {
+    this.db.prepare(
+      "INSERT OR REPLACE INTO push_subscriptions (endpoint, device_id, subscription, created_at) VALUES (?, ?, ?, ?)",
+    ).run(record.endpoint, record.deviceId, JSON.stringify(record.subscription), record.createdAt);
+  }
+
+  async deletePushSubscription(endpoint: string): Promise<boolean> {
+    const changes = this.db.prepare("DELETE FROM push_subscriptions WHERE endpoint = ?").run(endpoint);
+    return changes > 0;
+  }
+
+  async getAllPushSubscriptions(): Promise<PushSubscriptionRecord[]> {
+    const rows = this.db.prepare(
+      "SELECT endpoint, device_id, subscription, created_at FROM push_subscriptions",
+    ).all<{ endpoint: string; device_id: string | null; subscription: string; created_at: number }>();
+
+    return rows.map((row) => ({
+      endpoint: row.endpoint,
+      deviceId: row.device_id,
+      subscription: JSON.parse(row.subscription),
+      createdAt: row.created_at,
+    }));
   }
 }

@@ -6,6 +6,7 @@ import { WebSocketClientManager } from "./web-socket/web-socket-client-manager.t
 import { registerEventStoreRoutes } from "./event-store/event-store.routes.ts";
 import { registerImageKitRoutes } from "./image-kit/image-kit.routes.ts";
 import { registerLiveGameRoutes } from "./live-game/live-game.routes.ts";
+import { registerPushRoutes } from "./push-notifications/push.routes.ts";
 
 // Start background services
 import "./integrations/gamebot/poller.ts";
@@ -16,7 +17,9 @@ const api = new Router();
 app.use(
   oakCors({
     origin: "*",
-    allowedHeaders: ["content-type", "Authorization"],
+    // x-device-id identifies the posting device, so push notifications for an
+    // event are not sent back to the device that posted it.
+    allowedHeaders: ["content-type", "Authorization", "x-device-id"],
     methods: "*",
   }),
 );
@@ -32,6 +35,7 @@ registerUserRoutes(api);
 
 registerEventStoreRoutes(api);
 registerLiveGameRoutes(api);
+registerPushRoutes(api);
 
 app.use(api.routes());
 app.use(api.allowedMethods());

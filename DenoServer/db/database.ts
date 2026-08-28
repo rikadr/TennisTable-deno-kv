@@ -48,6 +48,19 @@ export type LiveGameState = {
   updatedAt: number;
 };
 
+export type PushSubscriptionRecord = {
+  /** The push service URL. Unique per subscription — used as the key. */
+  endpoint: string;
+  /** The subscribing device's id, so its own events do not notify it. */
+  deviceId: string | null;
+  /** The browser's PushSubscription JSON, everything needed to send to it. */
+  subscription: {
+    endpoint: string;
+    keys: { p256dh: string; auth: string };
+  };
+  createdAt: number;
+};
+
 export interface Database {
   // Events
   storeEvent(event: EventType): Promise<void>;
@@ -72,4 +85,9 @@ export interface Database {
   // Key-Value (for gamebot cursor, etc.)
   getValue<T>(key: string): Promise<T | null>;
   setValue<T>(key: string, value: T): Promise<void>;
+
+  // Push subscriptions
+  savePushSubscription(record: PushSubscriptionRecord): Promise<void>;
+  deletePushSubscription(endpoint: string): Promise<boolean>;
+  getAllPushSubscriptions(): Promise<PushSubscriptionRecord[]>;
 }

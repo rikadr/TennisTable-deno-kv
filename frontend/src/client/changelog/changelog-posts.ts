@@ -42,6 +42,28 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
+    slug: "install-app-and-push-notifications",
+    title: "Install the app and get push notifications",
+    date: "2026-08-28",
+    tags: ["new-feature"],
+    summary:
+      "You can install Tennis Table as an app on your phone. The app can send a push notification to your device when a player posts a new game, player or tournament event.",
+    body: [
+      text(
+        "Tennis Table is now an installable web app. Use the Install app button on the settings page, or the browser menu. The app opens in full screen with its own icon.",
+      ),
+      text(
+        "Turn on push notifications on the settings page. Your device then shows a notification when a new game, a new player or a tournament change arrives. Events that you post from your own device do not notify you.",
+      ),
+      text(
+        "Each device has its own subscription, so turn notifications on per device. The settings page has a test button to check the setup. On iPhone and iPad, install the app first, and then turn on notifications inside the installed app.",
+      ),
+      text(
+        "For the technical readers: the server sends the notifications with the Web Push protocol over WebCrypto, without a library. The server needs the `VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY` environment variables. Without them the settings page reports that push is not configured.",
+      ),
+    ],
+  },
+  {
     slug: "bad-side-bandit-achievement",
     title: "New achievement: Bad Side Bandit 😵",
     date: "2026-08-24",

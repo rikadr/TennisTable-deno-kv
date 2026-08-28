@@ -4,6 +4,7 @@ import { webSocketClientManager } from "../server.ts";
 import { hasAccess } from "../auth-service/middleware.ts";
 import { db } from "../db.ts";
 import { Router } from "oak";
+import { notifyNewEvent } from "../push-notifications/push-notifications.ts";
 
 export function registerEventStoreRoutes(api: Router) {
   /**
@@ -72,6 +73,9 @@ export function registerEventStoreRoutes(api: Router) {
 
     await storeEvent(eventPayload);
     webSocketClientManager.broadcastLatestEvent();
+    // Push a notification to the other devices. Not awaited — the response
+    // must not wait for the push services.
+    notifyNewEvent(eventPayload, context.request.headers.get("x-device-id"));
     context.response.status = 201;
   });
 

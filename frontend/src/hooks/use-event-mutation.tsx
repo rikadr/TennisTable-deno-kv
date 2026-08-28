@@ -2,6 +2,7 @@ import { useMutation } from "@tanstack/react-query";
 import { httpClient } from "../common/http-client";
 import { EventType } from "../client/client-db/event-store/event-types";
 import { useToast } from "../wrappers/toast-provider";
+import { getDeviceId } from "../services/device-id";
 
 function saveErrorMessage(action: string, error: Error): string {
   // httpClient throws "HTTP error <status>: ..." when the server rejected the
@@ -25,6 +26,9 @@ export function useEventMutation(options?: EventMutationOptions) {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          // So the server does not push a notification for this event back to
+          // the device that posted it.
+          "x-device-id": getDeviceId(),
         },
         body: JSON.stringify(payloadEvent),
       });

@@ -29,3 +29,12 @@ CREATE TABLE key_value (
   value     JSONB NOT NULL,
   PRIMARY KEY (client_id, key)
 );
+
+CREATE TABLE push_subscriptions (
+  client_id    TEXT NOT NULL,
+  endpoint     TEXT NOT NULL,
+  device_id    TEXT,
+  subscription JSONB NOT NULL,
+  created_at   BIGINT NOT NULL,
+  PRIMARY KEY (client_id, endpoint)
+);
