@@ -55,9 +55,14 @@ export const ACHIEVEMENT_LABELS: Record<AchievementType, { title: string; descri
     icon: "🍩",
   },
   "donut-5": {
-    title: "Donuts to Share",
+    title: "Donut Glutton",
     description: "Won 5 donut sets total",
     icon: "🥯",
+  },
+  "donut-baker": {
+    title: "The Baker",
+    description: "Gave away 5 donut sets",
+    icon: "🧑‍🍳",
   },
   "streak-all-10": {
     title: "Unstoppable",
