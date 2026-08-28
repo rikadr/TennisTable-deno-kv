@@ -75,6 +75,7 @@ export const ACHIEVEMENT_GROUPS: AchievementGroup[] = [
     types: [
       "donut-1",
       "donut-5",
+      "donut-baker",
       "nice-game",
       "less-is-more",
       "close-calls",

@@ -102,6 +102,13 @@ export function isTrackedGame(game: Game): boolean {
 // is optional and takes effort, so the target is deliberately low.
 export const BAD_SIDE_BANDIT_TARGET = 10;
 
+// Career donut sets a player gives away for "The Baker": sets they lose
+// without scoring a point. It counts the same sets as the "Donut" achievement,
+// seen from the other side of the table — the winner takes the donut, the
+// loser gave it. A set the game winner loses to 0 does not count, so the
+// donuts given always match the donuts taken.
+export const DONUT_BAKER_TARGET = 5;
+
 // The sets of one game that each player won while on the bad side of the
 // table. A set counts only when the game records both its side and its points:
 // the side names who was on the bad side, the points name who won the set. A
@@ -355,6 +362,7 @@ export class Achievements {
         heroOfTheWeek: HeroPeriodState;
         heroOfTheMonth: HeroPeriodState;
         donutCount: number;
+        donutsGiven: number;
         closeCallsCount: number;
         edgeLordCount: number;
         consistencyCount: number;
@@ -415,6 +423,7 @@ export class Achievements {
           heroOfTheWeek: { periodStart: 0, gamesInPeriod: 0, openRecord: undefined },
           heroOfTheMonth: { periodStart: 0, gamesInPeriod: 0, openRecord: undefined },
           donutCount: 0,
+          donutsGiven: 0,
           closeCallsCount: 0,
           edgeLordCount: 0,
           consistencyCount: 0,
@@ -447,6 +456,7 @@ export class Achievements {
           heroOfTheWeek: { periodStart: 0, gamesInPeriod: 0, openRecord: undefined },
           heroOfTheMonth: { periodStart: 0, gamesInPeriod: 0, openRecord: undefined },
           donutCount: 0,
+          donutsGiven: 0,
           closeCallsCount: 0,
           edgeLordCount: 0,
           consistencyCount: 0,
@@ -846,6 +856,18 @@ export class Achievements {
               this.#createAchievement("donut-5", game.winner, game.playedAt, undefined),
             );
           }
+        }
+
+        // "The Baker": the career count of donut sets the player gave away
+        // reaches DONUT_BAKER_TARGET. One game can give away several donuts,
+        // so the count can pass the target in one step.
+        const donutsGivenBefore = loser.donutsGiven;
+        loser.donutsGiven += donutsEarned;
+        if (donutsGivenBefore < DONUT_BAKER_TARGET && loser.donutsGiven >= DONUT_BAKER_TARGET) {
+          this.#addAchievement(
+            game.loser,
+            this.#createAchievement("donut-baker", game.loser, game.playedAt, undefined),
+          );
         }
 
         // Check for "Nice Game" achievement (total points = 69)
@@ -3082,6 +3104,7 @@ export class Achievements {
       // Game feats
       "donut-1": { current: 0, target: 1, earned: 0 },
       "donut-5": { current: 0, target: 5, earned: 0 },
+      "donut-baker": { current: 0, target: DONUT_BAKER_TARGET, earned: 0 },
       "nice-game": { earned: 0 },
       "less-is-more": { earned: 0 },
       "close-calls": { current: 0, target: 5, earned: 0 },
@@ -3184,6 +3207,7 @@ export class Achievements {
     let longestYinYang = 0;
     let yinYangLastWasWin: boolean | undefined = undefined;
     let donutCount = 0;
+    let donutsGivenCount = 0;
     let closeCallsCount = 0;
     let edgeLordCount = 0;
     let consistencyCount = 0;
@@ -3388,6 +3412,15 @@ export class Achievements {
         if (isLoser) {
           streaksPerOpponent.set(game.winner, 0);
         }
+
+        // Count the donuts the player gave away (only for losers)
+        if (isLoser && game.score?.setPoints) {
+          game.score.setPoints.forEach((set) => {
+            if (set.gameLoser === 0) {
+              donutsGivenCount++;
+            }
+          });
+        }
       }
 
       // Count close calls for both winners and losers
@@ -3441,6 +3474,7 @@ export class Achievements {
     progression["ranked"].current = Math.min(gamesPlayedCount, gameLimitForRanked);
     progression["donut-1"].current = donutCount;
     progression["donut-5"].current = donutCount;
+    progression["donut-baker"].current = Math.min(donutsGivenCount, DONUT_BAKER_TARGET);
     progression["streak-all-10"].current = currentWinStreakAll;
     progression["streak-all-10"].best = longestWinStreakAll;
     progression["close-calls"].current = closeCallsCount;
@@ -4082,6 +4116,9 @@ type AchievementDefinitions = {
   "ranked": { gameId: string; opponent: string };
   "donut-1": { gameId: string; opponent: string };
   "donut-5": undefined;
+  // Career donut sets given away — sets lost without scoring a point —
+  // reached DONUT_BAKER_TARGET. A pure counter crossing, no game to point at.
+  "donut-baker": undefined;
   "streak-all-10": { startedAt: number };
   "streak-player-10": { opponent: string; startedAt: number };
   "streak-player-20": { opponent: string; startedAt: number };
@@ -4265,6 +4302,7 @@ export const ACHIEVEMENT_IS_REACHIEVABLE: Record<AchievementType, boolean> = {
   "ranked": false,
   "donut-1": true, // Per donut set
   "donut-5": false,
+  "donut-baker": false,
   "streak-all-10": true, // Per streak — a new streak of 10 earns again
   "streak-player-10": true, // Per streak per opponent
   "streak-player-20": true,
@@ -4572,6 +4610,7 @@ export type AchievementProgression = {
   "ranked": ProgressionWithTarget;
   "donut-1": ProgressionWithTarget;
   "donut-5": ProgressionWithTarget;
+  "donut-baker": ProgressionWithTarget;
   "streak-all-10": ProgressionWithTarget;
   "streak-player-10": StreakPlayerProgression;
   "streak-player-20": StreakPlayerProgression;

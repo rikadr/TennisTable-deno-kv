@@ -42,6 +42,25 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
+    slug: "the-baker-achievement",
+    title: "New achievement: The Baker 🧑‍🍳",
+    date: "2026-08-28",
+    tags: ["feature-update"],
+    summary:
+      "The Baker 🧑‍🍳 is a new achievement for the player who gives away 5 donut sets. The achievement for 5 donut sets won is now Sweet Tooth 🥯.",
+    body: [
+      text(
+        "A donut set is a set that the loser of the game loses without a point. The winner of the set takes the donut, and the loser gives it. The Baker 🧑‍🍳 counts the donut sets you give away in your career. You earn the achievement 1 time at 5 sets.",
+      ),
+      text(
+        "The Progress tab on the player page shows how many of the 5 sets you have. The Game Feats group holds the achievement, next to the achievements for the donut sets you win.",
+      ),
+      text(
+        "The achievement for 5 donut sets won keeps the same rule, but it has a new name: Sweet Tooth 🥯. The previous name was Donuts to Share.",
+      ),
+    ],
+  },
+  {
     slug: "bad-side-bandit-achievement",
     title: "New achievement: Bad Side Bandit 😵",
     date: "2026-08-24",
