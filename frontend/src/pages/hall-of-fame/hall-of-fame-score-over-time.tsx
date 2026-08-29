@@ -13,6 +13,7 @@ import {
 import { NameType, ValueType } from "recharts/types/component/DefaultTooltipContent";
 import { HallOfFameFactorKey } from "../../client/client-db/hall-of-fame";
 import { HISTORY_MAX_POINTS } from "../../client/client-db/hall-of-fame-history";
+import { classNames } from "../../common/class-names";
 import { dateString } from "../../common/date-utils";
 import { fmtNum } from "../../common/number-utils";
 import { PillSelect } from "../../common/pill-select";
@@ -34,6 +35,18 @@ const STACK_SCALE_STORAGE_KEY = "hall-of-fame-score-over-time-scale";
 /** "Total" plus the 9 sections. Filters both graphs. */
 type SeriesKey = "total" | HallOfFameFactorKey;
 
+/** The zoom presets, as the percentage of the points that the graph shows.
+ * The same presets as the score graph on the player page. */
+const ZOOM_PRESETS = [
+  { label: "All", value: 100 },
+  { label: "50%", value: 50 },
+  { label: "25%", value: 25 },
+  { label: "10%", value: 10 },
+];
+
+/** Fewest visible points when zoomed in. */
+const MIN_VISIBLE_POINTS = 10;
+
 export const HallOfFameScoreOverTime: React.FC<{ playerId: string; playerName: string }> = ({
   playerId,
   playerName,
@@ -44,6 +57,10 @@ export const HallOfFameScoreOverTime: React.FC<{ playerId: string; playerName: s
   const [storedScale, setStoredScale] = useLocalStorage(STACK_SCALE_STORAGE_KEY, "absolute");
   const scale: StackScale = storedScale === "relative" ? "relative" : "absolute";
   const [series, setSeries] = useState<SeriesKey>("total");
+  /** Percentage of the points the graph shows. */
+  const [zoomLevel, setZoomLevel] = useState(100);
+  /** Position from 0 to 100, where 100 is the end (most recent). */
+  const [panPosition, setPanPosition] = useState(100);
 
   useEffect(() => {
     startComputation(playerId);
@@ -83,10 +100,16 @@ export const HallOfFameScoreOverTime: React.FC<{ playerId: string; playerName: s
   const chartData =
     mode === "delta" ? (stacked ? deltaData : graphData) : stacked ? (relative ? shareData : stackedData) : graphData;
 
-  const spansMoreThanAYear = useMemo(() => {
-    if (graphData.length < 2) return false;
-    return graphData[graphData.length - 1].time - graphData[0].time > ONE_YEAR;
-  }, [graphData]);
+  // The visible window, from the zoom and pan controls. Every dataset has one
+  // entry per simulated point, so the window applies to all of them.
+  const totalPoints = chartData.length;
+  const visibleCount = Math.max(MIN_VISIBLE_POINTS, Math.ceil((totalPoints * zoomLevel) / 100));
+  const maxStartIndex = Math.max(0, totalPoints - visibleCount);
+  const startIndex = Math.floor((panPosition / 100) * maxStartIndex);
+  const visibleData = chartData.slice(startIndex, startIndex + visibleCount);
+
+  const spansMoreThanAYear =
+    visibleData.length >= 2 && visibleData[visibleData.length - 1].time - visibleData[0].time > ONE_YEAR;
 
   const formatTick = (time: number) =>
     new Date(time).toLocaleDateString(
@@ -185,7 +208,7 @@ export const HallOfFameScoreOverTime: React.FC<{ playerId: string; playerName: s
       <div className="w-full h-[300px] md:h-[400px]">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart
-            data={chartData}
+            data={visibleData}
             stackOffset={mode === "delta" ? "sign" : "none"}
             margin={{ top: 5, right: 8, left: -12, bottom: 0 }}
           >
@@ -198,7 +221,7 @@ export const HallOfFameScoreOverTime: React.FC<{ playerId: string; playerName: s
             <XAxis
               dataKey="time"
               tickFormatter={formatTick}
-              interval={Math.max(0, Math.floor(chartData.length / 5))}
+              interval={Math.max(0, Math.floor(visibleData.length / 5))}
               stroke="rgb(var(--color-primary-text))"
               fontSize={11}
               tickLine={false}
@@ -260,6 +283,48 @@ export const HallOfFameScoreOverTime: React.FC<{ playerId: string; playerName: s
           </AreaChart>
         </ResponsiveContainer>
       </div>
+
+      {totalPoints > 50 && (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-primary-text whitespace-nowrap">Zoom:</span>
+            <div className="flex gap-1">
+              {ZOOM_PRESETS.map((preset) => (
+                <button
+                  key={preset.value}
+                  onClick={() => {
+                    setZoomLevel(preset.value);
+                    // Reset pan to end when zooming
+                    setPanPosition(100);
+                  }}
+                  className={classNames(
+                    "px-3 py-1 rounded text-sm font-medium transition-colors",
+                    zoomLevel === preset.value
+                      ? "bg-secondary-background text-secondary-text"
+                      : "bg-primary-background text-primary-text border border-primary-text/20 hover:bg-secondary-background/50",
+                  )}
+                >
+                  {preset.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {zoomLevel < 100 && (
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-medium text-primary-text whitespace-nowrap">Pan:</span>
+              <input
+                className="w-full"
+                type="range"
+                min={0}
+                max={100}
+                value={panPosition}
+                onChange={(e) => setPanPosition(Number(e.target.value))}
+              />
+            </div>
+          )}
+        </div>
+      )}
 
       {stacked && (
         <div className="flex flex-wrap gap-x-3 gap-y-1.5">

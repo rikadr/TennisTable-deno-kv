@@ -212,6 +212,7 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
         "The first point is the day the player was created.",
         "The last point is now.",
         "The points are never closer than 1 day, and never more than 100 in total.",
+        "Zoom buttons and a pan slider show a part of the timeline.",
       ),
       text(
         "The app projects the full state of every player at each timestamp and scores the player against it. The score depends on what all other players did, so each point needs a complete calculation. The work runs in a web worker and shows a progress bar.",
