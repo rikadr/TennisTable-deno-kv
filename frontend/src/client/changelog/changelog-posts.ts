@@ -203,7 +203,7 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
         "The toggle above the score has a new option: Score over time. The graph starts on the day the player joined and ends now.",
       ),
       text(
-        "A second toggle selects what the graph shows. Cumulative stacks the 9 sections as areas, with a solid color for each section. The top edge of the stack is the total score. A legend below the graph shows which color is which section. Delta gives the points the player gained in each period. A section picker filters both to the total score or to 1 of the 9 sections.",
+        "A second toggle selects what the graph shows. Cumulative stacks the 9 sections as areas, with a solid color for each section. The top edge of the stack is the total score. A legend below the graph shows which color is which section. Delta stacks the same areas, with the points each section gained in each period. A section picker filters both to the total score or to 1 of the 9 sections.",
       ),
       text(
         "A scale toggle sets how the app stacks the sections. Absolute stacks the score in points. Relative stacks the share of each section, so every point in time fills the full height and the 9 shares add up to 100%.",
@@ -212,7 +212,6 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
         "The first point is the day the player was created.",
         "The last point is now.",
         "The points are never closer than 1 day, and never more than 100 in total.",
-        "Delta groups the points into a maximum of 25 periods, so the bars stay readable.",
       ),
       text(
         "The app projects the full state of every player at each timestamp and scores the player against it. The score depends on what all other players did, so each point needs a complete calculation. The work runs in a web worker and shows a progress bar.",
