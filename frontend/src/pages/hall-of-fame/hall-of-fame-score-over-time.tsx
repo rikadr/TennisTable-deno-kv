@@ -2,10 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import {
   Area,
   AreaChart,
-  Bar,
-  BarChart,
   CartesianGrid,
-  Cell,
   ReferenceLine,
   ResponsiveContainer,
   Tooltip,
@@ -16,13 +13,14 @@ import {
 import { NameType, ValueType } from "recharts/types/component/DefaultTooltipContent";
 import { HallOfFameFactorKey } from "../../client/client-db/hall-of-fame";
 import { HISTORY_MAX_POINTS } from "../../client/client-db/hall-of-fame-history";
+import { classNames } from "../../common/class-names";
 import { dateString } from "../../common/date-utils";
 import { fmtNum } from "../../common/number-utils";
 import { PillSelect } from "../../common/pill-select";
 import { ONE_YEAR } from "../../common/time-in-ms";
 import { useHallOfFameHistoryWorker } from "../../hooks/use-hall-of-fame-history-worker";
 import { useLocalStorage } from "../../hooks/use-local-storage";
-import { deltaBars } from "./hall-of-fame-delta-bars";
+import { deltaPoints } from "./hall-of-fame-delta-points";
 import { FACTORS } from "./hall-of-fame-factors";
 import { stackedShares } from "./hall-of-fame-stacked-shares";
 
@@ -34,10 +32,20 @@ const GRAPH_MODE_STORAGE_KEY = "hall-of-fame-score-over-time-mode";
 type StackScale = "absolute" | "relative";
 const STACK_SCALE_STORAGE_KEY = "hall-of-fame-score-over-time-scale";
 
-/** "Total" plus the 9 sections. Filters both the line and the bars. */
+/** "Total" plus the 9 sections. Filters both graphs. */
 type SeriesKey = "total" | HallOfFameFactorKey;
 
-const NEGATIVE_COLOR = "#ef4444";
+/** The zoom presets, as the percentage of the points that the graph shows.
+ * The same presets as the score graph on the player page. */
+const ZOOM_PRESETS = [
+  { label: "All", value: 100 },
+  { label: "50%", value: 50 },
+  { label: "25%", value: 25 },
+  { label: "10%", value: 10 },
+];
+
+/** Fewest visible points when zoomed in. */
+const MIN_VISIBLE_POINTS = 10;
 
 export const HallOfFameScoreOverTime: React.FC<{ playerId: string; playerName: string }> = ({
   playerId,
@@ -49,6 +57,10 @@ export const HallOfFameScoreOverTime: React.FC<{ playerId: string; playerName: s
   const [storedScale, setStoredScale] = useLocalStorage(STACK_SCALE_STORAGE_KEY, "absolute");
   const scale: StackScale = storedScale === "relative" ? "relative" : "absolute";
   const [series, setSeries] = useState<SeriesKey>("total");
+  /** Percentage of the points the graph shows. */
+  const [zoomLevel, setZoomLevel] = useState(100);
+  /** Position from 0 to 100, where 100 is the end (most recent). */
+  const [panPosition, setPanPosition] = useState(100);
 
   useEffect(() => {
     startComputation(playerId);
@@ -58,12 +70,16 @@ export const HallOfFameScoreOverTime: React.FC<{ playerId: string; playerName: s
 
   const graphData = useMemo(() => {
     if (!points) return [];
-    let previous = 0;
-    return points.map((point) => {
+    return points.map((point, i) => {
+      const previous = i === 0 ? point : points[i - 1];
       const value = series === "total" ? point.total : point.factors[series];
-      const delta = value - previous;
-      previous = value;
-      return { time: point.time, cumulative: value, delta };
+      const previousValue = series === "total" ? previous.total : previous.factors[series];
+      return {
+        time: point.time,
+        from: i === 0 ? undefined : previous.time,
+        cumulative: value,
+        delta: value - previousValue,
+      };
     });
   }, [points, series]);
 
@@ -74,19 +90,26 @@ export const HallOfFameScoreOverTime: React.FC<{ playerId: string; playerName: s
 
   const shareData = useMemo(() => (points ? stackedShares(points) : []), [points]);
 
-  const deltaData = useMemo(() => deltaBars(graphData), [graphData]);
+  const deltaData = useMemo(() => (points ? deltaPoints(points) : []), [points]);
 
-  const chartData = mode === "delta" ? deltaData : graphData;
+  /** The sections are only stacked on the total. The relative scale only
+   * applies to the cumulative graph, where the stack has a stable height. */
+  const stacked = series === "total";
+  const relative = stacked && mode === "cumulative" && scale === "relative";
 
-  /** The sections are only stacked on the total, and only in the cumulative
-   * graph. The relative scale therefore applies to that graph alone. */
-  const stacked = mode === "cumulative" && series === "total";
-  const relative = stacked && scale === "relative";
+  const chartData =
+    mode === "delta" ? (stacked ? deltaData : graphData) : stacked ? (relative ? shareData : stackedData) : graphData;
 
-  const spansMoreThanAYear = useMemo(() => {
-    if (graphData.length < 2) return false;
-    return graphData[graphData.length - 1].time - graphData[0].time > ONE_YEAR;
-  }, [graphData]);
+  // The visible window, from the zoom and pan controls. Every dataset has one
+  // entry per simulated point, so the window applies to all of them.
+  const totalPoints = chartData.length;
+  const visibleCount = Math.max(MIN_VISIBLE_POINTS, Math.ceil((totalPoints * zoomLevel) / 100));
+  const maxStartIndex = Math.max(0, totalPoints - visibleCount);
+  const startIndex = Math.floor((panPosition / 100) * maxStartIndex);
+  const visibleData = chartData.slice(startIndex, startIndex + visibleCount);
+
+  const spansMoreThanAYear =
+    visibleData.length >= 2 && visibleData[visibleData.length - 1].time - visibleData[0].time > ONE_YEAR;
 
   const formatTick = (time: number) =>
     new Date(time).toLocaleDateString(
@@ -98,11 +121,11 @@ export const HallOfFameScoreOverTime: React.FC<{ playerId: string; playerName: s
   const seriesLabel = sectionFactor?.name ?? "Total score";
 
   const summary = useMemo(() => {
-    if (graphData.length === 0 || chartData.length === 0) return undefined;
+    if (graphData.length === 0) return undefined;
     const current = graphData[graphData.length - 1].cumulative;
-    const best = chartData.reduce((top, point) => (point.delta > top.delta ? point : top), chartData[0]);
+    const best = graphData.reduce((top, point) => (point.delta > top.delta ? point : top), graphData[0]);
     return { current, best };
-  }, [graphData, chartData]);
+  }, [graphData]);
 
   if (failed) {
     return (
@@ -153,7 +176,7 @@ export const HallOfFameScoreOverTime: React.FC<{ playerId: string; playerName: s
           value={mode}
           onChange={setStoredMode}
         />
-        {stacked && (
+        {stacked && mode === "cumulative" && (
           <PillSelect<StackScale>
             label="Scale"
             options={[
@@ -184,120 +207,124 @@ export const HallOfFameScoreOverTime: React.FC<{ playerId: string; playerName: s
 
       <div className="w-full h-[300px] md:h-[400px]">
         <ResponsiveContainer width="100%" height="100%">
-          {mode === "cumulative" ? (
-            <AreaChart
-              data={series === "total" ? (relative ? shareData : stackedData) : graphData}
-              margin={{ top: 5, right: 8, left: -12, bottom: 0 }}
-            >
-              <CartesianGrid
-                strokeDasharray="1 4"
-                vertical={false}
-                stroke="rgb(var(--color-primary-text))"
-                opacity={0.1}
-              />
-              <XAxis
-                dataKey="time"
-                tickFormatter={formatTick}
-                interval={Math.max(0, Math.floor(chartData.length / 5))}
-                stroke="rgb(var(--color-primary-text))"
-                fontSize={11}
-                tickLine={false}
-                axisLine={false}
-                dy={6}
-                opacity={0.6}
-              />
-              <YAxis
-                type="number"
-                domain={relative ? [0, 100] : ["auto", "auto"]}
-                tickFormatter={
-                  relative ? (value: number) => `${fmtNum(value) ?? ""}%` : (value: number) => fmtNum(value) ?? ""
-                }
-                stroke="rgb(var(--color-primary-text))"
-                fontSize={11}
-                tickLine={false}
-                axisLine={false}
-                opacity={0.6}
-              />
-              <Tooltip
-                content={
-                  series === "total" ? (
-                    <StackedTooltip relative={relative} />
-                  ) : (
-                    <ScoreTooltip mode={mode} seriesLabel={seriesLabel} />
-                  )
-                }
-              />
-              {series === "total" ? (
-                FACTORS.map((factor) => (
-                  <Area
-                    key={factor.key}
-                    type="monotone"
-                    dataKey={factor.key}
-                    stackId="score"
-                    name={factor.name}
-                    fill={factor.color}
-                    fillOpacity={1}
-                    stroke="#ffffff"
-                    strokeWidth={0.5}
-                    animationDuration={400}
-                  />
-                ))
-              ) : (
+          <AreaChart
+            data={visibleData}
+            stackOffset={mode === "delta" ? "sign" : "none"}
+            margin={{ top: 5, right: 8, left: -12, bottom: 0 }}
+          >
+            <CartesianGrid
+              strokeDasharray="1 4"
+              vertical={false}
+              stroke="rgb(var(--color-primary-text))"
+              opacity={0.1}
+            />
+            <XAxis
+              dataKey="time"
+              tickFormatter={formatTick}
+              interval={Math.max(0, Math.floor(visibleData.length / 5))}
+              stroke="rgb(var(--color-primary-text))"
+              fontSize={11}
+              tickLine={false}
+              axisLine={false}
+              dy={6}
+              opacity={0.6}
+            />
+            <YAxis
+              type="number"
+              domain={relative ? [0, 100] : ["auto", "auto"]}
+              tickFormatter={
+                relative ? (value: number) => `${fmtNum(value) ?? ""}%` : (value: number) => fmtNum(value) ?? ""
+              }
+              stroke="rgb(var(--color-primary-text))"
+              fontSize={11}
+              tickLine={false}
+              axisLine={false}
+              opacity={0.6}
+            />
+            <Tooltip
+              content={
+                stacked ? (
+                  <StackedTooltip relative={relative} delta={mode === "delta"} />
+                ) : (
+                  <ScoreTooltip mode={mode} seriesLabel={seriesLabel} />
+                )
+              }
+            />
+            {mode === "delta" && <ReferenceLine y={0} stroke="rgb(var(--color-primary-text))" opacity={0.3} />}
+            {stacked ? (
+              // Rendered in reverse, so the first section lands on top of the
+              // stack. The graph then reads in the order of the legend.
+              [...FACTORS].reverse().map((factor) => (
                 <Area
+                  key={factor.key}
                   type="monotone"
-                  dataKey="cumulative"
-                  fill={sectionFactor?.color}
+                  dataKey={factor.key}
+                  stackId="score"
+                  name={factor.name}
+                  fill={factor.color}
                   fillOpacity={1}
-                  stroke={sectionFactor?.color}
-                  strokeWidth={2}
-                  activeDot={{ r: 5, strokeWidth: 0 }}
+                  stroke="#ffffff"
+                  strokeWidth={0.5}
                   animationDuration={400}
                 />
-              )}
-            </AreaChart>
-          ) : (
-            <BarChart data={deltaData} margin={{ top: 5, right: 8, left: -12, bottom: 0 }}>
-              <CartesianGrid
-                strokeDasharray="1 4"
-                vertical={false}
-                stroke="rgb(var(--color-primary-text))"
-                opacity={0.1}
+              ))
+            ) : (
+              <Area
+                type="monotone"
+                dataKey={mode === "delta" ? "delta" : "cumulative"}
+                fill={sectionFactor?.color}
+                fillOpacity={1}
+                stroke={sectionFactor?.color}
+                strokeWidth={2}
+                activeDot={{ r: 5, strokeWidth: 0 }}
+                animationDuration={400}
               />
-              <XAxis
-                dataKey="time"
-                tickFormatter={formatTick}
-                interval={Math.max(0, Math.floor(chartData.length / 5))}
-                stroke="rgb(var(--color-primary-text))"
-                fontSize={11}
-                tickLine={false}
-                axisLine={false}
-                dy={6}
-                opacity={0.6}
-              />
-              <YAxis
-                type="number"
-                domain={["auto", "auto"]}
-                tickFormatter={(value: number) => fmtNum(value) ?? ""}
-                stroke="rgb(var(--color-primary-text))"
-                fontSize={11}
-                tickLine={false}
-                axisLine={false}
-                opacity={0.6}
-              />
-              <Tooltip
-                cursor={{ fill: "rgb(var(--color-primary-text))", opacity: 0.08 }}
-                content={<ScoreTooltip mode={mode} seriesLabel={seriesLabel} />}
-              />
-              <ReferenceLine y={0} stroke="rgb(var(--color-primary-text))" opacity={0.3} />
-              <Bar dataKey="delta" animationDuration={400}>
-                {deltaData.map((bar) => (
-                  <Cell key={bar.time} fill={bar.delta < 0 ? NEGATIVE_COLOR : "rgb(var(--color-primary-text))"} />
-                ))}
-              </Bar>
-            </BarChart>
-          )}
+            )}
+          </AreaChart>
         </ResponsiveContainer>
       </div>
+
+      {totalPoints > 50 && (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-primary-text whitespace-nowrap">Zoom:</span>
+            <div className="flex gap-1">
+              {ZOOM_PRESETS.map((preset) => (
+                <button
+                  key={preset.value}
+                  onClick={() => {
+                    setZoomLevel(preset.value);
+                    // Reset pan to end when zooming
+                    setPanPosition(100);
+                  }}
+                  className={classNames(
+                    "px-3 py-1 rounded text-sm font-medium transition-colors",
+                    zoomLevel === preset.value
+                      ? "bg-secondary-background text-secondary-text"
+                      : "bg-primary-background text-primary-text border border-primary-text/20 hover:bg-secondary-background/50",
+                  )}
+                >
+                  {preset.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {zoomLevel < 100 && (
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-medium text-primary-text whitespace-nowrap">Pan:</span>
+              <input
+                className="w-full"
+                type="range"
+                min={0}
+                max={100}
+                value={panPosition}
+                onChange={(e) => setPanPosition(Number(e.target.value))}
+              />
+            </div>
+          )}
+        </div>
+      )}
 
       {stacked && (
         <div className="flex flex-wrap gap-x-3 gap-y-1.5">
@@ -321,7 +348,7 @@ export const HallOfFameScoreOverTime: React.FC<{ playerId: string; playerName: s
           </span>
           <span className="bg-secondary-background/50 text-secondary-text/75 px-2 py-1 rounded">
             {mode === "delta"
-              ? `${deltaData.length} periods, gain in each`
+              ? `${graphData.length - 1} periods, gain in each`
               : relative
                 ? `${graphData.length} points, share of the score at each`
                 : `${graphData.length} points, score at each`}
@@ -340,25 +367,34 @@ const StackedTooltip = ({
   active,
   payload,
   relative,
-}: TooltipProps<ValueType, NameType> & { relative: boolean }) => {
+  delta,
+}: TooltipProps<ValueType, NameType> & { relative: boolean; delta: boolean }) => {
   if (!active || !payload || payload.length === 0) return null;
   const data = payload[0].payload as {
     time: number;
+    from?: number;
     total: number;
+    cumulative?: number;
     absolute?: Record<HallOfFameFactorKey, number>;
   } & Record<HallOfFameFactorKey, number>;
 
   return (
     <div className="p-3 bg-primary-background/95 backdrop-blur-sm ring-1 ring-primary-text/20 rounded-lg text-primary-text shadow-lg">
-      <div className="text-xs opacity-60 mb-1">{dateString(data.time)}</div>
-      <div className="font-bold text-lg">{fmtNum(data.total)} pts</div>
+      <div className="text-xs opacity-60 mb-1">
+        {delta && data.from !== undefined ? `${shortDate(data.from)} – ${dateString(data.time)}` : dateString(data.time)}
+      </div>
+      <div className="font-bold text-lg">
+        {delta ? `${fmtNum(data.total, { signedPositive: true })} pts` : `${fmtNum(data.total)} pts`}
+      </div>
       <div className="mt-1 space-y-0.5">
-        {[...FACTORS].reverse().map((factor) => (
+        {FACTORS.map((factor) => (
           <div key={factor.key} className="flex items-center gap-1.5 text-xs">
             <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ backgroundColor: factor.color }} />
             <span className="opacity-75">{factor.name}</span>
             <span className="ml-auto pl-4 font-bold">
-              {relative ? `${fmtNum(data[factor.key], { digits: 1 })}%` : fmtNum(data[factor.key])}
+              {relative
+                ? `${fmtNum(data[factor.key], { digits: 1 })}%`
+                : fmtNum(data[factor.key], delta ? { signedPositive: true } : undefined)}
             </span>
             {relative && data.absolute && (
               <span className="opacity-60 w-10 text-right">{fmtNum(data.absolute[factor.key])}</span>
@@ -366,6 +402,9 @@ const StackedTooltip = ({
           </div>
         ))}
       </div>
+      {delta && data.cumulative !== undefined && (
+        <div className="text-xs opacity-60 mt-1">{fmtNum(data.cumulative)} pts in total after the period</div>
+      )}
     </div>
   );
 };
