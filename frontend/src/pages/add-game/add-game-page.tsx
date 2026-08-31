@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useTennisParams } from "../../hooks/use-tennis-params";
 import { StepSelectPlayers } from "./step-select-players";
-import { StepIndicator } from "./step-indicator";
+import { StepIndicator } from "../../common/step-indicator";
 import { StepNavigator } from "./step-navigator";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { StepSelectWinner } from "./step-select-winner";
@@ -200,7 +200,7 @@ export const AddGamePageV2: React.FC = () => {
     // visible, and only the middle scrolls. top matches the nav's MENU_HEIGHT.
     <div className="fixed inset-x-0 top-16 md:top-12 flex flex-col" style={{ bottom: keyboardInset }}>
       <div className="shrink-0 pt-4">
-        <StepIndicator currentStep={currentStep} />
+        <StepIndicator steps={ADD_GAME_STEPS} currentStep={currentStep} />
       </div>
       {gameSuccessfullyAdded && (
         <div className="flex justify-center">

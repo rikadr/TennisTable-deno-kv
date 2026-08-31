@@ -1,9 +1,13 @@
-import { classNames } from "../../common/class-names";
-import { joinJSX } from "../../common/join-JSX";
-import { ADD_GAME_STEPS } from "./add-game-page";
+import { classNames } from "./class-names";
+import { joinJSX } from "./join-JSX";
 
-export const StepIndicator: React.FC<{ currentStep: number }> = ({ currentStep }) => {
-  const steps: { component: JSX.Element; isCompleted: boolean }[] = ADD_GAME_STEPS.map(({ step, icon }, index) => {
+export type IndicatorStep = { step: number; icon: string };
+
+export const StepIndicator: React.FC<{ steps: readonly IndicatorStep[]; currentStep: number }> = ({
+  steps: stepConfig,
+  currentStep,
+}) => {
+  const steps: { component: JSX.Element; isCompleted: boolean }[] = stepConfig.map(({ step, icon }) => {
     const isActive = currentStep === step;
     const isCompleted = currentStep > step;
 
