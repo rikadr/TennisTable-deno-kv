@@ -42,6 +42,22 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
+    slug: "game-details-tournament-section",
+    title: "Tournaments on the game details page",
+    date: "2026-08-31",
+    tags: ["feature-update"],
+    summary: "The game details page shows the tournaments a game was part of, and the round it was played in.",
+    body: [
+      text(
+        "A tournament game gets a Tournaments section on its details page. A row gives the name of the tournament, and the round or the group of the game. Examples are Group 3, Quarter Finals, Second Chance Round 2 and the Final.",
+      ),
+      text("A click on a row opens the tournament page on the tab that holds the game, and scrolls to the game card."),
+      text(
+        "Two tournaments that run at the same time both count a game between their players. Such a game shows one row for each tournament.",
+      ),
+    ],
+  },
+  {
     slug: "career-score-counts-table-sides",
     title: "The career score counts the table sides",
     date: "2026-08-31",

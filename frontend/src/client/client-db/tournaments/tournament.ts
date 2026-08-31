@@ -37,6 +37,27 @@ export type TournamentGame = {
   section?: TournamentBracketSection;
 };
 
+/**
+ * Where one game sits inside one tournament: the group it was played in, or the bracket section
+ * and the layer of it. The player slots come in the order the bracket or the group holds them, so
+ * a link can point the tournament page at the game's own card.
+ */
+export type TournamentGamePlacement = {
+  tournament: { id: string; name: string };
+  player1: string;
+  player2: string;
+} & (
+  | { where: "group"; groupIndex: number }
+  | {
+      where: "bracket";
+      section: TournamentBracketSection;
+      layerIndex: number;
+      /** Layers in the game's own section. A second chance round is named by how far it is from the end */
+      layerCount: number;
+      doubleElimination: boolean;
+    }
+);
+
 export class Tournament {
   readonly tournamentConfig: TournamentConfig;
   readonly #games: Game[];
@@ -294,6 +315,36 @@ export class Tournament {
     });
 
     return games;
+  }
+
+  /**
+   * Where the game played at this time sits in this tournament. A game is played once, so it holds
+   * at most one place here. Two tournaments that run at the same time can each hold the same game.
+   */
+  findGamePlacement(playedAt: number): TournamentGamePlacement | undefined {
+    const tournament = { id: this.id, name: this.name };
+
+    const groups = this.groupPlay?.groups ?? [];
+    for (let groupIndex = 0; groupIndex < groups.length; groupIndex++) {
+      const game = groups[groupIndex].played.find((g) => g.completedAt === playedAt && g.skipped === undefined);
+      if (game) {
+        return { tournament, player1: game.player1, player2: game.player2, where: "group", groupIndex };
+      }
+    }
+
+    const bracketGame = this.bracket?.findCompletedGame(playedAt);
+    if (bracketGame) {
+      return {
+        tournament,
+        player1: bracketGame.game.player1,
+        player2: bracketGame.game.player2,
+        where: "bracket",
+        section: bracketGame.section,
+        layerIndex: bracketGame.layerIndex,
+        layerCount: bracketGame.layerCount,
+        doubleElimination: this.bracket!.doubleElimination,
+      };
+    }
   }
 
   findAllCompletedGameTimes(): number[] {

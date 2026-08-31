@@ -238,6 +238,37 @@ export class TournamentBracket {
     return candidates.sort((a, b) => (b.game.completedAt ?? 0) - (a.game.completedAt ?? 0))[0];
   }
 
+  /**
+   * Where a game played at this time sits in the bracket. Skipped games are left out: they carry a
+   * completion time of their own, and no game was played over them.
+   */
+  findCompletedGame(
+    completedAt: number,
+  ): { game: TournamentGame; section: TournamentBracketSection; layerIndex: number; layerCount: number } | undefined {
+    const isTheGame = (game: TournamentGame) => game.completedAt === completedAt && game.skipped === undefined;
+
+    for (let layerIndex = 0; layerIndex < this.bracketGames.length; layerIndex++) {
+      const game = this.bracketGames[layerIndex].played.find(isTheGame);
+      if (game) return { game, section: "winners", layerIndex, layerCount: this.bracketGames.length };
+    }
+
+    const losersLayers = this.losersBracketGames ?? [];
+    for (let layerIndex = 0; layerIndex < losersLayers.length; layerIndex++) {
+      const game = losersLayers[layerIndex].played.find(isTheGame);
+      if (game) return { game, section: "losers", layerIndex, layerCount: losersLayers.length };
+    }
+
+    const grandFinalGame = this.grandFinalGames?.played.find(isTheGame);
+    if (grandFinalGame) {
+      return {
+        game: grandFinalGame,
+        section: grandFinalGame.section === "bracketReset" ? "bracketReset" : "grandFinal",
+        layerIndex: 0,
+        layerCount: 1,
+      };
+    }
+  }
+
   /** All completed games across all bracket sections */
   getCompletedGames(): TournamentGame[] {
     const completed: TournamentGame[] = [];
