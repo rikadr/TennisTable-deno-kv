@@ -107,7 +107,12 @@ export const PhotoCapture: React.FC<Props> = ({ playerId, playerName, onUploaded
       <input
         type="file"
         accept="image/*"
-        onChange={(e) => e.target.files && setImgUrl(URL.createObjectURL(e.target.files[0]))}
+        // An empty FileList is truthy, so the file itself is the guard: a
+        // dismissed picker must not reach createObjectURL.
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          file && setImgUrl(URL.createObjectURL(file));
+        }}
       />
       {!hasMediaStream && !imgUrl && (
         <div className="w-full max-w-[512px] aspect-square flex items-center justify-center">

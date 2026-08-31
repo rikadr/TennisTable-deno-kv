@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ConfettiExplosion from "react-confetti-explosion";
 import { queryClient } from "../../common/query-client";
-import { classNames } from "../../common/class-names";
 import { newId } from "../../common/nani-id";
 import { StepIndicator } from "../../common/step-indicator";
+import { StepBackButton, StepFooter, StepForwardButton } from "../../common/step-footer";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { useEventMutation } from "../../hooks/use-event-mutation";
 import { useKeyboardInset } from "../../hooks/use-keyboard-inset";
@@ -36,6 +36,9 @@ export const AddPlayerPage: React.FC = () => {
   const [playerId, setPlayerId] = useState<string>();
   const [colorOptions, setColorOptions] = useState(newColorOptions);
   const [errorMessage, setErrorMessage] = useState<string>();
+  // The refetch of the events, so that the player page has the new player
+  // before it opens. Without it the page shows the id and not the name.
+  const eventsRefresh = useRef<Promise<unknown>>();
 
   const nameValidation = context.eventStore.playersProjector.validatePlayerName(playerName);
   const nameError = nameValidation.valid === false ? nameValidation.message : undefined;
@@ -60,13 +63,19 @@ export const AddPlayerPage: React.FC = () => {
 
     addEventMutation.mutate(event, {
       onSuccess: () => {
-        queryClient.invalidateQueries();
+        eventsRefresh.current = queryClient.invalidateQueries();
         setCurrentStep(3);
       },
       onError(error) {
         setErrorMessage(error.message);
       },
     });
+  }
+
+  async function goToPlayerPage() {
+    // A slow or failed refetch must not hold the user in the flow.
+    await Promise.race([eventsRefresh.current, new Promise((resolve) => setTimeout(resolve, 3_000))]);
+    navigate(`/player/${playerId}`);
   }
 
   const canProceed = currentStep === 1 ? nameIsValid : playerId !== undefined;
@@ -114,8 +123,8 @@ export const AddPlayerPage: React.FC = () => {
           <StepPlayerPhoto
             playerName={playerName}
             playerId={playerId}
-            onUploaded={() => navigate(`/player/${playerId}`)}
-            onSkip={() => navigate(`/player/${playerId}`)}
+            onUploaded={goToPlayerPage}
+            onSkip={goToPlayerPage}
           />
         )}
       </div>
@@ -123,40 +132,32 @@ export const AddPlayerPage: React.FC = () => {
       {/* The name and the color are locked after the player exists, so the
           photo step navigates on its own. */}
       {currentStep < 3 && (
-        <div className="p-6 bg-secondary-background shrink-0">
-          <div className="flex space-x-3">
-            {currentStep === 2 && (
-              <button
-                onClick={() => setCurrentStep(1)}
-                disabled={addEventMutation.isPending}
-                className="text-primary-text flex-1 py-3 px-4 bg-primary-background hover:bg-primary-background/80 rounded-xl font-semibold flex items-center justify-center space-x-2 transition-colors"
-              >
-                <span>← Back</span>
-              </button>
-            )}
-            <button
-              onClick={() => (currentStep === 1 ? setCurrentStep(2) : createPlayer())}
-              disabled={!canProceed || addEventMutation.isPending}
-              className={classNames(
-                "flex-1 py-3 px-4 rounded-xl font-semibold flex items-center justify-center space-x-2 transition-colors ring-1 ring-primary-background",
-                canProceed && !addEventMutation.isPending
-                  ? "bg-tertiary-background text-tertiary-text hover:bg-tertiary-background/75"
-                  : "bg-tertiary-background/50 text-tertiary-text/50 cursor-not-allowed",
-              )}
-            >
-              {currentStep === 1 && <span>Next →</span>}
-              {currentStep === 2 &&
-                (addEventMutation.isPending ? (
-                  <>
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    <span>Creating player...</span>
-                  </>
-                ) : (
-                  <span>✓ Create {playerName}</span>
-                ))}
-            </button>
-          </div>
-        </div>
+        <StepFooter>
+          {currentStep === 2 && (
+            <StepBackButton
+              onClick={() => {
+                setErrorMessage(undefined);
+                setCurrentStep(1);
+              }}
+              disabled={addEventMutation.isPending}
+            />
+          )}
+          <StepForwardButton
+            onClick={() => (currentStep === 1 ? setCurrentStep(2) : createPlayer())}
+            disabled={!canProceed || addEventMutation.isPending}
+          >
+            {currentStep === 1 && <span>Next →</span>}
+            {currentStep === 2 &&
+              (addEventMutation.isPending ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <span>Creating player...</span>
+                </>
+              ) : (
+                <span>✓ Create {playerName}</span>
+              ))}
+          </StepForwardButton>
+        </StepFooter>
       )}
     </div>
   );

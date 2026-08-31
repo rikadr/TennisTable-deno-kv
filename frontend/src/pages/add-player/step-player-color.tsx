@@ -1,5 +1,6 @@
 import { classNames } from "../../common/class-names";
-import { readableTextColor, stringToColor } from "../../common/string-to-color";
+import { fill } from "../../common/player-color-styles";
+import { stringToColor } from "../../common/string-to-color";
 import { PlayerColorPreview } from "./player-color-preview";
 
 export const StepPlayerColor: React.FC<{
@@ -63,7 +64,7 @@ export const StepPlayerColor: React.FC<{
                 // visible on a pale color and on a dark color.
                 isSelected && "ring-4 ring-primary-text ring-offset-2 ring-offset-primary-background",
               )}
-              style={{ background: color, color: readableTextColor(color) }}
+              style={fill(color)}
               onClick={() => selectColor(optionId)}
             >
               {isSelected ? "✓ Selected" : "Select"}
