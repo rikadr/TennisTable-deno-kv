@@ -40,6 +40,7 @@ describe("Marathon Set Achievement", () => {
       type: "marathon-set",
       earnedBy: "alice",
       earnedAt: 100,
+      earnedByGame: "g1",
       data: {
         gameId: "g1",
         opponent: "bob",

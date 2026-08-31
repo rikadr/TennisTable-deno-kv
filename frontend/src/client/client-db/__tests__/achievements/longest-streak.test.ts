@@ -75,6 +75,7 @@ describe("Longest Win Streak / Longest Lose Streak achievements", () => {
       type: "longest-win-streak",
       earnedBy: "alice",
       earnedAt: playedAt(2),
+      earnedByGame: "g2",
       data: { streakLength: 3, startedAt: playedAt(0), previousRecord: undefined },
     });
     expect(tt.achievements.winStreakRecord).toStrictEqual({ length: 3, holder: "alice" });

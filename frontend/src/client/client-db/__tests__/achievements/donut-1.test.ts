@@ -57,6 +57,7 @@ describe("TennisTable", () => {
         type: "donut-1",
         earnedBy: "alice",
         earnedAt: 1003,
+        earnedByGame: "game1",
         data: {
           gameId: "game1",
           opponent: "bob",
@@ -96,6 +97,7 @@ describe("TennisTable", () => {
         type: "donut-1",
         earnedBy: "alice",
         earnedAt: 1003,
+        earnedByGame: "game1",
         data: {
           gameId: "game1",
           opponent: "bob",
@@ -105,6 +107,7 @@ describe("TennisTable", () => {
         type: "donut-1",
         earnedBy: "alice",
         earnedAt: 1003,
+        earnedByGame: "game1",
         data: {
           gameId: "game1",
           opponent: "bob",

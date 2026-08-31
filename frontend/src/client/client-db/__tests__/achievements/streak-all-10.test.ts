@@ -87,6 +87,7 @@ describe("TennisTable", () => {
         type: "streak-all-10",
         earnedBy: "alice",
         earnedAt: 1100, // Time of the 10th game
+        earnedByGame: "game10",
         data: {
           startedAt: 1010, // Time of the 1st game
         },
@@ -131,6 +132,7 @@ describe("TennisTable", () => {
         type: "streak-all-10",
         earnedBy: "alice",
         earnedAt: 1100, // Time of the 10th game (when threshold was crossed)
+        earnedByGame: "game10",
         data: {
           startedAt: 1010, // Time of the 1st game
         },
@@ -229,6 +231,7 @@ describe("TennisTable", () => {
         type: "streak-all-10",
         earnedBy: "alice",
         earnedAt: 1100, // Time of the 10th game (first streak)
+        earnedByGame: "game10",
         data: {
           startedAt: 1010, // Time of the 1st game
         },
@@ -237,6 +240,7 @@ describe("TennisTable", () => {
         type: "streak-all-10",
         earnedBy: "alice",
         earnedAt: 1210, // Time of the 21st game (second streak)
+        earnedByGame: "game21",
         data: {
           startedAt: 1120, // Time of the 12th game (start of second streak)
         },

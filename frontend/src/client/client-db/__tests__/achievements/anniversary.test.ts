@@ -35,6 +35,7 @@ describe("TennisTable", () => {
           type: "anniversary",
           earnedBy: player,
           earnedAt: T0 + ONE_YEAR,
+          earnedByGame: "g1",
           data: { firstGameAt: T0, year: 1 },
         });
       }
@@ -146,13 +147,20 @@ describe("TennisTable", () => {
       ];
 
       expect(anniversariesFor(events, "alice")).toStrictEqual([
-        { type: "anniversary", earnedBy: "alice", earnedAt: T0 + ONE_YEAR, data: { firstGameAt: T0, year: 1 } },
+        {
+          type: "anniversary",
+          earnedBy: "alice",
+          earnedAt: T0 + ONE_YEAR,
+          earnedByGame: "gAliceAnniv",
+          data: { firstGameAt: T0, year: 1 },
+        },
       ]);
       expect(anniversariesFor(events, "bob")).toStrictEqual([
         {
           type: "anniversary",
           earnedBy: "bob",
           earnedAt: bobFirst + ONE_YEAR,
+          earnedByGame: "gBobAnniv",
           data: { firstGameAt: bobFirst, year: 1 },
         },
       ]);

@@ -96,6 +96,7 @@ describe("TennisTable", () => {
         type: "back-after-6-months",
         earnedBy: "alice",
         earnedAt: now, // Time of the return game
+        earnedByGame: "game2",
         data: {
           lastGameAt: sixMonthsPlusOneDayAgo, // Time of the last game before the break
         },
@@ -205,6 +206,7 @@ describe("TennisTable", () => {
         type: "back-after-6-months",
         earnedBy: "alice",
         earnedAt: sevenMonthsAgo, // Time of the first return
+        earnedByGame: "game2",
         data: {
           lastGameAt: fourteenMonthsAgo, // Time of the last game before first break
         },
@@ -213,6 +215,7 @@ describe("TennisTable", () => {
         type: "back-after-6-months",
         earnedBy: "alice",
         earnedAt: now, // Time of the second return
+        earnedByGame: "game3",
         data: {
           lastGameAt: sevenMonthsAgo, // Time of the last game before second break
         },
