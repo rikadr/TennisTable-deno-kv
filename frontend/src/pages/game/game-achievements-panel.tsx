@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { Achievement } from "../../client/client-db/achievements";
 import { useEventDbContext } from "../../wrappers/event-db-context";
-import { achievementDetailsPageLink } from "../achievements/use-achievements-filter";
+import { playerAchievementProgressLink } from "../player/player-achievement-link";
 import { getAchievementLabel } from "../player/player-achievements";
 import { ProfilePicture } from "../player/profile-picture";
 
@@ -10,6 +10,9 @@ import { ProfilePicture } from "../player/profile-picture";
  * it makes it true, so an achievement here can belong to a player who did not
  * play the game, and one whose rule only completes later - a Perfect Day is
  * earned by the last win of the day - is stamped at the game that earned it.
+ *
+ * A row opens the achievements of the player who earned it, on that
+ * achievement's own progress row.
  */
 export const GameAchievements: React.FC<{ achievements: Achievement[] }> = ({ achievements }) => {
   const context = useEventDbContext();
@@ -30,7 +33,7 @@ export const GameAchievements: React.FC<{ achievements: Achievement[] }> = ({ ac
               return (
                 <tr
                   key={`${achievement.type}-${achievement.earnedBy}-${index}`}
-                  onClick={() => navigate(achievementDetailsPageLink(achievement.type))}
+                  onClick={() => navigate(playerAchievementProgressLink(achievement.earnedBy, achievement.type))}
                   className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text cursor-pointer transition-colors text-xs xs:text-sm md:text-base"
                 >
                   <td className="py-1 px-1 xs:px-2 md:px-3 w-[1%]">
