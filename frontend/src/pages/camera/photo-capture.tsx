@@ -1,12 +1,14 @@
-import React, { useEffect, useRef, useState } from "react";
-import Webcam from "react-webcam";
-import Avatar from "react-avatar-edit";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { classNames } from "../../common/class-names";
+import { LoadingButton } from "../../common/loading-button";
 import { useEventDbContext } from "../../wrappers/event-db-context";
-import { upload } from "@imagekit/react";
 import { useImageKitTimestamp } from "../../wrappers/image-kit-context";
 import { useToast } from "../../wrappers/toast-provider";
-import { httpClient } from "../../common/http-client";
+import { CENTERED, clampCrop, Crop, ImageSize, MAX_SCALE, MIN_SCALE, sourceRect } from "./crop-math";
+import { CroppedPhoto } from "./cropped-photo";
+import { DraggablePhoto, PhotoStage } from "./photo-stage";
+import { cropToFile, frameFromVideo, uploadProfilePicture } from "./profile-picture-upload";
+import { useCameraStream } from "./use-camera-stream";
 
 type Props = {
   playerId: string;
@@ -15,210 +17,290 @@ type Props = {
    * the events refetch, so the caller gives the name it knows.
    */
   playerName?: string;
-  /** Called after the photo is uploaded and the image cache is refreshed. */
+  /** Called after the picture is uploaded and the image cache is refreshed. */
   onUploaded: () => void;
 };
 
-/** The crop editor takes its size in px, so it needs the width it has. */
-const MAX_EDITOR_SIZE = 512;
+type Photo = { url: string; size: ImageSize; fromCamera: boolean };
+
+/** The sizes the app shows a profile picture at, to preview the crop. */
+const APP_SIZES = [
+  { size: 28, shape: "circle", label: "Leaderboard" },
+  { size: 44, shape: "circle", label: "Games" },
+  { size: 64, shape: "rounded", label: "Player page" },
+] as const;
+
+const secondaryButton =
+  "flex items-center justify-center gap-1.5 whitespace-nowrap rounded-xl px-3 py-3 font-semibold transition-colors " +
+  "bg-primary-background text-primary-text ring-1 ring-primary-text/30 hover:bg-primary-background/70";
 
 /**
- * Camera capture, crop and upload of a player's profile picture. Used both by
- * the camera page and by the photo step of the new player flow.
+ * Takes the profile picture of a player: the camera or a file of the device,
+ * then a drag and a zoom to select the square, then the upload. The camera
+ * page and the photo step of the new player flow both use it.
  */
 export const PhotoCapture: React.FC<Props> = ({ playerId, playerName, onUploaded }) => {
   const context = useEventDbContext();
   const name = playerName ?? context.playerName(playerId);
-
-  const [imgUrl, setImgUrl] = useState<string>();
-  const [avatarUrl, setAvatarUrl] = useState<string>();
-  const [happy, setHappy] = useState(false);
-  const webCamRef = useRef<Webcam>(null);
-  const [hasMediaStream, setHasMediaStream] = useState(false);
-  const [isUploading, setIsUploading] = useState<boolean>(false);
   const { setTimestamp } = useImageKitTimestamp();
   const { showToast } = useToast();
-  const sizeRef = useRef<HTMLDivElement>(null);
-  const [editorSize, setEditorSize] = useState(MAX_EDITOR_SIZE);
 
-  // The crop editor draws a canvas of a fixed px size, so a phone needs the
-  // width of the column and not the 512 px of a desktop.
-  useEffect(() => {
-    const element = sizeRef.current;
-    if (!element) return;
+  const [photo, setPhoto] = useState<Photo>();
+  const [crop, setCrop] = useState<Crop>(CENTERED);
+  const [stageSize, setStageSize] = useState(320);
+  const [isSaving, setIsSaving] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const objectUrlRef = useRef<string>();
 
-    const measure = () => setEditorSize(Math.min(element.clientWidth || MAX_EDITOR_SIZE, MAX_EDITOR_SIZE));
-    measure();
-    window.addEventListener("resize", measure);
-    return () => window.removeEventListener("resize", measure);
+  const camera = useCameraStream(photo === undefined);
+  const stage = stageSize > 0 ? stageSize : 320;
+
+  const releaseObjectUrl = useCallback(() => {
+    if (objectUrlRef.current) {
+      URL.revokeObjectURL(objectUrlRef.current);
+      objectUrlRef.current = undefined;
+    }
   }, []);
 
-  function captureWebcam() {
-    const img = webCamRef.current?.getScreenshot();
-    img && setImgUrl(img);
+  // A file of the device holds memory until the browser gets it back.
+  useEffect(() => releaseObjectUrl, [releaseObjectUrl]);
+
+  function startOver() {
+    releaseObjectUrl();
+    setPhoto(undefined);
+    setCrop(CENTERED);
   }
 
-  function clear() {
-    setImgUrl(undefined);
-    setAvatarUrl(undefined);
-    setHappy(false);
-  }
-
-  const handleFileUpload = async () => {
-    if (!avatarUrl) {
-      console.error("No base64 image provided");
-      return;
-    }
-
-    setIsUploading(true);
+  function takePhoto() {
+    const video = camera.videoRef.current;
+    if (!video || camera.status !== "live") return;
 
     try {
-      const file = dataURLtoFile(await compressImage(avatarUrl), playerId);
+      const frame = frameFromVideo(video, camera.facing === "user");
+      releaseObjectUrl();
+      setCrop(CENTERED);
+      setPhoto({ url: frame.url, size: frame.size, fromCamera: true });
+    } catch (error) {
+      console.error("Could not take the photo:", error);
+      showToast("error", "Could not take the photo. Try an image from your device.");
+    }
+  }
 
-      const url = new URL(`${process.env.REACT_APP_API_BASE_URL}/image-kit-auth`);
-      const authParams = await httpClient(url, { method: "GET" }).then((response) => response.json());
+  async function selectFile(file: File) {
+    try {
+      const url = URL.createObjectURL(file);
+      const size = await imageSize(url);
+      releaseObjectUrl();
+      objectUrlRef.current = url;
+      setCrop(CENTERED);
+      setPhoto({ url, size, fromCamera: false });
+    } catch (error) {
+      console.error("Could not read the image:", error);
+      showToast("error", "Could not read that image. Select an other file.");
+    }
+  }
 
-      await upload({
-        file,
-        fileName: playerId,
-        token: authParams.token,
-        signature: authParams.signature,
-        expire: authParams.expire,
-        publicKey: process.env.REACT_APP_IMAGE_KIT_PUBLIC_KEY || "",
-        overwriteFile: true,
-        useUniqueFileName: false,
-      });
+  async function savePhoto() {
+    if (!photo) return;
+    setIsSaving(true);
 
-      setIsUploading(false);
+    try {
+      const image = await loadImage(photo.url);
+      const file = await cropToFile(image, sourceRect(photo.size, stage, crop), playerId);
+      await uploadProfilePicture(file, playerId);
       setTimestamp(Date.now());
       onUploaded();
     } catch (error) {
       console.error("Error uploading:", error);
       showToast("error", "Could not upload the photo — check your connection and try again.");
-      setIsUploading(false);
+    } finally {
+      setIsSaving(false);
     }
-  };
-
-  const btnClassNames = "px-4 py-2 bg-green-700 hover:bg-green-900 text-white rounded-lg font-thin";
+  }
 
   return (
-    <div className="flex flex-col gap-4 items-center w-full" ref={sizeRef}>
-      <p>Take a photo with the camera, or select an image from your device:</p>
+    // A width that does not depend on the content keeps the stage the same
+    // size in both steps, so the photo stays where the user framed it.
+    <div className="flex w-full max-w-[420px] flex-col items-center gap-3">
+      <p className="text-center text-sm text-primary-text/70">
+        {photo ? "Drag the photo. Zoom with 2 fingers or the slider." : "The circle is the part people see."}
+      </p>
+
+      <PhotoStage onSize={setStageSize} guide={camera.status === "live" || photo !== undefined}>
+        {photo ? (
+          <DraggablePhoto
+            imageUrl={photo.url}
+            imageSize={photo.size}
+            crop={crop}
+            stage={stage}
+            onCropChange={(update) => setCrop((current) => update(current))}
+          />
+        ) : (
+          <>
+            <video
+              ref={camera.videoRef}
+              playsInline
+              muted
+              autoPlay
+              className={classNames(
+                "h-full w-full object-cover",
+                camera.facing === "user" && "-scale-x-100",
+                camera.status !== "live" && "opacity-0",
+              )}
+            />
+            {camera.status !== "live" && <CameraMessage status={camera.status} />}
+          </>
+        )}
+      </PhotoStage>
+
+      {photo ? (
+        <>
+          <label className="flex w-full max-w-[420px] items-center gap-3 text-sm text-primary-text/70">
+            <span aria-hidden="true">➖</span>
+            <input
+              type="range"
+              aria-label="Zoom"
+              min={MIN_SCALE}
+              max={MAX_SCALE}
+              step={0.01}
+              value={crop.scale}
+              onChange={(event) =>
+                setCrop((current) => clampCrop(photo.size, stage, { ...current, scale: Number(event.target.value) }))
+              }
+              className="h-2 w-full cursor-pointer appearance-none rounded-full bg-secondary-background accent-tertiary-background"
+            />
+            <span aria-hidden="true">➕</span>
+          </label>
+
+          <div className="hidden items-end justify-center gap-4 tall:flex">
+            {APP_SIZES.map((preview) => (
+              <div key={preview.label} className="flex flex-col items-center gap-1">
+                <CroppedPhoto
+                  imageUrl={photo.url}
+                  imageSize={photo.size}
+                  crop={crop}
+                  stage={stage}
+                  size={preview.size}
+                  shape={preview.shape}
+                />
+                <span className="text-[10px] text-primary-text/60">{preview.label}</span>
+              </div>
+            ))}
+          </div>
+        </>
+      ) : null}
+
+      <div className="flex w-full max-w-[420px] items-center gap-3 pt-1">
+        {photo ? (
+          <>
+            <button type="button" className={classNames(secondaryButton, "flex-1")} onClick={startOver}>
+              {photo.fromCamera ? "↺ Again" : "↺ An other"}
+            </button>
+            <LoadingButton
+              loading={isSaving}
+              loadingText="Saving..."
+              onClick={savePhoto}
+              className="flex-1 whitespace-nowrap rounded-xl bg-tertiary-background px-3 py-3 font-semibold text-tertiary-text ring-1 ring-primary-background transition-colors hover:bg-tertiary-background/75"
+            >
+              ✓ Use this photo
+            </LoadingButton>
+          </>
+        ) : (
+          <>
+            <button
+              type="button"
+              className={classNames(secondaryButton, "flex-1")}
+              onClick={() => fileInputRef.current?.click()}
+            >
+              🖼️ From device
+            </button>
+
+            <button
+              type="button"
+              aria-label={`Take the photo of ${name}`}
+              disabled={camera.status !== "live"}
+              onClick={takePhoto}
+              className={classNames(
+                "flex size-16 shrink-0 items-center justify-center rounded-full text-2xl transition-transform",
+                "bg-tertiary-background text-tertiary-text ring-4 ring-primary-background active:scale-95",
+                camera.status !== "live" && "cursor-not-allowed opacity-40",
+              )}
+            >
+              📸
+            </button>
+
+            <div className="flex-1">
+              {camera.status === "live" && camera.canFlip && (
+                <button
+                  type="button"
+                  aria-label="Use the other camera"
+                  className={classNames(secondaryButton, "w-full")}
+                  onClick={camera.flip}
+                >
+                  🔄 Flip
+                </button>
+              )}
+              {(camera.status === "denied" || camera.status === "unavailable") && (
+                <button type="button" className={classNames(secondaryButton, "w-full")} onClick={camera.retry}>
+                  ↺ Retry
+                </button>
+              )}
+            </div>
+          </>
+        )}
+      </div>
+
       <input
+        ref={fileInputRef}
         type="file"
         accept="image/*"
-        // An empty FileList is truthy, so the file itself is the guard: a
-        // dismissed picker must not reach createObjectURL.
-        onChange={(e) => {
-          const file = e.target.files?.[0];
-          file && setImgUrl(URL.createObjectURL(file));
+        className="hidden"
+        onChange={(event) => {
+          const file = event.target.files?.[0];
+          // The same file must fire the change again after a take again.
+          event.target.value = "";
+          file && selectFile(file);
         }}
       />
-      {!hasMediaStream && !imgUrl && (
-        <div className="w-full max-w-[512px] aspect-square flex items-center justify-center">
-          <h2>Waiting for camera ...</h2>
-        </div>
-      )}
-      <Webcam
-        ref={webCamRef}
-        className={classNames("w-full max-w-[512px]", imgUrl && "hidden")}
-        screenshotFormat="image/png"
-        screenshotQuality={100}
-        imageSmoothing
-        mirrored
-        audio={false}
-        videoConstraints={{
-          width: 512,
-          height: 512,
-          facingMode: "user",
-          noiseSuppression: true,
-        }}
-        onUserMedia={() => setHasMediaStream(true)}
-        onUserMediaError={() => setHasMediaStream(false)}
-      />
-      {!imgUrl && (
-        <button className={btnClassNames} onClick={captureWebcam}>
-          Capture
-        </button>
-      )}
-      {imgUrl && !happy && (
-        <Avatar
-          height={editorSize}
-          width={editorSize}
-          src={imgUrl}
-          onClose={clear}
-          onCrop={setAvatarUrl}
-          exportAsSquare
-          exportMimeType="image/jpeg"
-          cropRadius={Math.round(editorSize * 0.39)}
-          minCropRadius={Math.round(editorSize * 0.16)}
-        />
-      )}
-      {imgUrl && !happy && (
-        <button className={btnClassNames} onClick={() => setHappy(true)}>
-          Crop!
-        </button>
-      )}
-      {happy && <img src={avatarUrl} alt="avatar" className="w-96 max-w-full aspect-square" />}
-      {happy && (
-        <button
-          className={classNames(btnClassNames, isUploading && "animate-ping")}
-          onClick={async () => avatarUrl && (await handleFileUpload())}
-        >
-          {name}, you look great 😘 Submit photo!
-        </button>
-      )}
     </div>
   );
 };
 
-const dataURLtoFile = (dataurl: string, filename: string): File => {
-  const arr = dataurl.split(",");
-  const mime = arr[0].match(/:(.*?);/)?.[1] || "image/png";
-  const bstr = atob(arr[1]);
-  let n = bstr.length;
-  const u8arr = new Uint8Array(n);
+const CameraMessage: React.FC<{ status: "starting" | "denied" | "unavailable" }> = ({ status }) => (
+  <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-primary-background px-6 text-center">
+    {status === "starting" ? (
+      <>
+        <div className="size-8 animate-spin rounded-full border-2 border-primary-text border-t-transparent" />
+        <p className="text-primary-text">The camera starts...</p>
+      </>
+    ) : (
+      <>
+        <span className="text-4xl" aria-hidden="true">
+          🚫
+        </span>
+        <p className="font-semibold text-primary-text">
+          {status === "denied" ? "The browser blocks the camera" : "This device gives no camera"}
+        </p>
+        <p className="text-sm text-primary-text/70">
+          {status === "denied"
+            ? "Give the camera a permission in the browser, or use an image from your device."
+            : "Use an image from your device."}
+        </p>
+      </>
+    )}
+  </div>
+);
 
-  while (n--) {
-    u8arr[n] = bstr.charCodeAt(n);
-  }
-
-  return new File([u8arr], filename, { type: mime });
-};
-
-// Compress and resize image
-async function compressImage(base64Str: string, maxWidth = 512, maxHeight = 512, quality = 0.9): Promise<string> {
-  return new Promise((resolve) => {
-    const img = new Image();
-    img.src = base64Str;
-    img.onload = () => {
-      // Set up canvas to draw the image
-      const canvas = document.createElement("canvas");
-      const ctx = canvas.getContext("2d");
-
-      if (!ctx) {
-        console.error("Failed to get canvas context.");
-        return resolve(base64Str); // fallback if context fails
-      }
-
-      // Resize proportionally based on maxWidth and maxHeight
-      let { width, height } = img;
-      if (width > maxWidth || height > maxHeight) {
-        if (width > height) {
-          height = (maxHeight / width) * height;
-          width = maxWidth;
-        } else {
-          width = (maxWidth / height) * width;
-          height = maxHeight;
-        }
-      }
-
-      canvas.width = width;
-      canvas.height = height;
-      ctx.drawImage(img, 0, 0, width, height);
-
-      // Convert canvas back to base64 with compression
-      resolve(canvas.toDataURL("image/jpeg", quality)); // Compress using quality parameter
-    };
+function loadImage(url: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error("The browser could not read the image."));
+    image.src = url;
   });
+}
+
+async function imageSize(url: string): Promise<ImageSize> {
+  const image = await loadImage(url);
+  return { width: image.naturalWidth, height: image.naturalHeight };
 }

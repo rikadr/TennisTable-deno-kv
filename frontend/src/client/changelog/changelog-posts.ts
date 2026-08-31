@@ -42,6 +42,25 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
+    slug: "profile-picture-screen",
+    title: "A new screen for the profile picture",
+    date: "2026-08-31",
+    tags: ["feature-update"],
+    summary:
+      "The camera shows the circle of the picture while you take the photo. You then drag the photo and zoom it, and 3 previews show the result.",
+    body: [
+      text(
+        "The camera shows a circle on the picture. The circle is the part the app shows on a round picture, and the corners are dark. You frame the photo 1 time. Before this change you took the photo first, and you cut it after.",
+      ),
+      text(
+        "After the photo you drag it, and you zoom it with 2 fingers or with the slider. 3 previews show the picture at the size of the leaderboard, of a game and of the player page. 1 button saves it.",
+      ),
+      text(
+        "A button changes between the front camera and the back camera, so you can take the photo of an other player. An image from the device also works. If the browser blocks the camera, the screen says so and gives the way from the device.",
+      ),
+    ],
+  },
+  {
     slug: "new-player-in-3-steps",
     title: "New player in 3 steps",
     date: "2026-08-31",
