@@ -88,9 +88,7 @@ export const AchievementLeagueStats: React.FC<Props> = ({ detailsLink }) => {
               >
                 {context.playerName(row.playerId) ?? row.playerId}
               </Link>
-              <span className="text-sm tabular-nums whitespace-nowrap">
-                {fmtNum(row.types)} types
-              </span>
+              <span className="text-sm tabular-nums whitespace-nowrap">{fmtNum(row.types)} types</span>
               <span className="text-xs opacity-70 tabular-nums whitespace-nowrap">{fmtNum(row.earnings)} earned</span>
             </div>
           ))}

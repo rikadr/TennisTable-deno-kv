@@ -1,4 +1,10 @@
-import { SimulateGameFn, Tournament, TournamentBracketSection, TournamentGame, TournamentGameTarget } from "./tournament";
+import {
+  SimulateGameFn,
+  Tournament,
+  TournamentBracketSection,
+  TournamentGame,
+  TournamentGameTarget,
+} from "./tournament";
 
 type Bracket = Partial<TournamentGame>[][];
 
@@ -157,10 +163,7 @@ export class TournamentBracket {
    * so e.g. a pending winners bracket game surfaces its two players on the losers bracket slot its
    * loser will drop into. Returns undefined while the deciding game is not yet fully determined.
    */
-  getSlotFillCandidates(
-    game: Partial<TournamentGame>,
-    role: "player1" | "player2",
-  ): [string, string] | undefined {
+  getSlotFillCandidates(game: Partial<TournamentGame>, role: "player1" | "player2"): [string, string] | undefined {
     return this.#candidatesFilling(game, role, new Set());
   }
 

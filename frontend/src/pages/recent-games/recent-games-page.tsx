@@ -85,9 +85,7 @@ export const RecentGamesPage: React.FC = () => {
     return { ...game, ...foundGame, pointsDiff: foundGame?.pointsDiff || 0 } as DisplayGame;
   }
 
-  const processedGames = lastGames
-    .map(getGame)
-    .filter((g): g is DisplayGame => !!g);
+  const processedGames = lastGames.map(getGame).filter((g): g is DisplayGame => !!g);
 
   function renderScore(game: DisplayGame) {
     if (!game.score) return <span>-</span>;
@@ -190,9 +188,7 @@ export const RecentGamesPage: React.FC = () => {
                             <span className="font-medium truncate">{context.playerName(game.winner)}</span>
                           </div>
                         </td>
-                        <td className="py-1 px-1 md:px-2 text-center whitespace-nowrap w-[1%]">
-                          {renderScore(game)}
-                        </td>
+                        <td className="py-1 px-1 md:px-2 text-center whitespace-nowrap w-[1%]">{renderScore(game)}</td>
                         <td className="py-1 px-1 xs:px-2 md:px-3 w-[30%] max-w-0">
                           <div className="flex items-center justify-end gap-1 md:gap-2 min-w-0">
                             <span className="font-medium truncate">{context.playerName(game.loser)}</span>
@@ -203,7 +199,9 @@ export const RecentGamesPage: React.FC = () => {
                           {fmtNum(game.pointsDiff, { signedPositive: true })}
                         </td>
                         <td className="py-1 px-1 md:px-2 text-right w-[1%] whitespace-nowrap">
-                          {game.loserPointsDiff !== undefined ? fmtNum(game.loserPointsDiff, { signedPositive: true }) : ""}
+                          {game.loserPointsDiff !== undefined
+                            ? fmtNum(game.loserPointsDiff, { signedPositive: true })
+                            : ""}
                         </td>
                         <td className="py-1 px-1 xs:px-2 md:px-3 text-right whitespace-nowrap w-[1%]">
                           <RelativeTime date={new Date(game.playedAt)} variant="auto" />
@@ -224,9 +222,7 @@ export const RecentGamesPage: React.FC = () => {
                           <span className="font-medium truncate">{context.playerName(game.winner)}</span>
                         </div>
                       </td>
-                      <td className="py-1 px-1 md:px-2 text-center whitespace-nowrap w-[1%]">
-                        {renderScore(game)}
-                      </td>
+                      <td className="py-1 px-1 md:px-2 text-center whitespace-nowrap w-[1%]">{renderScore(game)}</td>
                       <td className="py-1 px-1 xs:px-2 md:px-3 w-[35%] max-w-0">
                         <div className="flex items-center justify-end gap-1 md:gap-2 min-w-0">
                           <span className="font-medium truncate">{context.playerName(game.loser)}</span>

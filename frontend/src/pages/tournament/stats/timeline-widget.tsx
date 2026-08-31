@@ -99,7 +99,7 @@ export const TournamentTimelineWidget: React.FC<{ tournament: Tournament }> = ({
   }
 
   const start = timeline.start;
-  const end = timeline.completed ? timeline.lastGameAt ?? start : now;
+  const end = timeline.completed ? (timeline.lastGameAt ?? start) : now;
   // Days are counted inclusively, so a tournament played out in one afternoon is a single day wide
   const totalDays = dayIndex(end, start) + 1;
 

@@ -57,9 +57,7 @@ const SeasonRow = ({
           <span className="text-xs uppercase opacity-70">Rank</span>
           <span className="font-bold text-base md:text-xl flex items-center">
             {medal && <span className="mr-1 md:mr-2 text-lg md:text-2xl">{medal}</span>} #{stats.rank}
-            <span className="text-xs md:text-sm font-normal text-gray-400">
-              /{stats.totalPlayers}
-            </span>
+            <span className="text-xs md:text-sm font-normal text-gray-400">/{stats.totalPlayers}</span>
           </span>
         </div>
         <div className="flex flex-col items-end">
@@ -99,8 +97,13 @@ export const PlayerSeasonStats: React.FC<PlayerSeasonStatsProps> = ({ playerId }
   const pastSeasons = seasons
     .map((season, index) => ({ season, stats: getPlayerSeasonStats(season), seasonNumber: index + 1 }))
     .filter(
-      (item): item is { season: Season; stats: NonNullable<ReturnType<typeof getPlayerSeasonStats>>; seasonNumber: number } =>
-        item.season !== currentSeason && item.season.end < now && item.stats !== null,
+      (
+        item,
+      ): item is {
+        season: Season;
+        stats: NonNullable<ReturnType<typeof getPlayerSeasonStats>>;
+        seasonNumber: number;
+      } => item.season !== currentSeason && item.season.end < now && item.stats !== null,
     )
     .reverse(); // Most recent first
 
@@ -113,14 +116,14 @@ export const PlayerSeasonStats: React.FC<PlayerSeasonStatsProps> = ({ playerId }
             <div className="flex flex-col gap-2 md:gap-4">
               <Link to={`/season?seasonStart=${currentSeason.start}`} className="block group">
                 <SeasonRow
-                    season={currentSeason}
-                    stats={currentSeasonStats}
-                    isCurrent
-                    seasonName={`Season ${seasons.indexOf(currentSeason) + 1}`}
+                  season={currentSeason}
+                  stats={currentSeasonStats}
+                  isCurrent
+                  seasonName={`Season ${seasons.indexOf(currentSeason) + 1}`}
                 />
               </Link>
               <div className="bg-primary-background rounded-lg -mx-2">
-                 <SeasonPlayerScoreGraph season={currentSeason} playerId={playerId} />
+                <SeasonPlayerScoreGraph season={currentSeason} playerId={playerId} />
               </div>
               <div className="text-right">
                 <Link
@@ -132,7 +135,9 @@ export const PlayerSeasonStats: React.FC<PlayerSeasonStatsProps> = ({ playerId }
               </div>
             </div>
           ) : (
-            <div className="text-center py-4 opacity-70 text-sm md:text-base">Player has not participated in the current season yet.</div>
+            <div className="text-center py-4 opacity-70 text-sm md:text-base">
+              Player has not participated in the current season yet.
+            </div>
           )}
         </ContentCard>
       )}
@@ -151,7 +156,9 @@ export const PlayerSeasonStats: React.FC<PlayerSeasonStatsProps> = ({ playerId }
       )}
 
       {pastSeasons.length === 0 && !currentSeasonStats && (
-        <div className="text-center py-6 md:py-8 text-base md:text-lg opacity-60">No season history found for this player.</div>
+        <div className="text-center py-6 md:py-8 text-base md:text-lg opacity-60">
+          No season history found for this player.
+        </div>
       )}
     </div>
   );

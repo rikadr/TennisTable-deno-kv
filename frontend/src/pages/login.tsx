@@ -53,9 +53,7 @@ export const LoginPage: React.FC = () => {
           />
         </div>
         {(validationError || auth.login.isError) && (
-          <p className="text-red-600 text-sm">
-            {validationError ?? (auth.login.error as Error).message}
-          </p>
+          <p className="text-red-600 text-sm">{validationError ?? (auth.login.error as Error).message}</p>
         )}
         <div className="/* flex flex-col w-full items-center justify-end space-y-3 pt-3 */">
           <button type="submit" className="p-2 w-full bg-blue-300 text-black rounded-md hover:bg-blue-500">

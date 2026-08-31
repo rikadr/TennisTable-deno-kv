@@ -20,7 +20,13 @@ type TournamentFormProps = {
   lockedFields?: { startDate?: boolean; groupPlay?: boolean; doubleElimination?: boolean };
 };
 
-export const TournamentForm = ({ initialData, onSubmit, submitLabel, isPending, lockedFields }: TournamentFormProps) => {
+export const TournamentForm = ({
+  initialData,
+  onSubmit,
+  submitLabel,
+  isPending,
+  lockedFields,
+}: TournamentFormProps) => {
   const [name, setName] = useState(initialData?.name ?? "");
   const [description, setDescription] = useState(initialData?.description ?? "");
   const [startDate, setStartDate] = useState(initialData?.startDate ?? "");
@@ -63,9 +69,7 @@ export const TournamentForm = ({ initialData, onSubmit, submitLabel, isPending, 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       {error && (
-        <div className="bg-red-500/20 text-red-300 border border-red-500/50 rounded-lg px-4 py-2 text-sm">
-          {error}
-        </div>
+        <div className="bg-red-500/20 text-red-300 border border-red-500/50 rounded-lg px-4 py-2 text-sm">{error}</div>
       )}
 
       <div>
@@ -175,15 +179,13 @@ export const TournamentForm = ({ initialData, onSubmit, submitLabel, isPending, 
             className="w-5 h-5 shrink-0 rounded accent-secondary-background"
           />
           <div>
-            <span className="text-xs font-medium text-primary-text/70 uppercase tracking-wide">
-              Double elimination
-            </span>
+            <span className="text-xs font-medium text-primary-text/70 uppercase tracking-wide">Double elimination</span>
             {lockedFields?.doubleElimination && (
               <span className="ml-2 text-xs text-primary-text/50">(locked - tournament has started)</span>
             )}
             <p className="text-xs text-primary-text/60 mt-0.5">
-              Players who lose in the first chance bracket drop into the second chance bracket and can fight their
-              way back. The winner of the second chance bracket plays the first chance champion in the final
+              Players who lose in the first chance bracket drop into the second chance bracket and can fight their way
+              back. The winner of the second chance bracket plays the first chance champion in the final
             </p>
           </div>
         </label>

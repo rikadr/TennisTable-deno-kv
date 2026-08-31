@@ -16,7 +16,12 @@ export const LiveGameCard: React.FC<Props> = ({ liveGameQuery }) => {
   const context = useEventDbContext();
   const state = liveGameQuery.data;
   const isActive = !!state && !!state.player1Id && !!state.player2Id && state.startedAt !== null && !state.finishedAt;
-  const isFinished = !!state && !!state.player1Id && !!state.player2Id && !!state.finishedAt && (Date.now() - state.finishedAt) < ONE_HOUR_MS;
+  const isFinished =
+    !!state &&
+    !!state.player1Id &&
+    !!state.player2Id &&
+    !!state.finishedAt &&
+    Date.now() - state.finishedAt < ONE_HOUR_MS;
 
   if ((!isActive && !isFinished) || !state) return null;
 

@@ -102,10 +102,7 @@ export const PlayerEloGraph: React.FC<{ playerId: string }> = ({ playerId }) => 
   return (
     <>
       <ResponsiveContainer width="100%" height={width > 768 ? 350 : 300}>
-        <LineChart
-          data={visibleGames}
-          margin={{ top: 5, right: 0, left: -12 }}
-        >
+        <LineChart data={visibleGames} margin={{ top: 5, right: 0, left: -12 }}>
           <CartesianGrid strokeDasharray="1 4" vertical={false} stroke="rgb(var(--color-primary-text))" opacity={1} />
           <YAxis
             type="number"
@@ -170,7 +167,7 @@ export const PlayerEloGraph: React.FC<{ playerId: string }> = ({ playerId }) => 
                     "px-3 py-1 rounded text-sm font-medium transition-colors",
                     zoomLevel === preset.value
                       ? "bg-secondary-background text-secondary-text"
-                      : "bg-primary-background text-primary-text border border-primary-text/20 hover:bg-secondary-background/50"
+                      : "bg-primary-background text-primary-text border border-primary-text/20 hover:bg-secondary-background/50",
                   )}
                 >
                   {preset.label}

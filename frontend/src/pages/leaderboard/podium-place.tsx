@@ -58,10 +58,10 @@ export const PodiumPlace: React.FC<Props> = ({ playerSummary, place, size, profi
             {score !== undefined
               ? score.toLocaleString("no-NO", { maximumFractionDigits: 0 })
               : playerSummary
-              ? playerSummary.elo.toLocaleString("no-NO", {
-                  maximumFractionDigits: 0,
-                })
-              : "-"}
+                ? playerSummary.elo.toLocaleString("no-NO", {
+                    maximumFractionDigits: 0,
+                  })
+                : "-"}
           </div>
           <div>
             🏆:💔

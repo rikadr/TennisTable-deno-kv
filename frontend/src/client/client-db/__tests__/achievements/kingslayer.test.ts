@@ -30,9 +30,15 @@ describe("Kingslayer Achievement", () => {
       { time: 5, stream: "e", type: EventTypeEnum.PLAYER_CREATED, data: { name: "E" } },
     ];
     const pairs: [string, string][] = [
-      ["a", "b"], ["a", "c"], ["a", "d"], ["a", "e"],
-      ["b", "c"], ["b", "d"], ["b", "e"],
-      ["c", "d"], ["c", "e"],
+      ["a", "b"],
+      ["a", "c"],
+      ["a", "d"],
+      ["a", "e"],
+      ["b", "c"],
+      ["b", "d"],
+      ["b", "e"],
+      ["c", "d"],
+      ["c", "e"],
       ["d", "e"],
     ];
     let t = 100;
@@ -95,8 +101,11 @@ describe("Kingslayer Achievement", () => {
       { time: 5, stream: "alice", type: EventTypeEnum.PLAYER_CREATED, data: { name: "Alice" } },
     ];
     const pairs: [string, string][] = [
-      ["a", "b"], ["a", "c"], ["a", "d"],
-      ["b", "c"], ["b", "d"],
+      ["a", "b"],
+      ["a", "c"],
+      ["a", "d"],
+      ["b", "c"],
+      ["b", "d"],
       ["c", "d"],
     ];
     let t = 100;

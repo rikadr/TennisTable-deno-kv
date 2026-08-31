@@ -450,8 +450,7 @@ export function gameLevelStats(
     else daysSince.push((game.playedAt - met) / DAY_MS);
 
     const ranked =
-      (standing.played.winner >= gameLimitForRanked ? 1 : 0) +
-      (standing.played.loser >= gameLimitForRanked ? 1 : 0);
+      (standing.played.winner >= gameLimitForRanked ? 1 : 0) + (standing.played.loser >= gameLimitForRanked ? 1 : 0);
     if (ranked === 2) bothRanked++;
     else if (ranked === 1) oneRanked++;
     else neitherRanked++;
@@ -979,7 +978,8 @@ export function tableSideStats(games: Game[]): TableSideStats | undefined {
       unequalSets++;
       unequalPoints += set.gameWinner + set.gameLoser;
       pointsToTheBadSide += gameWinnerOnTheBadSide ? set.gameWinner : set.gameLoser;
-      if ((set.gameWinner > set.gameLoser) === gameWinnerOnTheBadSide) setsToTheBadSide++;
+      const gameWinnerWonTheSet = set.gameWinner > set.gameLoser;
+      if (gameWinnerWonTheSet === gameWinnerOnTheBadSide) setsToTheBadSide++;
     }
 
     if (badSideSets.winner !== badSideSets.loser) {
@@ -1027,11 +1027,7 @@ export type GapDistribution = {
  *  - "losses" takes the loser's view, which is the opposite sign.
  *  - "all" takes both, so the distribution is symmetric about zero.
  */
-export function ratingGapDistribution(
-  games: Game[],
-  players: Player[],
-  view: GapView,
-): GapDistribution | undefined {
+export function ratingGapDistribution(games: Game[], players: Player[], view: GapView): GapDistribution | undefined {
   const gaps: number[] = [];
   forEachGameWithPreGameStanding(games, players, (game, { elo }) => {
     if (view === "all" || view === "wins") gaps.push(elo.loser - elo.winner);

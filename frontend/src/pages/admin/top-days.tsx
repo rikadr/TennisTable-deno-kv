@@ -128,10 +128,7 @@ export const TopGamingDays: React.FC = () => {
   const [metric, setMetric] = useState<Metric>("games");
   const [playerId, setPlayerId] = useState<string>("");
 
-  const players = useMemo(
-    () => [...context.allPlayers].sort((a, b) => a.name.localeCompare(b.name)),
-    [context],
-  );
+  const players = useMemo(() => [...context.allPlayers].sort((a, b) => a.name.localeCompare(b.name)), [context]);
 
   const recentCutoff = useMemo(() => Date.now() - RECENT_WINDOW_MS[period], [period]);
 

@@ -154,94 +154,96 @@ export const TournamentPredictions = ({ tournament }: { tournament: Tournament }
           )}
           {graphData.length > 0 ? (
             <>
-            <div className="flex items-center gap-2 mb-2 justify-end pr-2 md:pr-4">
-              <span className="text-primary-text/70 text-xs md:text-sm">Y-axis: {yMax < 10 ? yMax.toFixed(1) : Math.round(yMax)}%</span>
-              <button
-                onClick={() => setYMax((prev) => Math.min(DEFAULT_Y_MAX, prev / ZOOM_FACTOR))}
-                disabled={yMax >= DEFAULT_Y_MAX}
-                className="px-2 md:px-3 py-1 bg-secondary-background/60 hover:bg-secondary-background/80 disabled:opacity-30 disabled:cursor-not-allowed text-secondary-text font-bold rounded transition-colors text-base md:text-lg leading-none"
+              <div className="flex items-center gap-2 mb-2 justify-end pr-2 md:pr-4">
+                <span className="text-primary-text/70 text-xs md:text-sm">
+                  Y-axis: {yMax < 10 ? yMax.toFixed(1) : Math.round(yMax)}%
+                </span>
+                <button
+                  onClick={() => setYMax((prev) => Math.min(DEFAULT_Y_MAX, prev / ZOOM_FACTOR))}
+                  disabled={yMax >= DEFAULT_Y_MAX}
+                  className="px-2 md:px-3 py-1 bg-secondary-background/60 hover:bg-secondary-background/80 disabled:opacity-30 disabled:cursor-not-allowed text-secondary-text font-bold rounded transition-colors text-base md:text-lg leading-none"
+                >
+                  &minus;
+                </button>
+                <button
+                  onClick={() => setYMax((prev) => Math.max(MIN_Y_MAX, prev * ZOOM_FACTOR))}
+                  disabled={yMax <= MIN_Y_MAX}
+                  className="px-2 md:px-3 py-1 bg-secondary-background/60 hover:bg-secondary-background/80 disabled:opacity-30 disabled:cursor-not-allowed text-secondary-text font-bold rounded transition-colors text-base md:text-lg leading-none"
+                >
+                  +
+                </button>
+                <button
+                  onClick={() => setYMax(DEFAULT_Y_MAX)}
+                  disabled={yMax >= DEFAULT_Y_MAX}
+                  className="px-2 md:px-3 py-1 bg-secondary-background/60 hover:bg-secondary-background/80 disabled:opacity-30 disabled:cursor-not-allowed text-secondary-text rounded transition-colors text-xs md:text-sm leading-none"
+                >
+                  Reset
+                </button>
+              </div>
+              <LineChart
+                className="mt-2"
+                width={Math.min(1000, width - 50)}
+                height={Math.min(500, Math.max(300, height - 200))}
+                data={graphDataToSee}
               >
-                &minus;
-              </button>
-              <button
-                onClick={() => setYMax((prev) => Math.max(MIN_Y_MAX, prev * ZOOM_FACTOR))}
-                disabled={yMax <= MIN_Y_MAX}
-                className="px-2 md:px-3 py-1 bg-secondary-background/60 hover:bg-secondary-background/80 disabled:opacity-30 disabled:cursor-not-allowed text-secondary-text font-bold rounded transition-colors text-base md:text-lg leading-none"
-              >
-                +
-              </button>
-              <button
-                onClick={() => setYMax(DEFAULT_Y_MAX)}
-                disabled={yMax >= DEFAULT_Y_MAX}
-                className="px-2 md:px-3 py-1 bg-secondary-background/60 hover:bg-secondary-background/80 disabled:opacity-30 disabled:cursor-not-allowed text-secondary-text rounded transition-colors text-xs md:text-sm leading-none"
-              >
-                Reset
-              </button>
-            </div>
-            <LineChart
-              className="mt-2"
-              width={Math.min(1000, width - 50)}
-              height={Math.min(500, Math.max(300, height - 200))}
-              data={graphDataToSee}
-            >
-              <CartesianGrid strokeDasharray="1 4" vertical={false} stroke="rgb(var(--color-primary-text))" />
-              <XAxis dataKey="name" stroke="rgb(var(--color-primary-text))" />
-              <YAxis
-                type="number"
-                domain={[0, yMax]}
-                allowDataOverflow={true}
-                tickFormatter={(value) => `${yMax < 10 ? value.toFixed(1) : Math.round(value)}%`}
-                stroke="rgb(var(--color-primary-text))"
-              />
-              <Tooltip
-                formatter={(value) => [`${Number(value).toFixed(1)}%`, "Win Probability"]}
-                wrapperClassName="rounded-lg"
-                animationDuration={0}
-                content={<CustomTooltip />}
-              />
-              {allPlayers.map((playerId) => (
-                <Line
-                  key={playerId + "color"}
-                  type="monotone"
-                  dataKey={playerId}
-                  stroke={stringToColor(playerId)}
-                  dot={false}
-                  animationDuration={150}
-                  strokeWidth={3}
-                />
-              ))}
-              {allPlayers.map((playerId) => (
-                <Line
-                  key={playerId + "main"}
-                  type="monotone"
-                  dataKey={playerId}
-                  stroke={"white"}
-                  dot={false}
-                  animationDuration={150}
-                  strokeWidth={0.5}
-                  opacity={0.5}
-                />
-              ))}
-              <Line
-                key="confidence"
-                type="monotone"
-                dataKey="confidence"
-                stroke="rgb(255, 165, 0)"
-                strokeDasharray="5 5"
-                dot={false}
-                animationDuration={150}
-                strokeWidth={2}
-                opacity={0.7}
-              />
-              {yMax >= 50 && (
-                <ReferenceLine
-                  y={50}
-                  label={{ value: "50%", position: "insideBottom", fill: "rgb(var(--color-primary-text))" }}
+                <CartesianGrid strokeDasharray="1 4" vertical={false} stroke="rgb(var(--color-primary-text))" />
+                <XAxis dataKey="name" stroke="rgb(var(--color-primary-text))" />
+                <YAxis
+                  type="number"
+                  domain={[0, yMax]}
+                  allowDataOverflow={true}
+                  tickFormatter={(value) => `${yMax < 10 ? value.toFixed(1) : Math.round(value)}%`}
                   stroke="rgb(var(--color-primary-text))"
-                  strokeDasharray="3 3"
                 />
-              )}
-            </LineChart>
+                <Tooltip
+                  formatter={(value) => [`${Number(value).toFixed(1)}%`, "Win Probability"]}
+                  wrapperClassName="rounded-lg"
+                  animationDuration={0}
+                  content={<CustomTooltip />}
+                />
+                {allPlayers.map((playerId) => (
+                  <Line
+                    key={playerId + "color"}
+                    type="monotone"
+                    dataKey={playerId}
+                    stroke={stringToColor(playerId)}
+                    dot={false}
+                    animationDuration={150}
+                    strokeWidth={3}
+                  />
+                ))}
+                {allPlayers.map((playerId) => (
+                  <Line
+                    key={playerId + "main"}
+                    type="monotone"
+                    dataKey={playerId}
+                    stroke={"white"}
+                    dot={false}
+                    animationDuration={150}
+                    strokeWidth={0.5}
+                    opacity={0.5}
+                  />
+                ))}
+                <Line
+                  key="confidence"
+                  type="monotone"
+                  dataKey="confidence"
+                  stroke="rgb(255, 165, 0)"
+                  strokeDasharray="5 5"
+                  dot={false}
+                  animationDuration={150}
+                  strokeWidth={2}
+                  opacity={0.7}
+                />
+                {yMax >= 50 && (
+                  <ReferenceLine
+                    y={50}
+                    label={{ value: "50%", position: "insideBottom", fill: "rgb(var(--color-primary-text))" }}
+                    stroke="rgb(var(--color-primary-text))"
+                    strokeDasharray="3 3"
+                  />
+                )}
+              </LineChart>
             </>
           ) : (
             <div className="w-full h-[428px] rounded-lg bg-gray-300/50 flex items-center justify-center text-primary-text">
@@ -285,12 +287,14 @@ const LatestPredictionTable = ({
   return (
     <section className="w-full max-w-[1050px] mt-4 bg-primary-background rounded-lg p-2 md:p-4">
       <h3 className="text-primary-text font-semibold mb-2 text-sm md:text-base">
-        Latest Prediction ({new Date(latest.time).toLocaleDateString("no-NO", {
+        Latest Prediction (
+        {new Date(latest.time).toLocaleDateString("no-NO", {
           month: "short",
           day: "numeric",
           hour: "2-digit",
           minute: "2-digit",
-        })})
+        })}
+        )
       </h3>
       <div className="overflow-x-auto">
         <table className="w-full min-w-0 text-primary-text">
@@ -312,13 +316,15 @@ const LatestPredictionTable = ({
                     <div className="shrink-0">
                       <ProfilePicture playerId={entry.playerId} size={20} border={2} />
                     </div>
-                    <span className="truncate max-w-[100px] md:max-w-none text-primary-text">
-                      {entry.name}
-                    </span>
+                    <span className="truncate max-w-[100px] md:max-w-none text-primary-text">{entry.name}</span>
                   </div>
                 </td>
-                <td className="py-1 px-1 md:px-2 text-right font-mono text-xs md:text-sm text-primary-text/70">{entry.wins.toLocaleString()}</td>
-                <td className="py-1 px-1 md:px-2 text-right font-mono text-xs md:text-sm">{entry.winPct.toFixed(1)}%</td>
+                <td className="py-1 px-1 md:px-2 text-right font-mono text-xs md:text-sm text-primary-text/70">
+                  {entry.wins.toLocaleString()}
+                </td>
+                <td className="py-1 px-1 md:px-2 text-right font-mono text-xs md:text-sm">
+                  {entry.winPct.toFixed(1)}%
+                </td>
                 <td className="py-1 px-1 md:px-2">
                   <div className="w-full bg-secondary-background/30 rounded-full h-2 md:h-3">
                     <div

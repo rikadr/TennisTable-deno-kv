@@ -98,8 +98,8 @@ export const PlayerPage: React.FC = () => {
                 </Link>
               )}
               <div className="text-base space-y-1">
-                {isActive && (
-                  summary.isRanked ? (
+                {isActive &&
+                  (summary.isRanked ? (
                     <div>
                       🏆 Overall Rank {fmtNum(summary.rank)} of {fmtNum(leaderboard.rankedPlayers.length)}
                     </div>
@@ -113,8 +113,7 @@ export const PlayerPage: React.FC = () => {
                         required games played.
                       </p>
                     </div>
-                  )
-                )}
+                  ))}
                 {playerSeasonRank && (
                   <div className="text-secondary-text">
                     🍁 Season Rank {fmtNum(playerSeasonRank)} of {fmtNum(currentSeasonLeaderboard!.length)}
@@ -238,9 +237,7 @@ export const PlayerPage: React.FC = () => {
                 <div className="bg-primary-background rounded-lg p-4">
                   <p className="text-sm  mb-1">Win Rate</p>
 
-                  <p className="text-2xl font-bold">
-                    {fmtNum(100 * (summary.wins / (summary.wins + summary.loss)))}%
-                  </p>
+                  <p className="text-2xl font-bold">{fmtNum(100 * (summary.wins / (summary.wins + summary.loss)))}%</p>
                 </div>
                 <div className="bg-primary-background rounded-lg p-4">
                   <p className="text-sm  mb-1">Win / Loss Ratio</p>
@@ -393,4 +390,3 @@ export const PlayerPage: React.FC = () => {
     </div>
   );
 };
-

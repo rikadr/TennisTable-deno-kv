@@ -470,7 +470,10 @@ export const TrackGamePage: React.FC = () => {
                   {context.playerName(player1)}
                 </h3>
                 <div className="flex flex-col items-center justify-center gap-1.5 tall:gap-2">
-                  <div className="text-5xl tall:text-6xl font-bold text-center" style={textOn(player1Color, panel1Tint)}>
+                  <div
+                    className="text-5xl tall:text-6xl font-bold text-center"
+                    style={textOn(player1Color, panel1Tint)}
+                  >
                     {currentSetScore.player1}
                   </div>
                   <div className="flex flex-col gap-1.5 tall:gap-2 w-full items-center">
@@ -505,7 +508,10 @@ export const TrackGamePage: React.FC = () => {
                   {context.playerName(player2)}
                 </h3>
                 <div className="flex flex-col items-center justify-center gap-1.5 tall:gap-2">
-                  <div className="text-5xl tall:text-6xl font-bold text-center" style={textOn(player2Color, panel2Tint)}>
+                  <div
+                    className="text-5xl tall:text-6xl font-bold text-center"
+                    style={textOn(player2Color, panel2Tint)}
+                  >
                     {currentSetScore.player2}
                   </div>
                   <div className="flex flex-col gap-1.5 tall:gap-2 w-full items-center">
@@ -603,7 +609,10 @@ export const TrackGamePage: React.FC = () => {
                     context.playerName(player2),
                   );
                   return (
-                    <div key={index} className="flex items-center justify-between px-3 py-2 bg-gray-50 rounded-lg text-sm">
+                    <div
+                      key={index}
+                      className="flex items-center justify-between px-3 py-2 bg-gray-50 rounded-lg text-sm"
+                    >
                       <div className="flex flex-col">
                         <span className="font-semibold text-gray-700">Set {index + 1}</span>
                         {sideLabel && <span className="text-xs text-gray-400">😵 {sideLabel}</span>}
@@ -726,7 +735,10 @@ export const TrackGamePage: React.FC = () => {
                       context.playerName(player2),
                     );
                     return (
-                      <div key={index} className="flex items-center justify-between px-3 py-2 bg-gray-50 rounded-lg text-sm">
+                      <div
+                        key={index}
+                        className="flex items-center justify-between px-3 py-2 bg-gray-50 rounded-lg text-sm"
+                      >
                         <div className="flex flex-col">
                           <span className="font-semibold text-gray-700">Set {index + 1}</span>
                           {sideLabel && <span className="text-xs text-gray-400">😵 {sideLabel}</span>}

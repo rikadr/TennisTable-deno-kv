@@ -81,7 +81,9 @@ export const RecentLeaderBoardChanges: React.FC<Props> = ({ view }) => {
                 // Let's mimic that if feasible, but "leaderboard.length" changes.
                 const effectivePrev = lastLeaderboard.length + 1;
                 changesMap.get(p.playerId)!.netChange = effectivePrev - currentRank;
-                changesMap.get(p.playerId)!.allChanges.push({ change: effectivePrev - currentRank, time: game.playedAt });
+                changesMap
+                  .get(p.playerId)!
+                  .allChanges.push({ change: effectivePrev - currentRank, time: game.playedAt });
               }
             }
 

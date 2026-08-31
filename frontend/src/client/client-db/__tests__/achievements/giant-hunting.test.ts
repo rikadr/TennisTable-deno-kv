@@ -35,15 +35,23 @@ describe("Giant Hunting Achievement", () => {
       createPlayer("e", 5),
     ];
     const pairs: [string, string][] = [
-      ["a", "b"], ["a", "c"], ["a", "d"], ["a", "e"],
-      ["b", "c"], ["b", "d"], ["b", "e"],
-      ["c", "d"], ["c", "e"],
+      ["a", "b"],
+      ["a", "c"],
+      ["a", "d"],
+      ["a", "e"],
+      ["b", "c"],
+      ["b", "d"],
+      ["b", "e"],
+      ["c", "d"],
+      ["c", "e"],
       ["d", "e"],
     ];
     let minute = 0;
     for (let round = 0; round < 2; round++) {
       for (const [winner, loser] of pairs) {
-        events.push(gameAt(`rr-${round}-${winner}-${loser}`, new Date(2024, 0, 10, 9, minute++).getTime(), winner, loser));
+        events.push(
+          gameAt(`rr-${round}-${winner}-${loser}`, new Date(2024, 0, 10, 9, minute++).getTime(), winner, loser),
+        );
       }
     }
     return events;
@@ -187,14 +195,19 @@ describe("Giant Hunting Achievement", () => {
       createPlayer("d", 4),
     ];
     const pairs: [string, string][] = [
-      ["a", "b"], ["a", "c"], ["a", "d"],
-      ["b", "c"], ["b", "d"],
+      ["a", "b"],
+      ["a", "c"],
+      ["a", "d"],
+      ["b", "c"],
+      ["b", "d"],
       ["c", "d"],
     ];
     let minute = 0;
     for (let round = 0; round < 2; round++) {
       for (const [winner, loser] of pairs) {
-        events.push(gameAt(`rr-${round}-${winner}-${loser}`, new Date(2024, 0, 10, 9, minute++).getTime(), winner, loser));
+        events.push(
+          gameAt(`rr-${round}-${winner}-${loser}`, new Date(2024, 0, 10, 9, minute++).getTime(), winner, loser),
+        );
       }
     }
     events.push(gameAt("h1", new Date(2024, 0, 15, 10).getTime(), "d", "a"));

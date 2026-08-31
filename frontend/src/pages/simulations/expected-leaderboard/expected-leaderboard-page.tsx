@@ -156,7 +156,10 @@ export const SimulatedLeaderboard: React.FC = () => {
         from today shows the effect of the schedule.
       </p>
 
-      <div ref={containerRef} className="grid grid-cols-[1fr_44px_1fr] xs:grid-cols-[1fr_90px_1fr] md:grid-cols-[1fr_150px_1fr]">
+      <div
+        ref={containerRef}
+        className="grid grid-cols-[1fr_44px_1fr] xs:grid-cols-[1fr_90px_1fr] md:grid-cols-[1fr_150px_1fr]"
+      >
         {/* Current leaderboard */}
         <div>
           <h2 className="text-sm md:text-lg font-bold text-primary-text mb-2 md:mb-3 text-center">Today</h2>

@@ -45,23 +45,31 @@ export const SeasonFAQ: React.FC = () => {
 
         <div className="space-y-2">
           <div className="flex items-center gap-2 md:gap-4 p-2 md:p-3 rounded-lg bg-primary-background text-primary-text border border-secondary-text/20">
-            <div className="flex-shrink-0 w-5 h-5 md:w-6 md:h-6 rounded-full bg-secondary-background flex items-center justify-center text-xs font-bold text-secondary-text">1</div>
+            <div className="flex-shrink-0 w-5 h-5 md:w-6 md:h-6 rounded-full bg-secondary-background flex items-center justify-center text-xs font-bold text-secondary-text">
+              1
+            </div>
             <div className="text-xs md:text-sm">
-              <span className="font-bold text-primary-text">Avg. Performance:</span> Higher average score per opponent ranks higher.
+              <span className="font-bold text-primary-text">Avg. Performance:</span> Higher average score per opponent
+              ranks higher.
             </div>
           </div>
 
           <div className="flex items-center gap-2 md:gap-4 p-2 md:p-3 rounded-lg bg-primary-background text-primary-text border border-secondary-text/20">
-            <div className="flex-shrink-0 w-5 h-5 md:w-6 md:h-6 rounded-full bg-secondary-background flex items-center justify-center text-xs font-bold text-secondary-text">2</div>
+            <div className="flex-shrink-0 w-5 h-5 md:w-6 md:h-6 rounded-full bg-secondary-background flex items-center justify-center text-xs font-bold text-secondary-text">
+              2
+            </div>
             <div className="text-xs md:text-sm">
               <span className="font-bold text-primary-text">Activity:</span> More total games played ranks higher.
             </div>
           </div>
 
           <div className="flex items-center gap-2 md:gap-4 p-2 md:p-3 rounded-lg bg-primary-background text-primary-text border border-secondary-text/20">
-            <div className="flex-shrink-0 w-5 h-5 md:w-6 md:h-6 rounded-full bg-secondary-background flex items-center justify-center text-xs font-bold text-secondary-text">3</div>
+            <div className="flex-shrink-0 w-5 h-5 md:w-6 md:h-6 rounded-full bg-secondary-background flex items-center justify-center text-xs font-bold text-secondary-text">
+              3
+            </div>
             <div className="text-xs md:text-sm">
-              <span className="font-bold text-primary-text">First game played:</span> Earliest first game of the season ranks higher.
+              <span className="font-bold text-primary-text">First game played:</span> Earliest first game of the season
+              ranks higher.
             </div>
           </div>
         </div>
@@ -73,8 +81,8 @@ export const SeasonFAQ: React.FC = () => {
         <div className="border-l-4 border-secondary-text pl-3 md:pl-4 py-1">
           <h4 className="font-bold text-sm md:text-lg mb-1">Does losing a game lower my score?</h4>
           <p className="opacity-90 text-xs md:text-sm">
-            No! Since only your best performance against an opponent counts, a bad game will simply be ignored.
-            There is no penalty for playing more games.
+            No! Since only your best performance against an opponent counts, a bad game will simply be ignored. There is
+            no penalty for playing more games.
           </p>
         </div>
 
@@ -101,8 +109,8 @@ export const SeasonFAQ: React.FC = () => {
         <div className="border-l-4 border-secondary-text pl-3 md:pl-4 py-1">
           <h4 className="font-bold text-sm md:text-lg mb-1">Why doesn't my score go up after a win?</h4>
           <p className="opacity-90 text-xs md:text-sm">
-            If you've already played this opponent and had a better (or equal) performance in a previous game,
-            your score for that matchup won't increase. You need to beat your previous best record against them!
+            If you've already played this opponent and had a better (or equal) performance in a previous game, your
+            score for that matchup won't increase. You need to beat your previous best record against them!
           </p>
         </div>
 

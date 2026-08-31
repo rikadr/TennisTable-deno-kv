@@ -99,8 +99,7 @@ function solve(direction: Direction, x0: number, y0: number, speed: number, dist
   const reboundVelocityY = -RALLY.restitution * (velocityY + RALLY.gravity * bounceTime);
   const targetX = farBatX(direction);
   const returnTime = (targetX - bounceX) / velocityX;
-  const targetY =
-    CONTACT_Y + reboundVelocityY * returnTime + 0.5 * RALLY.gravity * returnTime * returnTime;
+  const targetY = CONTACT_Y + reboundVelocityY * returnTime + 0.5 * RALLY.gravity * returnTime * returnTime;
 
   return {
     direction,
@@ -205,8 +204,7 @@ export function positionAt(stroke: Stroke, time: number, out: Point): Point {
   } else {
     const afterBounce = time - stroke.bounceTime;
     out.x = stroke.bounceX + stroke.velocityX * afterBounce;
-    out.y =
-      CONTACT_Y + stroke.reboundVelocityY * afterBounce + 0.5 * RALLY.gravity * afterBounce * afterBounce;
+    out.y = CONTACT_Y + stroke.reboundVelocityY * afterBounce + 0.5 * RALLY.gravity * afterBounce * afterBounce;
   }
   return out;
 }

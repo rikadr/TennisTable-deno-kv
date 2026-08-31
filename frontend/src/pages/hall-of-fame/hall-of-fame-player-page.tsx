@@ -39,7 +39,15 @@ function renderDetails(breakdown: HallOfFameScoreBreakdown, key: FactorKey): Rea
           {seasonTiers.map((tier) => {
             const count = seasonCounts.get(tier.pts) || 0;
             return (
-              <span key={tier.label} className={classNames("px-2 py-0.5 rounded text-xs inline-flex items-center gap-1.5", count === 0 ? "bg-secondary-background/50 text-secondary-text/75" : "bg-secondary-background text-secondary-text")}>
+              <span
+                key={tier.label}
+                className={classNames(
+                  "px-2 py-0.5 rounded text-xs inline-flex items-center gap-1.5",
+                  count === 0
+                    ? "bg-secondary-background/50 text-secondary-text/75"
+                    : "bg-secondary-background text-secondary-text",
+                )}
+              >
                 {tier.label}: {tier.pts} pts
                 {count > 0 && (
                   <span className="bg-tertiary-background text-tertiary-text h-5 min-w-5 px-1 rounded-full inline-flex items-center justify-center text-xs font-bold">
@@ -102,7 +110,15 @@ function renderDetails(breakdown: HallOfFameScoreBreakdown, key: FactorKey): Rea
           {tournamentTiers.map((tier) => {
             const count = tournamentCounts.get(tier.pts) || 0;
             return (
-              <span key={tier.label} className={classNames("px-2 py-0.5 rounded text-xs inline-flex items-center gap-1.5", count === 0 ? "bg-secondary-background/50 text-secondary-text/75" : "bg-secondary-background text-secondary-text")}>
+              <span
+                key={tier.label}
+                className={classNames(
+                  "px-2 py-0.5 rounded text-xs inline-flex items-center gap-1.5",
+                  count === 0
+                    ? "bg-secondary-background/50 text-secondary-text/75"
+                    : "bg-secondary-background text-secondary-text",
+                )}
+              >
                 {tier.label}: {tier.pts} pts
                 {count > 0 && (
                   <span className="bg-tertiary-background text-tertiary-text h-5 min-w-5 px-1 rounded-full inline-flex items-center justify-center text-xs font-bold">
@@ -266,9 +282,7 @@ export const HallOfFamePlayerPage: React.FC = () => {
     );
   }
 
-  const sectionStats = viewMode === "compared"
-    ? context.hallOfFame.getSectionStats(playerId)
-    : undefined;
+  const sectionStats = viewMode === "compared" ? context.hallOfFame.getSectionStats(playerId) : undefined;
   const totalRank = viewMode === "compared" ? context.hallOfFame.getTotalRank(playerId) : 0;
   const playerCount = viewMode === "compared" ? context.hallOfFame.getRankedPlayerCount() : 0;
 
@@ -322,7 +336,9 @@ export const HallOfFamePlayerPage: React.FC = () => {
             <h2 className="text-xl text-primary-text font-semibold">Hall of Fame Score Breakdown</h2>
             <span className="text-primary-text font-bold text-2xl">
               {viewMode === "compared" && totalRank > 0 && (
-                <span className="text-primary-text/70 mr-1.5 text-lg font-medium">#{totalRank} of {playerCount} ·</span>
+                <span className="text-primary-text/70 mr-1.5 text-lg font-medium">
+                  #{totalRank} of {playerCount} ·
+                </span>
               )}
               {fmtNum(entry.score.total)} pts
             </span>
@@ -336,13 +352,11 @@ export const HallOfFamePlayerPage: React.FC = () => {
             aria-label="Score view mode"
             className="flex flex-wrap gap-1 bg-secondary-background rounded-full p-1 mb-4"
           >
-            {(
-              [
-                { value: "total" as const, label: "Section of total" },
-                { value: "compared" as const, label: "Compared to all" },
-                { value: "overTime" as const, label: "Score over time" },
-              ]
-            ).map((option) => {
+            {[
+              { value: "total" as const, label: "Section of total" },
+              { value: "compared" as const, label: "Compared to all" },
+              { value: "overTime" as const, label: "Score over time" },
+            ].map((option) => {
               const isActiveOption = viewMode === option.value;
               return (
                 <button
@@ -379,53 +393,55 @@ export const HallOfFamePlayerPage: React.FC = () => {
           {viewMode === "overTime" ? (
             <HallOfFameScoreOverTime playerId={entry.playerId} playerName={entry.playerName} />
           ) : (
-          <div className="space-y-6">
-            {segments.map((segment) => (
-              <div key={segment.key} className="ring-1 ring-secondary-background rounded-xl p-3">
-                <div className="flex justify-between items-center mb-1">
-                  <span className="text-primary-text text-sm">
-                    {segment.emoji} {segment.name}
-                  </span>
-                  <span className="text-primary-text font-medium text-sm">
-                    {viewMode === "compared" && segment.rank > 0 && (
-                      <span className="text-primary-text/70 mr-1.5">#{segment.rank} of {playerCount} ·</span>
-                    )}
-                    {fmtNum(segment.value)} pts
-                    {viewMode === "compared" && (
-                      <span className="text-primary-text/70 ml-1.5">/ {fmtNum(segment.max)}</span>
-                    )}
-                  </span>
+            <div className="space-y-6">
+              {segments.map((segment) => (
+                <div key={segment.key} className="ring-1 ring-secondary-background rounded-xl p-3">
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-primary-text text-sm">
+                      {segment.emoji} {segment.name}
+                    </span>
+                    <span className="text-primary-text font-medium text-sm">
+                      {viewMode === "compared" && segment.rank > 0 && (
+                        <span className="text-primary-text/70 mr-1.5">
+                          #{segment.rank} of {playerCount} ·
+                        </span>
+                      )}
+                      {fmtNum(segment.value)} pts
+                      {viewMode === "compared" && (
+                        <span className="text-primary-text/70 ml-1.5">/ {fmtNum(segment.max)}</span>
+                      )}
+                    </span>
+                  </div>
+                  <div className="w-full bg-secondary-background rounded-full h-6 overflow-hidden">
+                    <div
+                      className="bg-tertiary-background h-6 rounded-full transition-all shadow-md"
+                      style={{
+                        marginLeft: `${segment.startPct}%`,
+                        width: `${segment.widthPct}%`,
+                      }}
+                    />
+                  </div>
+                  <div className="mt-2">{renderDetails(entry.score, segment.key)}</div>
                 </div>
-                <div className="w-full bg-secondary-background rounded-full h-6 overflow-hidden">
-                  <div
-                    className="bg-tertiary-background h-6 rounded-full transition-all shadow-md"
-                    style={{
-                      marginLeft: `${segment.startPct}%`,
-                      width: `${segment.widthPct}%`,
-                    }}
-                  />
-                </div>
-                <div className="mt-2">
-                  {renderDetails(entry.score, segment.key)}
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
           )}
 
           {/* Total */}
           {viewMode !== "overTime" && (
-          <div className="mt-6 pt-4 border-t border-secondary-background flex justify-between items-center">
-            <span className="text-primary-text font-bold text-sm uppercase tracking-wide">
-              Final Hall of Fame Score
-            </span>
-            <span className="text-primary-text font-bold text-2xl">
-              {viewMode === "compared" && totalRank > 0 && (
-                <span className="text-primary-text/70 mr-1.5 text-lg font-medium">#{totalRank} of {playerCount} ·</span>
-              )}
-              {fmtNum(entry.score.total)} pts
-            </span>
-          </div>
+            <div className="mt-6 pt-4 border-t border-secondary-background flex justify-between items-center">
+              <span className="text-primary-text font-bold text-sm uppercase tracking-wide">
+                Final Hall of Fame Score
+              </span>
+              <span className="text-primary-text font-bold text-2xl">
+                {viewMode === "compared" && totalRank > 0 && (
+                  <span className="text-primary-text/70 mr-1.5 text-lg font-medium">
+                    #{totalRank} of {playerCount} ·
+                  </span>
+                )}
+                {fmtNum(entry.score.total)} pts
+              </span>
+            </div>
           )}
         </div>
       </div>

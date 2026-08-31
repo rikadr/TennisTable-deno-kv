@@ -55,80 +55,72 @@ export const ProgressList: React.FC<ProgressListProps> = ({ selectedType }) => {
             </p>
           </div>
 
-            {playersProgress.map(({ player, isRetired, current, target, percent, earned }, index) => {
-              const hasEarned = earned > 0;
+          {playersProgress.map(({ player, isRetired, current, target, percent, earned }, index) => {
+            const hasEarned = earned > 0;
 
-              return (
-                 <div
-                  key={player.id}
-                  className={classNames(
-                    "rounded-lg overflow-hidden border border-primary-text/30 relative",
-                    hasEarned
-                      ? "bg-gradient-to-b from-green-400 via-green-500 to-green-600"
-                      : "bg-background-secondary",
-                  )}
-                >
-                  {/* Progress Background. The bar itself is always
+            return (
+              <div
+                key={player.id}
+                className={classNames(
+                  "rounded-lg overflow-hidden border border-primary-text/30 relative",
+                  hasEarned ? "bg-gradient-to-b from-green-400 via-green-500 to-green-600" : "bg-background-secondary",
+                )}
+              >
+                {/* Progress Background. The bar itself is always
                       blue; the green earned-row background shows
                       through behind it so an earned-but-progressing
                       achievement reads as "blue bar over green bg". */}
-                  {(target > 1 || current > 0) && (
-                    <div className="absolute inset-0 pointer-events-none">
-                      <div
-                        className="h-full transition-all duration-300 bg-gradient-to-b from-blue-400 via-blue-500 to-blue-600"
-                        style={{ width: `${percent}%` }}
-                      />
-                    </div>
-                  )}
+                {(target > 1 || current > 0) && (
+                  <div className="absolute inset-0 pointer-events-none">
+                    <div
+                      className="h-full transition-all duration-300 bg-gradient-to-b from-blue-400 via-blue-500 to-blue-600"
+                      style={{ width: `${percent}%` }}
+                    />
+                  </div>
+                )}
 
-                  <div className="relative px-4 py-2 flex items-center gap-4">
-                    <div className="text-xl font-bold w-8 text-right opacity-50">
-                      #{index + 1}
-                    </div>
+                <div className="relative px-4 py-2 flex items-center gap-4">
+                  <div className="text-xl font-bold w-8 text-right opacity-50">#{index + 1}</div>
 
-                    <Link to={playerAchievementProgressLink(player.id, selectedType)} className="shrink-0">
-                      <ProfilePicture playerId={player.id} size={45} border={3} />
-                    </Link>
+                  <Link to={playerAchievementProgressLink(player.id, selectedType)} className="shrink-0">
+                    <ProfilePicture playerId={player.id} size={45} border={3} />
+                  </Link>
 
-                    <div className="flex-1">
-                      <div className="flex justify-between items-center mb-1">
-                        <div className="flex items-center gap-2">
-                          <Link
-                            to={playerAchievementProgressLink(player.id, selectedType)}
-                            className="font-semibold hover:underline"
-                          >
-                            {player.name}
-                          </Link>
-                          {isRetired && (
-                            <span className="bg-secondary-background text-secondary-text text-xs px-2 py-0.5 rounded-full font-normal shrink-0 ring-1 ring-primary-text/20">
-                              Retired
-                            </span>
-                          )}
-                        </div>
-                        <span className="text-sm font-mono">
-                           {isTimePeriod
-                            ? `${formatTimePeriod(current)} / ${formatTimePeriod(target)}`
-                            : `${fmtNum(current)} ${target > 1 ? `/ ${fmtNum(target)}` : ""}`}
-                        </span>
+                  <div className="flex-1">
+                    <div className="flex justify-between items-center mb-1">
+                      <div className="flex items-center gap-2">
+                        <Link
+                          to={playerAchievementProgressLink(player.id, selectedType)}
+                          className="font-semibold hover:underline"
+                        >
+                          {player.name}
+                        </Link>
+                        {isRetired && (
+                          <span className="bg-secondary-background text-secondary-text text-xs px-2 py-0.5 rounded-full font-normal shrink-0 ring-1 ring-primary-text/20">
+                            Retired
+                          </span>
+                        )}
                       </div>
-
-                      {/* Special handling for 'earned' counters if no target */}
-                      {target <= 1 && (
-                        <div className="text-xs opacity-70">
-                          Earned {current} time{current !== 1 ? "s" : ""}
-                        </div>
-                      )}
+                      <span className="text-sm font-mono">
+                        {isTimePeriod
+                          ? `${formatTimePeriod(current)} / ${formatTimePeriod(target)}`
+                          : `${fmtNum(current)} ${target > 1 ? `/ ${fmtNum(target)}` : ""}`}
+                      </span>
                     </div>
 
-                    {target > 1 && (
-                      <div className="text-lg font-bold w-16 text-right">
-                        {percent}%
+                    {/* Special handling for 'earned' counters if no target */}
+                    {target <= 1 && (
+                      <div className="text-xs opacity-70">
+                        Earned {current} time{current !== 1 ? "s" : ""}
                       </div>
                     )}
                   </div>
+
+                  {target > 1 && <div className="text-lg font-bold w-16 text-right">{percent}%</div>}
                 </div>
-              );
-            })}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>

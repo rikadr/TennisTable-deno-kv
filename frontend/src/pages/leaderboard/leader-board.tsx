@@ -66,7 +66,7 @@ export const LeaderBoard: React.FC = () => {
   const liveGameQuery = useLiveGameQuery({ refetchIntervalMs: LIVE_GAME_CARD_POLL_MS });
   const leaderboard = context.leaderboard.getLeaderboard();
   const [viewString, setViewString] = useLocalStorage("leaderboard_view", "overall");
-  
+
   // Validate and cast view
   const view: LeaderboardView = viewString === "season" ? "season" : "overall";
   const setView = (v: LeaderboardView) => setViewString(v);
@@ -98,15 +98,18 @@ export const LeaderBoard: React.FC = () => {
     .sort((a, b) => a.name.localeCompare(b.name));
 
   // Get top 3 based on current view
-  const nr1 = view === "season" && seasonLeaderboard[0]
-    ? context.leaderboard.getPlayerSummary(seasonLeaderboard[0].playerId)
-    : leaderboard.rankedPlayers[0];
-  const nr2 = view === "season" && seasonLeaderboard[1]
-    ? context.leaderboard.getPlayerSummary(seasonLeaderboard[1].playerId)
-    : leaderboard.rankedPlayers[1];
-  const nr3 = view === "season" && seasonLeaderboard[2]
-    ? context.leaderboard.getPlayerSummary(seasonLeaderboard[2].playerId)
-    : leaderboard.rankedPlayers[2];
+  const nr1 =
+    view === "season" && seasonLeaderboard[0]
+      ? context.leaderboard.getPlayerSummary(seasonLeaderboard[0].playerId)
+      : leaderboard.rankedPlayers[0];
+  const nr2 =
+    view === "season" && seasonLeaderboard[1]
+      ? context.leaderboard.getPlayerSummary(seasonLeaderboard[1].playerId)
+      : leaderboard.rankedPlayers[1];
+  const nr3 =
+    view === "season" && seasonLeaderboard[2]
+      ? context.leaderboard.getPlayerSummary(seasonLeaderboard[2].playerId)
+      : leaderboard.rankedPlayers[2];
 
   const nr1Score = view === "season" && seasonLeaderboard[0] ? seasonLeaderboard[0].seasonScore : undefined;
   const nr2Score = view === "season" && seasonLeaderboard[1] ? seasonLeaderboard[1].seasonScore : undefined;
@@ -135,11 +138,7 @@ export const LeaderBoard: React.FC = () => {
           <h1 className="text-2xl text-center text-primary-text my-2">
             {view === "season" ? "Season Leaderboard" : "Overall Leaderboard"}
           </h1>
-          <LeaderboardToggle
-            className="md:hidden border-b border-primary-text/20 mb-2"
-            view={view}
-            setView={setView}
-          />
+          <LeaderboardToggle className="md:hidden border-b border-primary-text/20 mb-2" view={view} setView={setView} />
           {view === "season" && isOffSeason ? (
             <>
               <div className="w-full p-4 rounded-lg bg-secondary-background text-secondary-text text-center space-y-1">
@@ -186,11 +185,7 @@ export const LeaderBoard: React.FC = () => {
                   playerSummary={nr1}
                   profilePicture
                   score={nr1Score}
-                  to={
-                    view === "season" && currentSeason
-                      ? `/player/${nr1.id}?tab=season`
-                      : undefined
-                  }
+                  to={view === "season" && currentSeason ? `/player/${nr1.id}?tab=season` : undefined}
                 />
               )}
               {nr2 && (
@@ -200,11 +195,7 @@ export const LeaderBoard: React.FC = () => {
                   playerSummary={nr2}
                   profilePicture
                   score={nr2Score}
-                  to={
-                    view === "season" && currentSeason
-                      ? `/player/${nr2.id}?tab=season`
-                      : undefined
-                  }
+                  to={view === "season" && currentSeason ? `/player/${nr2.id}?tab=season` : undefined}
                 />
               )}
               {nr3 && (
@@ -214,11 +205,7 @@ export const LeaderBoard: React.FC = () => {
                   playerSummary={nr3}
                   profilePicture
                   score={nr3Score}
-                  to={
-                    view === "season" && currentSeason
-                      ? `/player/${nr3.id}?tab=season`
-                      : undefined
-                  }
+                  to={view === "season" && currentSeason ? `/player/${nr3.id}?tab=season` : undefined}
                 />
               )}
             </>
@@ -232,11 +219,7 @@ export const LeaderBoard: React.FC = () => {
 
       <div className="bg-primary-background rounded-lg w-full max-w-md md:w-[450px]">
         {/* Toggle (Desktop) */}
-        <LeaderboardToggle
-          className="hidden md:flex border-b border-primary-text/20"
-          view={view}
-          setView={setView}
-        />
+        <LeaderboardToggle className="hidden md:flex border-b border-primary-text/20" view={view} setView={setView} />
 
         {view === "overall" ? (
           <>
@@ -354,7 +337,9 @@ export const LeaderBoard: React.FC = () => {
                       <th className="py-1 px-1 xs:px-2 text-left font-light">#</th>
                       <th className="py-1 px-1 xs:px-2 text-left font-normal">Player</th>
                       <th className="py-1 px-1 xs:px-2 text-right font-light">Score</th>
-                      <th className="py-1 px-1 xs:px-2 text-right font-light text-xs xs:text-sm md:text-base">Interval</th>
+                      <th className="py-1 px-1 xs:px-2 text-right font-light text-xs xs:text-sm md:text-base">
+                        Interval
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-primary-text/50">
@@ -373,7 +358,9 @@ export const LeaderBoard: React.FC = () => {
                             <span className="font-normal truncate">{context.playerName(player.playerId)}</span>
                           </div>
                         </td>
-                        <td className="py-1 px-1 xs:px-2 text-right w-[1%] whitespace-nowrap">{fmtNum(player.seasonScore)}</td>
+                        <td className="py-1 px-1 xs:px-2 text-right w-[1%] whitespace-nowrap">
+                          {fmtNum(player.seasonScore)}
+                        </td>
                         <td className="py-1 px-1 xs:px-2 text-right w-[1%] whitespace-nowrap text-xs xs:text-sm md:text-base">
                           {list[index - 1] ? fmtNum(player.seasonScore - list[index - 1].seasonScore) : "-"}
                         </td>

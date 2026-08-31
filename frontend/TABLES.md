@@ -80,7 +80,7 @@ be `shrink-0` so they never squish.
 Right-aligned flexible cells: keep the same structure and use
 `justify-end` on the flex container, or `text-right` on the truncating div.
 
-**Tail-visible truncation** — for sequence columns where the *latest* entry
+**Tail-visible truncation** — for sequence columns where the _latest_ entry
 must always stay readable (e.g. a chronological list of rank changes
 "+4, +5, −1, …"), truncate from the start instead: ellipsis on the left, end
 of the content visible.
@@ -103,10 +103,10 @@ and **`md` = 768px**. Do not gate table sizing on `lg` (1024px) — the largest
 style must arrive already at `md`, and the middle step at `xs`. Sizes change in
 moderate steps; never jump e.g. 10px → 18px between adjacent breakpoints.
 
-| Context | Row text | Secondary text (times, meta) |
-|---|---|---|
-| Card tables (leaderboard column, ~450px max) | `text-sm xs:text-lg md:text-xl` | `text-xs xs:text-sm md:text-base` |
-| Full-page tables | `text-xs xs:text-sm md:text-base` | one step below row text |
+| Context                                      | Row text                          | Secondary text (times, meta)      |
+| -------------------------------------------- | --------------------------------- | --------------------------------- |
+| Card tables (leaderboard column, ~450px max) | `text-sm xs:text-lg md:text-xl`   | `text-xs xs:text-sm md:text-base` |
+| Full-page tables                             | `text-xs xs:text-sm md:text-base` | one step below row text           |
 
 - Floor: nothing below 12px (`text-xs`); primary row text not below 14px
   (`text-sm`) in card tables.
@@ -124,8 +124,8 @@ moderate steps; never jump e.g. 10px → 18px between adjacent breakpoints.
   explicitly on each `th` — browsers default `th` to bold.
 - Alignment matches the column: `text-left` over left-aligned cells,
   `text-right` over right-aligned.
-- Headers are cells too: a column is as wide as its widest cell *including the
-  header*. A header must never inflate a hug column. Two ways to comply:
+- Headers are cells too: a column is as wide as its widest cell _including the
+  header_. A header must never inflate a hug column. Two ways to comply:
   - **Short label**: "Pts", not "Winner's points". The time column header is
     empty (`<th …></th>`).
   - One constant label at all widths — do **not** swap in a longer label on
@@ -139,16 +139,20 @@ moderate steps; never jump e.g. 10px → 18px between adjacent breakpoints.
     labels can't collide:
 
     ```jsx
-    {/* overflows leftward (right edge stays aligned with the column) */}
+    {
+      /* overflows leftward (right edge stays aligned with the column) */
+    }
     <th className="py-1 px-1 font-normal w-[1%]">
       <div className="w-0 ml-auto whitespace-nowrap" dir="rtl">
         <bdi dir="ltr">Place</bdi>
       </div>
-    </th>
-    {/* overflows rightward (into an empty header, e.g. the detail column) */}
+    </th>;
+    {
+      /* overflows rightward (into an empty header, e.g. the detail column) */
+    }
     <th className="py-1 px-1 font-normal w-[1%]">
       <div className="w-0 whitespace-nowrap">Changes</div>
-    </th>
+    </th>;
     ```
 
 ## 5. Relative times
@@ -223,7 +227,7 @@ Measuring beats eyeballing — screenshots can crop at the viewport edge and fak
 an overflow. From the console:
 
 ```js
-const t = document.querySelector('table');
-t.getBoundingClientRect().width === t.parentElement.getBoundingClientRect().width
-document.documentElement.scrollWidth > window.innerWidth // must be false
+const t = document.querySelector("table");
+t.getBoundingClientRect().width === t.parentElement.getBoundingClientRect().width;
+document.documentElement.scrollWidth > window.innerWidth; // must be false
 ```

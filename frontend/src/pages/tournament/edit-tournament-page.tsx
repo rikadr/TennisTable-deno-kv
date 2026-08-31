@@ -3,12 +3,13 @@ import { session } from "../../services/auth";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { useEventMutation } from "../../hooks/use-event-mutation";
 import { queryClient } from "../../common/query-client";
+import { EventTypeEnum, TournamentDeleted, TournamentUpdated } from "../../client/client-db/event-store/event-types";
 import {
-  EventTypeEnum,
-  TournamentDeleted,
-  TournamentUpdated,
-} from "../../client/client-db/event-store/event-types";
-import { TournamentForm, TournamentFormData, datetimeLocalToTimestamp, timestampToDatetimeLocal } from "./tournament-form";
+  TournamentForm,
+  TournamentFormData,
+  datetimeLocalToTimestamp,
+  timestampToDatetimeLocal,
+} from "./tournament-form";
 import { useTennisParams } from "../../hooks/use-tennis-params";
 
 export const EditTournamentPage: React.FC = () => {
@@ -51,7 +52,8 @@ export const EditTournamentPage: React.FC = () => {
 
     const updateData: TournamentUpdated["data"] = {};
     if (data.name !== tournament.name) updateData.name = data.name;
-    if ((data.description || undefined) !== tournament.description) updateData.description = data.description || undefined;
+    if ((data.description || undefined) !== tournament.description)
+      updateData.description = data.description || undefined;
     if (!hasStarted) {
       const newStartDate = datetimeLocalToTimestamp(data.startDate);
       if (newStartDate !== tournament.startDate) updateData.startDate = newStartDate;
@@ -117,10 +119,7 @@ export const EditTournamentPage: React.FC = () => {
     <div className="max-w-lg mx-4 md:mx-10 space-y-4 text-primary-text">
       <div className="flex items-center justify-between gap-4">
         <h1>Edit tournament</h1>
-        <Link
-          to={`/tournament?tournament=${tournament.id}`}
-          className="text-sm text-primary-text/70 hover:underline"
-        >
+        <Link to={`/tournament?tournament=${tournament.id}`} className="text-sm text-primary-text/70 hover:underline">
           &larr; Back
         </Link>
       </div>

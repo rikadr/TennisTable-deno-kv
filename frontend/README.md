@@ -23,23 +23,23 @@ or point `REACT_APP_API_BASE_URL` at a deployed backend.
 
 ### Environment variables
 
-| Variable | Purpose |
-| --- | --- |
-| `REACT_APP_API_BASE_URL` | Backend base URL (local dev: `http://localhost:8000`) |
-| `REACT_APP_CLIENT` | Client/tenant config: `local`, `optio`, `skimore`, `asplanviak`, `deepinsight`, or unset for the guest client |
-| `REACT_APP_ENV` | `local` enables local-only admin controls |
-| `REACT_APP_IMAGE_KIT_PUBLIC_KEY` | ImageKit public key for profile picture uploads |
+| Variable                         | Purpose                                                                                                       |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `REACT_APP_API_BASE_URL`         | Backend base URL (local dev: `http://localhost:8000`)                                                         |
+| `REACT_APP_CLIENT`               | Client/tenant config: `local`, `optio`, `skimore`, `asplanviak`, `deepinsight`, or unset for the guest client |
+| `REACT_APP_ENV`                  | `local` enables local-only admin controls                                                                     |
+| `REACT_APP_IMAGE_KIT_PUBLIC_KEY` | ImageKit public key for profile picture uploads                                                               |
 
 ## Scripts
 
-| Script | What it does |
-| --- | --- |
-| `npm start` | Dev server |
-| `npm run build` | Production build |
-| `npm test` | Run the Jest suite once |
-| `npm run test:watch` | Jest in watch mode |
+| Script                  | What it does              |
+| ----------------------- | ------------------------- |
+| `npm start`             | Dev server                |
+| `npm run build`         | Production build          |
+| `npm test`              | Run the Jest suite once   |
+| `npm run test:watch`    | Jest in watch mode        |
 | `npm run test:coverage` | Jest with coverage report |
-| `npm run lint` | ESLint over `src/` |
+| `npm run lint`          | ESLint over `src/`        |
 
 ## Project layout
 

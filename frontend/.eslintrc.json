@@ -1,10 +1,7 @@
 {
-    "extends": [
-        "react-app",
-        "react-app/jest"
-    ],
-    "rules": {
-        "no-loop-func": "error"
-    },
-    "ignorePatterns": ["src/client/client-db/web-worker/custom.d.ts"]
+  "extends": ["react-app", "react-app/jest"],
+  "rules": {
+    "no-loop-func": "error"
+  },
+  "ignorePatterns": ["src/client/client-db/web-worker/custom.d.ts"]
 }

@@ -183,12 +183,7 @@ function derivePerPointWinChance(input: LiveWinPredictionInput): Fraction {
 
   // Live sets → per-point% (set% → game% → per-point%).
   if (liveSetsP1 + liveSetsP2 > 0) {
-    const setLevel = Predictions.getWinFractionWithConfidence(
-      liveSetsP1,
-      liveSetsP2,
-      setToGame,
-      SET_CONFIDENCE_CONFIG,
-    );
+    const setLevel = Predictions.getWinFractionWithConfidence(liveSetsP1, liveSetsP2, setToGame, SET_CONFIDENCE_CONFIG);
     estimators.push({ fraction: gameChanceToPerPoint(setLevel.fraction), confidence: setLevel.confidence });
   }
 

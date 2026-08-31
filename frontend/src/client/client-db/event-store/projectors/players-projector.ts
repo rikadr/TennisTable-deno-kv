@@ -121,7 +121,7 @@ export class PlyersProjector {
     if (
       players.some(
         (player) =>
-          player.id !== ignorePlayerId &&player.name.trim().toLocaleLowerCase() === name.trim().toLocaleLowerCase() ,
+          player.id !== ignorePlayerId && player.name.trim().toLocaleLowerCase() === name.trim().toLocaleLowerCase(),
       )
     ) {
       return { valid: false, message: "Player name already exists" };

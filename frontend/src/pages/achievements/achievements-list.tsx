@@ -57,17 +57,13 @@ export const AchievementsList: React.FC<AchievementsListProps> = ({ achievements
                 </div>
 
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1">
-                  <div
-                    className="rounded-full w-fit flex items-center bg-primary-background/50 ring-1 ring-primary-text/10"
-                  >
+                  <div className="rounded-full w-fit flex items-center bg-primary-background/50 ring-1 ring-primary-text/10">
                     <Link
                       to={`/player/${achievement.earnedBy}?tab=achievements`}
                       className="flex gap-2 items-center pr-3 p-0.5 "
                     >
                       <ProfilePicture playerId={achievement.earnedBy} size={18} border={1} />
-                      <span className="text-xs font-medium">
-                        {context.playerName(achievement.earnedBy)}
-                      </span>
+                      <span className="text-xs font-medium">{context.playerName(achievement.earnedBy)}</span>
                     </Link>
                   </div>
 

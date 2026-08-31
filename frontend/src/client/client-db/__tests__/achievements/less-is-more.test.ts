@@ -11,7 +11,12 @@ describe("Less Is More Achievement", () => {
     // Alice wins 2-1 with: 11-9, 5-11, 11-9 → Alice 27, Bob 29
     const events: EventType[] = [
       ...baseEvents,
-      { type: EventTypeEnum.GAME_CREATED, stream: "g1", time: 100, data: { winner: "alice", loser: "bob", playedAt: 100 } },
+      {
+        type: EventTypeEnum.GAME_CREATED,
+        stream: "g1",
+        time: 100,
+        data: { winner: "alice", loser: "bob", playedAt: 100 },
+      },
       {
         type: EventTypeEnum.GAME_SCORE,
         stream: "g1",
@@ -47,7 +52,12 @@ describe("Less Is More Achievement", () => {
     // Standard 2-0 win: 11-9, 11-9 → Alice 22, Bob 18
     const events: EventType[] = [
       ...baseEvents,
-      { type: EventTypeEnum.GAME_CREATED, stream: "g1", time: 100, data: { winner: "alice", loser: "bob", playedAt: 100 } },
+      {
+        type: EventTypeEnum.GAME_CREATED,
+        stream: "g1",
+        time: 100,
+        data: { winner: "alice", loser: "bob", playedAt: 100 },
+      },
       {
         type: EventTypeEnum.GAME_SCORE,
         stream: "g1",
@@ -72,7 +82,12 @@ describe("Less Is More Achievement", () => {
   it("can be earned multiple times across multiple games", () => {
     const events: EventType[] = [
       ...baseEvents,
-      { type: EventTypeEnum.GAME_CREATED, stream: "g1", time: 100, data: { winner: "alice", loser: "bob", playedAt: 100 } },
+      {
+        type: EventTypeEnum.GAME_CREATED,
+        stream: "g1",
+        time: 100,
+        data: { winner: "alice", loser: "bob", playedAt: 100 },
+      },
       {
         type: EventTypeEnum.GAME_SCORE,
         stream: "g1",
@@ -86,7 +101,12 @@ describe("Less Is More Achievement", () => {
           ],
         },
       },
-      { type: EventTypeEnum.GAME_CREATED, stream: "g2", time: 200, data: { winner: "alice", loser: "bob", playedAt: 200 } },
+      {
+        type: EventTypeEnum.GAME_CREATED,
+        stream: "g2",
+        time: 200,
+        data: { winner: "alice", loser: "bob", playedAt: 200 },
+      },
       {
         type: EventTypeEnum.GAME_SCORE,
         stream: "g2",

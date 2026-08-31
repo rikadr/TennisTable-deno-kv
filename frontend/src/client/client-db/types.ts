@@ -25,4 +25,3 @@ export type PlayerComparison = {
   allPlayers: string[];
   graphData: Record<string, number>[];
 };
-

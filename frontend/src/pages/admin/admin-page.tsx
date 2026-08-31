@@ -383,7 +383,9 @@ export const AdminPage: React.FC = () => {
                         </button>
                       </div>
                     </td>
-                    <td className="border border-gray-300 px-1 md:px-4 py-0.5 md:py-1 text-center">{fmtNum(totalGames - (startIndex + index))}</td>
+                    <td className="border border-gray-300 px-1 md:px-4 py-0.5 md:py-1 text-center">
+                      {fmtNum(totalGames - (startIndex + index))}
+                    </td>
                   </tr>
                 ))}
               </tbody>

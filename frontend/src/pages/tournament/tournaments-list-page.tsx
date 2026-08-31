@@ -65,9 +65,7 @@ export const TournamentsListPage: React.FC = () => {
             )}
           </div>
         ))}
-        {sortedTournaments.length === 0 && (
-          <p>No tournaments has been played yet</p>
-        )}
+        {sortedTournaments.length === 0 && <p>No tournaments has been played yet</p>}
       </div>
     </div>
   );

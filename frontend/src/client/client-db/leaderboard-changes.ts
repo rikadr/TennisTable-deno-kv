@@ -15,8 +15,7 @@ export class LeaderboardChanges {
     allChanges: { change: number; time: number }[];
   }[] {
     const twoDaysAgo = Date.now() - 1000 * 60 * 60 * 24 * 2;
-    const isActive = (playerId: string) =>
-      this.parent.eventStore.playersProjector.getPlayer(playerId)?.active === true;
+    const isActive = (playerId: string) => this.parent.eventStore.playersProjector.getPlayer(playerId)?.active === true;
 
     const scoreMaps: { time: number; map: Map<string, PlayerWithElo> }[] = [];
     let lastGamesMap: { time: number; map: Map<string, PlayerWithElo> } = { time: 0, map: new Map() };

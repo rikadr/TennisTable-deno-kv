@@ -400,7 +400,9 @@ export const PlayerDiversityChart: React.FC = () => {
 
       {recentNewPairs.length > 0 && (
         <div className="mt-8">
-          <h3 className="text-lg font-semibold text-center mb-4">{RECENT_NEW_PAIRS_COUNT} Most Recent New Player Pairs</h3>
+          <h3 className="text-lg font-semibold text-center mb-4">
+            {RECENT_NEW_PAIRS_COUNT} Most Recent New Player Pairs
+          </h3>
           <table className="w-full text-xs md:text-sm border-collapse">
             <thead>
               <tr className="bg-secondary-background text-secondary-text">

@@ -4,78 +4,78 @@
 
 @layer base {
   :root {
-    --color-primary-text: 255,255,255;
-    --color-primary-background: 30,41,59;
-    --color-secondary-text: 255,255,255;
-    --color-secondary-background: 107,114,128;
-    --color-tertiary-text: 0,0,0;
-    --color-tertiary-background: 255,255,255;
+    --color-primary-text: 255, 255, 255;
+    --color-primary-background: 30, 41, 59;
+    --color-secondary-text: 255, 255, 255;
+    --color-secondary-background: 107, 114, 128;
+    --color-tertiary-text: 0, 0, 0;
+    --color-tertiary-background: 255, 255, 255;
   }
 }
 
 .theme-easter {
-  --color-primary-text: 255,225,0;
-  --color-primary-background: 99,103,79;
-  --color-secondary-text: 99,103,79;
-  --color-secondary-background: 255,225,0;
-  --color-tertiary-text: 255,255,255;
-  --color-tertiary-background: 238,154,75;
+  --color-primary-text: 255, 225, 0;
+  --color-primary-background: 99, 103, 79;
+  --color-secondary-text: 99, 103, 79;
+  --color-secondary-background: 255, 225, 0;
+  --color-tertiary-text: 255, 255, 255;
+  --color-tertiary-background: 238, 154, 75;
   --background-image-url: url("img//easter/easter_theme.png");
 }
 
 .theme-halloween {
-  --color-primary-text: 255,255,255;
-  --color-primary-background: 27,14,1;
-  --color-secondary-text: 0,0,0;
-  --color-secondary-background: 217,119,6;
-  --color-tertiary-text: 0,0,0;
-  --color-tertiary-background: 243,255,7;
+  --color-primary-text: 255, 255, 255;
+  --color-primary-background: 27, 14, 1;
+  --color-secondary-text: 0, 0, 0;
+  --color-secondary-background: 217, 119, 6;
+  --color-tertiary-text: 0, 0, 0;
+  --color-tertiary-background: 243, 255, 7;
 }
 
 .theme-stealth {
-  --color-primary-text: 128,128,128;
-  --color-primary-background: 0,0,0;
-  --color-secondary-text: 115,115,115;
-  --color-secondary-background: 23,23,23;
-  --color-tertiary-text: 102,102,102;
-  --color-tertiary-background: 38,38,38;
+  --color-primary-text: 128, 128, 128;
+  --color-primary-background: 0, 0, 0;
+  --color-secondary-text: 115, 115, 115;
+  --color-secondary-background: 23, 23, 23;
+  --color-tertiary-text: 102, 102, 102;
+  --color-tertiary-background: 38, 38, 38;
   --background-image-url: none;
 }
 
 .theme-skimore {
-  --color-primary-text: 31,42,68;
-  --color-primary-background: 183,220,225;
-  --color-secondary-text: 255,255,255;
-  --color-secondary-background: 31,42,68;
-  --color-tertiary-text: 255,255,255;
-  --color-tertiary-background: 106,191,75;
+  --color-primary-text: 31, 42, 68;
+  --color-primary-background: 183, 220, 225;
+  --color-secondary-text: 255, 255, 255;
+  --color-secondary-background: 31, 42, 68;
+  --color-tertiary-text: 255, 255, 255;
+  --color-tertiary-background: 106, 191, 75;
 }
 
 .theme-asplanviak {
-  --color-primary-text: 38,59,52;
-  --color-primary-background: 247,248,242;
-  --color-secondary-text: 38,59,52;
-  --color-secondary-background: 191,218,154;
-  --color-tertiary-text: 38,59,52;
-  --color-tertiary-background: 238,200,118;
+  --color-primary-text: 38, 59, 52;
+  --color-primary-background: 247, 248, 242;
+  --color-secondary-text: 38, 59, 52;
+  --color-secondary-background: 191, 218, 154;
+  --color-tertiary-text: 38, 59, 52;
+  --color-tertiary-background: 238, 200, 118;
 }
 
 .theme-deepinsight {
-  --color-primary-text: 255,255,255;
-  --color-primary-background: 6,15,48;
-  --color-secondary-text: 255,255,255;
-  --color-secondary-background: 110,114,130;
-  --color-tertiary-text: 255,255,255;
-  --color-tertiary-background: 255,86,2;
+  --color-primary-text: 255, 255, 255;
+  --color-primary-background: 6, 15, 48;
+  --color-secondary-text: 255, 255, 255;
+  --color-secondary-background: 110, 114, 130;
+  --color-tertiary-text: 255, 255, 255;
+  --color-tertiary-background: 255, 86, 2;
 }
 
 .theme-optio {
-  --color-primary-text: 26,33,58;
-  --color-primary-background: 255,255,255;
-  --color-secondary-text: 255,255,255;
-  --color-secondary-background: 79,131,232;
-  --color-tertiary-text: 79,131,232;
-  --color-tertiary-background: 211,225,250;
+  --color-primary-text: 26, 33, 58;
+  --color-primary-background: 255, 255, 255;
+  --color-secondary-text: 255, 255, 255;
+  --color-secondary-background: 79, 131, 232;
+  --color-tertiary-text: 79, 131, 232;
+  --color-tertiary-background: 211, 225, 250;
 }
 
 body {

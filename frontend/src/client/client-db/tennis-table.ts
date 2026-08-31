@@ -91,10 +91,7 @@ export class TennisTable {
   /** Returns every player ever created, active and deactivated. Used for scoring
    * so deactivating a player does not retroactively change anyone's Elo. */
   get allPlayers() {
-    return [
-      ...this.eventStore.playersProjector.activePlayers,
-      ...this.eventStore.playersProjector.inactivePlayers,
-    ];
+    return [...this.eventStore.playersProjector.activePlayers, ...this.eventStore.playersProjector.inactivePlayers];
   }
   get games() {
     return this.eventStore.gamesProjector.games;

@@ -55,9 +55,7 @@ export const LiveGamePredictionCard: React.FC<Props> = ({
   const hasBasePrediction = baseConfidence > 0;
 
   const pointsPlayed =
-    currentSet.player1 +
-    currentSet.player2 +
-    completedSets.reduce((sum, set) => sum + set.player1 + set.player2, 0);
+    currentSet.player1 + currentSet.player2 + completedSets.reduce((sum, set) => sum + set.player1 + set.player2, 0);
 
   // Primitives + a serialized key so the memo depends only on stable values
   // (the score objects get new identities on every poll/render).

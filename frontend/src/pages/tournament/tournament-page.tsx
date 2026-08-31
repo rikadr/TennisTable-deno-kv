@@ -61,8 +61,7 @@ export const TournamentPage: React.FC = () => {
     const candidate = ((): TabType => {
       if (!tournament) return "info";
       if (tournament.inSignupPeriod) return "signup";
-      if (tournament.groupPlay && tournament.groupPlay.groupPlayEnded === undefined)
-        return "group-play";
+      if (tournament.groupPlay && tournament.groupPlay.groupPlayEnded === undefined) return "group-play";
       if (tournament.bracket !== undefined) {
         if (isDoubleElimination) {
           // When arriving via a game link (pending, or just registered), open the tab the game is in
@@ -82,7 +81,7 @@ export const TournamentPage: React.FC = () => {
       }
       return "info";
     })();
-    return isVisibleTab(candidate) ? candidate : visibleTabs[0]?.id ?? "info";
+    return isVisibleTab(candidate) ? candidate : (visibleTabs[0]?.id ?? "info");
   };
   // Resolve the fallback tab once per navigation target, not on every render — otherwise live
   // data updates (e.g. a game registered on another device) would switch the tab under the user
@@ -97,7 +96,7 @@ export const TournamentPage: React.FC = () => {
     ? tabParam
     : isVisibleTab(initialTab)
       ? initialTab
-      : visibleTabs[0]?.id ?? "info";
+      : (visibleTabs[0]?.id ?? "info");
   const setActiveTab = (tab: TabType) => {
     setSearchParams(
       (previous) => {

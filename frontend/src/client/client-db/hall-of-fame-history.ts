@@ -57,11 +57,7 @@ export class HallOfFameHistory {
    * scores the player against it, because the score depends on what everyone
    * else had done by then (Elo, time at the top and achievement records).
    * This is expensive, so it is meant to run in a web worker. */
-  computeForPlayer(
-    playerId: string,
-    now: number,
-    onProgress?: (progress: number) => void,
-  ): HallOfFameHistoryResult {
+  computeForPlayer(playerId: string, now: number, onProgress?: (progress: number) => void): HallOfFameHistoryResult {
     const player = this.parent.eventStore.playersProjector.getPlayer(playerId);
     if (!player) return { playerId, points: [] };
 

@@ -377,9 +377,7 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
       text(
         "The time between 2 points includes everything that happens between the rallies. A player can collect the ball or speak. Read the value as the pace of the game, not as the length of a rally.",
       ),
-      text(
-        "Only games tracked live record the data. An edited score removes it, together with the point log.",
-      ),
+      text("Only games tracked live record the data. An edited score removes it, together with the point log."),
     ],
   },
   {
@@ -387,8 +385,7 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
     title: "New achievement: On the Record 🔴",
     date: "2026-08-16",
     tags: ["feature-update"],
-    summary:
-      "On the Record 🔴 is a new achievement. Play 5 games that are tracked point by point.",
+    summary: "On the Record 🔴 is a new achievement. Play 5 games that are tracked point by point.",
     body: [
       text(
         "A game is tracked when a person records each point on the track game page or the broadcasted live game. The game lists show a 🔴 mark next to the score of a tracked game.",

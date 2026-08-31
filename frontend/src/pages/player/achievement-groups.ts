@@ -40,14 +40,7 @@ export const ACHIEVEMENT_GROUPS: AchievementGroup[] = [
     id: "resilience",
     title: "Resilience",
     icon: "💪",
-    types: [
-      "punching-bag",
-      "never-give-up",
-      "comeback-kid",
-      "unbreakable-spirit",
-      "longest-lose-streak",
-      "yin-yang",
-    ],
+    types: ["punching-bag", "never-give-up", "comeback-kid", "unbreakable-spirit", "longest-lose-streak", "yin-yang"],
   },
   {
     id: "rank-and-score",
@@ -98,14 +91,7 @@ export const ACHIEVEMENT_GROUPS: AchievementGroup[] = [
     id: "social",
     title: "Social",
     icon: "🤝",
-    types: [
-      "variety-player",
-      "global-player",
-      "best-friends",
-      "reunion",
-      "welcome-committee",
-      "community-builder",
-    ],
+    types: ["variety-player", "global-player", "best-friends", "reunion", "welcome-committee", "community-builder"],
   },
   {
     id: "loyalty-and-activity",

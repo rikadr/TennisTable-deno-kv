@@ -18,12 +18,12 @@ export const SettingsPage: React.FC = () => {
   }
 
   const handleClearCache = () => {
-      localStorage.removeItem(LOCAL_STORAGE_KEY);
-      setCacheCleared(true);
-      // Reload the page to refetch all events
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
+    localStorage.removeItem(LOCAL_STORAGE_KEY);
+    setCacheCleared(true);
+    // Reload the page to refetch all events
+    setTimeout(() => {
+      window.location.reload();
+    }, 1000);
   };
 
   const getCacheInfo = () => {
@@ -84,9 +84,11 @@ export const SettingsPage: React.FC = () => {
               <div className="flex-1">
                 <h2 className="text-xl font-semibold mb-1">Theme Settings</h2>
                 <p className="text-sm opacity-70 mb-4">Customize the visual appearance of the application</p>
-                
+
                 <div className="space-y-4">
-                  <p className="text-sm mb-4">Current theme: <span className="font-semibold">{theme}</span></p>
+                  <p className="text-sm mb-4">
+                    Current theme: <span className="font-semibold">{theme}</span>
+                  </p>
 
                   <div>
                     <label className="block text-sm font-medium mb-2">Override Theme</label>
@@ -118,7 +120,7 @@ export const SettingsPage: React.FC = () => {
               <div className="flex-1">
                 <h2 className="text-xl font-semibold mb-1">Theme Colors Preview</h2>
                 <p className="text-sm opacity-70 mb-4">Preview the current theme color palette</p>
-                
+
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div
                     onClick={handleClickColor}

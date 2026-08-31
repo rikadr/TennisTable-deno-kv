@@ -40,10 +40,10 @@ describe("rarityRanking", () => {
   const types = ["first-game", "ranked", "donut-5", "retired"] as AchievementType[];
 
   it("counts the earnings and the players who hold each type", () => {
-    const ranking = rarityRanking(
-      [firstGame("alice", 1), firstGame("bob", 2), heroOfTheDay("alice", 3, 4)],
-      [...types, "hero-of-the-day"] as AchievementType[],
-    );
+    const ranking = rarityRanking([firstGame("alice", 1), firstGame("bob", 2), heroOfTheDay("alice", 3, 4)], [
+      ...types,
+      "hero-of-the-day",
+    ] as AchievementType[]);
 
     expect(ranking.get("first-game")).toMatchObject({ earnings: 2, holders: 2 });
     expect(ranking.get("hero-of-the-day")).toMatchObject({ earnings: 1, holders: 1 });
@@ -264,7 +264,11 @@ describe("achievementDetails", () => {
 
   it("summarises who holds it and when it was last earned", () => {
     const result = details(
-      [heroOfTheDay("alice", START + DAY_MS, 4), heroOfTheDay("alice", START + 2 * DAY_MS, 6), heroOfTheDay("bob", START + 10 * DAY_MS, 7)],
+      [
+        heroOfTheDay("alice", START + DAY_MS, 4),
+        heroOfTheDay("alice", START + 2 * DAY_MS, 6),
+        heroOfTheDay("bob", START + 10 * DAY_MS, 7),
+      ],
       "hero-of-the-day",
     );
 
@@ -360,8 +364,10 @@ describe("achievementDetails", () => {
     });
 
     expect(
-      details([kingslayer("alice", "bob", 1), kingslayer("carol", "bob", 2), kingslayer("alice", "dave", 3)], "kingslayer")
-        .topOpponents,
+      details(
+        [kingslayer("alice", "bob", 1), kingslayer("carol", "bob", 2), kingslayer("alice", "dave", 3)],
+        "kingslayer",
+      ).topOpponents,
     ).toEqual([
       { key: "bob", count: 2 },
       { key: "dave", count: 1 },
@@ -371,8 +377,18 @@ describe("achievementDetails", () => {
   it("lists no opponents for an achievement both players of a game earn", () => {
     const result = details(
       [
-        { type: "season-opener", earnedBy: "alice", earnedAt: START, data: { seasonStart: 0, gameId: "g", opponent: "bob" } },
-        { type: "season-opener", earnedBy: "bob", earnedAt: START, data: { seasonStart: 0, gameId: "g", opponent: "alice" } },
+        {
+          type: "season-opener",
+          earnedBy: "alice",
+          earnedAt: START,
+          data: { seasonStart: 0, gameId: "g", opponent: "bob" },
+        },
+        {
+          type: "season-opener",
+          earnedBy: "bob",
+          earnedAt: START,
+          data: { seasonStart: 0, gameId: "g", opponent: "alice" },
+        },
       ],
       "season-opener",
     );
@@ -393,8 +409,10 @@ describe("achievementDetails", () => {
     // Two seasons, 2 earnings each: the same number every time, so a season
     // breakdown compares nothing.
     expect(
-      details([opener("alice", 1, 10), opener("bob", 2, 10), opener("alice", 3, 20), opener("carol", 4, 20)], "season-opener")
-        .perSeason,
+      details(
+        [opener("alice", 1, 10), opener("bob", 2, 10), opener("alice", 3, 20), opener("carol", 4, 20)],
+        "season-opener",
+      ).perSeason,
     ).toEqual([]);
 
     // A season that differs from another is worth listing.

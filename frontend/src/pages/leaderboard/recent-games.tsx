@@ -42,13 +42,13 @@ export const RecentGames: React.FC<Props> = ({ view = "overall" }) => {
     if (view === "season") {
       if (!currentSeason) return undefined;
       const entry = seasonTimeline?.find((e) => e.time === game.playedAt);
-      
+
       const winnerImp = entry?.improvements.find((i) => i.playerId === game.winner);
       const loserImp = entry?.improvements.find((i) => i.playerId === game.loser);
-      
+
       const pointsDiff = winnerImp ? winnerImp.improvement : 0;
       const loserPointsDiff = loserImp ? loserImp.improvement : 0;
-      
+
       return { ...game, pointsDiff, loserPointsDiff };
     }
 
@@ -61,9 +61,7 @@ export const RecentGames: React.FC<Props> = ({ view = "overall" }) => {
     return { ...game, ...foundGame, pointsDiff: foundGame?.pointsDiff || 0 } as DisplayGame;
   }
 
-  const processedGames = lastGames
-    .map(getGame)
-    .filter((g): g is DisplayGame => !!g);
+  const processedGames = lastGames.map(getGame).filter((g): g is DisplayGame => !!g);
 
   return (
     <div className="bg-primary-background rounded-lg w-full overflow-hidden">
@@ -93,11 +91,11 @@ export const RecentGames: React.FC<Props> = ({ view = "overall" }) => {
         <tbody className="divide-y divide-primary-text/50">
           {processedGames.map((game, index) => {
             const rowClick = () => navigate(`/1v1?player1=${game.winner}&player2=${game.loser}`);
-            
+
             if (view === "season") {
               return (
-                <tr 
-                  key={index} 
+                <tr
+                  key={index}
                   onClick={rowClick}
                   className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text cursor-pointer transition-colors text-sm xs:text-lg md:text-xl font-light"
                 >
@@ -121,8 +119,8 @@ export const RecentGames: React.FC<Props> = ({ view = "overall" }) => {
             }
 
             return (
-              <tr 
-                key={index} 
+              <tr
+                key={index}
                 onClick={rowClick}
                 className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text cursor-pointer transition-colors text-sm xs:text-lg md:text-xl font-light"
               >

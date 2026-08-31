@@ -18,8 +18,8 @@ export const RelativeTime: React.FC<{ date: Date; variant?: RelativeTimeVariant 
       diff < 60_000
         ? 5_000 // < 1 min: every 5 seconds
         : diff < 3600_000
-        ? 60_000 // < 1 hour: every minute
-        : 300_000; // > 1 hour: every 5 minutes
+          ? 60_000 // < 1 hour: every minute
+          : 300_000; // > 1 hour: every 5 minutes
 
     const timer = setInterval(() => setTick((tick) => tick + 1), interval);
     return () => clearInterval(timer);

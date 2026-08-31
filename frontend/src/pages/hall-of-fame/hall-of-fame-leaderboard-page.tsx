@@ -77,12 +77,10 @@ export const HallOfFameLeaderboardPage: React.FC = () => {
 
           {isCategory && (
             <div role="tablist" aria-label="Sort by" className="inline-flex bg-secondary-background rounded-full p-1">
-              {(
-                [
-                  { value: "category" as const, label: `${selectedFactor?.name ?? "Category"} score` },
-                  { value: "total" as const, label: "Total score" },
-                ]
-              ).map((option) => {
+              {[
+                { value: "category" as const, label: `${selectedFactor?.name ?? "Category"} score` },
+                { value: "total" as const, label: "Total score" },
+              ].map((option) => {
                 const active = sortBy === option.value;
                 return (
                   <button

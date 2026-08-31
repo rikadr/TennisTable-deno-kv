@@ -38,8 +38,7 @@ export function gameTimingStats(tracking: GameTracking): GameTimingStats {
   );
   return {
     durationMs: totalTenths * TENTH_MS,
-    averagePointGapMs:
-      gaps.length === 0 ? 0 : (gaps.reduce((sum, gap) => sum + gap, 0) / gaps.length) * TENTH_MS,
+    averagePointGapMs: gaps.length === 0 ? 0 : (gaps.reduce((sum, gap) => sum + gap, 0) / gaps.length) * TENTH_MS,
     longestPointGapMs: gaps.length === 0 ? 0 : Math.max(...gaps) * TENTH_MS,
   };
 }

@@ -135,13 +135,7 @@ describe("Whr", () => {
   });
 
   it("still rates a retired player", () => {
-    const result = compute([
-      player("a"),
-      player("b"),
-      ...games("a", "b", 5),
-      ...games("b", "a", 1),
-      deactivate("b"),
-    ]);
+    const result = compute([player("a"), player("b"), ...games("a", "b", 5), ...games("b", "a", 1), deactivate("b")]);
 
     expect(result.curves.map((c) => c.playerId).sort()).toEqual(["a", "b"]);
     expect(lastRating(result, "a")).toBeGreaterThan(lastRating(result, "b"));
@@ -473,7 +467,9 @@ describe("Whr", () => {
         if (!predicted || predicted.confidence < 0.1) continue;
 
         const fromRating = 1 / (1 + Math.pow(10, (two - one) / 400));
-        if ((fromRating > 0.5) === (predicted.fraction > 0.5)) sameFavourite++;
+        const ratingFavoursOne = fromRating > 0.5;
+        const predictionFavoursOne = predicted.fraction > 0.5;
+        if (ratingFavoursOne === predictionFavoursOne) sameFavourite++;
         totalGap += Math.abs(fromRating - predicted.fraction);
         compared++;
       }

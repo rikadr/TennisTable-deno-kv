@@ -124,8 +124,7 @@ export class Simulations {
 
     const sortedPlayerGameTimes = Array.from(playerGameTimes).sort((a, b) => a - b); // Verify ascending
     const playerPlayedTheLastGame =
-      allGames[allGames.length - 1].winner === playerId ||
-      allGames[allGames.length - 1].loser === playerId;
+      allGames[allGames.length - 1].winner === playerId || allGames[allGames.length - 1].loser === playerId;
 
     const BATCH_SIZE = 1; // 5 seems reasonable but 1 works well on my beast mac and gives smooth frame rate
 

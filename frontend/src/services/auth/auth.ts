@@ -15,7 +15,9 @@ export const useAuth = () => {
         });
 
         if (!response.ok) {
-          throw new Error(response.status === 401 ? "Invalid username or password" : `Login failed (${response.status})`);
+          throw new Error(
+            response.status === 401 ? "Invalid username or password" : `Login failed (${response.status})`,
+          );
         }
 
         const json = (await response.json()) as { token: string };
@@ -43,8 +45,7 @@ export const auth = {
     if (!response.ok) {
       const body = (await response.json().catch(() => null)) as { error?: string } | null;
       throw new Error(
-        body?.error ??
-          (response.status === 409 ? "Username already taken" : `Sign up failed (${response.status})`),
+        body?.error ?? (response.status === 409 ? "Username already taken" : `Sign up failed (${response.status})`),
       );
     }
 

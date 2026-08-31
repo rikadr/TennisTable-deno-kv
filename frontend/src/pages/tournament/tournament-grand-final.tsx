@@ -19,8 +19,7 @@ export const TournamentGrandFinal = ({
   const grandFinal = bracket.grandFinal;
   const bracketReset = bracket.bracketReset;
   const bracketResetActivated = bracketReset?.player1 !== undefined && bracketReset?.player2 !== undefined;
-  const grandFinalDecidedWithoutReset =
-    grandFinal.winner !== undefined && grandFinal.winner === grandFinal.player1;
+  const grandFinalDecidedWithoutReset = grandFinal.winner !== undefined && grandFinal.winner === grandFinal.player1;
 
   // Only use real names once both finalists are decided; a mix of a name and a placeholder reads oddly
   const bothFinalistsKnown = grandFinal.player1 !== undefined && grandFinal.player2 !== undefined;
@@ -34,8 +33,8 @@ export const TournamentGrandFinal = ({
   return (
     <div className="space-y-6 max-w-2xl">
       <p className="text-sm text-primary-text/70">
-        The first chance champion meets the second chance champion in the final. If the second chance champion
-        wins the final, both players have one loss each — the final decider is played.
+        The first chance champion meets the second chance champion in the final. If the second chance champion wins the
+        final, both players have one loss each — the final decider is played.
       </p>
 
       <div className="space-y-1">
@@ -60,8 +59,8 @@ export const TournamentGrandFinal = ({
         <div className="space-y-1">
           <h3 className="text-center text-sm text-primary-text">The Final Decider</h3>
           <p className="text-center text-xs text-primary-text/60">
-            {losersChampionName} won the final, so {winnersChampionName} and {losersChampionName} now have one
-            loss each. The winner of this match wins the tournament.
+            {losersChampionName} won the final, so {winnersChampionName} and {losersChampionName} now have one loss
+            each. The winner of this match wins the tournament.
           </p>
           <TournamentGameListCard
             tournament={tournament}
@@ -92,8 +91,8 @@ export const TournamentGrandFinal = ({
             ghost
           />
           <p className="text-center text-xs text-primary-text/60">
-            If {winnersChampionName} wins the final, the tournament is over. If {losersChampionName} wins,
-            both players have one loss each — and this match decides everything.
+            If {winnersChampionName} wins the final, the tournament is over. If {losersChampionName} wins, both players
+            have one loss each — and this match decides everything.
           </p>
         </div>
       )}
@@ -107,4 +106,3 @@ export const TournamentGrandFinal = ({
     </div>
   );
 };
-

@@ -323,14 +323,24 @@ describe("Double elimination simulation", () => {
   });
 
   it("simulates a full double elimination bracket without a reset", () => {
-    const result = TournamentBracket.simulateWinnerFromStatic(player1AlwaysWins, 500_000, ["P1", "P2", "P3", "P4"], true);
+    const result = TournamentBracket.simulateWinnerFromStatic(
+      player1AlwaysWins,
+      500_000,
+      ["P1", "P2", "P3", "P4"],
+      true,
+    );
     // P1 wins everything from the player1 slot; 3 winners games + 2 losers games + grand final
     expect(result.winner).toBe("P1");
     expect(result.gamesSimulatedCount).toBe(6);
   });
 
   it("simulates the bracket reset when the losers champion wins the grand final", () => {
-    const result = TournamentBracket.simulateWinnerFromStatic(player2AlwaysWins, 500_000, ["P1", "P2", "P3", "P4"], true);
+    const result = TournamentBracket.simulateWinnerFromStatic(
+      player2AlwaysWins,
+      500_000,
+      ["P1", "P2", "P3", "P4"],
+      true,
+    );
     // player2 always wins, so the losers bracket champion wins the grand final and the reset is played
     expect(result.gamesSimulatedCount).toBe(7);
     expect(result.winner).toBeDefined();

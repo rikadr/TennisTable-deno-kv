@@ -85,8 +85,7 @@ export class PlayerPairings {
 
       previous = Array.from(found.values()).sort(
         (a, b) =>
-          b.games - a.games ||
-          this.parent.playerName(a.playerId).localeCompare(this.parent.playerName(b.playerId)),
+          b.games - a.games || this.parent.playerName(a.playerId).localeCompare(this.parent.playerName(b.playerId)),
       );
       if (previous.length > 0) {
         columns.push({ degree, players: previous });

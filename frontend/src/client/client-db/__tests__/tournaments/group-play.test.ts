@@ -150,12 +150,7 @@ describe("Group scoring", () => {
   const players = ["P1", "P2", "P3"];
 
   it("awards 3 points for a win and 1 point for a loss", () => {
-    const events = [
-      ...baseEvents(players),
-      gameEvent("P1", "P2"),
-      gameEvent("P1", "P3"),
-      gameEvent("P2", "P3"),
-    ];
+    const events = [...baseEvents(players), gameEvent("P1", "P2"), gameEvent("P1", "P3"), gameEvent("P2", "P3")];
     const groupPlay = getGroupPlay(events);
 
     const p1 = groupPlay.groupScores.get("P1")!;
@@ -175,12 +170,7 @@ describe("Group scoring", () => {
   });
 
   it("awards 0 points and a skip to the loser of a skipped game", () => {
-    const events = [
-      ...baseEvents(players),
-      gameEvent("P1", "P2"),
-      gameEvent("P1", "P3"),
-      skipEvent("P2", "P3"),
-    ];
+    const events = [...baseEvents(players), gameEvent("P1", "P2"), gameEvent("P1", "P3"), skipEvent("P2", "P3")];
     const groupPlay = getGroupPlay(events);
 
     const p2 = groupPlay.groupScores.get("P2")!;
@@ -279,15 +269,14 @@ describe("TournamentGroupPlay.sortGroupScores", () => {
   });
 
   it("breaks adjusted score ties by wins", () => {
-    expect(
-      sortNames([entry("A", { adjustedScore: 6, wins: 1 }), entry("B", { adjustedScore: 6, wins: 2 })]),
-    ).toEqual(["B", "A"]);
+    expect(sortNames([entry("A", { adjustedScore: 6, wins: 1 }), entry("B", { adjustedScore: 6, wins: 2 })])).toEqual([
+      "B",
+      "A",
+    ]);
   });
 
   it("breaks wins ties by fewest skips", () => {
-    expect(
-      sortNames([entry("A", { wins: 2, skips: 2 }), entry("B", { wins: 2, skips: 1 })]),
-    ).toEqual(["B", "A"]);
+    expect(sortNames([entry("A", { wins: 2, skips: 2 }), entry("B", { wins: 2, skips: 1 })])).toEqual(["B", "A"]);
   });
 
   it("breaks skips ties by raw score, then fewest losses", () => {

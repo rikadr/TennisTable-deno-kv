@@ -118,11 +118,7 @@ const Header: React.FC<{ children?: React.ReactNode }> = ({ children }) => (
 );
 
 /** Two columns from tablet up: the entries are short, and one column left most of the width empty */
-const Section: React.FC<{ title: string; count: number; children: React.ReactNode }> = ({
-  title,
-  count,
-  children,
-}) => (
+const Section: React.FC<{ title: string; count: number; children: React.ReactNode }> = ({ title, count, children }) => (
   <div className="mb-6">
     <h3 className="text-sm font-semibold mb-2">
       {title} <span className="font-thin italic">({fmtNum(count)})</span>

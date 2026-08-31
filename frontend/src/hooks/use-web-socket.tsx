@@ -38,8 +38,12 @@ export const useWebSocket = (
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
   // Keep refs up to date so reconnections use the latest callbacks
-  useEffect(() => { onMessageRef.current = onMessage; }, [onMessage]);
-  useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
+  useEffect(() => {
+    onMessageRef.current = onMessage;
+  }, [onMessage]);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
 
   function send(message: string) {
     webSocket?.send(message);

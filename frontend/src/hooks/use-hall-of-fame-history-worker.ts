@@ -28,53 +28,50 @@ export function useHallOfFameHistoryWorker() {
     };
   }, []);
 
-  const startComputation = useCallback(
-    (playerId: string) => {
-      workerRef.current?.terminate();
+  const startComputation = useCallback((playerId: string) => {
+    workerRef.current?.terminate();
 
-      setResult(undefined);
-      setProgress(0);
-      setFailed(false);
+    setResult(undefined);
+    setProgress(0);
+    setFailed(false);
 
-      const worker = createModernWorker();
-      workerRef.current = worker;
+    const worker = createModernWorker();
+    workerRef.current = worker;
 
-      if (!worker) {
-        console.error("Worker not initialized");
-        setFailed(true);
-        return;
+    if (!worker) {
+      console.error("Worker not initialized");
+      setFailed(true);
+      return;
+    }
+
+    worker.addEventListener("message", (e) => {
+      const message = e.data as WorkerMessage;
+      switch (message.type) {
+        case "hall-of-fame-history-progress":
+          setProgress(message.data.progress);
+          break;
+        case "hall-of-fame-history-result":
+          setResult(message.data.result);
+          setProgress(1);
+          break;
       }
+    });
 
-      worker.addEventListener("message", (e) => {
-        const message = e.data as WorkerMessage;
-        switch (message.type) {
-          case "hall-of-fame-history-progress":
-            setProgress(message.data.progress);
-            break;
-          case "hall-of-fame-history-result":
-            setResult(message.data.result);
-            setProgress(1);
-            break;
-        }
-      });
+    // Without these the graph waits on a progress bar forever if the
+    // simulation throws or runs out of memory part way through.
+    const fail = (error: unknown) => {
+      console.error("Hall of fame history simulation failed", error);
+      setFailed(true);
+    };
+    worker.addEventListener("error", fail);
+    worker.addEventListener("messageerror", fail);
 
-      // Without these the graph waits on a progress bar forever if the
-      // simulation throws or runs out of memory part way through.
-      const fail = (error: unknown) => {
-        console.error("Hall of fame history simulation failed", error);
-        setFailed(true);
-      };
-      worker.addEventListener("error", fail);
-      worker.addEventListener("messageerror", fail);
-
-      const message: WorkerMessage = {
-        type: "start-hall-of-fame-history",
-        data: { playerId, events: eventsRef.current, now: Date.now() },
-      };
-      worker.postMessage(message);
-    },
-    [],
-  );
+    const message: WorkerMessage = {
+      type: "start-hall-of-fame-history",
+      data: { playerId, events: eventsRef.current, now: Date.now() },
+    };
+    worker.postMessage(message);
+  }, []);
 
   return { startComputation, result, progress, failed, isDone: result !== undefined };
 }

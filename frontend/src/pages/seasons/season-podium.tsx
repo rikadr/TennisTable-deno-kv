@@ -29,17 +29,10 @@ export const SeasonPodium = ({ leaderboard, seasonStart, isOngoing = false }: Pr
     rank: 1 | 2 | 3,
     heightClass: string,
     bgColorClass: string,
-    medal: string
+    medal: string,
   ) => {
     if (!player) {
-      return (
-        <div
-          className={classNames(
-            "flex-1 hidden xs:flex",
-            orderClasses[rank]
-          )}
-        />
-      );
+      return <div className={classNames("flex-1 hidden xs:flex", orderClasses[rank])} />;
     }
 
     return (
@@ -47,7 +40,7 @@ export const SeasonPodium = ({ leaderboard, seasonStart, isOngoing = false }: Pr
         to={`/season/player?seasonStart=${seasonStart}&playerId=${player.playerId}`}
         className={classNames(
           "flex flex-row xs:flex-col items-center w-full xs:w-1/3 p-2 transition-all duration-300 gap-3 xs:gap-0 hover:scale-105",
-          orderClasses[rank]
+          orderClasses[rank],
         )}
       >
         {/* The Podium Bar - left on mobile, bottom on desktop */}
@@ -58,9 +51,9 @@ export const SeasonPodium = ({ leaderboard, seasonStart, isOngoing = false }: Pr
             heightClass,
             isOngoing
               ? "bg-transparent border-2 border-current opacity-60"
-              : classNames(bgColorClass, "shadow-lg opacity-90 group-hover:opacity-100")
+              : classNames(bgColorClass, "shadow-lg opacity-90 group-hover:opacity-100"),
           )}
-          style={isOngoing ? { borderColor: rank === 1 ? '#facc15' : rank === 2 ? '#cbd5e1' : '#f59e0b' } : undefined}
+          style={isOngoing ? { borderColor: rank === 1 ? "#facc15" : rank === 2 ? "#cbd5e1" : "#f59e0b" } : undefined}
         >
           <span
             className={classNames(
@@ -69,11 +62,17 @@ export const SeasonPodium = ({ leaderboard, seasonStart, isOngoing = false }: Pr
               rank === 2 && "text-2xl xs:text-4xl",
               rank === 3 && "text-xl xs:text-3xl",
               isOngoing
-                ? rank === 1 ? "text-yellow-400" : rank === 2 ? "text-slate-300" : "text-amber-500"
+                ? rank === 1
+                  ? "text-yellow-400"
+                  : rank === 2
+                    ? "text-slate-300"
+                    : "text-amber-500"
                 : "text-white",
             )}
-            style={isOngoing ? undefined : { textShadow: '1px 1px 2px rgba(0,0,0,0.2)' }}
-          >{isOngoing ? rank + "?" : rank}</span>
+            style={isOngoing ? undefined : { textShadow: "1px 1px 2px rgba(0,0,0,0.2)" }}
+          >
+            {isOngoing ? rank + "?" : rank}
+          </span>
         </div>
 
         {/* Avatar and Info - right on mobile, top on desktop */}
@@ -95,9 +94,7 @@ export const SeasonPodium = ({ leaderboard, seasonStart, isOngoing = false }: Pr
             <span className="font-bold text-base xs:text-lg text-primary-text xs:mt-2 xs:text-center truncate max-w-[120px] xs:max-w-[150px]">
               {context.playerName(player.playerId)}
             </span>
-            <div className="text-secondary-text text-sm font-medium">
-              {fmtNum(player.seasonScore)} pts
-            </div>
+            <div className="text-secondary-text text-sm font-medium">{fmtNum(player.seasonScore)} pts</div>
           </div>
         </div>
       </Link>
@@ -107,31 +104,13 @@ export const SeasonPodium = ({ leaderboard, seasonStart, isOngoing = false }: Pr
   return (
     <div className="flex flex-col xs:flex-row xs:items-end xs:justify-center w-full max-w-2xl mx-auto gap-1 xs:gap-4 mb-4 mt-4">
       {/* 1st Place */}
-      {renderPlace(
-        first,
-        1,
-        "xs:h-24",
-        "bg-yellow-400",
-        "🥇"
-      )}
+      {renderPlace(first, 1, "xs:h-24", "bg-yellow-400", "🥇")}
 
       {/* 2nd Place */}
-      {renderPlace(
-        second,
-        2,
-        "xs:h-20",
-        "bg-slate-300",
-        "🥈"
-      )}
+      {renderPlace(second, 2, "xs:h-20", "bg-slate-300", "🥈")}
 
       {/* 3rd Place */}
-      {renderPlace(
-        third,
-        3,
-        "xs:h-16",
-        "bg-amber-500",
-        "🥉"
-      )}
+      {renderPlace(third, 3, "xs:h-16", "bg-amber-500", "🥉")}
     </div>
   );
 };

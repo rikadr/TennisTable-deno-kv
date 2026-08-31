@@ -241,11 +241,11 @@ describe("Hat-trick Achievement Tests", () => {
 
       // Should have earned 2 hat-tricks
       expect(hatTricks).toHaveLength(2);
-      
+
       // First hat-trick
       expect(hatTricks[0].data.firstWinAt).toBe(baseTime);
       expect(hatTricks[0].data.thirdWinAt).toBe(baseTime + 40 * 60 * 1000);
-      
+
       // Second hat-trick
       expect(hatTricks[1].data.firstWinAt).toBe(baseTime + 50 * 60 * 1000);
       expect(hatTricks[1].data.thirdWinAt).toBe(baseTime + 70 * 60 * 1000);
@@ -471,8 +471,12 @@ describe("Hat-trick Achievement Tests", () => {
       const tennisTable = new TennisTable({ events });
       tennisTable.achievements.calculateAchievements();
 
-      const player1HatTricks = tennisTable.achievements.getAchievements("player-1").filter((a) => a.type === "hat-trick");
-      const player2HatTricks = tennisTable.achievements.getAchievements("player-2").filter((a) => a.type === "hat-trick");
+      const player1HatTricks = tennisTable.achievements
+        .getAchievements("player-1")
+        .filter((a) => a.type === "hat-trick");
+      const player2HatTricks = tennisTable.achievements
+        .getAchievements("player-2")
+        .filter((a) => a.type === "hat-trick");
 
       expect(player1HatTricks).toHaveLength(1);
       expect(player2HatTricks).toHaveLength(1);

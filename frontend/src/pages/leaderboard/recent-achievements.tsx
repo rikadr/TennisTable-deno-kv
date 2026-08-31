@@ -66,7 +66,9 @@ export const RecentAchievements: React.FC<Props> = ({ view = "overall" }) => {
                 <td className="py-1 px-2 w-[50%] max-w-0">
                   <div className="flex items-center gap-2 min-w-0">
                     <ProfilePicture playerId={achievement.earnedBy} size={28} border={2} />
-                    <span className="text-sm xs:text-base font-normal truncate">{context.playerName(achievement.earnedBy)}</span>
+                    <span className="text-sm xs:text-base font-normal truncate">
+                      {context.playerName(achievement.earnedBy)}
+                    </span>
                   </div>
                 </td>
                 <td className="py-1 px-2 w-[50%] max-w-0">

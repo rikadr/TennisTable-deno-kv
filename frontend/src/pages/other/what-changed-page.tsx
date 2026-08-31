@@ -440,9 +440,7 @@ export const WhatChangedPage: React.FC = () => {
     <div className="w-full px-4 flex flex-col items-center">
       <div className="w-full max-w-2xl md:max-w-4xl">
         <div className="bg-primary-background rounded-lg w-full overflow-hidden">
-          <h1 className="text-2xl md:text-4xl text-center mt-2 md:mt-4 mb-1 md:mb-2 text-primary-text">
-            What changed
-          </h1>
+          <h1 className="text-2xl md:text-4xl text-center mt-2 md:mt-4 mb-1 md:mb-2 text-primary-text">What changed</h1>
 
           {/* Quick select of common periods */}
           <div className="flex flex-wrap justify-center gap-1.5 xs:gap-2 px-4 py-2">

@@ -1,32 +1,39 @@
 # Claude Code Project Guidelines
 
 ## Project Overview
+
 This repository contains the **Tennis Table** application.
+
 - **Frontend:** React (Thick Client)
 - **Backend:** Deno (Thin Server)
 
 ## Commands
 
 ### Frontend (`/frontend`)
+
 - **Build:** `npm run build`
 - **Test:** `npm run test` (Runs Jest)
 - **Lint:** `npm run lint`
 - **Install:** `npm install`
 
 ### Backend (`/DenoServer`)
+
 - **Run Dev:** `deno task dev`
 - **Check Types:** `deno task check`
 - **Format:** `deno fmt`
 
 ## Architecture Highlights
+
 - **Event Sourcing:** The frontend projects events into state (`TennisTable` class).
 - **Backend:** Stateless event store + Auth.
 - **Do not** add business logic to the backend.
 
 ## Code Style
+
 - **Never use `any` type** in application code. Always use proper types. In test files, `any` is acceptable in rare cases where typing is impractical.
 
 ## Changelog
+
 Posts live in `frontend/src/client/changelog/changelog-posts.ts`. Add one when a
 change clears the bar; skip it when it does not, rather than padding the list.
 
@@ -36,9 +43,10 @@ they may have believed. If there is nothing for them to take away, there is no
 post - a short list of things worth reading beats a complete one.
 
 **Add a post when the change is either:**
+
 - Something players can see or try - a new feature, a meaningful update to one,
   or a removed feature.
-- A bug fix that showed players something *wrong* - an elo, a leaderboard
+- A bug fix that showed players something _wrong_ - an elo, a leaderboard
   position, a stat or a history they may have acted on. The post exists so they
   can revise what they believed.
 - A significant change under the hood. The audience is mostly engineers, so
@@ -71,7 +79,8 @@ that the bug was embarrassing, does not by itself clear the bar; the reader has
 to end up knowing something useful. When it is a close call, skip it.
 
 **Writing a post:**
-- **Lead with what is new.** The reader is here for what it changed *to*.
+
+- **Lead with what is new.** The reader is here for what it changed _to_.
   Describe the previous behaviour only where it makes the new thing land, and put
   it after, not first.
 - **Plain, descriptive titles.** "Live win% predictions on tracked games", not
@@ -131,6 +140,7 @@ The page is at `/changelog`. Everyone reaches it from the "Other" item in the
 nav menu.
 
 ## Context Files
+
 - Root Instructions: `./GEMINI.md`
 - Frontend Details: `./frontend/AGENTS.md`
 - Backend Details: `./DenoServer/AGENTS.md`

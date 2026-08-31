@@ -254,20 +254,22 @@ export const HallOfFameScoreOverTime: React.FC<{ playerId: string; playerName: s
             {stacked ? (
               // Rendered in reverse, so the first section lands on top of the
               // stack. The graph then reads in the order of the legend.
-              [...FACTORS].reverse().map((factor) => (
-                <Area
-                  key={factor.key}
-                  type="monotone"
-                  dataKey={factor.key}
-                  stackId="score"
-                  name={factor.name}
-                  fill={factor.color}
-                  fillOpacity={1}
-                  stroke="#ffffff"
-                  strokeWidth={0.5}
-                  animationDuration={400}
-                />
-              ))
+              [...FACTORS]
+                .reverse()
+                .map((factor) => (
+                  <Area
+                    key={factor.key}
+                    type="monotone"
+                    dataKey={factor.key}
+                    stackId="score"
+                    name={factor.name}
+                    fill={factor.color}
+                    fillOpacity={1}
+                    stroke="#ffffff"
+                    strokeWidth={0.5}
+                    animationDuration={400}
+                  />
+                ))
             ) : (
               <Area
                 type="monotone"
@@ -360,8 +362,7 @@ export const HallOfFameScoreOverTime: React.FC<{ playerId: string; playerName: s
 };
 
 // Day and month only, for the start of a period whose end already names the year.
-const shortDate = (time: number) =>
-  new Date(time).toLocaleDateString("nb-NO", { day: "numeric", month: "short" });
+const shortDate = (time: number) => new Date(time).toLocaleDateString("nb-NO", { day: "numeric", month: "short" });
 
 const StackedTooltip = ({
   active,
@@ -381,7 +382,9 @@ const StackedTooltip = ({
   return (
     <div className="p-3 bg-primary-background/95 backdrop-blur-sm ring-1 ring-primary-text/20 rounded-lg text-primary-text shadow-lg">
       <div className="text-xs opacity-60 mb-1">
-        {delta && data.from !== undefined ? `${shortDate(data.from)} – ${dateString(data.time)}` : dateString(data.time)}
+        {delta && data.from !== undefined
+          ? `${shortDate(data.from)} – ${dateString(data.time)}`
+          : dateString(data.time)}
       </div>
       <div className="font-bold text-lg">
         {delta ? `${fmtNum(data.total, { signedPositive: true })} pts` : `${fmtNum(data.total)} pts`}
@@ -426,9 +429,7 @@ const ScoreTooltip = ({
           : dateString(data.time)}
       </div>
       <div className="font-bold text-lg">
-        {mode === "delta"
-          ? `${fmtNum(data.delta, { signedPositive: true })} pts`
-          : `${fmtNum(data.cumulative)} pts`}
+        {mode === "delta" ? `${fmtNum(data.delta, { signedPositive: true })} pts` : `${fmtNum(data.cumulative)} pts`}
       </div>
       <div className="text-xs opacity-75">{seriesLabel}</div>
       <div className="text-xs opacity-60 mt-1">

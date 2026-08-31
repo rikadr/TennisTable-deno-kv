@@ -123,9 +123,7 @@ export const AchievementsPage: React.FC = () => {
         {view === "recent" && <AchievementsList achievements={filteredAchievements} />}
         {view === "details" &&
           (selectedType === ALL_ACHIEVEMENTS ? (
-            <AchievementLeagueStats
-              detailsLink={(type) => achievementsLink(searchParams, { type, view: "details" })}
-            />
+            <AchievementLeagueStats detailsLink={(type) => achievementsLink(searchParams, { type, view: "details" })} />
           ) : (
             <AchievementDetails
               type={selectedType as AchievementType}

@@ -166,14 +166,14 @@ export class Tournament {
     player2: string,
   ):
     | {
-      tournament: { name: string; id: string };
-      player1: string;
-      player2: string;
-      groupIndex?: number;
-      layerIndex?: number;
-      bracketSection?: TournamentBracketSection;
-      doubleElimination?: boolean;
-    }
+        tournament: { name: string; id: string };
+        player1: string;
+        player2: string;
+        groupIndex?: number;
+        layerIndex?: number;
+        bracketSection?: TournamentBracketSection;
+        doubleElimination?: boolean;
+      }
     | undefined {
     if (this.startDate > this.#time) return; // Not started
     if (this.endDate !== undefined) return; // Has ended
@@ -217,9 +217,9 @@ export class Tournament {
 
   findPendingGamesByPlayer(player: string):
     | {
-      tournament: { name: string; id: string };
-      games: { oponent: string; player1: string; player2: string }[];
-    }
+        tournament: { name: string; id: string };
+        games: { oponent: string; player1: string; player2: string }[];
+      }
     | undefined {
     if (this.startDate > this.#time) return; // Not started
     if (this.endDate !== undefined) return; // Has ended

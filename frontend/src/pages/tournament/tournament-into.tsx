@@ -173,11 +173,5 @@ const DirectEliminationSeedingCard = ({
     players = tournament.tournamentConfig.playerOrder ?? tournament.signedUp.map((s) => s.player);
   }
 
-  return (
-    <SeedingCard
-      label="Direct elimination seeding order"
-      players={players}
-      playerName={playerName}
-    />
-  );
+  return <SeedingCard label="Direct elimination seeding order" players={players} playerName={playerName} />;
 };

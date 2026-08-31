@@ -27,7 +27,7 @@ Pick, cut and add. Reply with ids (`G3`, `S1`, `P4`…) plus anything missing.
   know what a game without points would have contributed, so it cannot sit in
   the denominator. The same holds at every level, and each section prints the
   share of the games it covers so the reader knows the pool.
-- **Levels nest.** Sets ⊃ points ⊃ tracked. A stat belongs to the *lowest*
+- **Levels nest.** Sets ⊃ points ⊃ tracked. A stat belongs to the _lowest_
   level that can produce it. `medianPointsPerGame` for example does not need
   tracking, only `setPoints`, so it is a point-level stat.
 - **The other tabs already own some ground.** Activity owns when we play,
@@ -40,19 +40,20 @@ Status legend: `built` = on the branch now, `old` = was on the page before,
 ---
 
 ## Level 1 — Game level — DECIDED
-*Winner, loser, time. Every game. Ratings count as game level, since elo is
-derived from results only.*
+
+_Winner, loser, time. Every game. Ratings count as game level, since elo is
+derived from results only._
 
 Kept: **G2, G8, G9, G13**. Scrapped: G1, G3, G4, G5, G6, G7, G10, G11, G12,
 G14, G15, G16. G4-G7 are built on the branch, so `gameLevelStats` and its tests
 get deleted when we implement this.
 
-| id | Statistic | Shape | Note |
-|----|-----------|-------|------|
-| G2 | Median rating gap in a game | tile | The gap before the game, from `forEachGameWithPreGameStanding`. Absolute, so it never reads as a sign. |
-| G8 | Median days since the pair last played | tile | Over the games of the period that are not a first meeting. |
-| G9 | Share of games that are the first ever meeting of the pair | tile | "Ever" is over the whole history, so a game in the period counts as a first meeting only if the pair never played before it. |
-| G13 | Both ranked / one ranked / neither ranked | chart | The three shares add up to 100. Ranked is measured **at the time of the game**. |
+| id  | Statistic                                                  | Shape | Note                                                                                                                         |
+| --- | ---------------------------------------------------------- | ----- | ---------------------------------------------------------------------------------------------------------------------------- |
+| G2  | Median rating gap in a game                                | tile  | The gap before the game, from `forEachGameWithPreGameStanding`. Absolute, so it never reads as a sign.                       |
+| G8  | Median days since the pair last played                     | tile  | Over the games of the period that are not a first meeting.                                                                   |
+| G9  | Share of games that are the first ever meeting of the pair | tile  | "Ever" is over the whole history, so a game in the period counts as a first meeting only if the pair never played before it. |
+| G13 | Both ranked / one ranked / neither ranked                  | chart | The three shares add up to 100. Ranked is measured **at the time of the game**.                                              |
 
 **G13 in detail.** A player is ranked when they have played
 `gameLimitForRanked` games, so ranked at the time of a game means they had
@@ -84,16 +85,17 @@ League, rather than print two different values for "both ranked" on one page.
    statistics page. That is separate work, not this section.
 
 ## Level 2 — Set level — DECIDED
-*Games that record `setsWon`. No order and no points, so only the sets and who
-won them.*
+
+_Games that record `setsWon`. No order and no points, so only the sets and who
+won them._
 
 Kept: **S5, S7, S8**. Scrapped: S1, S2, S3, S4 (S8 carries all four) and S6.
 
-| id | Statistic | Shape | Note |
-|----|-----------|-------|------|
-| S5 | Share of all the sets that the game winners won | tile | Over the games with sets. Always above 50%, and it reads as dominance. |
-| S7 | Games by the number of sets they hold: 1, 2, 3, 4, 5 | chart | The relative quantity of each, as a share of the games with sets. |
-| S8 | The set score of a game: 2-0, 2-1, 3-0, 3-1, 3-2, 1-0… | pie | Read from the winner, so 2-1 and 1-2 are one slice. The slices add up to 100%. |
+| id  | Statistic                                              | Shape | Note                                                                           |
+| --- | ------------------------------------------------------ | ----- | ------------------------------------------------------------------------------ |
+| S5  | Share of all the sets that the game winners won        | tile  | Over the games with sets. Always above 50%, and it reads as dominance.         |
+| S7  | Games by the number of sets they hold: 1, 2, 3, 4, 5   | chart | The relative quantity of each, as a share of the games with sets.              |
+| S8  | The set score of a game: 2-0, 2-1, 3-0, 3-1, 3-2, 1-0… | pie   | Read from the winner, so 2-1 and 1-2 are one slice. The slices add up to 100%. |
 
 **S7 and S8 stay two charts.** They are read differently: S8 for the exact
 score, S7 for how long a game runs. S8 is a pie, S7 is a bar chart.
@@ -103,23 +105,24 @@ slice of the pie. Roll everything past the common ones into "other", or keep
 every scoreline? Default if we do not decide: keep every scoreline.
 
 ## Level 3 — Point level — DECIDED
-*Games that record `setPoints`. The sets are in the order they were played, so
-the first set and the deciding set are known here.*
+
+_Games that record `setPoints`. The sets are in the order they were played, so
+the first set and the deciding set are known here._
 
 Kept: **P1-P10**. Scrapped: P11, and P12 (the P9 chart carries it).
 
-| id | Statistic | Shape | Note |
-|----|-----------|-------|------|
-| P1 | Sets that reach deuce | tile | Both players at 10 or more. |
-| P2 | Median points in a set | tile | |
-| P3 | Median winning margin in a set | tile | |
-| P4 | Distribution of the points in a game | line chart | A line over the buckets of the total points of a game, with a reference line at the median, so the reader sees the spread on each side of it. The y axis is the share of the games, never a count. |
-| P5 | Share of the points won by the game winner | tile | |
-| P6 | Games won with fewer points than the loser | tile | Name it after the **Less is More** achievement, which awards exactly this. Link the card to the achievement. |
-| P7 | The winner of the first set wins the game | tile | |
-| P8 | Games where the winner lost the first set | tile | 100 minus P7. Show one of the two, framed the way that reads best. |
-| P9 | Distribution of the losing score of a set: 0-9 and deuce | bar chart | The most common way a set ends. |
-| P10 | Match deciding sets against the other sets, as a ratio | tile | "A match deciding set reaches deuce 1.4 times as often as a set that decides nothing." The two pools do not overlap: a deciding set is never in the comparison pool. |
+| id  | Statistic                                                | Shape      | Note                                                                                                                                                                                               |
+| --- | -------------------------------------------------------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| P1  | Sets that reach deuce                                    | tile       | Both players at 10 or more.                                                                                                                                                                        |
+| P2  | Median points in a set                                   | tile       |                                                                                                                                                                                                    |
+| P3  | Median winning margin in a set                           | tile       |                                                                                                                                                                                                    |
+| P4  | Distribution of the points in a game                     | line chart | A line over the buckets of the total points of a game, with a reference line at the median, so the reader sees the spread on each side of it. The y axis is the share of the games, never a count. |
+| P5  | Share of the points won by the game winner               | tile       |                                                                                                                                                                                                    |
+| P6  | Games won with fewer points than the loser               | tile       | Name it after the **Less is More** achievement, which awards exactly this. Link the card to the achievement.                                                                                       |
+| P7  | The winner of the first set wins the game                | tile       |                                                                                                                                                                                                    |
+| P8  | Games where the winner lost the first set                | tile       | 100 minus P7. Show one of the two, framed the way that reads best.                                                                                                                                 |
+| P9  | Distribution of the losing score of a set: 0-9 and deuce | bar chart  | The most common way a set ends.                                                                                                                                                                    |
+| P10 | Match deciding sets against the other sets, as a ratio   | tile       | "A match deciding set reaches deuce 1.4 times as often as a set that decides nothing." The two pools do not overlap: a deciding set is never in the comparison pool.                               |
 
 **P10 in detail.** A match deciding set is the last set of a game where the
 loser ended one set short of the winner, so both players could still win the
@@ -139,28 +142,29 @@ the card must say so.
 total. The line is spiky, which is true to the data.
 
 ## Level 4 — Fully tracked games — DECIDED
-*Games with `pointSequences` and `tracking`: every point in order, its time,
-and who served it.*
+
+_Games with `pointSequences` and `tracking`: every point in order, its time,
+and who served it._
 
 Kept: **T1, T2, T4, T6, T7, T12, T15 (rebuilt), T16 (rebuilt), T17-T22**.
 Scrapped: T3, T5, T8, T9, T11, T13, T14.
 
-| id | Statistic | Shape | Note |
-|----|-----------|-------|------|
-| T1 | Median game length | tile | |
-| T2 | Median time per point | tile | |
-| T4 | The serve, as a ratio | tile | Points the server wins against points the server loses. "The server wins 1.1 points for every 1 they lose." |
-| T6 | The first point of a set wins the set | tile | |
-| T7 | Median longest run of points in a game | tile | Low value is expected. Keep it and see. |
-| T12 | Time per point at deuce, as a ratio | tile | The median seconds per point at deuce against the median outside deuce. Framed like P10: "a point at deuce takes 1.3 times as long." |
-| T15 | The four levels of detail over time | stacked line chart | Replaces the tracked share line. One band per level (no score, sets, points, tracked), so the four add up to 100% of the games of the month. |
-| T16 | Average corrections in a tracked game | tile | How much a tracked log is edited by hand, so how far to trust the times. |
-| T17 | Average set points a set winner needs to close the set | one widget | T17, T18 and T19 belong together and read as one thing. |
-| T18 | Average match points a game winner needs to close the game | one widget | |
-| T19 | The difference between T18 and T17 | one widget | The headline of the group: closing a game costs this many more chances than closing a set. |
-| T20 | Set points converted, against match points converted | tile | The same idea as two conversion rates. It can join the T17-T19 widget if it fits. |
-| T21 | Games where the game loser held a match point | tile | |
-| T22 | Sets where the set loser held a set point | tile | |
+| id  | Statistic                                                  | Shape              | Note                                                                                                                                         |
+| --- | ---------------------------------------------------------- | ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| T1  | Median game length                                         | tile               |                                                                                                                                              |
+| T2  | Median time per point                                      | tile               |                                                                                                                                              |
+| T4  | The serve, as a ratio                                      | tile               | Points the server wins against points the server loses. "The server wins 1.1 points for every 1 they lose."                                  |
+| T6  | The first point of a set wins the set                      | tile               |                                                                                                                                              |
+| T7  | Median longest run of points in a game                     | tile               | Low value is expected. Keep it and see.                                                                                                      |
+| T12 | Time per point at deuce, as a ratio                        | tile               | The median seconds per point at deuce against the median outside deuce. Framed like P10: "a point at deuce takes 1.3 times as long."         |
+| T15 | The four levels of detail over time                        | stacked line chart | Replaces the tracked share line. One band per level (no score, sets, points, tracked), so the four add up to 100% of the games of the month. |
+| T16 | Average corrections in a tracked game                      | tile               | How much a tracked log is edited by hand, so how far to trust the times.                                                                     |
+| T17 | Average set points a set winner needs to close the set     | one widget         | T17, T18 and T19 belong together and read as one thing.                                                                                      |
+| T18 | Average match points a game winner needs to close the game | one widget         |                                                                                                                                              |
+| T19 | The difference between T18 and T17                         | one widget         | The headline of the group: closing a game costs this many more chances than closing a set.                                                   |
+| T20 | Set points converted, against match points converted       | tile               | The same idea as two conversion rates. It can join the T17-T19 widget if it fits.                                                            |
+| T21 | Games where the game loser held a match point              | tile               |                                                                                                                                              |
+| T22 | Sets where the set loser held a set point                  | tile               |                                                                                                                                              |
 
 **T15 is not really a level 4 statistic.** It describes how much detail every
 game records, so it belongs at the top of the tab as the map of the four

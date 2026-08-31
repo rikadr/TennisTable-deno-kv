@@ -151,11 +151,7 @@ describe("So Close Achievement", () => {
   // only), the loser 0. So a single unscored win makes the winner's 25 the
   // winning score, and only score ties can be within 10% of it.
   it("works for seasons of unscored games", () => {
-    const events: EventType[] = [
-      ...baseEvents,
-      game("g1", t(10), "alice", "bob"),
-      game("g2", t(11), "bob", "carol"),
-    ];
+    const events: EventType[] = [...baseEvents, game("g1", t(10), "alice", "bob"), game("g2", t(11), "bob", "carol")];
 
     const tt = new TennisTable({ events });
     tt.achievements.calculateAchievements();

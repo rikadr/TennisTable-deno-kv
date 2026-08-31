@@ -42,8 +42,7 @@ export const EditGameSore: React.FC = () => {
     loserSets === game?.score?.setsWon.gameLoser &&
     setPoints.every(
       ({ player1, player2 }, index) =>
-        game.score?.setPoints?.[index]?.gameWinner === player1 &&
-        game.score?.setPoints?.[index]?.gameLoser === player2,
+        game.score?.setPoints?.[index]?.gameWinner === player1 && game.score?.setPoints?.[index]?.gameLoser === player2,
     );
   const unchangedScore =
     pointDataUnchanged &&
@@ -155,8 +154,8 @@ export const EditGameSore: React.FC = () => {
       <div className="p-6 bg-secondary-background shrink-0">
         {discardsPointLog && (
           <div className="mb-3 p-3 bg-amber-100 border border-amber-400 text-amber-800 rounded-lg text-sm">
-            ⚠️ This game was tracked live, point by point. If you save a changed score, the point-by-point data of
-            this game is discarded. A change to only the table sides keeps it.
+            ⚠️ This game was tracked live, point by point. If you save a changed score, the point-by-point data of this
+            game is discarded. A change to only the table sides keeps it.
           </div>
         )}
         <div className="flex space-x-3">
