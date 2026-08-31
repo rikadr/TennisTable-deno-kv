@@ -83,7 +83,7 @@ export const GameDetailsPage: React.FC = () => {
   // The achievements this game earned. A game can earn one for a player who
   // did not play it: it can lift another player onto the podium, and a King
   // Maker goes to the opponent who built the new leader's climb. The 2 players
-  // of the game come first, the rest keep the order they were earned in.
+  // of the game come first, the rest keep the order the list gives them.
   const achievements = useMemo(() => {
     if (!game) return [];
     const order = (playerId: string) => (playerId === game.winner ? 0 : playerId === game.loser ? 1 : 2);

@@ -3151,8 +3151,8 @@ export class Achievements {
   // Helper method to get achievements for a player
   /**
    * Every achievement that one game earned, for every player. An achievement
-   * with no `earnedByGame` is in no list. The order is the order the
-   * achievements were awarded in.
+   * with no `earnedByGame` is in no list. The list is grouped by player, each
+   * player's achievements in the order they earned them.
    */
   getAchievementsEarnedByGame(gameId: string): Achievement[] {
     this.calculateAchievements();
@@ -4567,9 +4567,11 @@ type GenericAchievement<T extends AchievementType = AchievementType> = {
    * of the day is what earned it. A King Maker is earned by the game in which
    * another player takes rank 1.
    *
-   * It is undefined for an achievement that no single game earns: a season or
-   * a tournament result, a period of activity, a retirement, and an
-   * achievement that a player leaving the leaderboard completes.
+   * It is undefined for an achievement that no single game earns: a season
+   * result, taking part in a tournament, a whole group play, a period of
+   * activity, a retirement, and an achievement that a player leaving the
+   * leaderboard completes. A tournament win and a Sweet Revenge do have one -
+   * the deciding game and the revenge match.
    */
   earnedByGame?: string;
   data: AchievementDefinitions[T];
