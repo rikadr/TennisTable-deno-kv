@@ -15,7 +15,13 @@ export type HallOfFameScoreBreakdown = {
   tournamentProgression: { score: number; tournaments: TournamentDetail[] };
   longevity: { score: number; activeDays: number };
   experience: { score: number; gamesWon: number; gamesLost: number };
-  dataVolume: { score: number; gamesWithSets: number; gamesWithPoints: number; liveTrackedGames: number };
+  dataVolume: {
+    score: number;
+    gamesWithSets: number;
+    gamesWithPoints: number;
+    liveTrackedGames: number;
+    gamesWithBadSide: number;
+  };
   peakElo: { score: number; peakElo: number };
   podiumTime: { score: number; rank1Days: number; rank2to3Days: number; rank4to5Days: number };
   total: number;
@@ -426,6 +432,7 @@ export class HallOfFame {
     let gamesWithSets = 0;
     let gamesWithPoints = 0;
     let liveTrackedGames = 0;
+    let gamesWithBadSide = 0;
 
     for (const game of this.parent.games) {
       if (game.winner !== playerId && game.loser !== playerId) continue;
@@ -442,13 +449,18 @@ export class HallOfFame {
       if (game.score.pointSequences && game.score.pointSequences.length > 0) {
         liveTrackedGames++;
       }
+
+      if (game.score.gameWinnerSides?.some((side) => side !== null)) {
+        gamesWithBadSide++;
+      }
     }
 
     return {
-      score: gamesWithSets + gamesWithPoints + liveTrackedGames,
+      score: gamesWithSets + gamesWithPoints + liveTrackedGames + gamesWithBadSide,
       gamesWithSets,
       gamesWithPoints,
       liveTrackedGames,
+      gamesWithBadSide,
     };
   }
 
