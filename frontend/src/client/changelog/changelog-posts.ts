@@ -42,6 +42,25 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
+    slug: "new-player-in-3-steps",
+    title: "New player in 3 steps",
+    date: "2026-08-31",
+    tags: ["feature-update"],
+    summary:
+      "The new player page has 3 steps: the name, the color and the photo. The color is permanent, and the page now says so before you create the player.",
+    body: [
+      text(
+        "Step 1 takes the name of the player. Step 2 shows 8 colors, and you select 1 of them. Step 3 starts after the app creates the player, and it takes the photo of the player.",
+      ),
+      text(
+        "The color of a player is permanent. You cannot change the color after the app creates the player. Step 2 gives this warning, and you must confirm that you understand it before you create the player.",
+      ),
+      text(
+        "The photo step encourages a photo for each new player. You can use the camera, or select an image from your device, or add the photo later. Before this change, the app opened the page of the new player and asked for no photo.",
+      ),
+    ],
+  },
+  {
     slug: "the-baker-achievement",
     title: "New achievement: The Baker 🧑‍🍳",
     date: "2026-08-28",

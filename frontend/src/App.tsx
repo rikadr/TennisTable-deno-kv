@@ -1,7 +1,7 @@
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./common/query-client";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
-import { AddPlayerPage } from "./pages/add-player-page";
+import { AddPlayerPage } from "./pages/add-player/add-player-page";
 import { ComparePlayersPage } from "./pages/compare-players-page";
 import { MyPage } from "./pages/my-page";
 import { LoginPage } from "./pages/login";
