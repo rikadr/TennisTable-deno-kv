@@ -16,6 +16,7 @@ import { SetBreakdownTable, SetSidesTable, TrackingStats } from "./game-tracking
 import { SetScoreGraphs } from "./set-score-graphs";
 import { PointSituationRadar } from "./point-situation-radar";
 import { playerStandingsAt, seasonOfGame } from "../../client/client-db/game-standings";
+import { GameAchievements } from "./game-achievements-panel";
 import { useGameHallOfFameChange } from "../../hooks/use-game-hall-of-fame-change";
 import { StandingsChangeTable } from "./game-standings-panel";
 
@@ -23,9 +24,9 @@ import { StandingsChangeTable } from "./game-standings-panel";
  * Details about a single game, identified by its played-at timestamp (unique
  * per game) in the `time` url param: who played and the score, the Elo the
  * game moved, the ranks and the scores it moved on the leaderboards, the
- * pairing win % prediction before and after the game, and the win % over the
- * game replayed from the point-by-point log. Everything the game changed for
- * the other players, and the achievements it earned, lives on the What changed
+ * achievements it earned, the pairing win % prediction before and after the
+ * game, and the win % over the game replayed from the point-by-point log.
+ * Everything the game changed for the other players lives on the What changed
  * page, linked with the game's own 2-second window preselected.
  */
 export const GameDetailsPage: React.FC = () => {
@@ -78,6 +79,20 @@ export const GameDetailsPage: React.FC = () => {
       },
     };
   }, [game, preState, postState, season]);
+
+  // The achievements this game earned. A game can earn one for a player who
+  // did not play it: it can lift another player onto the podium, and a King
+  // Maker goes to the opponent who built the new leader's climb. The 2 players
+  // of the game come first, the rest keep the order the list gives them.
+  const achievements = useMemo(() => {
+    if (!game) return [];
+    const order = (playerId: string) => (playerId === game.winner ? 0 : playerId === game.loser ? 1 : 2);
+    return context.achievements
+      .getAchievementsEarnedByGame(game.id)
+      .map((achievement, index) => ({ achievement, index }))
+      .sort((a, b) => order(a.achievement.earnedBy) - order(b.achievement.earnedBy) || a.index - b.index)
+      .map(({ achievement }) => achievement);
+  }, [context, game]);
 
   // The Hall of Fame score of the two players before and after the game. It is
   // calculated in a web worker, so the page renders without waiting for it.
@@ -259,6 +274,9 @@ export const GameDetailsPage: React.FC = () => {
               )}
             </div>
           )}
+
+          {/* The achievements this game earned, for either player */}
+          <GameAchievements achievements={achievements} />
 
           {/* Everything the live tracker recorded: the timeline, the serves,
               the sets one by one, and the pace of the points */}

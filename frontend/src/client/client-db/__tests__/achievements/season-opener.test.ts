@@ -46,6 +46,7 @@ describe("Season Opener Achievement", () => {
       type: "season-opener",
       earnedBy: "alice",
       earnedAt: q1Game1,
+      earnedByGame: "g1",
       data: {
         seasonStart: determineSeason(q1Game1).start,
         gameId: "g1",

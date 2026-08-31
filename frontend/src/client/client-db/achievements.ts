@@ -147,6 +147,13 @@ export class Achievements {
 
   achievementMap: Map<string, Achievement[]> = new Map();
 
+  /** Achievements by the game that earned them. Built on the first read.
+   * See `earnedByGame`. */
+  #achievementsByGame: Map<string, Achievement[]> | undefined;
+
+  /** Game ids by the time they were played. Built on the first read. */
+  #gamesByPlayedAt: Map<number, string> | undefined;
+
   /** The moment the achievements are awarded for: the reference time of a
    * projection of a past state, or the real clock for the live state. Read
    * lazily so the live state always uses the current time.
@@ -300,6 +307,8 @@ export class Achievements {
     }
     // Clear existing achievements
     this.achievementMap.clear();
+    this.#achievementsByGame = undefined;
+    this.#gamesByPlayedAt = undefined;
     this.bestDavidGain.clear();
     this.worstGoliathLoss.clear();
     this.davidRecord = { eloGain: undefined, holder: undefined };
@@ -387,19 +396,23 @@ export class Achievements {
       if (isMilestoneGameNumber(leagueGameNumber)) {
         this.#addAchievement(
           game.winner,
-          this.#createAchievement("milestone-game", game.winner, game.playedAt, {
-            gameId: game.id,
-            opponent: game.loser,
-            milestone: leagueGameNumber,
-          }),
+          this.#createAchievement(
+            "milestone-game",
+            game.winner,
+            game.playedAt,
+            { gameId: game.id, opponent: game.loser, milestone: leagueGameNumber },
+            game.id,
+          ),
         );
         this.#addAchievement(
           game.loser,
-          this.#createAchievement("milestone-game", game.loser, game.playedAt, {
-            gameId: game.id,
-            opponent: game.winner,
-            milestone: leagueGameNumber,
-          }),
+          this.#createAchievement(
+            "milestone-game",
+            game.loser,
+            game.playedAt,
+            { gameId: game.id, opponent: game.winner, milestone: leagueGameNumber },
+            game.id,
+          ),
         );
       }
 
@@ -480,20 +493,26 @@ export class Achievements {
       if (winner.gamesPlayed === 1) {
         this.#addAchievement(
           game.winner,
-          this.#createAchievement("first-game", game.winner, game.playedAt, {
-            gameId: game.id,
-            opponent: game.loser,
-          }),
+          this.#createAchievement(
+            "first-game",
+            game.winner,
+            game.playedAt,
+            { gameId: game.id, opponent: game.loser },
+            game.id,
+          ),
         );
       }
       loser.gamesPlayed++;
       if (loser.gamesPlayed === 1) {
         this.#addAchievement(
           game.loser,
-          this.#createAchievement("first-game", game.loser, game.playedAt, {
-            gameId: game.id,
-            opponent: game.winner,
-          }),
+          this.#createAchievement(
+            "first-game",
+            game.loser,
+            game.playedAt,
+            { gameId: game.id, opponent: game.winner },
+            game.id,
+          ),
         );
       }
 
@@ -503,19 +522,25 @@ export class Achievements {
       if (winner.gamesPlayed === gameLimitForRanked) {
         this.#addAchievement(
           game.winner,
-          this.#createAchievement("ranked", game.winner, game.playedAt, {
-            gameId: game.id,
-            opponent: game.loser,
-          }),
+          this.#createAchievement(
+            "ranked",
+            game.winner,
+            game.playedAt,
+            { gameId: game.id, opponent: game.loser },
+            game.id,
+          ),
         );
       }
       if (loser.gamesPlayed === gameLimitForRanked) {
         this.#addAchievement(
           game.loser,
-          this.#createAchievement("ranked", game.loser, game.playedAt, {
-            gameId: game.id,
-            opponent: game.winner,
-          }),
+          this.#createAchievement(
+            "ranked",
+            game.loser,
+            game.playedAt,
+            { gameId: game.id, opponent: game.winner },
+            game.id,
+          ),
         );
       }
 
@@ -526,15 +551,15 @@ export class Achievements {
       // by one player in a single day / week / month. Both players played this
       // game; the winner is checked first, so when both cross the same count
       // at once the win breaks the tie.
-      this.#checkHeroAchievements(game.winner, winner, game.playedAt);
-      this.#checkHeroAchievements(game.loser, loser, game.playedAt);
+      this.#checkHeroAchievements(game.winner, winner, game.playedAt, game.id);
+      this.#checkHeroAchievements(game.loser, loser, game.playedAt, game.id);
 
       // Check for "Yin Yang": the league record for the longest run of
       // strictly alternating results. Both players' runs move on every game;
       // the winner is checked first, so when both reach the record length at
       // once the win breaks the tie.
-      this.#updateYinYangStreak(game.winner, winner, true, game.playedAt);
-      this.#updateYinYangStreak(game.loser, loser, false, game.playedAt);
+      this.#updateYinYangStreak(game.winner, winner, true, game.playedAt, game.id);
+      this.#updateYinYangStreak(game.loser, loser, false, game.playedAt, game.id);
 
       // Check for Welcome Committee achievement
       // If this is the loser's first game ever, the winner is their first opponent
@@ -543,17 +568,25 @@ export class Achievements {
         if (winner.firstOpponentFor.size === 3) {
           this.#addAchievement(
             game.winner,
-            this.#createAchievement("welcome-committee", game.winner, game.playedAt, {
-              opponents: Array.from(winner.firstOpponentFor),
-            }),
+            this.#createAchievement(
+              "welcome-committee",
+              game.winner,
+              game.playedAt,
+              { opponents: Array.from(winner.firstOpponentFor) },
+              game.id,
+            ),
           );
         }
         if (winner.firstOpponentFor.size === 10) {
           this.#addAchievement(
             game.winner,
-            this.#createAchievement("community-builder", game.winner, game.playedAt, {
-              opponents: Array.from(winner.firstOpponentFor),
-            }),
+            this.#createAchievement(
+              "community-builder",
+              game.winner,
+              game.playedAt,
+              { opponents: Array.from(winner.firstOpponentFor) },
+              game.id,
+            ),
           );
         }
       }
@@ -563,17 +596,25 @@ export class Achievements {
         if (loser.firstOpponentFor.size === 3) {
           this.#addAchievement(
             game.loser,
-            this.#createAchievement("welcome-committee", game.loser, game.playedAt, {
-              opponents: Array.from(loser.firstOpponentFor),
-            }),
+            this.#createAchievement(
+              "welcome-committee",
+              game.loser,
+              game.playedAt,
+              { opponents: Array.from(loser.firstOpponentFor) },
+              game.id,
+            ),
           );
         }
         if (loser.firstOpponentFor.size === 10) {
           this.#addAchievement(
             game.loser,
-            this.#createAchievement("community-builder", game.loser, game.playedAt, {
-              opponents: Array.from(loser.firstOpponentFor),
-            }),
+            this.#createAchievement(
+              "community-builder",
+              game.loser,
+              game.playedAt,
+              { opponents: Array.from(loser.firstOpponentFor) },
+              game.id,
+            ),
           );
         }
       }
@@ -590,13 +631,13 @@ export class Achievements {
       if (winnerPrevOpponentCount < 10 && winner.opponentsPlayed.size === 10) {
         this.#addAchievement(
           game.winner,
-          this.#createAchievement("variety-player", game.winner, game.playedAt, undefined),
+          this.#createAchievement("variety-player", game.winner, game.playedAt, undefined, game.id),
         );
       }
       if (loserPrevOpponentCount < 10 && loser.opponentsPlayed.size === 10) {
         this.#addAchievement(
           game.loser,
-          this.#createAchievement("variety-player", game.loser, game.playedAt, undefined),
+          this.#createAchievement("variety-player", game.loser, game.playedAt, undefined, game.id),
         );
       }
 
@@ -605,13 +646,13 @@ export class Achievements {
       if (winnerPrevOpponentCount < 20 && winner.opponentsPlayed.size === 20) {
         this.#addAchievement(
           game.winner,
-          this.#createAchievement("global-player", game.winner, game.playedAt, undefined),
+          this.#createAchievement("global-player", game.winner, game.playedAt, undefined, game.id),
         );
       }
       if (loserPrevOpponentCount < 20 && loser.opponentsPlayed.size === 20) {
         this.#addAchievement(
           game.loser,
-          this.#createAchievement("global-player", game.loser, game.playedAt, undefined),
+          this.#createAchievement("global-player", game.loser, game.playedAt, undefined, game.id),
         );
       }
 
@@ -635,19 +676,23 @@ export class Achievements {
       if (winnerOpponentData.count > 0 && game.playedAt - winnerOpponentData.lastGame >= ONE_YEAR) {
         this.#addAchievement(
           game.winner,
-          this.#createAchievement("reunion", game.winner, game.playedAt, {
-            gameId: game.id,
-            opponent: game.loser,
-            lastGameAt: winnerOpponentData.lastGame,
-          }),
+          this.#createAchievement(
+            "reunion",
+            game.winner,
+            game.playedAt,
+            { gameId: game.id, opponent: game.loser, lastGameAt: winnerOpponentData.lastGame },
+            game.id,
+          ),
         );
         this.#addAchievement(
           game.loser,
-          this.#createAchievement("reunion", game.loser, game.playedAt, {
-            gameId: game.id,
-            opponent: game.winner,
-            lastGameAt: loserOpponentData.lastGame,
-          }),
+          this.#createAchievement(
+            "reunion",
+            game.loser,
+            game.playedAt,
+            { gameId: game.id, opponent: game.winner, lastGameAt: loserOpponentData.lastGame },
+            game.id,
+          ),
         );
       }
 
@@ -660,30 +705,36 @@ export class Achievements {
       if (winnerOpponentData.count === 50 && game.playedAt - winnerOpponentData.firstGame <= ONE_YEAR) {
         this.#addAchievement(
           game.winner,
-          this.#createAchievement("best-friends", game.winner, game.playedAt, {
-            opponent: game.loser,
-            firstGame: winnerOpponentData.firstGame,
-          }),
+          this.#createAchievement(
+            "best-friends",
+            game.winner,
+            game.playedAt,
+            { opponent: game.loser, firstGame: winnerOpponentData.firstGame },
+            game.id,
+          ),
         );
       }
       if (loserOpponentData.count === 50 && game.playedAt - loserOpponentData.firstGame <= ONE_YEAR) {
         this.#addAchievement(
           game.loser,
-          this.#createAchievement("best-friends", game.loser, game.playedAt, {
-            opponent: game.winner,
-            firstGame: loserOpponentData.firstGame,
-          }),
+          this.#createAchievement(
+            "best-friends",
+            game.loser,
+            game.playedAt,
+            { opponent: game.winner, firstGame: loserOpponentData.firstGame },
+            game.id,
+          ),
         );
       }
 
       // Check for "Back After" achievements before updating lastActiveAt
-      this.#checkBackAfterAchievement(game.winner, winner.lastActiveAt, game.playedAt);
-      this.#checkBackAfterAchievement(game.loser, loser.lastActiveAt, game.playedAt);
+      this.#checkBackAfterAchievement(game.winner, winner.lastActiveAt, game.playedAt, game.id);
+      this.#checkBackAfterAchievement(game.loser, loser.lastActiveAt, game.playedAt, game.id);
 
       // Check for "Anniversary": a game played on the day before, the day of,
       // or the day after a yearly mark of the player's first ever game.
-      this.#checkAnniversaryAchievement(game.winner, winner.firstActiveAt, game.playedAt);
-      this.#checkAnniversaryAchievement(game.loser, loser.firstActiveAt, game.playedAt);
+      this.#checkAnniversaryAchievement(game.winner, winner.firstActiveAt, game.playedAt, game.id);
+      this.#checkAnniversaryAchievement(game.loser, loser.firstActiveAt, game.playedAt, game.id);
 
       // Update winner stats
       winner.lastActiveAt = game.playedAt;
@@ -702,6 +753,7 @@ export class Achievements {
         winner.winStreakAll,
         winner.winStreakAllStartedAt,
         game.playedAt,
+        game.id,
         winner.openWinStreakRecord,
         STREAK_RECORD_FLOOR,
       );
@@ -710,16 +762,12 @@ export class Achievements {
       if (winner.loseStreakAll >= 20) {
         this.#addAchievement(
           game.winner,
-          this.#createAchievement("unbreakable-spirit", game.winner, game.playedAt, {
-            opponent: game.loser,
-          }),
+          this.#createAchievement("unbreakable-spirit", game.winner, game.playedAt, { opponent: game.loser }, game.id),
         );
       } else if (winner.loseStreakAll >= 10) {
         this.#addAchievement(
           game.winner,
-          this.#createAchievement("comeback-kid", game.winner, game.playedAt, {
-            opponent: game.loser,
-          }),
+          this.#createAchievement("comeback-kid", game.winner, game.playedAt, { opponent: game.loser }, game.id),
         );
       }
 
@@ -744,11 +792,13 @@ export class Achievements {
       if (loser.winStreakAll >= 10) {
         this.#addAchievement(
           game.winner,
-          this.#createAchievement("streak-ender", game.winner, game.playedAt, {
-            opponent: game.loser,
-            gameId: game.id,
-            streakLength: loser.winStreakAll,
-          }),
+          this.#createAchievement(
+            "streak-ender",
+            game.winner,
+            game.playedAt,
+            { opponent: game.loser, gameId: game.id, streakLength: loser.winStreakAll },
+            game.id,
+          ),
         );
       }
 
@@ -774,6 +824,7 @@ export class Achievements {
         loser.loseStreakAll,
         loser.loseStreakAllStartedAt,
         game.playedAt,
+        game.id,
         loser.openLoseStreakRecord,
         STREAK_RECORD_FLOOR,
       );
@@ -782,16 +833,24 @@ export class Achievements {
       if (loser.loseStreakAll === 10) {
         this.#addAchievement(
           game.loser,
-          this.#createAchievement("punching-bag", game.loser, game.playedAt, {
-            startedAt: loser.loseStreakAllStartedAt,
-          }),
+          this.#createAchievement(
+            "punching-bag",
+            game.loser,
+            game.playedAt,
+            { startedAt: loser.loseStreakAllStartedAt },
+            game.id,
+          ),
         );
       } else if (loser.loseStreakAll === 20) {
         this.#addAchievement(
           game.loser,
-          this.#createAchievement("never-give-up", game.loser, game.playedAt, {
-            startedAt: loser.loseStreakAllStartedAt,
-          }),
+          this.#createAchievement(
+            "never-give-up",
+            game.loser,
+            game.playedAt,
+            { startedAt: loser.loseStreakAllStartedAt },
+            game.id,
+          ),
         );
       }
 
@@ -821,7 +880,7 @@ export class Achievements {
           if (tracker.trackedGamesPlayed === ON_THE_RECORD_TARGET) {
             this.#addAchievement(
               playerId,
-              this.#createAchievement("on-the-record", playerId, game.playedAt, undefined),
+              this.#createAchievement("on-the-record", playerId, game.playedAt, undefined, game.id),
             );
           }
         };
@@ -847,7 +906,7 @@ export class Achievements {
           if (!hasDonut5) {
             this.#addAchievement(
               game.winner,
-              this.#createAchievement("donut-5", game.winner, game.playedAt, undefined),
+              this.#createAchievement("donut-5", game.winner, game.playedAt, undefined, game.id),
             );
           }
         }
@@ -860,7 +919,7 @@ export class Achievements {
         if (donutsGivenBefore < DONUT_BAKER_TARGET && loser.donutsGiven >= DONUT_BAKER_TARGET) {
           this.#addAchievement(
             game.loser,
-            this.#createAchievement("donut-baker", game.loser, game.playedAt, undefined),
+            this.#createAchievement("donut-baker", game.loser, game.playedAt, undefined, game.id),
           );
         }
 
@@ -882,14 +941,14 @@ export class Achievements {
           if (winner.closeCallsCount === 5) {
             this.#addAchievement(
               game.winner,
-              this.#createAchievement("close-calls", game.winner, game.playedAt, undefined),
+              this.#createAchievement("close-calls", game.winner, game.playedAt, undefined, game.id),
             );
           }
 
           if (loser.closeCallsCount === 5) {
             this.#addAchievement(
               game.loser,
-              this.#createAchievement("close-calls", game.loser, game.playedAt, undefined),
+              this.#createAchievement("close-calls", game.loser, game.playedAt, undefined, game.id),
             );
           }
 
@@ -897,14 +956,14 @@ export class Achievements {
           if (winner.edgeLordCount === 20) {
             this.#addAchievement(
               game.winner,
-              this.#createAchievement("edge-lord", game.winner, game.playedAt, undefined),
+              this.#createAchievement("edge-lord", game.winner, game.playedAt, undefined, game.id),
             );
           }
 
           if (loser.edgeLordCount === 20) {
             this.#addAchievement(
               game.loser,
-              this.#createAchievement("edge-lord", game.loser, game.playedAt, undefined),
+              this.#createAchievement("edge-lord", game.loser, game.playedAt, undefined, game.id),
             );
           }
         }
@@ -919,21 +978,21 @@ export class Achievements {
           if (winner.consistencyCount === 5) {
             this.#addAchievement(
               game.winner,
-              this.#createAchievement("consistency-is-key", game.winner, game.playedAt, undefined),
+              this.#createAchievement("consistency-is-key", game.winner, game.playedAt, undefined, game.id),
             );
           }
 
           if (loser.consistencyCount === 5) {
             this.#addAchievement(
               game.loser,
-              this.#createAchievement("consistency-is-key", game.loser, game.playedAt, undefined),
+              this.#createAchievement("consistency-is-key", game.loser, game.playedAt, undefined, game.id),
             );
           }
         }
       }
 
       // Check for Hat-trick achievement (3 wins within 90 minutes)
-      this.#checkHatTrickAchievement(game.winner, winner.hatTrickWins, game.playedAt);
+      this.#checkHatTrickAchievement(game.winner, winner.hatTrickWins, game.playedAt, game.id);
 
       // Check for streak achievements
       this.#checkStreakAchievements(
@@ -944,6 +1003,7 @@ export class Achievements {
         playerStreak.count,
         playerStreak.startedAt,
         game.playedAt,
+        game.id,
       );
 
       // Check for activity period achievements for both players during the game loop
@@ -1060,12 +1120,18 @@ export class Achievements {
       return d.getTime();
     };
 
-    type DayStats = { wins: number; losses: number; lastWinAt: number };
+    // `lastWinGameId` goes with `lastWinAt`: the win the day is stamped at.
+    type DayStats = { wins: number; losses: number; lastWinAt: number; lastWinGameId: string | undefined };
     const perDay = new Map<string, Map<number, DayStats>>();
     // daysWon holds day offsets from the week's Monday (0=Mon..6=Sun).
     // startOffset is the first day of the 5-day run that completed the week
     // (only meaningful once completedAt is set).
-    type WeekStats = { daysWon: Set<number>; completedAt: number | null; startOffset: number };
+    type WeekStats = {
+      daysWon: Set<number>;
+      completedAt: number | null;
+      completedByGameId: string | undefined;
+      startOffset: number;
+    };
     const perWeek = new Map<string, Map<number, WeekStats>>();
 
     const getDayStats = (playerId: string, day: number): DayStats => {
@@ -1076,7 +1142,7 @@ export class Achievements {
       }
       let stats = days.get(day);
       if (!stats) {
-        stats = { wins: 0, losses: 0, lastWinAt: 0 };
+        stats = { wins: 0, losses: 0, lastWinAt: 0, lastWinGameId: undefined };
         days.set(day, stats);
       }
       return stats;
@@ -1089,7 +1155,7 @@ export class Achievements {
       }
       let stats = weeks.get(week);
       if (!stats) {
-        stats = { daysWon: new Set(), completedAt: null, startOffset: 0 };
+        stats = { daysWon: new Set(), completedAt: null, completedByGameId: undefined, startOffset: 0 };
         weeks.set(week, stats);
       }
       return stats;
@@ -1100,6 +1166,7 @@ export class Achievements {
       const winnerDay = getDayStats(game.winner, day);
       winnerDay.wins++;
       winnerDay.lastWinAt = game.playedAt;
+      winnerDay.lastWinGameId = game.id;
 
       // Party Pooper: checked before the loss is recorded, so `loserDay`
       // still shows the opponent's day as it stood going into this game.
@@ -1107,12 +1174,13 @@ export class Achievements {
       if (loserDay.losses === 0 && loserDay.wins >= PARTY_POOPER_MIN_WINS) {
         this.#addAchievement(
           game.winner,
-          this.#createAchievement("party-pooper", game.winner, game.playedAt, {
-            gameId: game.id,
-            opponent: game.loser,
-            day,
-            opponentWins: loserDay.wins,
-          }),
+          this.#createAchievement(
+            "party-pooper",
+            game.winner,
+            game.playedAt,
+            { gameId: game.id, opponent: game.loser, day, opponentWins: loserDay.wins },
+            game.id,
+          ),
         );
       }
       loserDay.losses++;
@@ -1136,6 +1204,7 @@ export class Achievements {
             }
             if (runComplete) {
               winnerWeek.completedAt = game.playedAt;
+              winnerWeek.completedByGameId = game.id;
               winnerWeek.startOffset = start;
               break;
             }
@@ -1155,10 +1224,16 @@ export class Achievements {
         if (stats.losses === 0 && stats.wins >= 5) {
           this.#addAchievement(
             playerId,
-            this.#createAchievement("perfect-day", playerId, stats.lastWinAt, {
-              day,
-              wins: stats.wins,
-            }),
+            // Earned by the win the day is stamped at - its last one. With
+            // exactly 5 wins that is the 5th game, the one that made the day
+            // perfect.
+            this.#createAchievement(
+              "perfect-day",
+              playerId,
+              stats.lastWinAt,
+              { day, wins: stats.wins },
+              stats.lastWinGameId,
+            ),
           );
         }
       }
@@ -1175,10 +1250,13 @@ export class Achievements {
           startDate.setDate(startDate.getDate() + stats.startOffset);
           this.#addAchievement(
             playerId,
-            this.#createAchievement("perfect-week", playerId, stats.completedAt, {
-              weekStart: week,
-              startDay: startDate.getTime(),
-            }),
+            this.#createAchievement(
+              "perfect-week",
+              playerId,
+              stats.completedAt,
+              { weekStart: week, startDay: startDate.getTime() },
+              stats.completedByGameId,
+            ),
           );
         }
       }
@@ -1284,7 +1362,9 @@ export class Achievements {
       return true;
     };
 
-    const recheckAt = (time: number) => {
+    // `gameId` is the game that moved the state, when a game did. A recheck
+    // after a deactivation completes a set with no game behind it.
+    const recheckAt = (time: number, gameId?: string) => {
       const cohort = cohortAt(time);
       if (cohort.size < 5) return;
       // Candidates are everyone who has played a game — the earner need not
@@ -1297,30 +1377,39 @@ export class Achievements {
           fullHouseAwarded.add(playerId);
           this.#addAchievement(
             playerId,
-            this.#createAchievement("full-house", playerId, time, {
-              count: targetCount,
-              firstGameAt: firstGameAt.get(playerId)!,
-            }),
+            this.#createAchievement(
+              "full-house",
+              playerId,
+              time,
+              { count: targetCount, firstGameAt: firstGameAt.get(playerId)! },
+              gameId,
+            ),
           );
         }
         if (!humbledAwarded.has(playerId) && coversCohort(lostTo.get(playerId), cohort, playerId)) {
           humbledAwarded.add(playerId);
           this.#addAchievement(
             playerId,
-            this.#createAchievement("humbled", playerId, time, {
-              count: targetCount,
-              firstGameAt: firstGameAt.get(playerId)!,
-            }),
+            this.#createAchievement(
+              "humbled",
+              playerId,
+              time,
+              { count: targetCount, firstGameAt: firstGameAt.get(playerId)! },
+              gameId,
+            ),
           );
         }
         if (!everybodysOpponentAwarded.has(playerId) && coversCohort(played.get(playerId), cohort, playerId)) {
           everybodysOpponentAwarded.add(playerId);
           this.#addAchievement(
             playerId,
-            this.#createAchievement("everybodys-opponent", playerId, time, {
-              count: targetCount,
-              firstGameAt: firstGameAt.get(playerId)!,
-            }),
+            this.#createAchievement(
+              "everybodys-opponent",
+              playerId,
+              time,
+              { count: targetCount, firstGameAt: firstGameAt.get(playerId)! },
+              gameId,
+            ),
           );
         }
       }
@@ -1359,7 +1448,7 @@ export class Achievements {
         addEdge(played, game.winner, game.loser);
         addEdge(played, game.loser, game.winner);
       }
-      recheckAt(action.time);
+      recheckAt(action.time, action.kind === "game" ? action.game.id : undefined);
     }
   }
 
@@ -1485,7 +1574,9 @@ export class Achievements {
     // Award King Maker to whichever opponent contributed the most positive
     // net Elo to `newKing` over their history up to `time`. No-op if no
     // opponent has a positive net contribution.
-    const awardKingMaker = (newKing: string, time: number) => {
+    // `gameId` is the game in which `newKing` reached rank 1 - the game that
+    // earns the King Maker for the opponent who built that climb.
+    const awardKingMaker = (newKing: string, time: number, gameId?: string) => {
       const gains = netGainPerOpponent.get(newKing);
       if (!gains) return;
       let bestOpponent: string | null = null;
@@ -1499,10 +1590,7 @@ export class Achievements {
       if (!bestOpponent) return;
       this.#addAchievement(
         bestOpponent,
-        this.#createAchievement("king-maker", bestOpponent, time, {
-          newKing,
-          netScoreGained: bestGain,
-        }),
+        this.#createAchievement("king-maker", bestOpponent, time, { newKing, netScoreGained: bestGain }, gameId),
       );
     };
 
@@ -1532,7 +1620,7 @@ export class Achievements {
     // Climber tracking: each time a player is post-match ranked, lock
     // in their first-ranked Elo (and update the running low downward).
     // Award the achievement once when current Elo - low ≥ 300.
-    const updateClimber = (playerId: string, currentElo: number, totalGames: number, time: number) => {
+    const updateClimber = (playerId: string, currentElo: number, totalGames: number, time: number, gameId: string) => {
       if (totalGames < gameLimit) return;
       if (!isActiveAt(playerId, time)) return;
       const prevLow = this.climberAllTimeLow.get(playerId);
@@ -1549,12 +1637,13 @@ export class Achievements {
         climber.add(playerId);
         this.#addAchievement(
           playerId,
-          this.#createAchievement("climber", playerId, time, {
-            fromElo: low.elo,
-            toElo: currentElo,
-            fromDate: low.time,
-            toDate: time,
-          }),
+          this.#createAchievement(
+            "climber",
+            playerId,
+            time,
+            { fromElo: low.elo, toElo: currentElo, fromDate: low.time, toDate: time },
+            gameId,
+          ),
         );
       }
     };
@@ -1578,7 +1667,9 @@ export class Achievements {
     // players whose own pre-match state should govern eligibility — used
     // by the per-game recheck so a winner/loser who just crossed
     // gameLimitForRanked doesn't sneak past the pre-match-ranked rule.
-    const recheckRankAchievementsAt = (time: number, skip?: Set<string>) => {
+    // `gameId` is the game that shifted the leaderboard, when a game did. A
+    // recheck after a deactivation lifts players with no game behind it.
+    const recheckRankAchievementsAt = (time: number, skip?: Set<string>, gameId?: string) => {
       const rankedCount = countRankedAt(time);
       if (rankedCount < 5) return;
       for (const [playerId, player] of playerMap) {
@@ -1591,22 +1682,31 @@ export class Achievements {
           touchedThrone.add(playerId);
           this.#addAchievement(
             playerId,
-            this.#createAchievement("touched-the-throne", playerId, time, {
-              elo: player.elo,
-              firstGameAt: firstGameAt.get(playerId)!,
-              dethroned: previousThroneHolder && previousThroneHolder !== playerId ? previousThroneHolder : undefined,
-            }),
+            this.#createAchievement(
+              "touched-the-throne",
+              playerId,
+              time,
+              {
+                elo: player.elo,
+                firstGameAt: firstGameAt.get(playerId)!,
+                dethroned: previousThroneHolder && previousThroneHolder !== playerId ? previousThroneHolder : undefined,
+              },
+              gameId,
+            ),
           );
-          awardKingMaker(playerId, time);
+          awardKingMaker(playerId, time, gameId);
         }
         if (rank <= 3 && !onPodium.has(playerId)) {
           onPodium.add(playerId);
           this.#addAchievement(
             playerId,
-            this.#createAchievement("on-the-podium", playerId, time, {
-              elo: player.elo,
-              firstGameAt: firstGameAt.get(playerId)!,
-            }),
+            this.#createAchievement(
+              "on-the-podium",
+              playerId,
+              time,
+              { elo: player.elo, firstGameAt: firstGameAt.get(playerId)! },
+              gameId,
+            ),
           );
         }
       }
@@ -1667,10 +1767,13 @@ export class Achievements {
         kingslayed.add(game.winner);
         this.#addAchievement(
           game.winner,
-          this.#createAchievement("kingslayer", game.winner, game.playedAt, {
-            opponent: game.loser,
-            gameId: game.id,
-          }),
+          this.#createAchievement(
+            "kingslayer",
+            game.winner,
+            game.playedAt,
+            { opponent: game.loser, gameId: game.id },
+            game.id,
+          ),
         );
       }
 
@@ -1711,10 +1814,13 @@ export class Achievements {
         if (giantState.count === GIANT_HUNTING_TARGET) {
           this.#addAchievement(
             game.winner,
-            this.#createAchievement("giant-hunting", game.winner, game.playedAt, {
-              day,
-              giants: [...giantState.giants],
-            }),
+            this.#createAchievement(
+              "giant-hunting",
+              game.winner,
+              game.playedAt,
+              { day, giants: [...giantState.giants] },
+              game.id,
+            ),
           );
         }
       }
@@ -1734,8 +1840,8 @@ export class Achievements {
       updateNetGain(game.loser, game.winner, -eloGain);
 
       // Update Climber tracking for both players (low + threshold check).
-      updateClimber(game.winner, winner.elo, winner.totalGames, game.playedAt);
-      updateClimber(game.loser, loser.elo, loser.totalGames, game.playedAt);
+      updateClimber(game.winner, winner.elo, winner.totalGames, game.playedAt, game.id);
+      updateClimber(game.loser, loser.elo, loser.totalGames, game.playedAt, game.id);
 
       // Post-match ranks.
       const winnerRankAfter = getRank(game.winner, game.playedAt);
@@ -1756,25 +1862,38 @@ export class Achievements {
         touchedThrone.add(game.winner);
         this.#addAchievement(
           game.winner,
-          this.#createAchievement("touched-the-throne", game.winner, game.playedAt, {
-            elo: winner.elo,
-            firstGameAt: firstGameAt.get(game.winner)!,
-            dethroned: previousThroneHolder && previousThroneHolder !== game.winner ? previousThroneHolder : undefined,
-          }),
+          this.#createAchievement(
+            "touched-the-throne",
+            game.winner,
+            game.playedAt,
+            {
+              elo: winner.elo,
+              firstGameAt: firstGameAt.get(game.winner)!,
+              dethroned:
+                previousThroneHolder && previousThroneHolder !== game.winner ? previousThroneHolder : undefined,
+            },
+            game.id,
+          ),
         );
-        awardKingMaker(game.winner, game.playedAt);
+        awardKingMaker(game.winner, game.playedAt, game.id);
       }
       if (loserRankBefore !== null && loserRankAfter === 1 && rankedCount >= 5 && !touchedThrone.has(game.loser)) {
         touchedThrone.add(game.loser);
         this.#addAchievement(
           game.loser,
-          this.#createAchievement("touched-the-throne", game.loser, game.playedAt, {
-            elo: loser.elo,
-            firstGameAt: firstGameAt.get(game.loser)!,
-            dethroned: previousThroneHolder && previousThroneHolder !== game.loser ? previousThroneHolder : undefined,
-          }),
+          this.#createAchievement(
+            "touched-the-throne",
+            game.loser,
+            game.playedAt,
+            {
+              elo: loser.elo,
+              firstGameAt: firstGameAt.get(game.loser)!,
+              dethroned: previousThroneHolder && previousThroneHolder !== game.loser ? previousThroneHolder : undefined,
+            },
+            game.id,
+          ),
         );
-        awardKingMaker(game.loser, game.playedAt);
+        awardKingMaker(game.loser, game.playedAt, game.id);
       }
 
       // On the Podium: first time the player ever sits at rank ≤ 3 while
@@ -1789,10 +1908,13 @@ export class Achievements {
         onPodium.add(game.winner);
         this.#addAchievement(
           game.winner,
-          this.#createAchievement("on-the-podium", game.winner, game.playedAt, {
-            elo: winner.elo,
-            firstGameAt: firstGameAt.get(game.winner)!,
-          }),
+          this.#createAchievement(
+            "on-the-podium",
+            game.winner,
+            game.playedAt,
+            { elo: winner.elo, firstGameAt: firstGameAt.get(game.winner)! },
+            game.id,
+          ),
         );
       }
       if (
@@ -1805,10 +1927,13 @@ export class Achievements {
         onPodium.add(game.loser);
         this.#addAchievement(
           game.loser,
-          this.#createAchievement("on-the-podium", game.loser, game.playedAt, {
-            elo: loser.elo,
-            firstGameAt: firstGameAt.get(game.loser)!,
-          }),
+          this.#createAchievement(
+            "on-the-podium",
+            game.loser,
+            game.playedAt,
+            { elo: loser.elo, firstGameAt: firstGameAt.get(game.loser)! },
+            game.id,
+          ),
         );
       }
 
@@ -1846,17 +1971,23 @@ export class Achievements {
           }
           this.#addAchievement(
             game.winner,
-            this.#createAchievement("leap-frog", game.winner, game.playedAt, {
-              opponent: game.loser,
-              gameId: game.id,
-              ranksJumped,
-              fromRank: winnerRankBefore,
-              toRank: winnerRankAfter,
-              fromElo: winnerEloBefore,
-              toElo: winner.elo,
-              leapfroggedPlayers,
-              previousRecord: currentRecord,
-            }),
+            this.#createAchievement(
+              "leap-frog",
+              game.winner,
+              game.playedAt,
+              {
+                opponent: game.loser,
+                gameId: game.id,
+                ranksJumped,
+                fromRank: winnerRankBefore,
+                toRank: winnerRankAfter,
+                fromElo: winnerEloBefore,
+                toElo: winner.elo,
+                leapfroggedPlayers,
+                previousRecord: currentRecord,
+              },
+              game.id,
+            ),
           );
           // Equalling the record earns the award but leaves the record, and
           // its holder, where they are.
@@ -1889,21 +2020,23 @@ export class Achievements {
         if (beatsUpsetRecord) {
           this.#addAchievement(
             game.winner,
-            this.#createAchievement("david", game.winner, game.playedAt, {
-              opponent: game.loser,
-              gameId: game.id,
-              eloGain,
-              previousRecord: currentUpsetRecord,
-            }),
+            this.#createAchievement(
+              "david",
+              game.winner,
+              game.playedAt,
+              { opponent: game.loser, gameId: game.id, eloGain, previousRecord: currentUpsetRecord },
+              game.id,
+            ),
           );
           this.#addAchievement(
             game.loser,
-            this.#createAchievement("goliath", game.loser, game.playedAt, {
-              opponent: game.winner,
-              gameId: game.id,
-              eloLoss: eloGain,
-              previousRecord: this.goliathRecord.eloLoss,
-            }),
+            this.#createAchievement(
+              "goliath",
+              game.loser,
+              game.playedAt,
+              { opponent: game.winner, gameId: game.id, eloLoss: eloGain, previousRecord: this.goliathRecord.eloLoss },
+              game.id,
+            ),
           );
           this.davidRecord = { eloGain, holder: game.winner };
           this.goliathRecord = { eloLoss: eloGain, holder: game.loser };
@@ -1917,23 +2050,23 @@ export class Achievements {
       if (eloDiff <= 1 && winnerRankAfter !== null && loserRankAfter !== null) {
         this.#addAchievement(
           game.winner,
-          this.#createAchievement("photo-finish", game.winner, game.playedAt, {
-            opponent: game.loser,
-            gameId: game.id,
-            eloDiff,
-            playerElo: winner.elo,
-            opponentElo: loser.elo,
-          }),
+          this.#createAchievement(
+            "photo-finish",
+            game.winner,
+            game.playedAt,
+            { opponent: game.loser, gameId: game.id, eloDiff, playerElo: winner.elo, opponentElo: loser.elo },
+            game.id,
+          ),
         );
         this.#addAchievement(
           game.loser,
-          this.#createAchievement("photo-finish", game.loser, game.playedAt, {
-            opponent: game.winner,
-            gameId: game.id,
-            eloDiff,
-            playerElo: loser.elo,
-            opponentElo: winner.elo,
-          }),
+          this.#createAchievement(
+            "photo-finish",
+            game.loser,
+            game.playedAt,
+            { opponent: game.winner, gameId: game.id, eloDiff, playerElo: loser.elo, opponentElo: winner.elo },
+            game.id,
+          ),
         );
       }
 
@@ -1944,7 +2077,7 @@ export class Achievements {
       // the ≥5 threshold and enable previously-blocked awards. The
       // winner and loser are excluded so their own pre-match-ranked
       // rule still governs.
-      recheckRankAchievementsAt(game.playedAt, new Set([game.winner, game.loser]));
+      recheckRankAchievementsAt(game.playedAt, new Set([game.winner, game.loser]), game.id);
 
       previousThroneHolder = computeRank1Holder(game.playedAt);
     }
@@ -1975,13 +2108,13 @@ export class Achievements {
 
       this.#addAchievement(
         setWinnerId,
-        this.#createAchievement("marathon-set", setWinnerId, playedAt, {
+        this.#createAchievement(
+          "marathon-set",
+          setWinnerId,
+          playedAt,
+          { gameId, opponent: setLoserId, setWinnerScore, setLoserScore, previousRecord: currentRecord },
           gameId,
-          opponent: setLoserId,
-          setWinnerScore,
-          setLoserScore,
-          previousRecord: currentRecord,
-        }),
+        ),
       );
 
       this.marathonSetRecord = { score: setWinnerScore, holder: setWinnerId };
@@ -2016,7 +2149,10 @@ export class Achievements {
       const before = tracker.deuceSetsWon;
       tracker.deuceSetsWon += setsWon;
       if (before < DEUCE_DEMON_TARGET && tracker.deuceSetsWon >= DEUCE_DEMON_TARGET) {
-        this.#addAchievement(playerId, this.#createAchievement("deuce-demon", playerId, game.playedAt, undefined));
+        this.#addAchievement(
+          playerId,
+          this.#createAchievement("deuce-demon", playerId, game.playedAt, undefined, game.id),
+        );
       }
     };
     applyDeuceSets(game.winner, winnerTracker, winnerDeuceSets);
@@ -2038,7 +2174,10 @@ export class Achievements {
       const before = tracker.badSideSetsWon;
       tracker.badSideSetsWon += sets;
       if (before < BAD_SIDE_BANDIT_TARGET && tracker.badSideSetsWon >= BAD_SIDE_BANDIT_TARGET) {
-        this.#addAchievement(playerId, this.#createAchievement("bad-side-bandit", playerId, game.playedAt, undefined));
+        this.#addAchievement(
+          playerId,
+          this.#createAchievement("bad-side-bandit", playerId, game.playedAt, undefined, game.id),
+        );
       }
     };
     applyBadSideSets(game.winner, winnerTracker, setsWon.gameWinner);
@@ -2098,23 +2237,35 @@ export class Achievements {
 
     this.#addAchievement(
       winner,
-      this.#createAchievement("shootout", winner, playedAt, {
+      this.#createAchievement(
+        "shootout",
+        winner,
+        playedAt,
+        {
+          gameId,
+          opponent: loser,
+          points,
+          sets: countedSets.map((set) => ({ playerPoints: set.gameWinner, opponentPoints: set.gameLoser })),
+          previousRecord: currentRecord,
+        },
         gameId,
-        opponent: loser,
-        points,
-        sets: countedSets.map((set) => ({ playerPoints: set.gameWinner, opponentPoints: set.gameLoser })),
-        previousRecord: currentRecord,
-      }),
+      ),
     );
     this.#addAchievement(
       loser,
-      this.#createAchievement("shootout", loser, playedAt, {
+      this.#createAchievement(
+        "shootout",
+        loser,
+        playedAt,
+        {
+          gameId,
+          opponent: winner,
+          points,
+          sets: countedSets.map((set) => ({ playerPoints: set.gameLoser, opponentPoints: set.gameWinner })),
+          previousRecord: currentRecord,
+        },
         gameId,
-        opponent: winner,
-        points,
-        sets: countedSets.map((set) => ({ playerPoints: set.gameLoser, opponentPoints: set.gameWinner })),
-        previousRecord: currentRecord,
-      }),
+      ),
     );
     this.shootoutRecord = { points, holders: [winner, loser] };
   }
@@ -2135,10 +2286,7 @@ export class Achievements {
         // Award a donut-1 achievement for each donut set
         this.#addAchievement(
           winner,
-          this.#createAchievement("donut-1", winner, playedAt, {
-            gameId,
-            opponent: loser,
-          }),
+          this.#createAchievement("donut-1", winner, playedAt, { gameId, opponent: loser }, gameId),
         );
       }
     });
@@ -2160,17 +2308,11 @@ export class Achievements {
       // Award achievement to both players
       this.#addAchievement(
         winner,
-        this.#createAchievement("nice-game", winner, playedAt, {
-          gameId,
-          opponent: loser,
-        }),
+        this.#createAchievement("nice-game", winner, playedAt, { gameId, opponent: loser }, gameId),
       );
       this.#addAchievement(
         loser,
-        this.#createAchievement("nice-game", loser, playedAt, {
-          gameId,
-          opponent: winner,
-        }),
+        this.#createAchievement("nice-game", loser, playedAt, { gameId, opponent: winner }, gameId),
       );
     }
   }
@@ -2188,12 +2330,13 @@ export class Achievements {
     if (winnerPoints < loserPoints) {
       this.#addAchievement(
         winner,
-        this.#createAchievement("less-is-more", winner, playedAt, {
+        this.#createAchievement(
+          "less-is-more",
+          winner,
+          playedAt,
+          { gameId, opponent: loser, playerPoints: winnerPoints, opponentPoints: loserPoints },
           gameId,
-          opponent: loser,
-          playerPoints: winnerPoints,
-          opponentPoints: loserPoints,
-        }),
+        ),
       );
     }
   }
@@ -2222,7 +2365,12 @@ export class Achievements {
     return setPoints.every((set) => set.gameWinner === firstSet.gameWinner && set.gameLoser === firstSet.gameLoser);
   }
 
-  #checkHatTrickAchievement(playerId: string, hatTrickWins: { playedAt: number }[], currentGameAt: number) {
+  #checkHatTrickAchievement(
+    playerId: string,
+    hatTrickWins: { playedAt: number }[],
+    currentGameAt: number,
+    gameId: string,
+  ) {
     const NINETY_MINUTES = 90 * 60 * 1000;
 
     // Add current win to the list
@@ -2239,10 +2387,13 @@ export class Achievements {
     if (recentWins.length === 3) {
       this.#addAchievement(
         playerId,
-        this.#createAchievement("hat-trick", playerId, currentGameAt, {
-          firstWinAt: recentWins[0].playedAt,
-          thirdWinAt: currentGameAt,
-        }),
+        this.#createAchievement(
+          "hat-trick",
+          playerId,
+          currentGameAt,
+          { firstWinAt: recentWins[0].playedAt, thirdWinAt: currentGameAt },
+          gameId,
+        ),
       );
 
       // Reset the tracking after earning the achievement
@@ -2259,14 +2410,13 @@ export class Achievements {
     streakPlayer: number,
     streakPlayerStartedAt: number,
     playedAt: number,
+    gameId: string,
   ) {
     // Check for 10-win streak against all opponents
     if (streakAll === 10) {
       this.#addAchievement(
         winner,
-        this.#createAchievement("streak-all-10", winner, playedAt, {
-          startedAt: streakAllStartedAt,
-        }),
+        this.#createAchievement("streak-all-10", winner, playedAt, { startedAt: streakAllStartedAt }, gameId),
       );
     }
 
@@ -2274,10 +2424,13 @@ export class Achievements {
     if (streakPlayer === 10) {
       this.#addAchievement(
         winner,
-        this.#createAchievement("streak-player-10", winner, playedAt, {
-          opponent,
-          startedAt: streakPlayerStartedAt,
-        }),
+        this.#createAchievement(
+          "streak-player-10",
+          winner,
+          playedAt,
+          { opponent, startedAt: streakPlayerStartedAt },
+          gameId,
+        ),
       );
     }
 
@@ -2285,10 +2438,13 @@ export class Achievements {
     if (streakPlayer === 20) {
       this.#addAchievement(
         winner,
-        this.#createAchievement("streak-player-20", winner, playedAt, {
-          opponent,
-          startedAt: streakPlayerStartedAt,
-        }),
+        this.#createAchievement(
+          "streak-player-20",
+          winner,
+          playedAt,
+          { opponent, startedAt: streakPlayerStartedAt },
+          gameId,
+        ),
       );
     }
   }
@@ -2320,6 +2476,7 @@ export class Achievements {
     streakLength: number,
     startedAt: number,
     playedAt: number,
+    gameId: string,
     openRecord: StreakRecordAchievement | undefined,
     recordFloor: number,
   ): StreakRecordAchievement | undefined {
@@ -2333,6 +2490,9 @@ export class Achievements {
     if (openRecord !== undefined && record.holder === playerId) {
       openRecord.data.streakLength = streakLength;
       openRecord.earnedAt = playedAt;
+      // One award, so it belongs to one game: the link follows `earnedAt` to
+      // the game that extended the streak.
+      openRecord.earnedByGame = gameId;
       record.length = streakLength;
       return openRecord;
     }
@@ -2340,10 +2500,10 @@ export class Achievements {
     const data = { streakLength, startedAt, previousRecord: record.length };
     const achievement: StreakRecordAchievement =
       type === "longest-win-streak"
-        ? this.#createAchievement("longest-win-streak", playerId, playedAt, data)
+        ? this.#createAchievement("longest-win-streak", playerId, playedAt, data, gameId)
         : type === "longest-lose-streak"
-          ? this.#createAchievement("longest-lose-streak", playerId, playedAt, data)
-          : this.#createAchievement("yin-yang", playerId, playedAt, data);
+          ? this.#createAchievement("longest-lose-streak", playerId, playedAt, data, gameId)
+          : this.#createAchievement("yin-yang", playerId, playedAt, data, gameId);
     this.#addAchievement(playerId, achievement);
     record.length = streakLength;
     record.holder = playerId;
@@ -2369,6 +2529,7 @@ export class Achievements {
     },
     won: boolean,
     playedAt: number,
+    gameId: string,
   ) {
     if (tracker.yinYangLastWasWin === undefined || tracker.yinYangLastWasWin === won) {
       tracker.yinYangStreak = 1;
@@ -2386,6 +2547,7 @@ export class Achievements {
       tracker.yinYangStreak,
       tracker.yinYangStartedAt,
       playedAt,
+      gameId,
       tracker.openYinYangRecord,
       YIN_YANG_RECORD_FLOOR,
     );
@@ -2427,6 +2589,7 @@ export class Achievements {
     playerId: string,
     tracker: { heroOfTheDay: HeroPeriodState; heroOfTheWeek: HeroPeriodState; heroOfTheMonth: HeroPeriodState },
     playedAt: number,
+    gameId: string,
   ) {
     this.#checkHeroRecordAchievement(
       "hero-of-the-day",
@@ -2435,6 +2598,7 @@ export class Achievements {
       this.gamesInDayRecord,
       this.#dayStartOf(playedAt),
       playedAt,
+      gameId,
     );
     this.#checkHeroRecordAchievement(
       "hero-of-the-week",
@@ -2443,6 +2607,7 @@ export class Achievements {
       this.gamesInWeekRecord,
       this.#weekStartOf(playedAt),
       playedAt,
+      gameId,
     );
     this.#checkHeroRecordAchievement(
       "hero-of-the-month",
@@ -2451,6 +2616,7 @@ export class Achievements {
       this.gamesInMonthRecord,
       this.#monthStartOf(playedAt),
       playedAt,
+      gameId,
     );
   }
 
@@ -2461,6 +2627,7 @@ export class Achievements {
     record: { count: number | undefined; holder: string | undefined },
     periodStart: number,
     playedAt: number,
+    gameId: string,
   ) {
     if (state.periodStart !== periodStart) {
       state.periodStart = periodStart;
@@ -2489,23 +2656,29 @@ export class Achievements {
     const previousRecord = record.count;
     let achievement: HeroRecordAchievement;
     if (type === "hero-of-the-day") {
-      achievement = this.#createAchievement("hero-of-the-day", playerId, playedAt, {
-        day: periodStart,
-        gamesPlayed,
-        previousRecord,
-      });
+      achievement = this.#createAchievement(
+        "hero-of-the-day",
+        playerId,
+        playedAt,
+        { day: periodStart, gamesPlayed, previousRecord },
+        gameId,
+      );
     } else if (type === "hero-of-the-week") {
-      achievement = this.#createAchievement("hero-of-the-week", playerId, playedAt, {
-        weekStart: periodStart,
-        gamesPlayed,
-        previousRecord,
-      });
+      achievement = this.#createAchievement(
+        "hero-of-the-week",
+        playerId,
+        playedAt,
+        { weekStart: periodStart, gamesPlayed, previousRecord },
+        gameId,
+      );
     } else {
-      achievement = this.#createAchievement("hero-of-the-month", playerId, playedAt, {
-        monthStart: periodStart,
-        gamesPlayed,
-        previousRecord,
-      });
+      achievement = this.#createAchievement(
+        "hero-of-the-month",
+        playerId,
+        playedAt,
+        { monthStart: periodStart, gamesPlayed, previousRecord },
+        gameId,
+      );
     }
     this.#addAchievement(playerId, achievement);
     record.count = gamesPlayed;
@@ -2513,7 +2686,7 @@ export class Achievements {
     state.openRecord = achievement;
   }
 
-  #checkBackAfterAchievement(playerId: string, lastActiveAt: number, currentGameAt: number) {
+  #checkBackAfterAchievement(playerId: string, lastActiveAt: number, currentGameAt: number, gameId: string) {
     const timeDiff = currentGameAt - lastActiveAt;
     const SIX_MONTHS = 6 * 30 * 24 * 60 * 60 * 1000;
     const ONE_YEAR = 365 * 24 * 60 * 60 * 1000;
@@ -2524,23 +2697,17 @@ export class Achievements {
     if (timeDiff >= TWO_YEARS) {
       this.#addAchievement(
         playerId,
-        this.#createAchievement("back-after-2-years", playerId, currentGameAt, {
-          lastGameAt: lastActiveAt,
-        }),
+        this.#createAchievement("back-after-2-years", playerId, currentGameAt, { lastGameAt: lastActiveAt }, gameId),
       );
     } else if (timeDiff >= ONE_YEAR) {
       this.#addAchievement(
         playerId,
-        this.#createAchievement("back-after-1-year", playerId, currentGameAt, {
-          lastGameAt: lastActiveAt,
-        }),
+        this.#createAchievement("back-after-1-year", playerId, currentGameAt, { lastGameAt: lastActiveAt }, gameId),
       );
     } else if (timeDiff >= SIX_MONTHS) {
       this.#addAchievement(
         playerId,
-        this.#createAchievement("back-after-6-months", playerId, currentGameAt, {
-          lastGameAt: lastActiveAt,
-        }),
+        this.#createAchievement("back-after-6-months", playerId, currentGameAt, { lastGameAt: lastActiveAt }, gameId),
       );
     }
   }
@@ -2571,7 +2738,7 @@ export class Achievements {
   // it lands on the calendar date before the anniversary, on the anniversary
   // date itself, or the date after — at any time of day. Earnable once per
   // year mark.
-  #checkAnniversaryAchievement(playerId: string, firstActiveAt: number, currentGameAt: number) {
+  #checkAnniversaryAchievement(playerId: string, firstActiveAt: number, currentGameAt: number, gameId: string) {
     const ONE_YEAR = 365 * 24 * 60 * 60 * 1000;
 
     // Which whole-year anniversary is this game closest to? A few days of
@@ -2592,7 +2759,7 @@ export class Achievements {
 
     this.#addAchievement(
       playerId,
-      this.#createAchievement("anniversary", playerId, currentGameAt, { firstGameAt: firstActiveAt, year }),
+      this.#createAchievement("anniversary", playerId, currentGameAt, { firstGameAt: firstActiveAt, year }, gameId),
     );
   }
 
@@ -2701,9 +2868,13 @@ export class Achievements {
       if (t.winner && t.endDate) {
         this.#addAchievement(
           t.winner,
-          this.#createAchievement("tournament-winner", t.winner, t.endDate, {
-            tournamentId,
-          }),
+          this.#createAchievement(
+            "tournament-winner",
+            t.winner,
+            t.endDate,
+            { tournamentId },
+            this.#gameIdPlayedAt(t.endDate),
+          ),
         );
       }
 
@@ -2773,12 +2944,18 @@ export class Achievements {
         this.tournamentLossToAvenge.get(match.winner)!.delete(match.loser);
         this.#addAchievement(
           match.winner,
-          this.#createAchievement("sweet-revenge", match.winner, match.completedAt, {
-            opponent: match.loser,
-            tournamentId: match.tournamentId,
-            lostAt: lossToAvenge.time,
-            lostTournamentId: lossToAvenge.tournamentId,
-          }),
+          this.#createAchievement(
+            "sweet-revenge",
+            match.winner,
+            match.completedAt,
+            {
+              opponent: match.loser,
+              tournamentId: match.tournamentId,
+              lostAt: lossToAvenge.time,
+              lostTournamentId: lossToAvenge.tournamentId,
+            },
+            this.#gameIdPlayedAt(match.completedAt),
+          ),
         );
       }
 
@@ -2805,19 +2982,23 @@ export class Achievements {
       if (openingGame) {
         this.#addAchievement(
           openingGame.winner,
-          this.#createAchievement("season-opener", openingGame.winner, openingGame.playedAt, {
-            seasonStart: s.start,
-            gameId: openingGame.id,
-            opponent: openingGame.loser,
-          }),
+          this.#createAchievement(
+            "season-opener",
+            openingGame.winner,
+            openingGame.playedAt,
+            { seasonStart: s.start, gameId: openingGame.id, opponent: openingGame.loser },
+            openingGame.id,
+          ),
         );
         this.#addAchievement(
           openingGame.loser,
-          this.#createAchievement("season-opener", openingGame.loser, openingGame.playedAt, {
-            seasonStart: s.start,
-            gameId: openingGame.id,
-            opponent: openingGame.winner,
-          }),
+          this.#createAchievement(
+            "season-opener",
+            openingGame.loser,
+            openingGame.playedAt,
+            { seasonStart: s.start, gameId: openingGame.id, opponent: openingGame.winner },
+            openingGame.id,
+          ),
         );
       }
 
@@ -2866,6 +3047,21 @@ export class Achievements {
     });
   }
 
+  /**
+   * The game played at an instant, by its played-at time. A game is uniquely
+   * identified by when it was played, and a tournament match records the
+   * played-at of its league game as its `completedAt`, so this resolves a
+   * tournament result back to the game that produced it. A walkover has no
+   * game and finds none.
+   */
+  #gameIdPlayedAt(playedAt: number | undefined): string | undefined {
+    if (playedAt === undefined) return undefined;
+    if (this.#gamesByPlayedAt === undefined) {
+      this.#gamesByPlayedAt = new Map(this.parent.games.map((game) => [game.playedAt, game.id]));
+    }
+    return this.#gamesByPlayedAt.get(playedAt);
+  }
+
   #addAchievement(playerId: string, achievement: Achievement) {
     if (!this.achievementMap.has(playerId)) {
       this.achievementMap.set(playerId, []);
@@ -2878,8 +3074,13 @@ export class Achievements {
     earnedBy: string,
     earnedAt: number,
     data: AchievementDefinitions[T],
+    earnedByGame?: string,
   ): GenericAchievement<T> {
-    return { type, earnedBy, earnedAt, data };
+    // An achievement that no game earned carries no key at all, rather than
+    // one set to undefined.
+    return earnedByGame === undefined
+      ? { type, earnedBy, earnedAt, data }
+      : { type, earnedBy, earnedAt, earnedByGame, data };
   }
 
   // Awards the "Earliest Game" and "Latest Game" record-breaking achievements.
@@ -2899,21 +3100,23 @@ export class Achievements {
       this.earliestGameRecord.minutesIntoDay = minutesIntoDay;
       this.#addAchievement(
         game.winner,
-        this.#createAchievement("earliest-game", game.winner, game.playedAt, {
-          gameId: game.id,
-          opponent: game.loser,
-          time,
-          minutesIntoDay,
-        }),
+        this.#createAchievement(
+          "earliest-game",
+          game.winner,
+          game.playedAt,
+          { gameId: game.id, opponent: game.loser, time, minutesIntoDay },
+          game.id,
+        ),
       );
       this.#addAchievement(
         game.loser,
-        this.#createAchievement("earliest-game", game.loser, game.playedAt, {
-          gameId: game.id,
-          opponent: game.winner,
-          time,
-          minutesIntoDay,
-        }),
+        this.#createAchievement(
+          "earliest-game",
+          game.loser,
+          game.playedAt,
+          { gameId: game.id, opponent: game.winner, time, minutesIntoDay },
+          game.id,
+        ),
       );
     }
 
@@ -2924,26 +3127,50 @@ export class Achievements {
       this.latestGameRecord.minutesIntoDay = minutesIntoDay;
       this.#addAchievement(
         game.winner,
-        this.#createAchievement("latest-game", game.winner, game.playedAt, {
-          gameId: game.id,
-          opponent: game.loser,
-          time,
-          minutesIntoDay,
-        }),
+        this.#createAchievement(
+          "latest-game",
+          game.winner,
+          game.playedAt,
+          { gameId: game.id, opponent: game.loser, time, minutesIntoDay },
+          game.id,
+        ),
       );
       this.#addAchievement(
         game.loser,
-        this.#createAchievement("latest-game", game.loser, game.playedAt, {
-          gameId: game.id,
-          opponent: game.winner,
-          time,
-          minutesIntoDay,
-        }),
+        this.#createAchievement(
+          "latest-game",
+          game.loser,
+          game.playedAt,
+          { gameId: game.id, opponent: game.winner, time, minutesIntoDay },
+          game.id,
+        ),
       );
     }
   }
 
   // Helper method to get achievements for a player
+  /**
+   * Every achievement that one game earned, for every player. An achievement
+   * with no `earnedByGame` is in no list. The list is grouped by player, each
+   * player's achievements in the order they earned them.
+   */
+  getAchievementsEarnedByGame(gameId: string): Achievement[] {
+    this.calculateAchievements();
+    if (this.#achievementsByGame === undefined) {
+      const byGame = new Map<string, Achievement[]>();
+      this.achievementMap.forEach((achievements) => {
+        achievements.forEach((achievement) => {
+          if (achievement.earnedByGame === undefined) return;
+          const earned = byGame.get(achievement.earnedByGame);
+          if (earned) earned.push(achievement);
+          else byGame.set(achievement.earnedByGame, [achievement]);
+        });
+      });
+      this.#achievementsByGame = byGame;
+    }
+    return this.#achievementsByGame.get(gameId) ?? [];
+  }
+
   getAchievements(playerId: string): Achievement[] {
     return this.achievementMap.get(playerId) || [];
   }
@@ -4331,6 +4558,22 @@ type GenericAchievement<T extends AchievementType = AchievementType> = {
   type: T;
   earnedBy: string;
   earnedAt: number;
+  /**
+   * The id of the game that earned the achievement, when one game earned it.
+   *
+   * It is the game that made the achievement true, which is not always a game
+   * the player of the achievement played, and not always a game played at
+   * `earnedAt`. A Perfect Day is earned when the day is over, but the last win
+   * of the day is what earned it. A King Maker is earned by the game in which
+   * another player takes rank 1.
+   *
+   * It is undefined for an achievement that no single game earns: a season
+   * result, taking part in a tournament, a whole group play, a period of
+   * activity, a retirement, and an achievement that a player leaving the
+   * leaderboard completes. A tournament win and a Sweet Revenge do have one -
+   * the deciding game and the revenge match.
+   */
+  earnedByGame?: string;
   data: AchievementDefinitions[T];
 };
 

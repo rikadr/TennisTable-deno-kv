@@ -40,6 +40,7 @@ describe("Streak Ender Achievement", () => {
       type: "streak-ender",
       earnedBy: "carol",
       earnedAt: 5000,
+      earnedByGame: "ender",
       data: {
         opponent: "alice",
         gameId: "ender",

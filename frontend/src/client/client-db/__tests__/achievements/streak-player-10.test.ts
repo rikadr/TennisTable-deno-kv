@@ -92,6 +92,7 @@ describe("TennisTable", () => {
         type: "streak-player-10",
         earnedBy: "alice",
         earnedAt: 1100, // Time of the 10th game
+        earnedByGame: "game10",
         data: {
           opponent: "bob",
           startedAt: 1010, // Time of the 1st game
@@ -131,6 +132,7 @@ describe("TennisTable", () => {
         type: "streak-player-10",
         earnedBy: "alice",
         earnedAt: 1100, // Time of the 10th game
+        earnedByGame: "game10",
         data: {
           opponent: "bob",
           startedAt: 1010, // Time of the 1st game
@@ -190,6 +192,7 @@ describe("TennisTable", () => {
         type: "streak-player-10",
         earnedBy: "alice",
         earnedAt: 1150, // Time of the 15th game (10th win vs Bob)
+        earnedByGame: "game15",
         data: {
           opponent: "bob",
           startedAt: 1010, // Time of the 1st game vs Bob
@@ -303,6 +306,7 @@ describe("TennisTable", () => {
         type: "streak-player-10",
         earnedBy: "alice",
         earnedAt: 1100, // Time of the 10th game (10th win vs Bob)
+        earnedByGame: "game10",
         data: {
           opponent: "bob",
           startedAt: 1010, // Time of the 1st game vs Bob
@@ -312,6 +316,7 @@ describe("TennisTable", () => {
         type: "streak-player-10",
         earnedBy: "alice",
         earnedAt: 1200, // Time of the 20th game (10th win vs Charlie)
+        earnedByGame: "game20",
         data: {
           opponent: "charlie",
           startedAt: 1110, // Time of the 11th game (1st game vs Charlie)

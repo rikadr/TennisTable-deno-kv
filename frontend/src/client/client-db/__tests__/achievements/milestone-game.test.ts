@@ -36,6 +36,7 @@ describe("Milestone Game Achievement", () => {
       type: "milestone-game",
       earnedBy: "alice",
       earnedAt: 1000 + 499,
+      earnedByGame: "g-500",
       data: { gameId: "g-500", opponent: "bob", milestone: 500 },
     });
     expect(bob[0].data?.opponent).toBe("alice");

@@ -39,6 +39,7 @@ describe("TennisTable", () => {
           type: "reunion",
           earnedBy: player,
           earnedAt: T0 + ONE_YEAR,
+          earnedByGame: "g1",
           data: { gameId: "g1", opponent, lastGameAt: T0 },
         });
       }

@@ -43,11 +43,11 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
     slug: "leaderboard-changes-on-game-details",
-    title: "Leaderboard changes on game details",
+    title: "Ranks, scores and achievements on game details",
     date: "2026-08-31",
     tags: ["feature-update"],
     summary:
-      "The game details page shows what the game moved for both players: the rank and the Elo on the leaderboard, the season rank and score, and the Hall of Fame score.",
+      "The game details page shows what the game changed: the rank and the Elo on the leaderboard, the season rank and score, the Hall of Fame score, and the achievements the game earned.",
     body: [
       text(
         "Each player gets a table with the value before the game, the value after it, and the change. The rows are the rank and the Elo on the overall leaderboard, the rank and the score on the season leaderboard, and the Hall of Fame score. A row opens the page that shows that number.",
@@ -57,6 +57,9 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
       ),
       text(
         "The Hall of Fame score needs the state of every player before the game and after it. The app calculates it in a web worker. The page opens at once, and the score comes a moment later.",
+      ),
+      text(
+        "The page also lists the achievements the game earned. Each achievement records the game that earned it. A Perfect Day records the last win of the day. The list can hold an achievement of a player who did not play the game. A game that changes the leaderboard can put another player on the podium.",
       ),
     ],
   },

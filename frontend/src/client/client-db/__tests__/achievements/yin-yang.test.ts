@@ -50,6 +50,7 @@ describe("Yin Yang Achievement", () => {
       type: "yin-yang",
       earnedBy: "alice",
       earnedAt: 140,
+      earnedByGame: "a-4",
       data: { streakLength: 5, startedAt: 100, previousRecord: undefined },
     });
     expect(tt.achievements.yinYangRecord).toStrictEqual({ length: 5, holder: "alice" });

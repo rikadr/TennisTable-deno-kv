@@ -44,6 +44,7 @@ describe("Less Is More Achievement", () => {
       type: "less-is-more",
       earnedBy: "alice",
       earnedAt: 100,
+      earnedByGame: "g1",
       data: { gameId: "g1", opponent: "bob", playerPoints: 27, opponentPoints: 29 },
     });
   });

@@ -97,6 +97,7 @@ describe("TennisTable", () => {
         type: "donut-5",
         earnedBy: "alice",
         earnedAt: 1050, // Time of the 5th game
+        earnedByGame: "game5",
         data: undefined,
       });
 
@@ -138,6 +139,7 @@ describe("TennisTable", () => {
         type: "donut-5",
         earnedBy: "alice",
         earnedAt: 1050, // Time of the 5th game (when threshold was crossed)
+        earnedByGame: "game5",
         data: undefined,
       });
 

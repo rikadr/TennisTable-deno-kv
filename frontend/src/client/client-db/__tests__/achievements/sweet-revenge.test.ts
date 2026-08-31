@@ -62,6 +62,7 @@ describe("Sweet Revenge Achievement", () => {
         type: "sweet-revenge",
         earnedBy: "alice",
         earnedAt: T2_START + 100,
+        earnedByGame: "g2",
         data: {
           opponent: "bob",
           tournamentId: "t2",
@@ -264,6 +265,7 @@ describe("Sweet Revenge Achievement", () => {
         type: "sweet-revenge",
         earnedBy: "alice",
         earnedAt: T2_START + 100,
+        earnedByGame: "g2",
         data: {
           opponent: "bob",
           tournamentId: "t2",

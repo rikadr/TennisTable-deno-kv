@@ -77,6 +77,7 @@ describe("TennisTable", () => {
         type: "donut-baker",
         earnedBy: "bob",
         earnedAt: 1050, // Time of the 5th game
+        earnedByGame: "game5",
         data: undefined,
       });
 
@@ -100,6 +101,7 @@ describe("TennisTable", () => {
         type: "donut-baker",
         earnedBy: "bob",
         earnedAt: 1030, // Time of the 3rd game
+        earnedByGame: "game3",
         data: undefined,
       });
     });

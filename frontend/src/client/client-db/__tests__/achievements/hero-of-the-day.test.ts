@@ -72,6 +72,7 @@ describe("Hero of the Day achievement", () => {
       type: "hero-of-the-day",
       earnedBy: "alice",
       earnedAt: at(1, GAMES_IN_PERIOD_RECORD_FLOOR - 1),
+      earnedByGame: "g2",
       data: {
         day: new Date(2024, 0, 1).getTime(),
         gamesPlayed: GAMES_IN_PERIOD_RECORD_FLOOR,

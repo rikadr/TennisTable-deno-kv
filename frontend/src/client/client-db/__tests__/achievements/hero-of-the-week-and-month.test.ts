@@ -85,6 +85,7 @@ describe("Hero of the Week achievement", () => {
       type: "hero-of-the-week",
       earnedBy: "alice",
       earnedAt: at(3, 0),
+      earnedByGame: "g2",
       data: {
         weekStart: new Date(2024, 0, 1).getTime(),
         gamesPlayed: GAMES_IN_PERIOD_RECORD_FLOOR,
@@ -185,6 +186,7 @@ describe("Hero of the Month achievement", () => {
       type: "hero-of-the-month",
       earnedBy: "alice",
       earnedAt: at(15, 0),
+      earnedByGame: "g2",
       data: {
         monthStart: new Date(2024, 0, 1).getTime(),
         gamesPlayed: GAMES_IN_PERIOD_RECORD_FLOOR,
