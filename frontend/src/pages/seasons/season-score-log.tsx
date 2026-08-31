@@ -202,13 +202,16 @@ export const SeasonScoreLog = ({ season }: Props) => {
                     playedAt={imp.game.playedAt}
                     className="flex flex-col xs:flex-row xs:flex-wrap xs:items-baseline xs:gap-x-2"
                   >
-                    {imp.game.score && (
+                    {imp.game.score ? (
                       <span className="font-medium">
                         {imp.game.winner === imp.playerId
                           ? `${imp.game.score?.setsWon.gameWinner} - ${imp.game.score?.setsWon.gameLoser}`
                           : `${imp.game.score?.setsWon.gameLoser} - ${imp.game.score?.setsWon.gameWinner}`}
                         <GameMarkers score={imp.game.score} />
                       </span>
+                    ) : (
+                      // A game with no score still opens its details page
+                      <span className="opacity-40">-</span>
                     )}
                     {setStrings.length > 0 && (
                       <>
