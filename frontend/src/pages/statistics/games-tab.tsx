@@ -214,7 +214,11 @@ export const GamesTab: React.FC<{ range: TimeRange; setRange: (range: TimeRange)
             title="The set score"
             description="Read from the winner, so 2-1 and 1-2 are the same score. The slices are all the games with sets."
           >
-            {setLevel === undefined ? <NotEnoughGames what="games with sets" /> : <SetScorePie data={setLevel.byScore} />}
+            {setLevel === undefined ? (
+              <NotEnoughGames what="games with sets" />
+            ) : (
+              <SetScorePie data={setLevel.byScore} />
+            )}
           </ContentCard>
 
           <ContentCard title="How long a game runs" description="The sets a game holds, and who won them.">
@@ -261,12 +265,20 @@ export const GamesTab: React.FC<{ range: TimeRange; setRange: (range: TimeRange)
                 <StatTileRow>
                   <StatTile
                     label="Points won on the bad side"
-                    value={tableSides.pointsWonOnTheBadSide === undefined ? "–" : percentLabel(tableSides.pointsWonOnTheBadSide)}
+                    value={
+                      tableSides.pointsWonOnTheBadSide === undefined
+                        ? "–"
+                        : percentLabel(tableSides.pointsWonOnTheBadSide)
+                    }
                     note="of the points of the sets with a worse side"
                   />
                   <StatTile
                     label="More sets on the bad side, and the game"
-                    value={tableSides.wonWithMoreBadSideSets === undefined ? "–" : percentLabel(tableSides.wonWithMoreBadSideSets)}
+                    value={
+                      tableSides.wonWithMoreBadSideSets === undefined
+                        ? "–"
+                        : percentLabel(tableSides.wonWithMoreBadSideSets)
+                    }
                     note="of the games where one player had the bad side more often, that player won"
                   />
                   <StatTile
@@ -394,12 +406,20 @@ export const GamesTab: React.FC<{ range: TimeRange; setRange: (range: TimeRange)
                 <StatTileRow columns={3}>
                   <StatTile
                     label="The loser held a match point"
-                    value={trackedLevel.matchPointForTheLoser === undefined ? "–" : percentLabel(trackedLevel.matchPointForTheLoser)}
+                    value={
+                      trackedLevel.matchPointForTheLoser === undefined
+                        ? "–"
+                        : percentLabel(trackedLevel.matchPointForTheLoser)
+                    }
                     note="of the tracked games"
                   />
                   <StatTile
                     label="The loser of a set held a set point"
-                    value={trackedLevel.setPointForTheSetLoser === undefined ? "–" : percentLabel(trackedLevel.setPointForTheSetLoser)}
+                    value={
+                      trackedLevel.setPointForTheSetLoser === undefined
+                        ? "–"
+                        : percentLabel(trackedLevel.setPointForTheSetLoser)
+                    }
                     note="of the sets"
                   />
                 </StatTileRow>

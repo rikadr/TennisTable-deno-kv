@@ -40,9 +40,15 @@ describe("Everybody's Opponent Achievement", () => {
       createPlayer("e", 5),
     ];
     const pairs: [string, string][] = [
-      ["a", "b"], ["a", "c"], ["a", "d"], ["a", "e"],
-      ["b", "c"], ["b", "d"], ["b", "e"],
-      ["c", "d"], ["c", "e"],
+      ["a", "b"],
+      ["a", "c"],
+      ["a", "d"],
+      ["a", "e"],
+      ["b", "c"],
+      ["b", "d"],
+      ["b", "e"],
+      ["c", "d"],
+      ["c", "e"],
       ["d", "e"],
     ];
     let t = 100;
@@ -91,8 +97,11 @@ describe("Everybody's Opponent Achievement", () => {
       createPlayer("d", 4),
     ];
     const pairs: [string, string][] = [
-      ["a", "b"], ["a", "c"], ["a", "d"],
-      ["b", "c"], ["b", "d"],
+      ["a", "b"],
+      ["a", "c"],
+      ["a", "d"],
+      ["b", "c"],
+      ["b", "d"],
       ["c", "d"],
     ];
     let t = 100;
@@ -106,9 +115,7 @@ describe("Everybody's Opponent Achievement", () => {
     tt.achievements.calculateAchievements();
 
     for (const playerId of ["a", "b", "c", "d"]) {
-      expect(
-        tt.achievements.getAchievements(playerId).filter((x) => x.type === "everybodys-opponent"),
-      ).toHaveLength(0);
+      expect(tt.achievements.getAchievements(playerId).filter((x) => x.type === "everybodys-opponent")).toHaveLength(0);
     }
   });
 

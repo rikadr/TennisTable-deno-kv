@@ -14,8 +14,7 @@ import { EventType, EventTypeEnum } from "../../event-store/event-types";
 
 describe("Earliest / Latest Game Achievements", () => {
   // Local-time timestamp for a given day and time-of-day.
-  const at = (day: number, hour: number, minute: number): number =>
-    new Date(2024, 0, day, hour, minute).getTime();
+  const at = (day: number, hour: number, minute: number): number => new Date(2024, 0, day, hour, minute).getTime();
 
   const game = (id: string, time: number, winner: string, loser: string): EventType => ({
     time,

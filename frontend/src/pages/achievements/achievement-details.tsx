@@ -46,10 +46,7 @@ export const AchievementDetails: React.FC<Props> = ({ type, earnedCount, onShowP
 
   // The order of the player's Progress tab, so the two pages read the
   // achievements in the same order. The ends join, so Next always has one.
-  const ordered = useMemo(
-    () => orderAchievementTypes(Object.keys(ACHIEVEMENT_LABELS)) as AchievementType[],
-    [],
-  );
+  const ordered = useMemo(() => orderAchievementTypes(Object.keys(ACHIEVEMENT_LABELS)) as AchievementType[], []);
   const position = ordered.indexOf(type);
   const previousType = ordered[(position - 1 + ordered.length) % ordered.length];
   const nextType = ordered[(position + 1) % ordered.length];
@@ -223,10 +220,7 @@ export const AchievementDetails: React.FC<Props> = ({ type, earnedCount, onShowP
           <Section title={details.isReachievable ? "Who holds it most" : "Who holds it"}>
             <div className="space-y-1">
               {details.topHolders.map((holder, index) => (
-                <div
-                  key={holder.playerId}
-                  className="rounded-lg px-3 py-2 bg-secondary-background text-secondary-text"
-                >
+                <div key={holder.playerId} className="rounded-lg px-3 py-2 bg-secondary-background text-secondary-text">
                   <div className="flex items-center gap-3">
                     <span className="w-6 text-right opacity-60 font-bold">#{index + 1}</span>
                     <Link to={playerAchievementProgressLink(holder.playerId, type)} className="shrink-0">
@@ -276,22 +270,43 @@ export const AchievementDetails: React.FC<Props> = ({ type, earnedCount, onShowP
           {/* First and latest */}
           <Section title="First and latest">
             <div className="grid gap-2 sm:grid-cols-2">
-              {details.first && <Milestone label="First earned" playerId={details.first.earnedBy} at={details.first.earnedAt} name={playerName(details.first.earnedBy)} />}
-              {details.latest && <Milestone label="Latest earned" playerId={details.latest.earnedBy} at={details.latest.earnedAt} name={playerName(details.latest.earnedBy)} />}
+              {details.first && (
+                <Milestone
+                  label="First earned"
+                  playerId={details.first.earnedBy}
+                  at={details.first.earnedAt}
+                  name={playerName(details.first.earnedBy)}
+                />
+              )}
+              {details.latest && (
+                <Milestone
+                  label="Latest earned"
+                  playerId={details.latest.earnedBy}
+                  at={details.latest.earnedAt}
+                  name={playerName(details.latest.earnedBy)}
+                />
+              )}
             </div>
           </Section>
 
           {/* Pace */}
           {details.perMonth.length > 1 && (
             <Section title="Earned per month">
-              <CountChart data={details.perMonth.map((bucket) => ({ label: monthLabel(bucket), count: bucket.count }))} name="Earnings" />
+              <CountChart
+                data={details.perMonth.map((bucket) => ({ label: monthLabel(bucket), count: bucket.count }))}
+                name="Earnings"
+              />
             </Section>
           )}
 
           {details.timeToEarn && (
             <Section title="Time to earn it">
               <StatTileRow columns={3}>
-                <StatTile label="Typical" value={dayLabel(details.timeToEarn.medianDays)} note="From a player's first game" />
+                <StatTile
+                  label="Typical"
+                  value={dayLabel(details.timeToEarn.medianDays)}
+                  note="From a player's first game"
+                />
                 <StatTile
                   label="Fastest"
                   value={dayLabel(details.timeToEarn.fastest.days)}

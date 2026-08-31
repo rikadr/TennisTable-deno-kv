@@ -7,11 +7,7 @@ export const SignupPage: React.FC = () => {
   const navigate = useNavigate();
   const [validationError, setValidationError] = useState<string | null>(null);
 
-  const signupMutation = useMutation<
-    void,
-    Error,
-    { username: string; password: string }
-  >({
+  const signupMutation = useMutation<void, Error, { username: string; password: string }>({
     // Handle failures inline in the UI instead of throwing to an error boundary.
     throwOnError: false,
     mutationFn: async ({ username, password }) => {
@@ -29,16 +25,10 @@ export const SignupPage: React.FC = () => {
         onSubmit={async (e) => {
           e.preventDefault();
           setValidationError(null);
-          const username = document.getElementById(
-            "username",
-          ) as HTMLInputElement;
-          const password = document.getElementById(
-            "password",
-          ) as HTMLInputElement;
+          const username = document.getElementById("username") as HTMLInputElement;
+          const password = document.getElementById("password") as HTMLInputElement;
 
-          const confirmPassword = document.getElementById(
-            "confirm-password",
-          ) as HTMLInputElement;
+          const confirmPassword = document.getElementById("confirm-password") as HTMLInputElement;
 
           if (!username?.value || !password?.value) {
             setValidationError("Please enter a username and password.");
@@ -75,23 +65,15 @@ export const SignupPage: React.FC = () => {
         <div className="w-full flex flex-col items-start justify-center">
           <label htmlFor="confirm-password">Confirm your password</label>
           <div className="flex w-full items-center space-x-3">
-            <input
-              type="checkbox"
-              id="confirm-password"
-            />
+            <input type="checkbox" id="confirm-password" />
             <span>Yes that is my password</span>
           </div>
         </div>
         {(validationError || signupMutation.isError) && (
-          <p className="text-red-600 text-sm">
-            {validationError ?? signupMutation.error?.message}
-          </p>
+          <p className="text-red-600 text-sm">{validationError ?? signupMutation.error?.message}</p>
         )}
         <div className="flex flex-col w-full items-center justify-end space-y-3 pt-3">
-          <button
-            type="submit"
-            className="p-2 w-full bg-blue-300 text-black rounded-md hover:bg-blue-500"
-          >
+          <button type="submit" className="p-2 w-full bg-blue-300 text-black rounded-md hover:bg-blue-500">
             sign up
           </button>
         </div>

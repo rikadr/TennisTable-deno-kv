@@ -1,18 +1,16 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-  content: [
-    "./src/**/*.{js,jsx,ts,tsx}",
-  ],
+  content: ["./src/**/*.{js,jsx,ts,tsx}"],
   theme: {
     fontFamily: {
       display: ["Oooh Baby", "cursive"],
     },
     extend: {
       screens: {
-        "xs": "470px",
+        xs: "470px",
         // Viewport-height breakpoint: phones with room to spare (a Pixel, a
         // Plus/Max iPhone) get roomier vertical spacing than an iPhone SE.
-        "tall": { raw: "(min-height: 740px)" },
+        tall: { raw: "(min-height: 740px)" },
       },
       colors: {
         primary: {

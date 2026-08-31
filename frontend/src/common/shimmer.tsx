@@ -35,7 +35,10 @@ export const Shimmer: React.FC<ShimmerProps> = ({
       {children}
       <div className="absolute inset-0 pointer-events-none">
         <div
-          className={classNames("absolute inset-0 bg-gradient-to-r animate-shimmer", enabled && intensityClasses[intensity])}
+          className={classNames(
+            "absolute inset-0 bg-gradient-to-r animate-shimmer",
+            enabled && intensityClasses[intensity],
+          )}
           style={enabled ? shimmerStyle : undefined}
         />
       </div>

@@ -72,7 +72,11 @@ export const LeagueTab: React.FC = () => {
         <StatTile
           label={`Changed place in ${MOVEMENT_WINDOW_DAYS} days`}
           value={movement === undefined ? "–" : percentLabel(movement.moved)}
-          note={movement === undefined ? undefined : `${percentLabel(movement.climbed)} up, ${percentLabel(movement.fell)} down`}
+          note={
+            movement === undefined
+              ? undefined
+              : `${percentLabel(movement.climbed)} up, ${percentLabel(movement.fell)} down`
+          }
         />
       </StatTileRow>
 
@@ -141,14 +145,31 @@ export const LeagueTab: React.FC = () => {
                   );
                 }}
               />
-              <Line type="monotone" dataKey="all" name="All players" stroke={SERIES_COLOR} strokeWidth={3} dot={false} />
-              <Line type="monotone" dataKey="ranked" name="Ranked players" stroke={ACCENT_COLOR} strokeWidth={3} dot={false} />
+              <Line
+                type="monotone"
+                dataKey="all"
+                name="All players"
+                stroke={SERIES_COLOR}
+                strokeWidth={3}
+                dot={false}
+              />
+              <Line
+                type="monotone"
+                dataKey="ranked"
+                name="Ranked players"
+                stroke={ACCENT_COLOR}
+                strokeWidth={3}
+                dot={false}
+              />
             </LineChart>
           </ResponsiveContainer>
         )}
       </ContentCard>
 
-      <ContentCard title="Ranked and unranked" description="Share of all games by how many of the two players are ranked.">
+      <ContentCard
+        title="Ranked and unranked"
+        description="Share of all games by how many of the two players are ranked."
+      >
         {mix === undefined ? (
           <NotEnoughGames />
         ) : (

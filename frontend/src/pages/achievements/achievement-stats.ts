@@ -1,8 +1,4 @@
-import {
-  Achievement,
-  ACHIEVEMENT_IS_REACHIEVABLE,
-  AchievementType,
-} from "../../client/client-db/achievements";
+import { Achievement, ACHIEVEMENT_IS_REACHIEVABLE, AchievementType } from "../../client/client-db/achievements";
 import { fmtNum } from "../../common/number-utils";
 import { calendarDaysBetween } from "../../common/date-utils";
 
@@ -39,15 +35,15 @@ export const ACHIEVEMENT_METRICS: Partial<Record<AchievementType, AchievementMet
   "longest-lose-streak": { label: "Losses in a row", format: games },
   "yin-yang": { label: "Alternating results", format: games },
   "streak-ender": { label: "Streak ended", format: games },
-  "david": { label: "Score won", format: score },
-  "goliath": { label: "Score lost", format: score },
-  "climber": { label: "Score climbed", format: score },
+  david: { label: "Score won", format: score },
+  goliath: { label: "Score lost", format: score },
+  climber: { label: "Score climbed", format: score },
   "king-maker": { label: "Score handed over", format: score },
   "photo-finish": { label: "Score between the players", format: score },
   "touched-the-throne": { label: "Score at the top", format: score },
   "on-the-podium": { label: "Score on the podium", format: score },
   "marathon-set": { label: "Points of the set winner", format: points },
-  "shootout": { label: "Points in the counted sets", format: points },
+  shootout: { label: "Points in the counted sets", format: points },
   "less-is-more": { label: "Points behind the loser", format: points },
   "leap-frog": { label: "Ranks jumped", format: (value) => `${fmtNum(value)} rank${value === 1 ? "" : "s"}` },
   "giant-hunting": { label: "Largest Score gap", format: score },
@@ -57,18 +53,18 @@ export const ACHIEVEMENT_METRICS: Partial<Record<AchievementType, AchievementMet
   "group-stage-star": { label: "Wins in the group", format: games },
   "party-pooper": { label: "Wins spoiled", format: games },
   "full-house": { label: "Players beaten", format: (value) => `${fmtNum(value)} players` },
-  "humbled": { label: "Players lost to", format: (value) => `${fmtNum(value)} players` },
+  humbled: { label: "Players lost to", format: (value) => `${fmtNum(value)} players` },
   "everybodys-opponent": { label: "Players played", format: (value) => `${fmtNum(value)} players` },
   "full-coverage": { label: "Opponents in the season", format: (value) => `${fmtNum(value)} players` },
   "so-close": { label: "Share of the winner's score", format: (value) => `${fmtNum(value, { digits: 1 })}%` },
   "best-friends": { label: "Days to 50 games", format: days },
-  "reunion": { label: "Days apart", format: days },
+  reunion: { label: "Days apart", format: days },
   "back-after-6-months": { label: "Days away", format: days },
   "back-after-1-year": { label: "Days away", format: days },
   "back-after-2-years": { label: "Days away", format: days },
   "back-from-the-dead": { label: "Days retired", format: days },
   "hat-trick": { label: "Minutes for 3 wins", format: (value) => `${fmtNum(Math.round(value))} min` },
-  "anniversary": { label: "Years in the league", format: (value) => `${fmtNum(value)} year${value === 1 ? "" : "s"}` },
+  anniversary: { label: "Years in the league", format: (value) => `${fmtNum(value)} year${value === 1 ? "" : "s"}` },
 };
 
 /**
@@ -374,9 +370,7 @@ function topHolders(earnings: Achievement[]): HolderRow[] {
       });
     }
   });
-  return [...byPlayer.values()]
-    .sort((a, b) => b.count - a.count || b.latestAt - a.latestAt)
-    .slice(0, HOLDER_ROWS);
+  return [...byPlayer.values()].sort((a, b) => b.count - a.count || b.latestAt - a.latestAt).slice(0, HOLDER_ROWS);
 }
 
 /**
@@ -494,7 +488,10 @@ function valueSummary(type: AchievementType, earnings: Achievement[]): ValueSumm
     lowest: sorted[0],
     average: measured.reduce((sum, item) => sum + item.value, 0) / measured.length,
     measured: [...sorted].reverse(),
-    buckets: valueBuckets(sorted.map((item) => item.value), metric),
+    buckets: valueBuckets(
+      sorted.map((item) => item.value),
+      metric,
+    ),
   };
 }
 
@@ -526,9 +523,8 @@ export function valueBuckets(sortedValues: number[], metric: AchievementMetric):
     return {
       label: `${metric.format(from)} – ${metric.format(to)}`,
       // The last bucket takes the highest value, so no value falls outside.
-      count: sortedValues.filter((value) =>
-        index === VALUE_BUCKETS - 1 ? value >= from : value >= from && value < to,
-      ).length,
+      count: sortedValues.filter((value) => (index === VALUE_BUCKETS - 1 ? value >= from : value >= from && value < to))
+        .length,
     };
   });
 }

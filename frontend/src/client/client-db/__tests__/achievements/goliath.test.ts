@@ -42,10 +42,7 @@ describe("Goliath Achievement", () => {
     // Goliath beats 200 fresh opponents → Elo well above 1500.
     // David beats 5 fresh opponents → ranked at Elo ~1073.
     // David then beats Goliath — the upset yields a ≥30 Elo swing.
-    const events: EventType[] = [
-      ...buildGoliath(200),
-      createPlayer("david", 5000),
-    ];
+    const events: EventType[] = [...buildGoliath(200), createPlayer("david", 5000)];
     for (let i = 0; i < 5; i++) {
       events.push(createPlayer(`dopp-${i}`, 5010 + i));
     }
@@ -81,9 +78,15 @@ describe("Goliath Achievement", () => {
       createPlayer("e", 5),
     ];
     const pairs: [string, string][] = [
-      ["a", "b"], ["a", "c"], ["a", "d"], ["a", "e"],
-      ["b", "c"], ["b", "d"], ["b", "e"],
-      ["c", "d"], ["c", "e"],
+      ["a", "b"],
+      ["a", "c"],
+      ["a", "d"],
+      ["a", "e"],
+      ["b", "c"],
+      ["b", "d"],
+      ["b", "e"],
+      ["c", "d"],
+      ["c", "e"],
       ["d", "e"],
     ];
     let t = 100;
@@ -105,10 +108,7 @@ describe("Goliath Achievement", () => {
     // After the upset, progression.goliath.current for the losing
     // Goliath should equal the Elo lost in that match (their all-time
     // worst single-match loss).
-    const events: EventType[] = [
-      ...buildGoliath(200),
-      createPlayer("david", 5000),
-    ];
+    const events: EventType[] = [...buildGoliath(200), createPlayer("david", 5000)];
     for (let i = 0; i < 5; i++) {
       events.push(createPlayer(`dopp-${i}`, 5010 + i));
     }
@@ -132,11 +132,7 @@ describe("Goliath Achievement", () => {
   });
 
   it("progression current is 0 when the player has no losses", () => {
-    const events: EventType[] = [
-      createPlayer("alice", 1),
-      createPlayer("bob", 2),
-      game("g1", 100, "bob", "alice"),
-    ];
+    const events: EventType[] = [createPlayer("alice", 1), createPlayer("bob", 2), game("g1", 100, "bob", "alice")];
 
     const tt = new TennisTable({ events });
     tt.achievements.calculateAchievements();
@@ -148,10 +144,7 @@ describe("Goliath Achievement", () => {
   it("progression is 0 for an unranked player (too few games)", () => {
     // Bob plays just 4 games against Carol → never ranked. He has
     // losses but no qualifying ones; progression must be 0.
-    const events: EventType[] = [
-      createPlayer("bob", 1),
-      createPlayer("carol", 2),
-    ];
+    const events: EventType[] = [createPlayer("bob", 1), createPlayer("carol", 2)];
     for (let i = 0; i < 4; i++) {
       events.push(game(`g${i}`, 100 + i, "carol", "bob"));
     }
@@ -166,10 +159,7 @@ describe("Goliath Achievement", () => {
     // Goliath suffers the upset during the setup, then is deactivated.
     // The qualifying game happened while he was active and ranked, so
     // the progression value persists past the deactivation.
-    const events: EventType[] = [
-      ...buildGoliath(200),
-      createPlayer("david", 5000),
-    ];
+    const events: EventType[] = [...buildGoliath(200), createPlayer("david", 5000)];
     for (let i = 0; i < 5; i++) {
       events.push(createPlayer(`dopp-${i}`, 5010 + i));
     }
@@ -228,10 +218,7 @@ describe("Goliath Achievement", () => {
   it("fires alongside David on the same game (both players awarded)", () => {
     // Mirror sanity check: when David is earned by the winner, Goliath
     // must be earned by the loser of the same game.
-    const events: EventType[] = [
-      ...buildGoliath(200),
-      createPlayer("david", 5000),
-    ];
+    const events: EventType[] = [...buildGoliath(200), createPlayer("david", 5000)];
     for (let i = 0; i < 5; i++) {
       events.push(createPlayer(`dopp-${i}`, 5010 + i));
     }

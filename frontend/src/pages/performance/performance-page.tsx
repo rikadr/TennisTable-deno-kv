@@ -217,7 +217,8 @@ function collectDatasetMetrics(context: TennisTable) {
       total: totalPlayers,
       active: activePlayers,
       inactive: totalPlayers - activePlayers,
-      averageGamesPerActivePlayer: activePlayers > 0 ? Math.round(((games.length * 2) / activePlayers) * 10) / 10 : null,
+      averageGamesPerActivePlayer:
+        activePlayers > 0 ? Math.round(((games.length * 2) / activePlayers) * 10) / 10 : null,
     },
     tournaments: { total: context.tournaments.getTournaments().length },
     seasons: { total: context.seasons.getSeasons().length },
@@ -303,7 +304,9 @@ export const PerformancePage: React.FC = () => {
               <button
                 className={classNames(
                   "bg-secondary-background text-secondary-text rounded-md px-4 py-2 text-lg",
-                  isRunning || completedCount === 0 ? "opacity-50 cursor-not-allowed" : "hover:bg-secondary-background/50",
+                  isRunning || completedCount === 0
+                    ? "opacity-50 cursor-not-allowed"
+                    : "hover:bg-secondary-background/50",
                 )}
                 disabled={isRunning || completedCount === 0}
                 onClick={copyResultsAsJson}
@@ -322,8 +325,8 @@ export const PerformancePage: React.FC = () => {
           </div>
           <p className="mt-4 text-sm text-primary-text/70">
             Each test creates a fresh TennisTable instance from the current {fmtNum(context.events.length)} events,
-            without caches. The timer measures only the feature calculation, not the instance creation. Tests run on
-            the main thread, so the page can freeze while a test runs.
+            without caches. The timer measures only the feature calculation, not the instance creation. Tests run on the
+            main thread, so the page can freeze while a test runs.
           </p>
           <p className="mt-2 text-sm text-primary-text/70">
             Copy JSON copies the completed results together with dataset metrics: event, game, player, tournament and
@@ -339,7 +342,12 @@ export const PerformancePage: React.FC = () => {
                 <div className="grow">
                   <h2 className="text-lg">{benchmark.name}</h2>
                   <p className="text-sm text-primary-text/70">{benchmark.description}</p>
-                  <p className={classNames("text-sm", result?.status === "error" ? "text-red-500" : "text-primary-text/70")}>
+                  <p
+                    className={classNames(
+                      "text-sm",
+                      result?.status === "error" ? "text-red-500" : "text-primary-text/70",
+                    )}
+                  >
                     {result?.status === "done" && result.detail}
                     {result?.status === "error" && `Failed: ${result.message}`}
                     {(result === undefined || result.status === "running") && " "}

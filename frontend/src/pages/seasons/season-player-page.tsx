@@ -119,7 +119,9 @@ export function SeasonPlayerPage() {
           <p className="text-xs text-primary-text/60">
             {dateString(Number(season.start))} – {dateString(Number(season.end))}
             {Date.now() > season.end && ` · Ended ${relativeTimeString(new Date(season.end))}`}
-            {Date.now() > season.start && Date.now() < season.end && ` · Ends ${relativeTimeString(new Date(season.end)).toLowerCase()}`}
+            {Date.now() > season.start &&
+              Date.now() < season.end &&
+              ` · Ends ${relativeTimeString(new Date(season.end)).toLowerCase()}`}
           </p>
         </div>
         <Link
@@ -200,98 +202,104 @@ export function SeasonPlayerPage() {
               {sortedMatchups.map(({ opponentId, bestPerformance, playedAt, breakdown, bestGame }) => {
                 const setStrings =
                   bestGame.score?.setPoints?.map((set) =>
-                    bestGame.winner === playerId ? `${set.gameWinner}-${set.gameLoser}` : `${set.gameLoser}-${set.gameWinner}`,
+                    bestGame.winner === playerId
+                      ? `${set.gameWinner}-${set.gameLoser}`
+                      : `${set.gameLoser}-${set.gameWinner}`,
                   ) ?? [];
                 // Max 2 sets per line on tiny screens
                 const setLines = Array.from({ length: Math.ceil(setStrings.length / 2) }, (_, i) =>
                   setStrings.slice(i * 2, i * 2 + 2).join(", "),
                 );
                 return (
-                <tr
-                  key={opponentId}
-                  onClick={() => navigate(`/season/player?seasonStart=${seasonStart}&playerId=${opponentId}`)}
-                  className="hover:bg-primary-background/50 cursor-pointer transition-colors text-xs xs:text-sm md:text-base"
-                >
-                  <td className="py-1 px-1 xs:px-2 md:px-3 w-full max-w-0">
-                    <div className="flex items-center gap-1 md:gap-3 min-w-0">
-                      <div className="md:hidden shrink-0"><ProfilePicture playerId={opponentId} size={18} border={1} shape="rounded" /></div>
-                      <div className="hidden md:block shrink-0"><ProfilePicture playerId={opponentId} size={35} border={3} shape="rounded" /></div>
-                      <span className="font-medium truncate">{context.playerName(opponentId)}</span>
-                    </div>
-                  </td>
-                  <td className="py-1 px-1 xs:px-2 md:px-3 text-right font-medium w-[1%] whitespace-nowrap">
-                    {fmtNum(bestPerformance)}
-                  </td>
-                  <td className="py-1 px-1 xs:px-2 md:px-3">
-                    {breakdown ? (
-                      <div className="flex flex-wrap sm:flex-nowrap gap-x-2 text-xs md:text-sm">
-                        <span className="whitespace-nowrap" title="Win gives 25% of points">
-                          Win: {fmtNum(breakdown.win / 4)}
-                          <span className="opacity-50">/25</span>
-                        </span>
-                        <span className="whitespace-nowrap" title="Set scores give 25% of points">
-                          Sets:{" "}
-                          {breakdown.hasSets ? (
-                            <>
-                              {fmtNum(breakdown.sets / 4)}
-                              <span className="opacity-50">/25</span>
-                            </>
-                          ) : (
-                            <>{hasEnded ? "-" : "🚨"}</>
-                          )}
-                        </span>
-                        <span className="whitespace-nowrap" title="Ball scores give 50% of points">
-                          Points:{" "}
-                          {breakdown.hasBalls ? (
-                            <>
-                              {fmtNum(breakdown.balls / 2)}
-                              <span className="opacity-50">/50</span>
-                            </>
-                          ) : (
-                            <>{hasEnded ? "-" : "⚠️"}</>
-                          )}
+                  <tr
+                    key={opponentId}
+                    onClick={() => navigate(`/season/player?seasonStart=${seasonStart}&playerId=${opponentId}`)}
+                    className="hover:bg-primary-background/50 cursor-pointer transition-colors text-xs xs:text-sm md:text-base"
+                  >
+                    <td className="py-1 px-1 xs:px-2 md:px-3 w-full max-w-0">
+                      <div className="flex items-center gap-1 md:gap-3 min-w-0">
+                        <div className="md:hidden shrink-0">
+                          <ProfilePicture playerId={opponentId} size={18} border={1} shape="rounded" />
+                        </div>
+                        <div className="hidden md:block shrink-0">
+                          <ProfilePicture playerId={opponentId} size={35} border={3} shape="rounded" />
+                        </div>
+                        <span className="font-medium truncate">{context.playerName(opponentId)}</span>
+                      </div>
+                    </td>
+                    <td className="py-1 px-1 xs:px-2 md:px-3 text-right font-medium w-[1%] whitespace-nowrap">
+                      {fmtNum(bestPerformance)}
+                    </td>
+                    <td className="py-1 px-1 xs:px-2 md:px-3">
+                      {breakdown ? (
+                        <div className="flex flex-wrap sm:flex-nowrap gap-x-2 text-xs md:text-sm">
+                          <span className="whitespace-nowrap" title="Win gives 25% of points">
+                            Win: {fmtNum(breakdown.win / 4)}
+                            <span className="opacity-50">/25</span>
+                          </span>
+                          <span className="whitespace-nowrap" title="Set scores give 25% of points">
+                            Sets:{" "}
+                            {breakdown.hasSets ? (
+                              <>
+                                {fmtNum(breakdown.sets / 4)}
+                                <span className="opacity-50">/25</span>
+                              </>
+                            ) : (
+                              <>{hasEnded ? "-" : "🚨"}</>
+                            )}
+                          </span>
+                          <span className="whitespace-nowrap" title="Ball scores give 50% of points">
+                            Points:{" "}
+                            {breakdown.hasBalls ? (
+                              <>
+                                {fmtNum(breakdown.balls / 2)}
+                                <span className="opacity-50">/50</span>
+                              </>
+                            ) : (
+                              <>{hasEnded ? "-" : "⚠️"}</>
+                            )}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-xs md:text-sm">—</span>
+                      )}
+                    </td>
+                    <td className="py-1 px-1 xs:px-2 md:px-3 w-[1%] whitespace-nowrap">
+                      {bestGame.score && (
+                        <div className="font-medium text-[11px] xs:text-sm md:text-base">
+                          {bestGame.winner === playerId
+                            ? `${bestGame.score?.setsWon.gameWinner} - ${bestGame.score?.setsWon.gameLoser}`
+                            : `${bestGame.score?.setsWon.gameLoser} - ${bestGame.score?.setsWon.gameWinner}`}
+                        </div>
+                      )}
+                      {setStrings.length > 0 && (
+                        <>
+                          {/* Tiny screens: smaller text, max 2 sets per line */}
+                          <div className="xs:hidden font-light italic text-[10px]">
+                            {setLines.map((line, lineIndex) => (
+                              <div key={lineIndex} className="whitespace-nowrap">
+                                {line}
+                              </div>
+                            ))}
+                          </div>
+                          <div className="hidden xs:block font-light italic text-xs whitespace-nowrap">
+                            {setStrings.join(", ")}
+                          </div>
+                        </>
+                      )}
+                      {!bestGame.score?.setsWon && !bestGame.score?.setPoints && (
+                        <p>{bestGame.winner === playerId ? "Won" : "Lost"}</p>
+                      )}
+                    </td>
+                    <td className="py-1 px-1 xs:px-2 md:px-3 text-xs md:text-sm opacity-70 w-[1%] whitespace-nowrap">
+                      <div className="flex flex-col">
+                        <span className="whitespace-nowrap">{dateString(playedAt)}</span>
+                        <span className="opacity-50 whitespace-nowrap">
+                          <RelativeTime date={new Date(playedAt)} variant="auto" />
                         </span>
                       </div>
-                    ) : (
-                      <span className="text-xs md:text-sm">—</span>
-                    )}
-                  </td>
-                  <td className="py-1 px-1 xs:px-2 md:px-3 w-[1%] whitespace-nowrap">
-                    {bestGame.score && (
-                      <div className="font-medium text-[11px] xs:text-sm md:text-base">
-                        {bestGame.winner === playerId
-                          ? `${bestGame.score?.setsWon.gameWinner} - ${bestGame.score?.setsWon.gameLoser}`
-                          : `${bestGame.score?.setsWon.gameLoser} - ${bestGame.score?.setsWon.gameWinner}`}
-                      </div>
-                    )}
-                    {setStrings.length > 0 && (
-                      <>
-                        {/* Tiny screens: smaller text, max 2 sets per line */}
-                        <div className="xs:hidden font-light italic text-[10px]">
-                          {setLines.map((line, lineIndex) => (
-                            <div key={lineIndex} className="whitespace-nowrap">
-                              {line}
-                            </div>
-                          ))}
-                        </div>
-                        <div className="hidden xs:block font-light italic text-xs whitespace-nowrap">
-                          {setStrings.join(", ")}
-                        </div>
-                      </>
-                    )}
-                    {!bestGame.score?.setsWon && !bestGame.score?.setPoints && (
-                      <p>{bestGame.winner === playerId ? "Won" : "Lost"}</p>
-                    )}
-                  </td>
-                  <td className="py-1 px-1 xs:px-2 md:px-3 text-xs md:text-sm opacity-70 w-[1%] whitespace-nowrap">
-                    <div className="flex flex-col">
-                      <span className="whitespace-nowrap">{dateString(playedAt)}</span>
-                      <span className="opacity-50 whitespace-nowrap">
-                        <RelativeTime date={new Date(playedAt)} variant="auto" />
-                      </span>
-                    </div>
-                  </td>
-                </tr>
+                    </td>
+                  </tr>
                 );
               })}
             </tbody>
@@ -321,7 +329,6 @@ export function SeasonPlayerPage() {
           </div>
         </div>
       )}
-
     </div>
   );
 }

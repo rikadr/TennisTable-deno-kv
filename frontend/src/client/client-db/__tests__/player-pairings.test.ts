@@ -147,14 +147,7 @@ describe("PlayerPairings", () => {
   });
 
   it("still connects a retired player through their own games", () => {
-    const events = [
-      player("me"),
-      player("a"),
-      player("b"),
-      ...games("me", "a"),
-      ...games("a", "b"),
-      deactivate("me"),
-    ];
+    const events = [player("me"), player("a"), player("b"), ...games("me", "a"), ...games("a", "b"), deactivate("me")];
 
     expect(pairings(events, "me")).toEqual({
       columns: [

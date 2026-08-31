@@ -123,21 +123,12 @@ describe("TennisTable", () => {
       ];
       const earned = anniversariesFor(events, "alice").sort((a, b) => a.earnedAt - b.earnedAt);
       expect(earned.map((a) => a.type === "anniversary" && a.data.year)).toStrictEqual([1, 2, 3]);
-      expect(earned.map((a) => a.earnedAt)).toStrictEqual([
-        T0 + ONE_YEAR,
-        T0 + 2 * ONE_YEAR,
-        T0 + 3 * ONE_YEAR,
-      ]);
+      expect(earned.map((a) => a.earnedAt)).toStrictEqual([T0 + ONE_YEAR, T0 + 2 * ONE_YEAR, T0 + 3 * ONE_YEAR]);
     });
 
     it("skips a missed year but still awards a later one", () => {
       // Plays on year 1 and year 3, but not year 2.
-      const events = [
-        ...baseEvents(),
-        game("g0", T0),
-        game("g1", T0 + ONE_YEAR),
-        game("g2", T0 + 3 * ONE_YEAR),
-      ];
+      const events = [...baseEvents(), game("g0", T0), game("g1", T0 + ONE_YEAR), game("g2", T0 + 3 * ONE_YEAR)];
       const earned = anniversariesFor(events, "alice").sort((a, b) => a.earnedAt - b.earnedAt);
       expect(earned.map((a) => a.type === "anniversary" && a.data.year)).toStrictEqual([1, 3]);
     });
@@ -201,11 +192,7 @@ describe("TennisTable", () => {
     it("resets to ~0 immediately after earning a year", () => {
       // First game 1 year + 10 days ago; played a game in the year-1 window.
       const firstGame = Date.now() - (ONE_YEAR + 10 * ONE_DAY);
-      const progression = progressionFor([
-        ...baseEvents(),
-        game("g0", firstGame),
-        game("g1", firstGame + ONE_YEAR),
-      ]);
+      const progression = progressionFor([...baseEvents(), game("g0", firstGame), game("g1", firstGame + ONE_YEAR)]);
 
       expect(progression.earned).toBe(1);
       // Now counting toward year 2, ~10 days in.

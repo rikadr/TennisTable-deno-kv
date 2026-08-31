@@ -4,29 +4,27 @@ import { useEventDbContext } from "../../wrappers/event-db-context";
 import { useEventMutation } from "../../hooks/use-event-mutation";
 import { queryClient } from "../../common/query-client";
 import { useNavigate } from "react-router-dom";
-import {
-  EventTypeEnum,
-  GameCreated,
-  GameScore,
-} from "../../client/client-db/event-store/event-types";
+import { EventTypeEnum, GameCreated, GameScore } from "../../client/client-db/event-store/event-types";
 import { newId } from "../../common/nani-id";
 import { classNames } from "../../common/class-names";
 import { ProfilePicture } from "../player/profile-picture";
 import { stringToColor } from "../../common/string-to-color";
 import { CARD_SURFACE, fill, panelTint, ROW_SURFACE, softFill, textOn } from "../../common/player-color-styles";
 import { session } from "../../services/auth";
-import {
-  useClearLiveGameMutation,
-  useLiveGameQuery,
-  useUpdateLiveGameMutation,
-} from "./use-live-game";
+import { useClearLiveGameMutation, useLiveGameQuery, useUpdateLiveGameMutation } from "./use-live-game";
 import { emptyLiveGame, LiveGameSetPoint, LiveGameState } from "./live-game-types";
 import { CompletedSetsList } from "./completed-sets-list";
 import { LiveGamePredictionCard } from "./live-game-prediction-card";
 import ConfettiExplosion from "react-confetti-explosion";
 import { Server } from "../../common/serve-tracker";
 import { ServeTrackerDisplay } from "../../common/serve-tracker-display";
-import { alignBadSides, BadSide, badSideLabel, gameWinnerSideOfBadSide, nextSetBadSide } from "../../common/table-sides";
+import {
+  alignBadSides,
+  BadSide,
+  badSideLabel,
+  gameWinnerSideOfBadSide,
+  nextSetBadSide,
+} from "../../common/table-sides";
 import { TableSideDisplay } from "../../common/table-sides-display";
 import { appendPoint, removeLastPoint, toEventTrackingData } from "../../common/point-sequences";
 
@@ -353,10 +351,7 @@ export const LiveGameAdminPage: React.FC = () => {
             <div className="flex justify-center items-center gap-3 xs:gap-6">
               <div className="flex flex-col items-center gap-0.5 flex-1 min-w-0">
                 <ProfilePicture playerId={localState.player1Id} size={40} border={2} />
-                <span
-                  className="font-bold text-xs truncate max-w-full"
-                  style={textOn(player1Color, CARD_SURFACE)}
-                >
+                <span className="font-bold text-xs truncate max-w-full" style={textOn(player1Color, CARD_SURFACE)}>
                   {context.playerName(localState.player1Id)}
                 </span>
               </div>
@@ -374,10 +369,7 @@ export const LiveGameAdminPage: React.FC = () => {
               </div>
               <div className="flex flex-col items-center gap-0.5 flex-1 min-w-0">
                 <ProfilePicture playerId={localState.player2Id} size={40} border={2} />
-                <span
-                  className="font-bold text-xs truncate max-w-full"
-                  style={textOn(player2Color, CARD_SURFACE)}
-                >
+                <span className="font-bold text-xs truncate max-w-full" style={textOn(player2Color, CARD_SURFACE)}>
                   {context.playerName(localState.player2Id)}
                 </span>
               </div>
@@ -440,9 +432,7 @@ export const LiveGameAdminPage: React.FC = () => {
             >
               {setLeader === null
                 ? "Set won by leading player"
-                : `Set won by ${context.playerName(
-                    setLeader === 1 ? localState.player1Id : localState.player2Id,
-                  )}`}
+                : `Set won by ${context.playerName(setLeader === 1 ? localState.player1Id : localState.player2Id)}`}
             </button>
           </div>
 
@@ -513,7 +503,10 @@ export const LiveGameAdminPage: React.FC = () => {
           isSubmitting={isSubmitting}
           gameSuccessfullyAdded={gameSuccessfullyAdded}
           onConfirm={saveAsGame}
-          onBack={() => { setStage("scoring"); setValidationError(""); }}
+          onBack={() => {
+            setStage("scoring");
+            setValidationError("");
+          }}
         />
       )}
     </div>
@@ -627,7 +620,10 @@ const ConfirmView: React.FC<{
                   context.playerName(localState.player2Id),
                 );
                 return (
-                  <div key={index} className="flex items-center justify-between px-3 py-2 bg-gray-50 rounded-lg text-sm">
+                  <div
+                    key={index}
+                    className="flex items-center justify-between px-3 py-2 bg-gray-50 rounded-lg text-sm"
+                  >
                     <div className="flex flex-col">
                       <span className="font-semibold text-gray-700">Set {index + 1}</span>
                       {sideLabel && <span className="text-xs text-gray-400">😵 {sideLabel}</span>}

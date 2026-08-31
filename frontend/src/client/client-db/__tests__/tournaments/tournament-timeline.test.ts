@@ -174,7 +174,10 @@ describe("Tournament timeline", () => {
     // The grand final waits for both bracket champions, and the reset follows it
     const grandFinal = section(timeline.sections, "grand-final");
     expect(span(grandFinal)).toEqual([5, 7]);
-    expect(grandFinal.subSections.map((sub) => sub.ref)).toEqual([{ kind: "grand-final-game" }, { kind: "bracket-reset" }]);
+    expect(grandFinal.subSections.map((sub) => sub.ref)).toEqual([
+      { kind: "grand-final-game" },
+      { kind: "bracket-reset" },
+    ]);
     expect(span(grandFinal.subSections[0])).toEqual([5, 6]);
     expect(span(grandFinal.subSections[1])).toEqual([6, 7]);
   });

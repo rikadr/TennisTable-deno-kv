@@ -135,11 +135,13 @@ export const PlayerPredictionsHistory = ({ playerId }: Props) => {
         <div className="flex items-center gap-4 text-[10px] md:text-[11px] font-semibold self-end md:self-auto border-t border-white/5 pt-2 md:pt-0 md:border-t-0">
           {selectedTargetId !== "overall" && (
             <div className="flex items-center gap-2 mr-2">
-              <Link to={"/player/" + playerId + "?tab=predictions&predictionTab=history"} >
+              <Link to={"/player/" + playerId + "?tab=predictions&predictionTab=history"}>
                 <ProfilePicture playerId={playerId} size={26} border={2} />
               </Link>
               <span className="text-primary-text/50 text-[10px]">VS</span>
-              <Link to={"/player/" + selectedTargetId + "?tab=predictions&predictionTab=history&compareWith=" + playerId} >
+              <Link
+                to={"/player/" + selectedTargetId + "?tab=predictions&predictionTab=history&compareWith=" + playerId}
+              >
                 <ProfilePicture playerId={selectedTargetId} size={26} border={2} />
               </Link>
             </div>
@@ -157,10 +159,7 @@ export const PlayerPredictionsHistory = ({ playerId }: Props) => {
 
       {!isDone && (
         <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden mb-2">
-          <div
-            className="h-full bg-blue-500/50 transition-all duration-300"
-            style={{ width: `${progress * 100}%` }}
-          />
+          <div className="h-full bg-blue-500/50 transition-all duration-300" style={{ width: `${progress * 100}%` }} />
         </div>
       )}
 
@@ -252,25 +251,26 @@ export const PlayerPredictionsHistory = ({ playerId }: Props) => {
         </ResponsiveContainer>
       </div>
 
-      {historicalData.length > 0 && (() => {
-        const latest = historicalData.findLast((d) => d.winChance !== null);
-        if (!latest || latest.winChance === null || latest.confidence === null) return null;
-        return (
-          <div className="mt-4 flex items-center gap-4 px-2 py-3 rounded-xl bg-white/5 border border-white/10">
-            <span className="text-primary-text/50 text-xs font-medium">Current</span>
-            <div className="flex items-center gap-1.5">
-              <div className="w-2 h-2 rounded-full bg-primary-text" />
-              <span className="text-primary-text text-sm font-bold">{latest.winChance.toFixed(1)}%</span>
-              <span className="text-primary-text/50 text-xs">Win</span>
+      {historicalData.length > 0 &&
+        (() => {
+          const latest = historicalData.findLast((d) => d.winChance !== null);
+          if (!latest || latest.winChance === null || latest.confidence === null) return null;
+          return (
+            <div className="mt-4 flex items-center gap-4 px-2 py-3 rounded-xl bg-white/5 border border-white/10">
+              <span className="text-primary-text/50 text-xs font-medium">Current</span>
+              <div className="flex items-center gap-1.5">
+                <div className="w-2 h-2 rounded-full bg-primary-text" />
+                <span className="text-primary-text text-sm font-bold">{latest.winChance.toFixed(1)}%</span>
+                <span className="text-primary-text/50 text-xs">Win</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-2 h-2 rounded-full border border-orange-500 border-dashed" />
+                <span className="text-orange-400 text-sm font-bold">{latest.confidence.toFixed(1)}%</span>
+                <span className="text-primary-text/50 text-xs">Confidence</span>
+              </div>
             </div>
-            <div className="flex items-center gap-1.5">
-              <div className="w-2 h-2 rounded-full border border-orange-500 border-dashed" />
-              <span className="text-orange-400 text-sm font-bold">{latest.confidence.toFixed(1)}%</span>
-              <span className="text-primary-text/50 text-xs">Confidence</span>
-            </div>
-          </div>
-        );
-      })()}
+          );
+        })()}
     </div>
   );
 };

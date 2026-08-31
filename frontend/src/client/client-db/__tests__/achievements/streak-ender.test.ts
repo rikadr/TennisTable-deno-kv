@@ -69,9 +69,21 @@ describe("Streak Ender Achievement", () => {
 
   it("records the actual streak length when the loser was on a long (15+) streak", () => {
     const opponents = [
-      "bob", "carol", "dave", "bob", "carol",
-      "dave", "bob", "carol", "dave", "bob",
-      "carol", "dave", "bob", "carol", "dave",
+      "bob",
+      "carol",
+      "dave",
+      "bob",
+      "carol",
+      "dave",
+      "bob",
+      "carol",
+      "dave",
+      "bob",
+      "carol",
+      "dave",
+      "bob",
+      "carol",
+      "dave",
     ];
     const aliceWins = aliceWinsAgainst(opponents);
     const events: EventType[] = [

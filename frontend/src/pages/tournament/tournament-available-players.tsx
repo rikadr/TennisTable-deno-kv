@@ -74,9 +74,7 @@ export const TournamentAvailablePlayers = ({ tournament }: { tournament: Tournam
           (game.player2 === playerId && checkedPlayers.has(game.player1)),
       );
 
-      const opponents = gamesAgainstChecked.map((game) =>
-        game.player1 === playerId ? game.player2 : game.player1,
-      );
+      const opponents = gamesAgainstChecked.map((game) => (game.player1 === playerId ? game.player2 : game.player1));
 
       return { playerId, opponents };
     })
@@ -123,8 +121,7 @@ export const TournamentAvailablePlayers = ({ tournament }: { tournament: Tournam
       {/* Player checkboxes */}
       <div className="ring-1 ring-secondary-background rounded-lg p-4 bg-primary-background">
         <h3 className="text-primary-text font-semibold mb-3">
-          Players with pending games{" "}
-          <span className="font-thin italic text-sm">({sortedPlayers.length})</span>
+          Players with pending games <span className="font-thin italic text-sm">({sortedPlayers.length})</span>
         </h3>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
           {sortedPlayers.map((playerId) => {
@@ -143,7 +140,9 @@ export const TournamentAvailablePlayers = ({ tournament }: { tournament: Tournam
                 <div
                   className={classNames(
                     "w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 text-xs",
-                    isChecked ? "border-secondary-text bg-secondary-text text-secondary-background" : "border-primary-text/40",
+                    isChecked
+                      ? "border-secondary-text bg-secondary-text text-secondary-background"
+                      : "border-primary-text/40",
                   )}
                 >
                   {isChecked && "✓"}
@@ -161,13 +160,17 @@ export const TournamentAvailablePlayers = ({ tournament }: { tournament: Tournam
         <div className="text-center text-primary-text text-sm">
           <span className="font-semibold">{checkedPlayers.size}</span> player{checkedPlayers.size !== 1 && "s"} selected
           {" — "}
-          <span className="font-semibold">{totalPlayableGames}</span> game{totalPlayableGames !== 1 && "s"} can be played
+          <span className="font-semibold">{totalPlayableGames}</span> game{totalPlayableGames !== 1 && "s"} can be
+          played
         </div>
       )}
 
       {/* Per-player pending games against checked players */}
       {checkedPlayerGames.map(({ playerId, opponents }) => (
-        <div key={playerId} className="ring-1 ring-secondary-background rounded-lg overflow-hidden bg-primary-background">
+        <div
+          key={playerId}
+          className="ring-1 ring-secondary-background rounded-lg overflow-hidden bg-primary-background"
+        >
           <div className="flex items-center gap-3 px-4 py-3 bg-secondary-background text-secondary-text">
             <ProfilePicture playerId={playerId} size={36} border={2} />
             <div>

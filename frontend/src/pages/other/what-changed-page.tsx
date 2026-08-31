@@ -15,9 +15,19 @@ import { Achievement } from "../../client/client-db/achievements";
 import { getAchievementLabel } from "../player/player-achievements";
 import { ProfilePicture } from "../player/profile-picture";
 import { Elo } from "../../client/client-db/elo";
+import { EXPECTED_LEADERBOARD_SIMULATIONS } from "../../client/client-db/simulations";
 import { AbsentScore, absentScoreZero, buildDiffRows, RankedEntry, scoreDelta, SortBy } from "./what-changed-diff";
 
 type Source = "actual" | "expected";
+
+// How many leaderboards the expected leaderboard simulates at each of the two
+// times. More simulations give a more stable expected score, but take longer.
+const SIMULATION_OPTIONS: { value: number; label: string }[] = [
+  { value: 1_000, label: "Quick" },
+  { value: EXPECTED_LEADERBOARD_SIMULATIONS, label: "Normal" },
+  { value: 15_000, label: "Heavy" },
+  { value: 50_000, label: "Extreme" },
+];
 
 type Tab = "leaderboards" | "games" | "achievements";
 const TABS: { id: Tab; label: string }[] = [
@@ -68,31 +78,39 @@ function seasonEntriesAt(state: TennisTable | undefined, seasonStart: number): R
   }));
 }
 
-function useExpectedLeaderboardAt(time: number | undefined, enabled: boolean) {
+function useExpectedLeaderboardAt(time: number | undefined, enabled: boolean, simulations: number) {
   const context = useEventDbContext();
-  const cacheRef = useRef<Map<number, RankedEntry[]>>(new Map());
-  const [computed, setComputed] = useState<{ time: number; entries: RankedEntry[] } | null>(null);
+  // Keyed by time and simulation count, so raising the count recomputes and
+  // lowering it again reuses the earlier result.
+  const cacheRef = useRef<Map<string, RankedEntry[]>>(new Map());
+  const [computed, setComputed] = useState<{ key: string; entries: RankedEntry[] } | null>(null);
   const [progress, setProgress] = useState(0);
+  const key = `${time}-${simulations}`;
 
   useEffect(() => {
     if (!enabled || time === undefined) return;
-    const cached = cacheRef.current.get(time);
+    const cached = cacheRef.current.get(key);
     if (cached) {
-      setComputed({ time, entries: cached });
+      setComputed({ key, entries: cached });
       return;
     }
     setProgress(0);
     let worker: Worker | null = null;
-    // Debounce so half-edited datetime inputs do not start 5 000 simulations.
+    // Debounce so half-edited datetime inputs do not start thousands of
+    // simulations.
     const debounce = setTimeout(() => {
       const events = eventsUpTo(context.events, time);
       worker = createModernWorker();
 
       if (!worker) {
         // Fallback: run on the main thread if workers are unavailable
-        const result = new TennisTable({ events, referenceTime: time }).simulations.expectedLeaderBoard();
-        cacheRef.current.set(time, result.expected);
-        setComputed({ time, entries: result.expected });
+        const result = new TennisTable({ events, referenceTime: time }).simulations.expectedLeaderBoard(
+          undefined,
+          undefined,
+          simulations,
+        );
+        cacheRef.current.set(key, result.expected);
+        setComputed({ key, entries: result.expected });
         return;
       }
 
@@ -104,13 +122,16 @@ function useExpectedLeaderboardAt(time: number | undefined, enabled: boolean) {
             break;
 
           case "expected-leaderboard-result":
-            cacheRef.current.set(time, message.data.result.expected);
-            setComputed({ time, entries: message.data.result.expected });
+            cacheRef.current.set(key, message.data.result.expected);
+            setComputed({ key, entries: message.data.result.expected });
             break;
         }
       });
 
-      const message: WorkerMessage = { type: "start-expected-leaderboard", data: { events, referenceTime: time } };
+      const message: WorkerMessage = {
+        type: "start-expected-leaderboard",
+        data: { events, referenceTime: time, simulations },
+      };
       worker.postMessage(message);
     }, 500);
 
@@ -118,9 +139,9 @@ function useExpectedLeaderboardAt(time: number | undefined, enabled: boolean) {
       clearTimeout(debounce);
       worker?.terminate();
     };
-  }, [context, time, enabled]);
+  }, [context, time, enabled, simulations, key]);
 
-  const entries = computed !== null && computed.time === time ? computed.entries : undefined;
+  const entries = computed !== null && computed.key === key ? computed.entries : undefined;
   return { entries, progress, loading: enabled && time !== undefined && entries === undefined };
 }
 
@@ -267,6 +288,10 @@ export const WhatChangedPage: React.FC = () => {
   const sortParam = searchParams.get("sort");
   const sortBy: SortBy = sortParam === "start" || sortParam === "delta" ? sortParam : "end";
   const source: Source = searchParams.get("source") === "expected" ? "expected" : "actual";
+  const simulationsParam = Number(searchParams.get("simulations"));
+  const simulationCount = SIMULATION_OPTIONS.some((option) => option.value === simulationsParam)
+    ? simulationsParam
+    : EXPECTED_LEADERBOARD_SIMULATIONS;
 
   // Fixed at mount and refreshed when a quick range is clicked, so the quick
   // windows do not drift while the page stays open.
@@ -346,8 +371,8 @@ export const WhatChangedPage: React.FC = () => {
   // The expected leaderboard is only shown on the overall leaderboard tab, so
   // only simulate there.
   const simulationNeeded = source === "expected" && activeTab === "leaderboards" && leaderboardTab === "overall";
-  const startExpected = useExpectedLeaderboardAt(startTime, simulationNeeded);
-  const endExpected = useExpectedLeaderboardAt(endTime, simulationNeeded);
+  const startExpected = useExpectedLeaderboardAt(startTime, simulationNeeded, simulationCount);
+  const endExpected = useExpectedLeaderboardAt(endTime, simulationNeeded, simulationCount);
 
   const simulating = simulationNeeded && (startExpected.loading || endExpected.loading);
   const simulationProgress =
@@ -415,9 +440,7 @@ export const WhatChangedPage: React.FC = () => {
     <div className="w-full px-4 flex flex-col items-center">
       <div className="w-full max-w-2xl md:max-w-4xl">
         <div className="bg-primary-background rounded-lg w-full overflow-hidden">
-          <h1 className="text-2xl md:text-4xl text-center mt-2 md:mt-4 mb-1 md:mb-2 text-primary-text">
-            What changed
-          </h1>
+          <h1 className="text-2xl md:text-4xl text-center mt-2 md:mt-4 mb-1 md:mb-2 text-primary-text">What changed</h1>
 
           {/* Quick select of common periods */}
           <div className="flex flex-wrap justify-center gap-1.5 xs:gap-2 px-4 py-2">
@@ -532,13 +555,39 @@ export const WhatChangedPage: React.FC = () => {
                     onChange={(value) => setParams({ source: value })}
                   />
                 )}
+                {leaderboardTab === "overall" && source === "expected" && (
+                  <div className="flex flex-col items-center gap-1">
+                    <label htmlFor="simulations-select" className="text-xs md:text-sm text-primary-text/60">
+                      Simulations
+                    </label>
+                    <select
+                      id="simulations-select"
+                      value={simulationCount}
+                      onChange={(e) =>
+                        setParams({
+                          simulations:
+                            Number(e.target.value) === EXPECTED_LEADERBOARD_SIMULATIONS ? undefined : e.target.value,
+                        })
+                      }
+                      className="h-10 rounded-full bg-secondary-background text-secondary-text px-3 text-xs xs:text-sm"
+                    >
+                      {SIMULATION_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label} ({fmtNum(option.value)})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
               </div>
 
               {/* Overall leaderboard changes between the two times */}
               {leaderboardTab === "overall" &&
                 (simulating ? (
                   <div className="max-w-md mx-auto p-6 text-center">
-                    <p className="text-primary-text/60 text-sm mb-4">Simulating 2 × 5 000 leaderboards…</p>
+                    <p className="text-primary-text/60 text-sm mb-4">
+                      Simulating 2 × {fmtNum(simulationCount)} leaderboards…
+                    </p>
                     <div className="h-2.5 w-full rounded-full bg-primary-text/10 overflow-hidden">
                       <div
                         className="h-full rounded-full bg-secondary-background transition-all duration-150"

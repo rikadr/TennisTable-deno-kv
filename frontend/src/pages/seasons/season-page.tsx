@@ -29,9 +29,9 @@ export function SeasonPage() {
   const [sortKey, setSortKey] = useState<SortKey>("score");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [searchParams, setSearchParams] = useSearchParams();
-  
+
   const activeTab = (searchParams.get("tab") as TabType) || "leaderboard";
-  
+
   const setActiveTab = (tab: TabType) => {
     setSearchParams((prev) => {
       const newParams = new URLSearchParams(prev);
@@ -99,14 +99,13 @@ export function SeasonPage() {
           <p className="text-xs text-primary-text/60">
             {dateString(Number(season.start))} – {dateString(Number(season.end))}
             {Date.now() > season.end && ` · Ended ${relativeTimeString(new Date(season.end))}`}
-            {Date.now() > season.start && Date.now() < season.end && ` · Ends ${relativeTimeString(new Date(season.end)).toLowerCase()}`}
+            {Date.now() > season.start &&
+              Date.now() < season.end &&
+              ` · Ends ${relativeTimeString(new Date(season.end)).toLowerCase()}`}
             {Date.now() < season.start && ` · Starts ${relativeTimeString(new Date(season.start))}`}
           </p>
         </div>
-        <Link
-          to="/season/list"
-          className="text-sm text-primary-text hover:text-primary-text/80 whitespace-nowrap"
-        >
+        <Link to="/season/list" className="text-sm text-primary-text hover:text-primary-text/80 whitespace-nowrap">
           ← All Seasons
         </Link>
       </div>
@@ -178,8 +177,12 @@ export function SeasonPage() {
                       <td className="py-1 px-1 xs:px-2 md:px-3 w-[1%] whitespace-nowrap">{rank + 1}</td>
                       <td className="py-1 px-1 xs:px-2 md:px-3 w-full max-w-0">
                         <div className="flex items-center gap-1 md:gap-3 min-w-0">
-                          <div className="md:hidden shrink-0"><ProfilePicture playerId={player.playerId} size={22} border={2} shape="rounded" /></div>
-                          <div className="hidden md:block shrink-0"><ProfilePicture playerId={player.playerId} size={35} border={3} shape="rounded" /></div>
+                          <div className="md:hidden shrink-0">
+                            <ProfilePicture playerId={player.playerId} size={22} border={2} shape="rounded" />
+                          </div>
+                          <div className="hidden md:block shrink-0">
+                            <ProfilePicture playerId={player.playerId} size={35} border={3} shape="rounded" />
+                          </div>
                           {!isOngoing && rank === 0 && "🥇 "}
                           {!isOngoing && rank === 1 && "🥈 "}
                           {!isOngoing && rank === 2 && "🥉 "}

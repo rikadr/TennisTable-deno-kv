@@ -145,7 +145,10 @@ function playersOfEarlierTournaments(tournament: Tournament, context: TennisTabl
 }
 
 /** Who had played whom, and how much, in the club before the tournament started */
-function historyBefore(context: TennisTable, baseline: number): { players: Map<string, History>; pairs: Map<string, History> } {
+function historyBefore(
+  context: TennisTable,
+  baseline: number,
+): { players: Map<string, History>; pairs: Map<string, History> } {
   const players = new Map<string, History>();
   const pairs = new Map<string, History>();
 
@@ -232,9 +235,7 @@ export function buildTournamentConnections(
 
   const reunions = pairs.filter((pair) => pair.kind === "reunion").sort((a, b) => (b.gap ?? 0) - (a.gap ?? 0));
 
-  const longestGap = pairs
-    .filter((pair) => pair.gap !== undefined)
-    .sort((a, b) => (b.gap ?? 0) - (a.gap ?? 0))[0];
+  const longestGap = pairs.filter((pair) => pair.gap !== undefined).sort((a, b) => (b.gap ?? 0) - (a.gap ?? 0))[0];
 
   // ---- Players ----
 

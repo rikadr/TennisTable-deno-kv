@@ -18,7 +18,13 @@ import { fmtNum } from "../../common/number-utils";
 import { ContentCard } from "../player/content-card";
 import { NotEnoughGames, StatTile, StatTileRow } from "./stat-tile";
 import { ACCENT_COLOR, AXIS_COLOR, percentLabel, percentTick, SERIES_COLOR, TooltipCard } from "./percent-chart";
-import { GAP_GROUP_SIZE, GapView, MIN_GAMES_PER_BUCKET, ratingGapDistribution, upsetRate } from "./statistics-aggregations";
+import {
+  GAP_GROUP_SIZE,
+  GapView,
+  MIN_GAMES_PER_BUCKET,
+  ratingGapDistribution,
+  upsetRate,
+} from "./statistics-aggregations";
 
 const VIEW_OPTIONS: { value: GapView; label: string }[] = [
   { value: "all", label: "All" },
@@ -38,10 +44,7 @@ const signedGroup = (group: number): string => `${group > 0 ? "+" : ""}${group}`
 export const MatchupsTab: React.FC<{ view: GapView; setView: (view: GapView) => void }> = ({ view, setView }) => {
   const context = useEventDbContext();
 
-  const gaps = useMemo(
-    () => ratingGapDistribution(context.games, context.allPlayers, view),
-    [context, view],
-  );
+  const gaps = useMemo(() => ratingGapDistribution(context.games, context.allPlayers, view), [context, view]);
   const upsets = useMemo(() => upsetRate(context.games, context.allPlayers), [context]);
 
   return (
@@ -93,7 +96,10 @@ export const MatchupsTab: React.FC<{ view: GapView; setView: (view: GapView) => 
             </ResponsiveContainer>
             <StatTileRow>
               <StatTile label="Median gap" value={fmtNum(gaps.medianGap, { digits: 0, signedPositive: true }) ?? "–"} />
-              <StatTile label="Average gap" value={fmtNum(gaps.averageGap, { digits: 0, signedPositive: true }) ?? "–"} />
+              <StatTile
+                label="Average gap"
+                value={fmtNum(gaps.averageGap, { digits: 0, signedPositive: true }) ?? "–"}
+              />
             </StatTileRow>
           </div>
         )}
@@ -114,7 +120,12 @@ export const MatchupsTab: React.FC<{ view: GapView; setView: (view: GapView) => 
                   dataKey="gapGroup"
                   stroke={AXIS_COLOR}
                   tick={{ fontSize: 11 }}
-                  label={{ value: "Rating gap", position: "insideBottom", offset: -12, style: { fill: AXIS_COLOR, fontSize: 11 } }}
+                  label={{
+                    value: "Rating gap",
+                    position: "insideBottom",
+                    offset: -12,
+                    style: { fill: AXIS_COLOR, fontSize: 11 },
+                  }}
                 />
                 {/* A near even matchup can pass 50%, so the axis holds the whole range. */}
                 <YAxis stroke={AXIS_COLOR} tick={{ fontSize: 11 }} domain={[0, 100]} tickFormatter={percentTick} />
@@ -131,7 +142,14 @@ export const MatchupsTab: React.FC<{ view: GapView; setView: (view: GapView) => 
                     );
                   }}
                 />
-                <Line type="monotone" dataKey="actual" name="Actual" stroke={SERIES_COLOR} strokeWidth={3} dot={{ r: 3 }} />
+                <Line
+                  type="monotone"
+                  dataKey="actual"
+                  name="Actual"
+                  stroke={SERIES_COLOR}
+                  strokeWidth={3}
+                  dot={{ r: 3 }}
+                />
                 <Line
                   type="monotone"
                   dataKey="expected"
@@ -144,7 +162,11 @@ export const MatchupsTab: React.FC<{ view: GapView; setView: (view: GapView) => 
               </LineChart>
             </ResponsiveContainer>
             <StatTileRow>
-              <StatTile label="Won by the stronger player" value={percentLabel(upsets.favouriteWinRate)} note="of all games" />
+              <StatTile
+                label="Won by the stronger player"
+                value={percentLabel(upsets.favouriteWinRate)}
+                note="of all games"
+              />
             </StatTileRow>
           </div>
         )}

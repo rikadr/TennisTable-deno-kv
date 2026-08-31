@@ -799,13 +799,7 @@ export class Achievements {
       // order against the running league-wide record) and Shootout (most
       // combined points in one game, counting only its highest-scoring sets).
       if (game.score?.setPoints) {
-        this.#checkMarathonSetAchievements(
-          game.winner,
-          game.loser,
-          game.id,
-          game.score.setPoints,
-          game.playedAt,
-        );
+        this.#checkMarathonSetAchievements(game.winner, game.loser, game.id, game.score.setPoints, game.playedAt);
         this.#checkShootoutAchievement(game.winner, game.loser, game.id, game.score.setPoints, game.playedAt);
 
         // Check for "Deuce Demon": career deuce sets won. Either player can
@@ -1008,10 +1002,7 @@ export class Achievements {
     for (const event of this.parent.events) {
       if (event.type === EventTypeEnum.PLAYER_DEACTIVATED) {
         lastRetiredAt.set(event.stream, event.time);
-        this.#addAchievement(
-          event.stream,
-          this.#createAchievement("retired", event.stream, event.time, undefined),
-        );
+        this.#addAchievement(event.stream, this.#createAchievement("retired", event.stream, event.time, undefined));
       } else if (event.type === EventTypeEnum.PLAYER_REACTIVATED) {
         const retiredAt = lastRetiredAt.get(event.stream);
         if (retiredAt === undefined) continue;
@@ -1322,10 +1313,7 @@ export class Achievements {
             }),
           );
         }
-        if (
-          !everybodysOpponentAwarded.has(playerId) &&
-          coversCohort(played.get(playerId), cohort, playerId)
-        ) {
+        if (!everybodysOpponentAwarded.has(playerId) && coversCohort(played.get(playerId), cohort, playerId)) {
           everybodysOpponentAwarded.add(playerId);
           this.#addAchievement(
             playerId,
@@ -1606,10 +1594,7 @@ export class Achievements {
             this.#createAchievement("touched-the-throne", playerId, time, {
               elo: player.elo,
               firstGameAt: firstGameAt.get(playerId)!,
-              dethroned:
-                previousThroneHolder && previousThroneHolder !== playerId
-                  ? previousThroneHolder
-                  : undefined,
+              dethroned: previousThroneHolder && previousThroneHolder !== playerId ? previousThroneHolder : undefined,
             }),
           );
           awardKingMaker(playerId, time);
@@ -1630,9 +1615,7 @@ export class Achievements {
     // Build a time-ordered action list of games + active-state changes.
     // Games at the same time as a state-change event are processed
     // first so the recheck sees the post-game state.
-    type Action =
-      | { kind: "game"; time: number; game: Game }
-      | { kind: "recheck"; time: number };
+    type Action = { kind: "game"; time: number; game: Game } | { kind: "recheck"; time: number };
     const actions: Action[] = [];
     for (const g of this.parent.games) {
       actions.push({ kind: "game", time: g.playedAt, game: g });
@@ -1680,11 +1663,7 @@ export class Achievements {
       // Kingslayer: loser was #1 going into the match. One-time per
       // player. Requires ≥5 ranked players so being "#1" actually means
       // outranking a real cohort, not a tiny pool.
-      if (
-        loserRankBefore === 1 &&
-        rankedCountBefore >= 5 &&
-        !kingslayed.has(game.winner)
-      ) {
+      if (loserRankBefore === 1 && rankedCountBefore >= 5 && !kingslayed.has(game.winner)) {
         kingslayed.add(game.winner);
         this.#addAchievement(
           game.winner,
@@ -1773,42 +1752,26 @@ export class Achievements {
       // Touched the Throne: first time the player ever sits at rank #1.
       // The player must already be ranked entering the match, and there
       // must be ≥5 ranked active players so "rank #1" is meaningful.
-      if (
-        winnerRankBefore !== null &&
-        winnerRankAfter === 1 &&
-        rankedCount >= 5 &&
-        !touchedThrone.has(game.winner)
-      ) {
+      if (winnerRankBefore !== null && winnerRankAfter === 1 && rankedCount >= 5 && !touchedThrone.has(game.winner)) {
         touchedThrone.add(game.winner);
         this.#addAchievement(
           game.winner,
           this.#createAchievement("touched-the-throne", game.winner, game.playedAt, {
             elo: winner.elo,
             firstGameAt: firstGameAt.get(game.winner)!,
-            dethroned:
-              previousThroneHolder && previousThroneHolder !== game.winner
-                ? previousThroneHolder
-                : undefined,
+            dethroned: previousThroneHolder && previousThroneHolder !== game.winner ? previousThroneHolder : undefined,
           }),
         );
         awardKingMaker(game.winner, game.playedAt);
       }
-      if (
-        loserRankBefore !== null &&
-        loserRankAfter === 1 &&
-        rankedCount >= 5 &&
-        !touchedThrone.has(game.loser)
-      ) {
+      if (loserRankBefore !== null && loserRankAfter === 1 && rankedCount >= 5 && !touchedThrone.has(game.loser)) {
         touchedThrone.add(game.loser);
         this.#addAchievement(
           game.loser,
           this.#createAchievement("touched-the-throne", game.loser, game.playedAt, {
             elo: loser.elo,
             firstGameAt: firstGameAt.get(game.loser)!,
-            dethroned:
-              previousThroneHolder && previousThroneHolder !== game.loser
-                ? previousThroneHolder
-                : undefined,
+            dethroned: previousThroneHolder && previousThroneHolder !== game.loser ? previousThroneHolder : undefined,
           }),
         );
         awardKingMaker(game.loser, game.playedAt);
@@ -2053,10 +2016,7 @@ export class Achievements {
       const before = tracker.deuceSetsWon;
       tracker.deuceSetsWon += setsWon;
       if (before < DEUCE_DEMON_TARGET && tracker.deuceSetsWon >= DEUCE_DEMON_TARGET) {
-        this.#addAchievement(
-          playerId,
-          this.#createAchievement("deuce-demon", playerId, game.playedAt, undefined),
-        );
+        this.#addAchievement(playerId, this.#createAchievement("deuce-demon", playerId, game.playedAt, undefined));
       }
     };
     applyDeuceSets(game.winner, winnerTracker, winnerDeuceSets);
@@ -2078,10 +2038,7 @@ export class Achievements {
       const before = tracker.badSideSetsWon;
       tracker.badSideSetsWon += sets;
       if (before < BAD_SIDE_BANDIT_TARGET && tracker.badSideSetsWon >= BAD_SIDE_BANDIT_TARGET) {
-        this.#addAchievement(
-          playerId,
-          this.#createAchievement("bad-side-bandit", playerId, game.playedAt, undefined),
-        );
+        this.#addAchievement(playerId, this.#createAchievement("bad-side-bandit", playerId, game.playedAt, undefined));
       }
     };
     applyBadSideSets(game.winner, winnerTracker, setsWon.gameWinner);
@@ -2092,9 +2049,7 @@ export class Achievements {
   // SHOOTOUT_SETS_COUNTED highest-scoring ones (all of them when the game has
   // fewer, earlier sets winning ties), returned in the order they were
   // played so they can be displayed as the game unfolded.
-  #shootoutSets(
-    setPoints: { gameWinner: number; gameLoser: number }[],
-  ): { gameWinner: number; gameLoser: number }[] {
+  #shootoutSets(setPoints: { gameWinner: number; gameLoser: number }[]): { gameWinner: number; gameLoser: number }[] {
     return setPoints
       .map((set, index) => ({ set, index, sum: set.gameWinner + set.gameLoser }))
       .sort((a, b) => b.sum - a.sum || a.index - b.index)
@@ -2368,8 +2323,7 @@ export class Achievements {
     openRecord: StreakRecordAchievement | undefined,
     recordFloor: number,
   ): StreakRecordAchievement | undefined {
-    const beatsRecord =
-      record.length === undefined ? streakLength >= recordFloor : streakLength > record.length;
+    const beatsRecord = record.length === undefined ? streakLength >= recordFloor : streakLength > record.length;
     if (!beatsRecord) {
       return openRecord;
     }
@@ -2631,9 +2585,7 @@ export class Achievements {
       return;
     }
 
-    const alreadyEarned = this.getAchievements(playerId).some(
-      (a) => a.type === "anniversary" && a.data.year === year,
-    );
+    const alreadyEarned = this.getAchievements(playerId).some((a) => a.type === "anniversary" && a.data.year === year);
     if (alreadyEarned) {
       return;
     }
@@ -3024,7 +2976,7 @@ export class Achievements {
     const progression: AchievementProgression = {
       // Getting started
       "first-game": { current: 0, target: 1, earned: 0 },
-      "ranked": { current: 0, target: gameLimitForRanked, earned: 0 },
+      ranked: { current: 0, target: gameLimitForRanked, earned: 0 },
 
       // Win streaks
       "streak-all-10": { current: 0, target: 10, earned: 0 },
@@ -3069,7 +3021,7 @@ export class Achievements {
       // Rank & Score
       "on-the-podium": { earned: 0 },
       "touched-the-throne": { earned: 0 },
-      "kingslayer": { earned: 0 },
+      kingslayer: { earned: 0 },
       "king-maker": { earned: 0 },
       // Giant Hunting resets at local midnight: current is today's wins over
       // higher-ranked opponents, best the most in any single day.
@@ -3084,21 +3036,21 @@ export class Achievements {
       },
       // David / Goliath chase a fractional Elo record, so unlike the integer
       // records the target IS the record — it must be strictly exceeded.
-      "david": {
+      david: {
         earned: 0,
         current: 0,
         target: this.davidRecord.eloGain,
         recordHolder: this.davidRecord.holder,
       },
-      "goliath": {
+      goliath: {
         earned: 0,
         current: 0,
         target: this.goliathRecord.eloLoss,
         recordHolder: this.goliathRecord.holder,
       },
-      "climber": { current: 0, target: 300, earned: 0 },
+      climber: { current: 0, target: 300, earned: 0 },
       "full-house": { current: 0, target: 1, missing: new Set(), earned: 0 },
-      "humbled": { current: 0, target: 1, missing: new Set(), earned: 0 },
+      humbled: { current: 0, target: 1, missing: new Set(), earned: 0 },
       "everybodys-opponent": { current: 0, target: 1, missing: new Set(), earned: 0 },
 
       // Game feats
@@ -3120,7 +3072,7 @@ export class Achievements {
         target: this.marathonSetRecord.score === undefined ? undefined : this.marathonSetRecord.score + 1,
         recordHolder: this.marathonSetRecord.holder,
       },
-      "shootout": {
+      shootout: {
         earned: 0,
         current: 0,
         target: this.shootoutRecord.points === undefined ? undefined : this.shootoutRecord.points + 1,
@@ -3156,7 +3108,7 @@ export class Achievements {
       "variety-player": { current: 0, target: 10, opponents: new Set(), earned: 0 },
       "global-player": { current: 0, target: 20, opponents: new Set(), earned: 0 },
       "best-friends": { current: 0, target: 50, perOpponent: new Map(), earned: 0 },
-      "reunion": { current: 0, target: ONE_YEAR, earned: 0 },
+      reunion: { current: 0, target: ONE_YEAR, earned: 0 },
       "welcome-committee": { current: 0, target: 3, newPlayers: new Set(), earned: 0 },
       "community-builder": { current: 0, target: 10, newPlayers: new Set(), earned: 0 },
 
@@ -3168,11 +3120,11 @@ export class Achievements {
       // that year has elapsed. When current reaches target the player is at
       // their anniversary and playing a game awards it (on the day before, day
       // of, or day after the anniversary date).
-      "anniversary": { current: 0, target: ONE_YEAR, earned: 0 },
+      anniversary: { current: 0, target: ONE_YEAR, earned: 0 },
       "back-after-6-months": { earned: 0, target: SIX_MONTHS },
       "back-after-1-year": { earned: 0, target: ONE_YEAR },
       "back-after-2-years": { earned: 0, target: TWO_YEARS },
-      "retired": { earned: 0 },
+      retired: { earned: 0 },
       // A two-step chase: retire, then come back. A currently retired player
       // is halfway there; current is filled in below.
       "back-from-the-dead": { current: 0, target: 2, earned: 0 },
@@ -3454,8 +3406,7 @@ export class Achievements {
           const setLoserScore = Math.min(set.gameWinner, set.gameLoser);
           if (setWinnerScore < 12 || setLoserScore < 10) return;
           const setWinnerIsGameWinner = set.gameWinner > set.gameLoser;
-          const playerWonSet =
-            (isWinner && setWinnerIsGameWinner) || (isLoser && !setWinnerIsGameWinner);
+          const playerWonSet = (isWinner && setWinnerIsGameWinner) || (isLoser && !setWinnerIsGameWinner);
           if (playerWonSet) {
             deuceSetsWonCount++;
             if (setWinnerScore > bestDeuceSetWon) {
@@ -3522,8 +3473,7 @@ export class Achievements {
     const todayStart = new Date(nowMs);
     todayStart.setHours(0, 0, 0, 0);
     const todayStat = perfectDayStats.get(todayStart.getTime());
-    progression["perfect-day"].current =
-      todayStat && todayStat.losses === 0 ? Math.min(todayStat.wins, 5) : 0;
+    progression["perfect-day"].current = todayStat && todayStat.losses === 0 ? Math.min(todayStat.wins, 5) : 0;
 
     // Perfect Day best: the most wins on any fully undefeated day — the
     // player's closest attempt ever, today's live attempt included.
@@ -3635,7 +3585,6 @@ export class Achievements {
       bestHatTrickWindow = Math.max(bestHatTrickWindow, index - hatTrickWindowStart + 1);
     });
     progression["hat-trick"].best = bestHatTrickWindow;
-
 
     // Get list of opponents we've already earned achievements with
     const earnedBestFriendsOpponents = new Set<string>();
@@ -4113,7 +4062,7 @@ type StreakRecordAchievementData = {
 
 type AchievementDefinitions = {
   "first-game": { gameId: string; opponent: string };
-  "ranked": { gameId: string; opponent: string };
+  ranked: { gameId: string; opponent: string };
   "donut-1": { gameId: string; opponent: string };
   "donut-5": undefined;
   // Career donut sets given away — sets lost without scoring a point —
@@ -4125,7 +4074,7 @@ type AchievementDefinitions = {
   "back-after-6-months": { lastGameAt: number };
   "back-after-1-year": { lastGameAt: number };
   "back-after-2-years": { lastGameAt: number };
-  "retired": undefined;
+  retired: undefined;
   "back-from-the-dead": { retiredAt: number };
   // `day` / `weekStart` / `monthStart` is the local midnight starting the
   // record period (weeks start on Monday, months on the 1st). Undefined
@@ -4136,7 +4085,7 @@ type AchievementDefinitions = {
   "active-6-months": { firstGameInPeriod: number };
   "active-1-year": { firstGameInPeriod: number };
   "active-2-years": { firstGameInPeriod: number };
-  "anniversary": { firstGameAt: number; year: number };
+  anniversary: { firstGameAt: number; year: number };
   "tournament-participated": { tournamentId: string };
   "tournament-winner": { tournamentId: string };
   // Won a tournament match against an opponent who beat the player in an
@@ -4163,7 +4112,7 @@ type AchievementDefinitions = {
   // Played an opponent again a year or more after the pair's previous game
   // against each other. `lastGameAt` is that previous game — the far end of
   // the gap the reunion closed.
-  "reunion": { gameId: string; opponent: string; lastGameAt: number };
+  reunion: { gameId: string; opponent: string; lastGameAt: number };
   "welcome-committee": { opponents: string[] };
   "community-builder": { opponents: string[] };
   "punching-bag": { startedAt: number };
@@ -4175,7 +4124,7 @@ type AchievementDefinitions = {
   // `startDay` is the local midnight of the first day in the 5-consecutive-day
   // run of won days; `weekStart` the Monday of the week containing the run.
   "perfect-week": { weekStart: number; startDay: number };
-  "kingslayer": { opponent: string; gameId: string };
+  kingslayer: { opponent: string; gameId: string };
   "king-maker": { newKing: string; netScoreGained: number };
   "touched-the-throne": { elo: number; firstGameAt: number; dethroned?: string };
   "on-the-podium": { elo: number; firstGameAt: number };
@@ -4201,9 +4150,9 @@ type AchievementDefinitions = {
   // Record-breaking upset achievements — one game always sets both records
   // (Elo is zero-sum). Undefined previousRecord means the game established
   // the very first league record.
-  "david": { opponent: string; gameId: string; eloGain: number; previousRecord?: number };
-  "goliath": { opponent: string; gameId: string; eloLoss: number; previousRecord?: number };
-  "climber": { fromElo: number; toElo: number; fromDate: number; toDate: number };
+  david: { opponent: string; gameId: string; eloGain: number; previousRecord?: number };
+  goliath: { opponent: string; gameId: string; eloLoss: number; previousRecord?: number };
+  climber: { fromElo: number; toElo: number; fromDate: number; toDate: number };
   "marathon-set": {
     gameId: string;
     opponent: string;
@@ -4225,7 +4174,7 @@ type AchievementDefinitions = {
   "yin-yang": StreakRecordAchievementData;
   "group-stage-star": { tournamentId: string; wins: number };
   "full-house": { count: number; firstGameAt: number };
-  "humbled": { count: number; firstGameAt: number };
+  humbled: { count: number; firstGameAt: number };
   // Played every currently ranked player at least once (wins and losses
   // both count). Same shape as Full House / Humbled: how many ranked
   // players the completed set held, and the player's first game.
@@ -4270,7 +4219,7 @@ type AchievementDefinitions = {
   // highest-scoring ones, in the order played, from the badge owner's
   // perspective — and `points` their combined score. Undefined previousRecord
   // means the game established the very first league record.
-  "shootout": {
+  shootout: {
     gameId: string;
     opponent: string;
     points: number;
@@ -4299,7 +4248,7 @@ export type AchievementType = keyof AchievementDefinitions;
 // compile until it is classified here.
 export const ACHIEVEMENT_IS_REACHIEVABLE: Record<AchievementType, boolean> = {
   "first-game": false,
-  "ranked": false,
+  ranked: false,
   "donut-1": true, // Per donut set
   "donut-5": false,
   "donut-baker": false,
@@ -4309,7 +4258,7 @@ export const ACHIEVEMENT_IS_REACHIEVABLE: Record<AchievementType, boolean> = {
   "back-after-6-months": true, // Per return from inactivity
   "back-after-1-year": true,
   "back-after-2-years": true,
-  "retired": true, // Per retirement cycle
+  retired: true, // Per retirement cycle
   "back-from-the-dead": true,
   "hero-of-the-day": true, // League records — can be retaken
   "hero-of-the-week": true,
@@ -4317,7 +4266,7 @@ export const ACHIEVEMENT_IS_REACHIEVABLE: Record<AchievementType, boolean> = {
   "active-6-months": true, // Per unbroken activity period
   "active-1-year": true,
   "active-2-years": true,
-  "anniversary": true, // Per year
+  anniversary: true, // Per year
   "tournament-participated": true, // Per tournament
   "tournament-winner": true,
   "sweet-revenge": true, // Per avenged loss — a new loss to that opponent re-arms it
@@ -4332,7 +4281,7 @@ export const ACHIEVEMENT_IS_REACHIEVABLE: Record<AchievementType, boolean> = {
   "variety-player": false,
   "global-player": false,
   "best-friends": true, // Per opponent
-  "reunion": true, // Per year-long gap per opponent
+  reunion: true, // Per year-long gap per opponent
   "welcome-committee": false,
   "community-builder": false,
   "punching-bag": true, // Per lose streak
@@ -4342,15 +4291,15 @@ export const ACHIEVEMENT_IS_REACHIEVABLE: Record<AchievementType, boolean> = {
   "hat-trick": true, // Per 3-wins-in-90-minutes window
   "perfect-day": true, // Per qualifying day / week
   "perfect-week": true,
-  "kingslayer": false,
+  kingslayer: false,
   "king-maker": true, // Per new #1
   "touched-the-throne": false,
   "on-the-podium": false,
   "photo-finish": true, // Per qualifying game
   "leap-frog": true, // League records — can be retaken
-  "david": true,
-  "goliath": true,
-  "climber": false,
+  david: true,
+  goliath: true,
+  climber: false,
   "marathon-set": true, // League record
   "streak-ender": true, // Per ended streak
   "longest-win-streak": true, // League records — can be retaken
@@ -4358,7 +4307,7 @@ export const ACHIEVEMENT_IS_REACHIEVABLE: Record<AchievementType, boolean> = {
   "yin-yang": true,
   "group-stage-star": true, // Per tournament's group play
   "full-house": false,
-  "humbled": false,
+  humbled: false,
   "everybodys-opponent": false,
   "deuce-demon": false,
   "on-the-record": false,
@@ -4367,7 +4316,7 @@ export const ACHIEVEMENT_IS_REACHIEVABLE: Record<AchievementType, boolean> = {
   "party-pooper": true, // Per spoiled perfect day
   "earliest-game": true, // League records — can be retaken
   "latest-game": true,
-  "shootout": true, // League record
+  shootout: true, // League record
   "season-opener": true, // Per season
   "milestone-game": true, // Per 500th league game
 };
@@ -4607,7 +4556,7 @@ type TimeOfDayRecordProgression = BaseProgression & {
 
 export type AchievementProgression = {
   "first-game": ProgressionWithTarget;
-  "ranked": ProgressionWithTarget;
+  ranked: ProgressionWithTarget;
   "donut-1": ProgressionWithTarget;
   "donut-5": ProgressionWithTarget;
   "donut-baker": ProgressionWithTarget;
@@ -4617,12 +4566,12 @@ export type AchievementProgression = {
   "back-after-6-months": BackAfterProgression;
   "back-after-1-year": BackAfterProgression;
   "back-after-2-years": BackAfterProgression;
-  "retired": BaseProgression;
+  retired: BaseProgression;
   "back-from-the-dead": ProgressionWithTarget;
   "active-6-months": ProgressionWithTarget;
   "active-1-year": ProgressionWithTarget;
   "active-2-years": ProgressionWithTarget;
-  "anniversary": AnniversaryProgression;
+  anniversary: AnniversaryProgression;
   "tournament-participated": BaseProgression;
   "tournament-winner": BaseProgression;
   "season-winner": ProgressionWithTarget;
@@ -4638,7 +4587,7 @@ export type AchievementProgression = {
   "variety-player": VarietyPlayerProgression;
   "global-player": VarietyPlayerProgression;
   "best-friends": BestFriendsProgression;
-  "reunion": ReunionProgression;
+  reunion: ReunionProgression;
   "welcome-committee": WelcomeCommitteeProgression;
   "community-builder": WelcomeCommitteeProgression;
   "punching-bag": ProgressionWithTarget;
@@ -4648,17 +4597,17 @@ export type AchievementProgression = {
   "hat-trick": ProgressionWithTarget;
   "perfect-day": ProgressionWithTarget;
   "perfect-week": ProgressionWithTarget;
-  "kingslayer": KingslayerProgression;
+  kingslayer: KingslayerProgression;
   "king-maker": BaseProgression;
   "touched-the-throne": BaseProgression;
   "on-the-podium": BaseProgression;
   "photo-finish": BaseProgression;
   "leap-frog": LeapFrogProgression;
-  "david": UpsetRecordProgression;
-  "goliath": UpsetRecordProgression;
-  "climber": ClimberProgression;
+  david: UpsetRecordProgression;
+  goliath: UpsetRecordProgression;
+  climber: ClimberProgression;
   "marathon-set": MarathonSetProgression;
-  "shootout": ShootoutProgression;
+  shootout: ShootoutProgression;
   "streak-ender": BaseProgression;
   "longest-win-streak": StreakRecordProgression;
   "longest-lose-streak": StreakRecordProgression;
@@ -4669,7 +4618,7 @@ export type AchievementProgression = {
   "group-stage-star": GroupPlayStarProgression;
   "sweet-revenge": MissingPlayersProgression;
   "full-house": MissingPlayersProgression;
-  "humbled": MissingPlayersProgression;
+  humbled: MissingPlayersProgression;
   "everybodys-opponent": MissingPlayersProgression;
   "deuce-demon": ProgressionWithTarget;
   "on-the-record": ProgressionWithTarget;

@@ -81,11 +81,7 @@ export function badSideOfGameWinnerSide(side: WinnerSide | null | undefined, gam
  * equally good. Null when the set has no recorded side — including a set past
  * the end of a side list, which a game tracked before the sides existed has.
  */
-export function badSideLabel(
-  badSide: BadSide | undefined,
-  player1Name: string,
-  player2Name: string,
-): string | null {
+export function badSideLabel(badSide: BadSide | undefined, player1Name: string, player2Name: string): string | null {
   if (badSide === 1) return `${player1Name} on the bad side`;
   if (badSide === 2) return `${player2Name} on the bad side`;
   if (badSide === "neutral") return "Equal sides";

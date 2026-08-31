@@ -66,7 +66,11 @@ export const NewTournamentPage: React.FC = () => {
       </div>
 
       <div className="ring-1 ring-secondary-background rounded-lg p-4 md:p-6 bg-primary-background">
-        <TournamentForm onSubmit={handleSubmit} submitLabel="Create tournament" isPending={addEventMutation.isPending} />
+        <TournamentForm
+          onSubmit={handleSubmit}
+          submitLabel="Create tournament"
+          isPending={addEventMutation.isPending}
+        />
       </div>
     </div>
   );

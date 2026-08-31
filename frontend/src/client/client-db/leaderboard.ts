@@ -30,8 +30,7 @@ export class Leaderboard {
 
   private _getLeaderboard(): LeaderboardDTO {
     const leaderboardMap = this.getCachedLeaderboardMap();
-    const isActive = (playerId: string) =>
-      this.parent.eventStore.playersProjector.getPlayer(playerId)?.active === true;
+    const isActive = (playerId: string) => this.parent.eventStore.playersProjector.getPlayer(playerId)?.active === true;
 
     const rankedPlayers: LeaderboardDTO["rankedPlayers"] = Array.from(leaderboardMap.values())
       .filter((player) => player.games.length >= this.parent.client.gameLimitForRanked)
@@ -66,14 +65,13 @@ export class Leaderboard {
     return playerSummary;
   }
 
-  private _getPlayerSummary(id: string):
-    | PlayerSummary & {
-        isRanked: boolean;
-        rank?: number;
-        streaks?: { longestWin: number; longestLose: number };
-        pointsDistrubution: { oponentId: string; points: number }[];
-        gamesDistribution: { oponentId: string; games: number }[];
-      } {
+  private _getPlayerSummary(id: string): PlayerSummary & {
+    isRanked: boolean;
+    rank?: number;
+    streaks?: { longestWin: number; longestLose: number };
+    pointsDistrubution: { oponentId: string; points: number }[];
+    gamesDistribution: { oponentId: string; games: number }[];
+  } {
     const leaderboardMap = this.getCachedLeaderboardMap();
 
     const player = leaderboardMap.get(id);
@@ -107,8 +105,7 @@ export class Leaderboard {
 
     const playerIsRanked = player.games.length >= this.parent.client.gameLimitForRanked;
 
-    const isActive = (playerId: string) =>
-      this.parent.eventStore.playersProjector.getPlayer(playerId)?.active === true;
+    const isActive = (playerId: string) => this.parent.eventStore.playersProjector.getPlayer(playerId)?.active === true;
     const playersWithHigherElo = Array.from(leaderboardMap.values()).reduce(
       (acc, otherPlayer) =>
         (acc +=

@@ -104,10 +104,7 @@ export const SkillRatingPage: React.FC = () => {
       .map((summary) => summary.playerId);
   }, [selected, summaries]);
 
-  const curvesById = useMemo(
-    () => new Map((result?.curves ?? []).map((curve) => [curve.playerId, curve])),
-    [result],
-  );
+  const curvesById = useMemo(() => new Map((result?.curves ?? []).map((curve) => [curve.playerId, curve])), [result]);
 
   const chartData = useMemo<ChartRow[]>(() => {
     const rowsByTime = new Map<number, ChartRow>();
@@ -168,9 +165,7 @@ export const SkillRatingPage: React.FC = () => {
     );
   }
 
-  const selectable = summaries.filter(
-    (summary) => (showRetired || summary.active) && (showUnranked || summary.ranked),
-  );
+  const selectable = summaries.filter((summary) => (showRetired || summary.active) && (showUnranked || summary.ranked));
 
   return (
     <div className="max-w-5xl mx-auto bg-primary-background rounded-lg p-2 md:p-4 text-primary-text">
@@ -241,7 +236,12 @@ export const SkillRatingPage: React.FC = () => {
             stroke="rgb(var(--color-primary-text))"
             strokeDasharray="4 4"
             opacity={0.6}
-            label={{ value: "New player", position: "insideBottomLeft", fill: "rgb(var(--color-primary-text))", fontSize: 11 }}
+            label={{
+              value: "New player",
+              position: "insideBottomLeft",
+              fill: "rgb(var(--color-primary-text))",
+              fontSize: 11,
+            }}
           />
           {activeSelection.length === 1 && (
             <Area

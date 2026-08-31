@@ -69,10 +69,9 @@ describe("percent", () => {
 
 describe("weekdayShares", () => {
   it("gives the share of all games on each day", () => {
-    const played = [
-      ...games(3, { playedAt: MONDAY }),
-      ...games(1, { playedAt: MONDAY + DAY_MS }),
-    ].map((entry, index) => ({ ...entry, playedAt: entry.playedAt + index }));
+    const played = [...games(3, { playedAt: MONDAY }), ...games(1, { playedAt: MONDAY + DAY_MS })].map(
+      (entry, index) => ({ ...entry, playedAt: entry.playedAt + index }),
+    );
 
     const shares = weekdayShares(played);
 
@@ -672,10 +671,7 @@ describe("pairingCoverage", () => {
 describe("rankedMix", () => {
   it("splits every game three ways, and the shares add up to 100", () => {
     const ranked = new Set(["alice", "bob"]);
-    const played = [
-      ...games(2, { winner: "alice", loser: "bob" }),
-      ...games(14, { winner: "alice", loser: "carol" }),
-    ];
+    const played = [...games(2, { winner: "alice", loser: "bob" }), ...games(14, { winner: "alice", loser: "carol" })];
 
     const mix = rankedMix(played, ranked)!;
 
@@ -942,11 +938,7 @@ describe("tableSideStats", () => {
   });
 
   it("measures the coverage over the games with a score only", () => {
-    const played = [
-      sidedGame([SET_TO_THE_WINNER], "B"),
-      sidedGame([SET_TO_THE_WINNER]),
-      ...games(10),
-    ];
+    const played = [sidedGame([SET_TO_THE_WINNER], "B"), sidedGame([SET_TO_THE_WINNER]), ...games(10)];
 
     expect(tableSideStats(played)!.sidesRecorded).toBe(50);
   });
@@ -1100,7 +1092,6 @@ describe("upsetRate", () => {
 
     expect(upsetRate(debuts, debutPlayers)).toBeUndefined();
   });
-
 });
 
 describe("weakerPlayer", () => {

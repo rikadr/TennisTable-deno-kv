@@ -185,8 +185,7 @@ export const PingPongLoader: React.FC = () => {
         }
       }
 
-      const halfWidth = (step: number) =>
-        (TRAIL_WIDTH / 2) * Math.pow(1 - step / segments, TRAIL_TAPER);
+      const halfWidth = (step: number) => (TRAIL_WIDTH / 2) * Math.pow(1 - step / segments, TRAIL_TAPER);
 
       context.globalAlpha = TRAIL_ALPHA;
       context.fillStyle = rgba(palette.trail, 1);

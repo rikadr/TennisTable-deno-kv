@@ -56,7 +56,9 @@ export const CreateEventForm = ({ onClose }: CreateEventFormProps) => {
           >
             <option value="">-- Select type --</option>
             {Object.values(EventTypeEnum).map((t) => (
-              <option key={t} value={t}>{t}</option>
+              <option key={t} value={t}>
+                {t}
+              </option>
             ))}
           </select>
         </div>
@@ -125,10 +127,7 @@ export const CreateEventForm = ({ onClose }: CreateEventFormProps) => {
         >
           Submit
         </LoadingButton>
-        <button
-          onClick={onClose}
-          className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
-        >
+        <button onClick={onClose} className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">
           Cancel
         </button>
       </div>
@@ -138,21 +137,52 @@ export const CreateEventForm = ({ onClose }: CreateEventFormProps) => {
 
 function eventDataTemplate(type: string): unknown {
   switch (type) {
-    case EventTypeEnum.PLAYER_CREATED: return { name: "TODO" };
-    case EventTypeEnum.PLAYER_DEACTIVATED: return null;
-    case EventTypeEnum.PLAYER_REACTIVATED: return null;
-    case EventTypeEnum.PLAYER_NAME_UPDATED: return { updatedName: "TODO" };
-    case EventTypeEnum.GAME_CREATED: return { playedAt: "TODO", winner: "TODO", loser: "TODO" };
-    case EventTypeEnum.GAME_DELETED: return null;
-    case EventTypeEnum.GAME_SCORE: return { setsWon: { gameWinner: "TODO", gameLoser: "TODO" }, setPoints: [{ gameWinner: "TODO", gameLoser: "TODO" }] };
-    case EventTypeEnum.TOURNAMENT_CREATED: return { name: "TODO", description: "TODO", startDate: "TODO", groupPlay: "TODO", overridePreferredGroupSize: "TODO" };
-    case EventTypeEnum.TOURNAMENT_UPDATED: return { name: "TODO", description: "TODO", startDate: "TODO", groupPlay: "TODO", overridePreferredGroupSize: "TODO" };
-    case EventTypeEnum.TOURNAMENT_DELETED: return null;
-    case EventTypeEnum.TOURNAMENT_SET_PLAYER_ORDER: return { playerOrder: ["TODO"] };
-    case EventTypeEnum.TOURNAMENT_SIGNUP: return { player: "TODO" };
-    case EventTypeEnum.TOURNAMENT_CANCEL_SIGNUP: return { player: "TODO" };
-    case EventTypeEnum.TOURNAMENT_SKIP_GAME: return { skipId: "TODO", winner: "TODO", loser: "TODO" };
-    case EventTypeEnum.TOURNAMENT_UNDO_SKIP_GAME: return { skipId: "TODO" };
-    default: return {};
+    case EventTypeEnum.PLAYER_CREATED:
+      return { name: "TODO" };
+    case EventTypeEnum.PLAYER_DEACTIVATED:
+      return null;
+    case EventTypeEnum.PLAYER_REACTIVATED:
+      return null;
+    case EventTypeEnum.PLAYER_NAME_UPDATED:
+      return { updatedName: "TODO" };
+    case EventTypeEnum.GAME_CREATED:
+      return { playedAt: "TODO", winner: "TODO", loser: "TODO" };
+    case EventTypeEnum.GAME_DELETED:
+      return null;
+    case EventTypeEnum.GAME_SCORE:
+      return {
+        setsWon: { gameWinner: "TODO", gameLoser: "TODO" },
+        setPoints: [{ gameWinner: "TODO", gameLoser: "TODO" }],
+      };
+    case EventTypeEnum.TOURNAMENT_CREATED:
+      return {
+        name: "TODO",
+        description: "TODO",
+        startDate: "TODO",
+        groupPlay: "TODO",
+        overridePreferredGroupSize: "TODO",
+      };
+    case EventTypeEnum.TOURNAMENT_UPDATED:
+      return {
+        name: "TODO",
+        description: "TODO",
+        startDate: "TODO",
+        groupPlay: "TODO",
+        overridePreferredGroupSize: "TODO",
+      };
+    case EventTypeEnum.TOURNAMENT_DELETED:
+      return null;
+    case EventTypeEnum.TOURNAMENT_SET_PLAYER_ORDER:
+      return { playerOrder: ["TODO"] };
+    case EventTypeEnum.TOURNAMENT_SIGNUP:
+      return { player: "TODO" };
+    case EventTypeEnum.TOURNAMENT_CANCEL_SIGNUP:
+      return { player: "TODO" };
+    case EventTypeEnum.TOURNAMENT_SKIP_GAME:
+      return { skipId: "TODO", winner: "TODO", loser: "TODO" };
+    case EventTypeEnum.TOURNAMENT_UNDO_SKIP_GAME:
+      return { skipId: "TODO" };
+    default:
+      return {};
   }
 }

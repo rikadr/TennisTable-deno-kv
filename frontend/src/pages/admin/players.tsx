@@ -108,8 +108,7 @@ export const PlayersTab: React.FC<PlayersTabProps> = ({ onDeactivatePlayer, onRe
       <div className="mb-3 md:mb-6 space-y-1 md:space-y-2">
         <div className="flex gap-3 md:gap-6 text-xs md:text-sm">
           <p>
-            <span className="font-semibold">Active:</span>{" "}
-            {context.eventStore.playersProjector.activePlayers.length}
+            <span className="font-semibold">Active:</span> {context.eventStore.playersProjector.activePlayers.length}
           </p>
           <p>
             <span className="font-semibold">Inactive:</span>{" "}
@@ -137,7 +136,9 @@ export const PlayersTab: React.FC<PlayersTabProps> = ({ onDeactivatePlayer, onRe
                   <SortIcon field="name" />
                 </div>
               </th>
-              <th className="border border-primary-text px-1 md:px-3 py-1 md:py-2 text-left font-semibold hidden md:table-cell">Status</th>
+              <th className="border border-primary-text px-1 md:px-3 py-1 md:py-2 text-left font-semibold hidden md:table-cell">
+                Status
+              </th>
               <th
                 className="border border-primary-text px-1 md:px-3 py-1 md:py-2 text-left cursor-pointer hover:bg-secondary-text/50 transition-colors"
                 onClick={() => handleSort("createdAt")}
@@ -156,7 +157,9 @@ export const PlayersTab: React.FC<PlayersTabProps> = ({ onDeactivatePlayer, onRe
                   <SortIcon field="updatedAt" />
                 </div>
               </th>
-              <th className="border border-primary-text px-1 md:px-3 py-1 md:py-2 text-center font-semibold">Actions</th>
+              <th className="border border-primary-text px-1 md:px-3 py-1 md:py-2 text-center font-semibold">
+                Actions
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -173,7 +176,9 @@ export const PlayersTab: React.FC<PlayersTabProps> = ({ onDeactivatePlayer, onRe
                     </div>
                     <section className="min-w-0">
                       <h3 className="text-xs md:text-base truncate">{player.name}</h3>
-                      <p className="text-secondary-text/30 text-[10px] md:text-xs truncate hidden md:block">{player.id}</p>
+                      <p className="text-secondary-text/30 text-[10px] md:text-xs truncate hidden md:block">
+                        {player.id}
+                      </p>
                     </section>
                   </div>
                 </td>
@@ -184,16 +189,22 @@ export const PlayersTab: React.FC<PlayersTabProps> = ({ onDeactivatePlayer, onRe
                 </td>
                 <td className="border border-primary-text px-1 md:px-3 py-1 md:py-2">
                   <div className="space-y-0">
-                    <p className="text-[10px] md:text-xs font-medium">{relativeTimeString(new Date(player.createdAt))}</p>
+                    <p className="text-[10px] md:text-xs font-medium">
+                      {relativeTimeString(new Date(player.createdAt))}
+                    </p>
                     <p className="text-[10px] md:text-[11px] hidden md:block">{formatDateTime(player.createdAt)}</p>
                   </div>
                 </td>
                 <td className="border border-primary-text px-1 md:px-3 py-1 md:py-2">
                   {player.createdAt !== player.updatedAt ? (
                     <div className="space-y-0">
-                      <p className="text-[10px] md:text-xs font-medium">{relativeTimeString(new Date(player.updatedAt))}</p>
+                      <p className="text-[10px] md:text-xs font-medium">
+                        {relativeTimeString(new Date(player.updatedAt))}
+                      </p>
                       <p className="text-[10px] md:text-[11px] hidden md:block">{formatDateTime(player.updatedAt)}</p>
-                      {player.updateAction && <p className="text-[10px] md:text-[11px] italic hidden md:block">{player.updateAction}</p>}
+                      {player.updateAction && (
+                        <p className="text-[10px] md:text-[11px] italic hidden md:block">{player.updateAction}</p>
+                      )}
                     </div>
                   ) : (
                     <span className="text-gray-400">—</span>
@@ -226,7 +237,9 @@ export const PlayersTab: React.FC<PlayersTabProps> = ({ onDeactivatePlayer, onRe
                     </div>
                     <section className="min-w-0">
                       <h3 className="text-xs md:text-base truncate">{player.name}</h3>
-                      <p className="text-secondary-text/30 text-[10px] md:text-xs truncate hidden md:block">{player.id}</p>
+                      <p className="text-secondary-text/30 text-[10px] md:text-xs truncate hidden md:block">
+                        {player.id}
+                      </p>
                     </section>
                   </div>
                 </td>
@@ -237,16 +250,22 @@ export const PlayersTab: React.FC<PlayersTabProps> = ({ onDeactivatePlayer, onRe
                 </td>
                 <td className="border border-primary-text px-1 md:px-3 py-1 md:py-2">
                   <div className="space-y-0">
-                    <p className="text-[10px] md:text-xs font-medium">{relativeTimeString(new Date(player.createdAt))}</p>
+                    <p className="text-[10px] md:text-xs font-medium">
+                      {relativeTimeString(new Date(player.createdAt))}
+                    </p>
                     <p className="text-[10px] md:text-[11px] hidden md:block">{formatDateTime(player.createdAt)}</p>
                   </div>
                 </td>
                 <td className="border border-primary-text px-1 md:px-3 py-1 md:py-2">
                   {player.createdAt !== player.updatedAt ? (
                     <div className="space-y-0">
-                      <p className="text-[10px] md:text-xs font-medium">{relativeTimeString(new Date(player.updatedAt))}</p>
+                      <p className="text-[10px] md:text-xs font-medium">
+                        {relativeTimeString(new Date(player.updatedAt))}
+                      </p>
                       <p className="text-[10px] md:text-[11px] hidden md:block">{formatDateTime(player.updatedAt)}</p>
-                      {player.updateAction && <p className="text-[10px] md:text-[11px] italic hidden md:block">{player.updateAction}</p>}
+                      {player.updateAction && (
+                        <p className="text-[10px] md:text-[11px] italic hidden md:block">{player.updateAction}</p>
+                      )}
                     </div>
                   ) : (
                     <span className="text-gray-400">—</span>

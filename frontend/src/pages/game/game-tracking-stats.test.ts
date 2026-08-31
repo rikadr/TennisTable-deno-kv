@@ -263,13 +263,25 @@ describe("serveStats", () => {
 
   it("reads the first server of each set separately", () => {
     // Same 2 points in both sets, but the server of the set swaps.
-    const stats = serveStats(["WW", "WW"], tracking({ pointDeltas: [[10, 10], [10, 10]], firstServers: "WL" }));
+    const stats = serveStats(
+      ["WW", "WW"],
+      tracking({
+        pointDeltas: [
+          [10, 10],
+          [10, 10],
+        ],
+        firstServers: "WL",
+      }),
+    );
     expect(stats.winner).toEqual({ served: 2, won: 2 });
     expect(stats.loser).toEqual({ served: 2, won: 0 });
   });
 
   it("returns empty counts for an empty log", () => {
-    expect(serveStats([], tracking({ pointDeltas: [], firstServers: "" }))).toEqual({ winner: { served: 0, won: 0 }, loser: { served: 0, won: 0 } });
+    expect(serveStats([], tracking({ pointDeltas: [], firstServers: "" }))).toEqual({
+      winner: { served: 0, won: 0 },
+      loser: { served: 0, won: 0 },
+    });
   });
 });
 

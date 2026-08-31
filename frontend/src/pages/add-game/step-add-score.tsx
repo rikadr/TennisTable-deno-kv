@@ -188,9 +188,7 @@ const WinnerBox: React.FC<{
   const context = useEventDbContext();
   return (
     <div
-      className={classNames(
-        "relative py-3 px-6 flex justify-between items-center bg-secondary-background rounded-xl",
-      )}
+      className={classNames("relative py-3 px-6 flex justify-between items-center bg-secondary-background rounded-xl")}
     >
       <div className={classNames("flex gap-2 items-center")}>
         <ProfilePicture playerId={player1} border={3} size={60} />

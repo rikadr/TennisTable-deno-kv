@@ -75,8 +75,8 @@ const GroupPlayRules: React.FC<{ tournament: Tournament }> = ({ tournament }) =>
           <div className="bg-secondary-background/20 rounded p-3 border-l-4 border-secondary-background/60">
             <p className="text-xs text-primary-text/70 italic">
               <span className="font-semibold not-italic text-primary-text">Note:</span> If a game is skipped, the
-              advancing player scores as a <span className="font-semibold">winner</span> and the other player scores as a{" "}
-              <span className="font-semibold">skip</span>.
+              advancing player scores as a <span className="font-semibold">winner</span> and the other player scores as
+              a <span className="font-semibold">skip</span>.
             </p>
           </div>
         </div>
@@ -173,18 +173,16 @@ export const TournamentGroupScores: React.FC<{ tournament: Tournament }> = ({ to
   const row = (player: GroupScorePlayer, place: number, isEliminated: boolean = false) => (
     <tr
       key={player.name}
-      className={classNames("transition-colors border-b border-secondary-background/20",
+      className={classNames(
+        "transition-colors border-b border-secondary-background/20",
         isEliminated
           ? "hover:bg-secondary-background/40 bg-secondary-background/20"
-          : "hover:bg-secondary-background/30")
-      }
+          : "hover:bg-secondary-background/30",
+      )}
     >
       <td className="px-4 py-1 text-center font-semibold">{place}</td>
       <td className="px-4 py-1 font-medium">
-        <Link
-          to={`/player/${player.name}`}
-          className="text-primary-text hover:text-primary-text/80 hover:underline"
-        >
+        <Link to={`/player/${player.name}`} className="text-primary-text hover:text-primary-text/80 hover:underline">
           {context.playerName(player.name)}
         </Link>
       </td>

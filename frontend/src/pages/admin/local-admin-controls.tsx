@@ -99,12 +99,17 @@ export const LocalAdminControls: React.FC = () => {
         </div>
 
         {(syncMutation.isSuccess || deleteMutation.isSuccess || error) && (
-          <div className={classNames("mt-4 p-3 rounded-lg", error ? "bg-red-100 text-red-800" : "bg-green-100 text-green-800")}>
+          <div
+            className={classNames(
+              "mt-4 p-3 rounded-lg",
+              error ? "bg-red-100 text-red-800" : "bg-green-100 text-green-800",
+            )}
+          >
             {error
               ? `❌ ${error instanceof Error ? error.message : "Operation failed"}`
               : syncMutation.isSuccess
-              ? `✅ Synced ${syncMutation.data?.count || 0} events from ${syncMutation.data?.env}`
-            : "✅ Local events deleted"}
+                ? `✅ Synced ${syncMutation.data?.count || 0} events from ${syncMutation.data?.env}`
+                : "✅ Local events deleted"}
           </div>
         )}
       </div>

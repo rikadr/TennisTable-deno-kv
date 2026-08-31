@@ -227,9 +227,15 @@ export class HallOfFame {
     const podiumTime = this.#calcPodiumTime(playerId);
 
     const total =
-      seasonPerformance.score + achievementsEarned.score + socialDiversity.score +
-      tournamentProgression.score + longevity.score + experience.score + dataVolume.score +
-      peakElo.score + podiumTime.score;
+      seasonPerformance.score +
+      achievementsEarned.score +
+      socialDiversity.score +
+      tournamentProgression.score +
+      longevity.score +
+      experience.score +
+      dataVolume.score +
+      peakElo.score +
+      podiumTime.score;
 
     return {
       seasonPerformance,
@@ -360,17 +366,24 @@ export class HallOfFame {
       // First chance rounds sit one level below the same-depth single elimination rounds: the
       // last first chance game is a semi final, because the real final is the grand final
       switch (bestLayer) {
-        case 0: return { points: 100, placement: "Semi Final" };
-        case 1: return { points: 75, placement: "Quarter Finals" };
-        default: return { points: 50, placement: "First Chance Bracket" };
+        case 0:
+          return { points: 100, placement: "Semi Final" };
+        case 1:
+          return { points: 75, placement: "Quarter Finals" };
+        default:
+          return { points: 50, placement: "First Chance Bracket" };
       }
     }
 
     switch (bestLayer) {
-      case 0: return { points: 200, placement: "Final" };
-      case 1: return { points: 100, placement: "Semi Finals" };
-      case 2: return { points: 75, placement: "Quarter Finals" };
-      default: return { points: 50, placement: "Bracket" };
+      case 0:
+        return { points: 200, placement: "Final" };
+      case 1:
+        return { points: 100, placement: "Semi Finals" };
+      case 2:
+        return { points: 75, placement: "Quarter Finals" };
+      default:
+        return { points: 50, placement: "Bracket" };
     }
   }
 
@@ -482,7 +495,8 @@ export class HallOfFame {
     const MIN_RANKED_FOR_PODIUM = 5;
     const PODIUM_SIZE = 5;
 
-    type Timeline = { kind: "game"; time: number; winner: string; loser: string }
+    type Timeline =
+      | { kind: "game"; time: number; winner: string; loser: string }
       | { kind: "activity"; time: number; playerId: string; active: boolean };
 
     const timeline: Timeline[] = [];
@@ -510,8 +524,9 @@ export class HallOfFame {
     let lastTime: number | undefined;
 
     const recomputePodium = (): string[] => {
-      const ranked = Array.from(playerState.entries())
-        .filter(([, s]) => s.active && s.totalGames >= gameLimitForRanked);
+      const ranked = Array.from(playerState.entries()).filter(
+        ([, s]) => s.active && s.totalGames >= gameLimitForRanked,
+      );
       if (ranked.length < MIN_RANKED_FOR_PODIUM) return [];
       return ranked
         .sort((a, b) => b[1].elo - a[1].elo)

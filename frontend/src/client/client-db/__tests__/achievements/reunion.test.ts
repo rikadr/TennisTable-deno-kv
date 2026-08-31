@@ -76,12 +76,7 @@ describe("TennisTable", () => {
     it("measures the gap from the pair's most recent game, not their first", () => {
       // Games at T0 and T0 + 6 months; a game a year after T0 is only 6
       // months after the pair's latest game, so no reunion.
-      const events = [
-        ...baseEvents(),
-        game("g0", T0),
-        game("g1", T0 + 182 * ONE_DAY),
-        game("g2", T0 + ONE_YEAR),
-      ];
+      const events = [...baseEvents(), game("g0", T0), game("g1", T0 + 182 * ONE_DAY), game("g2", T0 + ONE_YEAR)];
       expect(reunionsFor(events, "alice")).toHaveLength(0);
     });
 

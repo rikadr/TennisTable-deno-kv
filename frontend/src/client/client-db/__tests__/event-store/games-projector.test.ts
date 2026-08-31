@@ -263,7 +263,9 @@ describe("validateScoreGame", () => {
       }),
     );
     expectInvalid(result);
-    expect(result.message).toBe("If no sides are recorded, the gameWinnerSides should not be included in the event data");
+    expect(result.message).toBe(
+      "If no sides are recorded, the gameWinnerSides should not be included in the event data",
+    );
   });
 
   it("rejects set points where the loser wins as many sets as the winner", () => {
@@ -427,9 +429,7 @@ describe("validateScoreGame", () => {
   });
 
   it("rejects an unknown tracking source", () => {
-    const result = projector.validateScoreGame(
-      trackedScoreEvent({ source: "guesswork" as GameTracking["source"] }),
-    );
+    const result = projector.validateScoreGame(trackedScoreEvent({ source: "guesswork" as GameTracking["source"] }));
     expectInvalid(result);
     expect(result.message).toBe("Tracking data is invalid. Unknown source");
   });

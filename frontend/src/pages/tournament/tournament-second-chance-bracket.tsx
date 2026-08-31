@@ -26,8 +26,8 @@ export const TournamentSecondChanceBracket = ({
         <div className="max-w-2xl mx-auto bg-secondary-background rounded-lg p-6">
           <h3 className="text-lg font-semibold text-secondary-text mb-2">No second chance rounds</h3>
           <p className="text-sm text-secondary-text">
-            With only two players there are no second chance rounds. The loser of the first chance bracket game
-            gets their second chance directly in the final.
+            With only two players there are no second chance rounds. The loser of the first chance bracket game gets
+            their second chance directly in the final.
           </p>
         </div>
         <GrandFinalLinkCard tournament={tournament} itemRefs={itemRefs} fromSection="second-chance" />
@@ -38,9 +38,8 @@ export const TournamentSecondChanceBracket = ({
   return (
     <div className="space-y-4">
       <p className="text-sm text-primary-text/70 max-w-2xl">
-        Players who lose in the first chance bracket drop down here for a second chance to fight their way back.
-        Lose again and you are out. The winner of the second chance bracket meets the first chance champion in
-        the final.
+        Players who lose in the first chance bracket drop down here for a second chance to fight their way back. Lose
+        again and you are out. The winner of the second chance bracket meets the first chance champion in the final.
       </p>
       <TreeListToggle showAsList={showAsList} setShowAsList={setShowAsList} />
       <GrandFinalLinkCard tournament={tournament} itemRefs={itemRefs} fromSection="second-chance" />
@@ -61,9 +60,7 @@ export const TournamentSecondChanceBracket = ({
             return (
               <div key={layerIndex} className="space-y-1">
                 <h3 className="text-center text-sm text-primary-text">{title}</h3>
-                {subtitle && (
-                  <p className="text-center text-xs font-light text-primary-text/60">{subtitle}</p>
-                )}
+                {subtitle && <p className="text-center text-xs font-light text-primary-text/60">{subtitle}</p>}
                 <div className="flex justify-around items-start gap-2">
                   {layer.map((game, gameIndex) => {
                     // Empty bye slots are never shown; walkovers render as normal cards (with a
@@ -88,37 +85,39 @@ export const TournamentSecondChanceBracket = ({
         </div>
       )}
       {showAsList && (
-      <div className="flex flex-col items-center lg:flex-row-reverse lg:justify-end lg:items-start gap-2 bg-primary-background rounded-lg py-4">
-        {secondChanceBracket.map((layer, layerIndex) => {
-          // Rounds consisting only of collapsed bye slots are never played
-          if (layer.every((game) => game.isBye)) return null;
-          const { title, subtitle } = secondChanceRoundLabel(layerIndex, secondChanceBracket.length);
-          return (
-          <div key={layerIndex} className="flex flex-col gap-1 w-full min-w-[22rem] max-w-[27rem]">
-            {/* Fixed-height header so the game cards align across rounds */}
-            <div className="h-10 flex flex-col justify-end">
-              <h3 className="text-center text-sm text-primary-text">{title}</h3>
-              <p className="text-center text-xs font-light text-primary-text/60 whitespace-nowrap">{subtitle ?? " "}</p>
-            </div>
-            {layer.map((game, gameIndex) => {
-              // Empty bye slots are never shown; walkovers render as normal cards (with a "bye"
-              // in the empty slot)
-              if (game.isBye) return null;
-              const fallbackKey = "LOSERS-L" + layerIndex + "G+" + gameIndex;
-              return (
-                <TournamentGameListCard
-                  key={fallbackKey}
-                  tournament={tournament}
-                  game={game}
-                  itemRefs={itemRefs}
-                  fallbackKey={fallbackKey}
-                />
-              );
-            })}
-          </div>
-          );
-        })}
-      </div>
+        <div className="flex flex-col items-center lg:flex-row-reverse lg:justify-end lg:items-start gap-2 bg-primary-background rounded-lg py-4">
+          {secondChanceBracket.map((layer, layerIndex) => {
+            // Rounds consisting only of collapsed bye slots are never played
+            if (layer.every((game) => game.isBye)) return null;
+            const { title, subtitle } = secondChanceRoundLabel(layerIndex, secondChanceBracket.length);
+            return (
+              <div key={layerIndex} className="flex flex-col gap-1 w-full min-w-[22rem] max-w-[27rem]">
+                {/* Fixed-height header so the game cards align across rounds */}
+                <div className="h-10 flex flex-col justify-end">
+                  <h3 className="text-center text-sm text-primary-text">{title}</h3>
+                  <p className="text-center text-xs font-light text-primary-text/60 whitespace-nowrap">
+                    {subtitle ?? " "}
+                  </p>
+                </div>
+                {layer.map((game, gameIndex) => {
+                  // Empty bye slots are never shown; walkovers render as normal cards (with a "bye"
+                  // in the empty slot)
+                  if (game.isBye) return null;
+                  const fallbackKey = "LOSERS-L" + layerIndex + "G+" + gameIndex;
+                  return (
+                    <TournamentGameListCard
+                      key={fallbackKey}
+                      tournament={tournament}
+                      game={game}
+                      itemRefs={itemRefs}
+                      fallbackKey={fallbackKey}
+                    />
+                  );
+                })}
+              </div>
+            );
+          })}
+        </div>
       )}
     </div>
   );

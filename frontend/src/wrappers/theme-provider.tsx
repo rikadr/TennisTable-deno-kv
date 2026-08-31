@@ -22,10 +22,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
       // Ignore key presses while typing in inputs, textareas or editable elements.
       const target = event.target as HTMLElement | null;
-      if (
-        target &&
-        (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)
-      ) {
+      if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) {
         return;
       }
 

@@ -27,7 +27,12 @@ export const LiveGamePage: React.FC = () => {
   const isAdmin = session.sessionData?.role === "admin";
   const state = liveGameQuery.data;
   const isActive = !!state && !!state.player1Id && !!state.player2Id && state.startedAt !== null && !state.finishedAt;
-  const isFinished = !!state && !!state.player1Id && !!state.player2Id && !!state.finishedAt && (Date.now() - state.finishedAt) < ONE_HOUR_MS;
+  const isFinished =
+    !!state &&
+    !!state.player1Id &&
+    !!state.player2Id &&
+    !!state.finishedAt &&
+    Date.now() - state.finishedAt < ONE_HOUR_MS;
 
   return (
     <div className="p-2 sm:p-4 max-w-2xl mx-auto">
@@ -53,9 +58,7 @@ export const LiveGamePage: React.FC = () => {
         </div>
       </div>
 
-      {liveGameQuery.isLoading && (
-        <div className="text-center py-16 text-primary-text/70">Loading…</div>
-      )}
+      {liveGameQuery.isLoading && <div className="text-center py-16 text-primary-text/70">Loading…</div>}
 
       {!liveGameQuery.isLoading && !isActive && !isFinished && (
         <div className="bg-secondary-background text-secondary-text rounded-xl p-8 text-center">
@@ -123,9 +126,7 @@ const LiveScoreboard: React.FC<ScoreboardProps> = ({
   return (
     <div className="space-y-4">
       <div className="bg-white rounded-xl shadow-lg p-4 text-black">
-        <h2 className="text-gray-400 text-xs uppercase tracking-widest font-bold mb-3 text-center">
-          Match Score
-        </h2>
+        <h2 className="text-gray-400 text-xs uppercase tracking-widest font-bold mb-3 text-center">Match Score</h2>
         <div className="grid grid-cols-3 items-center gap-2">
           <div className="flex flex-col items-center gap-2">
             <ProfilePicture playerId={player1Id} size={80} border={3} />

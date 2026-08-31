@@ -71,9 +71,7 @@ export const StatisticsPage: React.FC = () => {
 
         {activeTab === "activity" && <ActivityTab />}
         {activeTab === "games" && <GamesTab range={range} setRange={(value) => setParams({ range: value })} />}
-        {activeTab === "matchups" && (
-          <MatchupsTab view={gapView} setView={(value) => setParams({ view: value })} />
-        )}
+        {activeTab === "matchups" && <MatchupsTab view={gapView} setView={(value) => setParams({ view: value })} />}
         {activeTab === "league" && <LeagueTab />}
       </div>
     </div>

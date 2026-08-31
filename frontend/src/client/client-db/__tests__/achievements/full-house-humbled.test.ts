@@ -41,9 +41,15 @@ describe("Full House & Humbled Achievements", () => {
       createPlayer("e", 5),
     ];
     const pairs: [string, string][] = [
-      ["a", "b"], ["a", "c"], ["a", "d"], ["a", "e"],
-      ["b", "c"], ["b", "d"], ["b", "e"],
-      ["c", "d"], ["c", "e"],
+      ["a", "b"],
+      ["a", "c"],
+      ["a", "d"],
+      ["a", "e"],
+      ["b", "c"],
+      ["b", "d"],
+      ["b", "e"],
+      ["c", "d"],
+      ["c", "e"],
       ["d", "e"],
     ];
     let t = 100;
@@ -113,8 +119,11 @@ describe("Full House & Humbled Achievements", () => {
       createPlayer("d", 4),
     ];
     const pairs: [string, string][] = [
-      ["a", "b"], ["a", "c"], ["a", "d"],
-      ["b", "c"], ["b", "d"],
+      ["a", "b"],
+      ["a", "c"],
+      ["a", "d"],
+      ["b", "c"],
+      ["b", "d"],
       ["c", "d"],
     ];
     let t = 100;
@@ -217,8 +226,12 @@ describe("Full House & Humbled Achievements", () => {
       createPlayer("d", 4),
     ];
     const outcomes: [string, string, string][] = [
-      ["a-b", "a", "b"], ["a-c", "a", "c"], ["a-d", "a", "d"],
-      ["b-c", "b", "c"], ["b-d", "b", "d"], ["c-d", "c", "d"],
+      ["a-b", "a", "b"],
+      ["a-c", "a", "c"],
+      ["a-d", "a", "d"],
+      ["b-c", "b", "c"],
+      ["b-d", "b", "d"],
+      ["c-d", "c", "d"],
     ];
     let t = 100;
     for (let round = 0; round < 2; round++) {
@@ -245,9 +258,16 @@ describe("Full House & Humbled Achievements", () => {
       createPlayer("e", 5),
     ];
     const outcomes: [string, string, string][] = [
-      ["a-b", "a", "b"], ["a-c", "a", "c"], ["a-d", "a", "d"], ["e-a", "e", "a"],
-      ["b-c", "b", "c"], ["b-d", "b", "d"], ["b-e", "b", "e"],
-      ["c-d", "c", "d"], ["c-e", "c", "e"], ["d-e", "d", "e"],
+      ["a-b", "a", "b"],
+      ["a-c", "a", "c"],
+      ["a-d", "a", "d"],
+      ["e-a", "e", "a"],
+      ["b-c", "b", "c"],
+      ["b-d", "b", "d"],
+      ["b-e", "b", "e"],
+      ["c-d", "c", "d"],
+      ["c-e", "c", "e"],
+      ["d-e", "d", "e"],
     ];
     let t = 100;
     for (let round = 0; round < 2; round++) {
@@ -291,9 +311,16 @@ describe("Full House & Humbled Achievements", () => {
       createPlayer("e", 5),
     ];
     const outcomes: [string, string, string][] = [
-      ["a-b", "a", "b"], ["a-c", "a", "c"], ["a-d", "a", "d"], ["e-a", "e", "a"],
-      ["b-c", "b", "c"], ["b-d", "b", "d"], ["b-e", "b", "e"],
-      ["c-d", "c", "d"], ["c-e", "c", "e"], ["d-e", "d", "e"],
+      ["a-b", "a", "b"],
+      ["a-c", "a", "c"],
+      ["a-d", "a", "d"],
+      ["e-a", "e", "a"],
+      ["b-c", "b", "c"],
+      ["b-d", "b", "d"],
+      ["b-e", "b", "e"],
+      ["c-d", "c", "d"],
+      ["c-e", "c", "e"],
+      ["d-e", "d", "e"],
     ];
     let t = 100;
     for (let round = 0; round < 2; round++) {
@@ -317,11 +344,7 @@ describe("Full House & Humbled Achievements", () => {
     // Z plays a single game, so Z is not ranked. The target is the total
     // number of ranked players (5) with no minus-one, since Z isn't in the
     // ranked cohort. Beating A once puts Z's Full House progress at 1/5.
-    const events = [
-      ...fivePlayerSetup(),
-      createPlayer("z", 50),
-      game("z-a", 5000, "z", "a"),
-    ];
+    const events = [...fivePlayerSetup(), createPlayer("z", 50), game("z-a", 5000, "z", "a")];
     const tt = new TennisTable({ events });
     tt.achievements.calculateAchievements();
 

@@ -185,5 +185,4 @@ describe("StatisticsPage", () => {
     expect(screen.getByText("Rating spread")).toBeInTheDocument();
     expect(screen.getByText("Ranked and unranked")).toBeInTheDocument();
   });
-
 });

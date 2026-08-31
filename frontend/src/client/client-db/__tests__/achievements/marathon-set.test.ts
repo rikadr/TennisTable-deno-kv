@@ -201,7 +201,7 @@ describe("Marathon Set Achievement", () => {
     const aliceAwards = tt.achievements
       .getAchievements("alice")
       .filter((a) => a.type === "marathon-set")
-      .sort((a, b) => (a.data!.setWinnerScore - b.data!.setWinnerScore));
+      .sort((a, b) => a.data!.setWinnerScore - b.data!.setWinnerScore);
     expect(aliceAwards).toHaveLength(2);
     expect(aliceAwards[0].data).toStrictEqual({
       gameId: "g1",

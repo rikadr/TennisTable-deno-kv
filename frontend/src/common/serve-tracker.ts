@@ -15,10 +15,7 @@ export type ServeInfo = {
  * `firstServer` is whoever served the first point of the current set; the
  * server for any later point is derived from the points played so far.
  */
-export function getServeInfo(
-  setScore: { player1: number; player2: number },
-  firstServer: Server,
-): ServeInfo {
+export function getServeInfo(setScore: { player1: number; player2: number }, firstServer: Server): ServeInfo {
   const totalPoints = setScore.player1 + setScore.player2;
   const serveTurn = Math.floor(totalPoints / 2);
   const otherServer: Server = firstServer === 1 ? 2 : 1;

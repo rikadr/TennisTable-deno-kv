@@ -16,9 +16,7 @@ export const ImageKitContext: React.FC<{ children: React.ReactNode }> = ({ child
   const [timestamp, setTimestamp] = useState<number>(Date.now());
 
   return (
-    <ImageKitProvider
-      urlEndpoint="https://ik.imagekit.io/tennistable"
-    >
+    <ImageKitProvider urlEndpoint="https://ik.imagekit.io/tennistable">
       <ImageKitTimestampContext.Provider
         value={{
           timestamp,

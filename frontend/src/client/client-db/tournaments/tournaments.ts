@@ -46,15 +46,13 @@ export class Tournaments {
   }
 
   getTournamentsNeedingPlayerOrder() {
-    return this.parent.eventStore.tournamentsProjector
-      .getTournamentConfigs()
-      .filter(
-        (config) =>
-          config.playerOrder === undefined &&
-          config.startDate !== 0 && // Is the case when config is missing
-          config.startDate <= Date.now() &&
-          this.parent.eventStore.tournamentsProjector.getTournamentSignups(config.id).length > 0,
-      );
+    return this.parent.eventStore.tournamentsProjector.getTournamentConfigs().filter(
+      (config) =>
+        config.playerOrder === undefined &&
+        config.startDate !== 0 && // Is the case when config is missing
+        config.startDate <= Date.now() &&
+        this.parent.eventStore.tournamentsProjector.getTournamentSignups(config.id).length > 0,
+    );
   }
 
   buildPlayerOrder(tournamentId: string): string[] {

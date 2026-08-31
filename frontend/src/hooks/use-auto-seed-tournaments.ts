@@ -34,11 +34,7 @@ export function useAutoSeedTournaments(tennisTable: TennisTable) {
     const now = Date.now();
     const futureTournaments = tennisTable.eventStore.tournamentsProjector
       .getTournamentConfigs()
-      .filter(
-        (config) =>
-          config.playerOrder === undefined &&
-          config.startDate > now
-      );
+      .filter((config) => config.playerOrder === undefined && config.startDate > now);
 
     const timeouts = futureTournaments.map((config) => {
       const randomOffset = 1000 + Math.random() * 4000; // 1-5 seconds after start

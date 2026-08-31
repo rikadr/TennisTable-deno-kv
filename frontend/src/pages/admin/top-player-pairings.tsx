@@ -83,9 +83,7 @@ export const TopPlayerPairings: React.FC = () => {
               const countPercent = maxCount > 0 ? Math.max(0, Math.min(100, (pairing.count / maxCount) * 100)) : 0;
               return (
                 <tr key={pairing.key} className="hover:bg-secondary-background/50">
-                  <td className="px-2 py-1 border border-primary-text/20 font-medium whitespace-nowrap">
-                    {index + 1}
-                  </td>
+                  <td className="px-2 py-1 border border-primary-text/20 font-medium whitespace-nowrap">{index + 1}</td>
                   <td className="px-2 py-1 border border-primary-text/20 whitespace-nowrap">
                     <Link to={`/1v1?player1=${pairing.player1}&player2=${pairing.player2}`} className="hover:underline">
                       {context.playerName(pairing.player1)} &amp; {context.playerName(pairing.player2)}

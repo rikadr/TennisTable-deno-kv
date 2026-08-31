@@ -90,7 +90,11 @@ export const ActivityTab: React.FC = () => {
   return (
     <div className="flex flex-col gap-4">
       <StatTileRow>
-        <StatTile label="Busiest day" value={highlights.busiestWeekday.weekday} note={`${percentLabel(highlights.busiestWeekday.share)} of all games`} />
+        <StatTile
+          label="Busiest day"
+          value={highlights.busiestWeekday.weekday}
+          note={`${percentLabel(highlights.busiestWeekday.share)} of all games`}
+        />
         <StatTile label="Busiest time" value={highlights.busiestSlot.slot} />
         <StatTile label="Median start time" value={minuteOfDayLabel(highlights.medianMinuteOfDay)} />
         <StatTile label="Played Monday to Friday" value={percentLabel(highlights.weekdayShare)} />
@@ -120,7 +124,9 @@ export const ActivityTab: React.FC = () => {
                 const entry = payload[0].payload as { share: number; trailingAverage: number };
                 return (
                   <TooltipCard title={formatPeriodLabel(String(label), period)}>
-                    <p>{percentLabel(entry.share)} of the busiest {period}</p>
+                    <p>
+                      {percentLabel(entry.share)} of the busiest {period}
+                    </p>
                     <p>{percentLabel(entry.trailingAverage)} on average over 6 months</p>
                   </TooltipCard>
                 );
@@ -143,7 +149,14 @@ export const ActivityTab: React.FC = () => {
                 }}
               />
             ))}
-            <Line type="monotone" dataKey="share" stroke={SERIES_COLOR} strokeWidth={3} dot={false} activeDot={{ r: 5, fill: ACCENT_COLOR }} />
+            <Line
+              type="monotone"
+              dataKey="share"
+              stroke={SERIES_COLOR}
+              strokeWidth={3}
+              dot={false}
+              activeDot={{ r: 5, fill: ACCENT_COLOR }}
+            />
             <Line
               type="monotone"
               dataKey="trailingAverage"

@@ -48,7 +48,7 @@ export const SeasonScoreLog = ({ season }: Props) => {
       entry.improvements.map((imp) => ({
         ...imp,
         time: entry.time,
-      }))
+      })),
     );
     // Sort by time desc
     return allImprovements.sort((a, b) => b.time - a.time);
@@ -61,9 +61,7 @@ export const SeasonScoreLog = ({ season }: Props) => {
       playerIds.add(imp.playerId);
       playerIds.add(imp.opponentId);
     });
-    return Array.from(playerIds).sort((a, b) => 
-      context.playerName(a).localeCompare(context.playerName(b))
-    );
+    return Array.from(playerIds).sort((a, b) => context.playerName(a).localeCompare(context.playerName(b)));
   }, [improvements, context]);
 
   // Filter improvements
@@ -165,66 +163,74 @@ export const SeasonScoreLog = ({ season }: Props) => {
               setStrings.slice(i * 3, i * 3 + 3).join(", "),
             );
             return (
-            <tr key={idx} className="text-xs xs:text-sm md:text-base">
-              <td className="py-1 px-1 xs:px-2 md:px-3 w-[35%] max-w-0">
-                <button
-                  onClick={() => setPlayerFilter(imp.playerId)}
-                  className="flex items-center gap-1 md:gap-2 font-medium hover:underline min-w-0 w-full text-left"
-                >
-                  <div className="md:hidden shrink-0"><ProfilePicture playerId={imp.playerId} size={18} border={1} shape="rounded" /></div>
-                  <div className="hidden md:block shrink-0"><ProfilePicture playerId={imp.playerId} size={30} border={2} shape="rounded" /></div>
-                  <span className="truncate">{context.playerName(imp.playerId)}</span>
-                </button>
-              </td>
-              <td className="py-1 px-1 xs:px-2 md:px-3 text-right font-bold w-[1%] whitespace-nowrap">
-                +{fmtNum(imp.improvement)}
-              </td>
-              <td className="py-1 px-1 xs:px-2 md:px-3 w-[35%] max-w-0">
-                <button
-                  onClick={() => setOpponentFilter(imp.opponentId)}
-                  className="flex items-center gap-1 md:gap-2 hover:underline min-w-0 w-full text-left"
-                >
-                  <div className="md:hidden shrink-0"><ProfilePicture playerId={imp.opponentId} size={18} border={1} shape="rounded" /></div>
-                  <div className="hidden md:block shrink-0"><ProfilePicture playerId={imp.opponentId} size={30} border={2} shape="rounded" /></div>
-                  <span className="truncate">{context.playerName(imp.opponentId)}</span>
-                </button>
-              </td>
-              <td className="py-1 px-1 xs:px-2 md:px-3 w-[1%] whitespace-nowrap">
-                {/* Tiny screens: sets on top, per-set points below (max 3 sets per line). xs+: inline. */}
-                <div className="flex flex-col xs:flex-row xs:flex-wrap xs:items-baseline xs:gap-x-2">
-                  {imp.game.score && (
-                    <span className="font-medium">
-                      {imp.game.winner === imp.playerId
-                        ? `${imp.game.score?.setsWon.gameWinner} - ${imp.game.score?.setsWon.gameLoser}`
-                        : `${imp.game.score?.setsWon.gameLoser} - ${imp.game.score?.setsWon.gameWinner}`}
-                      <GameMarkers score={imp.game.score} />
+              <tr key={idx} className="text-xs xs:text-sm md:text-base">
+                <td className="py-1 px-1 xs:px-2 md:px-3 w-[35%] max-w-0">
+                  <button
+                    onClick={() => setPlayerFilter(imp.playerId)}
+                    className="flex items-center gap-1 md:gap-2 font-medium hover:underline min-w-0 w-full text-left"
+                  >
+                    <div className="md:hidden shrink-0">
+                      <ProfilePicture playerId={imp.playerId} size={18} border={1} shape="rounded" />
+                    </div>
+                    <div className="hidden md:block shrink-0">
+                      <ProfilePicture playerId={imp.playerId} size={30} border={2} shape="rounded" />
+                    </div>
+                    <span className="truncate">{context.playerName(imp.playerId)}</span>
+                  </button>
+                </td>
+                <td className="py-1 px-1 xs:px-2 md:px-3 text-right font-bold w-[1%] whitespace-nowrap">
+                  +{fmtNum(imp.improvement)}
+                </td>
+                <td className="py-1 px-1 xs:px-2 md:px-3 w-[35%] max-w-0">
+                  <button
+                    onClick={() => setOpponentFilter(imp.opponentId)}
+                    className="flex items-center gap-1 md:gap-2 hover:underline min-w-0 w-full text-left"
+                  >
+                    <div className="md:hidden shrink-0">
+                      <ProfilePicture playerId={imp.opponentId} size={18} border={1} shape="rounded" />
+                    </div>
+                    <div className="hidden md:block shrink-0">
+                      <ProfilePicture playerId={imp.opponentId} size={30} border={2} shape="rounded" />
+                    </div>
+                    <span className="truncate">{context.playerName(imp.opponentId)}</span>
+                  </button>
+                </td>
+                <td className="py-1 px-1 xs:px-2 md:px-3 w-[1%] whitespace-nowrap">
+                  {/* Tiny screens: sets on top, per-set points below (max 3 sets per line). xs+: inline. */}
+                  <div className="flex flex-col xs:flex-row xs:flex-wrap xs:items-baseline xs:gap-x-2">
+                    {imp.game.score && (
+                      <span className="font-medium">
+                        {imp.game.winner === imp.playerId
+                          ? `${imp.game.score?.setsWon.gameWinner} - ${imp.game.score?.setsWon.gameLoser}`
+                          : `${imp.game.score?.setsWon.gameLoser} - ${imp.game.score?.setsWon.gameWinner}`}
+                        <GameMarkers score={imp.game.score} />
+                      </span>
+                    )}
+                    {setStrings.length > 0 && (
+                      <>
+                        <span className="xs:hidden text-xs opacity-70">
+                          {setLines.map((line, lineIndex) => (
+                            <span key={lineIndex} className="block whitespace-nowrap">
+                              {line}
+                            </span>
+                          ))}
+                        </span>
+                        <span className="hidden xs:inline text-xs opacity-70 whitespace-nowrap">
+                          {setStrings.join(", ")}
+                        </span>
+                      </>
+                    )}
+                  </div>
+                </td>
+                <td className="py-1 px-1 xs:px-2 md:px-3 text-xs md:text-sm opacity-70 w-[1%] whitespace-nowrap">
+                  <div className="flex flex-col">
+                    <span className="whitespace-nowrap">{dateString(imp.time)}</span>
+                    <span className="opacity-50 whitespace-nowrap">
+                      <RelativeTime date={new Date(imp.time)} variant="auto" />
                     </span>
-                  )}
-                  {setStrings.length > 0 && (
-                    <>
-                      <span className="xs:hidden text-xs opacity-70">
-                        {setLines.map((line, lineIndex) => (
-                          <span key={lineIndex} className="block whitespace-nowrap">
-                            {line}
-                          </span>
-                        ))}
-                      </span>
-                      <span className="hidden xs:inline text-xs opacity-70 whitespace-nowrap">
-                        {setStrings.join(", ")}
-                      </span>
-                    </>
-                  )}
-                </div>
-              </td>
-              <td className="py-1 px-1 xs:px-2 md:px-3 text-xs md:text-sm opacity-70 w-[1%] whitespace-nowrap">
-                <div className="flex flex-col">
-                  <span className="whitespace-nowrap">{dateString(imp.time)}</span>
-                  <span className="opacity-50 whitespace-nowrap">
-                    <RelativeTime date={new Date(imp.time)} variant="auto" />
-                  </span>
-                </div>
-              </td>
-            </tr>
+                  </div>
+                </td>
+              </tr>
             );
           })}
         </tbody>

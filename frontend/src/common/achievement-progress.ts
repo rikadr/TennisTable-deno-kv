@@ -11,7 +11,7 @@
 // point-heavy record only begins above that.
 const PROGRESS_BASELINES: Record<string, number> = {
   "marathon-set": 11,
-  "shootout": 33,
+  shootout: 33,
 };
 
 /**

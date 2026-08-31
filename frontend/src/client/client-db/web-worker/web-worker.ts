@@ -9,7 +9,12 @@ import { WhrConfig, WhrResult } from "../whr";
 export type WorkerMessage =
   | {
       type: "start-expected-leaderboard";
-      data: { events: EventType[]; referenceTime?: number; includeUnrankedPlayerId?: string };
+      data: {
+        events: EventType[];
+        referenceTime?: number;
+        includeUnrankedPlayerId?: string;
+        simulations?: number;
+      };
     }
   | { type: "expected-leaderboard-progress"; data: { progress: number } }
   | { type: "expected-leaderboard-result"; data: { result: ExpectedLeaderboard } }
@@ -53,6 +58,7 @@ function handleWorkerMessage(message: WorkerMessage) {
       const result = tennisTableForLeaderboard.simulations.expectedLeaderBoard(
         (progress) => postWorkerMessage({ type: "expected-leaderboard-progress", data: { progress } }),
         message.data.includeUnrankedPlayerId,
+        message.data.simulations,
       );
       postWorkerMessage({ type: "expected-leaderboard-result", data: { result } });
       break;

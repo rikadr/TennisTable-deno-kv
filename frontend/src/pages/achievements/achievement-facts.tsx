@@ -18,30 +18,21 @@ export const AchievementFacts: React.FC<{ achievement: Achievement }> = ({ achie
   return (
     <>
       {achievement.data && "opponent" in achievement.data && (
-        <span className="text-[11px] opacity-80">
-          vs {context.playerName(achievement.data.opponent)}
-        </span>
+        <span className="text-[11px] opacity-80">vs {context.playerName(achievement.data.opponent)}</span>
       )}
       {achievement.data && "time" in achievement.data && (
         <span className="text-[11px] opacity-80">🕒 {achievement.data.time}</span>
       )}
       {achievement.data && "tournamentId" in achievement.data && (
         <span className="text-[11px] opacity-80">
-          🏆 {context.tournaments.getTournament(
-            achievement.data.tournamentId
-          )?.tournamentConfig.name || "Tournament"}
+          🏆 {context.tournaments.getTournament(achievement.data.tournamentId)?.tournamentConfig.name || "Tournament"}
         </span>
       )}
-      {achievement.data &&
-        "opponents" in achievement.data &&
-        achievement.data.opponents && (
-          <div className="text-[11px] opacity-80">
-            Welcomed:{" "}
-            {achievement.data.opponents
-              .map((player: string) => context.playerName(player))
-              .join(", ")}
-          </div>
-        )}
+      {achievement.data && "opponents" in achievement.data && achievement.data.opponents && (
+        <div className="text-[11px] opacity-80">
+          Welcomed: {achievement.data.opponents.map((player: string) => context.playerName(player)).join(", ")}
+        </div>
+      )}
       {achievement.data && "firstGameInPeriod" in achievement.data && (
         <span className="text-[11px] opacity-80">
           {dateString(achievement.data.firstGameInPeriod)} – {dateString(achievement.earnedAt)}
@@ -61,9 +52,7 @@ export const AchievementFacts: React.FC<{ achievement: Achievement }> = ({ achie
           </span>
         )}
       {achievement.type === "season-opener" && achievement.data && (
-        <span className="text-[11px] opacity-80">
-          Season starting {dateString(achievement.data.seasonStart)}
-        </span>
+        <span className="text-[11px] opacity-80">Season starting {dateString(achievement.data.seasonStart)}</span>
       )}
       {achievement.type === "so-close" && achievement.data && (
         <span className="text-[11px] opacity-80">
@@ -79,9 +68,7 @@ export const AchievementFacts: React.FC<{ achievement: Achievement }> = ({ achie
         </span>
       )}
       {achievement.type === "milestone-game" && achievement.data && (
-        <span className="text-[11px] opacity-80">
-          League game #{fmtNum(achievement.data.milestone)}
-        </span>
+        <span className="text-[11px] opacity-80">League game #{fmtNum(achievement.data.milestone)}</span>
       )}
       {achievement.data && "lastGameAt" in achievement.data && achievement.type !== "reunion" && (
         <span className="text-[11px] opacity-80">
@@ -90,17 +77,14 @@ export const AchievementFacts: React.FC<{ achievement: Achievement }> = ({ achie
       )}
       {achievement.type === "reunion" && achievement.data && (
         <span className="text-[11px] opacity-80">
-          Reunited after{" "}
-          {Math.round((achievement.earnedAt - achievement.data.lastGameAt) / (24 * 60 * 60 * 1000))} days
+          Reunited after {Math.round((achievement.earnedAt - achievement.data.lastGameAt) / (24 * 60 * 60 * 1000))} days
         </span>
       )}
-      {achievement.data &&
-        "firstWinAt" in achievement.data &&
-        "thirdWinAt" in achievement.data && (
-          <span className="text-[11px] opacity-80">
-            {Math.round((achievement.data.thirdWinAt - achievement.data.firstWinAt) / (60 * 1000))}m interval
-          </span>
-        )}
+      {achievement.data && "firstWinAt" in achievement.data && "thirdWinAt" in achievement.data && (
+        <span className="text-[11px] opacity-80">
+          {Math.round((achievement.data.thirdWinAt - achievement.data.firstWinAt) / (60 * 1000))}m interval
+        </span>
+      )}
       {achievement.type === "david" && achievement.data && (
         <span className="text-[11px] opacity-80">
           {fmtNum(achievement.data.eloGain, { digits: 1, signedPositive: true })} Score
@@ -119,63 +103,40 @@ export const AchievementFacts: React.FC<{ achievement: Achievement }> = ({ achie
       )}
       {achievement.type === "best-friends" && achievement.data && (
         <span className="text-[11px] opacity-80">
-          50 games in{" "}
-          {Math.round(
-            (achievement.earnedAt - achievement.data.firstGame) / (24 * 60 * 60 * 1000),
-          )}{" "}
-          days ({dateString(achievement.data.firstGame)} – {dateString(achievement.earnedAt)})
+          50 games in {Math.round((achievement.earnedAt - achievement.data.firstGame) / (24 * 60 * 60 * 1000))} days (
+          {dateString(achievement.data.firstGame)} – {dateString(achievement.earnedAt)})
         </span>
       )}
       {achievement.type === "photo-finish" && achievement.data && (
         <span className="text-[11px] opacity-80">
           Score {fmtNum(achievement.data.playerElo, { digits: 1 })} vs{" "}
-          {fmtNum(achievement.data.opponentElo, { digits: 1 })} (diff{" "}
-          {fmtNum(achievement.data.eloDiff, { digits: 1 })})
+          {fmtNum(achievement.data.opponentElo, { digits: 1 })} (diff {fmtNum(achievement.data.eloDiff, { digits: 1 })})
         </span>
       )}
       {achievement.type === "touched-the-throne" && achievement.data && (
         <>
+          <span className="text-[11px] opacity-80">Score {fmtNum(achievement.data.elo)}</span>
           <span className="text-[11px] opacity-80">
-            Score {fmtNum(achievement.data.elo)}
-          </span>
-          <span className="text-[11px] opacity-80">
-            in{" "}
-            {Math.round(
-              (achievement.earnedAt - achievement.data.firstGameAt) /
-                (24 * 60 * 60 * 1000),
-            )}{" "}
-            days
+            in {Math.round((achievement.earnedAt - achievement.data.firstGameAt) / (24 * 60 * 60 * 1000))} days
           </span>
           {achievement.data.dethroned && (
-            <span className="text-[11px] opacity-80">
-              Dethroned {context.playerName(achievement.data.dethroned)}
-            </span>
+            <span className="text-[11px] opacity-80">Dethroned {context.playerName(achievement.data.dethroned)}</span>
           )}
         </>
       )}
       {achievement.type === "on-the-podium" && achievement.data && (
         <>
+          <span className="text-[11px] opacity-80">Score {fmtNum(achievement.data.elo)}</span>
           <span className="text-[11px] opacity-80">
-            Score {fmtNum(achievement.data.elo)}
-          </span>
-          <span className="text-[11px] opacity-80">
-            in{" "}
-            {Math.round(
-              (achievement.earnedAt - achievement.data.firstGameAt) /
-                (24 * 60 * 60 * 1000),
-            )}{" "}
-            days
+            in {Math.round((achievement.earnedAt - achievement.data.firstGameAt) / (24 * 60 * 60 * 1000))} days
           </span>
         </>
       )}
       {achievement.type === "climber" && achievement.data && (
         <span className="text-[11px] opacity-80">
-          {fmtNum(achievement.data.fromElo, { digits: 0 })} →{" "}
-          {fmtNum(achievement.data.toElo, { digits: 0 })} in{" "}
-          {Math.round(
-            (achievement.data.toDate - achievement.data.fromDate) / (24 * 60 * 60 * 1000),
-          )}{" "}
-          days ({dateString(achievement.data.fromDate)} – {dateString(achievement.data.toDate)})
+          {fmtNum(achievement.data.fromElo, { digits: 0 })} → {fmtNum(achievement.data.toElo, { digits: 0 })} in{" "}
+          {Math.round((achievement.data.toDate - achievement.data.fromDate) / (24 * 60 * 60 * 1000))} days (
+          {dateString(achievement.data.fromDate)} – {dateString(achievement.data.toDate)})
         </span>
       )}
       {achievement.type === "less-is-more" && achievement.data && (
@@ -227,8 +188,7 @@ export const AchievementFacts: React.FC<{ achievement: Achievement }> = ({ achie
       )}
       {achievement.type === "back-from-the-dead" && achievement.data && (
         <span className="text-[11px] opacity-80">
-          Retired for{" "}
-          {Math.round((achievement.earnedAt - achievement.data.retiredAt) / (24 * 60 * 60 * 1000))} days
+          Retired for {Math.round((achievement.earnedAt - achievement.data.retiredAt) / (24 * 60 * 60 * 1000))} days
         </span>
       )}
       {achievement.type === "king-maker" && achievement.data && (
@@ -238,16 +198,12 @@ export const AchievementFacts: React.FC<{ achievement: Achievement }> = ({ achie
         </span>
       )}
       {achievement.type === "streak-ender" && achievement.data && (
-        <span className="text-[11px] opacity-80">
-          Ended {achievement.data.streakLength}-game streak
-        </span>
+        <span className="text-[11px] opacity-80">Ended {achievement.data.streakLength}-game streak</span>
       )}
-      {(achievement.type === "longest-win-streak" ||
-        achievement.type === "longest-lose-streak") &&
+      {(achievement.type === "longest-win-streak" || achievement.type === "longest-lose-streak") &&
         achievement.data && (
           <span className="text-[11px] opacity-80">
-            {achievement.data.streakLength}{" "}
-            {achievement.type === "longest-win-streak" ? "wins" : "losses"} in a row
+            {achievement.data.streakLength} {achievement.type === "longest-win-streak" ? "wins" : "losses"} in a row
             {achievement.data.previousRecord !== undefined
               ? ` (prev record ${achievement.data.previousRecord})`
               : " (first league record!)"}
@@ -262,14 +218,10 @@ export const AchievementFacts: React.FC<{ achievement: Achievement }> = ({ achie
         </span>
       )}
       {achievement.type === "perfect-day" && achievement.data && (
-        <span className="text-[11px] opacity-80">
-          {achievement.data.wins} wins, 0 losses
-        </span>
+        <span className="text-[11px] opacity-80">{achievement.data.wins} wins, 0 losses</span>
       )}
       {achievement.type === "perfect-week" && achievement.data && (
-        <span className="text-[11px] opacity-80">
-          Won 5 days in a row from {dateString(achievement.data.startDay)}
-        </span>
+        <span className="text-[11px] opacity-80">Won 5 days in a row from {dateString(achievement.data.startDay)}</span>
       )}
       {achievement.type === "group-stage-star" && achievement.data && (
         <span className="text-[11px] opacity-80">
@@ -281,8 +233,7 @@ export const AchievementFacts: React.FC<{ achievement: Achievement }> = ({ achie
         <span className="text-[11px] opacity-80">
           Avenged in {daysBetweenCeiled(achievement.data.lostAt, achievement.earnedAt)} day
           {daysBetweenCeiled(achievement.data.lostAt, achievement.earnedAt) !== 1 ? "s" : ""}
-          {achievement.data.lostTournamentId === achievement.data.tournamentId &&
-            " in the same tournament"}
+          {achievement.data.lostTournamentId === achievement.data.tournamentId && " in the same tournament"}
         </span>
       )}
       {(achievement.type === "full-house" ||
@@ -290,17 +241,10 @@ export const AchievementFacts: React.FC<{ achievement: Achievement }> = ({ achie
         achievement.type === "everybodys-opponent") &&
         achievement.data && (
           <span className="text-[11px] opacity-80">
-            {achievement.type === "full-house"
-              ? "Beat "
-              : achievement.type === "humbled"
-                ? "Lost to "
-                : "Played "}
+            {achievement.type === "full-house" ? "Beat " : achievement.type === "humbled" ? "Lost to " : "Played "}
             {achievement.data.count} ranked player
             {achievement.data.count !== 1 ? "s" : ""} in{" "}
-            {Math.round(
-              (achievement.earnedAt - achievement.data.firstGameAt) / (24 * 60 * 60 * 1000),
-            )}{" "}
-            days
+            {Math.round((achievement.earnedAt - achievement.data.firstGameAt) / (24 * 60 * 60 * 1000))} days
           </span>
         )}
       {achievement.type === "giant-hunting" && achievement.data && (
@@ -319,16 +263,12 @@ export const AchievementFacts: React.FC<{ achievement: Achievement }> = ({ achie
       {achievement.type === "leap-frog" && achievement.data && (
         <span className="text-[11px] opacity-80">
           Jumped {achievement.data.ranksJumped} rank
-          {achievement.data.ranksJumped !== 1 ? "s" : ""}: #{achievement.data.fromRank} → #
-          {achievement.data.toRank} (
-          {fmtNum(achievement.data.fromElo, { digits: 1 })} →{" "}
-          {fmtNum(achievement.data.toElo, { digits: 1 })}
+          {achievement.data.ranksJumped !== 1 ? "s" : ""}: #{achievement.data.fromRank} → #{achievement.data.toRank} (
+          {fmtNum(achievement.data.fromElo, { digits: 1 })} → {fmtNum(achievement.data.toElo, { digits: 1 })}
           {achievement.data.leapfroggedPlayers.length > 0 && (
             <>
               {", over "}
-              {achievement.data.leapfroggedPlayers
-                .map((p) => context.playerName(p))
-                .join(", ")}
+              {achievement.data.leapfroggedPlayers.map((p) => context.playerName(p)).join(", ")}
             </>
           )}
           )

@@ -23,11 +23,7 @@ import {
   PLAYER_ACHIEVEMENTS_TAB_PARAM,
   playerAchievementRowId,
 } from "./player-achievement-link";
-import {
-  ACHIEVEMENT_GROUPS,
-  ACHIEVEMENT_TYPE_TO_GROUP_ID,
-  OTHER_ACHIEVEMENT_GROUP,
-} from "./achievement-groups";
+import { ACHIEVEMENT_GROUPS, ACHIEVEMENT_TYPE_TO_GROUP_ID, OTHER_ACHIEVEMENT_GROUP } from "./achievement-groups";
 import { achievementDetailsPageLink } from "../achievements/use-achievements-filter";
 
 type Props = {
@@ -42,7 +38,7 @@ export const ACHIEVEMENT_LABELS: Record<AchievementType, { title: string; descri
     description: "Play your first game",
     icon: "👶",
   },
-  "ranked": {
+  ranked: {
     title: "Ranked",
     // The number of games is client-specific (gameLimitForRanked); the
     // concrete count is filled in by getAchievementLabel at render time.
@@ -129,7 +125,7 @@ export const ACHIEVEMENT_LABELS: Record<AchievementType, { title: string; descri
     description: "Return after 2 years of inactivity",
     icon: "👸",
   },
-  "retired": {
+  retired: {
     title: "Retired",
     description: "Retire from the league",
     icon: "🪦",
@@ -154,7 +150,7 @@ export const ACHIEVEMENT_LABELS: Record<AchievementType, { title: string; descri
     description: "Active for 2 years without a 30-day break",
     icon: "🎖️",
   },
-  "anniversary": {
+  anniversary: {
     title: "Anniversary",
     description: "Play a game within a day of a yearly anniversary of your first game",
     icon: "🎂",
@@ -234,7 +230,7 @@ export const ACHIEVEMENT_LABELS: Record<AchievementType, { title: string; descri
     description: "Play 50 games with a single opponent within 1 year",
     icon: "💙",
   },
-  "reunion": {
+  reunion: {
     title: "Reunion",
     description: "Play an opponent again after a year or more since your last game together",
     icon: "🫂",
@@ -264,7 +260,7 @@ export const ACHIEVEMENT_LABELS: Record<AchievementType, { title: string; descri
     description: "Win a game on each of 5 consecutive days within one week (Mon–Sun)",
     icon: "🗓️",
   },
-  "kingslayer": {
+  kingslayer: {
     title: "Kingslayer",
     description: "Beat the player ranked #1 on the leaderboard",
     icon: "⚔️",
@@ -294,17 +290,17 @@ export const ACHIEVEMENT_LABELS: Record<AchievementType, { title: string; descri
     description: "Jump as many leaderboard ranks in a single game as anyone before you",
     icon: "🐸",
   },
-  "david": {
+  david: {
     title: "David",
     description: "Gain more Score from a single win than anyone in league history",
     icon: "🪨",
   },
-  "goliath": {
+  goliath: {
     title: "Goliath",
     description: "Lose more Score from a single game than anyone in league history",
     icon: "🗿",
   },
-  "climber": {
+  climber: {
     title: "Climber",
     description: "Climb 300 Score from your all-time low (recorded from when you first became ranked)",
     icon: "🧗",
@@ -314,7 +310,7 @@ export const ACHIEVEMENT_LABELS: Record<AchievementType, { title: string; descri
     description: "Win a deuce set with the highest winning score in league history",
     icon: "🏓",
   },
-  "shootout": {
+  shootout: {
     title: "Shootout",
     description: "Play the highest-scoring game in league history (the 3 highest-scoring legal sets count)",
     icon: "💥",
@@ -354,7 +350,7 @@ export const ACHIEVEMENT_LABELS: Record<AchievementType, { title: string; descri
     description: "Beat every currently ranked player at least once",
     icon: "🃏",
   },
-  "humbled": {
+  humbled: {
     title: "Humbled",
     description: "Lose to every currently ranked player at least once",
     icon: "🙇",
@@ -577,7 +573,8 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
                 {achievement.data && "tournamentId" in achievement.data && (
                   <p className="text-xs text-secondary-text/70 mt-2">
                     Tournament:{" "}
-                    {context.tournaments.getTournament(achievement.data.tournamentId)?.tournamentConfig.name || "Unknown"}
+                    {context.tournaments.getTournament(achievement.data.tournamentId)?.tournamentConfig.name ||
+                      "Unknown"}
                   </p>
                 )}
 
@@ -629,8 +626,8 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
 
                 {achievement.type === "so-close" && achievement.data && (
                   <p className="text-xs text-secondary-text/70 mt-2">
-                    Season {context.seasons.getSeasons().findIndex((s) => s.start === achievement.data.seasonStart) + 1}:
-                    scored {fmtNum(achievement.data.playerScore, { digits: 1 })} points —{" "}
+                    Season {context.seasons.getSeasons().findIndex((s) => s.start === achievement.data.seasonStart) + 1}
+                    : scored {fmtNum(achievement.data.playerScore, { digits: 1 })} points —{" "}
                     {fmtNum((achievement.data.playerScore / achievement.data.winnerScore) * 100, { digits: 1 })}% of{" "}
                     {context.playerName(achievement.data.winner)}'s winning{" "}
                     {fmtNum(achievement.data.winnerScore, { digits: 1 })}
@@ -651,8 +648,8 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
 
                 {achievement.data && "firstWinAt" in achievement.data && "thirdWinAt" in achievement.data && (
                   <p className="text-xs text-secondary-text/70 mt-2">
-                    From {dateString(achievement.data.firstWinAt)} to {dateString(achievement.data.thirdWinAt)}
-                    {" "}({Math.round((achievement.data.thirdWinAt - achievement.data.firstWinAt) / (60 * 1000))} minutes)
+                    From {dateString(achievement.data.firstWinAt)} to {dateString(achievement.data.thirdWinAt)} (
+                    {Math.round((achievement.data.thirdWinAt - achievement.data.firstWinAt) / (60 * 1000))} minutes)
                   </p>
                 )}
 
@@ -667,8 +664,8 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
 
                 {achievement.type === "best-friends" && achievement.data && (
                   <p className="text-xs text-secondary-text/70 mt-2">
-                    50 games in {daysBetween(achievement.data.firstGame, achievement.earnedAt)} days,
-                    from {dateString(achievement.data.firstGame)} to {dateString(achievement.earnedAt)}
+                    50 games in {daysBetween(achievement.data.firstGame, achievement.earnedAt)} days, from{" "}
+                    {dateString(achievement.data.firstGame)} to {dateString(achievement.earnedAt)}
                   </p>
                 )}
 
@@ -746,9 +743,7 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
                       Score {fmtNum(achievement.data.elo)} in{" "}
                       {daysBetween(achievement.data.firstGameAt, achievement.earnedAt)} days
                     </p>
-                    {achievement.data.dethroned && (
-                      <p>Dethroned {context.playerName(achievement.data.dethroned)}</p>
-                    )}
+                    {achievement.data.dethroned && <p>Dethroned {context.playerName(achievement.data.dethroned)}</p>}
                   </div>
                 )}
 
@@ -761,15 +756,16 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
 
                 {achievement.type === "streak-ender" && achievement.data && (
                   <p className="text-xs text-secondary-text/70 mt-2">
-                    Ended {context.playerName(achievement.data.opponent)}'s {achievement.data.streakLength}-game win streak
+                    Ended {context.playerName(achievement.data.opponent)}'s {achievement.data.streakLength}-game win
+                    streak
                   </p>
                 )}
 
                 {(achievement.type === "longest-win-streak" || achievement.type === "longest-lose-streak") &&
                   achievement.data && (
                     <p className="text-xs text-secondary-text/70 mt-2">
-                      {achievement.data.streakLength}{" "}
-                      {achievement.type === "longest-win-streak" ? "wins" : "losses"} in a row
+                      {achievement.data.streakLength} {achievement.type === "longest-win-streak" ? "wins" : "losses"} in
+                      a row
                       {achievement.data.previousRecord !== undefined
                         ? ` (previous record: ${achievement.data.previousRecord})`
                         : " (first league record!)"}
@@ -814,8 +810,7 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
                   <p className="text-xs text-secondary-text/70 mt-2">
                     Avenged in {daysBetweenCeiled(achievement.data.lostAt, achievement.earnedAt)} day
                     {daysBetweenCeiled(achievement.data.lostAt, achievement.earnedAt) !== 1 ? "s" : ""}
-                    {achievement.data.lostTournamentId === achievement.data.tournamentId &&
-                      " in the same tournament"}
+                    {achievement.data.lostTournamentId === achievement.data.tournamentId && " in the same tournament"}
                   </p>
                 )}
 
@@ -876,10 +871,7 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
                     </p>
                     {achievement.data.leapfroggedPlayers.length > 0 && (
                       <p>
-                        Leapfrogged:{" "}
-                        {achievement.data.leapfroggedPlayers
-                          .map((p) => context.playerName(p))
-                          .join(", ")}
+                        Leapfrogged: {achievement.data.leapfroggedPlayers.map((p) => context.playerName(p)).join(", ")}
                       </p>
                     )}
                   </div>
@@ -1144,553 +1136,563 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
 
           <div className="mt-2 space-y-2">
             {items.map(({ type, label, data }) => {
-        // Recomputed here rather than read off the item so TypeScript narrows
-        // `data` to the progression shapes that carry current/target.
-        const hasTarget = "target" in data && !!data.target;
-        const hasCurrent = "current" in data && !!data.current;
-        const percentage = hasTarget && hasCurrent ? achievementProgressPercentage(type, data.current, data.target) : 0;
-        const hasEarned = data.earned > 0;
-        const isTimePeriod =
-          type.startsWith("active-") ||
-          type.startsWith("back-after-") ||
-          type === "anniversary" ||
-          type === "season-opener" ||
-          type === "reunion";
+              // Recomputed here rather than read off the item so TypeScript narrows
+              // `data` to the progression shapes that carry current/target.
+              const hasTarget = "target" in data && !!data.target;
+              const hasCurrent = "current" in data && !!data.current;
+              const percentage =
+                hasTarget && hasCurrent ? achievementProgressPercentage(type, data.current, data.target) : 0;
+              const hasEarned = data.earned > 0;
+              const isTimePeriod =
+                type.startsWith("active-") ||
+                type.startsWith("back-after-") ||
+                type === "anniversary" ||
+                type === "season-opener" ||
+                type === "reunion";
 
-        return (
-          <div
-            key={type}
-            id={playerAchievementRowId(type)}
-            className={classNames(
-              "bg-background-secondary rounded-lg overflow-hidden border border-secondary-text transition-colors relative",
-              hasEarned && "bg-gradient-to-b from-green-400 via-green-500 to-green-600",
-              highlightedType === type && "ring-4 ring-secondary-text",
-            )}
-          >
-            {/* Progress bar background.
+              return (
+                <div
+                  key={type}
+                  id={playerAchievementRowId(type)}
+                  className={classNames(
+                    "bg-background-secondary rounded-lg overflow-hidden border border-secondary-text transition-colors relative",
+                    hasEarned && "bg-gradient-to-b from-green-400 via-green-500 to-green-600",
+                    highlightedType === type && "ring-4 ring-secondary-text",
+                  )}
+                >
+                  {/* Progress bar background.
                 The bar itself is always blue and represents current
                 progress. The row's container has a green gradient
                 when the achievement has been earned, which shows
                 through to the right of the blue bar — so an earned
                 achievement that's currently 94% progressed reads as
                 "94% blue over green bg, with a 6% green sliver". */}
-            {hasTarget && (
-              <div className="absolute inset-0 pointer-events-none">
-                <div
-                  className="h-full transition-all duration-300 bg-gradient-to-b from-blue-400 via-blue-500 to-blue-600"
-                  style={{ width: `${percentage}%` }}
-                />
-              </div>
-            )}
-
-            <div className="relative px-3 py-2.5">
-              <div className="flex items-start gap-3">
-                {/* The icon and the name link to the achievement's own Details
-                    page, with its holders and league stats. */}
-                <Link to={achievementDetailsPageLink(type)} className="text-2xl sm:text-3xl md:text-4xl">
-                  {label.icon}
-                </Link>
-                <div className="flex-1">
-                  <div className="flex items-center justify-between mb-1">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3">
-                        <h3 className="font-semibold ">
-                          <Link to={achievementDetailsPageLink(type)} className="hover:underline">
-                            {label.title}
-                          </Link>
-                        </h3>
-                        {hasTarget && <span className="text-lg font-bold">{percentage.toFixed(0)}%</span>}
-                      </div>
-                      <p className="text-sm text-secondary-text">{label.description}</p>
+                  {hasTarget && (
+                    <div className="absolute inset-0 pointer-events-none">
+                      <div
+                        className="h-full transition-all duration-300 bg-gradient-to-b from-blue-400 via-blue-500 to-blue-600"
+                        style={{ width: `${percentage}%` }}
+                      />
                     </div>
-                    {data.earned > 0 && (
-                      <div className="text-xs font-semibold px-2 py-1 rounded">
-                        Earned {data.earned} time{data.earned > 1 && "s"}
-                      </div>
-                    )}
-                  </div>
+                  )}
 
-                  {hasTarget ? (
-                    <>
-                      {/* Progress info */}
-                      <div className="mt-1">
-                        <div className="text-sm text-secondary-text">
-                          <span className="font-medium">
-                            {isTimePeriod ? formatTimePeriod(data.current) : fmtNum(data.current)}{" "}
-                            /{" "}
-                            {isTimePeriod ? formatTimePeriod(data.target) : fmtNum(data.target)}
-                            {type === "season-winner" && (
-                              <span className="text-xs text-secondary-text/70 font-normal ml-2">
-                                (Current leader's points)
-                              </span>
-                            )}
-                            {type === "milestone-game" &&
-                              typeof data.target === "number" &&
-                              typeof data.current === "number" && (
-                                <span className="text-xs text-secondary-text/70 font-normal ml-2">
-                                  (League-wide — {fmtNum(data.target - data.current)} games until the next
-                                  milestone game)
-                                </span>
-                              )}
-                            {type === "season-opener" &&
-                              typeof data.target === "number" &&
-                              typeof data.current === "number" && (
-                                <span className="text-xs text-secondary-text/70 font-normal ml-2">
-                                  (League-wide —{" "}
-                                  {data.current >= data.target
-                                    ? "the season is open, and the first game of it earns this"
-                                    : `${formatTimePeriod(data.target - data.current)} until the next season starts`}
-                                  )
-                                </span>
-                              )}
-                            {/* The player's best-ever value, for chases whose
+                  <div className="relative px-3 py-2.5">
+                    <div className="flex items-start gap-3">
+                      {/* The icon and the name link to the achievement's own Details
+                    page, with its holders and league stats. */}
+                      <Link to={achievementDetailsPageLink(type)} className="text-2xl sm:text-3xl md:text-4xl">
+                        {label.icon}
+                      </Link>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3">
+                              <h3 className="font-semibold ">
+                                <Link to={achievementDetailsPageLink(type)} className="hover:underline">
+                                  {label.title}
+                                </Link>
+                              </h3>
+                              {hasTarget && <span className="text-lg font-bold">{percentage.toFixed(0)}%</span>}
+                            </div>
+                            <p className="text-sm text-secondary-text">{label.description}</p>
+                          </div>
+                          {data.earned > 0 && (
+                            <div className="text-xs font-semibold px-2 py-1 rounded">
+                              Earned {data.earned} time{data.earned > 1 && "s"}
+                            </div>
+                          )}
+                        </div>
+
+                        {hasTarget ? (
+                          <>
+                            {/* Progress info */}
+                            <div className="mt-1">
+                              <div className="text-sm text-secondary-text">
+                                <span className="font-medium">
+                                  {isTimePeriod ? formatTimePeriod(data.current) : fmtNum(data.current)} /{" "}
+                                  {isTimePeriod ? formatTimePeriod(data.target) : fmtNum(data.target)}
+                                  {type === "season-winner" && (
+                                    <span className="text-xs text-secondary-text/70 font-normal ml-2">
+                                      (Current leader's points)
+                                    </span>
+                                  )}
+                                  {type === "milestone-game" &&
+                                    typeof data.target === "number" &&
+                                    typeof data.current === "number" && (
+                                      <span className="text-xs text-secondary-text/70 font-normal ml-2">
+                                        (League-wide — {fmtNum(data.target - data.current)} games until the next
+                                        milestone game)
+                                      </span>
+                                    )}
+                                  {type === "season-opener" &&
+                                    typeof data.target === "number" &&
+                                    typeof data.current === "number" && (
+                                      <span className="text-xs text-secondary-text/70 font-normal ml-2">
+                                        (League-wide —{" "}
+                                        {data.current >= data.target
+                                          ? "the season is open, and the first game of it earns this"
+                                          : `${formatTimePeriod(data.target - data.current)} until the next season starts`}
+                                        )
+                                      </span>
+                                    )}
+                                  {/* The player's best-ever value, for chases whose
                                 progress resets or decays — how close they have
                                 ever come, next to where they stand now. When
                                 the number alone is thin, the opponent it was
                                 achieved with is named. */}
-                            {data.best !== undefined && data.best > 0 && (
-                              <span className="text-xs text-secondary-text/70 font-normal ml-2">
-                                Best: {formatBestValue(type, data.best)}
-                                {"bestOpponent" in data && data.bestOpponent && (
-                                  <> with {context.playerName(data.bestOpponent)}</>
-                                )}
-                                {"bestFromElo" in data &&
-                                  data.bestFromElo !== undefined &&
-                                  data.bestToElo !== undefined && (
-                                    <>
-                                      {" "}
-                                      ({fmtNum(data.bestFromElo)} → {fmtNum(data.bestToElo)})
-                                    </>
+                                  {data.best !== undefined && data.best > 0 && (
+                                    <span className="text-xs text-secondary-text/70 font-normal ml-2">
+                                      Best: {formatBestValue(type, data.best)}
+                                      {"bestOpponent" in data && data.bestOpponent && (
+                                        <> with {context.playerName(data.bestOpponent)}</>
+                                      )}
+                                      {"bestFromElo" in data &&
+                                        data.bestFromElo !== undefined &&
+                                        data.bestToElo !== undefined && (
+                                          <>
+                                            {" "}
+                                            ({fmtNum(data.bestFromElo)} → {fmtNum(data.bestToElo)})
+                                          </>
+                                        )}
+                                    </span>
                                   )}
-                              </span>
-                            )}
-                          </span>
-                        </div>
-                      </div>
+                                </span>
+                              </div>
+                            </div>
 
-                      {/* The 5 longest open gaps for Reunion — the opponents
+                            {/* The 5 longest open gaps for Reunion — the opponents
                           to play for the next award. Inline on one wrapping
                           line to stay compact. */}
-                      {type === "reunion" && "perOpponent" in data && data.perOpponent && data.perOpponent.size > 0 && (
-                        <div className="mt-1.5 text-xs text-secondary-text/70">
-                          Longest gaps:{" "}
-                          {Array.from(data.perOpponent.entries() as IterableIterator<[string, number]>)
-                            .sort((a, b) => b[1] - a[1])
-                            .slice(0, 5)
-                            .map(([opponent, gap], index) => (
-                              <span key={opponent}>
-                                {index > 0 && ", "}
-                                <Link to={{ pathname: "/player/" + opponent, search }}>
-                                  <span className="text-secondary-text">{context.playerName(opponent)}</span>
-                                </Link>{" "}
-                                ({Math.floor(gap / (24 * 60 * 60 * 1000))} days)
-                              </span>
-                            ))}
-                        </div>
-                      )}
-
-                      {/* Show last active time for back-after achievements */}
-                      {type.startsWith("back-after-") && "lastActiveAt" in data && data.lastActiveAt && (
-                        <div className="mt-1.5 text-xs text-secondary-text/70">
-                          Last active: {dateString(data.lastActiveAt)}
-                        </div>
-                      )}
-
-                      {/* Show start date for active achievements */}
-                      {type.startsWith("active-") && "current" in data && !!data.current && (
-                        <div className="mt-1.5 text-xs text-secondary-text/70">
-                          Since: {dateString(Date.now() - data.current)}
-                        </div>
-                      )}
-
-                      {/* Show the recurring anniversary date — the player's
-                          first ever game. */}
-                      {type === "anniversary" && "firstGameAt" in data && !!data.firstGameAt && (
-                        <div className="mt-1.5 text-xs text-secondary-text/70">
-                          Anniversary date: {dateString(data.firstGameAt)}
-                        </div>
-                      )}
-
-                      {/* Show when the next season starts — the moment the
-                          next Season Opener is there to take. */}
-                      {type === "season-opener" && "nextSeasonStart" in data && !!data.nextSeasonStart && (
-                        <div className="mt-1.5 text-xs text-secondary-text/70">
-                          Next season starts: {dateString(data.nextSeasonStart)}
-                        </div>
-                      )}
-
-                      {/* Per-opponent breakdown for streak achievements */}
-                      {(type === "streak-player-10" || type === "streak-player-20") &&
-                        "perOpponent" in data &&
-                        data.perOpponent &&
-                        data.perOpponent.size > 0 && (
-                          <div className="mt-2 pt-2 border-t border-secondary-text/50">
-                            <p className="text-xs text-secondary-text/70 mb-2">Current highest streaks:</p>
-                            <div className="space-y-1 w-fit">
-                              {Array.from(data.perOpponent.entries() as IterableIterator<[string, number]>)
-                                .sort((a, b) => b[1] - a[1])
-                                .slice(0, 5)
-                                .map(([opponent, streak]) => (
-                                  <div
-                                    key={opponent}
-                                    className={classNames(
-                                      "flex items-center justify-between text-xs",
-                                      streak >= data.target && "line-through",
-                                    )}
-                                  >
-                                    <Link to={{ pathname: "/player/" + opponent, search }}>
-                                      <span className="text-secondary-text">{context.playerName(opponent)}</span>
-                                    </Link>
-                                    <span className="font-medium ml-2">
-                                      {streak}/{data.target}
-                                    </span>
-                                  </div>
-                                ))}
-                            </div>
-                          </div>
-                        )}
-
-                      {/* Per-opponent breakdown for best-friends achievement */}
-                      {type === "best-friends" &&
-                        "perOpponent" in data &&
-                        data.perOpponent &&
-                        data.perOpponent.size > 0 && (
-                          <div className="mt-2 pt-2 border-t border-secondary-text/50">
-                            <p className="text-xs text-secondary-text/70 mb-2">Games with opponents:</p>
-                            <div className="space-y-1 w-fit">
-                              {Array.from(
-                                data.perOpponent.entries() as IterableIterator<
-                                  [string, { count: number; timespan: number }]
-                                >,
-                              )
-                                .sort((a, b) => b[1].count - a[1].count)
-                                .slice(0, 5)
-                                .map(([opponent, info]) => {
-                                  const days = Math.floor(info.timespan / (24 * 60 * 60 * 1000));
-                                  // Check if achievement already earned with this opponent
-                                  const alreadyEarned = context.achievements
-                                    .getAchievements(playerId)
-                                    .some(
-                                      (achievement) =>
-                                        achievement.type === "best-friends" &&
-                                        achievement.data &&
-                                        "opponent" in achievement.data &&
-                                        achievement.data.opponent === opponent,
-                                    );
-                                  return (
-                                    <div
-                                      key={opponent}
-                                      className={classNames(
-                                        "flex items-center justify-between text-xs gap-4",
-                                        alreadyEarned && "line-through",
-                                      )}
-                                    >
-                                      <Link to={{ pathname: "/player/" + opponent, search }}>
-                                        <span className="text-secondary-text">{context.playerName(opponent)}</span>
-                                      </Link>
-                                      <span className="font-medium">
-                                        {info.count} games in last {days} days
+                            {type === "reunion" &&
+                              "perOpponent" in data &&
+                              data.perOpponent &&
+                              data.perOpponent.size > 0 && (
+                                <div className="mt-1.5 text-xs text-secondary-text/70">
+                                  Longest gaps:{" "}
+                                  {Array.from(data.perOpponent.entries() as IterableIterator<[string, number]>)
+                                    .sort((a, b) => b[1] - a[1])
+                                    .slice(0, 5)
+                                    .map(([opponent, gap], index) => (
+                                      <span key={opponent}>
+                                        {index > 0 && ", "}
+                                        <Link to={{ pathname: "/player/" + opponent, search }}>
+                                          <span className="text-secondary-text">{context.playerName(opponent)}</span>
+                                        </Link>{" "}
+                                        ({Math.floor(gap / (24 * 60 * 60 * 1000))} days)
                                       </span>
-                                    </div>
-                                  );
-                                })}
-                            </div>
-                          </div>
-                        )}
+                                    ))}
+                                </div>
+                              )}
 
-                      {/* New players list for welcome-committee achievement */}
-                      {(type === "welcome-committee" || type === "community-builder") &&
-                        "newPlayers" in data &&
-                        data.newPlayers &&
-                        data.newPlayers.size > 0 && (
-                          <div className="mt-2 pt-2 border-t border-secondary-text/50">
-                            <p className="text-xs text-secondary-text/70 mb-2">First opponent for:</p>
-                            <div className="flex flex-wrap gap-1">
-                              {Array.from(data.newPlayers).map((player: string) => (
-                                <Link to={{ pathname: "/player/" + player, search }} key={player}>
-                                  <span className="text-xs bg-background px-2 py-1 rounded text-secondary-text">
-                                    {context.playerName(player)}
-                                  </span>
-                                </Link>
-                              ))}
-                            </div>
-                          </div>
-                        )}
+                            {/* Show last active time for back-after achievements */}
+                            {type.startsWith("back-after-") && "lastActiveAt" in data && data.lastActiveAt && (
+                              <div className="mt-1.5 text-xs text-secondary-text/70">
+                                Last active: {dateString(data.lastActiveAt)}
+                              </div>
+                            )}
 
-                      {/* Missing players for full-house / humbled / sweet-revenge / full-coverage */}
-                      {(type === "full-house" ||
-                        type === "humbled" ||
-                        type === "everybodys-opponent" ||
-                        type === "full-coverage" ||
-                        type === "sweet-revenge") &&
-                        "missing" in data &&
-                        data.missing &&
-                        data.missing.size > 0 && (
-                          <div className="mt-2 pt-2 border-t border-secondary-text/50">
-                            <p className="text-xs text-secondary-text/70 mb-2">
-                              {type === "full-house"
-                                ? "Still need to beat:"
-                                : type === "humbled"
-                                  ? "Still need to lose to:"
-                                  : type === "everybodys-opponent"
-                                    ? "Still need to play:"
-                                    : type === "full-coverage"
-                                      ? "Still need to play this season:"
-                                      : "They beat you in a tournament — beat them in a tournament match to avenge it:"}
-                            </p>
-                            <div className="flex flex-wrap gap-1">
-                              {Array.from(data.missing).map((player: string) => (
-                                <Link to={{ pathname: "/player/" + player, search }} key={player}>
-                                  <span className="text-xs bg-background px-2 py-1 rounded text-secondary-text">
-                                    {context.playerName(player)}
-                                  </span>
-                                </Link>
-                              ))}
-                            </div>
-                          </div>
-                        )}
+                            {/* Show start date for active achievements */}
+                            {type.startsWith("active-") && "current" in data && !!data.current && (
+                              <div className="mt-1.5 text-xs text-secondary-text/70">
+                                Since: {dateString(Date.now() - data.current)}
+                              </div>
+                            )}
 
-                      {/* Record holder for marathon-set */}
-                      {type === "marathon-set" && "recordHolder" in data && (
-                        <div className="mt-1.5 text-xs text-secondary-text/70">
-                          {data.recordHolder ? (
-                            <>
-                              League record held by{" "}
-                              <Link to={{ pathname: "/player/" + data.recordHolder, search }}>
-                                <span className="text-secondary-text underline">
-                                  {context.playerName(data.recordHolder)}
-                                </span>
-                              </Link>
-                              . Win a deuce set at {data.target} or higher to take it.
-                            </>
-                          ) : (
-                            <>No record set yet — win a deuce set above 11 to start the record.</>
-                          )}
-                        </div>
-                      )}
+                            {/* Show the recurring anniversary date — the player's
+                          first ever game. */}
+                            {type === "anniversary" && "firstGameAt" in data && !!data.firstGameAt && (
+                              <div className="mt-1.5 text-xs text-secondary-text/70">
+                                Anniversary date: {dateString(data.firstGameAt)}
+                              </div>
+                            )}
 
-                      {/* Record holder for david / goliath. The record is a
+                            {/* Show when the next season starts — the moment the
+                          next Season Opener is there to take. */}
+                            {type === "season-opener" && "nextSeasonStart" in data && !!data.nextSeasonStart && (
+                              <div className="mt-1.5 text-xs text-secondary-text/70">
+                                Next season starts: {dateString(data.nextSeasonStart)}
+                              </div>
+                            )}
+
+                            {/* Per-opponent breakdown for streak achievements */}
+                            {(type === "streak-player-10" || type === "streak-player-20") &&
+                              "perOpponent" in data &&
+                              data.perOpponent &&
+                              data.perOpponent.size > 0 && (
+                                <div className="mt-2 pt-2 border-t border-secondary-text/50">
+                                  <p className="text-xs text-secondary-text/70 mb-2">Current highest streaks:</p>
+                                  <div className="space-y-1 w-fit">
+                                    {Array.from(data.perOpponent.entries() as IterableIterator<[string, number]>)
+                                      .sort((a, b) => b[1] - a[1])
+                                      .slice(0, 5)
+                                      .map(([opponent, streak]) => (
+                                        <div
+                                          key={opponent}
+                                          className={classNames(
+                                            "flex items-center justify-between text-xs",
+                                            streak >= data.target && "line-through",
+                                          )}
+                                        >
+                                          <Link to={{ pathname: "/player/" + opponent, search }}>
+                                            <span className="text-secondary-text">{context.playerName(opponent)}</span>
+                                          </Link>
+                                          <span className="font-medium ml-2">
+                                            {streak}/{data.target}
+                                          </span>
+                                        </div>
+                                      ))}
+                                  </div>
+                                </div>
+                              )}
+
+                            {/* Per-opponent breakdown for best-friends achievement */}
+                            {type === "best-friends" &&
+                              "perOpponent" in data &&
+                              data.perOpponent &&
+                              data.perOpponent.size > 0 && (
+                                <div className="mt-2 pt-2 border-t border-secondary-text/50">
+                                  <p className="text-xs text-secondary-text/70 mb-2">Games with opponents:</p>
+                                  <div className="space-y-1 w-fit">
+                                    {Array.from(
+                                      data.perOpponent.entries() as IterableIterator<
+                                        [string, { count: number; timespan: number }]
+                                      >,
+                                    )
+                                      .sort((a, b) => b[1].count - a[1].count)
+                                      .slice(0, 5)
+                                      .map(([opponent, info]) => {
+                                        const days = Math.floor(info.timespan / (24 * 60 * 60 * 1000));
+                                        // Check if achievement already earned with this opponent
+                                        const alreadyEarned = context.achievements
+                                          .getAchievements(playerId)
+                                          .some(
+                                            (achievement) =>
+                                              achievement.type === "best-friends" &&
+                                              achievement.data &&
+                                              "opponent" in achievement.data &&
+                                              achievement.data.opponent === opponent,
+                                          );
+                                        return (
+                                          <div
+                                            key={opponent}
+                                            className={classNames(
+                                              "flex items-center justify-between text-xs gap-4",
+                                              alreadyEarned && "line-through",
+                                            )}
+                                          >
+                                            <Link to={{ pathname: "/player/" + opponent, search }}>
+                                              <span className="text-secondary-text">
+                                                {context.playerName(opponent)}
+                                              </span>
+                                            </Link>
+                                            <span className="font-medium">
+                                              {info.count} games in last {days} days
+                                            </span>
+                                          </div>
+                                        );
+                                      })}
+                                  </div>
+                                </div>
+                              )}
+
+                            {/* New players list for welcome-committee achievement */}
+                            {(type === "welcome-committee" || type === "community-builder") &&
+                              "newPlayers" in data &&
+                              data.newPlayers &&
+                              data.newPlayers.size > 0 && (
+                                <div className="mt-2 pt-2 border-t border-secondary-text/50">
+                                  <p className="text-xs text-secondary-text/70 mb-2">First opponent for:</p>
+                                  <div className="flex flex-wrap gap-1">
+                                    {Array.from(data.newPlayers).map((player: string) => (
+                                      <Link to={{ pathname: "/player/" + player, search }} key={player}>
+                                        <span className="text-xs bg-background px-2 py-1 rounded text-secondary-text">
+                                          {context.playerName(player)}
+                                        </span>
+                                      </Link>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+
+                            {/* Missing players for full-house / humbled / sweet-revenge / full-coverage */}
+                            {(type === "full-house" ||
+                              type === "humbled" ||
+                              type === "everybodys-opponent" ||
+                              type === "full-coverage" ||
+                              type === "sweet-revenge") &&
+                              "missing" in data &&
+                              data.missing &&
+                              data.missing.size > 0 && (
+                                <div className="mt-2 pt-2 border-t border-secondary-text/50">
+                                  <p className="text-xs text-secondary-text/70 mb-2">
+                                    {type === "full-house"
+                                      ? "Still need to beat:"
+                                      : type === "humbled"
+                                        ? "Still need to lose to:"
+                                        : type === "everybodys-opponent"
+                                          ? "Still need to play:"
+                                          : type === "full-coverage"
+                                            ? "Still need to play this season:"
+                                            : "They beat you in a tournament — beat them in a tournament match to avenge it:"}
+                                  </p>
+                                  <div className="flex flex-wrap gap-1">
+                                    {Array.from(data.missing).map((player: string) => (
+                                      <Link to={{ pathname: "/player/" + player, search }} key={player}>
+                                        <span className="text-xs bg-background px-2 py-1 rounded text-secondary-text">
+                                          {context.playerName(player)}
+                                        </span>
+                                      </Link>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+
+                            {/* Record holder for marathon-set */}
+                            {type === "marathon-set" && "recordHolder" in data && (
+                              <div className="mt-1.5 text-xs text-secondary-text/70">
+                                {data.recordHolder ? (
+                                  <>
+                                    League record held by{" "}
+                                    <Link to={{ pathname: "/player/" + data.recordHolder, search }}>
+                                      <span className="text-secondary-text underline">
+                                        {context.playerName(data.recordHolder)}
+                                      </span>
+                                    </Link>
+                                    . Win a deuce set at {data.target} or higher to take it.
+                                  </>
+                                ) : (
+                                  <>No record set yet — win a deuce set above 11 to start the record.</>
+                                )}
+                              </div>
+                            )}
+
+                            {/* Record holder for david / goliath. The record is a
                           fractional Elo swing, so the target must be strictly
                           exceeded rather than reached. */}
-                      {(type === "david" || type === "goliath") && "recordHolder" in data && data.recordHolder && (
-                        <div className="mt-1.5 text-xs text-secondary-text/70">
-                          League record held by{" "}
-                          <Link to={{ pathname: "/player/" + data.recordHolder, search }}>
-                            <span className="text-secondary-text underline">
-                              {context.playerName(data.recordHolder)}
-                            </span>
-                          </Link>
-                          . {type === "david" ? "Gain" : "Lose"} more than{" "}
-                          {fmtNum(data.target, { digits: 1 })} Score in one game to take it.
-                        </div>
-                      )}
-
-                      {/* Record holders for shootout — both players of the
-                          record game hold it together. */}
-                      {type === "shootout" && "recordHolders" in data && (
-                        <div className="mt-1.5 text-xs text-secondary-text/70">
-                          {data.recordHolders && data.recordHolders.length > 0 ? (
-                            <>
-                              League record held by{" "}
-                              {data.recordHolders.map((holder, i) => (
-                                <span key={holder}>
-                                  {i > 0 && " and "}
-                                  <Link to={{ pathname: "/player/" + holder, search }}>
-                                    <span className="text-secondary-text underline">
-                                      {context.playerName(holder)}
-                                    </span>
-                                  </Link>
-                                </span>
-                              ))}
-                              . Play a {data.target}+ point game (your {SHOOTOUT_SETS_COUNTED} highest-scoring
-                              legal sets count) to take it.
-                            </>
-                          ) : (
-                            <>
-                              No record set yet — play a {SHOOTOUT_RECORD_FLOOR}+ point game to start the
-                              record.
-                            </>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Record holder for leap-frog */}
-                      {type === "leap-frog" && "recordHolder" in data && (
-                        <div className="mt-1.5 text-xs text-secondary-text/70">
-                          {data.recordHolder ? (
-                            <>
-                              League record held by{" "}
-                              <Link to={{ pathname: "/player/" + data.recordHolder, search }}>
-                                <span className="text-secondary-text underline">
-                                  {context.playerName(data.recordHolder)}
-                                </span>
-                              </Link>
-                              . Jump {data.target} or more ranks in one game to take it.
-                            </>
-                          ) : (
-                            <>No record set yet — jump 2 or more ranks in a single game to start the record.</>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Record holder for the Hero of the Day / Week / Month
-                          records. The bar tracks the current period's games;
-                          the player's busiest period ever is the shared
-                          "Best" value next to the progress numbers. */}
-                      {type in HERO_RECORD_PERIODS && "recordHolder" in data && (
-                        <div className="mt-1.5 text-xs text-secondary-text/70 space-y-1">
-                          <p>
-                            {data.recordHolder ? (
-                              <>
-                                League record held by{" "}
-                                <Link to={{ pathname: "/player/" + data.recordHolder, search }}>
-                                  <span className="text-secondary-text underline">
-                                    {context.playerName(data.recordHolder)}
-                                  </span>
-                                </Link>
-                                . Play {data.target} games in one {HERO_RECORD_PERIODS[type].noun} to take it.
-                              </>
-                            ) : (
-                              <>
-                                No record set yet — play {GAMES_IN_PERIOD_RECORD_FLOOR} games in one{" "}
-                                {HERO_RECORD_PERIODS[type].noun} to start the record.
-                              </>
-                            )}
-                          </p>
-                        </div>
-                      )}
-
-                      {/* Record holder for the streak records. The bar tracks
-                          the live streak; the player's longest ever run is the
-                          shared "Best" value next to the progress numbers. */}
-                      {(type === "longest-win-streak" || type === "longest-lose-streak") &&
-                        "recordHolder" in data && (
-                          <div className="mt-1.5 text-xs text-secondary-text/70 space-y-1">
-                            <p>
-                              {data.recordHolder ? (
-                                <>
+                            {(type === "david" || type === "goliath") &&
+                              "recordHolder" in data &&
+                              data.recordHolder && (
+                                <div className="mt-1.5 text-xs text-secondary-text/70">
                                   League record held by{" "}
                                   <Link to={{ pathname: "/player/" + data.recordHolder, search }}>
                                     <span className="text-secondary-text underline">
                                       {context.playerName(data.recordHolder)}
                                     </span>
                                   </Link>
-                                  . {type === "longest-win-streak" ? "Win" : "Lose"} {data.target} in a row to
-                                  take it.
-                                </>
-                              ) : (
-                                <>
-                                  No record set yet —{" "}
-                                  {type === "longest-win-streak" ? "win" : "lose"} {STREAK_RECORD_FLOOR} in a row to
-                                  start the record.
-                                </>
+                                  . {type === "david" ? "Gain" : "Lose"} more than {fmtNum(data.target, { digits: 1 })}{" "}
+                                  Score in one game to take it.
+                                </div>
                               )}
-                            </p>
-                          </div>
-                        )}
 
-                      {/* Record holder for Yin Yang. The bar tracks the live
+                            {/* Record holders for shootout — both players of the
+                          record game hold it together. */}
+                            {type === "shootout" && "recordHolders" in data && (
+                              <div className="mt-1.5 text-xs text-secondary-text/70">
+                                {data.recordHolders && data.recordHolders.length > 0 ? (
+                                  <>
+                                    League record held by{" "}
+                                    {data.recordHolders.map((holder, i) => (
+                                      <span key={holder}>
+                                        {i > 0 && " and "}
+                                        <Link to={{ pathname: "/player/" + holder, search }}>
+                                          <span className="text-secondary-text underline">
+                                            {context.playerName(holder)}
+                                          </span>
+                                        </Link>
+                                      </span>
+                                    ))}
+                                    . Play a {data.target}+ point game (your {SHOOTOUT_SETS_COUNTED} highest-scoring
+                                    legal sets count) to take it.
+                                  </>
+                                ) : (
+                                  <>
+                                    No record set yet — play a {SHOOTOUT_RECORD_FLOOR}+ point game to start the record.
+                                  </>
+                                )}
+                              </div>
+                            )}
+
+                            {/* Record holder for leap-frog */}
+                            {type === "leap-frog" && "recordHolder" in data && (
+                              <div className="mt-1.5 text-xs text-secondary-text/70">
+                                {data.recordHolder ? (
+                                  <>
+                                    League record held by{" "}
+                                    <Link to={{ pathname: "/player/" + data.recordHolder, search }}>
+                                      <span className="text-secondary-text underline">
+                                        {context.playerName(data.recordHolder)}
+                                      </span>
+                                    </Link>
+                                    . Jump {data.target} or more ranks in one game to take it.
+                                  </>
+                                ) : (
+                                  <>No record set yet — jump 2 or more ranks in a single game to start the record.</>
+                                )}
+                              </div>
+                            )}
+
+                            {/* Record holder for the Hero of the Day / Week / Month
+                          records. The bar tracks the current period's games;
+                          the player's busiest period ever is the shared
+                          "Best" value next to the progress numbers. */}
+                            {type in HERO_RECORD_PERIODS && "recordHolder" in data && (
+                              <div className="mt-1.5 text-xs text-secondary-text/70 space-y-1">
+                                <p>
+                                  {data.recordHolder ? (
+                                    <>
+                                      League record held by{" "}
+                                      <Link to={{ pathname: "/player/" + data.recordHolder, search }}>
+                                        <span className="text-secondary-text underline">
+                                          {context.playerName(data.recordHolder)}
+                                        </span>
+                                      </Link>
+                                      . Play {data.target} games in one {HERO_RECORD_PERIODS[type].noun} to take it.
+                                    </>
+                                  ) : (
+                                    <>
+                                      No record set yet — play {GAMES_IN_PERIOD_RECORD_FLOOR} games in one{" "}
+                                      {HERO_RECORD_PERIODS[type].noun} to start the record.
+                                    </>
+                                  )}
+                                </p>
+                              </div>
+                            )}
+
+                            {/* Record holder for the streak records. The bar tracks
+                          the live streak; the player's longest ever run is the
+                          shared "Best" value next to the progress numbers. */}
+                            {(type === "longest-win-streak" || type === "longest-lose-streak") &&
+                              "recordHolder" in data && (
+                                <div className="mt-1.5 text-xs text-secondary-text/70 space-y-1">
+                                  <p>
+                                    {data.recordHolder ? (
+                                      <>
+                                        League record held by{" "}
+                                        <Link to={{ pathname: "/player/" + data.recordHolder, search }}>
+                                          <span className="text-secondary-text underline">
+                                            {context.playerName(data.recordHolder)}
+                                          </span>
+                                        </Link>
+                                        . {type === "longest-win-streak" ? "Win" : "Lose"} {data.target} in a row to
+                                        take it.
+                                      </>
+                                    ) : (
+                                      <>
+                                        No record set yet — {type === "longest-win-streak" ? "win" : "lose"}{" "}
+                                        {STREAK_RECORD_FLOOR} in a row to start the record.
+                                      </>
+                                    )}
+                                  </p>
+                                </div>
+                              )}
+
+                            {/* Record holder for Yin Yang. The bar tracks the live
                           alternation run; the player's longest ever run is the
                           shared "Best" value next to the progress numbers. */}
-                      {type === "yin-yang" && "recordHolder" in data && (
-                        <div className="mt-1.5 text-xs text-secondary-text/70 space-y-1">
-                          <p>
-                            {data.recordHolder ? (
+                            {type === "yin-yang" && "recordHolder" in data && (
+                              <div className="mt-1.5 text-xs text-secondary-text/70 space-y-1">
+                                <p>
+                                  {data.recordHolder ? (
+                                    <>
+                                      League record held by{" "}
+                                      <Link to={{ pathname: "/player/" + data.recordHolder, search }}>
+                                        <span className="text-secondary-text underline">
+                                          {context.playerName(data.recordHolder)}
+                                        </span>
+                                      </Link>
+                                      . Alternate wins and losses for {data.target} games in a row to take it.
+                                    </>
+                                  ) : (
+                                    <>
+                                      No record set yet — alternate wins and losses for {YIN_YANG_RECORD_FLOOR} games in
+                                      a row to start the record.
+                                    </>
+                                  )}
+                                </p>
+                              </div>
+                            )}
+                          </>
+                        ) : type === "marathon-set" ? (
+                          <div className="mt-1.5 text-xs text-secondary-text/70">
+                            No league record yet — win a deuce set with the winning score at 12 or above to set the
+                            first record.
+                          </div>
+                        ) : type === "david" || type === "goliath" ? (
+                          <div className="mt-1.5 text-xs text-secondary-text/70">
+                            No league record yet — {type === "david" ? "gain" : "lose"} {UPSET_RECORD_FLOOR}+ Score in a
+                            single game (both players ranked) to set the first record.
+                          </div>
+                        ) : type === "shootout" ? (
+                          <div className="mt-1.5 text-xs text-secondary-text/70">
+                            No league record yet — play a {SHOOTOUT_RECORD_FLOOR}+ point game (the{" "}
+                            {SHOOTOUT_SETS_COUNTED} highest-scoring legal sets count) to set the first record.
+                          </div>
+                        ) : type === "leap-frog" ? (
+                          <div className="mt-1.5 text-xs text-secondary-text/70">
+                            No league record yet — jump 2 or more ranks in a single game to set the first record.
+                          </div>
+                        ) : type === "longest-win-streak" || type === "longest-lose-streak" ? (
+                          <div className="mt-1.5 text-xs text-secondary-text/70">
+                            No league record yet — {type === "longest-win-streak" ? "win" : "lose"}{" "}
+                            {STREAK_RECORD_FLOOR} in a row to set the first record.
+                          </div>
+                        ) : type === "yin-yang" ? (
+                          <div className="mt-1.5 text-xs text-secondary-text/70">
+                            No league record yet — alternate wins and losses for {YIN_YANG_RECORD_FLOOR} games in a row
+                            to set the first record.
+                          </div>
+                        ) : type in HERO_RECORD_PERIODS ? (
+                          <div className="mt-1.5 text-xs text-secondary-text/70">
+                            No league record yet — play {GAMES_IN_PERIOD_RECORD_FLOOR} games in one{" "}
+                            {HERO_RECORD_PERIODS[type].noun} to set the first record.
+                          </div>
+                        ) : type === "earliest-game" || type === "latest-game" ? (
+                          <div className="mt-1.5 text-xs text-secondary-text/70 space-y-1">
+                            {"recordMinutes" in data && data.recordMinutes !== undefined ? (
                               <>
-                                League record held by{" "}
-                                <Link to={{ pathname: "/player/" + data.recordHolder, search }}>
-                                  <span className="text-secondary-text underline">
-                                    {context.playerName(data.recordHolder)}
-                                  </span>
-                                </Link>
-                                . Alternate wins and losses for {data.target} games in a row to take it.
+                                <p>
+                                  {type === "earliest-game" ? "Earliest" : "Latest"} game on record:{" "}
+                                  <span className="font-medium">{minutesToTimeString(data.recordMinutes)}</span>
+                                </p>
+                                {"playerMinutes" in data && data.playerMinutes !== undefined && (
+                                  <p>
+                                    Your {type === "earliest-game" ? "earliest" : "latest"} game:{" "}
+                                    <span className="font-medium">{minutesToTimeString(data.playerMinutes)}</span>
+                                  </p>
+                                )}
                               </>
                             ) : (
-                              <>
-                                No record set yet — alternate wins and losses for {YIN_YANG_RECORD_FLOOR} games
-                                in a row to start the record.
-                              </>
+                              <p>No games played yet.</p>
                             )}
-                          </p>
-                        </div>
-                      )}
-                    </>
-                  ) : type === "marathon-set" ? (
-                    <div className="mt-1.5 text-xs text-secondary-text/70">
-                      No league record yet — win a deuce set with the winning score at 12 or above to set the first record.
+                          </div>
+                        ) : (
+                          // Fallback for achievements without targets (like tournament
+                          // achievements). The rank chases (On the Podium, Touched the
+                          // Throne, Kingslayer) carry a best-ever rank shown here, and
+                          // Group Play Star its best "N of M" group play.
+                          <div className="mt-1.5 text-xs text-secondary-text/70">
+                            {data.earned > 0
+                              ? `Earned ${data.earned} time${data.earned > 1 ? "s" : ""}`
+                              : "No progress yet"}
+                            {data.best !== undefined && data.best > 0 && (
+                              <span className="ml-2">
+                                Best: {formatBestValue(type, data.best)}
+                                {"bestOutOf" in data && data.bestOutOf !== undefined && (
+                                  <> of {fmtNum(data.bestOutOf)}</>
+                                )}
+                                {"bestOpponent" in data && data.bestOpponent && (
+                                  <> ({context.playerName(data.bestOpponent)})</>
+                                )}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  ) : type === "david" || type === "goliath" ? (
-                    <div className="mt-1.5 text-xs text-secondary-text/70">
-                      No league record yet — {type === "david" ? "gain" : "lose"} {UPSET_RECORD_FLOOR}+ Score in a
-                      single game (both players ranked) to set the first record.
-                    </div>
-                  ) : type === "shootout" ? (
-                    <div className="mt-1.5 text-xs text-secondary-text/70">
-                      No league record yet — play a {SHOOTOUT_RECORD_FLOOR}+ point game (the{" "}
-                      {SHOOTOUT_SETS_COUNTED} highest-scoring legal sets count) to set the first record.
-                    </div>
-                  ) : type === "leap-frog" ? (
-                    <div className="mt-1.5 text-xs text-secondary-text/70">
-                      No league record yet — jump 2 or more ranks in a single game to set the first record.
-                    </div>
-                  ) : type === "longest-win-streak" || type === "longest-lose-streak" ? (
-                    <div className="mt-1.5 text-xs text-secondary-text/70">
-                      No league record yet — {type === "longest-win-streak" ? "win" : "lose"}{" "}
-                      {STREAK_RECORD_FLOOR} in a row to set the first record.
-                    </div>
-                  ) : type === "yin-yang" ? (
-                    <div className="mt-1.5 text-xs text-secondary-text/70">
-                      No league record yet — alternate wins and losses for {YIN_YANG_RECORD_FLOOR} games in a
-                      row to set the first record.
-                    </div>
-                  ) : type in HERO_RECORD_PERIODS ? (
-                    <div className="mt-1.5 text-xs text-secondary-text/70">
-                      No league record yet — play {GAMES_IN_PERIOD_RECORD_FLOOR} games in one{" "}
-                      {HERO_RECORD_PERIODS[type].noun} to set the first record.
-                    </div>
-                  ) : type === "earliest-game" || type === "latest-game" ? (
-                    <div className="mt-1.5 text-xs text-secondary-text/70 space-y-1">
-                      {"recordMinutes" in data && data.recordMinutes !== undefined ? (
-                        <>
-                          <p>
-                            {type === "earliest-game" ? "Earliest" : "Latest"} game on record:{" "}
-                            <span className="font-medium">{minutesToTimeString(data.recordMinutes)}</span>
-                          </p>
-                          {"playerMinutes" in data && data.playerMinutes !== undefined && (
-                            <p>
-                              Your {type === "earliest-game" ? "earliest" : "latest"} game:{" "}
-                              <span className="font-medium">{minutesToTimeString(data.playerMinutes)}</span>
-                            </p>
-                          )}
-                        </>
-                      ) : (
-                        <p>No games played yet.</p>
-                      )}
-                    </div>
-                  ) : (
-                    // Fallback for achievements without targets (like tournament
-                    // achievements). The rank chases (On the Podium, Touched the
-                    // Throne, Kingslayer) carry a best-ever rank shown here, and
-                    // Group Play Star its best "N of M" group play.
-                    <div className="mt-1.5 text-xs text-secondary-text/70">
-                      {data.earned > 0 ? `Earned ${data.earned} time${data.earned > 1 ? "s" : ""}` : "No progress yet"}
-                      {data.best !== undefined && data.best > 0 && (
-                        <span className="ml-2">
-                          Best: {formatBestValue(type, data.best)}
-                          {"bestOutOf" in data && data.bestOutOf !== undefined && <> of {fmtNum(data.bestOutOf)}</>}
-                          {"bestOpponent" in data && data.bestOpponent && (
-                            <> ({context.playerName(data.bestOpponent)})</>
-                          )}
-                        </span>
-                      )}
-                    </div>
-                  )}
+                  </div>
                 </div>
-              </div>
-            </div>
-          </div>
-        );
-      })}
+              );
+            })}
           </div>
         </section>
       ))}

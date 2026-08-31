@@ -1,7 +1,14 @@
 import React, { useMemo, useState } from "react";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { relativeTimeStringShort } from "../../common/date-utils";
-import { Period, PERIOD_LABELS, getPeriodKey, getPeriodTimestamp, formatPeriod, pairingKey } from "../../common/period-utils";
+import {
+  Period,
+  PERIOD_LABELS,
+  getPeriodKey,
+  getPeriodTimestamp,
+  formatPeriod,
+  pairingKey,
+} from "../../common/period-utils";
 
 type Metric = "games" | "pairings" | "achievements";
 
@@ -234,7 +241,9 @@ export const TopPlayers: React.FC = () => {
       {hasCurrent && (
         <div className="mt-3 text-xs flex items-center gap-2">
           <span className="inline-block w-3 h-3 rounded-sm bg-tertiary-background border border-primary-text/20" />
-          <span>Best {periodLabel.singular.toLowerCase()} is the current {periodLabel.singular.toLowerCase()}</span>
+          <span>
+            Best {periodLabel.singular.toLowerCase()} is the current {periodLabel.singular.toLowerCase()}
+          </span>
         </div>
       )}
     </div>

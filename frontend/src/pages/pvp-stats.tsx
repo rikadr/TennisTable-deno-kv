@@ -46,96 +46,96 @@ export const PvPStats: React.FC<Props> = ({ player1, player2 }) => {
           <div className="text-center py-8 text-primary-text/60">No games played yet</div>
         ) : (
           <div className="max-w-xl mx-auto">
-          <table className="w-full text-primary-text border-collapse">
-            <thead className="border-b border-primary-text/50">
-              <tr className="text-xs xs:text-sm md:text-base text-primary-text">
-                <th className="py-1 px-1 xs:px-2 md:px-3 text-center font-medium">Winner</th>
-                <th className="py-1 px-1 xs:px-2 md:px-3 text-right font-light">Pts</th>
-                <th className="py-1 px-1 xs:px-2 md:px-3 text-center font-semibold">Score</th>
-                <th className="py-1 px-1 xs:px-2 md:px-3 text-right font-normal">Time</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-primary-text/50">
-              {games.map((_, index, list) => {
-                const game = list[list.length - 1 - index];
-                const isPlayer1Win = game.result === "win";
-                const winner = isPlayer1Win ? p1 : p2;
-                const setStrings =
-                  game.score?.setPoints?.map((set) =>
-                    isPlayer1Win ? `${set.gameWinner}-${set.gameLoser}` : `${set.gameLoser}-${set.gameWinner}`,
-                  ) ?? [];
-                // Max 3 sets per line on tiny screens
-                const setLines = Array.from({ length: Math.ceil(setStrings.length / 3) }, (_, i) =>
-                  setStrings.slice(i * 3, i * 3 + 3).join(", "),
-                );
+            <table className="w-full text-primary-text border-collapse">
+              <thead className="border-b border-primary-text/50">
+                <tr className="text-xs xs:text-sm md:text-base text-primary-text">
+                  <th className="py-1 px-1 xs:px-2 md:px-3 text-center font-medium">Winner</th>
+                  <th className="py-1 px-1 xs:px-2 md:px-3 text-right font-light">Pts</th>
+                  <th className="py-1 px-1 xs:px-2 md:px-3 text-center font-semibold">Score</th>
+                  <th className="py-1 px-1 xs:px-2 md:px-3 text-right font-normal">Time</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-primary-text/50">
+                {games.map((_, index, list) => {
+                  const game = list[list.length - 1 - index];
+                  const isPlayer1Win = game.result === "win";
+                  const winner = isPlayer1Win ? p1 : p2;
+                  const setStrings =
+                    game.score?.setPoints?.map((set) =>
+                      isPlayer1Win ? `${set.gameWinner}-${set.gameLoser}` : `${set.gameLoser}-${set.gameWinner}`,
+                    ) ?? [];
+                  // Max 3 sets per line on tiny screens
+                  const setLines = Array.from({ length: Math.ceil(setStrings.length / 3) }, (_, i) =>
+                    setStrings.slice(i * 3, i * 3 + 3).join(", "),
+                  );
 
-                return (
-                  <tr
-                    key={`${p1.playerId}-${p2.playerId}-${index}`}
-                    onClick={() => navigate(`/game?time=${game.time}`)}
-                    className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text cursor-pointer transition-colors text-xs xs:text-sm md:text-base"
-                  >
-                    {/* Three slots: player 1's trophy | winner name | player 2's trophy.
+                  return (
+                    <tr
+                      key={`${p1.playerId}-${p2.playerId}-${index}`}
+                      onClick={() => navigate(`/game?time=${game.time}`)}
+                      className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text cursor-pointer transition-colors text-xs xs:text-sm md:text-base"
+                    >
+                      {/* Three slots: player 1's trophy | winner name | player 2's trophy.
                         Below xs the trophy shrinks and the empty opposite slot collapses. */}
-                    <td className="py-1 px-1 xs:px-2 md:px-3 w-full max-w-0">
-                      <div className="flex items-center min-w-0">
-                        <span
-                          className={classNames(
-                            "shrink-0 text-center text-sm xs:text-lg w-4 xs:w-6",
-                            !isPlayer1Win && "hidden xs:block",
-                          )}
-                        >
-                          {isPlayer1Win && "🏆"}
-                        </span>
-                        <span className="font-medium truncate flex-1 text-center">{winner.name}</span>
-                        <span
-                          className={classNames(
-                            "shrink-0 text-center text-sm xs:text-lg w-4 xs:w-6",
-                            isPlayer1Win && "hidden xs:block",
-                          )}
-                        >
-                          {!isPlayer1Win && "🏆"}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="py-1 px-1 xs:px-2 md:px-3 text-right font-light italic w-[1%] whitespace-nowrap">
-                      {fmtNum(Math.abs(game.pointsDiff), { signedPositive: true })}
-                    </td>
-                    <td className="py-1 px-1 xs:px-2 md:px-3 text-center w-[1%] whitespace-nowrap">
-                      {/* Tiny screens: sets on top, per-set points below (max 3 per line). xs+: inline. */}
-                      <div className="flex flex-col xs:flex-row xs:flex-nowrap xs:items-baseline xs:justify-center xs:gap-x-2">
-                        {game.score && (
-                          <span className="font-semibold text-[11px] xs:text-sm md:text-base">
-                            {isPlayer1Win
-                              ? `${game.score.setsWon.gameWinner} - ${game.score.setsWon.gameLoser}`
-                              : `${game.score.setsWon.gameLoser} - ${game.score.setsWon.gameWinner}`}
-                            <GameMarkers score={game.score} />
+                      <td className="py-1 px-1 xs:px-2 md:px-3 w-full max-w-0">
+                        <div className="flex items-center min-w-0">
+                          <span
+                            className={classNames(
+                              "shrink-0 text-center text-sm xs:text-lg w-4 xs:w-6",
+                              !isPlayer1Win && "hidden xs:block",
+                            )}
+                          >
+                            {isPlayer1Win && "🏆"}
                           </span>
-                        )}
-                        {setStrings.length > 0 && (
-                          <>
-                            <span className="xs:hidden text-[10px] opacity-60 italic">
-                              {setLines.map((line, lineIndex) => (
-                                <span key={lineIndex} className="block whitespace-nowrap">
-                                  {line}
-                                </span>
-                              ))}
+                          <span className="font-medium truncate flex-1 text-center">{winner.name}</span>
+                          <span
+                            className={classNames(
+                              "shrink-0 text-center text-sm xs:text-lg w-4 xs:w-6",
+                              isPlayer1Win && "hidden xs:block",
+                            )}
+                          >
+                            {!isPlayer1Win && "🏆"}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="py-1 px-1 xs:px-2 md:px-3 text-right font-light italic w-[1%] whitespace-nowrap">
+                        {fmtNum(Math.abs(game.pointsDiff), { signedPositive: true })}
+                      </td>
+                      <td className="py-1 px-1 xs:px-2 md:px-3 text-center w-[1%] whitespace-nowrap">
+                        {/* Tiny screens: sets on top, per-set points below (max 3 per line). xs+: inline. */}
+                        <div className="flex flex-col xs:flex-row xs:flex-nowrap xs:items-baseline xs:justify-center xs:gap-x-2">
+                          {game.score && (
+                            <span className="font-semibold text-[11px] xs:text-sm md:text-base">
+                              {isPlayer1Win
+                                ? `${game.score.setsWon.gameWinner} - ${game.score.setsWon.gameLoser}`
+                                : `${game.score.setsWon.gameLoser} - ${game.score.setsWon.gameWinner}`}
+                              <GameMarkers score={game.score} />
                             </span>
-                            <span className="hidden xs:inline text-xs opacity-60 italic whitespace-nowrap">
-                              {setStrings.join(", ")}
-                            </span>
-                          </>
-                        )}
-                      </div>
-                    </td>
-                    <td className="py-1 px-1 xs:px-2 md:px-3 text-right text-xs md:text-sm opacity-70 w-[1%] whitespace-nowrap">
-                      <RelativeTime date={new Date(game.time)} variant="auto" />
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                          )}
+                          {setStrings.length > 0 && (
+                            <>
+                              <span className="xs:hidden text-[10px] opacity-60 italic">
+                                {setLines.map((line, lineIndex) => (
+                                  <span key={lineIndex} className="block whitespace-nowrap">
+                                    {line}
+                                  </span>
+                                ))}
+                              </span>
+                              <span className="hidden xs:inline text-xs opacity-60 italic whitespace-nowrap">
+                                {setStrings.join(", ")}
+                              </span>
+                            </>
+                          )}
+                        </div>
+                      </td>
+                      <td className="py-1 px-1 xs:px-2 md:px-3 text-right text-xs md:text-sm opacity-70 w-[1%] whitespace-nowrap">
+                        <RelativeTime date={new Date(game.time)} variant="auto" />
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         )}
       </div>

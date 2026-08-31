@@ -44,11 +44,7 @@ describe("Ranked Achievement", () => {
   });
 
   it("does NOT award before the threshold is reached", () => {
-    const events: EventType[] = [
-      ...players(),
-      game("g1", 100, "alice", "bob"),
-      game("g2", 200, "alice", "bob"),
-    ];
+    const events: EventType[] = [...players(), game("g1", 100, "alice", "bob"), game("g2", 200, "alice", "bob")];
 
     const tt = new TennisTable({ events, gameLimitForRankedOverride: 3 });
     tt.achievements.calculateAchievements();
@@ -74,11 +70,7 @@ describe("Ranked Achievement", () => {
   });
 
   it("reports progress toward the threshold before becoming ranked", () => {
-    const events: EventType[] = [
-      ...players(),
-      game("g1", 100, "alice", "bob"),
-      game("g2", 200, "alice", "bob"),
-    ];
+    const events: EventType[] = [...players(), game("g1", 100, "alice", "bob"), game("g2", 200, "alice", "bob")];
 
     const tt = new TennisTable({ events, gameLimitForRankedOverride: 5 });
     tt.achievements.calculateAchievements();
