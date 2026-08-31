@@ -27,3 +27,20 @@ export function stringToColor(playerId?: string): string {
   }
   return color;
 }
+
+/**
+ * Black or white, whichever reads better on the color. The colors of the
+ * players cover the full range from pale to near black.
+ */
+export function readableTextColor(hexColor: string): "#000000" | "#ffffff" {
+  const hex = hexColor.replace("#", "");
+  if (hex.length !== 6) return "#000000";
+
+  const red = parseInt(hex.slice(0, 2), 16);
+  const green = parseInt(hex.slice(2, 4), 16);
+  const blue = parseInt(hex.slice(4, 6), 16);
+
+  // Perceived brightness, weighted per channel as the human eye sees them.
+  const brightness = (red * 299 + green * 587 + blue * 114) / 1000;
+  return brightness > 140 ? "#000000" : "#ffffff";
+}

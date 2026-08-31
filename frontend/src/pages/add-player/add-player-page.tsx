@@ -36,7 +36,6 @@ export const AddPlayerPage: React.FC = () => {
   const [colorOptions, setColorOptions] = useState(newColorOptions);
   const [understandsPermanent, setUnderstandsPermanent] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string>();
-  const [playerCreated, setPlayerCreated] = useState(false);
 
   const nameValidation = context.eventStore.playersProjector.validatePlayerName(playerName);
   const nameError = nameValidation.valid === false ? nameValidation.message : undefined;
@@ -65,7 +64,6 @@ export const AddPlayerPage: React.FC = () => {
     addEventMutation.mutate(event, {
       onSuccess: () => {
         queryClient.invalidateQueries();
-        setPlayerCreated(true);
         setCurrentStep(3);
       },
       onError(error) {
@@ -84,9 +82,10 @@ export const AddPlayerPage: React.FC = () => {
       <div className="shrink-0 pt-4">
         <StepIndicator steps={ADD_PLAYER_STEPS} currentStep={currentStep} />
       </div>
-      {playerCreated && (
+      {/* The player exists on step 3, so the step itself is the success. */}
+      {currentStep === 3 && (
         <div className="flex justify-center">
-          <ConfettiExplosion particleCount={250} force={0.8} width={2_000} duration={10_000} />
+          <ConfettiExplosion particleCount={250} force={0.8} width={2_000} duration={4_000} />
         </div>
       )}
       <div className="flex-1 min-h-0 overflow-y-auto py-4 px-2 xs:px-4">

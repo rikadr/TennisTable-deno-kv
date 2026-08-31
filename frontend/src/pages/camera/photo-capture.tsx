@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Webcam from "react-webcam";
 import Avatar from "react-avatar-edit";
 import { classNames } from "../../common/class-names";
@@ -10,16 +10,25 @@ import { httpClient } from "../../common/http-client";
 
 type Props = {
   playerId: string;
+  /**
+   * The name to use in the text. A new player is not in the projection before
+   * the events refetch, so the caller gives the name it knows.
+   */
+  playerName?: string;
   /** Called after the photo is uploaded and the image cache is refreshed. */
   onUploaded: () => void;
 };
+
+/** The crop editor takes its size in px, so it needs the width it has. */
+const MAX_EDITOR_SIZE = 512;
 
 /**
  * Camera capture, crop and upload of a player's profile picture. Used both by
  * the camera page and by the photo step of the new player flow.
  */
-export const PhotoCapture: React.FC<Props> = ({ playerId, onUploaded }) => {
+export const PhotoCapture: React.FC<Props> = ({ playerId, playerName, onUploaded }) => {
   const context = useEventDbContext();
+  const name = playerName ?? context.playerName(playerId);
 
   const [imgUrl, setImgUrl] = useState<string>();
   const [avatarUrl, setAvatarUrl] = useState<string>();
@@ -29,6 +38,20 @@ export const PhotoCapture: React.FC<Props> = ({ playerId, onUploaded }) => {
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const { setTimestamp } = useImageKitTimestamp();
   const { showToast } = useToast();
+  const sizeRef = useRef<HTMLDivElement>(null);
+  const [editorSize, setEditorSize] = useState(MAX_EDITOR_SIZE);
+
+  // The crop editor draws a canvas of a fixed px size, so a phone needs the
+  // width of the column and not the 512 px of a desktop.
+  useEffect(() => {
+    const element = sizeRef.current;
+    if (!element) return;
+
+    const measure = () => setEditorSize(Math.min(element.clientWidth || MAX_EDITOR_SIZE, MAX_EDITOR_SIZE));
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, []);
 
   function captureWebcam() {
     const img = webCamRef.current?.getScreenshot();
@@ -79,7 +102,7 @@ export const PhotoCapture: React.FC<Props> = ({ playerId, onUploaded }) => {
   const btnClassNames = "px-4 py-2 bg-green-700 hover:bg-green-900 text-white rounded-lg font-thin";
 
   return (
-    <div className="flex flex-col gap-4 items-center w-full">
+    <div className="flex flex-col gap-4 items-center w-full" ref={sizeRef}>
       <p>Take a photo with the camera, or select an image from your device:</p>
       <input
         type="file"
@@ -115,15 +138,15 @@ export const PhotoCapture: React.FC<Props> = ({ playerId, onUploaded }) => {
       )}
       {imgUrl && !happy && (
         <Avatar
-          height={512}
-          width={512}
+          height={editorSize}
+          width={editorSize}
           src={imgUrl}
           onClose={clear}
           onCrop={setAvatarUrl}
           exportAsSquare
           exportMimeType="image/jpeg"
-          cropRadius={200}
-          minCropRadius={80}
+          cropRadius={Math.round(editorSize * 0.39)}
+          minCropRadius={Math.round(editorSize * 0.16)}
         />
       )}
       {imgUrl && !happy && (
@@ -137,7 +160,7 @@ export const PhotoCapture: React.FC<Props> = ({ playerId, onUploaded }) => {
           className={classNames(btnClassNames, isUploading && "animate-ping")}
           onClick={async () => avatarUrl && (await handleFileUpload())}
         >
-          {context.playerName(playerId)}, you look great 😘 Submit photo!
+          {name}, you look great 😘 Submit photo!
         </button>
       )}
     </div>

@@ -28,7 +28,7 @@ export const StepPlayerPhoto: React.FC<{
 
       {capturePhoto ? (
         <div className="space-y-4">
-          <PhotoCapture playerId={playerId} onUploaded={onUploaded} />
+          <PhotoCapture playerId={playerId} playerName={playerName} onUploaded={onUploaded} />
           <button
             type="button"
             className="w-full py-3 px-4 rounded-xl font-medium text-primary-text bg-primary-background hover:bg-primary-background/80 ring-1 ring-secondary-background transition-colors"

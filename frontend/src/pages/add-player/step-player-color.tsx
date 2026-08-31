@@ -1,5 +1,5 @@
 import { classNames } from "../../common/class-names";
-import { stringToColor } from "../../common/string-to-color";
+import { readableTextColor, stringToColor } from "../../common/string-to-color";
 import { PlayerColorPreview } from "./player-color-preview";
 
 export const StepPlayerColor: React.FC<{
@@ -40,8 +40,8 @@ export const StepPlayerColor: React.FC<{
           <button
             key={optionId}
             type="button"
-            className="aspect-square rounded-lg text-black/80 text-sm font-semibold transition-all hover:scale-105 active:scale-95 shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-white/50"
-            style={{ background: stringToColor(optionId) }}
+            className="aspect-square rounded-lg text-sm font-semibold transition-all hover:scale-105 active:scale-95 shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-white/50"
+            style={{ background: stringToColor(optionId), color: readableTextColor(stringToColor(optionId)) }}
             onClick={() => selectColor(optionId)}
             aria-label="Select this color"
           >
