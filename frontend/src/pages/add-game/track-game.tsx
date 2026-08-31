@@ -250,7 +250,7 @@ export const TrackGamePage: React.FC = () => {
         navigate(
           isPendingTournamentGame.length > 0
             ? `/tournament?tournament=${isPendingTournamentGame[0].tournament.id}&player1=${isPendingTournamentGame[0].player1}&player2=${isPendingTournamentGame[0].player2}`
-            : `/1v1/?player1=${winner}&player2=${loser}`,
+            : `/game?time=${now}`,
         );
       }, 2_000);
       setGameSuccessfullyAdded(true);

@@ -427,7 +427,7 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
       "Each game has a page with the score, the Elo it moved, the win % prediction before and after the game, and a win % graph for games tracked live.",
     body: [
       text(
-        "A game in the recent games list, on the What changed page, or in the 1v1 match history opens the new game details page. The page shows the players, the score, the time, and the Elo each player won or lost.",
+        "A game in the recent games list, on the What changed page, or in the 1v1 match history opens the new game details page. The page also opens when you register a game. The page shows the players, the score, the time, and the Elo each player won or lost.",
       ),
       text(
         "The page shows the win % prediction between the 2 players before and after the game, each with its confidence.",
