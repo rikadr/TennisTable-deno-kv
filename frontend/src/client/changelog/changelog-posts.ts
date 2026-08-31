@@ -42,6 +42,21 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
+    slug: "career-score-counts-table-sides",
+    title: "The career score counts the table sides",
+    date: "2026-08-31",
+    tags: ["feature-update"],
+    summary: "A game that records the side of the table gives 1 more point in the Data Volume factor.",
+    body: [
+      text(
+        "The Data Volume factor of the Hall of Fame score gives 1 point for a game with the sets won, 1 point for a game with the set points, and 1 point for a game tracked live. A game that records the side of the table in one set or more now gives 1 point as well.",
+      ),
+      text(
+        "The score of every player with such a game goes up, and the ranks on the Hall of Fame page move. Record the sides on the game tracker, the add game form or the edit score page to get the point.",
+      ),
+    ],
+  },
+  {
     slug: "leaderboard-changes-on-game-details",
     title: "Ranks, scores and achievements on game details",
     date: "2026-08-31",
