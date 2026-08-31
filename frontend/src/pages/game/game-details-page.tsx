@@ -15,14 +15,18 @@ import { pointSituations, setProgressions } from "./game-tracking-stats";
 import { SetBreakdownTable, SetSidesTable, TrackingStats } from "./game-tracking-panels";
 import { SetScoreGraphs } from "./set-score-graphs";
 import { PointSituationRadar } from "./point-situation-radar";
+import { playerStandingsAt, seasonOfGame } from "../../client/client-db/game-standings";
+import { useGameHallOfFameChange } from "../../hooks/use-game-hall-of-fame-change";
+import { StandingsChangeTable } from "./game-standings-panel";
 
 /**
  * Details about a single game, identified by its played-at timestamp (unique
  * per game) in the `time` url param: who played and the score, the Elo the
- * game moved, the pairing win % prediction before and after the game, and the
- * win % over the game replayed from the point-by-point log. Everything the
- * game changed beyond that (leaderboards, achievements) lives on the What
- * changed page, linked with the game's own 2-second window preselected.
+ * game moved, the ranks and the scores it moved on the leaderboards, the
+ * pairing win % prediction before and after the game, and the win % over the
+ * game replayed from the point-by-point log. Everything the game changed for
+ * the other players, and the achievements it earned, lives on the What changed
+ * page, linked with the game's own 2-second window preselected.
  */
 export const GameDetailsPage: React.FC = () => {
   const context = useEventDbContext();
@@ -54,6 +58,30 @@ export const GameDetailsPage: React.FC = () => {
       loser: { diff: loserGame.pointsDiff, after: loserGame.eloAfterGame },
     };
   }, [context, game]);
+
+  // The season the game counts towards. A game played in the break between
+  // two seasons counts towards none, and then it moves no season score.
+  const season = useMemo(() => (game ? seasonOfGame(context, game.playedAt) : undefined), [context, game]);
+
+  // Where both players stood on the overall leaderboard and on the season
+  // leaderboard, just before and just after the game.
+  const standings = useMemo(() => {
+    if (!game) return undefined;
+    return {
+      winner: {
+        before: playerStandingsAt(preState, game.winner, season?.start),
+        after: playerStandingsAt(postState, game.winner, season?.start),
+      },
+      loser: {
+        before: playerStandingsAt(preState, game.loser, season?.start),
+        after: playerStandingsAt(postState, game.loser, season?.start),
+      },
+    };
+  }, [game, preState, postState, season]);
+
+  // The Hall of Fame score of the two players before and after the game. It is
+  // calculated in a web worker, so the page renders without waiting for it.
+  const hallOfFame = useGameHallOfFameChange(game?.playedAt, game ? [game.winner, game.loser] : []);
 
   // The overall pairing prediction, from the winner's perspective, in the two
   // projected states. Undefined when there is no data to predict from.
@@ -191,6 +219,46 @@ export const GameDetailsPage: React.FC = () => {
               </div>
             </div>
           </div>
+
+          {/* The ranks and the scores the game moved for the two players */}
+          {standings && (
+            <div className="px-2 xs:px-4 pb-3 space-y-2">
+              <h2 className="text-sm font-semibold text-center text-primary-text">Ranks and scores</h2>
+              <div className="flex flex-col md:flex-row md:justify-center gap-2 md:gap-3">
+                <StandingsChangeTable
+                  playerId={game.winner}
+                  name={context.playerName(game.winner)}
+                  marker="🏆"
+                  before={standings.winner.before}
+                  after={standings.winner.after}
+                  hallOfFame={{
+                    before: hallOfFame.byPlayer.get(game.winner)?.before,
+                    after: hallOfFame.byPlayer.get(game.winner)?.after,
+                    pending: hallOfFame.pending,
+                  }}
+                  season={season}
+                />
+                <StandingsChangeTable
+                  playerId={game.loser}
+                  name={context.playerName(game.loser)}
+                  marker="💔"
+                  before={standings.loser.before}
+                  after={standings.loser.after}
+                  hallOfFame={{
+                    before: hallOfFame.byPlayer.get(game.loser)?.before,
+                    after: hallOfFame.byPlayer.get(game.loser)?.after,
+                    pending: hallOfFame.pending,
+                  }}
+                  season={season}
+                />
+              </div>
+              {!season && (
+                <p className="text-center text-xs text-primary-text/60">
+                  The game is in the break between two seasons, so it changes no season score.
+                </p>
+              )}
+            </div>
+          )}
 
           {/* Everything the live tracker recorded: the timeline, the serves,
               the sets one by one, and the pace of the points */}
