@@ -97,7 +97,7 @@ describe("the new player flow", () => {
     expect(screen.getByRole("button", { name: "Next →" })).toBeEnabled();
   });
 
-  it("tells you that the color is permanent, and creates no player before you confirm it", async () => {
+  it("tells you that the color is permanent, and takes no color before you select 1", async () => {
     await goToColorStep();
 
     expect(screen.getByRole("heading", { name: "Select the color of Cecilie" })).toBeInTheDocument();
@@ -108,24 +108,43 @@ describe("the new player flow", () => {
       ),
     ).toBeInTheDocument();
 
+    // No color is selected, so there is nothing to create yet.
+    expect(screen.getByText("No color selected")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "✓ Create Cecilie" })).toBeDisabled();
-    await userEvent.click(screen.getByRole("button", { name: /I understand that the color of Cecilie is permanent/ }));
+
+    await userEvent.click(screen.getAllByRole("button", { name: "Select this color" })[2]);
+
     expect(screen.getByRole("button", { name: "✓ Create Cecilie" })).toBeEnabled();
+    expect(screen.getByText("The color of Cecilie")).toBeInTheDocument();
     expect(postedEvents()).toHaveLength(0);
   });
 
-  it("uses the color you select", async () => {
+  it("marks the color you select, and keeps it when you ask for other colors", async () => {
     await goToColorStep();
-    const before = previewColor();
+
+    await userEvent.click(screen.getAllByRole("button", { name: "Select this color" })[2]);
+    expect(screen.getByRole("button", { name: "The selected color" })).toHaveTextContent("✓ Selected");
+    const selected = previewColor();
+
+    // The 8 options change, and the color of the player does not.
+    await userEvent.click(screen.getByRole("button", { name: "🔄 Show 8 other colors" }));
+    expect(previewColor()).toBe(selected);
+    expect(screen.getByRole("button", { name: "✓ Create Cecilie" })).toBeEnabled();
+  });
+
+  it("changes the color when you select an other color", async () => {
+    await goToColorStep();
 
     await userEvent.click(screen.getAllByRole("button", { name: "Select this color" })[0]);
+    const first = previewColor();
+    await userEvent.click(screen.getAllByRole("button", { name: "Select this color" })[0]);
 
-    expect(previewColor()).not.toBe(before);
+    expect(previewColor()).not.toBe(first);
   });
 
   it("creates the player and asks for a photo instead of opening the player page", async () => {
     await goToColorStep();
-    await userEvent.click(screen.getByRole("button", { name: /I understand that the color of Cecilie is permanent/ }));
+    await userEvent.click(screen.getAllByRole("button", { name: "Select this color" })[0]);
     await userEvent.click(screen.getByRole("button", { name: "✓ Create Cecilie" }));
 
     expect(await screen.findByRole("heading", { name: /Cecilie is on the leaderboard/ })).toBeInTheDocument();

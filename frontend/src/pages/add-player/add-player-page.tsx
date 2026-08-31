@@ -31,22 +31,19 @@ export const AddPlayerPage: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [playerName, setPlayerName] = useState("");
   // The color of a player comes from the player id, so selecting a color means
-  // selecting the id the player gets. It is permanent after the player exists.
-  const [playerId, setPlayerId] = useState(newId());
+  // selecting the id the player gets. It is permanent after the player exists,
+  // so the user must select it. There is no color before that selection.
+  const [playerId, setPlayerId] = useState<string>();
   const [colorOptions, setColorOptions] = useState(newColorOptions);
-  const [understandsPermanent, setUnderstandsPermanent] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string>();
 
   const nameValidation = context.eventStore.playersProjector.validatePlayerName(playerName);
   const nameError = nameValidation.valid === false ? nameValidation.message : undefined;
   const nameIsValid = !!playerName && nameError === undefined;
 
-  function selectColor(selectedId: string) {
-    setPlayerId(selectedId);
-    setColorOptions(newColorOptions());
-  }
-
   function createPlayer() {
+    if (!playerId) return;
+
     setErrorMessage(undefined);
     const event: PlayerCreated = {
       type: EventTypeEnum.PLAYER_CREATED,
@@ -72,7 +69,7 @@ export const AddPlayerPage: React.FC = () => {
     });
   }
 
-  const canProceed = currentStep === 1 ? nameIsValid : understandsPermanent;
+  const canProceed = currentStep === 1 ? nameIsValid : playerId !== undefined;
 
   return (
     // Fixed column from the nav's bottom edge to the keyboard's top edge: the
@@ -103,9 +100,8 @@ export const AddPlayerPage: React.FC = () => {
               playerName={playerName}
               playerId={playerId}
               colorOptions={colorOptions}
-              selectColor={selectColor}
-              understandsPermanent={understandsPermanent}
-              setUnderstandsPermanent={setUnderstandsPermanent}
+              selectColor={setPlayerId}
+              showOtherColors={() => setColorOptions(newColorOptions())}
             />
             {errorMessage && (
               <p className="max-w-md mx-auto text-sm text-red-600 bg-white px-3 py-2 rounded-md border border-red-900/50">
@@ -114,7 +110,7 @@ export const AddPlayerPage: React.FC = () => {
             )}
           </div>
         )}
-        {currentStep === 3 && (
+        {currentStep === 3 && playerId && (
           <StepPlayerPhoto
             playerName={playerName}
             playerId={playerId}
