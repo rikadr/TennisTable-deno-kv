@@ -527,7 +527,7 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
         "The Leaderboards tab compares the overall leaderboard, the season leaderboard or the Hall of Fame score at the two times. A table shows each player with the rank and the score at the start, at the end, and the change in both. A toggle sorts the table by the rank at the start, the rank at the end, or the change in score. A player who joins or leaves a leaderboard in the period also gets a score change. The season score and the Hall of Fame score start at 0, and the overall leaderboard uses the elo of the player.",
       ),
       text(
-        "On the overall leaderboard, a second toggle changes the data source between the actual leaderboard and the expected leaderboard. The expected leaderboard is the average of 5 000 simulations at each of the two times.",
+        "On the overall leaderboard, a second toggle changes the data source between the actual leaderboard and the expected leaderboard. The expected leaderboard is the average of many simulations at each of the two times. A menu selects the number of simulations: 1 000, 5 000, 15 000 or 50 000. The default is 5 000. A higher number gives a more stable score, but takes more time.",
       ),
       text(
         "The Games tab and the Achievements tab list the games played and the achievements earned in the period. The season leaderboard needs a period within 1 season.",

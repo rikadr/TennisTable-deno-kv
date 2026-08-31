@@ -8,6 +8,9 @@ export type ExpectedLeaderboard = {
   expected: { id: string; rank: number; score: number }[];
 };
 
+/** Default number of leaderboards simulated by `expectedLeaderBoard`. */
+export const EXPECTED_LEADERBOARD_SIMULATIONS = 5_000;
+
 export class Simulations {
   private parent: TennisTable;
 
@@ -45,13 +48,19 @@ export class Simulations {
     return wins / (loss || 1);
   }
 
-  expectedLeaderBoard(onProgress?: (progress: number) => void, includeUnrankedPlayerId?: string): ExpectedLeaderboard {
+  expectedLeaderBoard(
+    onProgress?: (progress: number) => void,
+    includeUnrankedPlayerId?: string,
+    simulations: number = EXPECTED_LEADERBOARD_SIMULATIONS,
+  ): ExpectedLeaderboard {
     const currentLeaderboard = this.parent.leaderboard.getLeaderboard();
     const predictedGames = this.parent.predictions.generateSimulatedGames(undefined, includeUnrankedPlayerId);
 
     const simResultMap = new Map<string, number[]>();
 
-    const SIMULATIONS = 5_000;
+    const SIMULATIONS = Math.max(1, Math.floor(simulations));
+    // Report about 100 times over the run, so a short run also shows progress.
+    const progressStep = Math.max(1, Math.floor(SIMULATIONS / 100));
     for (let i = 0; i < SIMULATIONS; i++) {
       this.shuffleArray(predictedGames);
       // Casting, but its only using winner and loser inside it anyway
@@ -62,7 +71,7 @@ export class Simulations {
         }
         simResultMap.get(player.id)!.push(player.elo);
       });
-      if (onProgress && (i + 1) % 100 === 0) {
+      if (onProgress && (i + 1) % progressStep === 0) {
         onProgress((i + 1) / SIMULATIONS);
       }
     }
