@@ -1,3 +1,4 @@
+import { Elo } from "./elo";
 import { EventType } from "./event-store/event-types";
 import { eventsUpTo } from "./event-store/events-up-to";
 import { TennisTable } from "./tennis-table";
@@ -10,6 +11,9 @@ import { TennisTable } from "./tennis-table";
 export type PlayerStandings = {
   /** The place on the overall leaderboard. Undefined for an unranked player. */
   leaderboardRank: number | undefined;
+  /** The Elo, which is the score of the overall leaderboard. Every player has
+   * one, ranked or not. */
+  leaderboardScore: number | undefined;
   /** The score on the leaderboard of the season the game counts towards. */
   seasonScore: number | undefined;
   /** The place on that same season leaderboard. */
@@ -39,6 +43,7 @@ export function playerStandingsAt(
 ): PlayerStandings {
   const standings: PlayerStandings = {
     leaderboardRank: undefined,
+    leaderboardScore: undefined,
     seasonScore: undefined,
     seasonRank: undefined,
   };
@@ -47,6 +52,12 @@ export function playerStandingsAt(
   standings.leaderboardRank = state.leaderboard
     .getLeaderboard()
     .rankedPlayers.find((player) => player.id === playerId)?.rank;
+
+  // A player who has played no game yet is not on the leaderboard, but starts
+  // from the initial Elo.
+  const summary = state.leaderboard.getCachedLeaderboardMap().get(playerId);
+  const playerExists = state.eventStore.playersProjector.getPlayer(playerId) !== undefined;
+  standings.leaderboardScore = summary?.elo ?? (playerExists ? Elo.INITIAL_ELO : undefined);
 
   if (seasonStart === undefined) return standings;
   const season = state.seasons.getSeasons().find((s) => s.start === seasonStart);

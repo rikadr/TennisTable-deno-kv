@@ -1,3 +1,4 @@
+import { Elo } from "../elo";
 import { EventType, EventTypeEnum } from "../event-store/event-types";
 import { eventsUpTo } from "../event-store/events-up-to";
 import { determineSeason } from "../seasons/seasons";
@@ -84,25 +85,47 @@ describe("playerStandingsAt", () => {
     expect(playerStandingsAt(postState, "a", season1.start).leaderboardRank).toBe(2);
   });
 
-  it("has no place for a player who is not ranked", () => {
+  it("has no place for a player who is not ranked, but keeps the Elo", () => {
     const unrankedState = new TennisTable({ events, gameLimitForRankedOverride: 10 });
-    expect(playerStandingsAt(unrankedState, "a", season1.start).leaderboardRank).toBeUndefined();
+    const standings = playerStandingsAt(unrankedState, "a", season1.start);
+    expect(standings.leaderboardRank).toBeUndefined();
+    // The player has played games, so the Elo has moved off the initial one.
+    expect(standings.leaderboardScore).toBeDefined();
+    expect(standings.leaderboardScore).not.toBe(Elo.INITIAL_ELO);
+  });
+
+  it("reads the Elo, which the winner gains and the loser loses", () => {
+    const winnerBefore = playerStandingsAt(preState, "b", season1.start).leaderboardScore;
+    const winnerAfter = playerStandingsAt(postState, "b", season1.start).leaderboardScore;
+    const loserBefore = playerStandingsAt(preState, "a", season1.start).leaderboardScore;
+    const loserAfter = playerStandingsAt(postState, "a", season1.start).leaderboardScore;
+    expect(scoreChange(winnerBefore, winnerAfter)).toBeGreaterThan(0);
+    // The game moves the same number of points from the loser to the winner.
+    expect(scoreChange(loserBefore, loserAfter)).toBe(-(scoreChange(winnerBefore, winnerAfter) ?? 0));
+  });
+
+  it("starts a player with no game yet at the initial Elo", () => {
+    const beforeAnyGame = new TennisTable({
+      events: eventsUpTo(events, season1.start),
+      referenceTime: season1.start,
+    });
+    expect(playerStandingsAt(beforeAnyGame, "a", season1.start).leaderboardScore).toBe(Elo.INITIAL_ELO);
   });
 
   it("reads the score and the place on the season leaderboard", () => {
     // A game without a score gives the winner 25 points for that pairing.
-    expect(playerStandingsAt(preState, "b", season1.start)).toEqual({
+    expect(playerStandingsAt(preState, "b", season1.start)).toMatchObject({
       leaderboardRank: 2,
       seasonScore: 25,
       seasonRank: 2,
     });
-    expect(playerStandingsAt(postState, "b", season1.start)).toEqual({
+    expect(playerStandingsAt(postState, "b", season1.start)).toMatchObject({
       leaderboardRank: 1,
       seasonScore: 50,
       seasonRank: 1,
     });
     // The loser keeps the 25 points won earlier, and drops one place.
-    expect(playerStandingsAt(postState, "a", season1.start)).toEqual({
+    expect(playerStandingsAt(postState, "a", season1.start)).toMatchObject({
       leaderboardRank: 2,
       seasonScore: 25,
       seasonRank: 2,
@@ -116,14 +139,19 @@ describe("playerStandingsAt", () => {
     expect(standings.leaderboardRank).toBe(1);
   });
 
-  it("has no season score for a player with no game in the season", () => {
-    const standings = playerStandingsAt(postState, "d", season1.start);
-    expect(standings).toEqual({ leaderboardRank: undefined, seasonScore: undefined, seasonRank: undefined });
+  it("has no standings at all for an unknown player", () => {
+    expect(playerStandingsAt(postState, "unknown-player", season1.start)).toEqual({
+      leaderboardRank: undefined,
+      leaderboardScore: undefined,
+      seasonScore: undefined,
+      seasonRank: undefined,
+    });
   });
 
   it("has no standings without a state", () => {
     expect(playerStandingsAt(undefined, "a", season1.start)).toEqual({
       leaderboardRank: undefined,
+      leaderboardScore: undefined,
       seasonScore: undefined,
       seasonRank: undefined,
     });

@@ -54,11 +54,27 @@ export const StandingsChangeTable: React.FC<{
       digits: 0,
       link: "/leader-board",
     },
+    {
+      label: "Leaderboard Elo",
+      before: before.leaderboardScore,
+      after: after.leaderboardScore,
+      change: scoreChange(before.leaderboardScore, after.leaderboardScore),
+      digits: 0,
+      link: "/leader-board",
+    },
   ];
 
   if (season) {
     const seasonLink = `/season/player?seasonStart=${season.start}&playerId=${playerId}`;
     rows.push(
+      {
+        label: `Season ${season.number} rank`,
+        before: before.seasonRank,
+        after: after.seasonRank,
+        change: rankChange(before.seasonRank, after.seasonRank),
+        digits: 0,
+        link: seasonLink,
+      },
       {
         label: `Season ${season.number} score`,
         before: before.seasonScore,
@@ -66,14 +82,6 @@ export const StandingsChangeTable: React.FC<{
         // A player with no game in the season yet has a season score of 0.
         change: scoreChange(before.seasonScore, after.seasonScore, 0),
         digits: 1,
-        link: seasonLink,
-      },
-      {
-        label: `Season ${season.number} rank`,
-        before: before.seasonRank,
-        after: after.seasonRank,
-        change: rankChange(before.seasonRank, after.seasonRank),
-        digits: 0,
         link: seasonLink,
       },
     );
