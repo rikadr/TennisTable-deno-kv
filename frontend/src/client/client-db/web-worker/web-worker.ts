@@ -1,4 +1,5 @@
 import { EventType } from "../event-store/event-types";
+import { HallOfFameChange, hallOfFameChangeAroundGame } from "../game-standings";
 import { HallOfFameHistoryResult } from "../hall-of-fame-history";
 import { PredictionHistoryEntry } from "../predictions-history";
 import { ExpectedLeaderboard } from "../simulations";
@@ -40,7 +41,12 @@ export type WorkerMessage =
       data: { playerId: string; events: EventType[]; now: number };
     }
   | { type: "hall-of-fame-history-progress"; data: { progress: number } }
-  | { type: "hall-of-fame-history-result"; data: { result: HallOfFameHistoryResult } };
+  | { type: "hall-of-fame-history-result"; data: { result: HallOfFameHistoryResult } }
+  | {
+      type: "start-game-hall-of-fame-change";
+      data: { events: EventType[]; playedAt: number; playerIds: string[] };
+    }
+  | { type: "game-hall-of-fame-change-result"; data: { playedAt: number; changes: HallOfFameChange[] } };
 
 // eslint-disable-next-line no-restricted-globals
 const scope = self as unknown as DedicatedWorkerGlobalScope;
@@ -112,6 +118,15 @@ function handleWorkerMessage(message: WorkerMessage) {
         (progress) => postWorkerMessage({ type: "hall-of-fame-history-progress", data: { progress } }),
       );
       postWorkerMessage({ type: "hall-of-fame-history-result", data: { result } });
+      break;
+    }
+
+    case "start-game-hall-of-fame-change": {
+      const changes = hallOfFameChangeAroundGame(message.data.events, message.data.playedAt, message.data.playerIds);
+      postWorkerMessage({
+        type: "game-hall-of-fame-change-result",
+        data: { playedAt: message.data.playedAt, changes },
+      });
       break;
     }
 

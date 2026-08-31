@@ -42,6 +42,25 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
+    slug: "leaderboard-changes-on-game-details",
+    title: "Leaderboard changes on game details",
+    date: "2026-08-31",
+    tags: ["feature-update"],
+    summary:
+      "The game details page shows what the game moved for both players: the rank and the Elo on the leaderboard, the season rank and score, and the Hall of Fame score.",
+    body: [
+      text(
+        "Each player gets a table with the value before the game, the value after it, and the change. The rows are the rank and the Elo on the overall leaderboard, the rank and the score on the season leaderboard, and the Hall of Fame score. A row opens the page that shows that number.",
+      ),
+      text(
+        "The table shows a dash where the player has no value. An unranked player has no rank, but keeps the Elo. A player with no earlier game in the season starts the season score at 0. A game in the break between 2 seasons changes no season score, and the page says so.",
+      ),
+      text(
+        "The Hall of Fame score needs the state of every player before the game and after it. The app calculates it in a web worker. The page opens at once, and the score comes a moment later.",
+      ),
+    ],
+  },
+  {
     slug: "profile-picture-screen",
     title: "A new screen for the profile picture",
     date: "2026-08-31",
