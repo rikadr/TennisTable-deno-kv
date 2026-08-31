@@ -19,6 +19,7 @@ import { ContentCard } from "./content-card";
 import { UnrankedExpectedScore } from "./unranked-expected-score";
 import { usePlayerLinkSearch } from "../../hooks/use-player-link-search";
 import { GameMarkers } from "../game/game-markers";
+import { GameScoreLink } from "../game/game-score-link";
 
 type TabType = "overview" | "games" | "statistics" | "achievements" | "predictions" | "season";
 const tabs: { id: TabType; label: string }[] = [
@@ -307,19 +308,21 @@ export const PlayerPage: React.FC = () => {
                       </td>
                       <td className="py-1 px-1 xs:px-2 md:px-3 w-[1%] whitespace-nowrap">
                         {game.score && (
-                          <div className="font-medium">
-                            {game.result === "win"
-                              ? `${game.score?.setsWon.gameWinner} - ${game.score?.setsWon.gameLoser}`
-                              : `${game.score?.setsWon.gameLoser} - ${game.score?.setsWon.gameWinner}`}
-                            <GameMarkers score={game.score} />
-                          </div>
-                        )}
-                        {game.score?.setPoints && (
-                          <div className="font-light italic text-xs md:text-sm whitespace-nowrap">
-                            {game.result === "win"
-                              ? game.score.setPoints.map((set) => `${set.gameWinner}-${set.gameLoser}`).join(", ")
-                              : game.score.setPoints.map((set) => `${set.gameLoser}-${set.gameWinner}`).join(", ")}
-                          </div>
+                          <GameScoreLink playedAt={game.time} className="block">
+                            <div className="font-medium">
+                              {game.result === "win"
+                                ? `${game.score?.setsWon.gameWinner} - ${game.score?.setsWon.gameLoser}`
+                                : `${game.score?.setsWon.gameLoser} - ${game.score?.setsWon.gameWinner}`}
+                              <GameMarkers score={game.score} />
+                            </div>
+                            {game.score.setPoints && (
+                              <div className="font-light italic text-xs md:text-sm whitespace-nowrap">
+                                {game.result === "win"
+                                  ? game.score.setPoints.map((set) => `${set.gameWinner}-${set.gameLoser}`).join(", ")
+                                  : game.score.setPoints.map((set) => `${set.gameLoser}-${set.gameWinner}`).join(", ")}
+                              </div>
+                            )}
+                          </GameScoreLink>
                         )}
                       </td>
                       <td className="py-1 px-1 xs:px-2 md:px-3 w-[1%] whitespace-nowrap">
