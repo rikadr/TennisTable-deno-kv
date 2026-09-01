@@ -393,6 +393,11 @@ export const TournamentGroups: React.FC<{
                   skipId: game.skipped?.skipId || "",
                   tournamentId: tournament.id,
                 }}
+                showGameDetails={{
+                  // A skipped game carries a winner and a time, but nobody played it
+                  show: !!game.winner && !game.skipped && game.completedAt !== undefined,
+                  playedAt: game.completedAt,
+                }}
               />
             </div>
           </Menu>
