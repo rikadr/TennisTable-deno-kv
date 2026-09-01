@@ -11,6 +11,7 @@ import { fmtNum } from "../../../common/number-utils";
 import { ONE_DAY, ONE_MONTH, ONE_YEAR } from "../../../common/time-in-ms";
 import { useEventDbContext } from "../../../wrappers/event-db-context";
 import { ProfilePicture } from "../../player/profile-picture";
+import { tournamentGameLink } from "../tournament-game-location";
 
 /**
  * Who the tournament brought together. Two ledgers: the pairs who had never met or had not met in
@@ -191,29 +192,12 @@ const PlayerRow: React.FC<{ arrival: PlayerArrival; tournamentId: string; childr
  */
 const ViewMatch: React.FC<{ tournamentId: string; game: GameLocation }> = ({ tournamentId, game }) => (
   <Link
-    to={gameLink(tournamentId, game)}
+    to={tournamentGameLink(tournamentId, game)}
     className="shrink-0 rounded-md px-2 py-1 text-xs font-light whitespace-nowrap bg-tertiary-background text-tertiary-text hover:opacity-80 transition-opacity"
   >
     View match
   </Link>
 );
-
-/** The tab has to come along, or the link would land on whichever tab the reader is already on */
-function gameLink(tournamentId: string, game: GameLocation): string {
-  const tab = (() => {
-    if (game.where === "group") return "group-play";
-    if (game.section === "losers") return "second-chance";
-    if (game.section === "grandFinal" || game.section === "bracketReset") return "grand-final";
-    return "finals";
-  })();
-  const params = new URLSearchParams({
-    tournament: tournamentId,
-    player1: game.player1,
-    player2: game.player2,
-    tab,
-  });
-  return `/tournament?${params.toString()}`;
-}
 
 const PlayerLink: React.FC<{ playerId: string }> = ({ playerId }) => {
   const context = useEventDbContext();

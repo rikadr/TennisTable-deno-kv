@@ -383,6 +383,7 @@ export const TournamentGameListCard: React.FC<TournamentGameListCardProps> = ({
             skipId: game.skipped?.skipId || "",
             tournamentId: tournament.id,
           }}
+          showGameDetails={{ show: states.showGameDetailsOption, playedAt: game.completedAt }}
         />
       </div>
     </Menu>
@@ -650,6 +651,7 @@ export const GameTriangle: React.FC<GameTriangleProps> = ({
                 skipId: game.skipped?.skipId || "",
                 tournamentId: tournament.id,
               }}
+              showGameDetails={{ show: states.showGameDetailsOption, playedAt: game.completedAt }}
             />
           </div>
         </Menu>
@@ -711,8 +713,12 @@ export function getGameStates(tournament: Tournament, game: Partial<TournamentGa
     (downstream) => downstream !== undefined && (downstream.winner !== undefined || downstream.skipped !== undefined),
   );
   const showUndoSkipOption = !!game.skipped && downstreamGameCompleted === false;
+  // Only a game somebody played has a details page. A skip and a walkover
+  // carry a winner and a completion time, but no game was played over them.
+  const showGameDetailsOption = !!game.winner && !game.skipped && game.completedAt !== undefined;
 
-  const showMenu = showCompareOption || showRegisterResultOption || showSkipGameOption || showUndoSkipOption;
+  const showMenu =
+    showCompareOption || showRegisterResultOption || showSkipGameOption || showUndoSkipOption || showGameDetailsOption;
   return {
     isPending,
     p1IsWinner,
@@ -724,6 +730,7 @@ export function getGameStates(tournament: Tournament, game: Partial<TournamentGa
     showRegisterResultOption,
     showSkipGameOption,
     showUndoSkipOption,
+    showGameDetailsOption,
   };
 }
 
@@ -740,6 +747,8 @@ type GameMenuItemsProps = {
   showRegisterResult: boolean;
   showSkipGame: { show: boolean; tournamentId: string };
   showUndoSkip: { show: boolean; tournamentId: string; skipId: string };
+  /** The played-at time of the game, which the details page reads it by */
+  showGameDetails: { show: boolean; playedAt?: number };
 };
 export const GameMenuItems: React.FC<GameMenuItemsProps> = (props) => {
   return (
@@ -778,6 +787,16 @@ export const GameMenuItems: React.FC<GameMenuItemsProps> = (props) => {
             className="w-full px-4 py-2 text-left data-[focus]:bg-secondary-text/30"
           >
             ⏮️ Undo skip
+          </Link>
+        </MenuItem>
+      )}
+      {props.showGameDetails.show && props.showGameDetails.playedAt !== undefined && (
+        <MenuItem>
+          <Link
+            to={`/game?time=${props.showGameDetails.playedAt}`}
+            className="w-full px-4 py-2 text-left data-[focus]:bg-secondary-text/30"
+          >
+            🔍 Game details
           </Link>
         </MenuItem>
       )}

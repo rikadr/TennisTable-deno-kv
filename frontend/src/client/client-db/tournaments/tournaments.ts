@@ -1,7 +1,7 @@
 import { TournamentConfig } from "../event-store/projectors/tournaments-projector";
 import { TennisTable } from "../tennis-table";
 import { TournamentPrediction } from "./prediction";
-import { Tournament } from "./tournament";
+import { Tournament, TournamentGamePlacement } from "./tournament";
 
 export class Tournaments {
   private readonly parent: TennisTable;
@@ -80,6 +80,14 @@ export class Tournaments {
     if (!player1 || !player2) return [];
     return this.getTournaments()
       .map((tournament) => tournament.findPendingGame(player1, player2))
+      .filter(isDefined);
+  }
+
+  /** Every tournament the game played at this time was part of, in the order the tournaments come */
+  findGamePlacements(playedAt: number | undefined): TournamentGamePlacement[] {
+    if (playedAt === undefined) return [];
+    return this.getTournaments()
+      .map((tournament) => tournament.findGamePlacement(playedAt))
       .filter(isDefined);
   }
 

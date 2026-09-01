@@ -17,15 +17,17 @@ import { SetScoreGraphs } from "./set-score-graphs";
 import { PointSituationRadar } from "./point-situation-radar";
 import { playerStandingsAt, seasonOfGame } from "../../client/client-db/game-standings";
 import { GameAchievements } from "./game-achievements-panel";
+import { GameTournaments } from "./game-tournaments-panel";
 import { useGameHallOfFameChange } from "../../hooks/use-game-hall-of-fame-change";
 import { StandingsChangeTable } from "./game-standings-panel";
 
 /**
  * Details about a single game, identified by its played-at timestamp (unique
  * per game) in the `time` url param: who played and the score, the Elo the
- * game moved, the ranks and the scores it moved on the leaderboards, the
- * achievements it earned, the pairing win % prediction before and after the
- * game, and the win % over the game replayed from the point-by-point log.
+ * game moved, the tournaments it was part of, the ranks and the scores it
+ * moved on the leaderboards, the achievements it earned, the pairing win %
+ * prediction before and after the game, and the win % over the game replayed
+ * from the point-by-point log.
  * Everything the game changed for the other players lives on the What changed
  * page, linked with the game's own 2-second window preselected.
  */
@@ -93,6 +95,10 @@ export const GameDetailsPage: React.FC = () => {
       .sort((a, b) => order(a.achievement.earnedBy) - order(b.achievement.earnedBy) || a.index - b.index)
       .map(({ achievement }) => achievement);
   }, [context, game]);
+
+  // The tournaments this game was part of. Two tournaments that run at the
+  // same time both count a game between their players, so this is a list.
+  const tournamentPlacements = useMemo(() => context.tournaments.findGamePlacements(game?.playedAt), [context, game]);
 
   // The Hall of Fame score of the two players before and after the game. It is
   // calculated in a web worker, so the page renders without waiting for it.
@@ -215,6 +221,9 @@ export const GameDetailsPage: React.FC = () => {
               </button>
             )}
           </div>
+
+          {/* The tournaments the game was part of, and where it sat in each */}
+          <GameTournaments placements={tournamentPlacements} />
 
           {/* The pairing prediction before and after the game */}
           <div className="max-w-md mx-auto px-4 pb-3">

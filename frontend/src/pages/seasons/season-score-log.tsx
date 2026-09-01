@@ -5,6 +5,7 @@ import { ProfilePicture } from "../player/profile-picture";
 import { fmtNum } from "../../common/number-utils";
 import { dateString, RelativeTime } from "../../common/date-utils";
 import { GameMarkers } from "../game/game-markers";
+import { GameScoreLink } from "../game/game-score-link";
 import { useMemo } from "react";
 
 type Props = {
@@ -197,14 +198,20 @@ export const SeasonScoreLog = ({ season }: Props) => {
                 </td>
                 <td className="py-1 px-1 xs:px-2 md:px-3 w-[1%] whitespace-nowrap">
                   {/* Tiny screens: sets on top, per-set points below (max 3 sets per line). xs+: inline. */}
-                  <div className="flex flex-col xs:flex-row xs:flex-wrap xs:items-baseline xs:gap-x-2">
-                    {imp.game.score && (
+                  <GameScoreLink
+                    playedAt={imp.game.playedAt}
+                    className="flex flex-col xs:flex-row xs:flex-wrap xs:items-baseline xs:gap-x-2"
+                  >
+                    {imp.game.score ? (
                       <span className="font-medium">
                         {imp.game.winner === imp.playerId
                           ? `${imp.game.score?.setsWon.gameWinner} - ${imp.game.score?.setsWon.gameLoser}`
                           : `${imp.game.score?.setsWon.gameLoser} - ${imp.game.score?.setsWon.gameWinner}`}
                         <GameMarkers score={imp.game.score} />
                       </span>
+                    ) : (
+                      // A game with no score still opens its details page
+                      <span className="opacity-40">-</span>
                     )}
                     {setStrings.length > 0 && (
                       <>
@@ -220,7 +227,7 @@ export const SeasonScoreLog = ({ season }: Props) => {
                         </span>
                       </>
                     )}
-                  </div>
+                  </GameScoreLink>
                 </td>
                 <td className="py-1 px-1 xs:px-2 md:px-3 text-xs md:text-sm opacity-70 w-[1%] whitespace-nowrap">
                   <div className="flex flex-col">

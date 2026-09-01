@@ -4,6 +4,7 @@ import { useEventDbContext } from "../../wrappers/event-db-context";
 import { fmtNum } from "../../common/number-utils";
 import { useTennisParams } from "../../hooks/use-tennis-params";
 import { dateString, RelativeTime, relativeTimeString } from "../../common/date-utils";
+import { GameScoreLink } from "../game/game-score-link";
 
 export function SeasonPlayerPage() {
   const context = useEventDbContext();
@@ -265,31 +266,33 @@ export function SeasonPlayerPage() {
                       )}
                     </td>
                     <td className="py-1 px-1 xs:px-2 md:px-3 w-[1%] whitespace-nowrap">
-                      {bestGame.score && (
-                        <div className="font-medium text-[11px] xs:text-sm md:text-base">
-                          {bestGame.winner === playerId
-                            ? `${bestGame.score?.setsWon.gameWinner} - ${bestGame.score?.setsWon.gameLoser}`
-                            : `${bestGame.score?.setsWon.gameLoser} - ${bestGame.score?.setsWon.gameWinner}`}
-                        </div>
-                      )}
-                      {setStrings.length > 0 && (
-                        <>
-                          {/* Tiny screens: smaller text, max 2 sets per line */}
-                          <div className="xs:hidden font-light italic text-[10px]">
-                            {setLines.map((line, lineIndex) => (
-                              <div key={lineIndex} className="whitespace-nowrap">
-                                {line}
-                              </div>
-                            ))}
+                      <GameScoreLink playedAt={bestGame.playedAt} className="block">
+                        {bestGame.score && (
+                          <div className="font-medium text-[11px] xs:text-sm md:text-base">
+                            {bestGame.winner === playerId
+                              ? `${bestGame.score?.setsWon.gameWinner} - ${bestGame.score?.setsWon.gameLoser}`
+                              : `${bestGame.score?.setsWon.gameLoser} - ${bestGame.score?.setsWon.gameWinner}`}
                           </div>
-                          <div className="hidden xs:block font-light italic text-xs whitespace-nowrap">
-                            {setStrings.join(", ")}
-                          </div>
-                        </>
-                      )}
-                      {!bestGame.score?.setsWon && !bestGame.score?.setPoints && (
-                        <p>{bestGame.winner === playerId ? "Won" : "Lost"}</p>
-                      )}
+                        )}
+                        {setStrings.length > 0 && (
+                          <>
+                            {/* Tiny screens: smaller text, max 2 sets per line */}
+                            <div className="xs:hidden font-light italic text-[10px]">
+                              {setLines.map((line, lineIndex) => (
+                                <div key={lineIndex} className="whitespace-nowrap">
+                                  {line}
+                                </div>
+                              ))}
+                            </div>
+                            <div className="hidden xs:block font-light italic text-xs whitespace-nowrap">
+                              {setStrings.join(", ")}
+                            </div>
+                          </>
+                        )}
+                        {!bestGame.score?.setsWon && !bestGame.score?.setPoints && (
+                          <p>{bestGame.winner === playerId ? "Won" : "Lost"}</p>
+                        )}
+                      </GameScoreLink>
                     </td>
                     <td className="py-1 px-1 xs:px-2 md:px-3 text-xs md:text-sm opacity-70 w-[1%] whitespace-nowrap">
                       <div className="flex flex-col">
