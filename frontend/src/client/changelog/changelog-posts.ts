@@ -582,6 +582,9 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
         "On the overall leaderboard, a second toggle changes the data source between the actual leaderboard and the expected leaderboard. The expected leaderboard is the average of many simulations at each of the two times. A menu selects the number of simulations: 1 000, 5 000, 15 000 or 50 000. The default is 5 000. A higher number gives a more stable score, but takes more time.",
       ),
       text(
+        "On the Hall of Fame score, a Breakdown toggle changes the rows of the table. All shows one row per player. Player shows one row per category of the score, for the player that you select. The All players option sums each category over all players. The rank then shows which category gives the most points.",
+      ),
+      text(
         "The Games tab and the Achievements tab list the games played and the achievements earned in the period. The season leaderboard needs a period within 1 season.",
       ),
       text("The page is in the Other menu."),

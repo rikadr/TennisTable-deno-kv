@@ -8,20 +8,20 @@ describe("what changed diff rows", () => {
   it("sorts by the rank at the start and at the end", () => {
     const end = [entry("b", 1, 1_050), entry("a", 2, 1_050)];
 
-    expect(buildDiffRows(start, end, "start").map((row) => row.playerId)).toEqual(["a", "b"]);
-    expect(buildDiffRows(start, end, "end").map((row) => row.playerId)).toEqual(["b", "a"]);
+    expect(buildDiffRows(start, end, "start").map((row) => row.id)).toEqual(["a", "b"]);
+    expect(buildDiffRows(start, end, "end").map((row) => row.id)).toEqual(["b", "a"]);
   });
 
   it("puts a player who is absent from the sorted leaderboard last", () => {
     const end = [entry("c", 1, 1_200), ...start];
     const rows = buildDiffRows(start, end, "start");
-    expect(rows.map((row) => row.playerId)).toEqual(["a", "b", "c"]);
+    expect(rows.map((row) => row.id)).toEqual(["a", "b", "c"]);
   });
 
   it("sorts by the score delta, biggest gain first", () => {
     const end = [entry("b", 1, 1_200), entry("a", 2, 1_000)];
     const rows = buildDiffRows(start, end, "delta");
-    expect(rows.map((row) => row.playerId)).toEqual(["b", "a"]);
+    expect(rows.map((row) => row.id)).toEqual(["b", "a"]);
   });
 
   describe("a player who joins the leaderboard", () => {
@@ -30,7 +30,7 @@ describe("what changed diff rows", () => {
 
     it("gains the full score when the score starts at 0", () => {
       const rows = buildDiffRows(start, end, "delta", absentScoreZero);
-      expect(rows.map((row) => row.playerId)).toEqual(["c", "a", "b"]);
+      expect(rows.map((row) => row.id)).toEqual(["c", "a", "b"]);
       expect(scoreDelta(rows[0], absentScoreZero)).toBe(1_200);
     });
 
@@ -38,13 +38,13 @@ describe("what changed diff rows", () => {
       // The overall leaderboard reads the elo of an unranked player instead.
       const eloWhileAbsent = () => 1_150;
       const rows = buildDiffRows(start, end, "delta", eloWhileAbsent);
-      expect(rows.map((row) => row.playerId)).toEqual(["c", "a", "b"]);
+      expect(rows.map((row) => row.id)).toEqual(["c", "a", "b"]);
       expect(scoreDelta(rows[0], eloWhileAbsent)).toBe(50);
     });
 
     it("sorts last with no delta when no absent score exists", () => {
       const rows = buildDiffRows(start, end, "delta");
-      expect(rows.map((row) => row.playerId)).toEqual(["a", "b", "c"]);
+      expect(rows.map((row) => row.id)).toEqual(["a", "b", "c"]);
       expect(scoreDelta(rows[2])).toBeUndefined();
     });
   });
@@ -52,15 +52,15 @@ describe("what changed diff rows", () => {
   it("scores a player who leaves the leaderboard as a loss", () => {
     const end = [entry("a", 1, 1_100)];
     const rows = buildDiffRows(start, end, "delta", absentScoreZero);
-    expect(rows.map((row) => row.playerId)).toEqual(["a", "b"]);
+    expect(rows.map((row) => row.id)).toEqual(["a", "b"]);
     expect(scoreDelta(rows[1], absentScoreZero)).toBe(-1_000);
   });
 
   it("uses the absent score of the side that the player is absent from", () => {
-    const absent = (playerId: string, side: "start" | "end") => (side === "start" ? 10 : 20);
+    const absent = (id: string, side: "start" | "end") => (side === "start" ? 10 : 20);
 
-    expect(scoreDelta({ playerId: "a", endScore: 100 }, absent)).toBe(90);
-    expect(scoreDelta({ playerId: "a", startScore: 100 }, absent)).toBe(-80);
-    expect(scoreDelta({ playerId: "a", startScore: 100, endScore: 120 }, absent)).toBe(20);
+    expect(scoreDelta({ id: "a", endScore: 100 }, absent)).toBe(90);
+    expect(scoreDelta({ id: "a", startScore: 100 }, absent)).toBe(-80);
+    expect(scoreDelta({ id: "a", startScore: 100, endScore: 120 }, absent)).toBe(20);
   });
 });

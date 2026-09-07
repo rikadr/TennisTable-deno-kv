@@ -17,6 +17,8 @@ import { ProfilePicture } from "../player/profile-picture";
 import { Elo } from "../../client/client-db/elo";
 import { EXPECTED_LEADERBOARD_SIMULATIONS } from "../../client/client-db/simulations";
 import { AbsentScore, absentScoreZero, buildDiffRows, RankedEntry, scoreDelta, SortBy } from "./what-changed-diff";
+import { FACTORS } from "../hall-of-fame/hall-of-fame-factors";
+import { ALL_PLAYERS, hallOfFameCategoryEntries } from "./what-changed-hall-of-fame-categories";
 
 type Source = "actual" | "expected";
 
@@ -43,6 +45,10 @@ const LEADERBOARD_TABS: { id: LeaderboardTab; label: string }[] = [
   { id: "hall-of-fame", label: "Hall of Fame" },
 ];
 
+// The Hall of Fame table shows either one row per player, or one row per
+// category of the score for the player that you select.
+type Breakdown = "all" | "player";
+
 type QuickRange = "last-game" | "today" | "7-days" | "30-days" | "365-days" | "custom";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -54,6 +60,30 @@ const ACHIEVEMENTS_PAGE_SIZE = 50;
 const ROW_GRID =
   "grid grid-cols-[minmax(0,1fr)_2.25rem_2.25rem_2.5rem_3rem_3rem_3.25rem] md:grid-cols-[minmax(0,1fr)_3.5rem_3.5rem_3.5rem_4.5rem_4.5rem_4.5rem] items-center";
 const NUM_CELL = "self-stretch flex items-center justify-end py-1 px-1 md:px-2 whitespace-nowrap";
+
+// The category table has 9 rows, so every rank is 1 digit and every rank
+// change is 1 digit and a sign. The narrower number columns below xs give the
+// category names the width to stay on one line on a phone. From xs up the
+// shared widths fit, and from md up the widths of the player table fit.
+//
+// The 2 steps below md use an explicit width range each, and md is the base.
+// The `xs` screen is in `theme.extend.screens`, so Tailwind writes the `xs:`
+// rules after the `md:` rules: an `xs:` step of the same property then also
+// applies above 768px and the md step never arrives.
+const CATEGORY_ROW_GRID =
+  "grid grid-cols-[minmax(0,1fr)_3.5rem_3.5rem_3.5rem_4.5rem_4.5rem_4.5rem] [@media(max-width:469px)]:grid-cols-[minmax(0,1fr)_2rem_1.75rem_1.75rem_2.75rem_2.75rem_3rem] [@media(min-width:470px)_and_(max-width:767px)]:grid-cols-[minmax(0,1fr)_2.25rem_2.25rem_2.5rem_3rem_3rem_3.25rem] items-center";
+
+// The name of a category wraps and does not truncate: the 9 names are a fixed
+// list, and an ellipsis on most of them makes the table unreadable.
+function categoryLabel(key: string): React.ReactNode {
+  const factor = FACTORS.find((f) => f.key === key);
+  return (
+    <>
+      <span className="shrink-0">{factor?.emoji}</span>
+      <span className="font-medium min-w-0 break-words leading-tight">{factor?.name ?? key}</span>
+    </>
+  );
+}
 
 function useDebounced<T>(value: T, ms: number): T {
   const [debounced, setDebounced] = useState(value);
@@ -168,8 +198,25 @@ const DiffTable: React.FC<{
   // The score of a player who is on only one of the two leaderboards, so the
   // score delta of a player who joins or leaves stays comparable.
   absentScore?: AbsentScore;
-  onRowClick: (playerId: string) => void;
-}> = ({ startEntries, endEntries, sortBy, emptyText, scoreDigits = 0, absentScore, onRowClick }) => {
+  // A row is a player by default. The 3 props below make it a category, or
+  // anything else with a rank and a score.
+  rowHeader?: string;
+  renderRowLabel?: (id: string) => React.ReactNode;
+  rowGrid?: string;
+  // A row without a click target is not clickable.
+  onRowClick?: (id: string) => void;
+}> = ({
+  startEntries,
+  endEntries,
+  sortBy,
+  emptyText,
+  scoreDigits = 0,
+  absentScore,
+  rowHeader = "Player",
+  renderRowLabel,
+  rowGrid = ROW_GRID,
+  onRowClick,
+}) => {
   const context = useEventDbContext();
 
   // A missing entry list means the leaderboard at that time is not known. The
@@ -182,8 +229,8 @@ const DiffTable: React.FC<{
     [startEntries, endEntries, sortBy, knownAbsentScore],
   );
 
-  const stableRows = useMemo(() => [...rows].sort((a, b) => a.playerId.localeCompare(b.playerId)), [rows]);
-  const visualOrder = new Map(rows.map((row, index) => [row.playerId, index + 1]));
+  const stableRows = useMemo(() => [...rows].sort((a, b) => a.id.localeCompare(b.id)), [rows]);
+  const visualOrder = new Map(rows.map((row, index) => [row.id, index + 1]));
 
   if (rows.length === 0) {
     return <div className="p-8 text-center text-primary-text/60">{emptyText}</div>;
@@ -191,7 +238,7 @@ const DiffTable: React.FC<{
 
   return (
     <div className="flex flex-col text-primary-text">
-      <div className={classNames(ROW_GRID, "text-xs md:text-sm text-primary-text/60")}>
+      <div className={classNames(rowGrid, "text-xs md:text-sm text-primary-text/60")}>
         <div />
         <div className="col-span-3 self-stretch flex items-center justify-center py-1 font-medium border-l border-primary-text/20">
           Rank
@@ -200,8 +247,8 @@ const DiffTable: React.FC<{
           Score
         </div>
       </div>
-      <div className={classNames(ROW_GRID, "text-xs xs:text-sm md:text-base border-b border-primary-text/50")}>
-        <div className="py-1 px-1 xs:px-2 md:px-3 font-medium">Player</div>
+      <div className={classNames(rowGrid, "text-xs xs:text-sm md:text-base border-b border-primary-text/50")}>
+        <div className="py-1 px-1 xs:px-2 md:px-3 font-medium">{rowHeader}</div>
         <div className={classNames(NUM_CELL, "font-medium border-l border-primary-text/20")}>Start</div>
         <div className={classNames(NUM_CELL, "font-medium")}>End</div>
         <div className={classNames(NUM_CELL, "font-medium")}>Δ</div>
@@ -215,18 +262,25 @@ const DiffTable: React.FC<{
         const deltaScore = scoreDelta(row, knownAbsentScore);
         return (
           <div
-            key={row.playerId}
-            style={{ order: visualOrder.get(row.playerId) }}
-            onClick={() => onRowClick(row.playerId)}
+            key={row.id}
+            style={{ order: visualOrder.get(row.id) }}
+            onClick={onRowClick ? () => onRowClick(row.id) : undefined}
             className={classNames(
-              ROW_GRID,
+              rowGrid,
               "text-xs xs:text-sm md:text-base transition-all duration-500 border-b border-primary-text/50",
-              "bg-primary-background hover:bg-secondary-background hover:text-secondary-text cursor-pointer",
+              "bg-primary-background",
+              onRowClick && "hover:bg-secondary-background hover:text-secondary-text cursor-pointer",
             )}
           >
             <div className="py-1 px-1 xs:px-2 md:px-3 min-w-0 flex items-center gap-1 md:gap-2">
-              <ProfilePicture playerId={row.playerId} size={24} border={2} />
-              <span className="font-medium truncate">{context.playerName(row.playerId)}</span>
+              {renderRowLabel ? (
+                renderRowLabel(row.id)
+              ) : (
+                <>
+                  <ProfilePicture playerId={row.id} size={24} border={2} />
+                  <span className="font-medium truncate">{context.playerName(row.id)}</span>
+                </>
+              )}
             </div>
             <div className={classNames(NUM_CELL, "border-l border-primary-text/20")}>
               {row.startRank ?? <span className="text-primary-text/40">–</span>}
@@ -292,6 +346,11 @@ export const WhatChangedPage: React.FC = () => {
   const simulationCount = SIMULATION_OPTIONS.some((option) => option.value === simulationsParam)
     ? simulationsParam
     : EXPECTED_LEADERBOARD_SIMULATIONS;
+  const breakdown: Breakdown = searchParams.get("breakdown") === "player" ? "player" : "all";
+  const playerParam = searchParams.get("player");
+  // A player that no longer exists falls back to all players.
+  const selectedPlayer =
+    playerParam && context.allPlayers.some((player) => player.id === playerParam) ? playerParam : ALL_PLAYERS;
 
   // Fixed at mount and refreshed when a quick range is clicked, so the quick
   // windows do not drift while the page stays open.
@@ -379,20 +438,33 @@ export const WhatChangedPage: React.FC = () => {
     (startExpected.loading ? startExpected.progress : 1) * 0.5 + (endExpected.loading ? endExpected.progress : 1) * 0.5;
 
   // Hall of Fame score for every player, retired and active, at the two times.
+  // The player rows and the category rows both come from these 2 lists, so the
+  // breakdown costs no extra computation.
+  const startHallOfFameEntries = useMemo(() => startState?.hallOfFame.getFullHypotheticalLeaderboard(), [startState]);
+  const endHallOfFameEntries = useMemo(() => endState?.hallOfFame.getFullHypotheticalLeaderboard(), [endState]);
   const startHallOfFame = useMemo(
     () =>
-      startState?.hallOfFame
-        .getFullHypotheticalLeaderboard()
-        .map((entry, index) => ({ id: entry.playerId, rank: index + 1, score: entry.score.total })),
-    [startState],
+      startHallOfFameEntries?.map((entry, index) => ({
+        id: entry.playerId,
+        rank: index + 1,
+        score: entry.score.total,
+      })),
+    [startHallOfFameEntries],
   );
   const endHallOfFame = useMemo(
     () =>
-      endState?.hallOfFame
-        .getFullHypotheticalLeaderboard()
-        .map((entry, index) => ({ id: entry.playerId, rank: index + 1, score: entry.score.total })),
-    [endState],
+      endHallOfFameEntries?.map((entry, index) => ({ id: entry.playerId, rank: index + 1, score: entry.score.total })),
+    [endHallOfFameEntries],
   );
+  const startHallOfFameCategories = useMemo(
+    () => hallOfFameCategoryEntries(startHallOfFameEntries, selectedPlayer),
+    [startHallOfFameEntries, selectedPlayer],
+  );
+  const endHallOfFameCategories = useMemo(
+    () => hallOfFameCategoryEntries(endHallOfFameEntries, selectedPlayer),
+    [endHallOfFameEntries, selectedPlayer],
+  );
+  const playersByName = useMemo(() => [...context.allPlayers].sort((a, b) => a.name.localeCompare(b.name)), [context]);
 
   // Seasons that overlap the selected period. The season leaderboard diff is
   // only meaningful when the period touches exactly one season.
@@ -533,7 +605,7 @@ export const WhatChangedPage: React.FC = () => {
 
               {/* Sort toggle for every leaderboard; the source toggle only
                   applies to the overall leaderboard */}
-              <div className="flex justify-center items-end gap-4 xs:gap-8 px-4 py-2 border-b border-primary-text/20">
+              <div className="flex flex-wrap justify-center items-end gap-4 xs:gap-8 px-4 py-2 border-b border-primary-text/20">
                 <PillSelect<SortBy>
                   label="Sort by"
                   options={[
@@ -574,6 +646,39 @@ export const WhatChangedPage: React.FC = () => {
                       {SIMULATION_OPTIONS.map((option) => (
                         <option key={option.value} value={option.value}>
                           {option.label} ({fmtNum(option.value)})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+                {leaderboardTab === "hall-of-fame" && (
+                  <PillSelect<Breakdown>
+                    label="Breakdown"
+                    options={[
+                      { value: "all", label: "All" },
+                      { value: "player", label: "Player" },
+                    ]}
+                    value={breakdown}
+                    onChange={(value) => setParams({ breakdown: value === "all" ? undefined : value })}
+                  />
+                )}
+                {leaderboardTab === "hall-of-fame" && breakdown === "player" && (
+                  <div className="flex flex-col items-center gap-1">
+                    <label htmlFor="breakdown-player-select" className="text-xs md:text-sm text-primary-text/60">
+                      Player
+                    </label>
+                    <select
+                      id="breakdown-player-select"
+                      value={selectedPlayer}
+                      onChange={(e) =>
+                        setParams({ player: e.target.value === ALL_PLAYERS ? undefined : e.target.value })
+                      }
+                      className="h-10 max-w-[10rem] rounded-full bg-secondary-background text-secondary-text px-3 text-xs xs:text-sm"
+                    >
+                      <option value={ALL_PLAYERS}>All players</option>
+                      {playersByName.map((player) => (
+                        <option key={player.id} value={player.id}>
+                          {player.name}
                         </option>
                       ))}
                     </select>
@@ -643,23 +748,50 @@ export const WhatChangedPage: React.FC = () => {
                 ))}
 
               {/* Hall of Fame score changes between the two times */}
-              {leaderboardTab === "hall-of-fame" && (
-                <>
-                  <p className="text-center text-sm md:text-base text-primary-text/60 py-1 md:py-2">
-                    The hypothetical Hall of Fame leaderboard for all players
-                  </p>
-                  <DiffTable
-                    startEntries={startHallOfFame}
-                    endEntries={endHallOfFame}
-                    sortBy={sortBy}
-                    emptyText="No players at either time"
-                    // A player who is not registered yet has a Hall of Fame
-                    // score of 0.
-                    absentScore={absentScoreZero}
-                    onRowClick={(playerId) => navigate(`/hall-of-fame/${playerId}`)}
-                  />
-                </>
-              )}
+              {leaderboardTab === "hall-of-fame" &&
+                (breakdown === "all" ? (
+                  <>
+                    <p className="text-center text-sm md:text-base text-primary-text/60 py-1 md:py-2">
+                      The hypothetical Hall of Fame leaderboard for all players
+                    </p>
+                    <DiffTable
+                      startEntries={startHallOfFame}
+                      endEntries={endHallOfFame}
+                      sortBy={sortBy}
+                      emptyText="No players at either time"
+                      // A player who is not registered yet has a Hall of Fame
+                      // score of 0.
+                      absentScore={absentScoreZero}
+                      onRowClick={(playerId) => navigate(`/hall-of-fame/${playerId}`)}
+                    />
+                  </>
+                ) : (
+                  <>
+                    <p className="text-center text-sm md:text-base text-primary-text/60 py-1 md:py-2 px-4">
+                      {selectedPlayer === ALL_PLAYERS
+                        ? "The Hall of Fame score per category, summed over all players."
+                        : `The Hall of Fame score of ${context.playerName(selectedPlayer)} per category.`}{" "}
+                      The rank shows which category gives the most points.
+                    </p>
+                    <DiffTable
+                      startEntries={startHallOfFameCategories}
+                      endEntries={endHallOfFameCategories}
+                      sortBy={sortBy}
+                      emptyText="No Hall of Fame score at either time"
+                      // A category of a player who is not registered yet
+                      // scores 0.
+                      absentScore={absentScoreZero}
+                      rowHeader="Category"
+                      renderRowLabel={categoryLabel}
+                      rowGrid={CATEGORY_ROW_GRID}
+                      // The sum over all players has no page of its own, so
+                      // those rows are not clickable.
+                      onRowClick={
+                        selectedPlayer === ALL_PLAYERS ? undefined : () => navigate(`/hall-of-fame/${selectedPlayer}`)
+                      }
+                    />
+                  </>
+                ))}
             </>
           )}
 
