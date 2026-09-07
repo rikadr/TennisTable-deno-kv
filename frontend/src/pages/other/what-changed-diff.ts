@@ -8,7 +8,7 @@ export type RankedEntry = { id: string; rank: number; score: number };
  * rank or score means the player was not on the leaderboard at that time.
  */
 export type DiffRow = {
-  playerId: string;
+  id: string;
   startRank?: number;
   endRank?: number;
   startScore?: number;
@@ -27,15 +27,15 @@ export type SortBy = "start" | "end" | "delta";
  * leaderboard reads the elo that the player had at that time instead. A
  * function that returns undefined leaves the delta unknown.
  */
-export type AbsentScore = (playerId: string, side: "start" | "end") => number | undefined;
+export type AbsentScore = (id: string, side: "start" | "end") => number | undefined;
 
 /** For a leaderboard whose score starts at 0. */
 export const absentScoreZero: AbsentScore = () => 0;
 
 /** The score change between the two times, or undefined when it is unknown. */
 export function scoreDelta(row: DiffRow, absentScore?: AbsentScore): number | undefined {
-  const start = row.startScore ?? absentScore?.(row.playerId, "start");
-  const end = row.endScore ?? absentScore?.(row.playerId, "end");
+  const start = row.startScore ?? absentScore?.(row.id, "start");
+  const end = row.endScore ?? absentScore?.(row.id, "end");
   if (start === undefined || end === undefined) return undefined;
   return end - start;
 }
@@ -65,10 +65,10 @@ export function buildDiffRows(
 ): DiffRow[] {
   const rowMap = new Map<string, DiffRow>();
   startEntries?.forEach((player) => {
-    rowMap.set(player.id, { playerId: player.id, startRank: player.rank, startScore: player.score });
+    rowMap.set(player.id, { id: player.id, startRank: player.rank, startScore: player.score });
   });
   endEntries?.forEach((player) => {
-    const row = rowMap.get(player.id) ?? { playerId: player.id };
+    const row = rowMap.get(player.id) ?? { id: player.id };
     row.endRank = player.rank;
     row.endScore = player.score;
     rowMap.set(player.id, row);
