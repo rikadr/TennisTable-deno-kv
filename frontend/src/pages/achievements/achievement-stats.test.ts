@@ -360,7 +360,7 @@ describe("achievementDetails", () => {
       type: "kingslayer",
       earnedBy,
       earnedAt,
-      data: { opponent, gameId: `g${earnedAt}` },
+      data: { opponent, gameId: `g${earnedAt}`, previousOpponents: [] },
     });
 
     expect(

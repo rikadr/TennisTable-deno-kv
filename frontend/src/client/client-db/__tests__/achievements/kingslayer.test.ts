@@ -60,7 +60,7 @@ describe("Kingslayer Achievement", () => {
 
     const kingslayers = tt.achievements.getAchievements("b").filter((x) => x.type === "kingslayer");
     expect(kingslayers).toHaveLength(1);
-    expect(kingslayers[0].data).toEqual({ opponent: "a", gameId: "ks" });
+    expect(kingslayers[0].data).toEqual({ opponent: "a", gameId: "ks", previousOpponents: [] });
   });
 
   it("does NOT award kingslayer when the loser is not rank #1", () => {
@@ -122,9 +122,9 @@ describe("Kingslayer Achievement", () => {
     expect(tt.achievements.getAchievements("alice").filter((x) => x.type === "kingslayer")).toHaveLength(0);
   });
 
-  it("is only awarded once per player even if they kingslay multiple times", () => {
-    // B kingslays A. A then beats C/D/E to climb back to #1. B kingslays
-    // A a second time — but the second one should NOT fire.
+  it("is only awarded once per opponent", () => {
+    // B kingslays A. A then beats C/D/E to climb back to #1. B beats A a
+    // second time — the same opponent does not give the award again.
     const events = [
       ...fivePlayerSetup(),
       game("ks-1", 1000, "b", "a"),
@@ -142,6 +142,29 @@ describe("Kingslayer Achievement", () => {
     expect(kingslayers[0].data?.gameId).toBe("ks-1");
   });
 
+  it("awards it again when the player beats a different #1", () => {
+    // C beats A while A is #1. B then takes rank #1 from A, and C beats B
+    // as well — a different opponent, so C earns the achievement a second
+    // time.
+    const events = [...fivePlayerSetup(), game("ks-1", 1000, "c", "a")];
+    for (let i = 0; i < 6; i++) {
+      events.push(game(`climb-${i}`, 1100 + i, "b", "a"));
+    }
+    events.push(game("ks-2", 2000, "c", "b"));
+
+    const tt = new TennisTable({ events });
+    tt.achievements.calculateAchievements();
+
+    const kingslayers = tt.achievements.getAchievements("c").filter((x) => x.type === "kingslayer");
+    expect(kingslayers).toHaveLength(2);
+    expect(kingslayers.map((x) => x.data?.opponent)).toEqual(["a", "b"]);
+    expect(kingslayers.map((x) => x.data?.gameId)).toEqual(["ks-1", "ks-2"]);
+    // Each badge keeps the opponents kingslayed before its own game.
+    expect(kingslayers.map((x) => x.data?.previousOpponents)).toEqual([[], ["a"]]);
+    expect(tt.achievements.getPlayerProgression("c")["kingslayer"].earned).toBe(2);
+    expect(tt.achievements.getPlayerProgression("c")["kingslayer"].slainOpponents).toEqual(["a", "b"]);
+  });
+
   it("reports the best-ranked beaten opponent in the progression", () => {
     // After the setup C's best win is over D (rank 4). C then beats B
     // (rank 2 going into the match) — the best beaten rank becomes #2,
@@ -154,6 +177,7 @@ describe("Kingslayer Achievement", () => {
     expect(tt.achievements.getPlayerProgression("c")["kingslayer"].best).toBe(2);
     expect(tt.achievements.getPlayerProgression("c")["kingslayer"].bestOpponent).toBe("b");
     expect(tt.achievements.getPlayerProgression("c")["kingslayer"].earned).toBe(0);
+    expect(tt.achievements.getPlayerProgression("c")["kingslayer"].slainOpponents).toEqual([]);
     // E never won a game — no beaten rank to report.
     expect(tt.achievements.getPlayerProgression("e")["kingslayer"].best).toBeUndefined();
   });

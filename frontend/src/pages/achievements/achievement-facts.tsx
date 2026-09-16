@@ -191,6 +191,13 @@ export const AchievementFacts: React.FC<{ achievement: Achievement }> = ({ achie
           Retired for {Math.round((achievement.earnedAt - achievement.data.retiredAt) / (24 * 60 * 60 * 1000))} days
         </span>
       )}
+      {/* Kingslayer is one time for each opponent. The badge names the #1
+          players the player beat before this game. */}
+      {achievement.type === "kingslayer" && achievement.data.previousOpponents.length > 0 && (
+        <span className="text-[11px] opacity-80">
+          Beat #1 before: {achievement.data.previousOpponents.map((player) => context.playerName(player)).join(", ")}
+        </span>
+      )}
       {achievement.type === "king-maker" && achievement.data && (
         <span className="text-[11px] opacity-80">
           New king: {context.playerName(achievement.data.newKing)} (
