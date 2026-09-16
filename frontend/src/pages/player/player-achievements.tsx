@@ -548,6 +548,15 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
                   </p>
                 )}
 
+                {/* Kingslayer is one time for each opponent. The badge names the
+                    #1 players the player beat before this game. */}
+                {achievement.type === "kingslayer" && achievement.data.previousOpponents.length > 0 && (
+                  <p className="text-xs text-secondary-text/70 mt-2">
+                    Beat #1 before:{" "}
+                    {achievement.data.previousOpponents.map((player) => context.playerName(player)).join(", ")}
+                  </p>
+                )}
+
                 {achievement.data && "time" in achievement.data && (
                   <p className="text-xs text-secondary-text/70 mt-2">🕒 {achievement.data.time}</p>
                 )}
@@ -1668,22 +1677,31 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                         ) : (
                           // Fallback for achievements without targets (like tournament
                           // achievements). The rank chases (On the Podium, Touched the
-                          // Throne, Kingslayer) carry a best-ever rank shown here, and
-                          // Group Play Star its best "N of M" group play.
+                          // Throne) carry a best-ever rank shown here, and Group Play
+                          // Star its best "N of M" group play. Kingslayer is one time
+                          // for each opponent, so it names the #1 players the player
+                          // beat, and keeps the best rank only until the first badge.
                           <div className="mt-1.5 text-xs text-secondary-text/70">
                             {data.earned > 0
                               ? `Earned ${data.earned} time${data.earned > 1 ? "s" : ""}`
                               : "No progress yet"}
-                            {data.best !== undefined && data.best > 0 && (
+                            {"slainOpponents" in data && data.slainOpponents.length > 0 ? (
                               <span className="ml-2">
-                                Best: {formatBestValue(type, data.best)}
-                                {"bestOutOf" in data && data.bestOutOf !== undefined && (
-                                  <> of {fmtNum(data.bestOutOf)}</>
-                                )}
-                                {"bestOpponent" in data && data.bestOpponent && (
-                                  <> ({context.playerName(data.bestOpponent)})</>
-                                )}
+                                Beat: {data.slainOpponents.map((player) => context.playerName(player)).join(", ")}
                               </span>
+                            ) : (
+                              data.best !== undefined &&
+                              data.best > 0 && (
+                                <span className="ml-2">
+                                  Best: {formatBestValue(type, data.best)}
+                                  {"bestOutOf" in data && data.bestOutOf !== undefined && (
+                                    <> of {fmtNum(data.bestOutOf)}</>
+                                  )}
+                                  {"bestOpponent" in data && data.bestOpponent && (
+                                    <> ({context.playerName(data.bestOpponent)})</>
+                                  )}
+                                </span>
+                              )
                             )}
                           </div>
                         )}

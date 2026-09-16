@@ -60,7 +60,7 @@ describe("Kingslayer Achievement", () => {
 
     const kingslayers = tt.achievements.getAchievements("b").filter((x) => x.type === "kingslayer");
     expect(kingslayers).toHaveLength(1);
-    expect(kingslayers[0].data).toEqual({ opponent: "a", gameId: "ks" });
+    expect(kingslayers[0].data).toEqual({ opponent: "a", gameId: "ks", previousOpponents: [] });
   });
 
   it("does NOT award kingslayer when the loser is not rank #1", () => {
@@ -159,7 +159,10 @@ describe("Kingslayer Achievement", () => {
     expect(kingslayers).toHaveLength(2);
     expect(kingslayers.map((x) => x.data?.opponent)).toEqual(["a", "b"]);
     expect(kingslayers.map((x) => x.data?.gameId)).toEqual(["ks-1", "ks-2"]);
+    // Each badge keeps the opponents kingslayed before its own game.
+    expect(kingslayers.map((x) => x.data?.previousOpponents)).toEqual([[], ["a"]]);
     expect(tt.achievements.getPlayerProgression("c")["kingslayer"].earned).toBe(2);
+    expect(tt.achievements.getPlayerProgression("c")["kingslayer"].slainOpponents).toEqual(["a", "b"]);
   });
 
   it("reports the best-ranked beaten opponent in the progression", () => {
@@ -174,6 +177,7 @@ describe("Kingslayer Achievement", () => {
     expect(tt.achievements.getPlayerProgression("c")["kingslayer"].best).toBe(2);
     expect(tt.achievements.getPlayerProgression("c")["kingslayer"].bestOpponent).toBe("b");
     expect(tt.achievements.getPlayerProgression("c")["kingslayer"].earned).toBe(0);
+    expect(tt.achievements.getPlayerProgression("c")["kingslayer"].slainOpponents).toEqual([]);
     // E never won a game — no beaten rank to report.
     expect(tt.achievements.getPlayerProgression("e")["kingslayer"].best).toBeUndefined();
   });

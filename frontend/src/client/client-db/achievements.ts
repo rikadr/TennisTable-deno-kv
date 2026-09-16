@@ -1770,6 +1770,10 @@ export class Achievements {
       // tiny pool.
       if (loserRankBefore === 1 && rankedCountBefore >= 5 && !kingslayed.get(game.winner)?.has(game.loser)) {
         const slain = kingslayed.get(game.winner) ?? new Set<string>();
+        // The opponents kingslayed before this game, in the order of the
+        // games. The badge keeps them, so it shows the history of the chase
+        // at the moment the player earned it.
+        const previousOpponents = [...slain];
         slain.add(game.loser);
         kingslayed.set(game.winner, slain);
         this.#addAchievement(
@@ -1778,7 +1782,7 @@ export class Achievements {
             "kingslayer",
             game.winner,
             game.playedAt,
-            { opponent: game.loser, gameId: game.id },
+            { opponent: game.loser, gameId: game.id, previousOpponents },
             game.id,
           ),
         );
@@ -3255,7 +3259,7 @@ export class Achievements {
       // Rank & Score
       "on-the-podium": { earned: 0 },
       "touched-the-throne": { earned: 0 },
-      kingslayer: { earned: 0 },
+      kingslayer: { earned: 0, slainOpponents: [] },
       "king-maker": { earned: 0 },
       // Giant Hunting resets at local midnight: current is today's wins over
       // higher-ranked opponents, best the most in any single day.
@@ -4282,6 +4286,12 @@ export class Achievements {
       }
     });
 
+    // Kingslayer is one time for each opponent, so the chase is a list of
+    // names, not a rank. The order follows the games that earned the badges.
+    progression["kingslayer"].slainOpponents = achievements.flatMap((achievement) =>
+      achievement.type === "kingslayer" ? [achievement.data.opponent] : [],
+    );
+
     return progression;
   }
 }
@@ -4358,7 +4368,10 @@ type AchievementDefinitions = {
   // `startDay` is the local midnight of the first day in the 5-consecutive-day
   // run of won days; `weekStart` the Monday of the week containing the run.
   "perfect-week": { weekStart: number; startDay: number };
-  kingslayer: { opponent: string; gameId: string };
+  // Beat the player ranked #1. One badge for each opponent.
+  // `previousOpponents` holds the #1 players the badge owner beat before this
+  // game, oldest first, and is empty for the first badge.
+  kingslayer: { opponent: string; gameId: string; previousOpponents: string[] };
   "king-maker": { newKing: string; netScoreGained: number };
   "touched-the-throne": { elo: number; firstGameAt: number; dethroned?: string };
   "on-the-podium": { elo: number; firstGameAt: number };
@@ -4782,8 +4795,12 @@ type GroupPlayStarProgression = BaseProgression & {
 };
 
 type KingslayerProgression = BaseProgression & {
-  // Who the best-ranked beaten opponent was, shown next to the best rank.
+  // Who the best-ranked beaten opponent was, shown next to the best rank
+  // while the player has no badge yet.
   bestOpponent?: string;
+  // Every #1 player the player beat, oldest first. The view shows this list
+  // in place of the best rank as soon as it holds one opponent.
+  slainOpponents: string[];
 };
 
 type ClimberProgression = ProgressionWithTarget & {
