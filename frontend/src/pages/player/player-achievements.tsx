@@ -262,7 +262,7 @@ export const ACHIEVEMENT_LABELS: Record<AchievementType, { title: string; descri
   },
   kingslayer: {
     title: "Kingslayer",
-    description: "Beat the player ranked #1 on the leaderboard",
+    description: "Beat the player ranked #1 on the leaderboard, one time for each different opponent",
     icon: "⚔️",
   },
   "king-maker": {

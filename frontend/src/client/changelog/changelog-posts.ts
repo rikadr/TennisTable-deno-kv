@@ -42,6 +42,21 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
+    slug: "kingslayer-per-opponent",
+    title: "Kingslayer for each different #1 player",
+    date: "2026-09-16",
+    tags: ["feature-update"],
+    summary: "Kingslayer ⚔️ gives a badge for each different player you beat while they are ranked #1.",
+    body: [
+      text(
+        "You get the Kingslayer badge each time you beat a different player who is #1 on the leaderboard. Each opponent gives the badge one time. A second win against the same #1 player does not give a new badge. Before this change, Kingslayer was one time only.",
+      ),
+      text(
+        "The app calculates the achievement from all games. If you beat more than one different #1 player in the past, you have the additional badges now.",
+      ),
+    ],
+  },
+  {
     slug: "game-details-tournament-section",
     title: "Tournaments on the game details page",
     date: "2026-08-31",

@@ -1536,7 +1536,10 @@ export class Achievements {
 
     const touchedThrone = new Set<string>();
     const onPodium = new Set<string>();
-    const kingslayed = new Set<string>();
+    // Kingslayer: the opponents each player has already kingslayed. The
+    // award is one time for each opponent, so the same opponent can only
+    // give a player the achievement one time.
+    const kingslayed = new Map<string, Set<string>>();
     const climber = new Set<string>();
 
     // Giant Hunting: per-player chase state for the local calendar day being
@@ -1760,11 +1763,15 @@ export class Achievements {
         }
       }
 
-      // Kingslayer: loser was #1 going into the match. One-time per
-      // player. Requires ≥5 ranked players so being "#1" actually means
-      // outranking a real cohort, not a tiny pool.
-      if (loserRankBefore === 1 && rankedCountBefore >= 5 && !kingslayed.has(game.winner)) {
-        kingslayed.add(game.winner);
+      // Kingslayer: loser was #1 going into the match. One time for each
+      // opponent — a player earns it again when they beat a different #1,
+      // but not when they beat the same #1 again. Requires ≥5 ranked
+      // players so being "#1" actually means outranking a real cohort, not a
+      // tiny pool.
+      if (loserRankBefore === 1 && rankedCountBefore >= 5 && !kingslayed.get(game.winner)?.has(game.loser)) {
+        const slain = kingslayed.get(game.winner) ?? new Set<string>();
+        slain.add(game.loser);
+        kingslayed.set(game.winner, slain);
         this.#addAchievement(
           game.winner,
           this.#createAchievement(
@@ -4465,7 +4472,7 @@ export type AchievementType = keyof AchievementDefinitions;
 // Whether each achievement can be earned again after it has been earned.
 // One-time achievements cross a threshold that never resets — total counts
 // that only grow (donut-5, close-calls, variety-player), a rank reached
-// (touched-the-throne, kingslayer) or a set that only fills (full-house).
+// (touched-the-throne) or a set that only fills (full-house).
 // Re-achievable achievements follow something that resets or can be retaken:
 // streaks, days and weeks, seasons, tournaments, retirements, per-opponent
 // chases, per-game conditions and league records. The Progress tab uses this
@@ -4518,7 +4525,7 @@ export const ACHIEVEMENT_IS_REACHIEVABLE: Record<AchievementType, boolean> = {
   "hat-trick": true, // Per 3-wins-in-90-minutes window
   "perfect-day": true, // Per qualifying day / week
   "perfect-week": true,
-  kingslayer: false,
+  kingslayer: true, // Per opponent — beating a different #1 earns it again
   "king-maker": true, // Per new #1
   "touched-the-throne": false,
   "on-the-podium": false,
