@@ -19,7 +19,10 @@ export type TournamentConfig = {
   doubleElimination: boolean;
   deleted: boolean;
   playerOrder?: string[];
+  /** The order that divides the players into groups when the group seeding is a random draw */
+  groupSeeding?: string[];
   overridePreferredGroupSize?: number;
+  randomGroupSeeding?: boolean;
 };
 
 type Tournament = {
@@ -98,6 +101,7 @@ export class TournamentsProjector {
       groupPlay: event.data.groupPlay,
       doubleElimination: event.data.doubleElimination ?? false,
       overridePreferredGroupSize: event.data.overridePreferredGroupSize,
+      randomGroupSeeding: event.data.randomGroupSeeding ?? false,
       deleted: false,
     };
   }
@@ -127,6 +131,8 @@ export class TournamentsProjector {
     if (event.data.doubleElimination !== undefined) tournament.config.doubleElimination = event.data.doubleElimination;
     if (event.data.overridePreferredGroupSize !== undefined)
       tournament.config.overridePreferredGroupSize = event.data.overridePreferredGroupSize;
+    if (event.data.randomGroupSeeding !== undefined)
+      tournament.config.randomGroupSeeding = event.data.randomGroupSeeding;
   }
   validateUpdateTournament(event: TournamentUpdated): ValidatorResponse {
     const existing = this.#tournamentsMap.get(event.stream);
@@ -142,6 +148,9 @@ export class TournamentsProjector {
     }
     if (hasStarted && event.data.doubleElimination !== undefined) {
       return { valid: false, message: "Cannot change double elimination setting after tournament has started" };
+    }
+    if (hasStarted && event.data.randomGroupSeeding !== undefined) {
+      return { valid: false, message: "Cannot change random group seeding after tournament has started" };
     }
     if (event.data.name !== undefined && !event.data.name.trim()) {
       return { valid: false, message: "Tournament name cannot be empty" };
@@ -167,6 +176,7 @@ export class TournamentsProjector {
   setPlayerOrder(event: TournamentSetPlayerOrder) {
     const tournament = this.#getOrCreateTournament(event.stream);
     tournament.config.playerOrder = event.data.playerOrder;
+    tournament.config.groupSeeding = event.data.groupSeeding;
   }
   validateSetPlayerOrder(event: TournamentSetPlayerOrder): ValidatorResponse {
     const existing = this.#tournamentsMap.get(event.stream);
@@ -175,6 +185,9 @@ export class TournamentsProjector {
     }
     if (!event.data.playerOrder || event.data.playerOrder.length === 0) {
       return { valid: false, message: "Player order cannot be empty" };
+    }
+    if (event.data.groupSeeding !== undefined && !isSamePlayers(event.data.groupSeeding, event.data.playerOrder)) {
+      return { valid: false, message: "Group seeding must contain the same players as the player order" };
     }
     return { valid: true };
   }
@@ -238,4 +251,12 @@ export class TournamentsProjector {
     }
     return { valid: true };
   }
+}
+
+/** True when both lists hold the same players one time each, in any order */
+export function isSamePlayers(a: string[], b: string[]): boolean {
+  if (a.length !== b.length) return false;
+  const setA = new Set(a);
+  if (setA.size !== a.length) return false;
+  return b.every((player) => setA.has(player));
 }

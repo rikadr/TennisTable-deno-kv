@@ -42,6 +42,21 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
+    slug: "random-group-seeding",
+    title: "Random group seeding in tournaments",
+    date: "2026-09-22",
+    tags: ["feature-update"],
+    summary: "An admin can set a group play tournament to divide the players into groups by a random draw.",
+    body: [
+      text(
+        "A tournament with group play has a new option: random group seeding. When it is on, the app draws the group seeding at random when the tournament starts. The strong players can then meet in the same group.",
+      ),
+      text(
+        "By default the app seeds the groups by leaderboard rank, then signup time. This default order still breaks ties in the group scores, also when the seeding is random. The info tab shows both orders.",
+      ),
+    ],
+  },
+  {
     slug: "kingslayer-per-opponent",
     title: "Kingslayer for each different #1 player",
     date: "2026-09-16",

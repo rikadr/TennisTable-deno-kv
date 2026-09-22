@@ -1,3 +1,4 @@
+import { isSamePlayers } from "../event-store/projectors/tournaments-projector";
 import { SimulateGameFn, Tournament, TournamentGame } from "./tournament";
 
 type GroupGame = Omit<TournamentGame, "advanceTo">;
@@ -15,7 +16,10 @@ export type GroupScorePlayer = {
 
 export class TournamentGroupPlay {
   readonly #tournament: Tournament;
+  /** Sorted by rank, then signup time. Breaks ties in the group scores */
   readonly playerOrder: string[];
+  /** The order that divides the players into groups. The random draw when the tournament has one, else the player order */
+  readonly groupSeeding: string[];
 
   groups: {
     players: string[];
@@ -29,8 +33,11 @@ export class TournamentGroupPlay {
   constructor(tournament: Tournament) {
     this.#tournament = tournament;
     this.playerOrder = this.#tournament.tournamentConfig.playerOrder ?? tournament.signedUp.map((s) => s.player);
+    const groupSeeding = this.#tournament.tournamentConfig.groupSeeding;
+    this.groupSeeding =
+      groupSeeding !== undefined && isSamePlayers(groupSeeding, this.playerOrder) ? groupSeeding : this.playerOrder;
 
-    const groups = this.#divideInGroups(this.playerOrder);
+    const groups = this.#divideInGroups(this.groupSeeding);
     const groupGames = this.#generateGroupGames(groups);
     this.#fillGroupsWithGames(groupGames);
     this.groupScores = this.#calculateGroupScores(groups, groupGames);
@@ -41,6 +48,11 @@ export class TournamentGroupPlay {
       played: groupGames[groupIndex].filter((g) => !!g.completedAt) as GroupGame[],
       pending: groupGames[groupIndex].filter((g) => !g.completedAt),
     }));
+  }
+
+  /** True when a random draw, and not the player order, divides the players into groups */
+  get hasRandomGroupSeeding(): boolean {
+    return this.groupSeeding !== this.playerOrder;
   }
 
   getBracketPlayerOrder(): string[] | undefined {
@@ -97,7 +109,7 @@ export class TournamentGroupPlay {
 
     for (const group of groups) {
       // Sort players by their order in the tournament
-      group.sort((a, b) => players.findIndex((n) => n === a) - players.findIndex((n) => n === b));
+      group.sort((a, b) => this.playerOrder.indexOf(a) - this.playerOrder.indexOf(b));
     }
     return groups;
   }

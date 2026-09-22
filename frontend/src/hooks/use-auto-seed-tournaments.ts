@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { EventTypeEnum, TournamentSetPlayerOrder } from "../client/client-db/event-store/event-types";
+import { TournamentConfig } from "../client/client-db/event-store/projectors/tournaments-projector";
 import { TennisTable } from "../client/client-db/tennis-table";
 import { useEventMutation } from "./use-event-mutation";
 
@@ -8,17 +9,21 @@ export function useAutoSeedTournaments(tennisTable: TennisTable) {
   const addEventMutation = useEventMutation();
 
   useEffect(() => {
-    const seedTournament = (config: { id: string; startDate: number }) => {
+    const seedTournament = (config: TournamentConfig) => {
       if (attemptedRef.current.has(config.id)) return;
       attemptedRef.current.add(config.id);
 
       const playerOrder = tennisTable.tournaments.buildPlayerOrder(config.id);
+      const groupSeeding =
+        config.groupPlay && config.randomGroupSeeding
+          ? tennisTable.tournaments.buildRandomGroupSeeding(config.id)
+          : undefined;
 
       const event: TournamentSetPlayerOrder = {
         time: config.startDate - 1,
         stream: config.id,
         type: EventTypeEnum.TOURNAMENT_SET_PLAYER_ORDER,
-        data: { playerOrder },
+        data: { playerOrder, groupSeeding },
       };
 
       addEventMutation.mutate(event);

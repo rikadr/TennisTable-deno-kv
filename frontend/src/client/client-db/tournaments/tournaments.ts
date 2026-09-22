@@ -76,6 +76,19 @@ export class Tournaments {
       });
   }
 
+  /**
+   * A random draw of the players for the group seeding. Fisher-Yates over the default
+   * player order, so the result is a permutation of the same players.
+   */
+  buildRandomGroupSeeding(tournamentId: string, random: () => number = Math.random): string[] {
+    const seeding = this.buildPlayerOrder(tournamentId);
+    for (let i = seeding.length - 1; i > 0; i--) {
+      const j = Math.floor(random() * (i + 1));
+      [seeding[i], seeding[j]] = [seeding[j], seeding[i]];
+    }
+    return seeding;
+  }
+
   findAllPendingGames(player1: string | null | undefined, player2: string | null | undefined) {
     if (!player1 || !player2) return [];
     return this.getTournaments()

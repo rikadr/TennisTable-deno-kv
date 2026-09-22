@@ -36,6 +36,7 @@ export const TournamentGroupPlayComponent: React.FC<{
 };
 
 const GroupPlayRules: React.FC<{ tournament: Tournament }> = ({ tournament }) => {
+  const hasRandomGroupSeeding = tournament.groupPlay?.hasRandomGroupSeeding ?? false;
   const hasUnequalGroups = tournament.groupPlay
     ? new Set(tournament.groupPlay.groups.map((g) => g.players.length)).size > 1
     : false;
@@ -97,7 +98,9 @@ const GroupPlayRules: React.FC<{ tournament: Tournament }> = ({ tournament }) =>
           "Least losses",
           "Highest overall leaderboard rank at tournament start",
           "First to sign up to the tournament",
-          "Group seeding order. Found in the info tab",
+          hasRandomGroupSeeding
+            ? "Group play tie-breaker order. Found in the info tab"
+            : "Group seeding order. Found in the info tab",
         ].map((text, i) => (
           <div key={i} className="flex items-start gap-3 py-1.5 px-3">
             <div className="flex-shrink-0 w-6 h-6 rounded-full bg-secondary-background/50 flex items-center justify-center">
@@ -126,7 +129,7 @@ export const PlacementBox: React.FC<{ on: boolean }> = ({ on }) => {
 /** Used to debug group distribution visually */
 export const GroupDistribution: React.FC<{ tournament: Tournament }> = ({ tournament }) => {
   const context = useEventDbContext();
-  const players = tournament.groupPlay!.playerOrder;
+  const players = tournament.groupPlay!.groupSeeding;
   const groups = tournament.groupPlay!.groups;
   const groupDistribution: { id: string; groupIndex: number }[] = players.map((player) => ({
     id: player,
