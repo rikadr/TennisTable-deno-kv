@@ -70,12 +70,17 @@ export const TournamentInfo = ({ tournament }: { tournament: Tournament }) => {
         )}
 
         <InfoRow label="Format">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {hasGroupPlay && (
               <>
                 <span className="px-2 py-1 rounded text-xs font-medium bg-secondary-background text-secondary-text">
                   Group Play
-                </span>{" "}
+                </span>
+                {tournament.tournamentConfig.randomGroupSeeding && (
+                  <span className="px-2 py-1 rounded text-xs font-medium ring-1 ring-secondary-background text-primary-text/80">
+                    Random group seeding
+                  </span>
+                )}{" "}
                 {"->"}
               </>
             )}
@@ -86,10 +91,22 @@ export const TournamentInfo = ({ tournament }: { tournament: Tournament }) => {
         </InfoRow>
 
         {hasStarted && (
-          <div className="flex gap-6">
+          <div className="flex flex-wrap gap-6">
+            {hasGroupPlay && tournament.groupPlay?.hasRandomGroupSeeding && (
+              <SeedingCard
+                label="Group seeding order"
+                sublabel="Random draw at tournament start"
+                players={tournament.groupPlay.groupSeeding}
+                playerName={context.playerName.bind(context)}
+              />
+            )}
             {hasGroupPlay && tournament.groupPlay && (
               <SeedingCard
-                label="Group seeding order & group play tie-breaker"
+                label={
+                  tournament.groupPlay.hasRandomGroupSeeding
+                    ? "Group play tie-breaker"
+                    : "Group seeding order & group play tie-breaker"
+                }
                 players={tournament.groupPlay.playerOrder}
                 playerName={context.playerName.bind(context)}
               />

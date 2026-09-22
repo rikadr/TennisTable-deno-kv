@@ -34,6 +34,15 @@ function baseEvents(players: string[], options?: { overridePreferredGroupSize?: 
   return events;
 }
 
+function playerOrderEvent(playerOrder: string[], groupSeeding?: string[]): EventType {
+  return {
+    time: START_DATE - 1,
+    stream: TOURNAMENT_ID,
+    type: EventTypeEnum.TOURNAMENT_SET_PLAYER_ORDER,
+    data: { playerOrder, groupSeeding },
+  };
+}
+
 function cancelSignupEvent(player: string, time: number): EventType {
   return {
     time,
@@ -130,6 +139,57 @@ describe("Group distribution", () => {
       expect(group.pending).toHaveLength((k * (k - 1)) / 2);
       expect(group.played).toHaveLength(0);
     }
+  });
+});
+
+describe("Random group seeding", () => {
+  const players = playerNames(6);
+  const draw = ["P4", "P1", "P6", "P3", "P2", "P5"];
+
+  it("divides the players into groups by the group seeding", () => {
+    const withDraw = getGroupPlay([...baseEvents(players), playerOrderEvent(players, draw)]);
+    const byDraw = getGroupPlay([...baseEvents(players), playerOrderEvent(draw)]);
+
+    expect(withDraw.groupSeeding).toEqual(draw);
+    expect(withDraw.hasRandomGroupSeeding).toBe(true);
+    expect(withDraw.groups.map((g) => [...g.players].sort())).toEqual(byDraw.groups.map((g) => [...g.players].sort()));
+  });
+
+  it("keeps the player order for the tie-breaker and the players in a group", () => {
+    const groupPlay = getGroupPlay([...baseEvents(players), playerOrderEvent(players, draw)]);
+
+    expect(groupPlay.playerOrder).toEqual(players);
+    players.forEach((player, index) => {
+      expect(groupPlay.groupScores.get(player)!.playerOrderIndex).toBe(index);
+    });
+    for (const group of groupPlay.groups) {
+      const indexes = group.players.map((p) => players.indexOf(p));
+      expect(indexes).toEqual([...indexes].sort((a, b) => a - b));
+    }
+  });
+
+  it("draws a permutation of the player order", () => {
+    const tennisTable = new TennisTable({ events: baseEvents(players) });
+    let calls = 0;
+    const seeding = tennisTable.tournaments.buildRandomGroupSeeding(TOURNAMENT_ID, () => {
+      calls++;
+      return 0.5;
+    });
+
+    expect(calls).toBe(players.length - 1);
+    expect([...seeding].sort()).toEqual([...players].sort());
+    expect(seeding).not.toEqual(tennisTable.tournaments.buildPlayerOrder(TOURNAMENT_ID));
+  });
+
+  it("uses the player order when there is no group seeding", () => {
+    const groupPlay = getGroupPlay([...baseEvents(players), playerOrderEvent(players)]);
+    expect(groupPlay.groupSeeding).toBe(groupPlay.playerOrder);
+    expect(groupPlay.hasRandomGroupSeeding).toBe(false);
+  });
+
+  it("ignores a group seeding that does not hold the same players", () => {
+    const groupPlay = getGroupPlay([...baseEvents(players), playerOrderEvent(players, ["P1", "P2"])]);
+    expect(groupPlay.groupSeeding).toBe(groupPlay.playerOrder);
   });
 });
 

@@ -33,8 +33,13 @@ function deleteEvent(stream: string, time = 3000): TournamentDeleted {
   return { time, stream, type: EventTypeEnum.TOURNAMENT_DELETED, data: null };
 }
 
-function playerOrderEvent(stream: string, playerOrder: string[], time = 4000): TournamentSetPlayerOrder {
-  return { time, stream, type: EventTypeEnum.TOURNAMENT_SET_PLAYER_ORDER, data: { playerOrder } };
+function playerOrderEvent(
+  stream: string,
+  playerOrder: string[],
+  time = 4000,
+  groupSeeding?: string[],
+): TournamentSetPlayerOrder {
+  return { time, stream, type: EventTypeEnum.TOURNAMENT_SET_PLAYER_ORDER, data: { playerOrder, groupSeeding } };
 }
 
 function signupEvent(stream: string, player: string, time = 5000): TournamentSignup {
@@ -106,6 +111,7 @@ describe("TournamentsProjector projection", () => {
       groupPlay: true,
       doubleElimination: true,
       overridePreferredGroupSize: undefined,
+      randomGroupSeeding: false,
       deleted: false,
     });
   });
@@ -300,6 +306,53 @@ describe("validateSetPlayerOrder", () => {
     const result = projector.validateSetPlayerOrder(playerOrderEvent("t1", []));
     expectInvalid(result);
     expect(result.message).toBe("Player order cannot be empty");
+  });
+
+  it("accepts a group seeding that is a permutation of the player order", () => {
+    const projector = new TournamentsProjector();
+    projector.createTournament(createEvent("t1"));
+    const event = playerOrderEvent("t1", ["p1", "p2", "p3"], 4000, ["p3", "p1", "p2"]);
+    expect(projector.validateSetPlayerOrder(event)).toEqual({ valid: true });
+
+    projector.setPlayerOrder(event);
+    expect(projector.getTournamentConfig("t1")?.groupSeeding).toEqual(["p3", "p1", "p2"]);
+  });
+
+  it("rejects a group seeding with other players than the player order", () => {
+    const projector = new TournamentsProjector();
+    projector.createTournament(createEvent("t1"));
+
+    const missing = projector.validateSetPlayerOrder(playerOrderEvent("t1", ["p1", "p2"], 4000, ["p1"]));
+    expectInvalid(missing);
+    expect(missing.message).toBe("Group seeding must contain the same players as the player order");
+
+    const duplicate = projector.validateSetPlayerOrder(playerOrderEvent("t1", ["p1", "p2"], 4000, ["p1", "p1"]));
+    expectInvalid(duplicate);
+  });
+});
+
+describe("randomGroupSeeding", () => {
+  it("defaults to false and is stored from the create event", () => {
+    const projector = new TournamentsProjector();
+    projector.createTournament(createEvent("t1"));
+    expect(projector.getTournamentConfig("t1")?.randomGroupSeeding).toBe(false);
+
+    projector.createTournament(createEvent("t2", { groupPlay: true, randomGroupSeeding: true }));
+    expect(projector.getTournamentConfig("t2")?.randomGroupSeeding).toBe(true);
+  });
+
+  it("can be changed before the tournament starts, but not after", () => {
+    const projector = new TournamentsProjector();
+    projector.createTournament(createEvent("t1", { groupPlay: true }));
+    const update = updateEvent("t1", { randomGroupSeeding: true });
+    expect(projector.validateUpdateTournament(update)).toEqual({ valid: true });
+    projector.updateTournament(update);
+    expect(projector.getTournamentConfig("t1")?.randomGroupSeeding).toBe(true);
+
+    projector.createTournament(createEvent("t2", { startDate: 1, groupPlay: true }));
+    const result = projector.validateUpdateTournament(updateEvent("t2", { randomGroupSeeding: true }));
+    expectInvalid(result);
+    expect(result.message).toBe("Cannot change random group seeding after tournament has started");
   });
 });
 

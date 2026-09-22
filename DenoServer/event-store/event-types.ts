@@ -95,6 +95,8 @@ export type TournamentCreated = GenericEvent<
     startDate: number;
     groupPlay: boolean;
     overridePreferredGroupSize?: number;
+    /** Group play: draw the group seeding at random instead of by rank and signup time */
+    randomGroupSeeding?: boolean;
     doubleElimination?: boolean;
   }
 >;
@@ -106,13 +108,19 @@ export type TournamentUpdated = GenericEvent<
     startDate?: number;
     groupPlay?: boolean;
     overridePreferredGroupSize?: number;
+    randomGroupSeeding?: boolean;
     doubleElimination?: boolean;
   }
 >;
 export type TournamentDeleted = GenericEvent<EventTypeEnum.TOURNAMENT_DELETED, null>;
 export type TournamentSetPlayerOrder = GenericEvent<
   EventTypeEnum.TOURNAMENT_SET_PLAYER_ORDER,
-  { playerOrder: string[] }
+  {
+    /** Sorted by rank, then signup time. Seeds the bracket and breaks ties in group play */
+    playerOrder: string[];
+    /** The same players in the order that divides them into groups. Set only when the tournament draws the group seeding at random */
+    groupSeeding?: string[];
+  }
 >;
 
 export type TournamentSignup = GenericEvent<EventTypeEnum.TOURNAMENT_SIGNUP, { player: string }>;

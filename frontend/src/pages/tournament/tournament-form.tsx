@@ -7,6 +7,7 @@ export type TournamentFormData = {
   description: string;
   startDate: string; // datetime-local string
   groupPlay: boolean;
+  randomGroupSeeding: boolean;
   doubleElimination: boolean;
   overridePreferredGroupSize?: number;
 };
@@ -17,7 +18,12 @@ type TournamentFormProps = {
   submitLabel: string;
   isPending: boolean;
   /** Fields that are locked and cannot be edited */
-  lockedFields?: { startDate?: boolean; groupPlay?: boolean; doubleElimination?: boolean };
+  lockedFields?: {
+    startDate?: boolean;
+    groupPlay?: boolean;
+    randomGroupSeeding?: boolean;
+    doubleElimination?: boolean;
+  };
 };
 
 export const TournamentForm = ({
@@ -31,6 +37,7 @@ export const TournamentForm = ({
   const [description, setDescription] = useState(initialData?.description ?? "");
   const [startDate, setStartDate] = useState(initialData?.startDate ?? "");
   const [groupPlay, setGroupPlay] = useState(initialData?.groupPlay ?? false);
+  const [randomGroupSeeding, setRandomGroupSeeding] = useState(initialData?.randomGroupSeeding ?? false);
   const [doubleElimination, setDoubleElimination] = useState(initialData?.doubleElimination ?? false);
   const [overrideGroupSize, setOverrideGroupSize] = useState<string>(
     initialData?.overridePreferredGroupSize?.toString() ?? "",
@@ -61,6 +68,7 @@ export const TournamentForm = ({
       description: description.trim(),
       startDate,
       groupPlay,
+      randomGroupSeeding: groupPlay && randomGroupSeeding,
       doubleElimination,
       overridePreferredGroupSize: groupPlay ? parsedGroupSize : undefined,
     });
@@ -162,6 +170,35 @@ export const TournamentForm = ({
         <p className="text-xs text-primary-text/60 mt-1">
           Override the preferred number of players per group. Leave empty for automatic sizing.
         </p>
+      </div>
+
+      <div>
+        <label
+          className={classNames(
+            "flex items-center gap-3 cursor-pointer",
+            (!groupPlay || lockedFields?.randomGroupSeeding) && "opacity-50 cursor-not-allowed",
+          )}
+        >
+          <input
+            type="checkbox"
+            checked={groupPlay && randomGroupSeeding}
+            onChange={(e) => setRandomGroupSeeding(e.target.checked)}
+            disabled={!groupPlay || lockedFields?.randomGroupSeeding}
+            className="w-5 h-5 shrink-0 rounded accent-secondary-background"
+          />
+          <div>
+            <span className="text-xs font-medium text-primary-text/70 uppercase tracking-wide">
+              Random group seeding
+            </span>
+            {lockedFields?.randomGroupSeeding && (
+              <span className="ml-2 text-xs text-primary-text/50">(locked - tournament has started)</span>
+            )}
+            <p className="text-xs text-primary-text/60 mt-0.5">
+              A random draw at tournament start divides the players into groups. By default the groups are seeded by
+              leaderboard rank, then signup time. The default order still breaks ties in the group scores.
+            </p>
+          </div>
+        </label>
       </div>
 
       <div>

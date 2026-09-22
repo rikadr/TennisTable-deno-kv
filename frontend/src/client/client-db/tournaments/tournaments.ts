@@ -1,3 +1,4 @@
+import { shuffleArray } from "../../../common/array-utils";
 import { TournamentConfig } from "../event-store/projectors/tournaments-projector";
 import { TennisTable } from "../tennis-table";
 import { TournamentPrediction } from "./prediction";
@@ -74,6 +75,14 @@ export class Tournaments {
         const signupB = signups.find((s) => s.player === b)!.time;
         return signupA - signupB;
       });
+  }
+
+  /**
+   * A random draw of the players for the group seeding. Fisher-Yates over the default
+   * player order, so the result is a permutation of the same players.
+   */
+  buildRandomGroupSeeding(tournamentId: string, random: () => number = Math.random): string[] {
+    return shuffleArray(this.buildPlayerOrder(tournamentId), random);
   }
 
   findAllPendingGames(player1: string | null | undefined, player2: string | null | undefined) {
