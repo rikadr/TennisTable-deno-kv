@@ -6,6 +6,7 @@ import { relativeTimeString } from "../../common/date-utils";
 import { session } from "../../services/auth";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { WinnerBox } from "../leaderboard/tournament-pending-games";
+import { tournamentDrawUrl } from "./draw/tournament-draw-page";
 
 const formatDate = (date: Date) => {
   return new Intl.DateTimeFormat("en-US", {
@@ -42,14 +43,24 @@ export const TournamentInfo = ({ tournament }: { tournament: Tournament }) => {
             <p className="text-sm text-primary-text/80 leading-relaxed">{tournament.description}</p>
           )}
         </div>
-        {isAdmin && (
-          <Link
-            to={`/tournament/edit?tournament=${tournament.id}`}
-            className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium bg-secondary-background text-secondary-text hover:opacity-80"
-          >
-            Edit
-          </Link>
-        )}
+        <div className="flex shrink-0 gap-2">
+          {hasGroupPlay && tournament.tournamentConfig.randomGroupSeeding && (
+            <Link
+              to={tournamentDrawUrl(tournament.id)}
+              className="px-3 py-1.5 rounded-lg text-xs font-medium bg-secondary-background text-secondary-text hover:opacity-80"
+            >
+              Live draw 🎲
+            </Link>
+          )}
+          {isAdmin && (
+            <Link
+              to={`/tournament/edit?tournament=${tournament.id}`}
+              className="px-3 py-1.5 rounded-lg text-xs font-medium bg-secondary-background text-secondary-text hover:opacity-80"
+            >
+              Edit
+            </Link>
+          )}
+        </div>
       </div>
 
       <div className="space-y-4">
