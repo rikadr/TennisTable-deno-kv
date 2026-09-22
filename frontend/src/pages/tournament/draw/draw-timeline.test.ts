@@ -60,18 +60,25 @@ describe("boardStateAt", () => {
 
   it("cycles the open slot, then settles on the drawn player", () => {
     const cycling = boardStateAt(groups, steps, PLAYER + 100);
-    expect(cycling.groups[0]).toEqual([{ kind: "revealed", player: "A" }, { kind: "cycling" }]);
+    expect(cycling.groups[0]).toEqual([{ kind: "revealed", player: "A", fresh: false }, { kind: "cycling" }]);
     expect(cycling.groups[1]).toEqual([{ kind: "empty" }]);
-    expect(cycling.pool).toEqual(["B", "C"]);
     expect(cycling.currentGroupIndex).toBe(0);
+    expect(cycling.celebratingGroupIndex).toBeUndefined();
     expect(cycling.done).toBe(false);
 
     const settled = boardStateAt(groups, steps, PLAYER + CYCLE);
     expect(settled.groups[0]).toEqual([
-      { kind: "revealed", player: "A" },
-      { kind: "revealed", player: "B" },
+      { kind: "revealed", player: "A", fresh: false },
+      { kind: "revealed", player: "B", fresh: true }, // The moment of the draw
     ]);
-    expect(settled.pool).toEqual(["C"]);
+  });
+
+  it("celebrates a group during its pause only", () => {
+    expect(boardStateAt(groups, steps, 2 * PLAYER - 1).celebratingGroupIndex).toBeUndefined();
+    expect(boardStateAt(groups, steps, 2 * PLAYER).celebratingGroupIndex).toBe(0);
+    expect(boardStateAt(groups, steps, 2 * PLAYER + GROUP_PAUSE).celebratingGroupIndex).toBeUndefined();
+    expect(boardStateAt(groups, steps, 3 * PLAYER + GROUP_PAUSE).celebratingGroupIndex).toBe(1);
+    expect(boardStateAt(groups, steps, 3 * PLAYER + 2 * GROUP_PAUSE).celebratingGroupIndex).toBeUndefined();
   });
 
   it("focuses the next group during and after its pause, and the last group at the end", () => {
@@ -90,8 +97,8 @@ describe("boardStateAt", () => {
   it("shows an empty board before the start", () => {
     const state = boardStateAt(groups, steps, -500);
     expect(state.groups.flat().every((slot) => slot.kind === "empty")).toBe(true);
-    expect(state.pool).toEqual(["A", "B", "C"]);
     expect(state.currentGroupIndex).toBe(0);
+    expect(state.celebratingGroupIndex).toBeUndefined();
   });
 });
 

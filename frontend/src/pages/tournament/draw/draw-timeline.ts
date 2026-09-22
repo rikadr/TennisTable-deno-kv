@@ -7,11 +7,11 @@ export const DRAW_TIMING = {
   /** From the tournament start to the first reveal. Gives the seeding event time to arrive */
   START_DELAY: 10_000,
   /** One player: the names cycle, then the drawn player is shown */
-  PLAYER: 3_000,
+  PLAYER: 5_000,
   /** The part of PLAYER where the names cycle before they stop on the drawn player */
-  CYCLE: 2_000,
+  CYCLE: 3_500,
   /** The full group is shown before the next group starts */
-  GROUP_PAUSE: 5_000,
+  GROUP_PAUSE: 8_000,
   /** The full board is shown before the page navigates to the tournament */
   END: 5_000,
 } as const;
@@ -21,15 +21,17 @@ export type DrawStep =
   | { kind: "group-pause"; groupIndex: number; startsAt: number; endsAt: number }
   | { kind: "end"; startsAt: number; endsAt: number };
 
-export type DrawSlot = { kind: "revealed"; player: string } | { kind: "cycling" } | { kind: "empty" };
+export type DrawSlot =
+  /** `fresh` is true while the reveal step of this player is still running: the moment of the draw */
+  { kind: "revealed"; player: string; fresh: boolean } | { kind: "cycling" } | { kind: "empty" };
 
 export type DrawBoardState = {
   /** One entry per group, one slot per player */
   groups: DrawSlot[][];
   /** The group the show is at. The last group when the show is at the end */
   currentGroupIndex: number;
-  /** Players not yet revealed. The names that cycle in an open slot */
-  pool: string[];
+  /** The group whose pause runs now: its last player was just drawn */
+  celebratingGroupIndex?: number;
   /** True when the end step is over */
   done: boolean;
 };
@@ -70,25 +72,30 @@ export function stepIndexAt(steps: DrawStep[], elapsed: number): number {
 export function boardStateAt(drawGroups: string[][], steps: DrawStep[], elapsed: number): DrawBoardState {
   const stepIndex = stepIndexAt(steps, elapsed);
   const groups: DrawSlot[][] = drawGroups.map((group) => group.map(() => ({ kind: "empty" })));
-  const pool: string[] = [];
 
   steps.forEach((step, index) => {
     if (step.kind !== "reveal") return;
     const isPast = index < stepIndex;
     const isSettled = index === stepIndex && elapsed - step.startsAt >= DRAW_TIMING.CYCLE;
     if (isPast || isSettled) {
-      groups[step.groupIndex][step.slotIndex] = { kind: "revealed", player: step.player };
-    } else {
-      pool.push(step.player);
-      if (index === stepIndex) groups[step.groupIndex][step.slotIndex] = { kind: "cycling" };
+      groups[step.groupIndex][step.slotIndex] = { kind: "revealed", player: step.player, fresh: isSettled };
+    } else if (index === stepIndex) {
+      groups[step.groupIndex][step.slotIndex] = { kind: "cycling" };
     }
   });
 
   const currentStep = steps[Math.min(Math.max(stepIndex, 0), steps.length - 1)];
   const currentGroupIndex =
     currentStep === undefined || currentStep.kind === "end" ? drawGroups.length - 1 : currentStep.groupIndex;
+  const celebratingGroupIndex =
+    stepIndex >= 0 && currentStep?.kind === "group-pause" ? currentStep.groupIndex : undefined;
 
-  return { groups, currentGroupIndex: Math.max(currentGroupIndex, 0), pool, done: stepIndex >= steps.length };
+  return {
+    groups,
+    currentGroupIndex: Math.max(currentGroupIndex, 0),
+    celebratingGroupIndex,
+    done: stepIndex >= steps.length,
+  };
 }
 
 /**

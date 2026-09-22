@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import ConfettiExplosion from "react-confetti-explosion";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { Tournament } from "../../../client/client-db/tournaments/tournament";
 import { TournamentGroupPlay } from "../../../client/client-db/tournaments/group-play";
@@ -23,6 +24,10 @@ import {
 const CLOCK_INTERVAL = 200;
 /** How often the cycling name changes */
 const CYCLE_INTERVAL = 90;
+/** A few particles when one player is drawn */
+const REVEAL_CONFETTI = { particleCount: 14, force: 0.4, duration: 1_800, width: 400, particleSize: 8 } as const;
+/** A bigger burst when a group is complete */
+const GROUP_CONFETTI = { particleCount: 80, force: 0.6, duration: 2_800, width: 900 } as const;
 /** A page that mounts this close after the anchor is a live viewer, not a late joiner */
 const LIVE_TOLERANCE = 1_000;
 
@@ -202,6 +207,7 @@ const DrawShow: React.FC<{
     [groupPlay],
   );
   const steps = useMemo(() => buildDrawTimeline(drawGroups), [drawGroups]);
+  const allPlayers = useMemo(() => drawGroups.flat(), [drawGroups]);
 
   // The wall-clock time the local playback started. Equal to the anchor when in sync with the live
   // show. Later than the anchor when the viewer joined late: the show then plays from the start,
@@ -222,8 +228,6 @@ const DrawShow: React.FC<{
   useEffect(() => {
     currentGroupRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }, [board.currentGroupIndex]);
-
-  const otherGroups = drawGroups.map((_, index) => index).filter((index) => index !== board.currentGroupIndex);
 
   return (
     <div className="mx-4 md:mx-10 space-y-6 text-primary-text">
@@ -259,31 +263,28 @@ const DrawShow: React.FC<{
         )}
       </DrawHeader>
 
-      <div ref={currentGroupRef} className="max-w-lg mx-auto scroll-mt-4">
-        <GroupCard
-          groupIndex={board.currentGroupIndex}
-          slots={board.groups[board.currentGroupIndex]}
-          pool={board.pool}
-          playerName={context.playerName.bind(context)}
-          size="large"
-        />
-      </div>
-
-      {otherGroups.length > 0 && (
-        <div className="flex flex-wrap justify-center gap-3">
-          {otherGroups.map((groupIndex) => (
-            <div key={groupIndex} className="w-full xs:w-64">
+      {/* One list with stable keys, so a group keeps its DOM nodes when it changes size and its reveals do not replay */}
+      <div className="flex flex-wrap justify-center gap-3">
+        {drawGroups.map((_, groupIndex) => {
+          const isCurrent = groupIndex === board.currentGroupIndex;
+          return (
+            <div
+              key={groupIndex}
+              ref={isCurrent ? currentGroupRef : undefined}
+              className={classNames(isCurrent ? "basis-full max-w-lg scroll-mt-4" : "w-full xs:w-64")}
+            >
               <GroupCard
                 groupIndex={groupIndex}
                 slots={board.groups[groupIndex]}
-                pool={board.pool}
+                allPlayers={allPlayers}
                 playerName={context.playerName.bind(context)}
-                size="small"
+                size={isCurrent ? "large" : "small"}
+                celebrating={board.celebratingGroupIndex === groupIndex}
               />
             </div>
-          ))}
-        </div>
-      )}
+          );
+        })}
+      </div>
 
       {!isPreview && (
         <div className="text-center pb-6">
@@ -299,10 +300,11 @@ const DrawShow: React.FC<{
 const GroupCard: React.FC<{
   groupIndex: number;
   slots: DrawSlot[];
-  pool: string[];
+  allPlayers: string[];
   playerName: (id: string) => string;
   size: "large" | "small";
-}> = ({ groupIndex, slots, pool, playerName, size }) => {
+  celebrating: boolean;
+}> = ({ groupIndex, slots, allPlayers, playerName, size, celebrating }) => {
   const revealedCount = slots.filter((slot) => slot.kind === "revealed").length;
   const isComplete = revealedCount === slots.length;
   const large = size === "large";
@@ -315,7 +317,12 @@ const GroupCard: React.FC<{
         !large && revealedCount === 0 && "opacity-60",
       )}
     >
-      <div className="flex justify-between items-baseline mb-3">
+      <div className="relative flex justify-between items-baseline mb-3">
+        {celebrating && (
+          <div className="absolute left-1/2 top-0">
+            <ConfettiExplosion {...GROUP_CONFETTI} />
+          </div>
+        )}
         <h2 className={classNames("font-semibold", large ? "text-2xl" : "text-base")}>Group {groupIndex + 1}</h2>
         <span className="text-xs text-primary-text/60">
           {isComplete ? "Complete" : `${revealedCount} / ${slots.length}`}
@@ -323,7 +330,7 @@ const GroupCard: React.FC<{
       </div>
       <div className={classNames(large ? "space-y-2" : "space-y-1")}>
         {slots.map((slot, slotIndex) => (
-          <SlotRow key={slotIndex} slot={slot} pool={pool} playerName={playerName} large={large} />
+          <SlotRow key={slotIndex} slot={slot} allPlayers={allPlayers} playerName={playerName} large={large} />
         ))}
       </div>
     </div>
@@ -332,16 +339,21 @@ const GroupCard: React.FC<{
 
 const SlotRow: React.FC<{
   slot: DrawSlot;
-  pool: string[];
+  allPlayers: string[];
   playerName: (id: string) => string;
   large: boolean;
-}> = ({ slot, pool, playerName, large }) => {
+}> = ({ slot, allPlayers, playerName, large }) => {
   const avatarSize = large ? 44 : 24;
   const rowClass = classNames("flex items-center gap-3 rounded-lg", large ? "h-14 px-3" : "h-9 px-2");
 
   if (slot.kind === "revealed") {
     return (
-      <div className={classNames(rowClass, "bg-secondary-background/20 animate-draw-reveal")}>
+      <div className={classNames(rowClass, "relative bg-secondary-background/20 animate-draw-reveal")}>
+        {slot.fresh && (
+          <div className="absolute left-1/2 top-1/2">
+            <ConfettiExplosion {...REVEAL_CONFETTI} />
+          </div>
+        )}
         <ProfilePicture playerId={slot.player} size={avatarSize} border={2} />
         <p className={classNames("truncate font-medium", large ? "text-xl" : "text-sm")}>{playerName(slot.player)}</p>
       </div>
@@ -357,7 +369,7 @@ const SlotRow: React.FC<{
         >
           ?
         </div>
-        <CyclingName pool={pool} playerName={playerName} large={large} />
+        <CyclingName pool={allPlayers} playerName={playerName} large={large} />
       </div>
     );
   }
@@ -372,6 +384,7 @@ const SlotRow: React.FC<{
   );
 };
 
+/** Shows one name after another from the pool, in a random order that does not repeat a name twice in a row */
 const CyclingName: React.FC<{ pool: string[]; playerName: (id: string) => string; large: boolean }> = ({
   pool,
   playerName,
