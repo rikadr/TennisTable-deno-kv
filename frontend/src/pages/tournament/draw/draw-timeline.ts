@@ -18,8 +18,10 @@ export const DRAW_TIMING = {
   CYCLE_TICK_SLOWEST: 700,
   /** The last name of the cycle is the drawn player. It holds at least this long before the reveal */
   CYCLE_LANDING: 600,
-  /** The full group is shown before the next group starts */
-  GROUP_PAUSE: 8_000,
+  /** The full group is shown before the next group starts. Starts with SORT */
+  GROUP_PAUSE: 10_000,
+  /** The first part of GROUP_PAUSE: the players move to the default order. The confetti comes after */
+  SORT: 2_000,
   /** The full board is shown before the page navigates to the tournament */
   END: 5_000,
 } as const;
@@ -47,7 +49,7 @@ export type DrawBoardState = {
   sorted: boolean[];
   /** The group the show is at. The last group when the show is at the end */
   currentGroupIndex: number;
-  /** The group whose pause runs now: its last player was just drawn */
+  /** The group whose pause runs now and whose sort is done: the moment of its confetti */
   celebratingGroupIndex?: number;
   /** True when the end step is over */
   done: boolean;
@@ -131,7 +133,9 @@ export function boardStateAt(
   const currentGroupIndex =
     currentStep === undefined || currentStep.kind === "end" ? drawGroups.length - 1 : currentStep.groupIndex;
   const celebratingGroupIndex =
-    stepIndex >= 0 && currentStep?.kind === "group-pause" ? currentStep.groupIndex : undefined;
+    stepIndex >= 0 && currentStep?.kind === "group-pause" && elapsed - currentStep.startsAt >= DRAW_TIMING.SORT
+      ? currentStep.groupIndex
+      : undefined;
 
   return {
     groups,

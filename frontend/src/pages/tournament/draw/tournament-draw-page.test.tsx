@@ -147,8 +147,11 @@ describe("TournamentDrawPage", () => {
     advance(DRAW_TIMING.PLAYER - DRAW_TIMING.CYCLE); // Second player cycles
     expect(screen.queryByTestId("confetti")).not.toBeInTheDocument();
 
-    advance(2 * DRAW_TIMING.PLAYER); // Group 1 complete, its pause runs
+    advance(2 * DRAW_TIMING.PLAYER); // Group 1 complete, its sort runs
     expect(screen.getByText("Complete")).toBeInTheDocument();
+    expect(screen.queryByTestId("confetti")).not.toBeInTheDocument();
+
+    advance(DRAW_TIMING.SORT); // The sort is done
     expect(screen.getByTestId("confetti")).toHaveAttribute("data-particles", "80");
   });
 
@@ -162,7 +165,7 @@ describe("TournamentDrawPage", () => {
     expect(drawOrder).toEqual(["Name P6", "Name P1", "Name P2"]);
     expect(screen.queryByText("1")).not.toBeInTheDocument();
 
-    advance(500); // The pause of group 1 starts
+    advance(500); // The pause of group 1 starts with the sort
     const sortedOrder = screen.getAllByText(/^Name P[126]$/).map((node) => node.textContent);
     expect(sortedOrder).toEqual(["Name P1", "Name P2", "Name P6"]);
     expect(screen.getByText("1")).toBeInTheDocument();

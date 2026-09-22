@@ -32,6 +32,8 @@ const GROUP_CONFETTI = { particleCount: 80, force: 0.6, duration: 2_800, width: 
 const CYCLE_TICKS = cycleTickOffsets();
 /** A page that mounts this close after the anchor is a live viewer, not a late joiner */
 const LIVE_TOLERANCE = 1_000;
+/** The height of a slot row and the gap between two rows, in pixels. The rows are positioned by hand so they can move */
+const ROW_SIZE = { large: { rowHeight: 56, rowGap: 8 }, small: { rowHeight: 36, rowGap: 4 } } as const;
 
 export function tournamentDrawUrl(tournamentId: string): string {
   return `/tournament/draw?tournament=${tournamentId}`;
@@ -318,6 +320,8 @@ const GroupCard: React.FC<{
   const revealedCount = slots.filter((slot) => slot.kind === "revealed").length;
   const isComplete = revealedCount === slots.length;
   const large = size === "large";
+  const { rowHeight, rowGap } = large ? ROW_SIZE.large : ROW_SIZE.small;
+  const rowPitch = rowHeight + rowGap;
 
   return (
     <div
@@ -338,18 +342,24 @@ const GroupCard: React.FC<{
           {isComplete ? "Complete" : `${revealedCount} / ${slots.length}`}
         </span>
       </div>
-      <div className={classNames(large ? "space-y-2" : "space-y-1")}>
-        {/* The key changes when the group sorts, so every row plays the reveal animation one time in its new place */}
+      {/* The rows have a fixed height and an absolute top, and a revealed row is keyed by its player.
+          When the group sorts, each row keeps its DOM node and its top changes, so it moves to its new place */}
+      <div className="relative" style={{ height: slots.length * rowPitch - rowGap }}>
         {slots.map((slot, slotIndex) => (
-          <SlotRow
-            key={`${sorted ? "sorted" : "draw"}-${slotIndex}`}
-            slot={slot}
-            rank={sorted ? slotIndex + 1 : undefined}
-            allPlayers={allPlayers}
-            localStartAt={localStartAt}
-            playerName={playerName}
-            large={large}
-          />
+          <div
+            key={slot.kind === "revealed" ? `player-${slot.player}` : `slot-${slotIndex}`}
+            className="absolute left-0 right-0 rounded-lg bg-primary-background"
+            style={{ top: slotIndex * rowPitch, transition: `top ${DRAW_TIMING.SORT}ms ease-in-out` }}
+          >
+            <SlotRow
+              slot={slot}
+              rank={sorted ? slotIndex + 1 : undefined}
+              allPlayers={allPlayers}
+              localStartAt={localStartAt}
+              playerName={playerName}
+              large={large}
+            />
+          </div>
         ))}
       </div>
     </div>
@@ -392,7 +402,8 @@ const SlotRow: React.FC<{
     );
   }
 
-  if (slot.kind === "cycling") {
+  // The open slot: it waits with no name first, so the viewer knows where to look, then the names cycle
+  if (slot.kind === "cycling" || slot.kind === "waiting") {
     return (
       <div className={classNames(rowClass, "ring-2 ring-secondary-background")}>
         <div
@@ -401,32 +412,23 @@ const SlotRow: React.FC<{
         >
           ?
         </div>
-        <CyclingName
-          pool={allPlayers}
-          player={slot.player}
-          cycleStartAt={localStartAt + slot.startsAt}
-          playerName={playerName}
-          large={large}
-        />
+        {slot.kind === "cycling" && (
+          <CyclingName
+            pool={allPlayers}
+            player={slot.player}
+            cycleStartAt={localStartAt + slot.startsAt}
+            playerName={playerName}
+            large={large}
+          />
+        )}
       </div>
     );
   }
 
-  // An empty slot. The waiting slot is the next to be drawn: it pulses, so the viewer knows where to look
-  const waiting = slot.kind === "waiting";
   return (
-    <div
-      className={classNames(
-        rowClass,
-        "border border-dashed",
-        waiting ? "border-primary-text/70 animate-pulse" : "border-primary-text/20",
-      )}
-    >
+    <div className={classNames(rowClass, "border border-dashed border-primary-text/20")}>
       <div
-        className={classNames(
-          "shrink-0 rounded-full border border-dashed",
-          waiting ? "border-primary-text/70" : "border-primary-text/20",
-        )}
+        className="shrink-0 rounded-full border border-dashed border-primary-text/20"
         style={{ width: avatarSize, height: avatarSize }}
       />
     </div>

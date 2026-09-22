@@ -11,7 +11,7 @@ import {
   timelineDuration,
 } from "./draw-timeline";
 
-const { PLAYER, FOCUS, CYCLE, GROUP_PAUSE, END } = DRAW_TIMING;
+const { PLAYER, FOCUS, CYCLE, GROUP_PAUSE, SORT, END } = DRAW_TIMING;
 
 describe("getDrawGroups", () => {
   it("orders the players of each group by their place in the draw", () => {
@@ -103,11 +103,12 @@ describe("boardStateAt", () => {
     expect(end.sorted).toEqual([true, true]);
   });
 
-  it("celebrates a group during its pause only", () => {
+  it("celebrates a group during its pause only, after its sort", () => {
     expect(boardStateAt(groups, steps, 2 * PLAYER - 1).celebratingGroupIndex).toBeUndefined();
-    expect(boardStateAt(groups, steps, 2 * PLAYER).celebratingGroupIndex).toBe(0);
+    expect(boardStateAt(groups, steps, 2 * PLAYER).celebratingGroupIndex).toBeUndefined(); // The sort runs
+    expect(boardStateAt(groups, steps, 2 * PLAYER + SORT).celebratingGroupIndex).toBe(0);
     expect(boardStateAt(groups, steps, 2 * PLAYER + GROUP_PAUSE).celebratingGroupIndex).toBeUndefined();
-    expect(boardStateAt(groups, steps, 3 * PLAYER + GROUP_PAUSE).celebratingGroupIndex).toBe(1);
+    expect(boardStateAt(groups, steps, 3 * PLAYER + GROUP_PAUSE + SORT).celebratingGroupIndex).toBe(1);
     expect(boardStateAt(groups, steps, 3 * PLAYER + 2 * GROUP_PAUSE).celebratingGroupIndex).toBeUndefined();
   });
 
