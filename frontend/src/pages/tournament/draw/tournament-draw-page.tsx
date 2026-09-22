@@ -16,14 +16,13 @@ import {
   advanceOneStep,
   boardStateAt,
   buildDrawTimeline,
+  cycleIntervalAt,
   getDrawGroups,
   stepIndexAt,
 } from "./draw-timeline";
 
 /** How often the clock ticks. Fast enough for a smooth countdown and step changes */
 const CLOCK_INTERVAL = 200;
-/** How often the cycling name changes */
-const CYCLE_INTERVAL = 90;
 /** A few particles when one player is drawn */
 const REVEAL_CONFETTI = { particleCount: 14, force: 0.4, duration: 1_800, width: 400, particleSize: 8 } as const;
 /** A bigger burst when a group is complete */
@@ -277,6 +276,7 @@ const DrawShow: React.FC<{
                 groupIndex={groupIndex}
                 slots={board.groups[groupIndex]}
                 allPlayers={allPlayers}
+                localStartAt={localStartAt}
                 playerName={context.playerName.bind(context)}
                 size={isCurrent ? "large" : "small"}
                 celebrating={board.celebratingGroupIndex === groupIndex}
@@ -301,10 +301,12 @@ const GroupCard: React.FC<{
   groupIndex: number;
   slots: DrawSlot[];
   allPlayers: string[];
+  /** Wall-clock time the local playback started. Turns a timeline offset into a wall-clock time */
+  localStartAt: number;
   playerName: (id: string) => string;
   size: "large" | "small";
   celebrating: boolean;
-}> = ({ groupIndex, slots, allPlayers, playerName, size, celebrating }) => {
+}> = ({ groupIndex, slots, allPlayers, localStartAt, playerName, size, celebrating }) => {
   const revealedCount = slots.filter((slot) => slot.kind === "revealed").length;
   const isComplete = revealedCount === slots.length;
   const large = size === "large";
@@ -330,7 +332,14 @@ const GroupCard: React.FC<{
       </div>
       <div className={classNames(large ? "space-y-2" : "space-y-1")}>
         {slots.map((slot, slotIndex) => (
-          <SlotRow key={slotIndex} slot={slot} allPlayers={allPlayers} playerName={playerName} large={large} />
+          <SlotRow
+            key={slotIndex}
+            slot={slot}
+            allPlayers={allPlayers}
+            localStartAt={localStartAt}
+            playerName={playerName}
+            large={large}
+          />
         ))}
       </div>
     </div>
@@ -340,9 +349,10 @@ const GroupCard: React.FC<{
 const SlotRow: React.FC<{
   slot: DrawSlot;
   allPlayers: string[];
+  localStartAt: number;
   playerName: (id: string) => string;
   large: boolean;
-}> = ({ slot, allPlayers, playerName, large }) => {
+}> = ({ slot, allPlayers, localStartAt, playerName, large }) => {
   const avatarSize = large ? 44 : 24;
   const rowClass = classNames("flex items-center gap-3 rounded-lg", large ? "h-14 px-3" : "h-9 px-2");
 
@@ -369,7 +379,12 @@ const SlotRow: React.FC<{
         >
           ?
         </div>
-        <CyclingName pool={allPlayers} playerName={playerName} large={large} />
+        <CyclingName
+          pool={allPlayers}
+          cycleStartAt={localStartAt + slot.startsAt}
+          playerName={playerName}
+          large={large}
+        />
       </div>
     );
   }
@@ -384,22 +399,29 @@ const SlotRow: React.FC<{
   );
 };
 
-/** Shows one name after another from the pool, in a random order that does not repeat a name twice in a row */
-const CyclingName: React.FC<{ pool: string[]; playerName: (id: string) => string; large: boolean }> = ({
-  pool,
-  playerName,
-  large,
-}) => {
-  const [index, setIndex] = useState(0);
+/**
+ * Shows one name after another from the pool, in a random order that does not repeat a name twice
+ * in a row. The names change fast at first and slow down towards the reveal.
+ */
+const CyclingName: React.FC<{
+  pool: string[];
+  /** Wall-clock time the cycle started */
+  cycleStartAt: number;
+  playerName: (id: string) => string;
+  large: boolean;
+}> = ({ pool, cycleStartAt, playerName, large }) => {
+  const [index, setIndex] = useState(() => Math.floor(Math.random() * Math.max(pool.length, 1)));
 
   useEffect(() => {
     if (pool.length < 2) return;
-    const timer = setInterval(
-      () => setIndex((prev) => (prev + 1 + Math.floor(Math.random() * (pool.length - 1))) % pool.length),
-      CYCLE_INTERVAL,
-    );
-    return () => clearInterval(timer);
-  }, [pool.length]);
+    let timer: ReturnType<typeof setTimeout>;
+    const tick = () => {
+      setIndex((prev) => (prev + 1 + Math.floor(Math.random() * (pool.length - 1))) % pool.length);
+      timer = setTimeout(tick, cycleIntervalAt(Date.now() - cycleStartAt));
+    };
+    timer = setTimeout(tick, cycleIntervalAt(Date.now() - cycleStartAt));
+    return () => clearTimeout(timer);
+  }, [pool.length, cycleStartAt]);
 
   const player = pool[index % Math.max(pool.length, 1)];
   return (

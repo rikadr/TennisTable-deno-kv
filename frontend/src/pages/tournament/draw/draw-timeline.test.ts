@@ -3,6 +3,7 @@ import {
   advanceOneStep,
   boardStateAt,
   buildDrawTimeline,
+  cycleIntervalAt,
   getDrawGroups,
   stepIndexAt,
   timelineDuration,
@@ -60,7 +61,10 @@ describe("boardStateAt", () => {
 
   it("cycles the open slot, then settles on the drawn player", () => {
     const cycling = boardStateAt(groups, steps, PLAYER + 100);
-    expect(cycling.groups[0]).toEqual([{ kind: "revealed", player: "A", fresh: false }, { kind: "cycling" }]);
+    expect(cycling.groups[0]).toEqual([
+      { kind: "revealed", player: "A", fresh: false },
+      { kind: "cycling", startsAt: PLAYER },
+    ]);
     expect(cycling.groups[1]).toEqual([{ kind: "empty" }]);
     expect(cycling.currentGroupIndex).toBe(0);
     expect(cycling.celebratingGroupIndex).toBeUndefined();
@@ -122,5 +126,25 @@ describe("advanceOneStep", () => {
     const localStartAt = anchor + 60_000;
     const now = localStartAt + timelineDuration(steps) + 1;
     expect(advanceOneStep(steps, localStartAt, anchor, now)).toBe(localStartAt);
+  });
+});
+
+describe("cycleIntervalAt", () => {
+  const { CYCLE_TICK_FASTEST, CYCLE_TICK_SLOWEST } = DRAW_TIMING;
+
+  it("starts fast and ends slow", () => {
+    expect(cycleIntervalAt(0)).toBe(CYCLE_TICK_FASTEST);
+    expect(cycleIntervalAt(CYCLE)).toBe(CYCLE_TICK_SLOWEST);
+  });
+
+  it("only slows down, and brakes hardest at the end", () => {
+    const samples = Array.from({ length: 11 }, (_, i) => cycleIntervalAt((CYCLE * i) / 10));
+    for (let i = 1; i < samples.length; i++) expect(samples[i]).toBeGreaterThan(samples[i - 1]);
+    expect(cycleIntervalAt(CYCLE / 2)).toBeLessThan((CYCLE_TICK_FASTEST + CYCLE_TICK_SLOWEST) / 2);
+  });
+
+  it("clamps outside the cycle", () => {
+    expect(cycleIntervalAt(-100)).toBe(CYCLE_TICK_FASTEST);
+    expect(cycleIntervalAt(CYCLE * 2)).toBe(CYCLE_TICK_SLOWEST);
   });
 });

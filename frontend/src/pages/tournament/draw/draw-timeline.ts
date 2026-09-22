@@ -10,6 +10,10 @@ export const DRAW_TIMING = {
   PLAYER: 5_000,
   /** The part of PLAYER where the names cycle before they stop on the drawn player */
   CYCLE: 3_500,
+  /** Time between two names at the start of the cycle */
+  CYCLE_TICK_FASTEST: 40,
+  /** Time between two names at the end of the cycle, right before the reveal */
+  CYCLE_TICK_SLOWEST: 700,
   /** The full group is shown before the next group starts */
   GROUP_PAUSE: 8_000,
   /** The full board is shown before the page navigates to the tournament */
@@ -23,7 +27,10 @@ export type DrawStep =
 
 export type DrawSlot =
   /** `fresh` is true while the reveal step of this player is still running: the moment of the draw */
-  { kind: "revealed"; player: string; fresh: boolean } | { kind: "cycling" } | { kind: "empty" };
+  | { kind: "revealed"; player: string; fresh: boolean }
+  /** `startsAt` is the time on the timeline the cycle started, so the UI knows how far it has slowed down */
+  | { kind: "cycling"; startsAt: number }
+  | { kind: "empty" };
 
 export type DrawBoardState = {
   /** One entry per group, one slot per player */
@@ -80,7 +87,7 @@ export function boardStateAt(drawGroups: string[][], steps: DrawStep[], elapsed:
     if (isPast || isSettled) {
       groups[step.groupIndex][step.slotIndex] = { kind: "revealed", player: step.player, fresh: isSettled };
     } else if (index === stepIndex) {
-      groups[step.groupIndex][step.slotIndex] = { kind: "cycling" };
+      groups[step.groupIndex][step.slotIndex] = { kind: "cycling", startsAt: step.startsAt };
     }
   });
 
@@ -109,4 +116,14 @@ export function advanceOneStep(steps: DrawStep[], localStartAt: number, anchor: 
   if (stepIndex >= steps.length) return localStartAt;
   const boundary = stepIndex < 0 ? 0 : steps[stepIndex].endsAt;
   return Math.max(anchor, localStartAt - (boundary - elapsed));
+}
+
+/**
+ * Time to the next name in a cycle, from the time since the cycle started. The names change
+ * fast at first and slow down hard at the end, like a wheel of fortune that comes to a stop.
+ */
+export function cycleIntervalAt(elapsedInCycle: number): number {
+  const progress = Math.min(Math.max(elapsedInCycle / DRAW_TIMING.CYCLE, 0), 1);
+  const { CYCLE_TICK_FASTEST, CYCLE_TICK_SLOWEST } = DRAW_TIMING;
+  return CYCLE_TICK_FASTEST + (CYCLE_TICK_SLOWEST - CYCLE_TICK_FASTEST) * Math.pow(progress, 3);
 }
