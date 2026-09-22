@@ -55,7 +55,7 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
         "By default the app seeds the groups by leaderboard rank, then signup time. This default order still breaks ties in the group scores, also when the seeding is random. The info tab shows both orders.",
       ),
       text(
-        'The tournament page has a "Live draw" button for these tournaments. Before the start, the page shows a countdown. When the tournament starts, the page reveals the drawn players one at a time, group by group. Everyone who has the page open sees the same reveal at the same time. If you open the page late, the show plays from the start, and a "Next" button skips one step at a time until you are at the live position. At the end, the page opens the group play tab.',
+        'The tournament page has a "Live draw" button for these tournaments. Before the start, the page shows a countdown. When the tournament starts, the page reveals the drawn players one at a time, group by group. When a group is complete, the page sorts its players in the default order. Everyone who has the page open sees the same reveal at the same time. If you open the page late, the show plays from the start, and a "Next" button skips one step at a time until you are at the live position. At the end, the page opens the group play tab.',
       ),
     ],
   },

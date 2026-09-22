@@ -134,14 +134,14 @@ describe("TournamentDrawPage", () => {
     expect(screen.getByText("1 / 3")).toBeInTheDocument();
     expect(screen.getByText("Group 1")).toBeInTheDocument();
     expect(screen.getByText("Group 2")).toBeInTheDocument();
-    // The second slot cycles now. A player already drawn is still in the cycle, so no confetti this moment
+    // The second slot waits for its cycle now, so no confetti this moment
     expect(screen.queryByTestId("confetti")).not.toBeInTheDocument();
   });
 
   it("spawns a few confetti at the moment of a draw, and a burst when a group is complete", () => {
     setNow(START + 2_000);
     renderPage(buildEvents());
-    advance(DRAW_TIMING.START_DELAY - 2_000 + DRAW_TIMING.CYCLE + 100); // First player settled
+    advance(DRAW_TIMING.START_DELAY - 2_000 + DRAW_TIMING.FOCUS + DRAW_TIMING.CYCLE + 100); // First player settled
     expect(screen.getByTestId("confetti")).toHaveAttribute("data-particles", "14");
 
     advance(DRAW_TIMING.PLAYER - DRAW_TIMING.CYCLE); // Second player cycles
@@ -150,6 +150,23 @@ describe("TournamentDrawPage", () => {
     advance(2 * DRAW_TIMING.PLAYER); // Group 1 complete, its pause runs
     expect(screen.getByText("Complete")).toBeInTheDocument();
     expect(screen.getByTestId("confetti")).toHaveAttribute("data-particles", "80");
+  });
+
+  it("shows a complete group in the default order, best player first, during its pause", () => {
+    setNow(START + 2_000);
+    renderPage(buildEvents());
+    advance(DRAW_TIMING.START_DELAY - 2_000 + 3 * DRAW_TIMING.PLAYER - 500); // Last player of group 1 is drawn
+
+    // Group 1 is P6, P1 and P2 in the order of the draw
+    const drawOrder = screen.getAllByText(/^Name P[126]$/).map((node) => node.textContent);
+    expect(drawOrder).toEqual(["Name P6", "Name P1", "Name P2"]);
+    expect(screen.queryByText("1")).not.toBeInTheDocument();
+
+    advance(500); // The pause of group 1 starts
+    const sortedOrder = screen.getAllByText(/^Name P[126]$/).map((node) => node.textContent);
+    expect(sortedOrder).toEqual(["Name P1", "Name P2", "Name P6"]);
+    expect(screen.getByText("1")).toBeInTheDocument();
+    expect(screen.getByText("3")).toBeInTheDocument();
   });
 
   it("plays from the start with a Next button when the viewer joins late", () => {

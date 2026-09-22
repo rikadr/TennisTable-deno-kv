@@ -208,6 +208,8 @@ const DrawShow: React.FC<{
       ),
     [groupPlay],
   );
+  // The default order: the tie breaker of the group play leaderboard, best player first
+  const sortedGroups = useMemo(() => groupPlay.groups.map((group) => group.players), [groupPlay]);
   const steps = useMemo(() => buildDrawTimeline(drawGroups), [drawGroups]);
   const allPlayers = useMemo(() => drawGroups.flat(), [drawGroups]);
 
@@ -216,7 +218,7 @@ const DrawShow: React.FC<{
   // and "Next" moves this back one step at a time until it reaches the anchor.
   const [localStartAt, setLocalStartAt] = useState(() => (Date.now() <= anchor + LIVE_TOLERANCE ? anchor : Date.now()));
   const elapsed = now - localStartAt;
-  const board = boardStateAt(drawGroups, steps, elapsed);
+  const board = boardStateAt(drawGroups, steps, elapsed, sortedGroups);
   const isBehind = localStartAt > anchor;
   const stepsBehind = isBehind ? Math.max(0, stepIndexAt(steps, now - anchor) - stepIndexAt(steps, elapsed)) : 0;
 
@@ -278,6 +280,7 @@ const DrawShow: React.FC<{
               <GroupCard
                 groupIndex={groupIndex}
                 slots={board.groups[groupIndex]}
+                sorted={board.sorted[groupIndex]}
                 allPlayers={allPlayers}
                 localStartAt={localStartAt}
                 playerName={context.playerName.bind(context)}
@@ -303,13 +306,15 @@ const DrawShow: React.FC<{
 const GroupCard: React.FC<{
   groupIndex: number;
   slots: DrawSlot[];
+  /** True when the group is complete and its players are in the default order, best player first */
+  sorted: boolean;
   allPlayers: string[];
   /** Wall-clock time the local playback started. Turns a timeline offset into a wall-clock time */
   localStartAt: number;
   playerName: (id: string) => string;
   size: "large" | "small";
   celebrating: boolean;
-}> = ({ groupIndex, slots, allPlayers, localStartAt, playerName, size, celebrating }) => {
+}> = ({ groupIndex, slots, sorted, allPlayers, localStartAt, playerName, size, celebrating }) => {
   const revealedCount = slots.filter((slot) => slot.kind === "revealed").length;
   const isComplete = revealedCount === slots.length;
   const large = size === "large";
@@ -334,10 +339,12 @@ const GroupCard: React.FC<{
         </span>
       </div>
       <div className={classNames(large ? "space-y-2" : "space-y-1")}>
+        {/* The key changes when the group sorts, so every row plays the reveal animation one time in its new place */}
         {slots.map((slot, slotIndex) => (
           <SlotRow
-            key={slotIndex}
+            key={`${sorted ? "sorted" : "draw"}-${slotIndex}`}
             slot={slot}
+            rank={sorted ? slotIndex + 1 : undefined}
             allPlayers={allPlayers}
             localStartAt={localStartAt}
             playerName={playerName}
@@ -351,11 +358,13 @@ const GroupCard: React.FC<{
 
 const SlotRow: React.FC<{
   slot: DrawSlot;
+  /** The position in the default order. Set when the group is sorted */
+  rank?: number;
   allPlayers: string[];
   localStartAt: number;
   playerName: (id: string) => string;
   large: boolean;
-}> = ({ slot, allPlayers, localStartAt, playerName, large }) => {
+}> = ({ slot, rank, allPlayers, localStartAt, playerName, large }) => {
   const avatarSize = large ? 44 : 24;
   const rowClass = classNames("flex items-center gap-3 rounded-lg", large ? "h-14 px-3" : "h-9 px-2");
 
@@ -366,6 +375,16 @@ const SlotRow: React.FC<{
           <div className="absolute left-1/2 top-1/2">
             <ConfettiExplosion {...REVEAL_CONFETTI} />
           </div>
+        )}
+        {rank !== undefined && (
+          <span
+            className={classNames(
+              "shrink-0 w-5 text-right tabular-nums text-primary-text/60",
+              large ? "text-base" : "text-xs",
+            )}
+          >
+            {rank}
+          </span>
         )}
         <ProfilePicture playerId={slot.player} size={avatarSize} border={2} />
         <p className={classNames("truncate font-medium", large ? "text-xl" : "text-sm")}>{playerName(slot.player)}</p>
@@ -393,10 +412,21 @@ const SlotRow: React.FC<{
     );
   }
 
+  // An empty slot. The waiting slot is the next to be drawn: it pulses, so the viewer knows where to look
+  const waiting = slot.kind === "waiting";
   return (
-    <div className={classNames(rowClass, "border border-dashed border-primary-text/20")}>
+    <div
+      className={classNames(
+        rowClass,
+        "border border-dashed",
+        waiting ? "border-primary-text/70 animate-pulse" : "border-primary-text/20",
+      )}
+    >
       <div
-        className="shrink-0 rounded-full border border-dashed border-primary-text/20"
+        className={classNames(
+          "shrink-0 rounded-full border border-dashed",
+          waiting ? "border-primary-text/70" : "border-primary-text/20",
+        )}
         style={{ width: avatarSize, height: avatarSize }}
       />
     </div>
