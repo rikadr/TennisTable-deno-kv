@@ -33,8 +33,14 @@ module.exports = {
         "ping-once": "ping-once 1000ms ease-in-out 1000ms forwards",
         wiggle: "wiggle 1s ease-in-out 500ms forwards",
         shimmer: "shimmer 2s ease-in-out infinite",
+        "draw-reveal": "draw-reveal 400ms ease-out",
       },
       keyframes: {
+        "draw-reveal": {
+          "0%": { transform: "scale(0.7)", opacity: "0" },
+          "60%": { transform: "scale(1.05)", opacity: "1" },
+          "100%": { transform: "scale(1)", opacity: "1" },
+        },
         "ping-once": {
           "0%": { transform: "scale(1)", opacity: "1" },
           "15%": { transform: "scale(0.7)", opacity: "1" },

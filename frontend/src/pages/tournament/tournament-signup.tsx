@@ -6,6 +6,8 @@ import { queryClient } from "../../common/query-client";
 import { ProfilePicture } from "../player/profile-picture";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { Tournament } from "../../client/client-db/tournaments/tournament";
+import { Link } from "react-router-dom";
+import { tournamentDrawUrl } from "./draw/tournament-draw-page";
 import { useEventMutation } from "../../hooks/use-event-mutation";
 import { useToast } from "../../wrappers/toast-provider";
 import {
@@ -67,6 +69,14 @@ export const TournamentSignup = ({ tournament }: { tournament: Tournament }) => 
 
   return (
     <div className="m-auto space-y-4 max-w-96 flex flex-col items-center w-full">
+      {tournament.tournamentConfig.groupPlay && tournament.tournamentConfig.randomGroupSeeding && (
+        <Link
+          to={tournamentDrawUrl(tournament.id)}
+          className="w-full py-3 px-6 text-center font-semibold ring-1 ring-secondary-background bg-primary-background hover:bg-secondary-background/30 text-primary-text rounded-lg"
+        >
+          Watch the live group draw 🎲
+        </Link>
+      )}
       <button
         className={classNames(
           "text-lg font-semibold w-full py-4 px-6 flex flex-col items-center bg-secondary-background hover:bg-secondary-background/70 text-secondary-text rounded-lg",
