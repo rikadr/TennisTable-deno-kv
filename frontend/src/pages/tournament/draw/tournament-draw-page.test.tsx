@@ -160,16 +160,22 @@ describe("TournamentDrawPage", () => {
     renderPage(buildEvents());
     advance(DRAW_TIMING.START_DELAY - 2_000 + 3 * DRAW_TIMING.PLAYER - 500); // Last player of group 1 is drawn
 
-    // Group 1 is P6, P1 and P2 in the order of the draw
-    const drawOrder = screen.getAllByText(/^Name P[126]$/).map((node) => node.textContent);
-    expect(drawOrder).toEqual(["Name P6", "Name P1", "Name P2"]);
+    // Group 1 is P6, P1 and P2 in the order of the draw. A row is positioned by its top, not by its DOM order
+    const rowTop = (name: string) => screen.getByText(name).closest("div[style]")?.getAttribute("style");
+    expect(rowTop("Name P6")).toContain("top: 0px");
+    expect(rowTop("Name P1")).toContain("top: 64px");
+    expect(rowTop("Name P2")).toContain("top: 128px");
     expect(screen.queryByText("1")).not.toBeInTheDocument();
 
     advance(500); // The pause of group 1 starts with the sort
-    const sortedOrder = screen.getAllByText(/^Name P[126]$/).map((node) => node.textContent);
-    expect(sortedOrder).toEqual(["Name P1", "Name P2", "Name P6"]);
-    expect(screen.getByText("1")).toBeInTheDocument();
-    expect(screen.getByText("3")).toBeInTheDocument();
+    expect(rowTop("Name P1")).toContain("top: 0px");
+    expect(rowTop("Name P2")).toContain("top: 64px");
+    expect(rowTop("Name P6")).toContain("top: 128px");
+    expect(screen.getByText("1").closest("div[style]")).toBe(screen.getByText("Name P1").closest("div[style]"));
+    expect(screen.getByText("3").closest("div[style]")).toBe(screen.getByText("Name P6").closest("div[style]"));
+    // The DOM order is still the draw order, so no row was moved in the DOM
+    const domOrder = screen.getAllByText(/^Name P[126]$/).map((node) => node.textContent);
+    expect(domOrder).toEqual(["Name P6", "Name P1", "Name P2"]);
   });
 
   it("plays from the start with a Next button when the viewer joins late", () => {

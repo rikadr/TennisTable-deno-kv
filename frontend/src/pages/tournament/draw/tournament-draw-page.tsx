@@ -282,6 +282,7 @@ const DrawShow: React.FC<{
               <GroupCard
                 groupIndex={groupIndex}
                 slots={board.groups[groupIndex]}
+                drawOrder={drawGroups[groupIndex]}
                 sorted={board.sorted[groupIndex]}
                 allPlayers={allPlayers}
                 localStartAt={localStartAt}
@@ -307,7 +308,10 @@ const DrawShow: React.FC<{
 
 const GroupCard: React.FC<{
   groupIndex: number;
+  /** The slots in the order they are shown. In the draw order until the group sorts, then in the default order */
   slots: DrawSlot[];
+  /** The players in the draw order: the order the rows are rendered in, so a row keeps its DOM node when the group sorts */
+  drawOrder: string[];
   /** True when the group is complete and its players are in the default order, best player first */
   sorted: boolean;
   allPlayers: string[];
@@ -316,7 +320,7 @@ const GroupCard: React.FC<{
   playerName: (id: string) => string;
   size: "large" | "small";
   celebrating: boolean;
-}> = ({ groupIndex, slots, sorted, allPlayers, localStartAt, playerName, size, celebrating }) => {
+}> = ({ groupIndex, slots, drawOrder, sorted, allPlayers, localStartAt, playerName, size, celebrating }) => {
   const revealedCount = slots.filter((slot) => slot.kind === "revealed").length;
   const isComplete = revealedCount === slots.length;
   const large = size === "large";
@@ -342,25 +346,31 @@ const GroupCard: React.FC<{
           {isComplete ? "Complete" : `${revealedCount} / ${slots.length}`}
         </span>
       </div>
-      {/* The rows have a fixed height and an absolute top, and a revealed row is keyed by its player.
-          When the group sorts, each row keeps its DOM node and its top changes, so it moves to its new place */}
+      {/* The rows are rendered in the draw order, with a fixed height and an absolute top. When the group
+          sorts, the DOM order does not change and only the top of each row does. A row that React moves in
+          the DOM would lose its transition and jump, so the rows are never reordered */}
       <div className="relative" style={{ height: slots.length * rowPitch - rowGap }}>
-        {slots.map((slot, slotIndex) => (
-          <div
-            key={slot.kind === "revealed" ? `player-${slot.player}` : `slot-${slotIndex}`}
-            className="absolute left-0 right-0 rounded-lg bg-primary-background"
-            style={{ top: slotIndex * rowPitch, transition: `top ${DRAW_TIMING.SORT}ms ease-in-out` }}
-          >
-            <SlotRow
-              slot={slot}
-              rank={sorted ? slotIndex + 1 : undefined}
-              allPlayers={allPlayers}
-              localStartAt={localStartAt}
-              playerName={playerName}
-              large={large}
-            />
-          </div>
-        ))}
+        {drawOrder.map((player, drawIndex) => {
+          const position = sorted
+            ? slots.findIndex((slot) => slot.kind === "revealed" && slot.player === player)
+            : drawIndex;
+          return (
+            <div
+              key={drawIndex}
+              className="absolute left-0 right-0 rounded-lg bg-primary-background"
+              style={{ top: position * rowPitch, transition: `top ${DRAW_TIMING.SORT}ms ease-in-out` }}
+            >
+              <SlotRow
+                slot={slots[position]}
+                rank={sorted ? position + 1 : undefined}
+                allPlayers={allPlayers}
+                localStartAt={localStartAt}
+                playerName={playerName}
+                large={large}
+              />
+            </div>
+          );
+        })}
       </div>
     </div>
   );
