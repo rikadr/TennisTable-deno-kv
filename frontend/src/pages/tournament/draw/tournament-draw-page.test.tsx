@@ -134,22 +134,48 @@ describe("TournamentDrawPage", () => {
     expect(screen.getByText("1 / 3")).toBeInTheDocument();
     expect(screen.getByText("Group 1")).toBeInTheDocument();
     expect(screen.getByText("Group 2")).toBeInTheDocument();
-    // The second slot cycles now. A player already drawn is still in the cycle, so no confetti this moment
+    // The second slot waits for its cycle now, so no confetti this moment
     expect(screen.queryByTestId("confetti")).not.toBeInTheDocument();
   });
 
   it("spawns a few confetti at the moment of a draw, and a burst when a group is complete", () => {
     setNow(START + 2_000);
     renderPage(buildEvents());
-    advance(DRAW_TIMING.START_DELAY - 2_000 + DRAW_TIMING.CYCLE + 100); // First player settled
+    advance(DRAW_TIMING.START_DELAY - 2_000 + DRAW_TIMING.FOCUS + DRAW_TIMING.CYCLE + 100); // First player settled
     expect(screen.getByTestId("confetti")).toHaveAttribute("data-particles", "14");
 
     advance(DRAW_TIMING.PLAYER - DRAW_TIMING.CYCLE); // Second player cycles
     expect(screen.queryByTestId("confetti")).not.toBeInTheDocument();
 
-    advance(2 * DRAW_TIMING.PLAYER); // Group 1 complete, its pause runs
+    advance(2 * DRAW_TIMING.PLAYER); // Group 1 complete, its sort runs
     expect(screen.getByText("Complete")).toBeInTheDocument();
+    expect(screen.queryByTestId("confetti")).not.toBeInTheDocument();
+
+    advance(DRAW_TIMING.SORT); // The sort is done
     expect(screen.getByTestId("confetti")).toHaveAttribute("data-particles", "80");
+  });
+
+  it("shows a complete group in the default order, best player first, during its pause", () => {
+    setNow(START + 2_000);
+    renderPage(buildEvents());
+    advance(DRAW_TIMING.START_DELAY - 2_000 + 3 * DRAW_TIMING.PLAYER - 500); // Last player of group 1 is drawn
+
+    // Group 1 is P6, P1 and P2 in the order of the draw. A row is positioned by its top, not by its DOM order
+    const rowTop = (name: string) => screen.getByText(name).closest("div[style]")?.getAttribute("style");
+    expect(rowTop("Name P6")).toContain("top: 0px");
+    expect(rowTop("Name P1")).toContain("top: 64px");
+    expect(rowTop("Name P2")).toContain("top: 128px");
+    expect(screen.queryByText("1")).not.toBeInTheDocument();
+
+    advance(500); // The pause of group 1 starts with the sort
+    expect(rowTop("Name P1")).toContain("top: 0px");
+    expect(rowTop("Name P2")).toContain("top: 64px");
+    expect(rowTop("Name P6")).toContain("top: 128px");
+    expect(screen.getByText("1").closest("div[style]")).toBe(screen.getByText("Name P1").closest("div[style]"));
+    expect(screen.getByText("3").closest("div[style]")).toBe(screen.getByText("Name P6").closest("div[style]"));
+    // The DOM order is still the draw order, so no row was moved in the DOM
+    const domOrder = screen.getAllByText(/^Name P[126]$/).map((node) => node.textContent);
+    expect(domOrder).toEqual(["Name P6", "Name P1", "Name P2"]);
   });
 
   it("plays from the start with a Next button when the viewer joins late", () => {

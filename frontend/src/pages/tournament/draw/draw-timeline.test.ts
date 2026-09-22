@@ -11,7 +11,7 @@ import {
   timelineDuration,
 } from "./draw-timeline";
 
-const { PLAYER, CYCLE, GROUP_PAUSE, END } = DRAW_TIMING;
+const { PLAYER, FOCUS, CYCLE, GROUP_PAUSE, SORT, END } = DRAW_TIMING;
 
 describe("getDrawGroups", () => {
   it("orders the players of each group by their place in the draw", () => {
@@ -61,29 +61,54 @@ describe("boardStateAt", () => {
   const groups = [["A", "B"], ["C"]];
   const steps = buildDrawTimeline(groups);
 
-  it("cycles the open slot, then settles on the drawn player", () => {
-    const cycling = boardStateAt(groups, steps, PLAYER + 100);
+  it("waits on the open slot, cycles it, then settles on the drawn player", () => {
+    const waiting = boardStateAt(groups, steps, PLAYER + 100);
+    expect(waiting.groups[0]).toEqual([{ kind: "revealed", player: "A", fresh: false }, { kind: "waiting" }]);
+    expect(waiting.groups[1]).toEqual([{ kind: "empty" }]);
+    expect(waiting.currentGroupIndex).toBe(0);
+    expect(waiting.celebratingGroupIndex).toBeUndefined();
+    expect(waiting.done).toBe(false);
+
+    const cycling = boardStateAt(groups, steps, PLAYER + FOCUS);
     expect(cycling.groups[0]).toEqual([
       { kind: "revealed", player: "A", fresh: false },
-      { kind: "cycling", player: "B", startsAt: PLAYER },
+      { kind: "cycling", player: "B", startsAt: PLAYER + FOCUS },
     ]);
-    expect(cycling.groups[1]).toEqual([{ kind: "empty" }]);
-    expect(cycling.currentGroupIndex).toBe(0);
-    expect(cycling.celebratingGroupIndex).toBeUndefined();
-    expect(cycling.done).toBe(false);
 
-    const settled = boardStateAt(groups, steps, PLAYER + CYCLE);
+    const settled = boardStateAt(groups, steps, PLAYER + FOCUS + CYCLE);
     expect(settled.groups[0]).toEqual([
       { kind: "revealed", player: "A", fresh: false },
       { kind: "revealed", player: "B", fresh: true }, // The moment of the draw
     ]);
+    expect(settled.sorted).toEqual([false, false]);
   });
 
-  it("celebrates a group during its pause only", () => {
+  it("sorts a complete group in the default order from the start of its pause", () => {
+    const drawOrder = [["B", "A"], ["C"]];
+    const defaultOrder = [["A", "B"], ["C"]];
+    const drawSteps = buildDrawTimeline(drawOrder);
+
+    const lastReveal = boardStateAt(drawOrder, drawSteps, 2 * PLAYER - 1, defaultOrder);
+    expect(lastReveal.groups[0].map((slot) => slot.kind === "revealed" && slot.player)).toEqual(["B", "A"]);
+    expect(lastReveal.sorted).toEqual([false, false]);
+
+    const pause = boardStateAt(drawOrder, drawSteps, 2 * PLAYER, defaultOrder);
+    expect(pause.groups[0]).toEqual([
+      { kind: "revealed", player: "A", fresh: false },
+      { kind: "revealed", player: "B", fresh: false },
+    ]);
+    expect(pause.sorted).toEqual([true, false]);
+
+    const end = boardStateAt(drawOrder, drawSteps, timelineDuration(drawSteps), defaultOrder);
+    expect(end.sorted).toEqual([true, true]);
+  });
+
+  it("celebrates a group during its pause only, after its sort", () => {
     expect(boardStateAt(groups, steps, 2 * PLAYER - 1).celebratingGroupIndex).toBeUndefined();
-    expect(boardStateAt(groups, steps, 2 * PLAYER).celebratingGroupIndex).toBe(0);
+    expect(boardStateAt(groups, steps, 2 * PLAYER).celebratingGroupIndex).toBeUndefined(); // The sort runs
+    expect(boardStateAt(groups, steps, 2 * PLAYER + SORT).celebratingGroupIndex).toBe(0);
     expect(boardStateAt(groups, steps, 2 * PLAYER + GROUP_PAUSE).celebratingGroupIndex).toBeUndefined();
-    expect(boardStateAt(groups, steps, 3 * PLAYER + GROUP_PAUSE).celebratingGroupIndex).toBe(1);
+    expect(boardStateAt(groups, steps, 3 * PLAYER + GROUP_PAUSE + SORT).celebratingGroupIndex).toBe(1);
     expect(boardStateAt(groups, steps, 3 * PLAYER + 2 * GROUP_PAUSE).celebratingGroupIndex).toBeUndefined();
   });
 

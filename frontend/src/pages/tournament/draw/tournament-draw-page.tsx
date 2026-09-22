@@ -32,6 +32,8 @@ const GROUP_CONFETTI = { particleCount: 80, force: 0.6, duration: 2_800, width: 
 const CYCLE_TICKS = cycleTickOffsets();
 /** A page that mounts this close after the anchor is a live viewer, not a late joiner */
 const LIVE_TOLERANCE = 1_000;
+/** The height of a slot row and the gap between two rows, in pixels. The rows are positioned by hand so they can move */
+const ROW_SIZE = { large: { rowHeight: 56, rowGap: 8 }, small: { rowHeight: 36, rowGap: 4 } } as const;
 
 export function tournamentDrawUrl(tournamentId: string): string {
   return `/tournament/draw?tournament=${tournamentId}`;
@@ -208,6 +210,8 @@ const DrawShow: React.FC<{
       ),
     [groupPlay],
   );
+  // The default order: the tie breaker of the group play leaderboard, best player first
+  const sortedGroups = useMemo(() => groupPlay.groups.map((group) => group.players), [groupPlay]);
   const steps = useMemo(() => buildDrawTimeline(drawGroups), [drawGroups]);
   const allPlayers = useMemo(() => drawGroups.flat(), [drawGroups]);
 
@@ -216,7 +220,7 @@ const DrawShow: React.FC<{
   // and "Next" moves this back one step at a time until it reaches the anchor.
   const [localStartAt, setLocalStartAt] = useState(() => (Date.now() <= anchor + LIVE_TOLERANCE ? anchor : Date.now()));
   const elapsed = now - localStartAt;
-  const board = boardStateAt(drawGroups, steps, elapsed);
+  const board = boardStateAt(drawGroups, steps, elapsed, sortedGroups);
   const isBehind = localStartAt > anchor;
   const stepsBehind = isBehind ? Math.max(0, stepIndexAt(steps, now - anchor) - stepIndexAt(steps, elapsed)) : 0;
 
@@ -278,6 +282,8 @@ const DrawShow: React.FC<{
               <GroupCard
                 groupIndex={groupIndex}
                 slots={board.groups[groupIndex]}
+                drawOrder={drawGroups[groupIndex]}
+                sorted={board.sorted[groupIndex]}
                 allPlayers={allPlayers}
                 localStartAt={localStartAt}
                 playerName={context.playerName.bind(context)}
@@ -302,17 +308,24 @@ const DrawShow: React.FC<{
 
 const GroupCard: React.FC<{
   groupIndex: number;
+  /** The slots in the order they are shown. In the draw order until the group sorts, then in the default order */
   slots: DrawSlot[];
+  /** The players in the draw order: the order the rows are rendered in, so a row keeps its DOM node when the group sorts */
+  drawOrder: string[];
+  /** True when the group is complete and its players are in the default order, best player first */
+  sorted: boolean;
   allPlayers: string[];
   /** Wall-clock time the local playback started. Turns a timeline offset into a wall-clock time */
   localStartAt: number;
   playerName: (id: string) => string;
   size: "large" | "small";
   celebrating: boolean;
-}> = ({ groupIndex, slots, allPlayers, localStartAt, playerName, size, celebrating }) => {
+}> = ({ groupIndex, slots, drawOrder, sorted, allPlayers, localStartAt, playerName, size, celebrating }) => {
   const revealedCount = slots.filter((slot) => slot.kind === "revealed").length;
   const isComplete = revealedCount === slots.length;
   const large = size === "large";
+  const { rowHeight, rowGap } = large ? ROW_SIZE.large : ROW_SIZE.small;
+  const rowPitch = rowHeight + rowGap;
 
   return (
     <div
@@ -333,17 +346,31 @@ const GroupCard: React.FC<{
           {isComplete ? "Complete" : `${revealedCount} / ${slots.length}`}
         </span>
       </div>
-      <div className={classNames(large ? "space-y-2" : "space-y-1")}>
-        {slots.map((slot, slotIndex) => (
-          <SlotRow
-            key={slotIndex}
-            slot={slot}
-            allPlayers={allPlayers}
-            localStartAt={localStartAt}
-            playerName={playerName}
-            large={large}
-          />
-        ))}
+      {/* The rows are rendered in the draw order, with a fixed height and an absolute top. When the group
+          sorts, the DOM order does not change and only the top of each row does. A row that React moves in
+          the DOM would lose its transition and jump, so the rows are never reordered */}
+      <div className="relative" style={{ height: slots.length * rowPitch - rowGap }}>
+        {drawOrder.map((player, drawIndex) => {
+          const position = sorted
+            ? slots.findIndex((slot) => slot.kind === "revealed" && slot.player === player)
+            : drawIndex;
+          return (
+            <div
+              key={drawIndex}
+              className="absolute left-0 right-0 rounded-lg bg-primary-background"
+              style={{ top: position * rowPitch, transition: `top ${DRAW_TIMING.SORT}ms ease-in-out` }}
+            >
+              <SlotRow
+                slot={slots[position]}
+                rank={sorted ? position + 1 : undefined}
+                allPlayers={allPlayers}
+                localStartAt={localStartAt}
+                playerName={playerName}
+                large={large}
+              />
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -351,11 +378,13 @@ const GroupCard: React.FC<{
 
 const SlotRow: React.FC<{
   slot: DrawSlot;
+  /** The position in the default order. Set when the group is sorted */
+  rank?: number;
   allPlayers: string[];
   localStartAt: number;
   playerName: (id: string) => string;
   large: boolean;
-}> = ({ slot, allPlayers, localStartAt, playerName, large }) => {
+}> = ({ slot, rank, allPlayers, localStartAt, playerName, large }) => {
   const avatarSize = large ? 44 : 24;
   const rowClass = classNames("flex items-center gap-3 rounded-lg", large ? "h-14 px-3" : "h-9 px-2");
 
@@ -367,13 +396,24 @@ const SlotRow: React.FC<{
             <ConfettiExplosion {...REVEAL_CONFETTI} />
           </div>
         )}
+        {rank !== undefined && (
+          <span
+            className={classNames(
+              "shrink-0 w-5 text-right tabular-nums text-primary-text/60",
+              large ? "text-base" : "text-xs",
+            )}
+          >
+            {rank}
+          </span>
+        )}
         <ProfilePicture playerId={slot.player} size={avatarSize} border={2} />
         <p className={classNames("truncate font-medium", large ? "text-xl" : "text-sm")}>{playerName(slot.player)}</p>
       </div>
     );
   }
 
-  if (slot.kind === "cycling") {
+  // The open slot: it waits with no name first, so the viewer knows where to look, then the names cycle
+  if (slot.kind === "cycling" || slot.kind === "waiting") {
     return (
       <div className={classNames(rowClass, "ring-2 ring-secondary-background")}>
         <div
@@ -382,13 +422,15 @@ const SlotRow: React.FC<{
         >
           ?
         </div>
-        <CyclingName
-          pool={allPlayers}
-          player={slot.player}
-          cycleStartAt={localStartAt + slot.startsAt}
-          playerName={playerName}
-          large={large}
-        />
+        {slot.kind === "cycling" && (
+          <CyclingName
+            pool={allPlayers}
+            player={slot.player}
+            cycleStartAt={localStartAt + slot.startsAt}
+            playerName={playerName}
+            large={large}
+          />
+        )}
       </div>
     );
   }

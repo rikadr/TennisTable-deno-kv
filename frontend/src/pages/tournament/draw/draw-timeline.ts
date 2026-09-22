@@ -6,9 +6,11 @@
 export const DRAW_TIMING = {
   /** From the tournament start to the first reveal. Gives the seeding event time to arrive */
   START_DELAY: 10_000,
-  /** One player: the names cycle, then the drawn player is shown */
-  PLAYER: 5_000,
-  /** The part of PLAYER where the names cycle before they stop on the drawn player */
+  /** One player: the slot waits, the names cycle, then the drawn player is shown */
+  PLAYER: 6_000,
+  /** The first part of PLAYER: the open slot waits, so the viewer knows where to look before the cycle starts */
+  FOCUS: 1_000,
+  /** The part of PLAYER after FOCUS where the names cycle before they stop on the drawn player */
   CYCLE: 3_500,
   /** Time between two names at the start of the cycle */
   CYCLE_TICK_FASTEST: 20,
@@ -16,8 +18,10 @@ export const DRAW_TIMING = {
   CYCLE_TICK_SLOWEST: 700,
   /** The last name of the cycle is the drawn player. It holds at least this long before the reveal */
   CYCLE_LANDING: 600,
-  /** The full group is shown before the next group starts */
-  GROUP_PAUSE: 8_000,
+  /** The full group is shown before the next group starts. Starts with SORT */
+  GROUP_PAUSE: 10_000,
+  /** The first part of GROUP_PAUSE: the players move to the default order. The confetti comes after */
+  SORT: 2_000,
   /** The full board is shown before the page navigates to the tournament */
   END: 5_000,
 } as const;
@@ -33,14 +37,19 @@ export type DrawSlot =
   /** `startsAt` is the time on the timeline the cycle started, so the UI knows how far it has slowed down.
    * `player` is the player the cycle lands on right before the reveal */
   | { kind: "cycling"; player: string; startsAt: number }
+  /** The next slot to be drawn. Its cycle has not started yet */
+  | { kind: "waiting" }
   | { kind: "empty" };
 
 export type DrawBoardState = {
   /** One entry per group, one slot per player */
   groups: DrawSlot[][];
+  /** One entry per group. True when its last player is drawn and its pause has started: the
+   * players are then in the default order, best player first, instead of the order of the draw */
+  sorted: boolean[];
   /** The group the show is at. The last group when the show is at the end */
   currentGroupIndex: number;
-  /** The group whose pause runs now: its last player was just drawn */
+  /** The group whose pause runs now and whose sort is done: the moment of its confetti */
   celebratingGroupIndex?: number;
   /** True when the end step is over */
   done: boolean;
@@ -79,18 +88,44 @@ export function stepIndexAt(steps: DrawStep[], elapsed: number): number {
   return index === -1 ? steps.length : index;
 }
 
-export function boardStateAt(drawGroups: string[][], steps: DrawStep[], elapsed: number): DrawBoardState {
+/**
+ * The board at this time on the timeline. `drawGroups` is the order of the draw, in which the
+ * players are revealed. `sortedGroups` is the default order of the same players, in which a group
+ * is shown from the start of its pause.
+ */
+export function boardStateAt(
+  drawGroups: string[][],
+  steps: DrawStep[],
+  elapsed: number,
+  sortedGroups: string[][] = drawGroups,
+): DrawBoardState {
   const stepIndex = stepIndexAt(steps, elapsed);
   const groups: DrawSlot[][] = drawGroups.map((group) => group.map(() => ({ kind: "empty" })));
+  const sorted: boolean[] = drawGroups.map(() => false);
 
   steps.forEach((step, index) => {
+    if (step.kind === "group-pause") {
+      if (index <= stepIndex) {
+        sorted[step.groupIndex] = true;
+        groups[step.groupIndex] = sortedGroups[step.groupIndex].map((player) => ({
+          kind: "revealed",
+          player,
+          fresh: false,
+        }));
+      }
+      return;
+    }
     if (step.kind !== "reveal") return;
     const isPast = index < stepIndex;
-    const isSettled = index === stepIndex && elapsed - step.startsAt >= DRAW_TIMING.CYCLE;
+    const elapsedInStep = elapsed - step.startsAt;
+    const isSettled = index === stepIndex && elapsedInStep >= DRAW_TIMING.FOCUS + DRAW_TIMING.CYCLE;
     if (isPast || isSettled) {
       groups[step.groupIndex][step.slotIndex] = { kind: "revealed", player: step.player, fresh: isSettled };
+    } else if (index === stepIndex && elapsedInStep >= DRAW_TIMING.FOCUS) {
+      const startsAt = step.startsAt + DRAW_TIMING.FOCUS;
+      groups[step.groupIndex][step.slotIndex] = { kind: "cycling", player: step.player, startsAt };
     } else if (index === stepIndex) {
-      groups[step.groupIndex][step.slotIndex] = { kind: "cycling", player: step.player, startsAt: step.startsAt };
+      groups[step.groupIndex][step.slotIndex] = { kind: "waiting" };
     }
   });
 
@@ -98,10 +133,13 @@ export function boardStateAt(drawGroups: string[][], steps: DrawStep[], elapsed:
   const currentGroupIndex =
     currentStep === undefined || currentStep.kind === "end" ? drawGroups.length - 1 : currentStep.groupIndex;
   const celebratingGroupIndex =
-    stepIndex >= 0 && currentStep?.kind === "group-pause" ? currentStep.groupIndex : undefined;
+    stepIndex >= 0 && currentStep?.kind === "group-pause" && elapsed - currentStep.startsAt >= DRAW_TIMING.SORT
+      ? currentStep.groupIndex
+      : undefined;
 
   return {
     groups,
+    sorted,
     currentGroupIndex: Math.max(currentGroupIndex, 0),
     celebratingGroupIndex,
     done: stepIndex >= steps.length,
