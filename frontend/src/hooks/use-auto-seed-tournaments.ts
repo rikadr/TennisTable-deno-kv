@@ -26,6 +26,12 @@ export function useAutoSeedTournaments(tennisTable: TennisTable) {
         data: { playerOrder, groupSeeding },
       };
 
+      const validateResponse = tennisTable.eventStore.tournamentsProjector.validateSetPlayerOrder(event);
+      if (validateResponse.valid === false) {
+        console.error(`Tournament ${config.id} seeding failed validation: ${validateResponse.message}`);
+        return;
+      }
+
       addEventMutation.mutate(event);
     };
 

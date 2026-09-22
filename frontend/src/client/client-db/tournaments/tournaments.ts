@@ -1,3 +1,4 @@
+import { shuffleArray } from "../../../common/array-utils";
 import { TournamentConfig } from "../event-store/projectors/tournaments-projector";
 import { TennisTable } from "../tennis-table";
 import { TournamentPrediction } from "./prediction";
@@ -81,12 +82,7 @@ export class Tournaments {
    * player order, so the result is a permutation of the same players.
    */
   buildRandomGroupSeeding(tournamentId: string, random: () => number = Math.random): string[] {
-    const seeding = this.buildPlayerOrder(tournamentId);
-    for (let i = seeding.length - 1; i > 0; i--) {
-      const j = Math.floor(random() * (i + 1));
-      [seeding[i], seeding[j]] = [seeding[j], seeding[i]];
-    }
-    return seeding;
+    return shuffleArray(this.buildPlayerOrder(tournamentId), random);
   }
 
   findAllPendingGames(player1: string | null | undefined, player2: string | null | undefined) {

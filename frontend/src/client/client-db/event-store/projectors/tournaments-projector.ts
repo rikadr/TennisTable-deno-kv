@@ -8,6 +8,7 @@ import {
   TournamentUndoSkipGame,
   TournamentUpdated,
 } from "../event-types";
+import { isSameSet } from "../../../../common/array-utils";
 import { ValidatorResponse } from "./validator-types";
 
 export type TournamentConfig = {
@@ -186,7 +187,7 @@ export class TournamentsProjector {
     if (!event.data.playerOrder || event.data.playerOrder.length === 0) {
       return { valid: false, message: "Player order cannot be empty" };
     }
-    if (event.data.groupSeeding !== undefined && !isSamePlayers(event.data.groupSeeding, event.data.playerOrder)) {
+    if (event.data.groupSeeding !== undefined && !isSameSet(event.data.groupSeeding, event.data.playerOrder)) {
       return { valid: false, message: "Group seeding must contain the same players as the player order" };
     }
     return { valid: true };
@@ -251,12 +252,4 @@ export class TournamentsProjector {
     }
     return { valid: true };
   }
-}
-
-/** True when both lists hold the same players one time each, in any order */
-export function isSamePlayers(a: string[], b: string[]): boolean {
-  if (a.length !== b.length) return false;
-  const setA = new Set(a);
-  if (setA.size !== a.length) return false;
-  return b.every((player) => setA.has(player));
 }

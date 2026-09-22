@@ -1,4 +1,4 @@
-import { isSamePlayers } from "../event-store/projectors/tournaments-projector";
+import { isSameSet } from "../../../common/array-utils";
 import { SimulateGameFn, Tournament, TournamentGame } from "./tournament";
 
 type GroupGame = Omit<TournamentGame, "advanceTo">;
@@ -20,6 +20,10 @@ export class TournamentGroupPlay {
   readonly playerOrder: string[];
   /** The order that divides the players into groups. The random draw when the tournament has one, else the player order */
   readonly groupSeeding: string[];
+  /** True when a random draw, and not the player order, divides the players into groups */
+  readonly hasRandomGroupSeeding: boolean;
+  /** Index of each player in the player order */
+  readonly #playerOrderIndex: Map<string, number>;
 
   groups: {
     players: string[];
@@ -33,9 +37,11 @@ export class TournamentGroupPlay {
   constructor(tournament: Tournament) {
     this.#tournament = tournament;
     this.playerOrder = this.#tournament.tournamentConfig.playerOrder ?? tournament.signedUp.map((s) => s.player);
-    const groupSeeding = this.#tournament.tournamentConfig.groupSeeding;
-    this.groupSeeding =
-      groupSeeding !== undefined && isSamePlayers(groupSeeding, this.playerOrder) ? groupSeeding : this.playerOrder;
+    this.#playerOrderIndex = new Map(this.playerOrder.map((player, index) => [player, index]));
+    const configSeeding = this.#tournament.tournamentConfig.groupSeeding;
+    const draw = configSeeding !== undefined && isSameSet(configSeeding, this.playerOrder) ? configSeeding : undefined;
+    this.hasRandomGroupSeeding = draw !== undefined;
+    this.groupSeeding = draw ?? this.playerOrder;
 
     const groups = this.#divideInGroups(this.groupSeeding);
     const groupGames = this.#generateGroupGames(groups);
@@ -48,11 +54,6 @@ export class TournamentGroupPlay {
       played: groupGames[groupIndex].filter((g) => !!g.completedAt) as GroupGame[],
       pending: groupGames[groupIndex].filter((g) => !g.completedAt),
     }));
-  }
-
-  /** True when a random draw, and not the player order, divides the players into groups */
-  get hasRandomGroupSeeding(): boolean {
-    return this.groupSeeding !== this.playerOrder;
   }
 
   getBracketPlayerOrder(): string[] | undefined {
@@ -109,7 +110,7 @@ export class TournamentGroupPlay {
 
     for (const group of groups) {
       // Sort players by their order in the tournament
-      group.sort((a, b) => this.playerOrder.indexOf(a) - this.playerOrder.indexOf(b));
+      group.sort((a, b) => this.#playerOrderIndex.get(a)! - this.#playerOrderIndex.get(b)!);
     }
     return groups;
   }
@@ -196,7 +197,7 @@ export class TournamentGroupPlay {
           wins: 0,
           loss: 0,
           skips: 0,
-          playerOrderIndex: this.playerOrder.findIndex((p) => p === player),
+          playerOrderIndex: this.#playerOrderIndex.get(player) ?? -1,
         }),
       ),
     );

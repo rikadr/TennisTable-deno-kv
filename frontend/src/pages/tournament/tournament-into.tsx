@@ -70,12 +70,17 @@ export const TournamentInfo = ({ tournament }: { tournament: Tournament }) => {
         )}
 
         <InfoRow label="Format">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {hasGroupPlay && (
               <>
                 <span className="px-2 py-1 rounded text-xs font-medium bg-secondary-background text-secondary-text">
                   Group Play
-                </span>{" "}
+                </span>
+                {tournament.tournamentConfig.randomGroupSeeding && (
+                  <span className="px-2 py-1 rounded text-xs font-medium ring-1 ring-secondary-background text-primary-text/80">
+                    Random group seeding
+                  </span>
+                )}{" "}
                 {"->"}
               </>
             )}
