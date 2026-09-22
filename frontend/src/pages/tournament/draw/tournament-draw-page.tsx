@@ -16,7 +16,8 @@ import {
   advanceOneStep,
   boardStateAt,
   buildDrawTimeline,
-  cycleIntervalAt,
+  cycleTickIndexAt,
+  cycleTickOffsets,
   getDrawGroups,
   stepIndexAt,
 } from "./draw-timeline";
@@ -27,6 +28,8 @@ const CLOCK_INTERVAL = 200;
 const REVEAL_CONFETTI = { particleCount: 14, force: 0.4, duration: 1_800, width: 400, particleSize: 8 } as const;
 /** A bigger burst when a group is complete */
 const GROUP_CONFETTI = { particleCount: 80, force: 0.6, duration: 2_800, width: 900 } as const;
+/** When the name changes inside a cycle. The same for every slot, so it is built one time */
+const CYCLE_TICKS = cycleTickOffsets();
 /** A page that mounts this close after the anchor is a live viewer, not a late joiner */
 const LIVE_TOLERANCE = 1_000;
 
@@ -381,6 +384,7 @@ const SlotRow: React.FC<{
         </div>
         <CyclingName
           pool={allPlayers}
+          player={slot.player}
           cycleStartAt={localStartAt + slot.startsAt}
           playerName={playerName}
           large={large}
@@ -400,33 +404,49 @@ const SlotRow: React.FC<{
 };
 
 /**
- * Shows one name after another from the pool, in a random order that does not repeat a name twice
- * in a row. The names change fast at first and slow down towards the reveal.
+ * Shows one name after another from the pool on the tick schedule of the cycle: fast at first,
+ * slow towards the end. Every tick but the last shows a random other name, never the same name
+ * twice in a row. The last tick shows the drawn player, so the cycle lands on the player.
  */
 const CyclingName: React.FC<{
   pool: string[];
+  /** The player the cycle lands on */
+  player: string;
   /** Wall-clock time the cycle started */
   cycleStartAt: number;
   playerName: (id: string) => string;
   large: boolean;
-}> = ({ pool, cycleStartAt, playerName, large }) => {
-  const [index, setIndex] = useState(() => Math.floor(Math.random() * Math.max(pool.length, 1)));
+}> = ({ pool, player, cycleStartAt, playerName, large }) => {
+  const others = useMemo(() => pool.filter((p) => p !== player), [pool, player]);
+  // A counter, not the tick index: a timer that fires a hair early must still re-run the effect
+  const [beat, setBeat] = useState(0);
+  const [shown, setShown] = useState<string>(player);
+  const shownTickRef = useRef<number>();
 
   useEffect(() => {
-    if (pool.length < 2) return;
-    let timer: ReturnType<typeof setTimeout>;
-    const tick = () => {
-      setIndex((prev) => (prev + 1 + Math.floor(Math.random() * (pool.length - 1))) % pool.length);
-      timer = setTimeout(tick, cycleIntervalAt(Date.now() - cycleStartAt));
-    };
-    timer = setTimeout(tick, cycleIntervalAt(Date.now() - cycleStartAt));
+    const index = cycleTickIndexAt(CYCLE_TICKS, Date.now() - cycleStartAt);
+    const isLast = index >= CYCLE_TICKS.length - 1;
+    if (isLast || others.length === 0) {
+      setShown(player);
+      return;
+    }
+    if (shownTickRef.current !== index) {
+      shownTickRef.current = index;
+      setShown((prev) => {
+        const candidates = others.length > 1 ? others.filter((p) => p !== prev) : others;
+        return candidates[Math.floor(Math.random() * candidates.length)];
+      });
+    }
+    const timer = setTimeout(
+      () => setBeat((prev) => prev + 1),
+      Math.max(1, cycleStartAt + CYCLE_TICKS[index + 1] - Date.now()),
+    );
     return () => clearTimeout(timer);
-  }, [pool.length, cycleStartAt]);
+  }, [beat, cycleStartAt, others, player]);
 
-  const player = pool[index % Math.max(pool.length, 1)];
   return (
     <p className={classNames("truncate font-medium text-primary-text/70", large ? "text-xl" : "text-sm")}>
-      {player ? playerName(player) : ""}
+      {playerName(shown)}
     </p>
   );
 };

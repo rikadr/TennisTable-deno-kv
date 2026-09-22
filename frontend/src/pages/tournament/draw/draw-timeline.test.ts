@@ -4,6 +4,8 @@ import {
   boardStateAt,
   buildDrawTimeline,
   cycleIntervalAt,
+  cycleTickIndexAt,
+  cycleTickOffsets,
   getDrawGroups,
   stepIndexAt,
   timelineDuration,
@@ -63,7 +65,7 @@ describe("boardStateAt", () => {
     const cycling = boardStateAt(groups, steps, PLAYER + 100);
     expect(cycling.groups[0]).toEqual([
       { kind: "revealed", player: "A", fresh: false },
-      { kind: "cycling", startsAt: PLAYER },
+      { kind: "cycling", player: "B", startsAt: PLAYER },
     ]);
     expect(cycling.groups[1]).toEqual([{ kind: "empty" }]);
     expect(cycling.currentGroupIndex).toBe(0);
@@ -146,5 +148,29 @@ describe("cycleIntervalAt", () => {
   it("clamps outside the cycle", () => {
     expect(cycleIntervalAt(-100)).toBe(CYCLE_TICK_FASTEST);
     expect(cycleIntervalAt(CYCLE * 2)).toBe(CYCLE_TICK_SLOWEST);
+  });
+});
+
+describe("cycleTickOffsets", () => {
+  const offsets = cycleTickOffsets();
+
+  it("starts at 0, lands before the reveal and only slows down", () => {
+    expect(offsets[0]).toBe(0);
+    expect(offsets.length).toBeGreaterThan(20);
+    expect(offsets[offsets.length - 1]).toBeLessThanOrEqual(CYCLE - DRAW_TIMING.CYCLE_LANDING);
+    expect(offsets[offsets.length - 1]).toBeGreaterThan(
+      CYCLE - DRAW_TIMING.CYCLE_LANDING - DRAW_TIMING.CYCLE_TICK_SLOWEST,
+    );
+    for (let i = 2; i < offsets.length; i++) {
+      expect(offsets[i] - offsets[i - 1]).toBeGreaterThanOrEqual(offsets[i - 1] - offsets[i - 2]);
+    }
+  });
+
+  it("finds the tick shown at a time", () => {
+    expect(cycleTickIndexAt(offsets, -10)).toBe(0);
+    expect(cycleTickIndexAt(offsets, 0)).toBe(0);
+    expect(cycleTickIndexAt(offsets, offsets[1])).toBe(1);
+    expect(cycleTickIndexAt(offsets, offsets[5] + 1)).toBe(5);
+    expect(cycleTickIndexAt(offsets, CYCLE)).toBe(offsets.length - 1);
   });
 });
