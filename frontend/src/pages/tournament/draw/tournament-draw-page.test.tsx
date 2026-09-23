@@ -5,7 +5,7 @@ import { EventDbContext } from "../../../wrappers/event-db-context";
 import { ImageKitContext } from "../../../wrappers/image-kit-context";
 import { TennisTable } from "../../../client/client-db/tennis-table";
 import { EventType, EventTypeEnum } from "../../../client/client-db/event-store/event-types";
-import { TournamentDrawPage, formatCountdown } from "./tournament-draw-page";
+import { TournamentDrawPage, countdownParts, formatCountdown } from "./tournament-draw-page";
 import { DRAW_TIMING } from "./draw-timeline";
 
 // jsdom has no scrollIntoView, which the show calls when the group in focus changes
@@ -104,7 +104,9 @@ describe("TournamentDrawPage", () => {
     renderPage(buildEvents({ seeded: false }));
 
     expect(screen.getByText("The draw starts in")).toBeInTheDocument();
-    expect(screen.getByText("1:30")).toBeInTheDocument();
+    expect(screen.getByRole("timer")).toHaveAttribute("aria-label", "1:30");
+    expect(screen.getByText("01")).toBeInTheDocument();
+    expect(screen.getByText("30")).toBeInTheDocument();
     expect(screen.getByText("Name P1")).toBeInTheDocument();
     expect(screen.getByText("Name P6")).toBeInTheDocument();
   });
@@ -246,5 +248,17 @@ describe("formatCountdown", () => {
     expect(formatCountdown(65_000)).toBe("1:05");
     expect(formatCountdown(3_600_000 + 60_000 + 5_000)).toBe("1:01:05");
     expect(formatCountdown(2 * 86_400_000 + 3_600_000)).toBe("2d 01h 00m 00s");
+  });
+});
+
+describe("countdownParts", () => {
+  it("always shows minutes and seconds, and adds the larger units when they are not zero", () => {
+    expect(countdownParts(90_000)).toEqual([
+      { value: "01", label: "min" },
+      { value: "30", label: "sec" },
+    ]);
+    expect(countdownParts(3_600_000 + 5_000).map((part) => part.value)).toEqual(["01", "00", "05"]);
+    expect(countdownParts(86_400_000 + 5_000).map((part) => part.label)).toEqual(["day", "hrs", "min", "sec"]);
+    expect(countdownParts(2 * 86_400_000)[0]).toEqual({ value: "2", label: "days" });
   });
 });

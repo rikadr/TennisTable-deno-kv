@@ -118,6 +118,23 @@ const DrawHeader: React.FC<{ tournament: Tournament; children?: React.ReactNode 
   </div>
 );
 
+/** The hero at the top of the countdown and the wait: the tournament name, above what happens next */
+const DrawHero: React.FC<{ tournament: Tournament; children: React.ReactNode }> = ({ tournament, children }) => (
+  <section className="min-h-[70vh] flex flex-col items-center justify-center text-center py-10 md:py-16">
+    <p className="flex items-center gap-2 text-xs sm:text-sm md:text-base font-semibold uppercase tracking-[0.3em] text-primary-text/70">
+      <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
+      Live group draw
+    </p>
+    <h1 className="mt-3 max-w-5xl break-words text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight">
+      {tournament.name}
+    </h1>
+    <div className="mt-10 md:mt-16 w-full">{children}</div>
+  </section>
+);
+
+/** The countdown shows its last seconds with a tick animation on every change */
+const FINAL_SECONDS = 10_000;
+
 const DrawCountdown: React.FC<{ tournament: Tournament; now: number; onPreview: () => void }> = ({
   tournament,
   now,
@@ -125,68 +142,107 @@ const DrawCountdown: React.FC<{ tournament: Tournament; now: number; onPreview: 
 }) => {
   const context = useEventDbContext();
   const remaining = Math.max(0, tournament.startDate - now);
+  const parts = countdownParts(remaining);
+  const isFinal = remaining <= FINAL_SECONDS;
   const isAdmin = session.sessionData?.role === "admin";
   const canPreview = isAdmin && tournament.signedUp.length >= 2;
+  // Four units need more width than three, so they get a smaller font. The xs breakpoint is not
+  // used: it is sorted after lg in the generated CSS and would override the larger sizes
+  const digitClass =
+    parts.length > 3
+      ? "text-5xl sm:text-7xl md:text-8xl xl:text-9xl 2xl:text-[10rem]"
+      : "text-6xl sm:text-8xl md:text-9xl lg:text-[10rem] xl:text-[12rem]";
 
   return (
-    <div className="mx-4 md:mx-10 space-y-8 text-primary-text">
-      <DrawHeader tournament={tournament}>
-        <Link
-          to={`/tournament?tournament=${tournament.id}`}
-          className="px-3 py-1.5 rounded-lg text-xs font-medium bg-secondary-background text-secondary-text hover:opacity-80"
-        >
-          Tournament page
-        </Link>
-      </DrawHeader>
-
-      <div className="text-center space-y-3 py-6">
-        <p className="text-sm uppercase tracking-wide text-primary-text/70">The draw starts in</p>
-        <p className="text-5xl md:text-7xl font-bold tabular-nums">{formatCountdown(remaining)}</p>
-        <p className="text-xs text-primary-text/60">
-          The app draws the groups at random when the tournament starts. The show starts{" "}
-          {DRAW_TIMING.START_DELAY / 1000} seconds after that.
+    <div className="mx-4 md:mx-10 pb-10 text-primary-text">
+      <DrawHero tournament={tournament}>
+        <p className="text-center text-sm sm:text-base md:text-xl font-medium uppercase tracking-[0.2em] text-primary-text/70">
+          The draw starts in
         </p>
-        {canPreview && (
-          <div className="pt-4 space-y-1">
+        <div
+          role="timer"
+          aria-label={formatCountdown(remaining)}
+          className="mt-4 md:mt-6 flex items-start justify-center gap-2 sm:gap-4 md:gap-6"
+        >
+          {parts.map((part) => (
+            <div key={part.label} className="flex flex-col items-center">
+              <div
+                className={classNames(
+                  "rounded-2xl bg-secondary-background text-secondary-text shadow-lg px-3 sm:px-5 lg:px-7 py-2 sm:py-4 lg:py-6",
+                  isFinal && "ring-4 ring-red-500",
+                )}
+              >
+                <span
+                  key={isFinal ? part.value : undefined}
+                  className={classNames(
+                    "block tabular-nums font-black leading-none",
+                    digitClass,
+                    isFinal && "animate-draw-reveal",
+                  )}
+                >
+                  {part.value}
+                </span>
+              </div>
+              <span className="mt-2 md:mt-3 text-xs sm:text-sm md:text-base font-medium uppercase tracking-widest text-primary-text/60">
+                {part.label}
+              </span>
+            </div>
+          ))}
+        </div>
+      </DrawHero>
+
+      <section className="mx-auto max-w-5xl text-center">
+        <h2 className="text-lg md:text-2xl font-semibold">
+          In the draw <span className="font-normal text-primary-text/60">({tournament.signedUp.length})</span>
+        </h2>
+        <div className="mt-4 md:mt-6 flex flex-wrap justify-center gap-2 md:gap-3">
+          {tournament.signedUp.map((signup) => (
+            <div
+              key={signup.player}
+              className="flex items-center gap-2 min-w-0 max-w-full rounded-full bg-primary-background ring-1 ring-secondary-background/60 py-1 pl-1 pr-4"
+            >
+              <ProfilePicture playerId={signup.player} size={36} border={2} />
+              <p className="truncate text-sm md:text-base font-medium">{context.playerName(signup.player)}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <footer className="mt-12 md:mt-16 flex flex-col items-center gap-3 text-center">
+        <div className="flex flex-wrap justify-center gap-3">
+          <Link
+            to={`/tournament?tournament=${tournament.id}`}
+            className="px-4 py-2 rounded-lg text-sm font-medium bg-secondary-background text-secondary-text hover:opacity-80"
+          >
+            Tournament page
+          </Link>
+          {canPreview && (
             <button
               onClick={onPreview}
               className="px-4 py-2 rounded-lg text-sm font-semibold ring-1 ring-secondary-background text-primary-text hover:bg-secondary-background/30"
             >
               Preview the show 🎲
             </button>
-            <p className="text-xs text-primary-text/50">
-              Admin only. A test run with the signed up players in a new random order. It changes nothing.
-            </p>
-          </div>
-        )}
-      </div>
-
-      <div className="max-w-2xl mx-auto ring-1 ring-secondary-background rounded-lg bg-primary-background p-4">
-        <h2 className="text-sm font-medium uppercase tracking-wide text-primary-text/70 mb-3">
-          In the draw <span className="normal-case font-thin italic">({tournament.signedUp.length})</span>
-        </h2>
-        <div className="grid grid-cols-2 xs:grid-cols-3 md:grid-cols-4 gap-2">
-          {tournament.signedUp.map((signup) => (
-            <div key={signup.player} className="flex items-center gap-2 min-w-0">
-              <ProfilePicture playerId={signup.player} size={28} border={2} />
-              <p className="truncate text-sm">{context.playerName(signup.player)}</p>
-            </div>
-          ))}
+          )}
         </div>
-      </div>
+        {canPreview && (
+          <p className="max-w-md text-center text-xs text-primary-text/50">
+            Admin only. A test run with the signed up players in a new random order. It changes nothing.
+          </p>
+        )}
+      </footer>
     </div>
   );
 };
 
 const DrawWaiting: React.FC<{ tournament: Tournament }> = ({ tournament }) => (
-  <div className="mx-4 md:mx-10 space-y-8 text-primary-text">
-    <DrawHeader tournament={tournament} />
-    <div className="text-center space-y-3 py-16">
-      <p className="text-3xl md:text-5xl font-bold">
+  <div className="mx-4 md:mx-10 text-primary-text">
+    <DrawHero tournament={tournament}>
+      <p className="text-center text-5xl sm:text-7xl md:text-8xl font-black">
         Drawing<span className="animate-pulse">...</span>
       </p>
-      <p className="text-sm text-primary-text/70">The tournament has started. The show starts in a moment.</p>
-    </div>
+      <p className="mt-6 text-center text-sm md:text-lg text-primary-text/70">The draw starts in a moment.</p>
+    </DrawHero>
   </div>
 );
 
@@ -492,6 +548,23 @@ const CyclingName: React.FC<{
     </p>
   );
 };
+
+type CountdownPart = { value: string; label: string };
+
+/** The units of the countdown, with the largest units left out while they are zero. Minutes and seconds are always shown */
+export function countdownParts(ms: number): CountdownPart[] {
+  const totalSeconds = Math.ceil(ms / 1000);
+  const days = Math.floor(totalSeconds / 86_400);
+  const hours = Math.floor((totalSeconds % 86_400) / 3_600);
+  const minutes = Math.floor((totalSeconds % 3_600) / 60);
+  const seconds = totalSeconds % 60;
+  const pad = (value: number) => value.toString().padStart(2, "0");
+  const parts: CountdownPart[] = [];
+  if (days > 0) parts.push({ value: days.toString(), label: days === 1 ? "day" : "days" });
+  if (days > 0 || hours > 0) parts.push({ value: pad(hours), label: "hrs" });
+  parts.push({ value: pad(minutes), label: "min" }, { value: pad(seconds), label: "sec" });
+  return parts;
+}
 
 /** d h m s, with the largest units left out while they are zero */
 export function formatCountdown(ms: number): string {
