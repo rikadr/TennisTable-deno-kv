@@ -189,10 +189,6 @@ const DrawCountdown: React.FC<{ tournament: Tournament; now: number; onPreview: 
             </div>
           ))}
         </div>
-        <p className="mt-8 md:mt-10 mx-auto max-w-xl text-center text-sm md:text-base text-primary-text/60">
-          The app draws the groups at random when the tournament starts. The show starts{" "}
-          {DRAW_TIMING.START_DELAY / 1000} seconds after that.
-        </p>
       </DrawHero>
 
       <section className="mx-auto max-w-5xl text-center">
@@ -245,9 +241,7 @@ const DrawWaiting: React.FC<{ tournament: Tournament }> = ({ tournament }) => (
       <p className="text-center text-5xl sm:text-7xl md:text-8xl font-black">
         Drawing<span className="animate-pulse">...</span>
       </p>
-      <p className="mt-6 text-center text-sm md:text-lg text-primary-text/70">
-        The tournament has started. The show starts in a moment.
-      </p>
+      <p className="mt-6 text-center text-sm md:text-lg text-primary-text/70">The draw starts in a moment.</p>
     </DrawHero>
   </div>
 );
