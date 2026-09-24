@@ -88,15 +88,7 @@ function advance(ms: number, tick = 200) {
 
 afterEach(() => {
   jest.useRealTimers();
-  localStorage.clear();
 });
-
-/** An unsigned token. The client reads the role from the payload and does not verify the signature */
-function loginAs(role: string) {
-  const payload = { exp: Math.floor(Date.now() / 1000) + 3600, role, username: "tester" };
-  const encode = (value: object) => btoa(JSON.stringify(value)).replace(/=+$/, "");
-  localStorage.setItem("jwt-token", `${encode({ alg: "none" })}.${encode(payload)}.sig`);
-}
 
 describe("TournamentDrawPage", () => {
   it("shows a countdown and the signed up players before the start", () => {
@@ -204,20 +196,15 @@ describe("TournamentDrawPage", () => {
 });
 
 describe("TournamentDrawPage preview", () => {
-  it("hides the preview from players", () => {
+  it("lets a player who is not logged in run a simulated show, and returns to the countdown on exit", () => {
     setNow(START - 90_000);
-    renderPage(buildEvents({ seeded: false }));
-    expect(screen.queryByRole("button", { name: /Preview the show/ })).not.toBeInTheDocument();
-  });
-
-  it("lets an admin run the show with a fresh random order, and returns to the countdown at the end", () => {
-    setNow(START - 90_000);
-    loginAs("admin");
     renderPage(buildEvents({ seeded: false }));
 
     fireEvent.click(screen.getByRole("button", { name: /Preview the show/ }));
-    expect(screen.getByText("Preview")).toBeInTheDocument();
-    expect(screen.getByText("Live")).toBeInTheDocument();
+    expect(screen.getByText("Simulated")).toBeInTheDocument();
+    expect(screen.getByText("Simulated group draw")).toBeInTheDocument();
+    expect(screen.getByText("This is a simulated draw, not the real draw")).toBeInTheDocument();
+    expect(screen.queryByText("Live")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Next/ })).not.toBeInTheDocument();
     expect(screen.getByText("Group 1")).toBeInTheDocument();
     expect(screen.getByText("Group 2")).toBeInTheDocument();
@@ -232,7 +219,6 @@ describe("TournamentDrawPage preview", () => {
 
   it("returns to the countdown when the preview show ends", () => {
     setNow(START - 900_000);
-    loginAs("admin");
     renderPage(buildEvents({ seeded: false }));
     fireEvent.click(screen.getByRole("button", { name: /Preview the show/ }));
 
