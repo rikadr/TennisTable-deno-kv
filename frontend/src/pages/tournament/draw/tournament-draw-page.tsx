@@ -5,7 +5,6 @@ import { Tournament } from "../../../client/client-db/tournaments/tournament";
 import { TournamentGroupPlay } from "../../../client/client-db/tournaments/group-play";
 import { shuffleArray } from "../../../common/array-utils";
 import { classNames } from "../../../common/class-names";
-import { session } from "../../../services/auth";
 import { useNow } from "../../../hooks/use-now";
 import { useTennisParams } from "../../../hooks/use-tennis-params";
 import { useEventDbContext } from "../../../wrappers/event-db-context";
@@ -43,7 +42,7 @@ function groupPlayUrl(tournamentId: string): string {
   return `/tournament?tournament=${tournamentId}&tab=group-play`;
 }
 
-/** An admin's test run of the show: the signed up players in a fresh random order, shown as if they were the draw */
+/** A simulated run of the show for anyone: the signed up players in a fresh random order, shown as if they were the draw */
 type Preview = { groupPlay: TournamentGroupPlay; anchor: number };
 
 export const TournamentDrawPage: React.FC = () => {
@@ -108,10 +107,16 @@ export const TournamentDrawPage: React.FC = () => {
   return <DrawShow tournament={tournament} groupPlay={groupPlay} anchor={anchor} now={now} />;
 };
 
-const DrawHeader: React.FC<{ tournament: Tournament; children?: React.ReactNode }> = ({ tournament, children }) => (
+const DrawHeader: React.FC<{ tournament: Tournament; isPreview: boolean; children?: React.ReactNode }> = ({
+  tournament,
+  isPreview,
+  children,
+}) => (
   <div className="flex flex-wrap items-center justify-between gap-3">
     <div>
-      <p className="text-xs font-medium uppercase tracking-wide text-primary-text/60">Live group draw</p>
+      <p className="text-xs font-medium uppercase tracking-wide text-primary-text/60">
+        {isPreview ? "Simulated group draw" : "Live group draw"}
+      </p>
       <h1 className="text-2xl md:text-3xl font-bold">{tournament.name}</h1>
     </div>
     <div className="flex items-center gap-2">{children}</div>
@@ -144,8 +149,7 @@ const DrawCountdown: React.FC<{ tournament: Tournament; now: number; onPreview: 
   const remaining = Math.max(0, tournament.startDate - now);
   const parts = countdownParts(remaining);
   const isFinal = remaining <= FINAL_SECONDS;
-  const isAdmin = session.sessionData?.role === "admin";
-  const canPreview = isAdmin && tournament.signedUp.length >= 2;
+  const canPreview = tournament.signedUp.length >= 2;
   // Four units need more width than three, so they get a smaller font. The xs breakpoint is not
   // used: it is sorted after lg in the generated CSS and would override the larger sizes
   const digitClass =
@@ -227,7 +231,7 @@ const DrawCountdown: React.FC<{ tournament: Tournament; now: number; onPreview: 
         </div>
         {canPreview && (
           <p className="max-w-md text-center text-xs text-primary-text/50">
-            Admin only. A test run with the signed up players in a new random order. It changes nothing.
+            A simulated draw with the signed up players in a random order. It is not the real draw and changes nothing.
           </p>
         )}
       </footer>
@@ -293,10 +297,12 @@ const DrawShow: React.FC<{
 
   return (
     <div className="mx-4 md:mx-10 space-y-6 text-primary-text">
-      <DrawHeader tournament={tournament}>
-        {isPreview && (
+      <DrawHeader tournament={tournament} isPreview={isPreview}>
+        {isPreview ? (
           <>
-            <span className="px-3 py-1.5 rounded-lg text-xs font-medium ring-1 ring-secondary-background">Preview</span>
+            <span className="px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wide bg-amber-400 text-black">
+              Simulated
+            </span>
             <button
               onClick={onPreviewExit}
               className="px-3 py-1.5 rounded-lg text-xs font-medium bg-secondary-background text-secondary-text hover:opacity-80"
@@ -304,8 +310,7 @@ const DrawShow: React.FC<{
               Exit preview
             </button>
           </>
-        )}
-        {isBehind ? (
+        ) : isBehind ? (
           <>
             <span className="text-xs text-primary-text/70">
               {stepsBehind} {stepsBehind === 1 ? "step" : "steps"} behind live
@@ -324,6 +329,18 @@ const DrawShow: React.FC<{
           </span>
         )}
       </DrawHeader>
+
+      {isPreview && (
+        <div
+          role="note"
+          className="rounded-xl border-2 border-dashed border-amber-400 bg-amber-400/10 px-4 py-3 text-center"
+        >
+          <p className="text-base md:text-lg font-bold">This is a simulated draw, not the real draw</p>
+          <p className="mt-1 text-xs md:text-sm text-primary-text/70">
+            The groups are random and change nothing. The real draw starts when the tournament starts.
+          </p>
+        </div>
+      )}
 
       {/* One list with stable keys, so a group keeps its DOM nodes when it changes size and its reveals do not replay */}
       <div className="flex flex-wrap justify-center gap-3">

@@ -60,6 +60,9 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
       text(
         "The leaderboard shows a banner for the live draw from 5 days before the draw. The banner shows the countdown and opens the live draw page. It stays for 1 hour after the show, so you can watch the replay.",
       ),
+      text(
+        'Before the start, everyone can click "Preview the show" to see a simulated draw. It puts the signed up players in a random order. The page marks it clearly as a simulation. It is not the real draw and changes nothing.',
+      ),
     ],
   },
   {
