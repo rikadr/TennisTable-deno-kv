@@ -120,7 +120,7 @@ const DrawHeader: React.FC<{ tournament: Tournament; children?: React.ReactNode 
 
 /** The hero at the top of the countdown and the wait: the tournament name, above what happens next */
 const DrawHero: React.FC<{ tournament: Tournament; children: React.ReactNode }> = ({ tournament, children }) => (
-  <section className="min-h-[70vh] flex flex-col items-center justify-center text-center py-10 md:py-16">
+  <section className="min-h-[35vh] flex flex-col items-center justify-center text-center pt-5 pb-10 md:pt-8 md:pb-16">
     <p className="flex items-center gap-2 text-xs sm:text-sm md:text-base font-semibold uppercase tracking-[0.3em] text-primary-text/70">
       <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
       Live group draw
