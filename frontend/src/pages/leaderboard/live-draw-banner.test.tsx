@@ -5,7 +5,12 @@ import { EventDbContext } from "../../wrappers/event-db-context";
 import { TennisTable } from "../../client/client-db/tennis-table";
 import { EventType, EventTypeEnum } from "../../client/client-db/event-store/event-types";
 import { DRAW_TIMING, buildDrawTimeline, timelineDuration } from "../tournament/draw/draw-timeline";
-import { LIVE_DRAW_REPLAY_WINDOW, LiveDrawBanners, liveDrawPhase } from "./live-draw-banner";
+import {
+  LIVE_DRAW_COUNTDOWN_WINDOW,
+  LIVE_DRAW_REPLAY_WINDOW,
+  LiveDrawBanners,
+  liveDrawPhase,
+} from "./live-draw-banner";
 
 const TOURNAMENT_ID = "t1";
 const START = new Date(2026, 8, 22, 18, 0).getTime();
@@ -52,11 +57,12 @@ function phaseAt(time: number, events = buildEvents()) {
 afterEach(() => jest.useRealTimers());
 
 describe("liveDrawPhase", () => {
-  it("is hidden before the signup period", () => {
-    expect(phaseAt(START - 15 * 24 * 60 * 60 * 1000)).toBeUndefined();
+  it("is hidden more than 5 days before the draw", () => {
+    expect(phaseAt(START - LIVE_DRAW_COUNTDOWN_WINDOW - 1)).toBeUndefined();
   });
 
-  it("counts down in the signup period", () => {
+  it("counts down from 5 days before the draw", () => {
+    expect(phaseAt(START - LIVE_DRAW_COUNTDOWN_WINDOW)).toBe("countdown");
     expect(phaseAt(START - 60_000)).toBe("countdown");
   });
 

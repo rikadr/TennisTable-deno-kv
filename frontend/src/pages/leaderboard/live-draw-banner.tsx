@@ -6,6 +6,8 @@ import { useEventDbContext } from "../../wrappers/event-db-context";
 import { DRAW_TIMING, buildDrawTimeline, timelineDuration } from "../tournament/draw/draw-timeline";
 import { formatCountdown, tournamentDrawUrl } from "../tournament/draw/tournament-draw-page";
 
+/** The banner shows the countdown this long before the draw */
+export const LIVE_DRAW_COUNTDOWN_WINDOW = 5 * 24 * 60 * 60 * 1000;
 /** The banner stays this long after the show ends, so a viewer who missed it can watch the replay */
 export const LIVE_DRAW_REPLAY_WINDOW = 60 * 60 * 1000;
 
@@ -14,7 +16,9 @@ export type LiveDrawPhase = "countdown" | "live" | "replay";
 export function liveDrawPhase(tournament: Tournament, now: number): LiveDrawPhase | undefined {
   const config = tournament.tournamentConfig;
   if (!config.groupPlay || !config.randomGroupSeeding) return undefined;
-  if (now < tournament.startDate) return tournament.inSignupPeriod ? "countdown" : undefined;
+  if (now < tournament.startDate) {
+    return tournament.startDate - now <= LIVE_DRAW_COUNTDOWN_WINDOW ? "countdown" : undefined;
+  }
 
   const anchor = tournament.startDate + DRAW_TIMING.START_DELAY;
   const groupPlay = tournament.groupPlay;
