@@ -11,6 +11,7 @@ import easterBunny from "../../img/easter/easter-bunny-realistic.png";
 import { getEgg, getPumpkin } from "./themed-place-number";
 import { RecentLeaderBoardChanges } from "./recent-leaderboard-changes";
 import { RecentHallOfFame } from "./recent-hall-of-fame";
+import { LiveDrawBanners } from "./live-draw-banner";
 import { fmtNum } from "../../common/number-utils";
 import { classNames } from "../../common/class-names";
 import { useLocalStorage } from "../../hooks/use-local-storage";
@@ -132,6 +133,7 @@ export const LeaderBoard: React.FC = () => {
     <div className="w-full px-4 flex flex-col justify-center items-center md:items-start gap-6 md:flex-row ">
       <div className="w-full max-w-md md:w-[450px] flex flex-col gap-2 items-center">
         <LiveGameCard liveGameQuery={liveGameQuery} />
+        <LiveDrawBanners />
         <TournamentHighlightsAndPendingGames />
         <RecentHallOfFame />
         <div className="bg-primary-background rounded-lg w-full space-y-2">
