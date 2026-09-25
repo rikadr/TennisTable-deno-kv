@@ -57,10 +57,18 @@ export class TournamentGroupPlay {
   }
 
   getBracketPlayerOrder(): string[] | undefined {
-    return Array.from(this.groupScores)
-      .sort(TournamentGroupPlay.sortGroupScores) // Sort by score
-      .map((player) => player[0]) // Only get the name
-      .slice(0, this.getBracketSize());
+    return this.getStandings().slice(0, this.getBracketSize());
+  }
+
+  /** All players in the total group play standings, best first. The best players qualify for the bracket */
+  getStandings(): string[] {
+    return TournamentGroupPlay.#standings(this.groupScores);
+  }
+
+  static #standings(scores: GroupScore): string[] {
+    return Array.from(scores)
+      .sort(TournamentGroupPlay.sortGroupScores)
+      .map(([player]) => player);
   }
 
   getBracketSize(): number {
@@ -264,7 +272,12 @@ export class TournamentGroupPlay {
   simulatePlayerOrder(
     simulateGameFn: SimulateGameFn,
     time: number,
-  ): { playerOrder: string[]; gamesSimulatedCount: number; totalConfidenceSum: number } {
+  ): {
+    playerOrder: string[];
+    standings: string[];
+    gamesSimulatedCount: number;
+    totalConfidenceSum: number;
+  } {
     // Deep copy groups and group games to avoid mutating the original
     const groupsCopy = this.groups.map((group) => ({
       ...group,
@@ -312,14 +325,11 @@ export class TournamentGroupPlay {
     const groupGames = groupsCopy.map((g) => g.groupGames);
     const simulatedScores = this.#calculateGroupScores(groups, groupGames);
 
-    // Get final player order sorted by scores
-    const playerOrder = Array.from(simulatedScores)
-      .sort(TournamentGroupPlay.sortGroupScores)
-      .map(([playerName]) => playerName)
-      .slice(0, this.getBracketSize());
+    const standings = TournamentGroupPlay.#standings(simulatedScores);
 
     return {
-      playerOrder,
+      playerOrder: standings.slice(0, this.getBracketSize()),
+      standings,
       gamesSimulatedCount,
       totalConfidenceSum,
     };

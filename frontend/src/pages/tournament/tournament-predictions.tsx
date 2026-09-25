@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { CartesianGrid, Line, LineChart, ReferenceLine, Tooltip, TooltipProps, XAxis, YAxis } from "recharts";
 import { useWindowSize } from "usehooks-ts";
 import { NameType, ValueType } from "recharts/types/component/DefaultTooltipContent";
@@ -10,6 +11,8 @@ import { Tournament } from "../../client/client-db/tournaments/tournament";
 import { useTournamentPredictionWorker } from "../../hooks/use-tournament-prediction-worker";
 import { ProgressBar } from "../player/player-elo-graph";
 import { ProfilePicture } from "../player/profile-picture";
+import { classNames } from "../../common/class-names";
+import { TournamentHowFar } from "./tournament-how-far";
 
 const ZOOM_FACTOR = 0.7; // Each click multiplies/divides by this (30% relative change)
 const MIN_Y_MAX = 1; // Allow zooming down to 1%
@@ -22,7 +25,56 @@ const SIMULATION_OPTIONS: { label: string; value: number }[] = [
   { label: "Melt your pc (1,000,000)", value: 1_000_000 },
 ];
 
+type PredictionTab = "win-chance" | "how-far";
+
+const PREDICTION_TABS: { id: PredictionTab; label: string }[] = [
+  { id: "win-chance", label: "Win chance" },
+  { id: "how-far", label: "How far will you go?" },
+];
+
 export const TournamentPredictions = ({ tournament }: { tournament: Tournament }) => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab: PredictionTab = searchParams.get("prediction") === "how-far" ? "how-far" : "win-chance";
+  const setActiveTab = (tab: PredictionTab) =>
+    setSearchParams(
+      (previous) => {
+        const params = new URLSearchParams(previous);
+        params.set("prediction", tab);
+        return params;
+      },
+      { replace: true },
+    );
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-center space-x-2 overflow-auto">
+        {PREDICTION_TABS.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={classNames(
+              "flex items-center py-2 px-4 border-b-4 font-medium text-sm transition-colors",
+              activeTab === tab.id
+                ? "text-primary-text border-primary-text"
+                : "text-primary-text/80 border-transparent hover:text-primary-text hover:border-primary-text border-dotted",
+            )}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+      {/* Both stay mounted, so a simulation result survives a change of tab */}
+      <div className={classNames(activeTab !== "win-chance" && "hidden")}>
+        <WinChance tournament={tournament} />
+      </div>
+      <div className={classNames(activeTab !== "how-far" && "hidden")}>
+        <TournamentHowFar tournament={tournament} />
+      </div>
+    </div>
+  );
+};
+
+const WinChance = ({ tournament }: { tournament: Tournament }) => {
   const [range, setRange] = useState(2);
   const [yMax, setYMax] = useState(DEFAULT_Y_MAX);
   const [selectedNumSimulations, setSelectedNumSimulations] = useState<number>(NUM_SIMULATIONS);

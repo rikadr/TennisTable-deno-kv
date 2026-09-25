@@ -5,6 +5,7 @@ import {
   TournamentGame,
   TournamentGameTarget,
 } from "./tournament";
+import { TournamentStages } from "./stage-prediction";
 
 type Bracket = Partial<TournamentGame>[][];
 
@@ -635,17 +636,7 @@ export class TournamentBracket {
   }
 
   simulateWinnerFromExisting(simulateGameFn: SimulateGameFn, time: number): SimulationResult {
-    return TournamentBracket.#simulateBracket(
-      {
-        winners: this.#deepCopyBracket(this.bracket),
-        losers: this.losersBracket ? this.#deepCopyBracket(this.losersBracket) : undefined,
-        grandFinal: this.grandFinal ? TournamentBracket.#deepCopyGame(this.grandFinal) : undefined,
-        bracketReset: this.bracketReset ? TournamentBracket.#deepCopyGame(this.bracketReset) : undefined,
-        doubleElimination: this.doubleElimination,
-      },
-      simulateGameFn,
-      time,
-    );
+    return TournamentBracket.#simulateBracket(this.#copyStructures(), simulateGameFn, time);
   }
 
   static simulateWinnerFromStatic(
@@ -654,12 +645,107 @@ export class TournamentBracket {
     playerOrder: string[],
     doubleElimination = false,
   ): SimulationResult {
+    return TournamentBracket.#simulateBracket(
+      TournamentBracket.#startingStructures(playerOrder, doubleElimination),
+      simulateGameFn,
+      time,
+    );
+  }
+
+  /** Simulates the rest of this bracket and returns the stage each player reached */
+  simulateStagesFromExisting(simulateGameFn: SimulateGameFn, time: number): TournamentStages {
+    const structures = this.#copyStructures();
+    TournamentBracket.#simulateBracket(structures, simulateGameFn, time);
+    return TournamentBracket.#stagesIn(structures);
+  }
+
+  /** Simulates a new bracket from this player order and returns the stage each player reached */
+  static simulateStagesFromStatic(
+    simulateGameFn: SimulateGameFn,
+    time: number,
+    playerOrder: string[],
+    doubleElimination = false,
+  ): TournamentStages {
+    const structures = TournamentBracket.#startingStructures(playerOrder, doubleElimination);
+    TournamentBracket.#simulateBracket(structures, simulateGameFn, time);
+    return TournamentBracket.#stagesIn(structures);
+  }
+
+  /** The stages the played games already decide. A player who is still in play has no knocked out stage */
+  getDecidedStages(): TournamentStages {
+    return TournamentBracket.#stagesIn(this.#structures);
+  }
+
+  static #startingStructures(playerOrder: string[], doubleElimination: boolean): SimulationStructures {
     if (doubleElimination) {
-      const structures = TournamentBracket.getStartingDoubleElimination(playerOrder);
-      return TournamentBracket.#simulateBracket({ ...structures, doubleElimination: true }, simulateGameFn, time);
+      return { ...TournamentBracket.getStartingDoubleElimination(playerOrder), doubleElimination: true };
     }
-    const bracket = TournamentBracket.getStartingBracket(playerOrder);
-    return TournamentBracket.#simulateBracket({ winners: bracket, doubleElimination: false }, simulateGameFn, time);
+    return { winners: TournamentBracket.getStartingBracket(playerOrder), doubleElimination: false };
+  }
+
+  #copyStructures(): SimulationStructures {
+    return {
+      winners: this.#deepCopyBracket(this.bracket),
+      losers: this.losersBracket ? this.#deepCopyBracket(this.losersBracket) : undefined,
+      grandFinal: this.grandFinal ? TournamentBracket.#deepCopyGame(this.grandFinal) : undefined,
+      bracketReset: this.bracketReset ? TournamentBracket.#deepCopyGame(this.bracketReset) : undefined,
+      doubleElimination: this.doubleElimination,
+    };
+  }
+
+  /**
+   * Reads the stage of each player from the games that have a winner. In single elimination a
+   * player's first loss knocks them out. In double elimination a loss in the first chance bracket
+   * sets the first chance stage, and a loss in the second chance bracket or the final knocks them out.
+   */
+  static #stagesIn(structures: SimulationStructures): TournamentStages {
+    const { winners, losers, grandFinal, bracketReset, doubleElimination } = structures;
+    const stages: TournamentStages = {
+      players: new Map(),
+      winnersLayerCount: winners.length,
+      losersLayerCount: losers?.length ?? 0,
+    };
+    const stageOf = (player: string) => {
+      let entry = stages.players.get(player);
+      if (!entry) {
+        entry = {};
+        stages.players.set(player, entry);
+      }
+      return entry;
+    };
+    const loserOf = (game: Partial<TournamentGame>) => (game.winner === game.player1 ? game.player2 : game.player1);
+
+    winners.forEach((layer, layerIndex) =>
+      layer.forEach((game) => {
+        if (!game.winner || !game.player1 || !game.player2) return;
+        const loser = loserOf(game)!;
+        if (doubleElimination) {
+          stageOf(loser).firstChance = `bracket:${layerIndex}`;
+          if (layerIndex === 0) stageOf(game.winner).firstChance = "final";
+        } else if (layerIndex === 0) {
+          stageOf(loser).knockedOut = "final";
+          stageOf(game.winner).knockedOut = "winner";
+        } else {
+          stageOf(loser).knockedOut = `bracket:${layerIndex}`;
+        }
+      }),
+    );
+    if (!doubleElimination) return stages;
+
+    losers?.forEach((layer, layerIndex) =>
+      layer.forEach((game) => {
+        if (game.walkover || !game.winner || !game.player1 || !game.player2) return;
+        stageOf(loserOf(game)!).knockedOut = `second:${layerIndex}`;
+      }),
+    );
+
+    // The final and the final decider count as one stage
+    const decidingGame = grandFinal?.winner === grandFinal?.player2 ? bracketReset : grandFinal;
+    if (decidingGame?.winner && decidingGame.player1 && decidingGame.player2) {
+      stageOf(decidingGame.winner).knockedOut = "winner";
+      stageOf(loserOf(decidingGame)!).knockedOut = "final";
+    }
+    return stages;
   }
 
   /**

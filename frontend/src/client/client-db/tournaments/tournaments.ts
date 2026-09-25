@@ -2,6 +2,7 @@ import { shuffleArray } from "../../../common/array-utils";
 import { TournamentConfig } from "../event-store/projectors/tournaments-projector";
 import { TennisTable } from "../tennis-table";
 import { TournamentPrediction } from "./prediction";
+import { TournamentStagePrediction } from "./stage-prediction";
 import { Tournament, TournamentGamePlacement } from "./tournament";
 
 export class Tournaments {
@@ -9,10 +10,12 @@ export class Tournaments {
   #tournamentsCache: Tournament[] | undefined;
 
   tournamentPrediction: TournamentPrediction;
+  stagePrediction: TournamentStagePrediction;
 
   constructor(parent: TennisTable) {
     this.parent = parent;
     this.tournamentPrediction = new TournamentPrediction(this.parent);
+    this.stagePrediction = new TournamentStagePrediction(this.parent);
   }
 
   clearTournamentCache() {
