@@ -4,6 +4,7 @@ import { SignUp, SkippedGame, TournamentConfig } from "../event-store/projectors
 import { TennisTable } from "../tennis-table";
 import { TournamentBracket } from "./bracket";
 import { TournamentGroupPlay } from "./group-play";
+import { TournamentStages } from "./stage-prediction";
 
 export type TournamentBracketSection = "winners" | "losers" | "grandFinal" | "bracketReset";
 
@@ -392,6 +393,48 @@ export class Tournament {
       return { winner: this.winner, gamesSimulatedCount: 1, totalConfidenceSum: 1 };
     }
     throw new Error("Unexpected no winner of tournament when predicting winner");
+  }
+
+  /** Simulates the rest of the tournament once and returns the stage each player reached */
+  simulateStages(state: TennisTable, time: number): TournamentStages {
+    const simulateGameFn = this.simulateGameFn(state);
+    const doubleElimination = this.tournamentConfig.doubleElimination;
+    if (this.groupPlay && this.groupPlay.groupPlayEnded === undefined) {
+      const { playerOrder, groupPositions } = this.groupPlay.simulatePlayerOrder(simulateGameFn, time);
+      const stages = TournamentBracket.simulateStagesFromStatic(simulateGameFn, time, playerOrder, doubleElimination);
+      return this.#addGroupStages(stages, groupPositions, playerOrder);
+    }
+    if (this.bracket) {
+      return this.#addDecidedGroupStages(this.bracket.simulateStagesFromExisting(simulateGameFn, time));
+    }
+    throw new Error("Cannot simulate the stages of a tournament that has not started");
+  }
+
+  /** The stages that the played games already decide */
+  getDecidedStages(): TournamentStages {
+    if (!this.bracket) return { players: new Map(), winnersLayerCount: 0, losersLayerCount: 0 };
+    return this.#addDecidedGroupStages(this.bracket.getDecidedStages());
+  }
+
+  #addDecidedGroupStages(stages: TournamentStages): TournamentStages {
+    if (!this.groupPlay) return stages;
+    return this.#addGroupStages(
+      stages,
+      this.groupPlay.getGroupPositions(),
+      this.groupPlay.getBracketPlayerOrder() ?? [],
+    );
+  }
+
+  /** A player who does not qualify for the bracket leaves the tournament in the group play */
+  #addGroupStages(stages: TournamentStages, groupPositions: Map<string, number>, qualified: string[]) {
+    const qualifiedPlayers = new Set(qualified);
+    const doubleElimination = this.tournamentConfig.doubleElimination;
+    groupPositions.forEach((position, player) => {
+      if (qualifiedPlayers.has(player)) return;
+      const stage = `group:${position}` as const;
+      stages.players.set(player, { knockedOut: stage, firstChance: doubleElimination ? stage : undefined });
+    });
+    return stages;
   }
 
   simulateGameFn(state: TennisTable): SimulateGameFn {

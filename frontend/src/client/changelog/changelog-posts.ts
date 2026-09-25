@@ -42,6 +42,26 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
+    slug: "tournament-how-far-will-you-go",
+    title: "Stage predictions for tournaments",
+    date: "2026-09-25",
+    tags: ["feature-update"],
+    summary:
+      'The tournament Predictions tab has a new "How far will you go?" tab. It shows the stage where each player will most likely leave the tournament.',
+    body: [
+      text(
+        'The Predictions tab now has 2 tabs. "Win chance" holds the win % predictions. "How far will you go?" simulates the rest of the tournament many times from the current state. It counts the stage where each player leaves the tournament.',
+      ),
+      list(
+        "All players: each player with their most frequent stage. The list starts with Winner, then Final, then the earlier rounds.",
+        "Per player: all stages, each with a bar for the chance to leave the tournament there. Click a player in the list to open this view.",
+        "Double elimination: each player has 2 stages. The first is where they leave the first chance bracket. The second is where they leave the tournament.",
+        'Group play: a player who does not qualify for the bracket leaves at a group position, for example "5th in group".',
+      ),
+      text("A stage that played games already decide shows 100% and a ✓ mark."),
+    ],
+  },
+  {
     slug: "random-group-seeding",
     title: "Random group seeding in tournaments",
     date: "2026-09-22",

@@ -5,6 +5,7 @@ import { PredictionHistoryEntry } from "../predictions-history";
 import { ExpectedLeaderboard } from "../simulations";
 import { TennisTable } from "../tennis-table";
 import { TournamentPredictionResult } from "../tournaments/prediction";
+import { TournamentStagePredictionResult } from "../tournaments/stage-prediction";
 import { WhrConfig, WhrResult } from "../whr";
 
 export type WorkerMessage =
@@ -29,6 +30,11 @@ export type WorkerMessage =
   | { type: "tournament-prediction-times"; data: { times: number[]; progress: number } }
   | { type: "tournament-prediction-data"; data: { result: TournamentPredictionResult; progress: number } }
   | { type: "tournament-prediction-complete" }
+  | {
+      type: "start-tournament-stage-prediction";
+      data: { tournamentId: string; events: EventType[]; numSimulations?: number };
+    }
+  | { type: "tournament-stage-prediction-data"; data: { result: TournamentStagePredictionResult; done: boolean } }
   | { type: "start-predictions-history"; data: { playerId: string; events: EventType[] } }
   | { type: "predictions-history-times"; data: { times: number[] } }
   | { type: "predictions-history-data"; data: { entry: PredictionHistoryEntry; progress: number } }
@@ -99,6 +105,18 @@ function handleWorkerMessage(message: WorkerMessage) {
       );
       setTimeout(() => postWorkerMessage({ type: "tournament-prediction-complete" }), 1000);
       break;
+
+    case "start-tournament-stage-prediction": {
+      const tennisTableForStages = new TennisTable({ events: message.data.events });
+      const result = tennisTableForStages.tournaments.stagePrediction.predictStages(
+        message.data.tournamentId,
+        message.data.numSimulations,
+        (partial) =>
+          postWorkerMessage({ type: "tournament-stage-prediction-data", data: { result: partial, done: false } }),
+      );
+      postWorkerMessage({ type: "tournament-stage-prediction-data", data: { result, done: true } });
+      break;
+    }
 
     case "start-predictions-history":
       const tennisTableForHistory = new TennisTable({ events: message.data.events });

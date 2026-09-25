@@ -261,10 +261,34 @@ export class TournamentGroupPlay {
     return p1.playerOrderIndex - p2.playerOrderIndex; // Default to player order
   }
 
+  /** The position of each player in their own group, from 1 */
+  getGroupPositions(): Map<string, number> {
+    return TournamentGroupPlay.#groupPositions(
+      this.groups.map((g) => g.players),
+      this.groupScores,
+    );
+  }
+
+  static #groupPositions(groups: string[][], scores: GroupScore): Map<string, number> {
+    const positions = new Map<string, number>();
+    for (const players of groups) {
+      players
+        .map((player): [string, GroupScorePlayer] => [player, scores.get(player)!])
+        .sort(TournamentGroupPlay.sortGroupScores)
+        .forEach(([player], index) => positions.set(player, index + 1));
+    }
+    return positions;
+  }
+
   simulatePlayerOrder(
     simulateGameFn: SimulateGameFn,
     time: number,
-  ): { playerOrder: string[]; gamesSimulatedCount: number; totalConfidenceSum: number } {
+  ): {
+    playerOrder: string[];
+    groupPositions: Map<string, number>;
+    gamesSimulatedCount: number;
+    totalConfidenceSum: number;
+  } {
     // Deep copy groups and group games to avoid mutating the original
     const groupsCopy = this.groups.map((group) => ({
       ...group,
@@ -320,6 +344,7 @@ export class TournamentGroupPlay {
 
     return {
       playerOrder,
+      groupPositions: TournamentGroupPlay.#groupPositions(groups, simulatedScores),
       gamesSimulatedCount,
       totalConfidenceSum,
     };
