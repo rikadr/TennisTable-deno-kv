@@ -176,13 +176,15 @@ const DrawCountdown: React.FC<{ tournament: Tournament; now: number; onPreview: 
                   isFinal && "ring-4 ring-red-500",
                 )}
               >
+                {/* The min width keeps the box width constant also when the font has no tabular digits */}
                 <span
                   key={isFinal ? part.value : undefined}
                   className={classNames(
-                    "block tabular-nums font-black leading-none",
+                    "block text-center tabular-nums font-black leading-none",
                     digitClass,
                     isFinal && "animate-draw-reveal",
                   )}
+                  style={{ minWidth: `${part.value.length}ch` }}
                 >
                   {part.value}
                 </span>
