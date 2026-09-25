@@ -6,7 +6,9 @@ import { useEventMutation } from "./use-event-mutation";
 
 export function useAutoSeedTournaments(tennisTable: TennisTable) {
   const attemptedRef = useRef(new Set<string>());
-  const addEventMutation = useEventMutation();
+  // Every open browser posts the seeding and only the first one is stored. The server rejects the
+  // others, so a failed post is expected and must not show an error or crash the app
+  const addEventMutation = useEventMutation({ suppressErrorToast: true, throwOnError: false });
 
   useEffect(() => {
     const seedTournament = (config: TournamentConfig) => {
