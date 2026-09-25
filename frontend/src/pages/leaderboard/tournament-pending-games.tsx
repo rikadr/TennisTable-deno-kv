@@ -148,7 +148,14 @@ const PendingGameGroup: React.FC<PendingGameGroupProps> = ({ group, groupIndex, 
   const OverlappingProfilePictures: React.FC<{ opponents: Set<string> }> = ({ opponents }) => {
     const opponentsArray = Array.from(opponents);
     const PICTURE_SIZE = 35;
-    const OVERLAP_OFFSET = 24; // Fixed spacing - pictures overlap by 11px (35 - 24)
+    const MAX_OVERLAP_OFFSET = 24; // Pictures overlap by 11px (35 - 24)
+    // From 7 opponents, the pictures move closer so the row is never wider than 6 pictures at the max offset
+    const MAX_VISIBLE_AT_MAX_OFFSET = 6;
+    const maxWidth = (MAX_VISIBLE_AT_MAX_OFFSET - 1) * MAX_OVERLAP_OFFSET + PICTURE_SIZE;
+    const OVERLAP_OFFSET =
+      opponentsArray.length > MAX_VISIBLE_AT_MAX_OFFSET
+        ? (maxWidth - PICTURE_SIZE) / (opponentsArray.length - 1)
+        : MAX_OVERLAP_OFFSET;
 
     // Calculate total width needed: last picture position + picture size
     const totalWidth = opponentsArray.length > 0 ? (opponentsArray.length - 1) * OVERLAP_OFFSET + PICTURE_SIZE : 0;
