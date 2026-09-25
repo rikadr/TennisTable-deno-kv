@@ -6,7 +6,7 @@ import { TennisTable } from "../tennis-table";
  * - `final`: lost the final. In the first chance column: won the first chance bracket
  * - `bracket:<layerIndex>`: lost a game in this layer of the (first chance) bracket
  * - `second:<layerIndex>`: lost a game in this layer of the second chance bracket
- * - `group:<position>`: finished in this position of their group and did not qualify for the bracket
+ * - `group:<place>`: finished at this place in the total group play standings and did not qualify for the bracket
  */
 export type TournamentStage = "winner" | "final" | `bracket:${number}` | `second:${number}` | `group:${number}`;
 
@@ -111,7 +111,7 @@ export function stageRank(stage: TournamentStage): number {
   if (stage === "final") return 1_999;
   const [kind, value] = stage.split(":");
   const index = Number(value);
-  if (kind === "group") return -index; // Position 1 is the best
+  if (kind === "group") return -index; // A lower place is better
   return 1_000 - index; // bracket and second chance: layer 0 is the last round before the final
 }
 

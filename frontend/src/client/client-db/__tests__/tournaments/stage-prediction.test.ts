@@ -150,17 +150,40 @@ describe("Tournament stage prediction", () => {
     expect(result.decided.C).toEqual({ firstChance: "bracket:1", knockedOut: "second:1" });
   });
 
-  it("gives players who do not qualify from group play a group stage", () => {
-    // 5 players: 1 group, the bracket takes the best 4
-    const result = predict(baseEvents(["A", "B", "C", "D", "E"], { groupPlay: true }));
+  it("gives players who do not qualify from group play their place in the total standings", () => {
+    // 10 players: 2 groups of 5, the bracket takes the best 8 of the total standings
+    const players = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"];
+    const result = predict(baseEvents(players, { groupPlay: true }));
 
-    let groupExits = 0;
+    const groupStages = new Map<string, number>();
     for (const counts of Object.values(result.players)) {
       expect(total(counts.knockedOut)).toBe(SIMULATIONS);
-      groupExits += counts.knockedOut["group:5"] ?? 0;
-      expect(Object.keys(counts.knockedOut).filter((stage) => stage.startsWith("group:"))).not.toContain("group:4");
+      for (const [stage, count] of Object.entries(counts.knockedOut)) {
+        if (stage.startsWith("group:")) groupStages.set(stage, (groupStages.get(stage) ?? 0) + (count ?? 0));
+      }
     }
-    expect(groupExits).toBe(SIMULATIONS);
+    expect(Object.fromEntries(groupStages)).toEqual({ "group:9": SIMULATIONS, "group:10": SIMULATIONS });
+  });
+
+  it("gives the decided standings place when group play has ended", () => {
+    // 5 players in 1 group. E loses all games and ends 5th, below the 4 bracket places
+    const players = ["A", "B", "C", "D", "E"];
+    const groupGames = [
+      gameEvent("A", "B"),
+      gameEvent("A", "C"),
+      gameEvent("A", "D"),
+      gameEvent("A", "E"),
+      gameEvent("B", "C"),
+      gameEvent("B", "D"),
+      gameEvent("B", "E"),
+      gameEvent("C", "D"),
+      gameEvent("C", "E"),
+      gameEvent("D", "E"),
+    ];
+    const result = predict([...baseEvents(players, { groupPlay: true }), ...groupGames]);
+
+    expect(result.decided.E).toEqual({ knockedOut: "group:5", firstChance: undefined });
+    expect(result.players.E.knockedOut).toEqual({ "group:5": SIMULATIONS });
   });
 
   it("gives a group stage in both columns for double elimination with group play", () => {

@@ -57,10 +57,18 @@ export class TournamentGroupPlay {
   }
 
   getBracketPlayerOrder(): string[] | undefined {
-    return Array.from(this.groupScores)
-      .sort(TournamentGroupPlay.sortGroupScores) // Sort by score
-      .map((player) => player[0]) // Only get the name
-      .slice(0, this.getBracketSize());
+    return this.getStandings().slice(0, this.getBracketSize());
+  }
+
+  /** All players in the total group play standings, best first. The best players qualify for the bracket */
+  getStandings(): string[] {
+    return TournamentGroupPlay.#standings(this.groupScores);
+  }
+
+  static #standings(scores: GroupScore): string[] {
+    return Array.from(scores)
+      .sort(TournamentGroupPlay.sortGroupScores)
+      .map(([player]) => player);
   }
 
   getBracketSize(): number {
@@ -261,31 +269,12 @@ export class TournamentGroupPlay {
     return p1.playerOrderIndex - p2.playerOrderIndex; // Default to player order
   }
 
-  /** The position of each player in their own group, from 1 */
-  getGroupPositions(): Map<string, number> {
-    return TournamentGroupPlay.#groupPositions(
-      this.groups.map((g) => g.players),
-      this.groupScores,
-    );
-  }
-
-  static #groupPositions(groups: string[][], scores: GroupScore): Map<string, number> {
-    const positions = new Map<string, number>();
-    for (const players of groups) {
-      players
-        .map((player): [string, GroupScorePlayer] => [player, scores.get(player)!])
-        .sort(TournamentGroupPlay.sortGroupScores)
-        .forEach(([player], index) => positions.set(player, index + 1));
-    }
-    return positions;
-  }
-
   simulatePlayerOrder(
     simulateGameFn: SimulateGameFn,
     time: number,
   ): {
     playerOrder: string[];
-    groupPositions: Map<string, number>;
+    standings: string[];
     gamesSimulatedCount: number;
     totalConfidenceSum: number;
   } {
@@ -336,15 +325,11 @@ export class TournamentGroupPlay {
     const groupGames = groupsCopy.map((g) => g.groupGames);
     const simulatedScores = this.#calculateGroupScores(groups, groupGames);
 
-    // Get final player order sorted by scores
-    const playerOrder = Array.from(simulatedScores)
-      .sort(TournamentGroupPlay.sortGroupScores)
-      .map(([playerName]) => playerName)
-      .slice(0, this.getBracketSize());
+    const standings = TournamentGroupPlay.#standings(simulatedScores);
 
     return {
-      playerOrder,
-      groupPositions: TournamentGroupPlay.#groupPositions(groups, simulatedScores),
+      playerOrder: standings.slice(0, this.getBracketSize()),
+      standings,
       gamesSimulatedCount,
       totalConfidenceSum,
     };

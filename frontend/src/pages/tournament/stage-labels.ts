@@ -18,7 +18,7 @@ export function stageLabel(stage: TournamentStage, context: LabelContext): strin
   const index = Number(value);
   switch (kind) {
     case "group":
-      return `Group play (${ordinal(index)} in group)`;
+      return `Group play (${ordinal(index)} place)`;
     case "second":
       return secondChanceRoundLabel(index, context.losersLayerCount).title;
     default: {

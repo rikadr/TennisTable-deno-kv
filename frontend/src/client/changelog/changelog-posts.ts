@@ -56,7 +56,7 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
         "All players: each player with their most frequent stage. The list starts with Winner, then Final, then the earlier rounds.",
         "Per player: all stages, each with a bar for the chance to leave the tournament there. Click a player in the list to open this view.",
         "Double elimination: each player has 2 stages. The first is where they leave the first chance bracket. The second is where they leave the tournament.",
-        'Group play: a player who does not qualify for the bracket leaves at a group position, for example "5th in group".',
+        'Group play: a player who does not qualify gets their place in the total group play standings, for example "9th place".',
       ),
       text("A stage that played games already decide shows 100% and a ✓ mark."),
     ],

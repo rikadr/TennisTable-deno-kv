@@ -400,9 +400,9 @@ export class Tournament {
     const simulateGameFn = this.simulateGameFn(state);
     const doubleElimination = this.tournamentConfig.doubleElimination;
     if (this.groupPlay && this.groupPlay.groupPlayEnded === undefined) {
-      const { playerOrder, groupPositions } = this.groupPlay.simulatePlayerOrder(simulateGameFn, time);
+      const { playerOrder, standings } = this.groupPlay.simulatePlayerOrder(simulateGameFn, time);
       const stages = TournamentBracket.simulateStagesFromStatic(simulateGameFn, time, playerOrder, doubleElimination);
-      return this.#addGroupStages(stages, groupPositions, playerOrder);
+      return this.#addGroupStages(stages, standings, playerOrder.length);
     }
     if (this.bracket) {
       return this.#addDecidedGroupStages(this.bracket.simulateStagesFromExisting(simulateGameFn, time));
@@ -418,20 +418,14 @@ export class Tournament {
 
   #addDecidedGroupStages(stages: TournamentStages): TournamentStages {
     if (!this.groupPlay) return stages;
-    return this.#addGroupStages(
-      stages,
-      this.groupPlay.getGroupPositions(),
-      this.groupPlay.getBracketPlayerOrder() ?? [],
-    );
+    return this.#addGroupStages(stages, this.groupPlay.getStandings(), this.groupPlay.getBracketSize());
   }
 
-  /** A player who does not qualify for the bracket leaves the tournament in the group play */
-  #addGroupStages(stages: TournamentStages, groupPositions: Map<string, number>, qualified: string[]) {
-    const qualifiedPlayers = new Set(qualified);
+  /** A player below the bracket places in the total group play standings leaves the tournament in the group play */
+  #addGroupStages(stages: TournamentStages, standings: string[], bracketSize: number) {
     const doubleElimination = this.tournamentConfig.doubleElimination;
-    groupPositions.forEach((position, player) => {
-      if (qualifiedPlayers.has(player)) return;
-      const stage = `group:${position}` as const;
+    standings.slice(bracketSize).forEach((player, index) => {
+      const stage = `group:${bracketSize + index + 1}` as const;
       stages.players.set(player, { knockedOut: stage, firstChance: doubleElimination ? stage : undefined });
     });
     return stages;
