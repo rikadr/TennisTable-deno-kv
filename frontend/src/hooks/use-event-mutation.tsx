@@ -15,11 +15,16 @@ function saveErrorMessage(action: string, error: Error): string {
 
 // suppressErrorToast is for callers that render the failure themselves (e.g.
 // an inline form error), so the user does not get two messages for one error.
-type EventMutationOptions = { suppressErrorToast?: boolean };
+// throwOnError: false is for callers that expect some posts to fail. The
+// default rethrows the error during render, and with no error boundary that
+// unmounts the whole app.
+type EventMutationOptions = { suppressErrorToast?: boolean; throwOnError?: boolean };
 
 export function useEventMutation(options?: EventMutationOptions) {
   const { showToast } = useToast();
   return useMutation({
+    // Set only when given: an explicit undefined would replace the query client default
+    ...(options?.throwOnError !== undefined && { throwOnError: options.throwOnError }),
     mutationFn: async (payloadEvent: EventType) => {
       return httpClient(`${process.env.REACT_APP_API_BASE_URL}/event`, {
         method: "POST",
