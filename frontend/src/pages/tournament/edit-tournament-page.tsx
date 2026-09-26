@@ -64,6 +64,8 @@ export const EditTournamentPage: React.FC = () => {
         updateData.doubleElimination = data.doubleElimination;
       if (data.overridePreferredGroupSize !== tournament.tournamentConfig.overridePreferredGroupSize)
         updateData.overridePreferredGroupSize = data.overridePreferredGroupSize;
+      if (data.eliminationThreshold !== tournament.tournamentConfig.eliminationThreshold)
+        updateData.eliminationThreshold = data.eliminationThreshold ?? null;
     }
 
     if (Object.keys(updateData).length === 0) {
@@ -136,13 +138,20 @@ export const EditTournamentPage: React.FC = () => {
             randomGroupSeeding: tournament.tournamentConfig.randomGroupSeeding ?? false,
             doubleElimination: tournament.tournamentConfig.doubleElimination,
             overridePreferredGroupSize: tournament.tournamentConfig.overridePreferredGroupSize,
+            eliminationThreshold: tournament.tournamentConfig.eliminationThreshold,
           }}
           onSubmit={handleSubmit}
           submitLabel="Save changes"
           isPending={addEventMutation.isPending}
           lockedFields={
             hasStarted
-              ? { startDate: true, groupPlay: true, randomGroupSeeding: true, doubleElimination: true }
+              ? {
+                  startDate: true,
+                  groupPlay: true,
+                  randomGroupSeeding: true,
+                  eliminationThreshold: true,
+                  doubleElimination: true,
+                }
               : undefined
           }
         />

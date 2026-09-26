@@ -97,6 +97,11 @@ export type TournamentCreated = GenericEvent<
     overridePreferredGroupSize?: number;
     /** Group play: draw the group seeding at random instead of by rank and signup time */
     randomGroupSeeding?: boolean;
+    /**
+     * Group play: the number of players who advance to the bracket. "none" advances all players.
+     * Undefined advances the biggest full power of 2.
+     */
+    eliminationThreshold?: number | "none";
     doubleElimination?: boolean;
   }
 >;
@@ -109,6 +114,8 @@ export type TournamentUpdated = GenericEvent<
     groupPlay?: boolean;
     overridePreferredGroupSize?: number;
     randomGroupSeeding?: boolean;
+    /** Null sets the default back */
+    eliminationThreshold?: number | "none" | null;
     doubleElimination?: boolean;
   }
 >;

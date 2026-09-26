@@ -24,6 +24,8 @@ export type TournamentConfig = {
   groupSeeding?: string[];
   overridePreferredGroupSize?: number;
   randomGroupSeeding?: boolean;
+  /** Group play: the number of players who advance to the bracket. "none" advances all players */
+  eliminationThreshold?: number | "none";
 };
 
 type Tournament = {
@@ -103,6 +105,7 @@ export class TournamentsProjector {
       doubleElimination: event.data.doubleElimination ?? false,
       overridePreferredGroupSize: event.data.overridePreferredGroupSize,
       randomGroupSeeding: event.data.randomGroupSeeding ?? false,
+      eliminationThreshold: event.data.eliminationThreshold,
       deleted: false,
     };
   }
@@ -120,7 +123,15 @@ export class TournamentsProjector {
     if (event.data.overridePreferredGroupSize !== undefined && event.data.overridePreferredGroupSize < 2) {
       return { valid: false, message: "Group size must be 2 or higher" };
     }
+    if (!TournamentsProjector.#isValidEliminationThreshold(event.data.eliminationThreshold)) {
+      return { valid: false, message: "Elimination threshold must be a whole number of 2 or higher" };
+    }
     return { valid: true };
+  }
+
+  static #isValidEliminationThreshold(threshold: number | "none" | null | undefined): boolean {
+    if (typeof threshold !== "number") return true;
+    return Number.isInteger(threshold) && threshold >= 2;
   }
 
   updateTournament(event: TournamentUpdated) {
@@ -134,6 +145,8 @@ export class TournamentsProjector {
       tournament.config.overridePreferredGroupSize = event.data.overridePreferredGroupSize;
     if (event.data.randomGroupSeeding !== undefined)
       tournament.config.randomGroupSeeding = event.data.randomGroupSeeding;
+    if (event.data.eliminationThreshold !== undefined)
+      tournament.config.eliminationThreshold = event.data.eliminationThreshold ?? undefined;
   }
   validateUpdateTournament(event: TournamentUpdated): ValidatorResponse {
     const existing = this.#tournamentsMap.get(event.stream);
@@ -153,11 +166,17 @@ export class TournamentsProjector {
     if (hasStarted && event.data.randomGroupSeeding !== undefined) {
       return { valid: false, message: "Cannot change random group seeding after tournament has started" };
     }
+    if (hasStarted && event.data.eliminationThreshold !== undefined) {
+      return { valid: false, message: "Cannot change elimination threshold after tournament has started" };
+    }
     if (event.data.name !== undefined && !event.data.name.trim()) {
       return { valid: false, message: "Tournament name cannot be empty" };
     }
     if (event.data.overridePreferredGroupSize !== undefined && event.data.overridePreferredGroupSize < 2) {
       return { valid: false, message: "Group size must be 2 or higher" };
+    }
+    if (!TournamentsProjector.#isValidEliminationThreshold(event.data.eliminationThreshold)) {
+      return { valid: false, message: "Elimination threshold must be a whole number of 2 or higher" };
     }
     return { valid: true };
   }

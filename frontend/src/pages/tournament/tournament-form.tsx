@@ -10,7 +10,11 @@ export type TournamentFormData = {
   randomGroupSeeding: boolean;
   doubleElimination: boolean;
   overridePreferredGroupSize?: number;
+  /** Undefined advances the biggest full power of 2 */
+  eliminationThreshold?: number | "none";
 };
+
+type EliminationMode = "default" | "custom" | "none";
 
 type TournamentFormProps = {
   initialData?: TournamentFormData;
@@ -22,6 +26,7 @@ type TournamentFormProps = {
     startDate?: boolean;
     groupPlay?: boolean;
     randomGroupSeeding?: boolean;
+    eliminationThreshold?: boolean;
     doubleElimination?: boolean;
   };
 };
@@ -41,6 +46,13 @@ export const TournamentForm = ({
   const [doubleElimination, setDoubleElimination] = useState(initialData?.doubleElimination ?? false);
   const [overrideGroupSize, setOverrideGroupSize] = useState<string>(
     initialData?.overridePreferredGroupSize?.toString() ?? "",
+  );
+  const initialThreshold = initialData?.eliminationThreshold;
+  const [eliminationMode, setEliminationMode] = useState<EliminationMode>(
+    initialThreshold === undefined ? "default" : initialThreshold === "none" ? "none" : "custom",
+  );
+  const [eliminationThreshold, setEliminationThreshold] = useState<string>(
+    typeof initialThreshold === "number" ? initialThreshold.toString() : "",
   );
   const [error, setError] = useState<string>();
 
@@ -63,6 +75,16 @@ export const TournamentForm = ({
       return;
     }
 
+    let parsedThreshold: number | "none" | undefined;
+    if (groupPlay && eliminationMode === "none") parsedThreshold = "none";
+    if (groupPlay && eliminationMode === "custom") {
+      parsedThreshold = Number(eliminationThreshold);
+      if (!eliminationThreshold || !Number.isInteger(parsedThreshold) || parsedThreshold < 2) {
+        setError("Elimination threshold must be a whole number of 2 or higher");
+        return;
+      }
+    }
+
     onSubmit({
       name: name.trim(),
       description: description.trim(),
@@ -71,6 +93,7 @@ export const TournamentForm = ({
       randomGroupSeeding: groupPlay && randomGroupSeeding,
       doubleElimination,
       overridePreferredGroupSize: groupPlay ? parsedGroupSize : undefined,
+      eliminationThreshold: parsedThreshold,
     });
   }
 
@@ -199,6 +222,50 @@ export const TournamentForm = ({
             </p>
           </div>
         </label>
+      </div>
+
+      <div>
+        <label className="block text-xs font-medium text-primary-text/70 uppercase tracking-wide mb-1">
+          Elimination threshold
+          {lockedFields?.eliminationThreshold && (
+            <span className="ml-2 text-primary-text/50 normal-case">(locked - tournament has started)</span>
+          )}
+        </label>
+        <div className="flex gap-2">
+          <select
+            value={eliminationMode}
+            onChange={(e) => setEliminationMode(e.target.value as EliminationMode)}
+            disabled={!groupPlay || lockedFields?.eliminationThreshold}
+            className={classNames(
+              "flex-1 px-3 py-2 rounded-lg bg-primary-background text-primary-text ring-1 ring-secondary-background focus:ring-2 focus:ring-secondary-text focus:outline-none",
+              (!groupPlay || lockedFields?.eliminationThreshold) && "opacity-50 cursor-not-allowed",
+            )}
+          >
+            <option value="default">Default (biggest full power of 2)</option>
+            <option value="custom">Custom number of players</option>
+            <option value="none">No elimination</option>
+          </select>
+          {eliminationMode === "custom" && (
+            <input
+              type="number"
+              min={2}
+              step={1}
+              value={eliminationThreshold}
+              onChange={(e) => setEliminationThreshold(e.target.value)}
+              disabled={!groupPlay || lockedFields?.eliminationThreshold}
+              placeholder="Players"
+              className={classNames(
+                "w-28 px-3 py-2 rounded-lg bg-primary-background text-primary-text ring-1 ring-secondary-background focus:ring-2 focus:ring-secondary-text focus:outline-none",
+                (!groupPlay || lockedFields?.eliminationThreshold) && "opacity-50 cursor-not-allowed",
+              )}
+            />
+          )}
+        </div>
+        <p className="text-xs text-primary-text/60 mt-1">
+          The number of players who advance from group play to the elimination bracket. The default is the biggest full
+          power of 2, for example 8 of 11 players. With no elimination, all players advance. When fewer players sign up
+          than the threshold, all players advance.
+        </p>
       </div>
 
       <div>

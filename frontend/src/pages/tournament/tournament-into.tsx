@@ -91,6 +91,13 @@ export const TournamentInfo = ({ tournament }: { tournament: Tournament }) => {
                   <span className="px-2 py-1 rounded text-xs font-medium ring-1 ring-secondary-background text-primary-text/80">
                     Random group seeding
                   </span>
+                )}
+                {tournament.tournamentConfig.eliminationThreshold !== undefined && (
+                  <span className="px-2 py-1 rounded text-xs font-medium ring-1 ring-secondary-background text-primary-text/80">
+                    {tournament.tournamentConfig.eliminationThreshold === "none"
+                      ? "No elimination"
+                      : `Top ${tournament.tournamentConfig.eliminationThreshold} advance`}
+                  </span>
                 )}{" "}
                 {"->"}
               </>
