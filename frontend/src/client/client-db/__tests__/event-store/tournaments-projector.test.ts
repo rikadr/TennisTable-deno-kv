@@ -312,12 +312,26 @@ describe("Elimination threshold", () => {
     });
   });
 
-  it("rejects changing the elimination threshold after start", () => {
+  it("accepts changing the elimination threshold after start while group play is ongoing", () => {
     const projector = new TournamentsProjector();
-    projector.createTournament(createEvent("t1", { startDate: PAST_START }));
-    const result = projector.validateUpdateTournament(updateEvent("t1", { eliminationThreshold: 6 }));
+    projector.createTournament(createEvent("t1", { startDate: PAST_START, groupPlay: true }));
+    expect(projector.validateUpdateTournament(updateEvent("t1", { eliminationThreshold: 6 }), false)).toEqual({
+      valid: true,
+    });
+  });
+
+  it("rejects changing the elimination threshold after group play has ended", () => {
+    const projector = new TournamentsProjector();
+    projector.createTournament(createEvent("t1", { startDate: PAST_START, groupPlay: true }));
+    const result = projector.validateUpdateTournament(updateEvent("t1", { eliminationThreshold: 6 }), true);
     expectInvalid(result);
-    expect(result.message).toBe("Cannot change elimination threshold after tournament has started");
+    expect(result.message).toBe("Cannot change elimination threshold after group play has ended");
+  });
+
+  it("still allows other changes after group play has ended", () => {
+    const projector = new TournamentsProjector();
+    projector.createTournament(createEvent("t1", { startDate: PAST_START, groupPlay: true }));
+    expect(projector.validateUpdateTournament(updateEvent("t1", { name: "New name" }), true)).toEqual({ valid: true });
   });
 });
 

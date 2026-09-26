@@ -148,7 +148,11 @@ export class TournamentsProjector {
     if (event.data.eliminationThreshold !== undefined)
       tournament.config.eliminationThreshold = event.data.eliminationThreshold ?? undefined;
   }
-  validateUpdateTournament(event: TournamentUpdated): ValidatorResponse {
+  /**
+   * The projector has no games, so the caller tells whether the group play has ended.
+   * The elimination threshold stays open for changes until the last group play game is played.
+   */
+  validateUpdateTournament(event: TournamentUpdated, groupPlayEnded = false): ValidatorResponse {
     const existing = this.#tournamentsMap.get(event.stream);
     if (!existing || existing.config.deleted) {
       return { valid: false, message: "Tournament does not exist" };
@@ -166,8 +170,8 @@ export class TournamentsProjector {
     if (hasStarted && event.data.randomGroupSeeding !== undefined) {
       return { valid: false, message: "Cannot change random group seeding after tournament has started" };
     }
-    if (hasStarted && event.data.eliminationThreshold !== undefined) {
-      return { valid: false, message: "Cannot change elimination threshold after tournament has started" };
+    if (groupPlayEnded && event.data.eliminationThreshold !== undefined) {
+      return { valid: false, message: "Cannot change elimination threshold after group play has ended" };
     }
     if (event.data.name !== undefined && !event.data.name.trim()) {
       return { valid: false, message: "Tournament name cannot be empty" };

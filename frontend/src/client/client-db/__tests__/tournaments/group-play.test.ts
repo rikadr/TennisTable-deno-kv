@@ -331,6 +331,23 @@ describe("Bracket advancement", () => {
     expect(tournament.bracket).toBeDefined();
     expect(tournament.getDecidedStages().players.has("P3")).toBe(false);
   });
+
+  it("uses the latest elimination threshold that was set during group play", () => {
+    const events: EventType[] = [
+      ...baseEvents(["P1", "P2", "P3"]),
+      gameEvent("P2", "P1"),
+      {
+        time: gameTime + 1,
+        stream: TOURNAMENT_ID,
+        type: EventTypeEnum.TOURNAMENT_UPDATED,
+        data: { eliminationThreshold: "none" },
+      },
+    ];
+    gameTime += 1;
+    events.push(gameEvent("P2", "P3"), gameEvent("P1", "P3"));
+
+    expect(getGroupPlay(events).getBracketPlayerOrder()).toEqual(["P2", "P1", "P3"]);
+  });
 });
 
 describe("TournamentGroupPlay.sortGroupScores", () => {

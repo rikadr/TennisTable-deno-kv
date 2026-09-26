@@ -58,7 +58,7 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
         "No elimination: all players advance to the bracket.",
       ),
       text(
-        "When fewer players sign up than the threshold, all players advance. The info tab shows a custom threshold next to the format.",
+        "When fewer players sign up than the threshold, all players advance. The admin can change the threshold until the last group play game is played. The info tab shows a custom threshold next to the format.",
       ),
     ],
   },

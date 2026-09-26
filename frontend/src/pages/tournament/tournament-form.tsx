@@ -26,6 +26,7 @@ type TournamentFormProps = {
     startDate?: boolean;
     groupPlay?: boolean;
     randomGroupSeeding?: boolean;
+    /** Locked when the group play has ended */
     eliminationThreshold?: boolean;
     doubleElimination?: boolean;
   };
@@ -228,7 +229,7 @@ export const TournamentForm = ({
         <label className="block text-xs font-medium text-primary-text/70 uppercase tracking-wide mb-1">
           Elimination threshold
           {lockedFields?.eliminationThreshold && (
-            <span className="ml-2 text-primary-text/50 normal-case">(locked - tournament has started)</span>
+            <span className="ml-2 text-primary-text/50 normal-case">(locked - group play has ended)</span>
           )}
         </label>
         <div className="flex gap-2">
@@ -264,7 +265,7 @@ export const TournamentForm = ({
         <p className="text-xs text-primary-text/60 mt-1">
           The number of players who advance from group play to the elimination bracket. The default is the biggest full
           power of 2, for example 8 of 11 players. With no elimination, all players advance. When fewer players sign up
-          than the threshold, all players advance.
+          than the threshold, all players advance. You can change it until the last group play game is played.
         </p>
       </div>
 

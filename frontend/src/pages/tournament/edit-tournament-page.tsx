@@ -46,6 +46,7 @@ export const EditTournamentPage: React.FC = () => {
   }
 
   const hasStarted = tournament.startDate <= Date.now();
+  const groupPlayEnded = tournament.groupPlay?.groupPlayEnded !== undefined;
 
   function handleSubmit(data: TournamentFormData) {
     if (!tournament) return;
@@ -64,9 +65,9 @@ export const EditTournamentPage: React.FC = () => {
         updateData.doubleElimination = data.doubleElimination;
       if (data.overridePreferredGroupSize !== tournament.tournamentConfig.overridePreferredGroupSize)
         updateData.overridePreferredGroupSize = data.overridePreferredGroupSize;
-      if (data.eliminationThreshold !== tournament.tournamentConfig.eliminationThreshold)
-        updateData.eliminationThreshold = data.eliminationThreshold ?? null;
     }
+    if (!groupPlayEnded && data.eliminationThreshold !== tournament.tournamentConfig.eliminationThreshold)
+      updateData.eliminationThreshold = data.eliminationThreshold ?? null;
 
     if (Object.keys(updateData).length === 0) {
       navigate(`/tournament?tournament=${tournament.id}`);
@@ -80,7 +81,7 @@ export const EditTournamentPage: React.FC = () => {
       data: updateData,
     };
 
-    const validateResponse = context.eventStore.tournamentsProjector.validateUpdateTournament(event);
+    const validateResponse = context.eventStore.tournamentsProjector.validateUpdateTournament(event, groupPlayEnded);
     if (validateResponse.valid === false) {
       alert(validateResponse.message);
       return;
@@ -149,7 +150,7 @@ export const EditTournamentPage: React.FC = () => {
                   startDate: true,
                   groupPlay: true,
                   randomGroupSeeding: true,
-                  eliminationThreshold: true,
+                  eliminationThreshold: groupPlayEnded,
                   doubleElimination: true,
                 }
               : undefined
