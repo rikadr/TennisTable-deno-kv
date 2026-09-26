@@ -40,6 +40,7 @@ export const NewTournamentPage: React.FC = () => {
         randomGroupSeeding: data.randomGroupSeeding,
         doubleElimination: data.doubleElimination,
         overridePreferredGroupSize: data.overridePreferredGroupSize,
+        eliminationThreshold: data.eliminationThreshold,
       },
     };
 

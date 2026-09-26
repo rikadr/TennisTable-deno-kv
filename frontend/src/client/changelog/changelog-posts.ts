@@ -42,6 +42,27 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
+    slug: "group-play-elimination-threshold",
+    title: "Elimination threshold for group play",
+    date: "2026-09-26",
+    tags: ["feature-update"],
+    summary:
+      "An admin can set the number of players who advance from group play to the bracket, or set no elimination.",
+    body: [
+      text(
+        "A tournament with group play has a new option: the elimination threshold. It sets the number of players who advance to the bracket.",
+      ),
+      list(
+        "Default: the biggest full power of 2. For example, 8 of 11 players advance. This is the same as before.",
+        "Custom number: the best players in the total group play standings advance, for example the top 6.",
+        "No elimination: all players advance to the bracket.",
+      ),
+      text(
+        "When fewer players sign up than the threshold, all players advance. The admin can change the threshold until the last group play game is played. The info tab shows a custom threshold next to the format.",
+      ),
+    ],
+  },
+  {
     slug: "tournament-how-far-will-you-go",
     title: "Stage predictions for tournaments",
     date: "2026-09-25",

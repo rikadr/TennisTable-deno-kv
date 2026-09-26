@@ -71,8 +71,13 @@ export class TournamentGroupPlay {
       .map(([player]) => player);
   }
 
+  /** The number of players who advance to the bracket */
   getBracketSize(): number {
-    return Math.pow(2, Math.floor(Math.log2(this.playerOrder.length))); // Floor to biggest possible full power of 2
+    const players = this.playerOrder.length;
+    const threshold = this.#tournament.tournamentConfig.eliminationThreshold;
+    if (threshold === "none") return players;
+    if (threshold !== undefined) return Math.min(threshold, players);
+    return Math.pow(2, Math.floor(Math.log2(players))); // Floor to biggest possible full power of 2
   }
 
   #divideInGroups(players: string[]): string[][] {

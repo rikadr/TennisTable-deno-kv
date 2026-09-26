@@ -46,6 +46,7 @@ export const EditTournamentPage: React.FC = () => {
   }
 
   const hasStarted = tournament.startDate <= Date.now();
+  const groupPlayEnded = tournament.groupPlay?.groupPlayEnded !== undefined;
 
   function handleSubmit(data: TournamentFormData) {
     if (!tournament) return;
@@ -65,6 +66,8 @@ export const EditTournamentPage: React.FC = () => {
       if (data.overridePreferredGroupSize !== tournament.tournamentConfig.overridePreferredGroupSize)
         updateData.overridePreferredGroupSize = data.overridePreferredGroupSize;
     }
+    if (!groupPlayEnded && data.eliminationThreshold !== tournament.tournamentConfig.eliminationThreshold)
+      updateData.eliminationThreshold = data.eliminationThreshold ?? null;
 
     if (Object.keys(updateData).length === 0) {
       navigate(`/tournament?tournament=${tournament.id}`);
@@ -78,7 +81,7 @@ export const EditTournamentPage: React.FC = () => {
       data: updateData,
     };
 
-    const validateResponse = context.eventStore.tournamentsProjector.validateUpdateTournament(event);
+    const validateResponse = context.eventStore.tournamentsProjector.validateUpdateTournament(event, groupPlayEnded);
     if (validateResponse.valid === false) {
       alert(validateResponse.message);
       return;
@@ -136,13 +139,20 @@ export const EditTournamentPage: React.FC = () => {
             randomGroupSeeding: tournament.tournamentConfig.randomGroupSeeding ?? false,
             doubleElimination: tournament.tournamentConfig.doubleElimination,
             overridePreferredGroupSize: tournament.tournamentConfig.overridePreferredGroupSize,
+            eliminationThreshold: tournament.tournamentConfig.eliminationThreshold,
           }}
           onSubmit={handleSubmit}
           submitLabel="Save changes"
           isPending={addEventMutation.isPending}
           lockedFields={
             hasStarted
-              ? { startDate: true, groupPlay: true, randomGroupSeeding: true, doubleElimination: true }
+              ? {
+                  startDate: true,
+                  groupPlay: true,
+                  randomGroupSeeding: true,
+                  eliminationThreshold: groupPlayEnded,
+                  doubleElimination: true,
+                }
               : undefined
           }
         />

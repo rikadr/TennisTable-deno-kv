@@ -6,7 +6,10 @@ import { Tournament } from "../../tournaments/tournament";
 const TOURNAMENT_ID = "tournament-1";
 const START_DATE = 100_000; // Far in the past so the tournament has started
 
-function baseEvents(players: string[], options?: { overridePreferredGroupSize?: number }): EventType[] {
+function baseEvents(
+  players: string[],
+  options?: { overridePreferredGroupSize?: number; eliminationThreshold?: number | "none" },
+): EventType[] {
   const events: EventType[] = [];
   let time = 1_000;
   for (const player of players) {
@@ -21,6 +24,7 @@ function baseEvents(players: string[], options?: { overridePreferredGroupSize?: 
       startDate: START_DATE,
       groupPlay: true,
       overridePreferredGroupSize: options?.overridePreferredGroupSize,
+      eliminationThreshold: options?.eliminationThreshold,
     },
   });
   for (const player of players) {
@@ -299,6 +303,50 @@ describe("Bracket advancement", () => {
     // P2 has 2 wins (6), P1 has 1 win + 1 loss (4), P3 has 2 losses (2).
     // Bracket size for 3 players is 2, so P3 is cut
     expect(groupPlay.getBracketPlayerOrder()).toEqual(["P2", "P1"]);
+  });
+
+  it("advances the number of players in a custom elimination threshold", () => {
+    expect(getGroupPlay(baseEvents(playerNames(9), { eliminationThreshold: 6 })).getBracketSize()).toBe(6);
+    expect(getGroupPlay(baseEvents(playerNames(9), { eliminationThreshold: 3 })).getBracketSize()).toBe(3);
+  });
+
+  it("advances all players when the elimination threshold is higher than the number of players", () => {
+    expect(getGroupPlay(baseEvents(playerNames(5), { eliminationThreshold: 8 })).getBracketSize()).toBe(5);
+  });
+
+  it("advances all players with no elimination", () => {
+    expect(getGroupPlay(baseEvents(playerNames(9), { eliminationThreshold: "none" })).getBracketSize()).toBe(9);
+  });
+
+  it("builds the bracket from all players with no elimination", () => {
+    const events = [
+      ...baseEvents(["P1", "P2", "P3"], { eliminationThreshold: "none" }),
+      gameEvent("P2", "P1"),
+      gameEvent("P2", "P3"),
+      gameEvent("P1", "P3"),
+    ];
+    const tournament = getTournament(events);
+
+    expect(tournament.groupPlay!.getBracketPlayerOrder()).toEqual(["P2", "P1", "P3"]);
+    expect(tournament.bracket).toBeDefined();
+    expect(tournament.getDecidedStages().players.has("P3")).toBe(false);
+  });
+
+  it("uses the latest elimination threshold that was set during group play", () => {
+    const events: EventType[] = [
+      ...baseEvents(["P1", "P2", "P3"]),
+      gameEvent("P2", "P1"),
+      {
+        time: gameTime + 1,
+        stream: TOURNAMENT_ID,
+        type: EventTypeEnum.TOURNAMENT_UPDATED,
+        data: { eliminationThreshold: "none" },
+      },
+    ];
+    gameTime += 1;
+    events.push(gameEvent("P2", "P3"), gameEvent("P1", "P3"));
+
+    expect(getGroupPlay(events).getBracketPlayerOrder()).toEqual(["P2", "P1", "P3"]);
   });
 });
 

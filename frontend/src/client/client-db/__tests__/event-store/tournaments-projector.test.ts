@@ -267,6 +267,74 @@ describe("validateUpdateTournament", () => {
   });
 });
 
+describe("Elimination threshold", () => {
+  it("stores the elimination threshold from the create event", () => {
+    const projector = new TournamentsProjector();
+    projector.createTournament(createEvent("t1", { groupPlay: true, eliminationThreshold: 6 }));
+    expect(projector.getTournamentConfig("t1")!.eliminationThreshold).toBe(6);
+  });
+
+  it("changes the elimination threshold, and null sets the default back", () => {
+    const projector = new TournamentsProjector();
+    projector.createTournament(createEvent("t1", { groupPlay: true, eliminationThreshold: 6 }));
+
+    projector.updateTournament(updateEvent("t1", { eliminationThreshold: "none" }));
+    expect(projector.getTournamentConfig("t1")!.eliminationThreshold).toBe("none");
+
+    projector.updateTournament(updateEvent("t1", { name: "Renamed" }));
+    expect(projector.getTournamentConfig("t1")!.eliminationThreshold).toBe("none");
+
+    projector.updateTournament(updateEvent("t1", { eliminationThreshold: null }));
+    expect(projector.getTournamentConfig("t1")!.eliminationThreshold).toBeUndefined();
+  });
+
+  it.each([1, 0, 2.5])("rejects the elimination threshold %p", (threshold) => {
+    const projector = new TournamentsProjector();
+    const create = projector.validateCreateTournament(createEvent("t1", { eliminationThreshold: threshold }));
+    expectInvalid(create);
+    expect(create.message).toBe("Elimination threshold must be a whole number of 2 or higher");
+
+    projector.createTournament(createEvent("t1"));
+    const update = projector.validateUpdateTournament(updateEvent("t1", { eliminationThreshold: threshold }));
+    expectInvalid(update);
+    expect(update.message).toBe("Elimination threshold must be a whole number of 2 or higher");
+  });
+
+  it("accepts a whole number of 2 or higher, no elimination and the default", () => {
+    const projector = new TournamentsProjector();
+    expect(projector.validateCreateTournament(createEvent("t1", { eliminationThreshold: 2 }))).toEqual({ valid: true });
+    expect(projector.validateCreateTournament(createEvent("t1", { eliminationThreshold: "none" }))).toEqual({
+      valid: true,
+    });
+    projector.createTournament(createEvent("t1"));
+    expect(projector.validateUpdateTournament(updateEvent("t1", { eliminationThreshold: null }))).toEqual({
+      valid: true,
+    });
+  });
+
+  it("accepts changing the elimination threshold after start while group play is ongoing", () => {
+    const projector = new TournamentsProjector();
+    projector.createTournament(createEvent("t1", { startDate: PAST_START, groupPlay: true }));
+    expect(projector.validateUpdateTournament(updateEvent("t1", { eliminationThreshold: 6 }), false)).toEqual({
+      valid: true,
+    });
+  });
+
+  it("rejects changing the elimination threshold after group play has ended", () => {
+    const projector = new TournamentsProjector();
+    projector.createTournament(createEvent("t1", { startDate: PAST_START, groupPlay: true }));
+    const result = projector.validateUpdateTournament(updateEvent("t1", { eliminationThreshold: 6 }), true);
+    expectInvalid(result);
+    expect(result.message).toBe("Cannot change elimination threshold after group play has ended");
+  });
+
+  it("still allows other changes after group play has ended", () => {
+    const projector = new TournamentsProjector();
+    projector.createTournament(createEvent("t1", { startDate: PAST_START, groupPlay: true }));
+    expect(projector.validateUpdateTournament(updateEvent("t1", { name: "New name" }), true)).toEqual({ valid: true });
+  });
+});
+
 describe("validateDeleteTournament", () => {
   it("accepts deleting an existing tournament and rejects a second delete", () => {
     const projector = new TournamentsProjector();
