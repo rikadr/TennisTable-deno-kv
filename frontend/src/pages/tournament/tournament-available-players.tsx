@@ -7,12 +7,14 @@ import { Link } from "react-router-dom";
 import { tournamentGameLink } from "./tournament-game-location";
 import { tournamentNudgeMessage } from "./tournament-nudge-message";
 
+const COPIED_ALL = "all";
+
 export const TournamentAvailablePlayers = ({ tournament }: { tournament: Tournament }) => {
   const context = useEventDbContext();
 
   const storageKey = `tournament-available-${tournament.id}`;
 
-  const [copiedPlayer, setCopiedPlayer] = useState<string>();
+  const [copied, setCopied] = useState<string>();
 
   const [checkedPlayers, setCheckedPlayers] = useState<Set<string>>(() => {
     try {
@@ -91,8 +93,8 @@ export const TournamentAvailablePlayers = ({ tournament }: { tournament: Tournam
     (game) => checkedPlayers.has(game.player1) && checkedPlayers.has(game.player2),
   ).length;
 
-  const copyNudgeMessage = async (playerId: string, opponents: { opponentId: string; link: string }[]) => {
-    const { html, plain } = tournamentNudgeMessage({
+  const nudgeMessage = (playerId: string, opponents: { opponentId: string; link: string }[]) =>
+    tournamentNudgeMessage({
       playerName: context.playerName(playerId),
       tournamentName: tournament.name,
       opponents: opponents.map(({ opponentId, link }) => ({
@@ -100,6 +102,14 @@ export const TournamentAvailablePlayers = ({ tournament }: { tournament: Tournam
         url: window.location.origin + link,
       })),
     });
+
+  const markCopied = (key: string) => {
+    setCopied(key);
+    setTimeout(() => setCopied((current) => (current === key ? undefined : current)), 2000);
+  };
+
+  const copyNudgeMessage = async (playerId: string, opponents: { opponentId: string; link: string }[]) => {
+    const { html, plain } = nudgeMessage(playerId, opponents);
     try {
       await navigator.clipboard.write([
         new ClipboardItem({
@@ -110,8 +120,16 @@ export const TournamentAvailablePlayers = ({ tournament }: { tournament: Tournam
     } catch {
       await navigator.clipboard.writeText(plain);
     }
-    setCopiedPlayer(playerId);
-    setTimeout(() => setCopiedPlayer((current) => (current === playerId ? undefined : current)), 2000);
+    markCopied(playerId);
+  };
+
+  const copyAllNudgeMessages = async () => {
+    const messages = checkedPlayerGames.map(({ playerId, opponents }) => ({
+      playerName: context.playerName(playerId),
+      message: nudgeMessage(playerId, opponents).slack,
+    }));
+    await navigator.clipboard.writeText(JSON.stringify(messages, null, 2));
+    markCopied(COPIED_ALL);
   };
 
   if (sortedPlayers.length === 0) {
@@ -195,6 +213,17 @@ export const TournamentAvailablePlayers = ({ tournament }: { tournament: Tournam
         </div>
       )}
 
+      {checkedPlayerGames.length > 0 && (
+        <div className="flex justify-center">
+          <button
+            onClick={copyAllNudgeMessages}
+            className="text-xs px-3 py-1 rounded bg-secondary-background text-secondary-text hover:bg-secondary-background/70"
+          >
+            {copied === COPIED_ALL ? "Copied ✓" : "Copy Slack messages for all (JSON)"}
+          </button>
+        </div>
+      )}
+
       {/* Per-player pending games against checked players */}
       {checkedPlayerGames.map(({ playerId, opponents }) => (
         <div
@@ -213,7 +242,7 @@ export const TournamentAvailablePlayers = ({ tournament }: { tournament: Tournam
               onClick={() => copyNudgeMessage(playerId, opponents)}
               className="text-xs px-3 py-1 rounded shrink-0 ring-1 ring-secondary-text/30 hover:bg-secondary-text/10"
             >
-              {copiedPlayer === playerId ? "Copied ✓" : "Copy Slack message"}
+              {copied === playerId ? "Copied ✓" : "Copy Slack message"}
             </button>
           </div>
           <div className="divide-y divide-secondary-background/50">

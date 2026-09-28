@@ -24,6 +24,15 @@ describe("Slack message about the games a player can play today", () => {
     );
   });
 
+  it("shows each game as link text in the slack version", () => {
+    const { slack } = tournamentNudgeMessage({ playerName: "Ada", tournamentName: "Autumn Cup", opponents });
+    expect(slack).toBe(
+      "Hi Ada! 🏓 You have 2 tournament games you can play today in *Autumn Cup*:\n" +
+        "• <https://example.com/tournament?tournament=cup&player1=ada&player2=bob|vs Bob>\n" +
+        "• <https://example.com/tournament?tournament=cup&player1=ada&player2=carl|vs Carl>",
+    );
+  });
+
   it("uses the singular for one game", () => {
     const { plain } = tournamentNudgeMessage({
       playerName: "Ada",
@@ -42,5 +51,16 @@ describe("Slack message about the games a player can play today", () => {
     expect(html).toContain("Hi &lt;Ada&gt;!");
     expect(html).toContain("<b>Tom &amp; Jerry Cup</b>");
     expect(html).toContain(">vs B&quot;ob</a>");
+  });
+
+  it("escapes names in the slack version", () => {
+    const { slack } = tournamentNudgeMessage({
+      playerName: "<Ada>",
+      tournamentName: "Tom & Jerry Cup",
+      opponents: [{ name: "B>ob", url: "https://example.com" }],
+    });
+    expect(slack).toContain("Hi &lt;Ada&gt;!");
+    expect(slack).toContain("*Tom &amp; Jerry Cup*");
+    expect(slack).toContain("<https://example.com|vs B&gt;ob>");
   });
 });
