@@ -15,13 +15,13 @@ import { classNames } from "../../common/class-names";
 import { TournamentHowFar } from "./tournament-how-far";
 
 const ZOOM_FACTOR = 0.7; // Each click multiplies/divides by this (30% relative change)
-const MIN_Y_MAX = 0.1; // Allow zooming down to 0.1%
+const MIN_Y_MAX = 0.01; // Allow zooming down to 0.01%
 const DEFAULT_Y_MAX = 100;
 
 const formatYAxisPercent = (value: number, yMax: number): string => {
   if (yMax >= 10) return `${Math.round(value)}`;
   if (yMax >= 1) return value.toFixed(1);
-  return `${parseFloat(value.toFixed(3))}`;
+  return `${parseFloat(value.toFixed(4))}`;
 };
 
 const SIMULATION_OPTIONS: { label: string; value: number }[] = [
@@ -214,7 +214,7 @@ const WinChance = ({ tournament }: { tournament: Tournament }) => {
             <>
               <div className="flex items-center gap-2 mb-2 justify-end pr-2 md:pr-4">
                 <span className="text-primary-text/70 text-xs md:text-sm">
-                  Y-axis: {yMax < 1 ? yMax.toFixed(2) : formatYAxisPercent(yMax, yMax)}%
+                  Y-axis: {yMax < 1 ? parseFloat(yMax.toPrecision(2)) : formatYAxisPercent(yMax, yMax)}%
                 </span>
                 <button
                   onClick={() => setYMax((prev) => Math.min(DEFAULT_Y_MAX, prev / ZOOM_FACTOR))}
@@ -429,7 +429,7 @@ const CustomTooltip: React.FC = ({ active, payload }: TooltipProps<ValueType, Na
           .filter((e) => (e[1] as number) > 0)
           .map((entry) => (
             <p key={entry[0]} style={{ color: stringToColor(entry[0]) }}>
-              {`${context.playerName(entry[0])}: ${(entry[1] as number).toFixed((entry[1] as number) < 1 ? 2 : 1)}%`}
+              {`${context.playerName(entry[0])}: ${(entry[1] as number).toFixed((entry[1] as number) < 0.1 ? 3 : (entry[1] as number) < 1 ? 2 : 1)}%`}
             </p>
           ))}
         {confidence && typeof confidence[1] === "number" && (
