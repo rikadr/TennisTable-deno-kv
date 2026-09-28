@@ -150,7 +150,7 @@ export const AddPlayerPage: React.FC = () => {
             {currentStep === 2 &&
               (addEventMutation.isPending ? (
                 <>
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
                   <span>Creating player...</span>
                 </>
               ) : (
