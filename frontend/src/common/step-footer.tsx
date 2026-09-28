@@ -37,7 +37,7 @@ export const StepForwardButton: React.FC<{
       "flex-1 py-3 px-4 rounded-xl font-semibold flex items-center justify-center space-x-2 transition-colors",
       disabled
         ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-        : "bg-green-600 text-white shadow-md hover:bg-green-700",
+        : "bg-green-600 text-white shadow-md ring-2 ring-white hover:bg-green-700",
     )}
   >
     {children}
