@@ -4,11 +4,15 @@ import { ProfilePicture } from "../player/profile-picture";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { Tournament } from "../../client/client-db/tournaments/tournament";
 import { Link } from "react-router-dom";
+import { tournamentGameLink } from "./tournament-game-location";
+import { tournamentNudgeMessage } from "./tournament-nudge-message";
 
 export const TournamentAvailablePlayers = ({ tournament }: { tournament: Tournament }) => {
   const context = useEventDbContext();
 
   const storageKey = `tournament-available-${tournament.id}`;
+
+  const [copiedPlayer, setCopiedPlayer] = useState<string>();
 
   const [checkedPlayers, setCheckedPlayers] = useState<Set<string>>(() => {
     try {
@@ -74,7 +78,10 @@ export const TournamentAvailablePlayers = ({ tournament }: { tournament: Tournam
           (game.player2 === playerId && checkedPlayers.has(game.player1)),
       );
 
-      const opponents = gamesAgainstChecked.map((game) => (game.player1 === playerId ? game.player2 : game.player1));
+      const opponents = gamesAgainstChecked.map((game) => ({
+        opponentId: game.player1 === playerId ? game.player2 : game.player1,
+        link: tournamentGameLink(tournament.id, game),
+      }));
 
       return { playerId, opponents };
     })
@@ -83,6 +90,29 @@ export const TournamentAvailablePlayers = ({ tournament }: { tournament: Tournam
   const totalPlayableGames = allPendingGames.filter(
     (game) => checkedPlayers.has(game.player1) && checkedPlayers.has(game.player2),
   ).length;
+
+  const copyNudgeMessage = async (playerId: string, opponents: { opponentId: string; link: string }[]) => {
+    const { html, plain } = tournamentNudgeMessage({
+      playerName: context.playerName(playerId),
+      tournamentName: tournament.name,
+      opponents: opponents.map(({ opponentId, link }) => ({
+        name: context.playerName(opponentId),
+        url: window.location.origin + link,
+      })),
+    });
+    try {
+      await navigator.clipboard.write([
+        new ClipboardItem({
+          "text/html": new Blob([html], { type: "text/html" }),
+          "text/plain": new Blob([plain], { type: "text/plain" }),
+        }),
+      ]);
+    } catch {
+      await navigator.clipboard.writeText(plain);
+    }
+    setCopiedPlayer(playerId);
+    setTimeout(() => setCopiedPlayer((current) => (current === playerId ? undefined : current)), 2000);
+  };
 
   if (sortedPlayers.length === 0) {
     return (
@@ -173,18 +203,24 @@ export const TournamentAvailablePlayers = ({ tournament }: { tournament: Tournam
         >
           <div className="flex items-center gap-3 px-4 py-3 bg-secondary-background text-secondary-text">
             <ProfilePicture playerId={playerId} size={36} border={2} />
-            <div>
-              <h3 className="font-bold text-lg">{context.playerName(playerId)}</h3>
+            <div className="grow min-w-0">
+              <h3 className="font-bold text-lg truncate">{context.playerName(playerId)}</h3>
               <p className="text-xs text-secondary-text/70">
                 {opponents.length} game{opponents.length !== 1 && "s"} available today
               </p>
             </div>
+            <button
+              onClick={() => copyNudgeMessage(playerId, opponents)}
+              className="text-xs px-3 py-1 rounded shrink-0 ring-1 ring-secondary-text/30 hover:bg-secondary-text/10"
+            >
+              {copiedPlayer === playerId ? "Copied ✓" : "Copy Slack message"}
+            </button>
           </div>
           <div className="divide-y divide-secondary-background/50">
-            {opponents.map((opponentId) => (
+            {opponents.map(({ opponentId, link }) => (
               <Link
                 key={opponentId}
-                to={`/tournament?tournament=${tournament.id}&player1=${playerId}&player2=${opponentId}`}
+                to={link}
                 className="flex items-center gap-3 px-4 py-2 hover:bg-secondary-background/20 transition-colors text-primary-text"
               >
                 <span className="text-xs text-primary-text/50 font-medium">VS</span>
