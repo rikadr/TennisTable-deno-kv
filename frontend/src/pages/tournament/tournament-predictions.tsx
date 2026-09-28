@@ -15,8 +15,14 @@ import { classNames } from "../../common/class-names";
 import { TournamentHowFar } from "./tournament-how-far";
 
 const ZOOM_FACTOR = 0.7; // Each click multiplies/divides by this (30% relative change)
-const MIN_Y_MAX = 1; // Allow zooming down to 1%
+const MIN_Y_MAX = 0.1; // Allow zooming down to 0.1%
 const DEFAULT_Y_MAX = 100;
+
+const formatYAxisPercent = (value: number, yMax: number): string => {
+  if (yMax >= 10) return `${Math.round(value)}`;
+  if (yMax >= 1) return value.toFixed(1);
+  return `${parseFloat(value.toFixed(3))}`;
+};
 
 const SIMULATION_OPTIONS: { label: string; value: number }[] = [
   { label: "Normal (5,000)", value: NUM_SIMULATIONS },
@@ -208,7 +214,7 @@ const WinChance = ({ tournament }: { tournament: Tournament }) => {
             <>
               <div className="flex items-center gap-2 mb-2 justify-end pr-2 md:pr-4">
                 <span className="text-primary-text/70 text-xs md:text-sm">
-                  Y-axis: {yMax < 10 ? yMax.toFixed(1) : Math.round(yMax)}%
+                  Y-axis: {yMax < 1 ? yMax.toFixed(2) : formatYAxisPercent(yMax, yMax)}%
                 </span>
                 <button
                   onClick={() => setYMax((prev) => Math.min(DEFAULT_Y_MAX, prev / ZOOM_FACTOR))}
@@ -244,7 +250,7 @@ const WinChance = ({ tournament }: { tournament: Tournament }) => {
                   type="number"
                   domain={[0, yMax]}
                   allowDataOverflow={true}
-                  tickFormatter={(value) => `${yMax < 10 ? value.toFixed(1) : Math.round(value)}%`}
+                  tickFormatter={(value) => `${formatYAxisPercent(value, yMax)}%`}
                   stroke="rgb(var(--color-primary-text))"
                 />
                 <Tooltip
@@ -423,7 +429,7 @@ const CustomTooltip: React.FC = ({ active, payload }: TooltipProps<ValueType, Na
           .filter((e) => (e[1] as number) > 0)
           .map((entry) => (
             <p key={entry[0]} style={{ color: stringToColor(entry[0]) }}>
-              {`${context.playerName(entry[0])}: ${(entry[1] as number).toFixed(1)}%`}
+              {`${context.playerName(entry[0])}: ${(entry[1] as number).toFixed((entry[1] as number) < 1 ? 2 : 1)}%`}
             </p>
           ))}
         {confidence && typeof confidence[1] === "number" && (
