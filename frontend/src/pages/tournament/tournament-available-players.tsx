@@ -4,11 +4,17 @@ import { ProfilePicture } from "../player/profile-picture";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { Tournament } from "../../client/client-db/tournaments/tournament";
 import { Link } from "react-router-dom";
+import { tournamentGameLink } from "./tournament-game-location";
+import { tournamentNudgeMessage } from "./tournament-nudge-message";
+
+const COPIED_ALL = "all";
 
 export const TournamentAvailablePlayers = ({ tournament }: { tournament: Tournament }) => {
   const context = useEventDbContext();
 
   const storageKey = `tournament-available-${tournament.id}`;
+
+  const [copied, setCopied] = useState<string>();
 
   const [checkedPlayers, setCheckedPlayers] = useState<Set<string>>(() => {
     try {
@@ -74,7 +80,10 @@ export const TournamentAvailablePlayers = ({ tournament }: { tournament: Tournam
           (game.player2 === playerId && checkedPlayers.has(game.player1)),
       );
 
-      const opponents = gamesAgainstChecked.map((game) => (game.player1 === playerId ? game.player2 : game.player1));
+      const opponents = gamesAgainstChecked.map((game) => ({
+        opponentId: game.player1 === playerId ? game.player2 : game.player1,
+        link: tournamentGameLink(tournament.id, game),
+      }));
 
       return { playerId, opponents };
     })
@@ -83,6 +92,45 @@ export const TournamentAvailablePlayers = ({ tournament }: { tournament: Tournam
   const totalPlayableGames = allPendingGames.filter(
     (game) => checkedPlayers.has(game.player1) && checkedPlayers.has(game.player2),
   ).length;
+
+  const nudgeMessage = (playerId: string, opponents: { opponentId: string; link: string }[]) =>
+    tournamentNudgeMessage({
+      playerName: context.playerName(playerId),
+      tournamentName: tournament.name,
+      opponents: opponents.map(({ opponentId, link }) => ({
+        name: context.playerName(opponentId),
+        url: window.location.origin + link,
+      })),
+    });
+
+  const markCopied = (key: string) => {
+    setCopied(key);
+    setTimeout(() => setCopied((current) => (current === key ? undefined : current)), 2000);
+  };
+
+  const copyNudgeMessage = async (playerId: string, opponents: { opponentId: string; link: string }[]) => {
+    const { html, plain } = nudgeMessage(playerId, opponents);
+    try {
+      await navigator.clipboard.write([
+        new ClipboardItem({
+          "text/html": new Blob([html], { type: "text/html" }),
+          "text/plain": new Blob([plain], { type: "text/plain" }),
+        }),
+      ]);
+    } catch {
+      await navigator.clipboard.writeText(plain);
+    }
+    markCopied(playerId);
+  };
+
+  const copyAllNudgeMessages = async () => {
+    const messages = checkedPlayerGames.map(({ playerId, opponents }) => ({
+      playerName: context.playerName(playerId),
+      message: nudgeMessage(playerId, opponents).slack,
+    }));
+    await navigator.clipboard.writeText(JSON.stringify(messages, null, 2));
+    markCopied(COPIED_ALL);
+  };
 
   if (sortedPlayers.length === 0) {
     return (
@@ -165,6 +213,17 @@ export const TournamentAvailablePlayers = ({ tournament }: { tournament: Tournam
         </div>
       )}
 
+      {checkedPlayerGames.length > 0 && (
+        <div className="flex justify-center">
+          <button
+            onClick={copyAllNudgeMessages}
+            className="text-xs px-3 py-1 rounded bg-secondary-background text-secondary-text hover:bg-secondary-background/70"
+          >
+            {copied === COPIED_ALL ? "Copied ✓" : "Copy Slack messages for all (JSON)"}
+          </button>
+        </div>
+      )}
+
       {/* Per-player pending games against checked players */}
       {checkedPlayerGames.map(({ playerId, opponents }) => (
         <div
@@ -173,18 +232,24 @@ export const TournamentAvailablePlayers = ({ tournament }: { tournament: Tournam
         >
           <div className="flex items-center gap-3 px-4 py-3 bg-secondary-background text-secondary-text">
             <ProfilePicture playerId={playerId} size={36} border={2} />
-            <div>
-              <h3 className="font-bold text-lg">{context.playerName(playerId)}</h3>
+            <div className="grow min-w-0">
+              <h3 className="font-bold text-lg truncate">{context.playerName(playerId)}</h3>
               <p className="text-xs text-secondary-text/70">
                 {opponents.length} game{opponents.length !== 1 && "s"} available today
               </p>
             </div>
+            <button
+              onClick={() => copyNudgeMessage(playerId, opponents)}
+              className="text-xs px-3 py-1 rounded shrink-0 ring-1 ring-secondary-text/30 hover:bg-secondary-text/10"
+            >
+              {copied === playerId ? "Copied ✓" : "Copy Slack message"}
+            </button>
           </div>
           <div className="divide-y divide-secondary-background/50">
-            {opponents.map((opponentId) => (
+            {opponents.map(({ opponentId, link }) => (
               <Link
                 key={opponentId}
-                to={`/tournament?tournament=${tournament.id}&player1=${playerId}&player2=${opponentId}`}
+                to={link}
                 className="flex items-center gap-3 px-4 py-2 hover:bg-secondary-background/20 transition-colors text-primary-text"
               >
                 <span className="text-xs text-primary-text/50 font-medium">VS</span>

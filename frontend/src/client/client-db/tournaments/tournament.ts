@@ -8,6 +8,13 @@ import { TournamentStages } from "./stage-prediction";
 
 export type TournamentBracketSection = "winners" | "losers" | "grandFinal" | "bracketReset";
 
+export type PendingTournamentGame = {
+  player1: string;
+  player2: string;
+  where: "group" | "bracket";
+  section?: TournamentBracketSection;
+};
+
 export type TournamentGameTarget = {
   /** Which bracket structure the target game is in. Undefined means the same (winners) bracket */
   section?: TournamentBracketSection;
@@ -281,19 +288,13 @@ export class Tournament {
 
   /**
    * Find all pending games in the tournament
-   * @returns Array of pending games with player IDs and location info (groupIndex or layerIndex)
+   * @returns Array of pending games with player IDs and the part of the tournament they are in
    */
-  findAllPendingGames(): {
-    player1: string;
-    player2: string;
-  }[] {
+  findAllPendingGames(): PendingTournamentGame[] {
     if (this.startDate > this.#time) return []; // Not started
     if (this.endDate !== undefined) return []; // Has ended
 
-    const games: {
-      player1: string;
-      player2: string;
-    }[] = [];
+    const games: PendingTournamentGame[] = [];
 
     // Check group play games
     if (this.groupPlay && this.groupPlay.groupPlayEnded === undefined) {
@@ -302,16 +303,19 @@ export class Tournament {
           games.push({
             player1: game.player1!,
             player2: game.player2!,
+            where: "group",
           });
         });
       });
     }
 
     // Check bracket games (winners bracket, losers bracket, grand final)
-    this.bracket?.getPendingGames().forEach(({ game }) => {
+    this.bracket?.getPendingGames().forEach(({ game, section }) => {
       games.push({
         player1: game.player1!,
         player2: game.player2!,
+        where: "bracket",
+        section,
       });
     });
 
