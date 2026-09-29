@@ -1,4 +1,4 @@
-import { Elo } from "./elo";
+import { Elo, PlayerWithElo } from "./elo";
 import { Game } from "./event-store/projectors/games-projector";
 import { Predictions } from "./predictions";
 import { TennisTable } from "./tennis-table";
@@ -59,13 +59,19 @@ export class Simulations {
 
     const simResultMap = new Map<string, number[]>();
 
+    // Start from the current scores, so the simulated points pool is the real one.
+    // Each run then starts from the scores the run before it ended with.
+    let startElos = new Map<string, number>();
+    this.parent.leaderboard.getCachedLeaderboardMap().forEach((player, id) => startElos.set(id, player.elo));
+
     const SIMULATIONS = Math.max(1, Math.floor(simulations));
     // Report about 100 times over the run, so a short run also shows progress.
     const progressStep = Math.max(1, Math.floor(SIMULATIONS / 100));
     for (let i = 0; i < SIMULATIONS; i++) {
       this.shuffleArray(predictedGames);
       // Casting, but its only using winner and loser inside it anyway
-      const eloMap = Elo.eloCalculator(predictedGames as Game[], this.parent.allPlayers);
+      const eloMap = Elo.eloCalculator(predictedGames as Game[], this.parent.allPlayers, undefined, startElos);
+      startElos = Simulations.toEloMap(eloMap);
       eloMap.forEach((player) => {
         if (simResultMap.has(player.id) === false) {
           simResultMap.set(player.id, []);
@@ -145,6 +151,8 @@ export class Simulations {
 
       const playerElos: number[] = [];
 
+      let startElos = Simulations.toEloMap(Elo.eloCalculator(relevantGames, this.parent.allPlayers));
+
       const iterations =
         gameTime >= sortedPlayerGameTimes[sortedPlayerGameTimes.length - (playerPlayedTheLastGame ? 2 : 3)]
           ? DETAILED_ITERATION
@@ -155,7 +163,10 @@ export class Simulations {
         const eloMap = Elo.eloCalculator(
           predictedGames as Game[], // Casting, but its only using winner and loser inside it anyway
           this.parent.allPlayers,
+          undefined,
+          startElos,
         );
+        startElos = Simulations.toEloMap(eloMap);
         const playerElo = eloMap.get(playerId)?.elo;
         playerElo && playerElos.push(playerElo);
       }
@@ -179,6 +190,12 @@ export class Simulations {
     }
 
     return;
+  }
+
+  private static toEloMap(players: Map<string, PlayerWithElo>): Map<string, number> {
+    const elos = new Map<string, number>();
+    players.forEach((player, id) => elos.set(id, player.elo));
+    return elos;
   }
 
   shuffleArray<T>(array: T[]): T[] {
