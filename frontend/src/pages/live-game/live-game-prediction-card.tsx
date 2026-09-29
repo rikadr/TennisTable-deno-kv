@@ -7,6 +7,9 @@ import { stringToColor } from "../../common/string-to-color";
 import { LiveGameSetPoint } from "./live-game-types";
 import { computeLiveWinPrediction } from "./live-game-win-probability";
 
+/** Width of the white pill that marks the split in the win prediction bar. */
+const DIVIDER_WIDTH_PX = 6;
+
 type Props = {
   player1Id: string;
   player2Id: string;
@@ -91,6 +94,10 @@ export const LiveGamePredictionCard: React.FC<Props> = ({
   );
   const player2WinChance = 1 - player1WinChance;
 
+  // The win chance splits the full width of the bar. The divider width is taken off the
+  // span, so at 0% and 100% the divider sits flush with the end of the bar and stays in view.
+  const split = `calc(${DIVIDER_WIDTH_PX / 2}px + ${player1WinChance} * (100% - ${DIVIDER_WIDTH_PX}px))`;
+
   // With no pairing data and no points played yet there is nothing to predict.
   const hasPrediction = hasBasePrediction || pointsPlayed > 0;
 
@@ -134,14 +141,16 @@ export const LiveGamePredictionCard: React.FC<Props> = ({
               {fmtNum(player2WinChance * 100)}% {player2Name}
             </span>
           </div>
-          <div className="flex h-6 w-full overflow-hidden rounded-full bg-gray-100">
+          <div className="relative">
+            <div className="flex h-6 w-full overflow-hidden rounded-full bg-gray-100">
+              <div className="transition-all duration-500" style={{ width: split, ...fill(player1Color) }} />
+              <div className="flex-1" style={fill(player2Color)} />
+            </div>
+            {/* Two similar player colours can hide the split, so a white pill marks it.
+                The shadow keeps the pill visible when a player colour is near white. */}
             <div
-              className="transition-all duration-500"
-              style={{ width: `${player1WinChance * 100}%`, ...fill(player1Color) }}
-            />
-            <div
-              className="transition-all duration-500"
-              style={{ width: `${player2WinChance * 100}%`, ...fill(player2Color) }}
+              className="pointer-events-none absolute -top-1 -bottom-1 -translate-x-1/2 rounded-full bg-white shadow-[0_0_0_1px_rgba(0,0,0,0.25)] transition-all duration-500"
+              style={{ left: split, width: DIVIDER_WIDTH_PX }}
             />
           </div>
           <div className="mt-1 text-center text-xs text-gray-500">{fmtNum(confidence * 100)}% confidence</div>
