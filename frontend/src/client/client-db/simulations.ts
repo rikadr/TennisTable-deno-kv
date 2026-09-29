@@ -59,13 +59,18 @@ export class Simulations {
 
     const simResultMap = new Map<string, number[]>();
 
+    // Start from the current scores, so the simulated points pool is the real one.
+    // Each run then starts from the scores the run before it ended with.
+    let startScores: Map<string, { elo: number }> = this.parent.leaderboard.getCachedLeaderboardMap();
+
     const SIMULATIONS = Math.max(1, Math.floor(simulations));
     // Report about 100 times over the run, so a short run also shows progress.
     const progressStep = Math.max(1, Math.floor(SIMULATIONS / 100));
     for (let i = 0; i < SIMULATIONS; i++) {
       this.shuffleArray(predictedGames);
       // Casting, but its only using winner and loser inside it anyway
-      const eloMap = Elo.eloCalculator(predictedGames as Game[], this.parent.allPlayers);
+      const eloMap = Elo.eloCalculator(predictedGames as Game[], this.parent.allPlayers, undefined, startScores);
+      startScores = eloMap;
       eloMap.forEach((player) => {
         if (simResultMap.has(player.id) === false) {
           simResultMap.set(player.id, []);
@@ -150,12 +155,23 @@ export class Simulations {
           ? DETAILED_ITERATION
           : FAST_ITERATION;
 
+      // A player outside the simulation has no expected score at this time.
+      if (!predictedGames.some((game) => game.winner === playerId || game.loser === playerId)) {
+        iterationsProgress += iterations;
+        continue;
+      }
+
+      let startScores: Map<string, { elo: number }> = Elo.eloCalculator(relevantGames, this.parent.allPlayers);
+
       for (let i = 0; i < iterations; i++) {
         this.shuffleArray(predictedGames);
         const eloMap = Elo.eloCalculator(
           predictedGames as Game[], // Casting, but its only using winner and loser inside it anyway
           this.parent.allPlayers,
+          undefined,
+          startScores,
         );
+        startScores = eloMap;
         const playerElo = eloMap.get(playerId)?.elo;
         playerElo && playerElos.push(playerElo);
       }
