@@ -26,8 +26,8 @@ describe("Elo.eloCalculator start scores", () => {
       players,
       undefined,
       new Map([
-        ["a", 1200],
-        ["b", 900],
+        ["a", { elo: 1200 }],
+        ["b", { elo: 900 }],
       ]),
     );
 
@@ -43,8 +43,8 @@ describe("Elo.eloCalculator start scores", () => {
       players,
       undefined,
       new Map([
-        ["a", 1000],
-        ["b", 1200],
+        ["a", { elo: 1000 }],
+        ["b", { elo: 1200 }],
       ]),
     );
     const { winnersNewElo, losersNewElo } = Elo.calculateELO(1000, 1200);

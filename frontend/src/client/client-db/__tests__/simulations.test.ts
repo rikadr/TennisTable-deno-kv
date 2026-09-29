@@ -58,3 +58,34 @@ describe("Simulations.expectedLeaderBoard", () => {
     expect(sum(expected)).toBeCloseTo(sum(current) + unrankedScore, 6);
   });
 });
+
+describe("Simulations.expectedPlayerEloOverTime", () => {
+  // A and B share a 5-5 record, then A beats the unranked D 4 times.
+  const alternating: [string, string][] = Array.from({ length: 10 }, (_, i) => (i % 2 === 0 ? ["A", "B"] : ["B", "A"]));
+  const overTimeGames: [string, string][] = [...alternating, ...repeat(["A", "D"], 4)];
+
+  const simulate = (tennisTable: TennisTable, playerId: string) => {
+    const elements: { elo: number; time: number }[] = [];
+    tennisTable.simulations.expectedPlayerEloOverTime(playerId, (message) => elements.push(...message.elements));
+    return elements;
+  };
+
+  it("gives no expected score at a time when the player is not in the simulation", () => {
+    const elements = simulate(buildTennisTable(overTimeGames), "A");
+
+    // A and B have 5 games each after the game at T0 + 4.
+    expect(elements.length).toBeGreaterThan(0);
+    expect(elements.every((element) => element.time >= T0 + 4)).toBe(true);
+  });
+
+  it("starts from the scores at that time, so the points pool is the real one", () => {
+    const tennisTable = buildTennisTable(overTimeGames);
+    const leaderboardMap = tennisTable.leaderboard.getCachedLeaderboardMap();
+    const pool = leaderboardMap.get("A")!.elo + leaderboardMap.get("B")!.elo;
+    const latest = simulate(tennisTable, "A").find((element) => element.time === T0 + overTimeGames.length - 1)!;
+
+    // A 50/50 record splits the pool of A and B evenly.
+    expect(pool).toBeGreaterThan(2 * 1000 + 20);
+    expect(Math.abs(latest.elo - pool / 2)).toBeLessThan(5);
+  });
+});

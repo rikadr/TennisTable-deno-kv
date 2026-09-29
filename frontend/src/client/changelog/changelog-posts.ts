@@ -43,23 +43,20 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
     slug: "expected-score-points-pool",
-    title: "Expected scores use the real points pool",
+    title: "Expected scores start from the current scores",
     date: "2026-09-29",
     tags: ["bug-fix"],
     summary:
-      "The expected leaderboard and the expected scores now start from the current scores. Before, the expected scores were too low.",
+      "The expected leaderboard and the other expected scores start from the current scores. Before, most expected scores were too low.",
     body: [
       text(
-        "Each simulation starts every player at the current score. The next simulation starts from the scores that the previous simulation ended with.",
+        "The first simulation starts each player at the current score. Each next simulation starts from the scores at the end of the previous simulation. The total of the expected scores is now equal to the total of the current scores.",
       ),
       text(
-        "The total of the expected scores is now the same as the total of the current scores. A player who moves up or down on the expected leaderboard moves in the real points pool.",
+        "Ranked players win points from unranked players and from players who stop playing. For this reason, the average current score of the ranked players is usually more than 1000. Before, each simulation started all players at 1000, so most expected scores were too low. The expected ranks did not change.",
       ),
       text(
-        "Before, every simulation started all players at 1000. Ranked players have taken points from unranked players and from players who stopped playing. Thus most expected scores were too low, and most players seemed to play above their expected score. The expected ranks did not change.",
-      ),
-      text(
-        "The fix also applies to the expected score of an unranked player and to the expected line in the score graph on the player page.",
+        "The fix also applies to the expected score of an unranked player and to the expected line in the score graph on the player page. The expected line now starts at the first time that the player is in the simulation. Before, the line showed 1000 before that time.",
       ),
     ],
   },
