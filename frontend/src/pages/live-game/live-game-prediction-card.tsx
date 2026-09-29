@@ -7,6 +7,9 @@ import { stringToColor } from "../../common/string-to-color";
 import { LiveGameSetPoint } from "./live-game-types";
 import { computeLiveWinPrediction } from "./live-game-win-probability";
 
+/** Half the height of the `h-6` bar, which is the radius of its rounded ends. */
+const BAR_END_RADIUS_PX = 12;
+
 type Props = {
   player1Id: string;
   player2Id: string;
@@ -91,6 +94,10 @@ export const LiveGamePredictionCard: React.FC<Props> = ({
   );
   const player2WinChance = 1 - player1WinChance;
 
+  // Each player owns the rounded end on their side of the bar. The win chance splits
+  // only the straight part between the ends, so the split stays clear of the ends at 0% and 100%.
+  const split = `calc(${BAR_END_RADIUS_PX}px + ${player1WinChance} * (100% - ${2 * BAR_END_RADIUS_PX}px))`;
+
   // With no pairing data and no points played yet there is nothing to predict.
   const hasPrediction = hasBasePrediction || pointsPlayed > 0;
 
@@ -136,23 +143,15 @@ export const LiveGamePredictionCard: React.FC<Props> = ({
           </div>
           <div className="relative">
             <div className="flex h-6 w-full overflow-hidden rounded-full bg-gray-100">
-              <div
-                className="transition-all duration-500"
-                style={{ width: `${player1WinChance * 100}%`, ...fill(player1Color) }}
-              />
-              <div
-                className="transition-all duration-500"
-                style={{ width: `${player2WinChance * 100}%`, ...fill(player2Color) }}
-              />
+              <div className="transition-all duration-500" style={{ width: split, ...fill(player1Color) }} />
+              <div className="flex-1" style={fill(player2Color)} />
             </div>
             {/* Two similar player colours can hide the split, so a white pill marks it.
                 The shadow keeps the pill visible when a player colour is near white. */}
-            {player1WinChance > 0 && player2WinChance > 0 && (
-              <div
-                className="pointer-events-none absolute -top-1 -bottom-1 w-1.5 -translate-x-1/2 rounded-full bg-white shadow-[0_0_0_1px_rgba(0,0,0,0.25)] transition-all duration-500"
-                style={{ left: `${player1WinChance * 100}%` }}
-              />
-            )}
+            <div
+              className="pointer-events-none absolute -top-1 -bottom-1 w-1.5 -translate-x-1/2 rounded-full bg-white shadow-[0_0_0_1px_rgba(0,0,0,0.25)] transition-all duration-500"
+              style={{ left: split }}
+            />
           </div>
           <div className="mt-1 text-center text-xs text-gray-500">{fmtNum(confidence * 100)}% confidence</div>
         </>
