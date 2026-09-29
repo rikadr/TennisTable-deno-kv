@@ -134,15 +134,25 @@ export const LiveGamePredictionCard: React.FC<Props> = ({
               {fmtNum(player2WinChance * 100)}% {player2Name}
             </span>
           </div>
-          <div className="flex h-6 w-full overflow-hidden rounded-full bg-gray-100">
-            <div
-              className="transition-all duration-500"
-              style={{ width: `${player1WinChance * 100}%`, ...fill(player1Color) }}
-            />
-            <div
-              className="transition-all duration-500"
-              style={{ width: `${player2WinChance * 100}%`, ...fill(player2Color) }}
-            />
+          <div className="relative">
+            <div className="flex h-6 w-full overflow-hidden rounded-full bg-gray-100">
+              <div
+                className="transition-all duration-500"
+                style={{ width: `${player1WinChance * 100}%`, ...fill(player1Color) }}
+              />
+              <div
+                className="transition-all duration-500"
+                style={{ width: `${player2WinChance * 100}%`, ...fill(player2Color) }}
+              />
+            </div>
+            {/* Two similar player colours can hide the split, so a white pill marks it.
+                The shadow keeps the pill visible when a player colour is near white. */}
+            {player1WinChance > 0 && player2WinChance > 0 && (
+              <div
+                className="pointer-events-none absolute -top-1 -bottom-1 w-1.5 -translate-x-1/2 rounded-full bg-white shadow-[0_0_0_1px_rgba(0,0,0,0.25)] transition-all duration-500"
+                style={{ left: `${player1WinChance * 100}%` }}
+              />
+            )}
           </div>
           <div className="mt-1 text-center text-xs text-gray-500">{fmtNum(confidence * 100)}% confidence</div>
         </>
