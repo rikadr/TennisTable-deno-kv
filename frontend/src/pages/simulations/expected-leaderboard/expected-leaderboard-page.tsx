@@ -69,7 +69,7 @@ const PlayerRow: React.FC<{
 };
 
 export const SimulatedLeaderboard: React.FC = () => {
-  const { result, progress } = useExpectedLeaderboardWorker();
+  const { result } = useExpectedLeaderboardWorker();
 
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [lines, setLines] = useState<Line[]>([]);
@@ -120,14 +120,7 @@ export const SimulatedLeaderboard: React.FC = () => {
     return (
       <div className="max-w-md mx-auto mt-12 p-6 bg-primary-background rounded-lg text-center">
         <h1 className="text-xl md:text-2xl text-primary-text">Expected leaderboard</h1>
-        <p className="text-primary-text/60 text-sm mt-2 mb-6">Simulating 5 000 leaderboards…</p>
-        <div className="h-2.5 w-full rounded-full bg-primary-text/10 overflow-hidden">
-          <div
-            className="h-full rounded-full bg-secondary-background transition-all duration-150"
-            style={{ width: `${Math.round(progress * 100)}%` }}
-          />
-        </div>
-        <p className="text-primary-text/60 text-xs mt-2">{Math.round(progress * 100)} %</p>
+        <p className="text-primary-text/60 text-sm mt-2">Calculating the expected leaderboard…</p>
       </div>
     );
   }
@@ -136,7 +129,9 @@ export const SimulatedLeaderboard: React.FC = () => {
     return (
       <div className="max-w-md mx-auto mt-12 p-6 bg-primary-background rounded-lg text-center">
         <h1 className="text-xl md:text-2xl text-primary-text">Expected leaderboard</h1>
-        <p className="text-primary-text/60 text-sm mt-2">Not enough ranked players to simulate a leaderboard.</p>
+        <p className="text-primary-text/60 text-sm mt-2">
+          Not enough ranked players to calculate an expected leaderboard.
+        </p>
       </div>
     );
   }
@@ -152,8 +147,8 @@ export const SimulatedLeaderboard: React.FC = () => {
     <div className="max-w-5xl mx-auto bg-primary-background rounded-lg p-2 md:p-4">
       <h1 className="text-xl md:text-2xl text-center text-primary-text pt-2">Expected leaderboard</h1>
       <p className="text-center text-primary-text/60 text-xs md:text-sm mt-1 mb-4 max-w-xl mx-auto">
-        The average of 5 000 simulated leaderboards where every ranked player plays every other player. The difference
-        from today shows the effect of the schedule.
+        The scores if every ranked player played every other ranked player the same number of times. The difference from
+        today shows the effect of the schedule.
       </p>
 
       <div

@@ -8,13 +8,13 @@ type Props = {
 };
 
 /**
- * Compact overview widget for unranked players: simulates their expected score
- * by letting every ranked player plus this player play each other, like the
- * expected leaderboard. The first click arms an insufficient-data warning; the
- * second click on the same button runs the simulation.
+ * Compact overview widget for unranked players: calculates their expected score
+ * with every ranked player plus this player, like the expected leaderboard. The
+ * first click arms an insufficient-data warning; the second click on the same
+ * button runs the calculation.
  */
 export const UnrankedExpectedScore: React.FC<Props> = ({ playerId }) => {
-  const { start, result, progress, running } = useUnrankedExpectedScoreWorker(playerId);
+  const { start, result, running } = useUnrankedExpectedScoreWorker(playerId);
   const [armed, setArmed] = useState(false);
 
   const playerEntry = result?.expected.find((p) => p.id === playerId);
@@ -34,22 +34,12 @@ export const UnrankedExpectedScore: React.FC<Props> = ({ playerId }) => {
             onClick={() => (armed ? start() : setArmed(true))}
             className="rounded-md bg-tertiary-background px-3 py-1.5 text-xs font-medium text-tertiary-text hover:bg-tertiary-background/70 transition-colors"
           >
-            {armed ? "Simulate anyway" : "Simulate"}
+            {armed ? "Calculate anyway" : "Calculate"}
           </button>
         </>
       )}
 
-      {running && (
-        <div className="flex-1 min-w-32 flex items-center gap-2">
-          <div className="h-2 flex-1 rounded-full bg-primary-text/10 overflow-hidden">
-            <div
-              className="h-full rounded-full bg-secondary-background transition-all duration-150"
-              style={{ width: `${Math.round(progress * 100)}%` }}
-            />
-          </div>
-          <span className="text-xs text-primary-text/60 whitespace-nowrap">{Math.round(progress * 100)} %</span>
-        </div>
-      )}
+      {running && <span className="text-xs text-primary-text/60">Calculating…</span>}
 
       {result &&
         !running &&
@@ -70,7 +60,7 @@ export const UnrankedExpectedScore: React.FC<Props> = ({ playerId }) => {
           </>
         ) : (
           <span className="text-xs text-primary-text/80">
-            Not enough game data to simulate an expected score for this player.
+            Not enough game data to calculate an expected score for this player.
           </span>
         ))}
     </div>

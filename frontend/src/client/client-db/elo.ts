@@ -12,14 +12,9 @@ export abstract class Elo {
     games: Game[],
     players: Player[],
     onGameResult?: (map: Map<string, PlayerWithElo>, game: Game, pointsWon: number) => void,
-    /** Start score per player id. A player not in the map starts at `INITIAL_ELO`. */
-    startScores?: Map<string, { elo: number }>,
   ): Map<string, PlayerWithElo> {
     const playerMap = new Map<string, PlayerWithElo>(
-      players.map((player) => [
-        player.id,
-        { ...player, elo: startScores?.get(player.id)?.elo ?? this.INITIAL_ELO, totalGames: 0 },
-      ]),
+      players.map((player) => [player.id, { ...player, elo: this.INITIAL_ELO, totalGames: 0 }]),
     );
 
     games.forEach((game) => {
