@@ -204,6 +204,30 @@ describe("Tournament win chances", () => {
     expect(total).toBeCloseTo(1, 10);
   });
 
+  it("gives the same simulation for the same seed", () => {
+    const tennisTable = new TennisTable({ events: tournamentEvents(players, { doubleElimination: true }) });
+    const tournament = tennisTable.tournaments.getTournament(TOURNAMENT_ID)!;
+    const winners = (seed: number) =>
+      Array.from({ length: 20 }, (_, i) => tournament.predictWinner(tennisTable, START_DATE + 1, seed + i).winner);
+
+    expect(winners(1)).toEqual(winners(1));
+    expect(winners(1)).not.toEqual(winners(1_000));
+  });
+
+  it("gives each bracket game one random number, also a played game", () => {
+    const tennisTable = new TennisTable({ events: [...tournamentEvents(players), gameEvent("P4", "P1")] });
+    const bracket = tennisTable.tournaments.getTournament(TOURNAMENT_ID)!.bracket!;
+    let draws = 0;
+    const random = () => {
+      draws++;
+      return 0.5;
+    };
+    bracket.simulateWinnerFromExisting(() => ({ winner: "P4", loser: "P2", confidence: 1 }), 0, random);
+
+    // 2 semi finals and 1 final
+    expect(draws).toBe(3);
+  });
+
   it("simulates a double elimination bracket once", () => {
     const { chances, method } = predict(tournamentEvents(players, { doubleElimination: true }));
 

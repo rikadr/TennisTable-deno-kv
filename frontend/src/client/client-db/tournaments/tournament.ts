@@ -4,6 +4,7 @@ import { SignUp, SkippedGame, TournamentConfig } from "../event-store/projectors
 import { TennisTable } from "../tennis-table";
 import { TournamentBracket } from "./bracket";
 import { TournamentGroupPlay } from "./group-play";
+import { seededRandom } from "./seeded-random";
 import { StageColumn, StageCounts, TournamentStages } from "./stage-prediction";
 
 export type TournamentBracketSection = "winners" | "losers" | "grandFinal" | "bracketReset";
@@ -370,18 +371,26 @@ export class Tournament {
     return times;
   }
 
+  /**
+   * Simulates the rest of the tournament once. With a seed, the group play and the bracket each get
+   * their own seeded random numbers. The same seed at two times then gives the same number to the
+   * same game, so the difference between the two predictions comes from the played games.
+   */
   predictWinner(
     state: TennisTable,
     time: number,
+    seed?: number,
   ): { winner: string; gamesSimulatedCount: number; totalConfidenceSum: number } {
     const simulateGameFn = this.simulateGameFn(state);
+    const { groupRandom, bracketRandom } = Tournament.#randoms(seed);
     if (this.groupPlay && this.groupPlay.groupPlayEnded === undefined) {
-      const groupPlayResult = this.groupPlay.simulatePlayerOrder(simulateGameFn, time);
+      const groupPlayResult = this.groupPlay.simulatePlayerOrder(simulateGameFn, time, groupRandom);
       const bracketResult = TournamentBracket.simulateWinnerFromStatic(
         simulateGameFn,
         time,
         groupPlayResult.playerOrder,
         this.tournamentConfig.doubleElimination,
+        bracketRandom,
       );
       return {
         winner: bracketResult.winner,
@@ -390,7 +399,7 @@ export class Tournament {
       };
     }
     if (this.bracket && this.bracket.bracketEnded === undefined) {
-      return this.bracket.simulateWinnerFromExisting(simulateGameFn, time);
+      return this.bracket.simulateWinnerFromExisting(simulateGameFn, time, bracketRandom);
     }
 
     if (this.winner) {
@@ -440,14 +449,18 @@ export class Tournament {
    * single elimination bracket is calculated exactly. Group play and double elimination are
    * simulated once, so the caller averages the chances of many calls.
    */
-  predictWinChances(state: TennisTable, time: number): WinChances {
+  predictWinChances(state: TennisTable, time: number, seed?: number): WinChances {
     const groupPlayPending = this.groupPlay !== undefined && this.groupPlay.groupPlayEnded === undefined;
     const bracketPending = this.bracket !== undefined && this.bracket.bracketEnded === undefined;
 
     if (this.tournamentConfig.doubleElimination === false) {
       const predictGameFn = this.predictGameFn(state);
       if (groupPlayPending) {
-        const groupPlay = this.groupPlay!.simulatePlayerOrder(this.simulateGameFn(state), time);
+        const groupPlay = this.groupPlay!.simulatePlayerOrder(
+          this.simulateGameFn(state),
+          time,
+          Tournament.#randoms(seed).groupRandom,
+        );
         const bracket = TournamentBracket.winChancesFromStatic(predictGameFn, groupPlay.playerOrder);
         return {
           chances: bracket.chances,
@@ -459,7 +472,7 @@ export class Tournament {
       if (bracketPending) return { ...this.bracket!.winChancesFromExisting(predictGameFn), method: "exact" };
     }
 
-    const { winner, gamesSimulatedCount, totalConfidenceSum } = this.predictWinner(state, time);
+    const { winner, gamesSimulatedCount, totalConfidenceSum } = this.predictWinner(state, time, seed);
     return {
       chances: new Map([[winner, 1]]),
       method: groupPlayPending || bracketPending ? "simulation" : "exact",
@@ -541,12 +554,17 @@ export class Tournament {
     };
   }
 
+  static #randoms(seed: number | undefined) {
+    if (seed === undefined) return { groupRandom: Math.random, bracketRandom: Math.random };
+    return { groupRandom: seededRandom(seed, 1), bracketRandom: seededRandom(seed, 2) };
+  }
+
   simulateGameFn(state: TennisTable): SimulateGameFn {
     const predictGameFn = this.predictGameFn(state);
-    return function fn(player1: string, player2: string) {
+    return function fn(player1: string, player2: string, random: number) {
       const { player1Wins: chance, confidence } = predictGameFn(player1, player2);
       // Player 1 wins if random number is less than their predicted fraction
-      const player1Wins = Math.random() < chance;
+      const player1Wins = random < chance;
 
       return {
         winner: player1Wins ? player1 : player2,
@@ -557,9 +575,11 @@ export class Tournament {
   }
 }
 
+/** Simulates one game. The random number is from 0 to 1 */
 export type SimulateGameFn = (
   player1: string,
   player2: string,
+  random: number,
 ) => { winner: string; loser: string; confidence: number };
 
 export type PredictionMethod = "exact" | "hybrid" | "simulation";

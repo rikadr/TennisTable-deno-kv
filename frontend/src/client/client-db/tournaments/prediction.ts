@@ -24,6 +24,8 @@ export class TournamentPrediction {
     }
 
     const simulationTimePoints = this.getSimulationTimePoints(tournament).toReversed();
+    // All time points use the same seeds, so a change between two points comes from the played games
+    const seed = Math.floor(Math.random() * 2 ** 31);
 
     callback({
       simulationTimes: simulationTimePoints,
@@ -32,7 +34,7 @@ export class TournamentPrediction {
 
     for (let i = 0; i < simulationTimePoints.length; i++) {
       const timePoint = simulationTimePoints[i];
-      const result = this.predictTournamentAtTime(tournamentId, timePoint, numSimulations, (partial, done) =>
+      const result = this.predictTournamentAtTime(tournamentId, timePoint, seed, numSimulations, (partial, done) =>
         callback({
           data: partial,
           progress: (i + done) / simulationTimePoints.length,
@@ -86,6 +88,7 @@ export class TournamentPrediction {
   private predictTournamentAtTime(
     tournamentId: string,
     simulationTime: number,
+    seed: number,
     numSimulations: number = NUM_SIMULATIONS,
     /** Gets a running tally and the part of this time point that is done */
     onPartialResult?: (result: TournamentPredictionResult, done: number) => void,
@@ -123,6 +126,7 @@ export class TournamentPrediction {
       const { chances, method, gamesCount, confidenceSum } = tournamentAtTime.predictWinChances(
         stateAtTime,
         simulationTime,
+        seed + i,
       );
       if (i === 0) {
         resultMethod = method;

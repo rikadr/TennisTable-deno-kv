@@ -652,8 +652,12 @@ export class TournamentBracket {
     return this.#calculateLayerGames([games])[0];
   }
 
-  simulateWinnerFromExisting(simulateGameFn: SimulateGameFn, time: number): SimulationResult {
-    return TournamentBracket.#simulateBracket(this.#copyStructures(), simulateGameFn, time);
+  simulateWinnerFromExisting(
+    simulateGameFn: SimulateGameFn,
+    time: number,
+    random: () => number = Math.random,
+  ): SimulationResult {
+    return TournamentBracket.#simulateBracket(this.#copyStructures(), simulateGameFn, time, random);
   }
 
   static simulateWinnerFromStatic(
@@ -661,18 +665,20 @@ export class TournamentBracket {
     time: number,
     playerOrder: string[],
     doubleElimination = false,
+    random: () => number = Math.random,
   ): SimulationResult {
     return TournamentBracket.#simulateBracket(
       TournamentBracket.#startingStructures(playerOrder, doubleElimination),
       simulateGameFn,
       time,
+      random,
     );
   }
 
   /** Simulates the rest of this bracket and returns the stage each player reached */
   simulateStagesFromExisting(simulateGameFn: SimulateGameFn, time: number): TournamentStages {
     const structures = this.#copyStructures();
-    TournamentBracket.#simulateBracket(structures, simulateGameFn, time);
+    TournamentBracket.#simulateBracket(structures, simulateGameFn, time, Math.random);
     return TournamentBracket.#stagesIn(structures);
   }
 
@@ -684,7 +690,7 @@ export class TournamentBracket {
     doubleElimination = false,
   ): TournamentStages {
     const structures = TournamentBracket.#startingStructures(playerOrder, doubleElimination);
-    TournamentBracket.#simulateBracket(structures, simulateGameFn, time);
+    TournamentBracket.#simulateBracket(structures, simulateGameFn, time, Math.random);
     return TournamentBracket.#stagesIn(structures);
   }
 
@@ -937,11 +943,15 @@ export class TournamentBracket {
    * Core simulation logic that works on any bracket structure.
    * Simulates all pending games starting from the earliest rounds: the whole winners bracket,
    * then the losers bracket, then the grand final (and bracket reset if needed).
+   *
+   * Each game gets one random number, also a played game. So with the same random numbers, the
+   * same game gets the same number when other games are played.
    */
   static #simulateBracket(
     structures: SimulationStructures,
     simulateGameFn: SimulateGameFn,
     time: number,
+    random: () => number,
   ): SimulationResult {
     const { winners, losers, grandFinal, bracketReset, doubleElimination } = structures;
     let gamesSimulatedCount = 0;
@@ -949,8 +959,9 @@ export class TournamentBracket {
 
     // Simulates a game if it is pending. Returns true if the game was simulated now
     const simulateGame = (game: Partial<TournamentGame>): boolean => {
+      const randomNumber = random();
       if (game.winner || !game.player1 || !game.player2) return false;
-      const result = simulateGameFn(game.player1, game.player2);
+      const result = simulateGameFn(game.player1, game.player2, randomNumber);
       game.winner = result.winner;
       game.completedAt = time;
       gamesSimulatedCount++;

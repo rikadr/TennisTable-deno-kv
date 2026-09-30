@@ -317,6 +317,8 @@ export class TournamentGroupPlay {
   simulatePlayerOrder(
     simulateGameFn: SimulateGameFn,
     time: number,
+    /** Gives one number for each group game, also for a played game, so the same game gets the same number */
+    random: () => number = Math.random,
   ): {
     playerOrder: string[];
     standings: string[];
@@ -335,9 +337,10 @@ export class TournamentGroupPlay {
     let totalConfidenceSum = 0;
 
     for (const game of games) {
+      const randomNumber = random();
       let winner = game.winner;
       if (winner === undefined) {
-        const result = simulateGameFn(players[game.player1], players[game.player2]);
+        const result = simulateGameFn(players[game.player1], players[game.player2], randomNumber);
         winner = result.winner === players[game.player1] ? game.player1 : game.player2;
         gamesSimulatedCount++;
         totalConfidenceSum += result.confidence;
