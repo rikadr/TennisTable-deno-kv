@@ -830,20 +830,51 @@ export class TournamentBracket {
     return TournamentBracket.#stagesIn(this.#structures);
   }
 
+  /**
+   * The shape of a starting bracket depends only on the number of players. A template for each
+   * size holds the seed index of each player, so a simulation builds the shape only once.
+   */
+  static readonly #startingTemplates = new Map<string, { structures: SimulationStructures; seeds: string[] }>();
+
   static #startingStructures(playerOrder: string[], doubleElimination: boolean): SimulationStructures {
-    if (doubleElimination) {
-      return { ...TournamentBracket.getStartingDoubleElimination(playerOrder), doubleElimination: true };
+    const key = `${playerOrder.length}|${doubleElimination}`;
+    let template = TournamentBracket.#startingTemplates.get(key);
+    if (!template) {
+      // The seed indexes are unique strings, so they build the same shape as the real players
+      const seeds = playerOrder.map((_, index) => `${index}`);
+      const structures: SimulationStructures = doubleElimination
+        ? { ...TournamentBracket.getStartingDoubleElimination(seeds), doubleElimination: true }
+        : { winners: TournamentBracket.getStartingBracket(seeds), doubleElimination: false };
+      template = { structures, seeds };
+      TournamentBracket.#startingTemplates.set(key, template);
     }
-    return { winners: TournamentBracket.getStartingBracket(playerOrder), doubleElimination: false };
+    const playerOf = new Map(template.seeds.map((seed, index) => [seed, playerOrder[index]]));
+    return TournamentBracket.#copyStructuresOf(template.structures, (seed) => playerOf.get(seed)!);
   }
 
   #copyStructures(): SimulationStructures {
+    return TournamentBracket.#copyStructuresOf(this.#structures, (player) => player);
+  }
+
+  /** A simulation changes only the players and the winner of a game, so a shallow copy of each game is enough */
+  static #copyStructuresOf(
+    structures: SimulationStructures,
+    playerOf: (player: string) => string,
+  ): SimulationStructures {
+    const copyGame = (game: Partial<TournamentGame>): Partial<TournamentGame> => {
+      const copy = { ...game };
+      if (copy.player1 !== undefined) copy.player1 = playerOf(copy.player1);
+      if (copy.player2 !== undefined) copy.player2 = playerOf(copy.player2);
+      if (copy.winner !== undefined) copy.winner = playerOf(copy.winner);
+      return copy;
+    };
+    const copyBracket = (bracket: Bracket) => bracket.map((layer) => layer.map(copyGame));
     return {
-      winners: this.#deepCopyBracket(this.bracket),
-      losers: this.losersBracket ? this.#deepCopyBracket(this.losersBracket) : undefined,
-      grandFinal: this.grandFinal ? TournamentBracket.#deepCopyGame(this.grandFinal) : undefined,
-      bracketReset: this.bracketReset ? TournamentBracket.#deepCopyGame(this.bracketReset) : undefined,
-      doubleElimination: this.doubleElimination,
+      winners: copyBracket(structures.winners),
+      losers: structures.losers ? copyBracket(structures.losers) : undefined,
+      grandFinal: structures.grandFinal ? copyGame(structures.grandFinal) : undefined,
+      bracketReset: structures.bracketReset ? copyGame(structures.bracketReset) : undefined,
+      doubleElimination: structures.doubleElimination,
     };
   }
 
@@ -966,21 +997,6 @@ export class TournamentBracket {
       throw new Error("Simulation failed to produce a bracket reset winner");
     }
     return { winner: bracketReset.winner, gamesSimulatedCount, totalConfidenceSum };
-  }
-
-  /**
-   * Deep copy a bracket to avoid mutating the original
-   */
-  #deepCopyBracket(bracket: Bracket): Bracket {
-    return bracket.map((layer) => layer.map((game) => TournamentBracket.#deepCopyGame(game)));
-  }
-
-  static #deepCopyGame(game: Partial<TournamentGame>): Partial<TournamentGame> {
-    return {
-      ...game,
-      advanceTo: game.advanceTo ? { ...game.advanceTo } : undefined,
-      loserAdvanceTo: game.loserAdvanceTo ? { ...game.loserAdvanceTo } : undefined,
-    };
   }
 }
 

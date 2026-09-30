@@ -422,6 +422,25 @@ describe("simulatePlayerOrder", () => {
     expect(result.gamesSimulatedCount).toBe(2);
   });
 
+  it("gives the same standings as the real group play when it has the same results", () => {
+    // 7 players: groups of 4 and 3, so the group size adjustment is part of the scores
+    const players = ["P1", "P2", "P3", "P4", "P5", "P6", "P7"];
+    const playedGames = [gameEvent("P4", "P1"), gameEvent("P3", "P2")];
+    const groupPlay = getGroupPlay([...baseEvents(players), ...playedGames]);
+
+    const simulatedGames: EventType[] = [];
+    const player2AlwaysWins = (player1: string, player2: string) => {
+      simulatedGames.push(gameEvent(player2, player1));
+      return { winner: player2, loser: player1, confidence: 1 };
+    };
+    const result = groupPlay.simulatePlayerOrder(player2AlwaysWins, 500_000);
+    const realGroupPlay = getGroupPlay([...baseEvents(players), ...playedGames, ...simulatedGames]);
+
+    expect(realGroupPlay.groupPlayEnded).toBeDefined();
+    expect(result.standings).toEqual(realGroupPlay.getStandings());
+    expect(result.playerOrder).toEqual(realGroupPlay.getBracketPlayerOrder());
+  });
+
   it("does not mutate the real group state", () => {
     const groupPlay = getGroupPlay(baseEvents(["P1", "P2", "P3"]));
     groupPlay.simulatePlayerOrder(player1AlwaysWins, 500_000);
