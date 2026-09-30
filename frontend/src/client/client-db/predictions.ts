@@ -191,13 +191,31 @@ export class Predictions {
    * Combined direct fraction (game+set+point levels merged) for p1 vs p2.
    * Equivalent to FutureElo.getDirectFraction but with zero game iteration.
    */
-  getDirectFraction(p1: string, p2: string): Fraction {
-    // The lookups are not exactly symmetric. Calculate each pair in one order, so the reverse is the complement.
-    if (p1 > p2) {
-      const reverse = this.getDirectFraction(p2, p1);
-      return reverse.confidence === 0 ? reverse : { fraction: 1 - reverse.fraction, confidence: reverse.confidence };
-    }
+  /** cache[p1][p2]. The two-layer prediction uses each direct fraction many times */
+  #directCache = new Map<string, Map<string, Fraction>>();
 
+  getDirectFraction(p1: string, p2: string): Fraction {
+    let opponents = this.#directCache.get(p1);
+    if (!opponents) {
+      opponents = new Map();
+      this.#directCache.set(p1, opponents);
+    }
+    let fraction = opponents.get(p2);
+    if (!fraction) {
+      // The lookups are not exactly symmetric. Calculate each pair in one order, so the reverse is the complement.
+      if (p1 > p2) {
+        const reverse = this.getDirectFraction(p2, p1);
+        fraction =
+          reverse.confidence === 0 ? reverse : { fraction: 1 - reverse.fraction, confidence: reverse.confidence };
+      } else {
+        fraction = this.#calculateDirectFraction(p1, p2);
+      }
+      opponents.set(p2, fraction);
+    }
+    return fraction;
+  }
+
+  #calculateDirectFraction(p1: string, p2: string): Fraction {
     const p1Stats = this.getStats(p1, p2);
     const p2Stats = this.getStats(p2, p1);
 
@@ -431,12 +449,16 @@ export class Predictions {
   // Combined prediction (all three layers)
   // ---------------------------------------------------------------------------
 
-  /** Null marks a pair with no prediction */
-  #predictedCache = new Map<string, Fraction | null>();
+  /** cache[p1][p2]. Null marks a pair with no prediction. Nested maps need no key string for each lookup */
+  #predictedCache = new Map<string, Map<string, Fraction | null>>();
 
   getPredictedFraction(p1: string, p2: string): Fraction | undefined {
-    const key = `${p1}|${p2}`;
-    const cached = this.#predictedCache.get(key);
+    let opponents = this.#predictedCache.get(p1);
+    if (!opponents) {
+      opponents = new Map();
+      this.#predictedCache.set(p1, opponents);
+    }
+    const cached = opponents.get(p2);
     if (cached !== undefined) return cached ?? undefined;
 
     const direct = this.getDirectFraction(p1, p2);
@@ -445,7 +467,7 @@ export class Predictions {
 
     const combined = Predictions.combinePrioritizedFractions([direct, oneLayer, twoLayer]);
     const result = combined.confidence === 0 ? undefined : combined;
-    this.#predictedCache.set(key, result ?? null);
+    opponents.set(p2, result ?? null);
     return result;
   }
 
@@ -482,6 +504,7 @@ export class Predictions {
   clearCache() {
     this.#pairwiseStats = undefined;
     this.#adjacencyMap = undefined;
+    this.#directCache.clear();
     this.#oneLayerCache.clear();
     this.#twoLayerCache.clear();
     this.#predictedCache.clear();
