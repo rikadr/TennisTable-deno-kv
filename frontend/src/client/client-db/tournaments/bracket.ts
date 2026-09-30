@@ -6,7 +6,7 @@ import {
   TournamentGame,
   TournamentGameTarget,
 } from "./tournament";
-import { TournamentStages } from "./stage-prediction";
+import { StageCounts, TournamentStage, TournamentStages } from "./stage-prediction";
 
 type Bracket = Partial<TournamentGame>[][];
 
@@ -25,6 +25,15 @@ export type DoubleEliminationStructures = {
 
 export type BracketWinChances = {
   chances: Map<string, number>;
+  /** The number of games that are still to play, and the expected sum of their confidence */
+  gamesCount: number;
+  confidenceSum: number;
+};
+
+export type BracketStageChances = {
+  /** The chance of each stage for each player in the bracket */
+  players: Map<string, StageCounts>;
+  winnersLayerCount: number;
   /** The number of games that are still to play, and the expected sum of their confidence */
   gamesCount: number;
   confidenceSum: number;
@@ -690,12 +699,70 @@ export class TournamentBracket {
     return TournamentBracket.#winChances(TournamentBracket.getStartingBracket(playerOrder), predictGameFn);
   }
 
+  /** The exact chance of each stage for each player in the rest of this single elimination bracket */
+  stageChancesFromExisting(predictGameFn: PredictGameFn): BracketStageChances {
+    if (this.doubleElimination) throw new Error("Stage chances are only exact for single elimination");
+    return TournamentBracket.#stageChances(this.bracket, predictGameFn);
+  }
+
+  /** The exact chance of each stage for each player in a new single elimination bracket from this player order */
+  static stageChancesFromStatic(predictGameFn: PredictGameFn, playerOrder: string[]): BracketStageChances {
+    return TournamentBracket.#stageChances(TournamentBracket.getStartingBracket(playerOrder), predictGameFn);
+  }
+
+  static #winChances(bracket: Bracket, predictGameFn: PredictGameFn): BracketWinChances {
+    const { winners, gamesCount, confidenceSum } = TournamentBracket.#gameChances(bracket, predictGameFn);
+    const final = bracket[0]?.[0];
+    const chances = new Map(final ? winners.get(final) : undefined);
+    chances.forEach((chance, player) => {
+      if (chance === 0) chances.delete(player);
+    });
+    return { chances, gamesCount, confidenceSum };
+  }
+
   /**
-   * The chance of each player to win each game, from the first rounds to the final. The two slots
-   * of a game come from separate parts of the bracket, so their chances are independent. This
+   * A player who plays a game and loses it leaves the tournament at the stage of that game. The
+   * chance to lose a game is the chance to play it minus the chance to win it.
+   */
+  static #stageChances(bracket: Bracket, predictGameFn: PredictGameFn): BracketStageChances {
+    const { winners, slots, gamesCount, confidenceSum } = TournamentBracket.#gameChances(bracket, predictGameFn);
+    const players = new Map<string, StageCounts>();
+    const add = (player: string, stage: TournamentStage, chance: number) => {
+      if (chance <= 0) return;
+      const counts = players.get(player) ?? {};
+      counts[stage] = (counts[stage] ?? 0) + chance;
+      players.set(player, counts);
+    };
+
+    bracket.forEach((layer, layerIndex) =>
+      layer.forEach((game) => {
+        const [player1Chances, player2Chances] = slots.get(game)!;
+        // A walkover is not a game, so no player leaves the tournament here
+        if (player1Chances.size === 0 || player2Chances.size === 0) return;
+        const winnerChances = winners.get(game)!;
+        for (const slotChances of [player1Chances, player2Chances]) {
+          slotChances.forEach((playChance, player) => {
+            const winChance = winnerChances.get(player) ?? 0;
+            if (layerIndex === 0) {
+              add(player, "final", playChance - winChance);
+              add(player, "winner", winChance);
+            } else {
+              add(player, `bracket:${layerIndex}`, playChance - winChance);
+            }
+          });
+        }
+      }),
+    );
+    return { players, winnersLayerCount: bracket.length, gamesCount, confidenceSum };
+  }
+
+  /**
+   * The chance of each player to play in each slot of each game, and to win each game. The two
+   * slots of a game come from separate parts of the bracket, so their chances are independent. This
    * gives the same chances as an infinite number of simulations with the same game predictions.
    */
-  static #winChances(bracket: Bracket, predictGameFn: PredictGameFn): BracketWinChances {
+  static #gameChances(bracket: Bracket, predictGameFn: PredictGameFn) {
+    type Chances = Map<string, number>;
     const feeders = new Map<
       Partial<TournamentGame>,
       { player1?: Partial<TournamentGame>; player2?: Partial<TournamentGame> }
@@ -709,13 +776,16 @@ export class TournamentBracket {
       }),
     );
 
+    const winners = new Map<Partial<TournamentGame>, Chances>();
+    const slots = new Map<Partial<TournamentGame>, [Chances, Chances]>();
     let gamesCount = 0;
     let confidenceSum = 0;
-    const winnerChances = (game: Partial<TournamentGame>): Map<string, number> => {
-      if (game.winner) return new Map([[game.winner, 1]]);
+    const winnerChances = (game: Partial<TournamentGame>): Chances => {
+      const known = winners.get(game);
+      if (known) return known;
 
       // A slot with a player is fixed. An empty slot gets the winner of the game that feeds it
-      const slotChances = (role: "player1" | "player2"): Map<string, number> => {
+      const slotChances = (role: "player1" | "player2"): Chances => {
         const player = game[role];
         if (player !== undefined) return new Map([[player, 1]]);
         const feeder = feeders.get(game)?.[role];
@@ -723,31 +793,36 @@ export class TournamentBracket {
       };
       const player1Chances = slotChances("player1");
       const player2Chances = slotChances("player2");
-      // A slot that no player can reach gives the other player a walkover
-      if (player1Chances.size === 0) return player2Chances;
-      if (player2Chances.size === 0) return player1Chances;
+      slots.set(game, [player1Chances, player2Chances]);
 
-      gamesCount++;
-      const chances = new Map<string, number>();
-      const add = (player: string, chance: number) => chances.set(player, (chances.get(player) ?? 0) + chance);
-      player1Chances.forEach((player1Chance, player1) =>
-        player2Chances.forEach((player2Chance, player2) => {
-          const meetChance = player1Chance * player2Chance;
-          const { player1Wins, confidence } = predictGameFn(player1, player2);
-          add(player1, meetChance * player1Wins);
-          add(player2, meetChance * (1 - player1Wins));
-          confidenceSum += meetChance * confidence;
-        }),
-      );
+      let chances: Chances;
+      if (game.winner) {
+        chances = new Map([[game.winner, 1]]);
+      } else if (player1Chances.size === 0) {
+        // A slot that no player can reach gives the other player a walkover
+        chances = player2Chances;
+      } else if (player2Chances.size === 0) {
+        chances = player1Chances;
+      } else {
+        gamesCount++;
+        chances = new Map();
+        const add = (player: string, chance: number) => chances.set(player, (chances.get(player) ?? 0) + chance);
+        player1Chances.forEach((player1Chance, player1) =>
+          player2Chances.forEach((player2Chance, player2) => {
+            const meetChance = player1Chance * player2Chance;
+            const { player1Wins, confidence } = predictGameFn(player1, player2);
+            add(player1, meetChance * player1Wins);
+            add(player2, meetChance * (1 - player1Wins));
+            confidenceSum += meetChance * confidence;
+          }),
+        );
+      }
+      winners.set(game, chances);
       return chances;
     };
 
-    const final = bracket[0]?.[0];
-    const chances = final ? winnerChances(final) : new Map<string, number>();
-    chances.forEach((chance, player) => {
-      if (chance === 0) chances.delete(player);
-    });
-    return { chances, gamesCount, confidenceSum };
+    bracket.forEach((layer) => layer.forEach((game) => winnerChances(game)));
+    return { winners, slots, gamesCount, confidenceSum };
   }
 
   /** The stages the played games already decide. A player who is still in play has no knocked out stage */

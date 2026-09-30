@@ -1,4 +1,5 @@
 import { TennisTable } from "../tennis-table";
+import { PredictionMethod } from "./tournament";
 
 /**
  * The stage where a player leaves a tournament, or a double elimination first chance bracket.
@@ -23,8 +24,14 @@ export type StageCounts = Partial<Record<TournamentStage, number>>;
 export type StageColumn = "knockedOut" | "firstChance";
 
 export type TournamentStagePredictionResult = {
-  /** How many simulations these counts are based on. Less than the requested number while still running */
+  /**
+   * How many simulations these counts are based on. Less than the planned number while still
+   * running. The counts are expected counts, so with an exact result they are chances.
+   */
   simulations: number;
+  /** 1 for an exact result, else the requested number */
+  plannedSimulations: number;
+  method: PredictionMethod;
   doubleElimination: boolean;
   winnersLayerCount: number;
   losersLayerCount: number;
@@ -43,7 +50,7 @@ export class TournamentStagePrediction {
     this.parent = parent;
   }
 
-  /** Simulates the rest of the tournament from its current state and counts the stage each player reaches */
+  /** Predicts the rest of the tournament from its current state and adds up the chance of each stage for each player */
   predictStages(
     tournamentId: string,
     numSimulations: number = NUM_STAGE_SIMULATIONS,
@@ -57,6 +64,8 @@ export class TournamentStagePrediction {
     const decidedStages = tournament.getDecidedStages();
     const result: TournamentStagePredictionResult = {
       simulations: 0,
+      plannedSimulations: numSimulations,
+      method: "simulation",
       doubleElimination: tournament.tournamentConfig.doubleElimination,
       winnersLayerCount: decidedStages.winnersLayerCount,
       losersLayerCount: decidedStages.losersLayerCount,
@@ -65,21 +74,27 @@ export class TournamentStagePrediction {
     };
 
     const time = Date.now();
-    for (let i = 0; i < numSimulations; i++) {
-      const stages = tournament.simulateStages(this.parent, time);
+    for (let i = 0; i < result.plannedSimulations; i++) {
+      const stages = tournament.predictStageChances(this.parent, time);
+      if (i === 0) {
+        result.method = stages.method;
+        // A hybrid result keeps all the samples. The group play places come only from the simulation,
+        // so fewer samples make them less accurate.
+        if (stages.method === "exact") result.plannedSimulations = 1;
+      }
       result.winnersLayerCount = stages.winnersLayerCount;
       result.losersLayerCount = stages.losersLayerCount;
-      stages.players.forEach((playerStages, player) => {
+      stages.players.forEach((chances, player) => {
         const counts = (result.players[player] ??= { knockedOut: {}, firstChance: {} });
-        if (playerStages.knockedOut) increment(counts.knockedOut, playerStages.knockedOut);
-        if (playerStages.firstChance) increment(counts.firstChance, playerStages.firstChance);
+        add(counts.knockedOut, chances.knockedOut);
+        add(counts.firstChance, chances.firstChance);
       });
       result.simulations = i + 1;
 
       if (
         onPartialResult &&
         result.simulations % PARTIAL_RESULT_INTERVAL === 0 &&
-        result.simulations < numSimulations
+        result.simulations < result.plannedSimulations
       ) {
         onPartialResult(copyResult(result));
       }
@@ -88,8 +103,8 @@ export class TournamentStagePrediction {
   }
 }
 
-function increment(counts: StageCounts, stage: TournamentStage) {
-  counts[stage] = (counts[stage] ?? 0) + 1;
+function add(counts: StageCounts, chances: StageCounts) {
+  for (const [stage, chance] of stageEntries(chances)) counts[stage] = (counts[stage] ?? 0) + chance;
 }
 
 /** The counts keep changing while the simulation runs, so a partial result gets its own copy */

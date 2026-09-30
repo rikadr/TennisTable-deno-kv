@@ -117,6 +117,67 @@ describe("TournamentBracket win chances", () => {
   });
 });
 
+describe("TournamentBracket stage chances", () => {
+  it("calculates the stage chances of a new bracket", () => {
+    // P1 wins the semi final at 60%, then wins the final at 60% as player1
+    const stageChances = TournamentBracket.stageChancesFromStatic(player1At60, players);
+
+    expect(stageChances.winnersLayerCount).toBe(2);
+    const expected: Record<string, Record<string, number>> = {
+      P1: { winner: 0.36, final: 0.6 - 0.36, "bracket:1": 0.4 },
+      P4: { winner: 0.24, final: 0.4 - 0.24, "bracket:1": 0.6 },
+      P2: { winner: 0.24, final: 0.6 - 0.24, "bracket:1": 0.4 },
+      P3: { winner: 0.16, final: 0.4 - 0.16, "bracket:1": 0.6 },
+    };
+    for (const [player, stages] of Object.entries(expected)) {
+      const counts = stageChances.players.get(player)!;
+      expect(Object.keys(counts).sort()).toEqual(Object.keys(stages).sort());
+      for (const [stage, chance] of Object.entries(stages)) {
+        expect(counts[stage as keyof typeof counts]).toBeCloseTo(chance, 10);
+      }
+    }
+  });
+
+  it("gives the same stage chances as many simulations, with byes", () => {
+    const sixPlayers = ["A", "B", "C", "D", "E", "F"];
+    const strength = new Map(sixPlayers.map((player, index) => [player, 6 - index]));
+    const predictGameFn: PredictGameFn = (player1, player2) => ({
+      player1Wins: strength.get(player1)! / (strength.get(player1)! + strength.get(player2)!),
+      confidence: 1,
+    });
+    let seed = 7;
+    const random = () => {
+      seed = (seed * 16807) % 2147483647;
+      return seed / 2147483647;
+    };
+    const simulateGameFn: SimulateGameFn = (player1, player2) => {
+      const player1Wins = random() < predictGameFn(player1, player2).player1Wins;
+      return { winner: player1Wins ? player1 : player2, loser: player1Wins ? player2 : player1, confidence: 1 };
+    };
+
+    const { players } = TournamentBracket.stageChancesFromStatic(predictGameFn, sixPlayers);
+    const simulations = 200_000;
+    const counts = new Map<string, number>();
+    for (let i = 0; i < simulations; i++) {
+      const stages = TournamentBracket.simulateStagesFromStatic(simulateGameFn, 0, sixPlayers);
+      stages.players.forEach(({ knockedOut }, player) => {
+        const key = `${player}|${knockedOut}`;
+        counts.set(key, (counts.get(key) ?? 0) + 1);
+      });
+    }
+
+    for (const player of sixPlayers) {
+      const chances = players.get(player)!;
+      expect(Object.values(chances).reduce((sum: number, chance) => sum + (chance ?? 0), 0)).toBeCloseTo(1, 10);
+      for (const stage of ["winner", "final", "bracket:1", "bracket:2"] as const) {
+        const simulated = (counts.get(`${player}|${stage}`) ?? 0) / simulations;
+        // 5 standard errors of the simulated fraction
+        expect(Math.abs(simulated - (chances[stage] ?? 0))).toBeLessThan(0.006);
+      }
+    }
+  });
+});
+
 describe("Tournament win chances", () => {
   const predict = (events: EventType[]) => {
     const tennisTable = new TennisTable({ events });

@@ -65,28 +65,30 @@ beforeEach(() => {
 });
 
 describe("Tournament stage prediction", () => {
-  it("gives every single elimination player one knocked out stage per simulation", () => {
+  it("calculates the stage chances of a single elimination bracket exactly", () => {
     const result = predict(baseEvents(["A", "B", "C", "D"], {}));
 
-    expect(result.simulations).toBe(SIMULATIONS);
+    expect(result.method).toBe("exact");
+    expect(result.simulations).toBe(1);
+    expect(result.plannedSimulations).toBe(1);
     expect(Object.keys(result.players).sort()).toEqual(["A", "B", "C", "D"]);
     let winners = 0;
     for (const counts of Object.values(result.players)) {
-      expect(total(counts.knockedOut)).toBe(SIMULATIONS);
+      expect(total(counts.knockedOut)).toBeCloseTo(1, 10);
       expect(total(counts.firstChance)).toBe(0);
       for (const stage of Object.keys(counts.knockedOut)) {
         expect(["winner", "final", "bracket:1"]).toContain(stage);
       }
       winners += counts.knockedOut.winner ?? 0;
     }
-    expect(winners).toBe(SIMULATIONS);
+    expect(winners).toBeCloseTo(1, 10);
   });
 
   it("gives a player who is already knocked out their stage in every simulation", () => {
     // Player order A, B, C, D: the semi finals are A vs D and B vs C
     const result = predict([...baseEvents(["A", "B", "C", "D"], {}), gameEvent("A", "D")]);
 
-    expect(result.players.D.knockedOut).toEqual({ "bracket:1": SIMULATIONS });
+    expect(result.players.D.knockedOut).toEqual({ "bracket:1": 1 });
     expect(result.decided.D).toEqual({ knockedOut: "bracket:1" });
     expect(result.decided.A).toBeUndefined();
     expect(result.players.A.knockedOut["bracket:1"]).toBeUndefined();
@@ -100,9 +102,9 @@ describe("Tournament stage prediction", () => {
       gameEvent("C", "A"),
     ]);
 
-    expect(result.players.C.knockedOut).toEqual({ winner: SIMULATIONS });
-    expect(result.players.A.knockedOut).toEqual({ final: SIMULATIONS });
-    expect(result.players.B.knockedOut).toEqual({ "bracket:1": SIMULATIONS });
+    expect(result.players.C.knockedOut).toEqual({ winner: 1 });
+    expect(result.players.A.knockedOut).toEqual({ final: 1 });
+    expect(result.players.B.knockedOut).toEqual({ "bracket:1": 1 });
     expect(result.decided.C).toEqual({ knockedOut: "winner" });
   });
 
@@ -155,14 +157,17 @@ describe("Tournament stage prediction", () => {
     const players = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"];
     const result = predict(baseEvents(players, { groupPlay: true }));
 
+    // The group play is simulated, and the bracket is calculated exactly
+    expect(result.method).toBe("hybrid");
+    expect(result.simulations).toBe(SIMULATIONS);
     const groupStages = new Map<string, number>();
     for (const counts of Object.values(result.players)) {
-      expect(total(counts.knockedOut)).toBe(SIMULATIONS);
+      expect(total(counts.knockedOut)).toBeCloseTo(result.simulations, 10);
       for (const [stage, count] of Object.entries(counts.knockedOut)) {
         if (stage.startsWith("group:")) groupStages.set(stage, (groupStages.get(stage) ?? 0) + (count ?? 0));
       }
     }
-    expect(Object.fromEntries(groupStages)).toEqual({ "group:9": SIMULATIONS, "group:10": SIMULATIONS });
+    expect(Object.fromEntries(groupStages)).toEqual({ "group:9": result.simulations, "group:10": result.simulations });
   });
 
   it("gives the decided standings place when group play has ended", () => {
@@ -183,7 +188,7 @@ describe("Tournament stage prediction", () => {
     const result = predict([...baseEvents(players, { groupPlay: true }), ...groupGames]);
 
     expect(result.decided.E).toEqual({ knockedOut: "group:5", firstChance: undefined });
-    expect(result.players.E.knockedOut).toEqual({ "group:5": SIMULATIONS });
+    expect(result.players.E.knockedOut).toEqual({ "group:5": 1 });
   });
 
   it("gives a group stage in both columns for double elimination with group play", () => {
@@ -211,6 +216,8 @@ describe("Stage helpers", () => {
   it("lists the stages of a column with the latest stage first", () => {
     const result: TournamentStagePredictionResult = {
       simulations: 10,
+      plannedSimulations: 10,
+      method: "simulation",
       doubleElimination: false,
       winnersLayerCount: 3,
       losersLayerCount: 0,

@@ -4,7 +4,7 @@ import { SignUp, SkippedGame, TournamentConfig } from "../event-store/projectors
 import { TennisTable } from "../tennis-table";
 import { TournamentBracket } from "./bracket";
 import { TournamentGroupPlay } from "./group-play";
-import { TournamentStages } from "./stage-prediction";
+import { StageColumn, StageCounts, TournamentStages } from "./stage-prediction";
 
 export type TournamentBracketSection = "winners" | "losers" | "grandFinal" | "bracketReset";
 
@@ -468,6 +468,69 @@ export class Tournament {
     };
   }
 
+  /**
+   * The chance of each stage for each player. A single elimination bracket is calculated exactly.
+   * Group play and double elimination are simulated once, so the caller averages the chances of many calls.
+   */
+  predictStageChances(state: TennisTable, time: number): StageChances {
+    const groupPlayPending = this.groupPlay !== undefined && this.groupPlay.groupPlayEnded === undefined;
+    const bracketPending = this.bracket !== undefined && this.bracket.bracketEnded === undefined;
+
+    if (this.tournamentConfig.doubleElimination === false) {
+      const predictGameFn = this.predictGameFn(state);
+      if (groupPlayPending) {
+        const groupPlay = this.groupPlay!.simulatePlayerOrder(this.simulateGameFn(state), time);
+        const bracket = TournamentBracket.stageChancesFromStatic(predictGameFn, groupPlay.playerOrder);
+        const groupStages = this.#addGroupStages(
+          { players: new Map(), winnersLayerCount: 0, losersLayerCount: 0 },
+          groupPlay.standings,
+          groupPlay.playerOrder.length,
+        );
+        return {
+          ...Tournament.#withGroupStages(bracket.players, groupStages),
+          winnersLayerCount: bracket.winnersLayerCount,
+          losersLayerCount: 0,
+          method: "hybrid",
+        };
+      }
+      if (this.bracket) {
+        const bracket = this.bracket.stageChancesFromExisting(predictGameFn);
+        const groupStages = this.#addDecidedGroupStages({
+          players: new Map(),
+          winnersLayerCount: 0,
+          losersLayerCount: 0,
+        });
+        return {
+          ...Tournament.#withGroupStages(bracket.players, groupStages),
+          winnersLayerCount: bracket.winnersLayerCount,
+          losersLayerCount: 0,
+          method: "exact",
+        };
+      }
+    }
+
+    const stages = this.simulateStages(state, time);
+    return {
+      ...Tournament.#withGroupStages(new Map(), stages),
+      winnersLayerCount: stages.winnersLayerCount,
+      losersLayerCount: stages.losersLayerCount,
+      method: groupPlayPending || bracketPending ? "simulation" : "exact",
+    };
+  }
+
+  /** Adds the stages that are certain, with a chance of 1, to the knocked out chances of the bracket */
+  static #withGroupStages(knockedOut: Map<string, StageCounts>, stages: TournamentStages) {
+    const players = new Map<string, Record<StageColumn, StageCounts>>();
+    knockedOut.forEach((counts, player) => players.set(player, { knockedOut: counts, firstChance: {} }));
+    stages.players.forEach((playerStages, player) => {
+      const counts = players.get(player) ?? { knockedOut: {}, firstChance: {} };
+      if (playerStages.knockedOut) counts.knockedOut[playerStages.knockedOut] = 1;
+      if (playerStages.firstChance) counts.firstChance[playerStages.firstChance] = 1;
+      players.set(player, counts);
+    });
+    return { players };
+  }
+
   /** The chance that player1 wins a game. A pair with no prediction gets 50% and a confidence of 0 */
   predictGameFn(state: TennisTable): PredictGameFn {
     return function fn(player1: string, player2: string) {
@@ -501,6 +564,13 @@ export type SimulateGameFn = (
 
 export type PredictionMethod = "exact" | "hybrid" | "simulation";
 
+/**
+ * A hybrid sample calculates the bracket exactly, so it varies much less than a full simulation. On
+ * real tournaments the variance of one sample was 35 to 49 times smaller. With 25 times fewer samples,
+ * the noise is the same or less.
+ */
+export const HYBRID_SAMPLE_DIVISOR = 25;
+
 export type PredictGameFn = (player1: string, player2: string) => { player1Wins: number; confidence: number };
 
 export type WinChances = {
@@ -515,4 +585,13 @@ export type WinChances = {
   /** The expected number of games that the prediction plays, and the sum of their confidence */
   gamesCount: number;
   confidenceSum: number;
+};
+
+export type StageChances = {
+  /** The chance of each stage for each player, in each column */
+  players: Map<string, Record<StageColumn, StageCounts>>;
+  winnersLayerCount: number;
+  losersLayerCount: number;
+  /** As for {@link WinChances} */
+  method: PredictionMethod;
 };

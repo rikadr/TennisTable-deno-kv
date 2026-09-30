@@ -89,10 +89,15 @@ export const TournamentHowFar = ({ tournament }: { tournament: Tournament }) => 
           </button>
         </div>
         <p className="text-xs md:text-sm text-primary-text/70 text-center">
-          The app plays the rest of the tournament many times, with the win % predictions for each game. Each list shows
-          how often a player leaves the tournament at each stage.
+          The app uses the win % predictions for each game. It calculates a single elimination bracket exactly, and it
+          simulates group play and a double elimination bracket many times. Each list shows the chance that a player
+          leaves the tournament at each stage.
         </p>
-        {isRunning && <ProgressBar progress={(result?.simulations ?? 0) / Math.max(1, numSimulations)} />}
+        {isRunning && (
+          <ProgressBar
+            progress={(result?.simulations ?? 0) / Math.max(1, result?.plannedSimulations ?? numSimulations)}
+          />
+        )}
       </section>
 
       {result === undefined ? (
@@ -130,9 +135,13 @@ export const TournamentHowFar = ({ tournament }: { tournament: Tournament }) => 
             />
           )}
           <p className="w-full max-w-[1050px] text-xs md:text-sm text-primary-text/50 mt-2">
-            {result.simulations < numSimulations
-              ? `${result.simulations.toLocaleString()} of ${numSimulations.toLocaleString()} simulations`
-              : `${result.simulations.toLocaleString()} simulations`}
+            {result.method === "exact"
+              ? "Exact calculation"
+              : `${
+                  result.simulations < result.plannedSimulations
+                    ? `${result.simulations.toLocaleString()} of ${result.plannedSimulations.toLocaleString()}`
+                    : result.simulations.toLocaleString()
+                } ${result.method === "hybrid" ? "simulations of the group play, with an exact bracket" : "simulations"}`}
           </p>
         </>
       )}
@@ -241,8 +250,8 @@ const AllPlayersTable = ({
       </table>
     </div>
     <p className="text-xs md:text-sm text-primary-text/50 mt-2">
-      Each player shows the stage that occurs most often in the simulations. A ✓ marks a stage that played games already
-      decide. Click a player to see all stages.
+      Each player shows the stage with the highest chance. A ✓ marks a stage that played games already decide. Click a
+      player to see all stages.
     </p>
   </section>
 );
