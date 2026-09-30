@@ -42,21 +42,43 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
+    slug: "symmetric-win-predictions",
+    title: "Win predictions are the same in both directions",
+    date: "2026-09-30",
+    tags: ["bug-fix", "technical"],
+    summary:
+      "The win prediction for player A against player B is now 100% minus the prediction for B against A. Some predictions, expected scores and ranks change.",
+    body: [
+      text("Before, the 2 directions of a pair could give different predictions. The app now corrects 3 causes:"),
+      list(
+        "A chain through 2 other players counted only 1 of the 2 player orders. The order of the data selected it.",
+        "A chain with a 0% link and a 100% link gave 0% in both directions. Now it gives no information.",
+        "The lookups for sets and points are not exactly symmetric. Now the app calculates each pair in 1 order.",
+      ),
+      text(
+        "With real data, the predictions between ranked players change by 0.5 percentage points on average, and by up to 4.7. The expected scores change by up to 11 points, and 4 expected ranks change.",
+      ),
+      text(
+        "The app now also keeps the direct prediction for each pair, and it shares the chains of each player between pairs. The expected line in the score graph shows about 15 times faster.",
+      ),
+    ],
+  },
+  {
     slug: "exact-tournament-win-chances",
     title: "Exact win chances for single elimination tournaments",
     date: "2026-09-30",
     tags: ["feature-update", "technical"],
     summary:
-      "The Win chance tab calculates the win chances of a single elimination bracket exactly. The tab is also 2 to 10 times faster.",
+      'The Win chance tab and the "How far will you go?" tab calculate a single elimination bracket exactly. The prediction graph is up to 18 times faster.',
     body: [
       text(
-        'In a single elimination bracket, the app calculates the chance of each player to win each game, from the first round to the final. The result has no random variation. The table shows "Exact calculation".',
+        'In a single elimination bracket, the app calculates the chance of each player to win each game, from the first round to the final. The result has no random variation, and the tab shows "Exact calculation". The "How far will you go?" tab uses the same calculation for the chance of each stage.',
       ),
       text(
-        "During group play, the app simulates the group play and calculates the bracket exactly for each simulation. For the same accuracy, this needs 25 times fewer simulations.",
+        'During group play, the app simulates the group play and calculates the bracket exactly for each simulation. The Win chance tab needs 25 times fewer simulations for the same accuracy. The "How far will you go?" tab keeps all the simulations, because the group play places come only from the simulation.',
       ),
       text(
-        "A double elimination bracket still uses simulations. The app now keeps the win prediction for each pair of players, so each simulation is faster.",
+        "A double elimination bracket still uses simulations, and each simulation is faster. All time points of the graph use the same random numbers. The lines move 23% to 58% less from one point to the next, so a change comes more from the played games.",
       ),
     ],
   },
