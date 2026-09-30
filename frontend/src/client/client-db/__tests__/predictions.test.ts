@@ -236,6 +236,24 @@ describe("Predictions transitive (one-layer) probability", () => {
     expect(tt.predictions.getPredictedFraction("A", "C")).toBeUndefined();
   });
 
+  it("gives the same prediction when called again, and a separate one for the reverse pair", () => {
+    const tt = buildTennisTable(chainGames);
+    const first = tt.predictions.getPredictedFraction("A", "B");
+
+    expect(tt.predictions.getPredictedFraction("A", "B")).toEqual(first);
+    expect(tt.predictions.getPredictedFraction("B", "A")!.fraction).toBeCloseTo(0.1, 3);
+  });
+
+  it("gives undefined again for a pair with no prediction", () => {
+    const tt = buildTennisTable([
+      ["A", "B"],
+      ["C", "D"],
+    ]);
+    tt.predictions.getPredictedFraction("A", "C");
+
+    expect(tt.predictions.getPredictedFraction("A", "C")).toBeUndefined();
+  });
+
   it("counts total games per player and lists all player ids", () => {
     const tt = buildTennisTable(chainGames);
 

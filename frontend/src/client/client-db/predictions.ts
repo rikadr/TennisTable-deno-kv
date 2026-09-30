@@ -431,14 +431,22 @@ export class Predictions {
   // Combined prediction (all three layers)
   // ---------------------------------------------------------------------------
 
+  /** Null marks a pair with no prediction */
+  #predictedCache = new Map<string, Fraction | null>();
+
   getPredictedFraction(p1: string, p2: string): Fraction | undefined {
+    const key = `${p1}|${p2}`;
+    const cached = this.#predictedCache.get(key);
+    if (cached !== undefined) return cached ?? undefined;
+
     const direct = this.getDirectFraction(p1, p2);
     const oneLayer = this.getOneLayerFraction(p1, p2);
     const twoLayer = this.getTwoLayerFraction(p1, p2);
 
     const combined = Predictions.combinePrioritizedFractions([direct, oneLayer, twoLayer]);
-    if (combined.confidence === 0) return undefined;
-    return combined;
+    const result = combined.confidence === 0 ? undefined : combined;
+    this.#predictedCache.set(key, result ?? null);
+    return result;
   }
 
   // ---------------------------------------------------------------------------
@@ -476,6 +484,7 @@ export class Predictions {
     this.#adjacencyMap = undefined;
     this.#oneLayerCache.clear();
     this.#twoLayerCache.clear();
+    this.#predictedCache.clear();
   }
 
   // ---------------------------------------------------------------------------
