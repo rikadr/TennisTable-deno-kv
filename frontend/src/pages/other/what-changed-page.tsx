@@ -100,13 +100,18 @@ function seasonEntriesAt(state: TennisTable | undefined, seasonStart: number): R
 
 function useExpectedLeaderboardAt(time: number | undefined, enabled: boolean) {
   const context = useEventDbContext();
-  // Keyed by time, so a time that you go back to reuses the earlier result.
+  const events = useMemo(
+    () => (time === undefined ? undefined : eventsUpTo(context.events, time)),
+    [context.events, time],
+  );
+  // Keyed by time, so a time that you go back to reuses the earlier result. Events only
+  // get added, so the event count shows a new game with a played time before this time.
   const cacheRef = useRef<Map<string, RankedEntry[]>>(new Map());
   const [computed, setComputed] = useState<{ key: string; entries: RankedEntry[] } | null>(null);
-  const key = `${time}`;
+  const key = `${time}|${events?.length}`;
 
   useEffect(() => {
-    if (!enabled || time === undefined) return;
+    if (!enabled || time === undefined || events === undefined) return;
     const cached = cacheRef.current.get(key);
     if (cached) {
       setComputed({ key, entries: cached });
@@ -115,7 +120,6 @@ function useExpectedLeaderboardAt(time: number | undefined, enabled: boolean) {
     let worker: Worker | null = null;
     // Debounce so half-edited datetime inputs do not start a calculation each.
     const debounce = setTimeout(() => {
-      const events = eventsUpTo(context.events, time);
       worker = createModernWorker();
 
       if (!worker) {
@@ -145,7 +149,7 @@ function useExpectedLeaderboardAt(time: number | undefined, enabled: boolean) {
       clearTimeout(debounce);
       worker?.terminate();
     };
-  }, [context, time, enabled, key]);
+  }, [events, time, enabled, key]);
 
   const entries = computed !== null && computed.key === key ? computed.entries : undefined;
   return { entries, loading: enabled && time !== undefined && entries === undefined };
