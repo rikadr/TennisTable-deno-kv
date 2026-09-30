@@ -15,21 +15,11 @@ import { Achievement } from "../../client/client-db/achievements";
 import { getAchievementLabel } from "../player/player-achievements";
 import { ProfilePicture } from "../player/profile-picture";
 import { Elo } from "../../client/client-db/elo";
-import { EXPECTED_LEADERBOARD_SIMULATIONS } from "../../client/client-db/simulations";
 import { AbsentScore, absentScoreZero, buildDiffRows, RankedEntry, scoreDelta, SortBy } from "./what-changed-diff";
 import { FACTORS } from "../hall-of-fame/hall-of-fame-factors";
 import { ALL_PLAYERS, hallOfFameCategoryEntries } from "./what-changed-hall-of-fame-categories";
 
 type Source = "actual" | "expected";
-
-// How many leaderboards the expected leaderboard simulates at each of the two
-// times. More simulations give a more stable expected score, but take longer.
-const SIMULATION_OPTIONS: { value: number; label: string }[] = [
-  { value: 1_000, label: "Quick" },
-  { value: EXPECTED_LEADERBOARD_SIMULATIONS, label: "Normal" },
-  { value: 15_000, label: "Heavy" },
-  { value: 50_000, label: "Extreme" },
-];
 
 type Tab = "leaderboards" | "games" | "achievements";
 const TABS: { id: Tab; label: string }[] = [
@@ -108,14 +98,12 @@ function seasonEntriesAt(state: TennisTable | undefined, seasonStart: number): R
   }));
 }
 
-function useExpectedLeaderboardAt(time: number | undefined, enabled: boolean, simulations: number) {
+function useExpectedLeaderboardAt(time: number | undefined, enabled: boolean) {
   const context = useEventDbContext();
-  // Keyed by time and simulation count, so raising the count recomputes and
-  // lowering it again reuses the earlier result.
+  // Keyed by time, so a time that you go back to reuses the earlier result.
   const cacheRef = useRef<Map<string, RankedEntry[]>>(new Map());
   const [computed, setComputed] = useState<{ key: string; entries: RankedEntry[] } | null>(null);
-  const [progress, setProgress] = useState(0);
-  const key = `${time}-${simulations}`;
+  const key = `${time}`;
 
   useEffect(() => {
     if (!enabled || time === undefined) return;
@@ -124,21 +112,15 @@ function useExpectedLeaderboardAt(time: number | undefined, enabled: boolean, si
       setComputed({ key, entries: cached });
       return;
     }
-    setProgress(0);
     let worker: Worker | null = null;
-    // Debounce so half-edited datetime inputs do not start thousands of
-    // simulations.
+    // Debounce so half-edited datetime inputs do not start a calculation each.
     const debounce = setTimeout(() => {
       const events = eventsUpTo(context.events, time);
       worker = createModernWorker();
 
       if (!worker) {
         // Fallback: run on the main thread if workers are unavailable
-        const result = new TennisTable({ events, referenceTime: time }).simulations.expectedLeaderBoard(
-          undefined,
-          undefined,
-          simulations,
-        );
+        const result = new TennisTable({ events, referenceTime: time }).simulations.expectedLeaderBoard();
         cacheRef.current.set(key, result.expected);
         setComputed({ key, entries: result.expected });
         return;
@@ -146,21 +128,15 @@ function useExpectedLeaderboardAt(time: number | undefined, enabled: boolean, si
 
       worker.addEventListener("message", (e) => {
         const message = e.data as WorkerMessage;
-        switch (message.type) {
-          case "expected-leaderboard-progress":
-            setProgress(message.data.progress);
-            break;
-
-          case "expected-leaderboard-result":
-            cacheRef.current.set(key, message.data.result.expected);
-            setComputed({ key, entries: message.data.result.expected });
-            break;
+        if (message.type === "expected-leaderboard-result") {
+          cacheRef.current.set(key, message.data.result.expected);
+          setComputed({ key, entries: message.data.result.expected });
         }
       });
 
       const message: WorkerMessage = {
         type: "start-expected-leaderboard",
-        data: { events, referenceTime: time, simulations },
+        data: { events, referenceTime: time },
       };
       worker.postMessage(message);
     }, 500);
@@ -169,10 +145,10 @@ function useExpectedLeaderboardAt(time: number | undefined, enabled: boolean, si
       clearTimeout(debounce);
       worker?.terminate();
     };
-  }, [context, time, enabled, simulations, key]);
+  }, [context, time, enabled, key]);
 
   const entries = computed !== null && computed.key === key ? computed.entries : undefined;
-  return { entries, progress, loading: enabled && time !== undefined && entries === undefined };
+  return { entries, loading: enabled && time !== undefined && entries === undefined };
 }
 
 const DeltaCell: React.FC<{ delta?: number; digits?: number }> = ({ delta, digits = 0 }) => {
@@ -342,10 +318,6 @@ export const WhatChangedPage: React.FC = () => {
   const sortParam = searchParams.get("sort");
   const sortBy: SortBy = sortParam === "start" || sortParam === "delta" ? sortParam : "end";
   const source: Source = searchParams.get("source") === "expected" ? "expected" : "actual";
-  const simulationsParam = Number(searchParams.get("simulations"));
-  const simulationCount = SIMULATION_OPTIONS.some((option) => option.value === simulationsParam)
-    ? simulationsParam
-    : EXPECTED_LEADERBOARD_SIMULATIONS;
   const breakdown: Breakdown = searchParams.get("breakdown") === "player" ? "player" : "all";
   const playerParam = searchParams.get("player");
   // A player that no longer exists falls back to all players.
@@ -428,14 +400,12 @@ export const WhatChangedPage: React.FC = () => {
   );
 
   // The expected leaderboard is only shown on the overall leaderboard tab, so
-  // only simulate there.
-  const simulationNeeded = source === "expected" && activeTab === "leaderboards" && leaderboardTab === "overall";
-  const startExpected = useExpectedLeaderboardAt(startTime, simulationNeeded, simulationCount);
-  const endExpected = useExpectedLeaderboardAt(endTime, simulationNeeded, simulationCount);
+  // only calculate there.
+  const expectedNeeded = source === "expected" && activeTab === "leaderboards" && leaderboardTab === "overall";
+  const startExpected = useExpectedLeaderboardAt(startTime, expectedNeeded);
+  const endExpected = useExpectedLeaderboardAt(endTime, expectedNeeded);
 
-  const simulating = simulationNeeded && (startExpected.loading || endExpected.loading);
-  const simulationProgress =
-    (startExpected.loading ? startExpected.progress : 1) * 0.5 + (endExpected.loading ? endExpected.progress : 1) * 0.5;
+  const calculatingExpected = expectedNeeded && (startExpected.loading || endExpected.loading);
 
   // Hall of Fame score for every player, retired and active, at the two times.
   // The player rows and the category rows both come from these 2 lists, so the
@@ -627,30 +597,6 @@ export const WhatChangedPage: React.FC = () => {
                     onChange={(value) => setParams({ source: value })}
                   />
                 )}
-                {leaderboardTab === "overall" && source === "expected" && (
-                  <div className="flex flex-col items-center gap-1">
-                    <label htmlFor="simulations-select" className="text-xs md:text-sm text-primary-text/60">
-                      Simulations
-                    </label>
-                    <select
-                      id="simulations-select"
-                      value={simulationCount}
-                      onChange={(e) =>
-                        setParams({
-                          simulations:
-                            Number(e.target.value) === EXPECTED_LEADERBOARD_SIMULATIONS ? undefined : e.target.value,
-                        })
-                      }
-                      className="h-10 rounded-full bg-secondary-background text-secondary-text px-3 text-xs xs:text-sm"
-                    >
-                      {SIMULATION_OPTIONS.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label} ({fmtNum(option.value)})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                )}
                 {leaderboardTab === "hall-of-fame" && (
                   <PillSelect<Breakdown>
                     label="Breakdown"
@@ -688,18 +634,9 @@ export const WhatChangedPage: React.FC = () => {
 
               {/* Overall leaderboard changes between the two times */}
               {leaderboardTab === "overall" &&
-                (simulating ? (
+                (calculatingExpected ? (
                   <div className="max-w-md mx-auto p-6 text-center">
-                    <p className="text-primary-text/60 text-sm mb-4">
-                      Simulating 2 × {fmtNum(simulationCount)} leaderboards…
-                    </p>
-                    <div className="h-2.5 w-full rounded-full bg-primary-text/10 overflow-hidden">
-                      <div
-                        className="h-full rounded-full bg-secondary-background transition-all duration-150"
-                        style={{ width: `${Math.round(simulationProgress * 100)}%` }}
-                      />
-                    </div>
-                    <p className="text-primary-text/60 text-xs mt-2">{Math.round(simulationProgress * 100)} %</p>
+                    <p className="text-primary-text/60 text-sm">Calculating 2 expected leaderboards…</p>
                   </div>
                 ) : (
                   <DiffTable
@@ -707,7 +644,7 @@ export const WhatChangedPage: React.FC = () => {
                     endEntries={source === "actual" ? endActual : endExpected.entries}
                     sortBy={sortBy}
                     emptyText="No ranked players at either time"
-                    // The simulation only covers the players who are ranked at
+                    // The calculation only covers the players who are ranked at
                     // that time, so the expected leaderboard has no score for a
                     // player who is absent.
                     absentScore={source === "actual" ? actualAbsentScore : undefined}

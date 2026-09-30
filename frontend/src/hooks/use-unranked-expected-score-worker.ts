@@ -5,7 +5,7 @@ import { ExpectedLeaderboard } from "../client/client-db/simulations";
 import { createModernWorker } from "./use-elo-simulation-worker";
 
 /**
- * Expected-leaderboard simulation that also includes one unranked player, so
+ * Expected leaderboard that also includes one unranked player, so
  * their expected score can be shown on the player page. Unlike
  * useExpectedLeaderboardWorker it does not start on mount — call start().
  */
@@ -14,7 +14,6 @@ export function useUnrankedExpectedScoreWorker(playerId: string) {
 
   const workerRef = useRef<Worker | null>(null);
   const [result, setResult] = useState<ExpectedLeaderboard | null>(null);
-  const [progress, setProgress] = useState(0);
   const [running, setRunning] = useState(false);
 
   useEffect(() => {
@@ -31,8 +30,7 @@ export function useUnrankedExpectedScoreWorker(playerId: string) {
 
     if (!worker) {
       // Fallback: run on the main thread if workers are unavailable
-      setResult(context.simulations.expectedLeaderBoard(undefined, playerId));
-      setProgress(1);
+      setResult(context.simulations.expectedLeaderBoard(playerId));
       setRunning(false);
       return;
     }
@@ -40,16 +38,9 @@ export function useUnrankedExpectedScoreWorker(playerId: string) {
 
     worker.addEventListener("message", (e) => {
       const message = e.data as WorkerMessage;
-      switch (message.type) {
-        case "expected-leaderboard-progress":
-          setProgress(message.data.progress);
-          break;
-
-        case "expected-leaderboard-result":
-          setProgress(1);
-          setResult(message.data.result);
-          setRunning(false);
-          break;
+      if (message.type === "expected-leaderboard-result") {
+        setResult(message.data.result);
+        setRunning(false);
       }
     });
 
@@ -61,5 +52,5 @@ export function useUnrankedExpectedScoreWorker(playerId: string) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [playerId, running, result]);
 
-  return { start, result, progress, running };
+  return { start, result, running };
 }

@@ -205,7 +205,7 @@ export const PlayerEloGraph: React.FC<{ playerId: string }> = ({ playerId }) => 
             })
           }
         >
-          Simulate expected score
+          Show expected score
         </button>
       )}
       {showExpectedElo && simulationIsDone === false && <ProgressBar progress={simulationProgress} />}
@@ -254,7 +254,6 @@ export const PlayerEloGraph: React.FC<{ playerId: string }> = ({ playerId }) => 
       )}
       {showExpectedElo && (
         <div className="mt-4">
-          <p className="text-xs">* Simulation has some randomness every time.</p>
           <p className="text-xs">Might fluctuate wildly when too little data (few games)</p>
           <p className="text-xs">or when the total points pool increases by more players becomeing ranked</p>
         </div>
@@ -283,7 +282,7 @@ const CustomTooltip: React.FC = ({ active, payload, label }: TooltipProps<ValueT
         )}
         {game.simulatedElo && game.simulatedEloDiff && (
           <p>
-            Simulated: {fmtNum(game.simulatedElo, { digits: 0 })} (
+            Expected: {fmtNum(game.simulatedElo, { digits: 0 })} (
             {fmtNum(game.simulatedEloDiff, { signedPositive: true, digits: 0 })})
           </p>
         )}

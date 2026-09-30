@@ -12,14 +12,9 @@ export abstract class Elo {
     games: Game[],
     players: Player[],
     onGameResult?: (map: Map<string, PlayerWithElo>, game: Game, pointsWon: number) => void,
-    /** Start score per player id. A player not in the map starts at `INITIAL_ELO`. */
-    startScores?: Map<string, { elo: number }>,
   ): Map<string, PlayerWithElo> {
     const playerMap = new Map<string, PlayerWithElo>(
-      players.map((player) => [
-        player.id,
-        { ...player, elo: startScores?.get(player.id)?.elo ?? this.INITIAL_ELO, totalGames: 0 },
-      ]),
+      players.map((player) => [player.id, { ...player, elo: this.INITIAL_ELO, totalGames: 0 }]),
     );
 
     games.forEach((game) => {
@@ -43,10 +38,15 @@ export abstract class Elo {
     return playerMap;
   }
 
+  /** The expected result of a game for a player: the probability of a win. */
+  static expectedResult(score: number, opponentScore: number): number {
+    return 1 / (1 + Math.pow(10, (opponentScore - score) / this.DIVISOR));
+  }
+
   static calculateELO(winnersElo: number, losersElo: number) {
     // Calculate the expected scores for both players
-    const expectedScoreWinner = 1 / (1 + Math.pow(10, (losersElo - winnersElo) / this.DIVISOR));
-    const expectedScoreLoser = 1 / (1 + Math.pow(10, (winnersElo - losersElo) / this.DIVISOR));
+    const expectedScoreWinner = this.expectedResult(winnersElo, losersElo);
+    const expectedScoreLoser = this.expectedResult(losersElo, winnersElo);
 
     const winnersNewElo = winnersElo + Elo.K * (1 - expectedScoreWinner);
     const losersNewElo = losersElo + Elo.K * (0 - expectedScoreLoser);

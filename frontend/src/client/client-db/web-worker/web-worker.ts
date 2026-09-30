@@ -15,10 +15,8 @@ export type WorkerMessage =
         events: EventType[];
         referenceTime?: number;
         includeUnrankedPlayerId?: string;
-        simulations?: number;
       };
     }
-  | { type: "expected-leaderboard-progress"; data: { progress: number } }
   | { type: "expected-leaderboard-result"; data: { result: ExpectedLeaderboard } }
   | { type: "start-simulating-elo-over-time"; data: { playerId: string; events: EventType[] } }
   | { type: "simulated-elo-delivery"; data: { elements: { elo: number; time: number }[]; progress: number } }
@@ -67,11 +65,7 @@ function handleWorkerMessage(message: WorkerMessage) {
         events: message.data.events,
         referenceTime: message.data.referenceTime,
       });
-      const result = tennisTableForLeaderboard.simulations.expectedLeaderBoard(
-        (progress) => postWorkerMessage({ type: "expected-leaderboard-progress", data: { progress } }),
-        message.data.includeUnrankedPlayerId,
-        message.data.simulations,
-      );
+      const result = tennisTableForLeaderboard.simulations.expectedLeaderBoard(message.data.includeUnrankedPlayerId);
       postWorkerMessage({ type: "expected-leaderboard-result", data: { result } });
       break;
     }

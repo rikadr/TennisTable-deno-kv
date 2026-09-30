@@ -1,16 +1,12 @@
 import { Elo } from "./elo";
-import { Game } from "./event-store/projectors/games-projector";
+import { solveExpectedScores } from "./expected-scores";
 import { Predictions } from "./predictions";
 import { TennisTable } from "./tennis-table";
-import { shuffleArray } from "../../common/array-utils";
 
 export type ExpectedLeaderboard = {
   current: { id: string; rank: number; score: number }[];
   expected: { id: string; rank: number; score: number }[];
 };
-
-/** Default number of leaderboards simulated by `expectedLeaderBoard`. */
-export const EXPECTED_LEADERBOARD_SIMULATIONS = 5_000;
 
 export class Simulations {
   private parent: TennisTable;
@@ -49,59 +45,21 @@ export class Simulations {
     return wins / (loss || 1);
   }
 
-  expectedLeaderBoard(
-    onProgress?: (progress: number) => void,
-    includeUnrankedPlayerId?: string,
-    simulations: number = EXPECTED_LEADERBOARD_SIMULATIONS,
-  ): ExpectedLeaderboard {
-    const currentLeaderboard = this.parent.leaderboard.getLeaderboard();
-    const predictedGames = this.parent.predictions.generateSimulatedGames(undefined, includeUnrankedPlayerId);
+  expectedLeaderBoard(includeUnrankedPlayerId?: string): ExpectedLeaderboard {
+    const { rankedPlayers } = this.parent.leaderboard.getLeaderboard();
+    const rankedIds = new Set(rankedPlayers.map((player) => player.id));
 
-    const simResultMap = new Map<string, number[]>();
-
-    // Start from the current scores, so the simulated points pool is the real one.
-    // Each run then starts from the scores the run before it ended with.
-    let startScores: Map<string, { elo: number }> = this.parent.leaderboard.getCachedLeaderboardMap();
-
-    const SIMULATIONS = Math.max(1, Math.floor(simulations));
-    // Report about 100 times over the run, so a short run also shows progress.
-    const progressStep = Math.max(1, Math.floor(SIMULATIONS / 100));
-    for (let i = 0; i < SIMULATIONS; i++) {
-      this.shuffleArray(predictedGames);
-      // Casting, but its only using winner and loser inside it anyway
-      const eloMap = Elo.eloCalculator(predictedGames as Game[], this.parent.allPlayers, undefined, startScores);
-      startScores = eloMap;
-      eloMap.forEach((player) => {
-        if (simResultMap.has(player.id) === false) {
-          simResultMap.set(player.id, []);
-        }
-        simResultMap.get(player.id)!.push(player.elo);
-      });
-      if (onProgress && (i + 1) % progressStep === 0) {
-        onProgress((i + 1) / SIMULATIONS);
-      }
-    }
-
-    const avgSimResult: { id: string; rank: number; score: number }[] = [];
-    simResultMap.forEach((scores, playerId) =>
-      avgSimResult.push({
-        id: playerId,
-        rank: -1,
-        score: scores.reduce((acc, cur) => (acc += cur), 0) / scores.length,
-      }),
+    const expectedScores = this.expectedScores(
+      this.parent.predictions,
+      this.parent.predictions.getExpectedScorePlayerIds(includeUnrankedPlayerId),
+      this.parent.leaderboard.getCachedLeaderboardMap(),
     );
-    avgSimResult.sort((a, b) => b.score - a.score);
+    const expected = Array.from(expectedScores, ([id, score]) => ({ id, score }))
+      .filter(({ id }) => id === includeUnrankedPlayerId || rankedIds.has(id))
+      .sort((a, b) => b.score - a.score)
+      .map((player, index) => ({ ...player, rank: index + 1 }));
 
-    return {
-      current: currentLeaderboard.rankedPlayers.map(({ id, rank, elo }) => ({ id, rank, score: elo })),
-      expected: avgSimResult
-        .filter(
-          (player) =>
-            player.id === includeUnrankedPlayerId ||
-            currentLeaderboard.rankedPlayers.some((ranked) => ranked.id === player.id),
-        )
-        .map((player, index) => ({ ...player, rank: index + 1 })),
-    };
+    return { current: rankedPlayers.map(({ id, rank, elo }) => ({ id, rank, score: elo })), expected };
   }
 
   expectedPlayerEloOverTime(
@@ -129,75 +87,36 @@ export class Simulations {
     playerGameTimes.add(allGames[allGames.length - 1].playedAt);
 
     const sortedPlayerGameTimes = Array.from(playerGameTimes).sort((a, b) => a - b); // Verify ascending
-    const playerPlayedTheLastGame =
-      allGames[allGames.length - 1].winner === playerId || allGames[allGames.length - 1].loser === playerId;
 
-    const BATCH_SIZE = 1; // 5 seems reasonable but 1 works well on my beast mac and gives smooth frame rate
-
-    const FAST_ITERATION = 50;
-    const DETAILED_ITERATION = 3_000;
-
-    const totalIterationsToSimulate =
-      FAST_ITERATION * sortedPlayerGameTimes.length + DETAILED_ITERATION * (playerPlayedTheLastGame ? 2 : 3);
-    let iterationsProgress = 0;
-
-    let eloOverTime: { elo: number; time: number }[] = [];
-
-    for (const gameTime of sortedPlayerGameTimes.toReversed()) {
+    // Latest first, so the most recent part of the graph shows first
+    const times = sortedPlayerGameTimes.toReversed();
+    times.forEach((gameTime, index) => {
       const relevantGames = allGames.filter((g) => g.playedAt <= gameTime);
       const predictions = new Predictions(this.parent, gameTime, relevantGames);
-      const predictedGames = predictions.generateSimulatedGames();
-
-      const playerElos: number[] = [];
-
-      const iterations =
-        gameTime >= sortedPlayerGameTimes[sortedPlayerGameTimes.length - (playerPlayedTheLastGame ? 2 : 3)]
-          ? DETAILED_ITERATION
-          : FAST_ITERATION;
-
-      // A player outside the simulation has no expected score at this time.
-      if (!predictedGames.some((game) => game.winner === playerId || game.loser === playerId)) {
-        iterationsProgress += iterations;
-        continue;
+      const playerIds = predictions.getExpectedScorePlayerIds();
+      let elo: number | undefined;
+      if (playerIds.includes(playerId)) {
+        const scoresAtTime = Elo.eloCalculator(relevantGames, this.parent.allPlayers);
+        elo = this.expectedScores(predictions, playerIds, scoresAtTime).get(playerId);
       }
-
-      let startScores: Map<string, { elo: number }> = Elo.eloCalculator(relevantGames, this.parent.allPlayers);
-
-      for (let i = 0; i < iterations; i++) {
-        this.shuffleArray(predictedGames);
-        const eloMap = Elo.eloCalculator(
-          predictedGames as Game[], // Casting, but its only using winner and loser inside it anyway
-          this.parent.allPlayers,
-          undefined,
-          startScores,
-        );
-        startScores = eloMap;
-        const playerElo = eloMap.get(playerId)?.elo;
-        playerElo && playerElos.push(playerElo);
-      }
-      if (playerElos.length === 0) {
-        continue;
-      }
-      const avg = playerElos.reduce((acc, cur) => acc + cur, 0) / playerElos.length;
-      eloOverTime.push({ elo: avg, time: gameTime });
-
-      // Tally-up and do worker callback
-      iterationsProgress += iterations;
-      if (
-        eloOverTime.length >= BATCH_SIZE ||
-        iterations === DETAILED_ITERATION ||
-        gameTime === sortedPlayerGameTimes[sortedPlayerGameTimes.length - 1]
-      ) {
-        const progress = iterationsProgress / totalIterationsToSimulate;
-        workerCallback({ elements: [...eloOverTime], progress });
-        eloOverTime = [];
-      }
-    }
-
-    return;
+      workerCallback({
+        elements: elo === undefined ? [] : [{ elo, time: gameTime }],
+        progress: (index + 1) / times.length,
+      });
+    });
   }
 
-  shuffleArray<T>(array: T[]): T[] {
-    return shuffleArray(array);
+  /**
+   * The expected scores of the players in the calculation. The total of the
+   * expected scores is equal to the total of the current scores of those players.
+   */
+  private expectedScores(
+    predictions: Predictions,
+    playerIds: string[],
+    currentScores: Map<string, { elo: number }>,
+  ): Map<string, number> {
+    if (playerIds.length < 2) return new Map();
+    const startScores = new Map(playerIds.map((id) => [id, currentScores.get(id)?.elo ?? Elo.INITIAL_ELO]));
+    return solveExpectedScores(startScores, predictions.getPairFractions(playerIds));
   }
 }

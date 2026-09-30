@@ -43,20 +43,23 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
     slug: "expected-score-points-pool",
-    title: "Expected scores start from the current scores",
+    title: "Expected scores use a direct calculation",
     date: "2026-09-29",
-    tags: ["bug-fix"],
+    tags: ["bug-fix", "technical"],
     summary:
-      "The expected leaderboard and the other expected scores start from the current scores. Before, most expected scores were too low.",
+      "The app calculates the expected scores directly, not with a simulation. The result is exact and the same each time. Some expected scores and ranks change.",
     body: [
       text(
-        "The first simulation starts each player at the current score. Each next simulation starts from the scores at the end of the previous simulation. The total of the expected scores is now equal to the total of the current scores.",
+        "The expected leaderboard, the expected score of an unranked player and the expected line in the score graph use the new calculation. For each player, the calculation finds the score where the expected results against all opponents equal the predicted results. The expected leaderboard shows in less than 1 second, and the score graph shows about 2 times faster.",
+      ),
+      text("The change also corrects 3 errors in the previous simulation:"),
+      list(
+        "The simulation gave a small advantage in each pair to the player who played first. With real data, this moved expected scores by up to 84 points.",
+        "The simulation started all players at 1000. Now the total of the expected scores is equal to the total of the current scores.",
+        "The expected line in the score graph showed 1000 before the player was in the simulation. Now the line starts at that time.",
       ),
       text(
-        "Ranked players win points from unranked players and from players who stop playing. For this reason, the average current score of the ranked players is usually more than 1000. Before, each simulation started all players at 1000, so most expected scores were too low. The expected ranks did not change.",
-      ),
-      text(
-        "The fix also applies to the expected score of an unranked player and to the expected line in the score graph on the player page. The expected line now starts at the first time that the player is in the simulation. Before, the line showed 1000 before that time.",
+        "The calculation has no random variation from K = 32, so the gaps between the expected scores are up to about 15 points smaller.",
       ),
     ],
   },
@@ -459,7 +462,7 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
         "Set scores are newer than the league, so a rating is more exact over the recent period. A game with no score still counts in full.",
       ),
       text(
-        "The rating uses played games only. A retirement today does not change the history of any player, and the rating does not depend on who is on the leaderboard. A result from today also sharpens the estimate of a player months back, so a curve can change when new games arrive. The expected score simulation on the player page answers a different question: your place in the field of active players. Both numbers stay.",
+        "The rating uses played games only. A retirement today does not change the history of any player, and the rating does not depend on who is on the leaderboard. A result from today also sharpens the estimate of a player months back, so a curve can change when new games arrive. The expected score on the player page answers a different question: your place in the field of active players. Both numbers stay.",
       ),
     ],
   },
@@ -596,20 +599,20 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
   },
   {
     slug: "unranked-expected-score-simulation",
-    title: "Simulated expected score for unranked players",
+    title: "Expected score for unranked players",
     date: "2026-08-13",
     tags: ["feature-update"],
     summary:
-      "The Overview tab of an unranked player has a button that simulates the expected score and rank for that player.",
+      "The Overview tab of an unranked player has a button that calculates the expected score and rank for that player.",
     body: [
       text(
-        "An unranked player has no score on the leaderboard. The Overview tab of the player page now has a button that simulates the expected score for that player.",
+        "An unranked player has no score on the leaderboard. The Overview tab of the player page now has a button that calculates the expected score for that player.",
       ),
       text(
-        "The simulation uses the same model as the expected leaderboard: the average of 5 000 simulated leaderboards where every ranked player and this player play each other. The result shows the expected score and the expected rank.",
+        "The calculation uses the same model as the expected leaderboard, with every ranked player and this player. The result shows the expected score and the expected rank.",
       ),
       text(
-        "The player is not ranked, so the simulation has insufficient data. A warning shows this before the simulation and with the result.",
+        "The player is not ranked, so the calculation has insufficient data. A warning shows this before the calculation and with the result.",
       ),
     ],
   },
@@ -678,7 +681,7 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
         "The Leaderboards tab compares the overall leaderboard, the season leaderboard or the Hall of Fame score at the two times. A table shows each player with the rank and the score at the start, at the end, and the change in both. A toggle sorts the table by the rank at the start, the rank at the end, or the change in score. A player who joins or leaves a leaderboard in the period also gets a score change. The season score and the Hall of Fame score start at 0, and the overall leaderboard uses the elo of the player.",
       ),
       text(
-        "On the overall leaderboard, a second toggle changes the data source between the actual leaderboard and the expected leaderboard. The expected leaderboard is the average of many simulations at each of the two times. A menu selects the number of simulations: 1 000, 5 000, 15 000 or 50 000. The default is 5 000. A higher number gives a more stable score, but takes more time.",
+        "On the overall leaderboard, a second toggle changes the data source between the actual leaderboard and the expected leaderboard at each of the two times.",
       ),
       text(
         "On the Hall of Fame score, a Breakdown toggle changes the rows of the table. All shows one row per player. Player shows one row per category of the score, for the player that you select. The All players option sums each category over all players. The rank then shows which category gives the most points.",
@@ -1422,7 +1425,7 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
     summary: "The standings if every player played every other player the same number of times.",
     body: [
       text(
-        "The app simulates the games that did not happen. It uses the prediction model for each pair of players, then ranks the results. The schedule has no effect on this leaderboard.",
+        "The app calculates the expected score of each player from the prediction model for each pair of players, then ranks the results. The schedule has no effect on this leaderboard.",
       ),
       text(
         "The real standings are part a rank of skill and part a rank of the players you played. If you beat the same 3 players 40 times, your rating says little. This page is not the real leaderboard and does not replace it.",

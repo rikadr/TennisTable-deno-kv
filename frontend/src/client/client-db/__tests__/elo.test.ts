@@ -18,42 +18,6 @@ describe("Elo constants", () => {
   });
 });
 
-describe("Elo.eloCalculator start scores", () => {
-  it("starts each player at the given score, and other players at INITIAL_ELO", () => {
-    const players = [makePlayer("a"), makePlayer("b"), makePlayer("c")];
-    const result = Elo.eloCalculator(
-      [],
-      players,
-      undefined,
-      new Map([
-        ["a", { elo: 1200 }],
-        ["b", { elo: 900 }],
-      ]),
-    );
-
-    expect(result.get("a")!.elo).toBe(1200);
-    expect(result.get("b")!.elo).toBe(900);
-    expect(result.get("c")!.elo).toBe(Elo.INITIAL_ELO);
-  });
-
-  it("plays the games from the given start scores", () => {
-    const players = [makePlayer("a"), makePlayer("b")];
-    const result = Elo.eloCalculator(
-      [makeGame("g1", 1, "a", "b")],
-      players,
-      undefined,
-      new Map([
-        ["a", { elo: 1000 }],
-        ["b", { elo: 1200 }],
-      ]),
-    );
-    const { winnersNewElo, losersNewElo } = Elo.calculateELO(1000, 1200);
-
-    expect(result.get("a")!.elo).toBeCloseTo(winnersNewElo, 10);
-    expect(result.get("b")!.elo).toBeCloseTo(losersNewElo, 10);
-  });
-});
-
 describe("Elo.calculateELO", () => {
   it("gives the winner exactly K/2 = 16 points when ratings are equal", () => {
     const { winnersNewElo, losersNewElo } = Elo.calculateELO(1000, 1000);

@@ -1,7 +1,7 @@
 import { Game } from "./event-store/projectors/games-projector";
 import { gameToGame, pointToGame, setToGame } from "./future-elo-probability-lookups";
-import { newId } from "../../common/nani-id";
 import { TennisTable } from "./tennis-table";
+import { PairFraction } from "./expected-scores";
 
 export type Fraction = { fraction: number; confidence: number };
 
@@ -442,59 +442,29 @@ export class Predictions {
   }
 
   // ---------------------------------------------------------------------------
-  // Simulated game generation
+  // Expected score inputs
   // ---------------------------------------------------------------------------
 
-  generateSimulatedGames(targetGamesPerPlayer = 400, includeUnrankedPlayerId?: string): Game[] {
-    const simulatedPlayerIds = this.getAllPlayerIds().filter((id) => {
+  /** The players in an expected score calculation: the active players with enough games to be ranked. */
+  getExpectedScorePlayerIds(includeUnrankedPlayerId?: string): string[] {
+    return this.getAllPlayerIds().filter((id) => {
       const isActive = this.parent.eventStore.playersProjector.getPlayer(id)?.active === true;
-      // The explicitly included player joins the simulation regardless of game count
+      // The explicitly included player joins the calculation regardless of game count
       if (id === includeUnrankedPlayerId) return isActive;
       return this.getPlayerTotalGames(id) >= this.parent.client.gameLimitForRanked && isActive;
     });
+  }
 
-    if (simulatedPlayerIds.length < 2) return [];
-
-    const gamesPerPairing = Math.max(1, Math.round(targetGamesPerPlayer / (simulatedPlayerIds.length - 1)));
-
-    const predictedGamesTemp: { winner: string; loser: string }[][] = [];
-
-    for (let i = 0; i < simulatedPlayerIds.length; i++) {
-      for (let j = i + 1; j < simulatedPlayerIds.length; j++) {
-        const p1 = simulatedPlayerIds[i];
-        const p2 = simulatedPlayerIds[j];
-
-        const direct = this.getDirectFraction(p1, p2);
-        const oneLayer = this.getOneLayerFraction(p1, p2);
-        const twoLayer = this.getTwoLayerFraction(p1, p2);
-        const combinedFraction = Predictions.combinePrioritizedFractions([direct, oneLayer, twoLayer]);
-
-        const predictedWins = gamesPerPairing * combinedFraction.fraction;
-        const predictedLoss = gamesPerPairing * (1 - combinedFraction.fraction);
-
-        const pairingGames: { winner: string; loser: string }[] = [];
-        for (let k = 0; k < predictedWins; k++) pairingGames.push({ winner: p1, loser: p2 });
-        for (let k = 0; k < predictedLoss; k++) pairingGames.push({ winner: p2, loser: p1 });
-
-        predictedGamesTemp.push(pairingGames);
+  /** The predicted fraction for each pair of the players. A pair with no prediction is left out. */
+  getPairFractions(playerIds: string[]): PairFraction[] {
+    const pairs: PairFraction[] = [];
+    for (let i = 0; i < playerIds.length; i++) {
+      for (let j = i + 1; j < playerIds.length; j++) {
+        const predicted = this.getPredictedFraction(playerIds[i], playerIds[j]);
+        if (predicted) pairs.push({ a: playerIds[i], b: playerIds[j], fraction: predicted.fraction });
       }
     }
-
-    const games: Game[] = [];
-    const now = Date.now();
-    for (let round = 0; round < gamesPerPairing; round++) {
-      for (const pairingGames of predictedGamesTemp) {
-        if (round < pairingGames.length) {
-          games.push({
-            ...pairingGames[round],
-            playedAt: now + games.length,
-            id: newId(),
-          });
-        }
-      }
-    }
-
-    return games;
+    return pairs;
   }
 
   // ---------------------------------------------------------------------------
