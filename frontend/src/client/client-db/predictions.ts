@@ -187,13 +187,13 @@ export class Predictions {
     return this.pairwiseStats.get(p1)?.get(p2) ?? Predictions.EMPTY_STATS;
   }
 
+  /** cache[p1][p2]. The two-layer prediction uses each direct fraction many times */
+  #directCache = new Map<string, Map<string, Fraction>>();
+
   /**
    * Combined direct fraction (game+set+point levels merged) for p1 vs p2.
    * Equivalent to FutureElo.getDirectFraction but with zero game iteration.
    */
-  /** cache[p1][p2]. The two-layer prediction uses each direct fraction many times */
-  #directCache = new Map<string, Map<string, Fraction>>();
-
   getDirectFraction(p1: string, p2: string): Fraction {
     let opponents = this.#directCache.get(p1);
     if (!opponents) {
@@ -202,7 +202,8 @@ export class Predictions {
     }
     let fraction = opponents.get(p2);
     if (!fraction) {
-      // The lookups are not exactly symmetric. Calculate each pair in one order, so the reverse is the complement.
+      // Calculate each pair in one order, so the reverse is exactly the complement, also after rounding.
+      // A chain of a link near 0 and a link near 1 makes a small difference much larger.
       if (p1 > p2) {
         const reverse = this.getDirectFraction(p2, p1);
         fraction =
@@ -421,12 +422,11 @@ export class Predictions {
       const bToP2 = this.getDirectFraction(b, p2);
       for (let i = 0; i < toB.via.length; i++) {
         if (toB.via[i] === p2) continue;
-        // The same calculation as Predictions.linkFractions, without an object for each chain
-        const numerator = toB.fractions[i] * bToP2.fraction;
-        const denominator = numerator + (1 - toB.fractions[i]) * (1 - bToP2.fraction);
-        if (denominator === 0) continue;
+        // No object for each chain. A contradictory chain has no confidence, so it adds nothing
+        const fraction = Predictions.linkFractionValues(toB.fractions[i], bToP2.fraction);
+        if (fraction === undefined) continue;
         const confidence = toB.confidences[i] * bToP2.confidence;
-        weightedFractionSum += (numerator / denominator) * confidence;
+        weightedFractionSum += fraction * confidence;
         weightedConfidenceSum += confidence * confidence;
         totalWeight += confidence;
       }
@@ -531,20 +531,13 @@ export class Predictions {
     const { additions, products, halfLifePoints, curveExponent } = confidenceConfig;
 
     const rawWinFraction = wins / (wins + loss);
-    const exactIndex = rawWinFraction * 100;
-
-    const lowerIndex = Math.floor(exactIndex);
-    const upperIndex = Math.ceil(exactIndex);
-
-    let expectedWinProbability: number;
-    if (lowerIndex === upperIndex || upperIndex > 100) {
-      const index = Math.min(Math.max(Math.round(exactIndex), 0), 100);
-      expectedWinProbability = probabilityLookup[index];
-    } else {
-      const lowerValue = probabilityLookup[lowerIndex];
-      const upperValue = probabilityLookup[upperIndex];
-      expectedWinProbability = lowerValue + (upperValue - lowerValue) * (exactIndex - lowerIndex);
-    }
+    // The set and point lookups are not exactly symmetric. The average of the two directions is,
+    // so the prediction for the other player is the complement.
+    const expectedWinProbability =
+      (Predictions.#lookUp(probabilityLookup, rawWinFraction) +
+        1 -
+        Predictions.#lookUp(probabilityLookup, loss / (wins + loss))) /
+      2;
 
     const addition = wins + loss;
     const product = wins * loss;
@@ -552,6 +545,21 @@ export class Predictions {
     const confidence = 1 - Math.pow(2, -Math.pow(confidencePoints / halfLifePoints, curveExponent));
 
     return { fraction: expectedWinProbability, confidence };
+  }
+
+  /** The lookup value at this fraction, interpolated between the entries for each whole percent */
+  static #lookUp(probabilityLookup: number[], fraction: number): number {
+    const exactIndex = fraction * 100;
+    const lowerIndex = Math.floor(exactIndex);
+    const upperIndex = Math.ceil(exactIndex);
+
+    if (lowerIndex === upperIndex || upperIndex > 100) {
+      const index = Math.min(Math.max(Math.round(exactIndex), 0), 100);
+      return probabilityLookup[index];
+    }
+    const lowerValue = probabilityLookup[lowerIndex];
+    const upperValue = probabilityLookup[upperIndex];
+    return lowerValue + (upperValue - lowerValue) * (exactIndex - lowerIndex);
   }
 
   static combinePrioritizedFractions(fractions: (Fraction | undefined)[]): Fraction {
@@ -599,15 +607,16 @@ export class Predictions {
   }
 
   static linkFractions(fraction1: Fraction, fraction2: Fraction): Fraction {
-    const numerator = fraction1.fraction * fraction2.fraction;
-    const denominator = numerator + (1 - fraction1.fraction) * (1 - fraction2.fraction);
-
+    const fraction = Predictions.linkFractionValues(fraction1.fraction, fraction2.fraction);
     // A link of 0 and a link of 1 contradict each other, so the chain gives no information
-    if (denominator === 0) return { fraction: 0.5, confidence: 0 };
+    if (fraction === undefined) return { fraction: 0.5, confidence: 0 };
+    return { fraction, confidence: fraction1.confidence * fraction2.confidence };
+  }
 
-    return {
-      fraction: numerator / denominator,
-      confidence: fraction1.confidence * fraction2.confidence,
-    };
+  /** The Bradley-Terry link of two fractions. Undefined when a link of 0 meets a link of 1 */
+  static linkFractionValues(fraction1: number, fraction2: number): number | undefined {
+    const numerator = fraction1 * fraction2;
+    const denominator = numerator + (1 - fraction1) * (1 - fraction2);
+    return denominator === 0 ? undefined : numerator / denominator;
   }
 }

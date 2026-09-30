@@ -1,7 +1,7 @@
 import { TennisTable } from "../tennis-table";
 import { EventType, EventTypeEnum } from "../event-store/event-types";
-import { GAME_CONFIDENCE_CONFIG, Predictions } from "../predictions";
-import { gameToGame } from "../future-elo-probability-lookups";
+import { GAME_CONFIDENCE_CONFIG, POINT_CONFIDENCE_CONFIG, Predictions, SET_CONFIDENCE_CONFIG } from "../predictions";
+import { gameToGame, pointToGame, setToGame } from "../future-elo-probability-lookups";
 
 // The confidence curve itself is covered in future-elo.test.ts. These tests
 // cover the win-probability outputs and the deterministic fraction helpers.
@@ -39,6 +39,25 @@ describe("Predictions.getWinFractionWithConfidence", () => {
     // 1 win to 2 losses = 1/3: index 33.33 interpolates between 0.33 and 0.34
     const result = Predictions.getWinFractionWithConfidence(1, 2, gameToGame, GAME_CONFIDENCE_CONFIG);
     expect(result.fraction).toBeCloseTo(1 / 3, 10);
+  });
+
+  it("gives the complement for the other player with the set and point lookups", () => {
+    // The set and point lookups are not exactly symmetric, so the app uses the average of the two directions
+    for (const [lookup, config] of [
+      [setToGame, SET_CONFIDENCE_CONFIG],
+      [pointToGame, POINT_CONFIDENCE_CONFIG],
+    ] as const) {
+      for (const [wins, loss] of [
+        [3, 1],
+        [7.3, 2.1],
+        [1, 9],
+      ]) {
+        const forward = Predictions.getWinFractionWithConfidence(wins, loss, lookup, config);
+        const backward = Predictions.getWinFractionWithConfidence(loss, wins, lookup, config);
+        expect(forward.fraction + backward.fraction).toBeCloseTo(1, 12);
+        expect(forward.confidence).toBeCloseTo(backward.confidence, 12);
+      }
+    }
   });
 
   it("handles the all-wins and all-losses edges of the lookup", () => {

@@ -702,7 +702,10 @@ export class TournamentBracket {
 
   /** The exact chance of each player to win a new single elimination bracket from this player order */
   static winChancesFromStatic(predictGameFn: PredictGameFn, playerOrder: string[]): BracketWinChances {
-    return TournamentBracket.#winChances(TournamentBracket.getStartingBracket(playerOrder), predictGameFn);
+    return TournamentBracket.#winChances(
+      TournamentBracket.#startingStructures(playerOrder, false).winners,
+      predictGameFn,
+    );
   }
 
   /** The exact chance of each stage for each player in the rest of this single elimination bracket */
@@ -713,7 +716,10 @@ export class TournamentBracket {
 
   /** The exact chance of each stage for each player in a new single elimination bracket from this player order */
   static stageChancesFromStatic(predictGameFn: PredictGameFn, playerOrder: string[]): BracketStageChances {
-    return TournamentBracket.#stageChances(TournamentBracket.getStartingBracket(playerOrder), predictGameFn);
+    return TournamentBracket.#stageChances(
+      TournamentBracket.#startingStructures(playerOrder, false).winners,
+      predictGameFn,
+    );
   }
 
   static #winChances(bracket: Bracket, predictGameFn: PredictGameFn): BracketWinChances {

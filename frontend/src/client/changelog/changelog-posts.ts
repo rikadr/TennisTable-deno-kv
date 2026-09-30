@@ -49,11 +49,11 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
     summary:
       "The win prediction for player A against player B is now 100% minus the prediction for B against A. Some predictions, expected scores and ranks change.",
     body: [
-      text("Before, the 2 directions of a pair could give different predictions. The app now corrects 3 causes:"),
+      text("The app now calculates each prediction in the same way for the 2 players of a pair:"),
       list(
-        "A chain through 2 other players counted only 1 of the 2 player orders. The order of the data selected it.",
-        "A chain with a 0% link and a 100% link gave 0% in both directions. Now it gives no information.",
-        "The lookups for sets and points are not exactly symmetric. Now the app calculates each pair in 1 order.",
+        "A chain through 2 other players counts both player orders. Before, it counted only 1.",
+        "A chain with a 0% link and a 100% link gives no information. Before, it gave 0% in both directions.",
+        "The set and point lookups use the average of the 2 directions. Before, they were not exactly symmetric.",
       ),
       text(
         "With real data, the predictions between ranked players change by 0.5 percentage points on average, and by up to 4.7. The expected scores change by up to 11 points, and 4 expected ranks change.",
