@@ -1,10 +1,16 @@
 import { EventTypeEnum } from "../event-store/event-types";
 import { TennisTable } from "../tennis-table";
-import { Tournament } from "./tournament";
+import { PredictionMethod, Tournament } from "./tournament";
 
 export const NUM_SIMULATIONS = 5_000; // 10_000 at least. 1_000 for higher performance
 const SIMULATION_TIME_BUFFER = 10_000; // Buffer added to simulation times (except Date.now())
 const PARTIAL_RESULT_INTERVAL = 2_000; // Emit a running tally every this many simulations
+/**
+ * A hybrid sample calculates the bracket exactly, so it varies much less than a full simulation. On
+ * real tournaments the variance of one sample was 35 to 49 times smaller. With 25 times fewer samples,
+ * the noise is the same or less.
+ */
+const HYBRID_SAMPLE_DIVISOR = 25;
 
 export class TournamentPrediction {
   private readonly parent: TennisTable;
@@ -32,10 +38,10 @@ export class TournamentPrediction {
 
     for (let i = 0; i < simulationTimePoints.length; i++) {
       const timePoint = simulationTimePoints[i];
-      const result = this.predictTournamentAtTime(tournamentId, timePoint, numSimulations, (partial) =>
+      const result = this.predictTournamentAtTime(tournamentId, timePoint, numSimulations, (partial, done) =>
         callback({
           data: partial,
-          progress: (i + partial.simulations / numSimulations) / simulationTimePoints.length,
+          progress: (i + done) / simulationTimePoints.length,
         }),
       );
       callback({
@@ -87,7 +93,8 @@ export class TournamentPrediction {
     tournamentId: string,
     simulationTime: number,
     numSimulations: number = NUM_SIMULATIONS,
-    onPartialResult?: (result: TournamentPredictionResult) => void,
+    /** Gets a running tally and the part of this time point that is done */
+    onPartialResult?: (result: TournamentPredictionResult, done: number) => void,
   ): TournamentPredictionResult {
     const winCounts = new Map<string, { wins: number }>();
 
@@ -108,39 +115,58 @@ export class TournamentPrediction {
         players: {},
         confidence: 0,
         simulations: numSimulations,
+        method: "simulation",
       };
     }
 
     let gamesSimulatedCount = 0;
     let totalConfidenceSum = 0;
 
-    // Run Monte Carlo simulations from this time point
-    for (let i = 0; i < numSimulations; i++) {
-      const {
-        winner,
-        gamesSimulatedCount: gsc,
-        totalConfidenceSum: tcs,
-      } = tournamentAtTime.predictWinner(stateAtTime, simulationTime);
-
-      // Record winner
-      if (!winCounts.has(winner)) {
-        winCounts.set(winner, { wins: 0 });
+    // Run Monte Carlo simulations from this time point. An exact result needs only one
+    let samples = numSimulations;
+    let resultMethod: PredictionMethod = "simulation";
+    for (let i = 0; i < samples; i++) {
+      const { chances, method, gamesCount, confidenceSum } = tournamentAtTime.predictWinChances(
+        stateAtTime,
+        simulationTime,
+      );
+      if (i === 0) {
+        resultMethod = method;
+        if (method === "hybrid") samples = Math.max(1, Math.ceil(numSimulations / HYBRID_SAMPLE_DIVISOR));
       }
-      winCounts.get(winner)!.wins++;
 
-      gamesSimulatedCount += gsc;
-      totalConfidenceSum += tcs;
+      chances.forEach((chance, player) => {
+        if (!winCounts.has(player)) {
+          winCounts.set(player, { wins: 0 });
+        }
+        winCounts.get(player)!.wins += chance;
+      });
+
+      gamesSimulatedCount += gamesCount;
+      totalConfidenceSum += confidenceSum;
+
+      if (method === "exact") {
+        return this.buildResult(simulationTime, winCounts, totalConfidenceSum, gamesSimulatedCount, 1, method);
+      }
 
       // Deliver a running tally so long simulations show progress instead of nothing
       const simulationsDone = i + 1;
-      if (onPartialResult && simulationsDone % PARTIAL_RESULT_INTERVAL === 0 && simulationsDone < numSimulations) {
+      if (onPartialResult && simulationsDone % PARTIAL_RESULT_INTERVAL === 0 && simulationsDone < samples) {
         onPartialResult(
-          this.buildResult(simulationTime, winCounts, totalConfidenceSum, gamesSimulatedCount, simulationsDone),
+          this.buildResult(
+            simulationTime,
+            winCounts,
+            totalConfidenceSum,
+            gamesSimulatedCount,
+            simulationsDone,
+            resultMethod,
+          ),
+          simulationsDone / samples,
         );
       }
     }
 
-    return this.buildResult(simulationTime, winCounts, totalConfidenceSum, gamesSimulatedCount, numSimulations);
+    return this.buildResult(simulationTime, winCounts, totalConfidenceSum, gamesSimulatedCount, samples, resultMethod);
   }
 
   private buildResult(
@@ -149,6 +175,7 @@ export class TournamentPrediction {
     totalConfidenceSum: number,
     gamesSimulatedCount: number,
     simulations: number,
+    method: PredictionMethod,
   ): TournamentPredictionResult {
     return {
       time: simulationTime,
@@ -156,14 +183,20 @@ export class TournamentPrediction {
       players: Object.fromEntries([...winCounts].map(([playerId, { wins }]) => [playerId, { wins }])),
       confidence: totalConfidenceSum / Math.max(1, gamesSimulatedCount),
       simulations,
+      method,
     };
   }
 }
 
 export type TournamentPredictionResult = {
   time: number;
+  /** The expected number of the simulations that each player wins. With an exact result, the chance of a win */
   players: Record<string, { wins: number }>;
   confidence: number;
-  /** How many simulations these counts are based on. Less than the requested number while still running. */
+  /**
+   * How many simulations these counts are based on. Less than the requested number while still
+   * running, 1 for an exact result, and fewer samples for a hybrid result.
+   */
   simulations: number;
+  method: PredictionMethod;
 };

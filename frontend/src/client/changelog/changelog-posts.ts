@@ -42,6 +42,25 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
+    slug: "exact-tournament-win-chances",
+    title: "Exact win chances for single elimination tournaments",
+    date: "2026-09-30",
+    tags: ["feature-update", "technical"],
+    summary:
+      "The Win chance tab calculates the win chances of a single elimination bracket exactly. The tab is also 2 to 10 times faster.",
+    body: [
+      text(
+        'In a single elimination bracket, the app calculates the chance of each player to win each game, from the first round to the final. The result has no random variation. The table shows "Exact calculation".',
+      ),
+      text(
+        "During group play, the app simulates the group play and calculates the bracket exactly for each simulation. For the same accuracy, this needs 25 times fewer simulations.",
+      ),
+      text(
+        "A double elimination bracket still uses simulations. The app now keeps the win prediction for each pair of players, so each simulation is faster.",
+      ),
+    ],
+  },
+  {
     slug: "expected-score-points-pool",
     title: "Expected scores use a direct calculation",
     date: "2026-09-29",
