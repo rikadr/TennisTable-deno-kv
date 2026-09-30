@@ -422,6 +422,45 @@ describe("simulatePlayerOrder", () => {
     expect(result.gamesSimulatedCount).toBe(2);
   });
 
+  it("gives the same standings as the real group play when it has the same results", () => {
+    // 7 players: groups of 4 and 3, so the group size adjustment is part of the scores
+    const players = ["P1", "P2", "P3", "P4", "P5", "P6", "P7"];
+    const playedGames = [gameEvent("P4", "P1"), gameEvent("P3", "P2")];
+    const groupPlay = getGroupPlay([...baseEvents(players), ...playedGames]);
+
+    const simulatedGames: EventType[] = [];
+    const player2AlwaysWins = (player1: string, player2: string) => {
+      simulatedGames.push(gameEvent(player2, player1));
+      return { winner: player2, loser: player1, confidence: 1 };
+    };
+    const result = groupPlay.simulatePlayerOrder(player2AlwaysWins, 500_000);
+    const realGroupPlay = getGroupPlay([...baseEvents(players), ...playedGames, ...simulatedGames]);
+
+    expect(realGroupPlay.groupPlayEnded).toBeDefined();
+    expect(result.standings).toEqual(realGroupPlay.getStandings());
+    expect(result.playerOrder).toEqual(realGroupPlay.getBracketPlayerOrder());
+  });
+
+  it("gives each group game one random number, also a played game", () => {
+    const events = [...baseEvents(["P1", "P2", "P3"]), gameEvent("P3", "P1")];
+    const groupPlay = getGroupPlay(events);
+    const randomNumbers: number[] = [];
+    let draws = 0;
+    const random = () => ++draws / 10;
+    groupPlay.simulatePlayerOrder(
+      (player1, player2, randomNumber) => {
+        randomNumbers.push(randomNumber);
+        return player1AlwaysWins(player1, player2);
+      },
+      500_000,
+      random,
+    );
+
+    // P1-P2, P1-P3 and P2-P3. P1-P3 is played, so its number 0.2 is not used
+    expect(draws).toBe(3);
+    expect(randomNumbers).toEqual([0.1, 0.3]);
+  });
+
   it("does not mutate the real group state", () => {
     const groupPlay = getGroupPlay(baseEvents(["P1", "P2", "P3"]));
     groupPlay.simulatePlayerOrder(player1AlwaysWins, 500_000);

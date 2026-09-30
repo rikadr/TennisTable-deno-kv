@@ -378,7 +378,7 @@ const LatestPredictionTable = ({
                   </div>
                 </td>
                 <td className="py-1 px-1 md:px-2 text-right font-mono text-xs md:text-sm text-primary-text/70">
-                  {entry.wins.toLocaleString()}
+                  {latest.method === "exact" ? "–" : Math.round(entry.wins).toLocaleString()}
                 </td>
                 <td className="py-1 px-1 md:px-2 text-right font-mono text-xs md:text-sm">
                   {entry.winPct.toFixed(1)}%
@@ -401,9 +401,13 @@ const LatestPredictionTable = ({
       </div>
       <p className="text-xs md:text-sm text-primary-text/50 mt-2">
         Confidence: {(latest.confidence * 100).toFixed(1)}% &middot;{" "}
-        {latest.simulations < numSimulations
-          ? `${latest.simulations.toLocaleString()} of ${numSimulations.toLocaleString()} simulations`
-          : `${latest.simulations.toLocaleString()} simulations`}
+        {latest.method === "exact"
+          ? "Exact calculation"
+          : latest.method === "hybrid"
+            ? `${latest.simulations.toLocaleString()} simulations of the group play, with an exact bracket`
+            : latest.simulations < numSimulations
+              ? `${latest.simulations.toLocaleString()} of ${numSimulations.toLocaleString()} simulations`
+              : `${latest.simulations.toLocaleString()} simulations`}
       </p>
     </section>
   );

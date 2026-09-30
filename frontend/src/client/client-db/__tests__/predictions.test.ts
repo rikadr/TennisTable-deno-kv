@@ -1,7 +1,7 @@
 import { TennisTable } from "../tennis-table";
 import { EventType, EventTypeEnum } from "../event-store/event-types";
-import { GAME_CONFIDENCE_CONFIG, Predictions } from "../predictions";
-import { gameToGame } from "../future-elo-probability-lookups";
+import { GAME_CONFIDENCE_CONFIG, POINT_CONFIDENCE_CONFIG, Predictions, SET_CONFIDENCE_CONFIG } from "../predictions";
+import { gameToGame, pointToGame, setToGame } from "../future-elo-probability-lookups";
 
 // The confidence curve itself is covered in future-elo.test.ts. These tests
 // cover the win-probability outputs and the deterministic fraction helpers.
@@ -41,6 +41,25 @@ describe("Predictions.getWinFractionWithConfidence", () => {
     expect(result.fraction).toBeCloseTo(1 / 3, 10);
   });
 
+  it("gives the complement for the other player with the set and point lookups", () => {
+    // The set and point lookups are not exactly symmetric, so the app uses the average of the two directions
+    for (const [lookup, config] of [
+      [setToGame, SET_CONFIDENCE_CONFIG],
+      [pointToGame, POINT_CONFIDENCE_CONFIG],
+    ] as const) {
+      for (const [wins, loss] of [
+        [3, 1],
+        [7.3, 2.1],
+        [1, 9],
+      ]) {
+        const forward = Predictions.getWinFractionWithConfidence(wins, loss, lookup, config);
+        const backward = Predictions.getWinFractionWithConfidence(loss, wins, lookup, config);
+        expect(forward.fraction + backward.fraction).toBeCloseTo(1, 12);
+        expect(forward.confidence).toBeCloseTo(backward.confidence, 12);
+      }
+    }
+  });
+
   it("handles the all-wins and all-losses edges of the lookup", () => {
     expect(Predictions.getWinFractionWithConfidence(5, 0, gameToGame, GAME_CONFIDENCE_CONFIG).fraction).toBe(1);
     expect(Predictions.getWinFractionWithConfidence(0, 5, gameToGame, GAME_CONFIDENCE_CONFIG).fraction).toBe(0);
@@ -63,6 +82,12 @@ describe("Predictions.linkFractions", () => {
   it("multiplies the confidences of the two links", () => {
     const linked = Predictions.linkFractions({ fraction: 0.6, confidence: 0.5 }, { fraction: 0.6, confidence: 0.4 });
     expect(linked.confidence).toBeCloseTo(0.2, 10);
+  });
+
+  it("gives no information for a link of 0 and a link of 1", () => {
+    // Before the fix, both directions of this chain gave 0
+    const linked = Predictions.linkFractions({ fraction: 0, confidence: 1 }, { fraction: 1, confidence: 1 });
+    expect(linked).toEqual({ fraction: 0.5, confidence: 0 });
   });
 
   it("is symmetric: the reverse chain gives the complement fraction", () => {
@@ -191,6 +216,68 @@ describe("Predictions direct win probability from games", () => {
   });
 });
 
+describe("Predictions symmetry", () => {
+  // Every pair of P1, A, B and P2 played, except P1 and P2
+  const games: [string, string][] = [
+    ["P1", "A"],
+    ["P1", "A"],
+    ["A", "P1"],
+    ["P1", "B"],
+    ["B", "P1"],
+    ["B", "P1"],
+    ["A", "B"],
+    ["A", "B"],
+    ["A", "B"],
+    ["B", "A"],
+    ["A", "P2"],
+    ["P2", "A"],
+    ["P2", "A"],
+    ["B", "P2"],
+    ["B", "P2"],
+    ["B", "P2"],
+    ["P2", "B"],
+  ];
+
+  it("counts the chains P1→A→B→P2 and P1→B→A→P2 in the two-layer fraction", () => {
+    const predictions = buildTennisTable(games).predictions;
+    const direct = (a: string, b: string) => predictions.getDirectFraction(a, b);
+    const chain = (a: string, b: string) =>
+      Predictions.linkFractions(Predictions.linkFractions(direct("P1", a), direct(a, b)), direct(b, "P2"));
+
+    const expected = Predictions.combineFractions([chain("A", "B"), chain("B", "A")]);
+    const twoLayer = predictions.getTwoLayerFraction("P1", "P2");
+
+    expect(twoLayer.fraction).toBeCloseTo(expected.fraction, 10);
+    expect(twoLayer.confidence).toBeCloseTo(expected.confidence, 10);
+  });
+
+  it("gives the complement fraction for the reverse pair, in each layer", () => {
+    // A new TennisTable for each direction, so no value comes from the cache of the other direction
+    const forward = buildTennisTable(games).predictions;
+    const backward = buildTennisTable(games).predictions;
+
+    for (const [p1, p2] of [
+      ["P1", "P2"],
+      ["P1", "B"],
+      ["A", "P2"],
+    ]) {
+      const layers = (predictions: Predictions, a: string, b: string) => [
+        predictions.getDirectFraction(a, b),
+        predictions.getOneLayerFraction(a, b),
+        predictions.getTwoLayerFraction(a, b),
+        predictions.getPredictedFraction(a, b)!,
+      ];
+      const forwardLayers = layers(forward, p1, p2);
+      const backwardLayers = layers(backward, p2, p1);
+      forwardLayers.forEach((layer, i) => {
+        if (layer.confidence === 0) return;
+        expect(layer.fraction + backwardLayers[i].fraction).toBeCloseTo(1, 12);
+        expect(layer.confidence).toBeCloseTo(backwardLayers[i].confidence, 12);
+      });
+    }
+  });
+});
+
 describe("Predictions transitive (one-layer) probability", () => {
   const chainGames: [string, string][] = [
     // A beats M 3 of 4
@@ -233,6 +320,24 @@ describe("Predictions transitive (one-layer) probability", () => {
       ["A", "B"],
       ["C", "D"],
     ]);
+    expect(tt.predictions.getPredictedFraction("A", "C")).toBeUndefined();
+  });
+
+  it("gives the same prediction when called again, and a separate one for the reverse pair", () => {
+    const tt = buildTennisTable(chainGames);
+    const first = tt.predictions.getPredictedFraction("A", "B");
+
+    expect(tt.predictions.getPredictedFraction("A", "B")).toEqual(first);
+    expect(tt.predictions.getPredictedFraction("B", "A")!.fraction).toBeCloseTo(0.1, 3);
+  });
+
+  it("gives undefined again for a pair with no prediction", () => {
+    const tt = buildTennisTable([
+      ["A", "B"],
+      ["C", "D"],
+    ]);
+    tt.predictions.getPredictedFraction("A", "C");
+
     expect(tt.predictions.getPredictedFraction("A", "C")).toBeUndefined();
   });
 

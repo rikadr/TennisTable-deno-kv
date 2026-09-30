@@ -274,63 +274,103 @@ export class TournamentGroupPlay {
     return p1.playerOrderIndex - p2.playerOrderIndex; // Default to player order
   }
 
+  /**
+   * The group games in the order that the group scores add them up, with the players as indexes.
+   * The simulation uses these arrays, so it does not copy the games for each run.
+   */
+  #simulationPlan?: {
+    players: string[];
+    groupSizeAdjustmentFactors: number[];
+    playerOrderIndexes: number[];
+    games: { player1: number; player2: number; winner?: number; skipped: boolean }[];
+  };
+
+  get #plan() {
+    if (this.#simulationPlan) return this.#simulationPlan;
+    const players = Array.from(this.groupScores.keys());
+    const indexOf = new Map(players.map((player, index) => [player, index]));
+    const games = this.groups.flatMap((group) =>
+      group.groupGames.map((game) => {
+        if (!game.player1 || !game.player2) throw new Error("Group game missing players");
+        return {
+          player1: indexOf.get(game.player1)!,
+          player2: indexOf.get(game.player2)!,
+          winner: game.winner === undefined ? undefined : indexOf.get(game.winner)!,
+          skipped: game.skipped !== undefined,
+        };
+      }),
+    );
+    this.#simulationPlan = {
+      players,
+      groupSizeAdjustmentFactors: players.map((player) => this.groupScores.get(player)!.groupSizeAdjustmentFactor),
+      playerOrderIndexes: players.map((player) => this.groupScores.get(player)!.playerOrderIndex),
+      games,
+    };
+    return this.#simulationPlan;
+  }
+
+  /**
+   * Simulates the pending group games and gives the total standings. The scores add up in the same
+   * order as {@link TournamentGroupPlay.groupScores}, and the sort uses the same rules as
+   * {@link TournamentGroupPlay.sortGroupScores}.
+   */
   simulatePlayerOrder(
     simulateGameFn: SimulateGameFn,
     time: number,
+    /** Gives one number for each group game, also for a played game, so the same game gets the same number */
+    random: () => number = Math.random,
   ): {
     playerOrder: string[];
     standings: string[];
     gamesSimulatedCount: number;
     totalConfidenceSum: number;
   } {
-    // Deep copy groups and group games to avoid mutating the original
-    const groupsCopy = this.groups.map((group) => ({
-      ...group,
-      groupGames: group.groupGames.map((game) => ({ ...game })),
-      played: [...group.played],
-      pending: group.pending.map((game) => ({ ...game })),
-    }));
+    const { players, groupSizeAdjustmentFactors, playerOrderIndexes, games } = this.#plan;
+    const count = players.length;
+    const score = new Array<number>(count).fill(0);
+    const adjustedScore = new Array<number>(count).fill(0);
+    const wins = new Array<number>(count).fill(0);
+    const loss = new Array<number>(count).fill(0);
+    const skips = new Array<number>(count).fill(0);
 
     let gamesSimulatedCount = 0;
     let totalConfidenceSum = 0;
 
-    // Simulate all pending games in each group
-    for (let groupIdx = 0; groupIdx < groupsCopy.length; groupIdx++) {
-      const group = groupsCopy[groupIdx];
-
-      for (let gameIdx = 0; gameIdx < group.pending.length; gameIdx++) {
-        const game = group.pending[gameIdx];
-        if (!game.player1 || !game.player2) {
-          throw new Error("Pending game missing players");
-        }
-
-        // Simulate the game
-        const result = simulateGameFn(game.player1, game.player2);
-
-        game.winner = result.winner;
-        game.completedAt = time;
+    for (const game of games) {
+      const randomNumber = random();
+      let winner = game.winner;
+      if (winner === undefined) {
+        const result = simulateGameFn(players[game.player1], players[game.player2], randomNumber);
+        winner = result.winner === players[game.player1] ? game.player1 : game.player2;
         gamesSimulatedCount++;
         totalConfidenceSum += result.confidence;
+      }
+      const loser = winner === game.player1 ? game.player2 : game.player1;
 
-        const correspondingGame = group.groupGames.find(
-          (g) => g.player1 === game.player1 && g.player2 === game.player2 && !g.winner,
-        );
-        if (correspondingGame) {
-          correspondingGame.winner = result.winner;
-          correspondingGame.completedAt = time;
-        }
-
-        // Move from pending to played
-        group.played.push(game as GroupGame);
+      wins[winner]++;
+      score[winner] += Tournament.GROUP_POINTS.WIN;
+      adjustedScore[winner] += Tournament.GROUP_POINTS.WIN * groupSizeAdjustmentFactors[winner];
+      if (game.skipped) {
+        skips[loser]++;
+        score[loser] += Tournament.GROUP_POINTS.SKIP;
+        adjustedScore[loser] += Tournament.GROUP_POINTS.SKIP * groupSizeAdjustmentFactors[loser];
+      } else {
+        loss[loser]++;
+        score[loser] += Tournament.GROUP_POINTS.LOSS;
+        adjustedScore[loser] += Tournament.GROUP_POINTS.LOSS * groupSizeAdjustmentFactors[loser];
       }
     }
 
-    // Recalculate group scores with simulated games
-    const groups = groupsCopy.map((g) => g.players);
-    const groupGames = groupsCopy.map((g) => g.groupGames);
-    const simulatedScores = this.#calculateGroupScores(groups, groupGames);
-
-    const standings = TournamentGroupPlay.#standings(simulatedScores);
+    const order = Array.from({ length: count }, (_, index) => index).sort(
+      (a, b) =>
+        adjustedScore[b] - adjustedScore[a] ||
+        wins[b] - wins[a] ||
+        skips[a] - skips[b] ||
+        score[b] - score[a] ||
+        loss[a] - loss[b] ||
+        playerOrderIndexes[a] - playerOrderIndexes[b],
+    );
+    const standings = order.map((index) => players[index]);
 
     return {
       playerOrder: standings.slice(0, this.getBracketSize()),
