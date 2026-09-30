@@ -192,6 +192,12 @@ export class Predictions {
    * Equivalent to FutureElo.getDirectFraction but with zero game iteration.
    */
   getDirectFraction(p1: string, p2: string): Fraction {
+    // The lookups are not exactly symmetric. Calculate each pair in one order, so the reverse is the complement.
+    if (p1 > p2) {
+      const reverse = this.getDirectFraction(p2, p1);
+      return reverse.confidence === 0 ? reverse : { fraction: 1 - reverse.fraction, confidence: reverse.confidence };
+    }
+
     const p1Stats = this.getStats(p1, p2);
     const p2Stats = this.getStats(p2, p1);
 
@@ -385,9 +391,8 @@ export class Predictions {
 
     // Iterate unique unordered pairs (i < j) of candidates.
     // A valid chain p1→a→b→p2 needs: a adj p1, a adj b, b adj p2.
-    // Since {a,b} and {b,a} yield equivalent results under the
-    // Bradley-Terry model, we try both orientations of each pair
-    // but only where the adjacency constraints are met.
+    // The chains p1→a→b→p2 and p1→b→a→p2 use different games, so each
+    // orientation counts when its adjacency constraints are met.
     for (let i = 0; i < candidates.length; i++) {
       const a = candidates[i];
       const adjA = this.adjacencyMap.get(a);
@@ -404,12 +409,7 @@ export class Predictions {
         }
 
         // Orientation 2: p1→b→a→p2 (needs b adj p1, a adj p2)
-        // Skip if both orientations are valid — orientation 1 already covers this pair
-        const bAdjP1 = isAdjP1.has(b);
-        const aAdjP2 = isAdjP2.has(a);
-        if (bAdjP1 && aAdjP2 && isAdjP1.has(a) && isAdjP2.has(b)) continue;
-
-        if (bAdjP1 && aAdjP2) {
+        if (isAdjP1.has(b) && isAdjP2.has(a)) {
           const step1 = Predictions.linkFractions(this.getDirectFraction(p1, b), this.getDirectFraction(b, a));
           fractions.push(Predictions.linkFractions(step1, this.getDirectFraction(a, p2)));
         }
@@ -577,8 +577,11 @@ export class Predictions {
     const numerator = fraction1.fraction * fraction2.fraction;
     const denominator = numerator + (1 - fraction1.fraction) * (1 - fraction2.fraction);
 
+    // A link of 0 and a link of 1 contradict each other, so the chain gives no information
+    if (denominator === 0) return { fraction: 0.5, confidence: 0 };
+
     return {
-      fraction: denominator === 0 ? 0 : numerator / denominator,
+      fraction: numerator / denominator,
       confidence: fraction1.confidence * fraction2.confidence,
     };
   }

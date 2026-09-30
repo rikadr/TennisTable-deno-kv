@@ -65,6 +65,12 @@ describe("Predictions.linkFractions", () => {
     expect(linked.confidence).toBeCloseTo(0.2, 10);
   });
 
+  it("gives no information for a link of 0 and a link of 1", () => {
+    // Before the fix, both directions of this chain gave 0
+    const linked = Predictions.linkFractions({ fraction: 0, confidence: 1 }, { fraction: 1, confidence: 1 });
+    expect(linked).toEqual({ fraction: 0.5, confidence: 0 });
+  });
+
   it("is symmetric: the reverse chain gives the complement fraction", () => {
     const forward = Predictions.linkFractions({ fraction: 0.7, confidence: 1 }, { fraction: 0.6, confidence: 1 });
     const backward = Predictions.linkFractions({ fraction: 0.3, confidence: 1 }, { fraction: 0.4, confidence: 1 });
@@ -188,6 +194,68 @@ describe("Predictions direct win probability from games", () => {
     expect(stats.weightedWins).toBeCloseTo(2, 5);
     expect(stats.weightedLost).toBeCloseTo(1, 5);
     expect(stats.fraction.fraction).toBeCloseTo(2 / 3, 5);
+  });
+});
+
+describe("Predictions symmetry", () => {
+  // Every pair of P1, A, B and P2 played, except P1 and P2
+  const games: [string, string][] = [
+    ["P1", "A"],
+    ["P1", "A"],
+    ["A", "P1"],
+    ["P1", "B"],
+    ["B", "P1"],
+    ["B", "P1"],
+    ["A", "B"],
+    ["A", "B"],
+    ["A", "B"],
+    ["B", "A"],
+    ["A", "P2"],
+    ["P2", "A"],
+    ["P2", "A"],
+    ["B", "P2"],
+    ["B", "P2"],
+    ["B", "P2"],
+    ["P2", "B"],
+  ];
+
+  it("counts the chains P1→A→B→P2 and P1→B→A→P2 in the two-layer fraction", () => {
+    const predictions = buildTennisTable(games).predictions;
+    const direct = (a: string, b: string) => predictions.getDirectFraction(a, b);
+    const chain = (a: string, b: string) =>
+      Predictions.linkFractions(Predictions.linkFractions(direct("P1", a), direct(a, b)), direct(b, "P2"));
+
+    const expected = Predictions.combineFractions([chain("A", "B"), chain("B", "A")]);
+    const twoLayer = predictions.getTwoLayerFraction("P1", "P2");
+
+    expect(twoLayer.fraction).toBeCloseTo(expected.fraction, 10);
+    expect(twoLayer.confidence).toBeCloseTo(expected.confidence, 10);
+  });
+
+  it("gives the complement fraction for the reverse pair, in each layer", () => {
+    // A new TennisTable for each direction, so no value comes from the cache of the other direction
+    const forward = buildTennisTable(games).predictions;
+    const backward = buildTennisTable(games).predictions;
+
+    for (const [p1, p2] of [
+      ["P1", "P2"],
+      ["P1", "B"],
+      ["A", "P2"],
+    ]) {
+      const layers = (predictions: Predictions, a: string, b: string) => [
+        predictions.getDirectFraction(a, b),
+        predictions.getOneLayerFraction(a, b),
+        predictions.getTwoLayerFraction(a, b),
+        predictions.getPredictedFraction(a, b)!,
+      ];
+      const forwardLayers = layers(forward, p1, p2);
+      const backwardLayers = layers(backward, p2, p1);
+      forwardLayers.forEach((layer, i) => {
+        if (layer.confidence === 0) return;
+        expect(layer.fraction + backwardLayers[i].fraction).toBeCloseTo(1, 12);
+        expect(layer.confidence).toBeCloseTo(backwardLayers[i].confidence, 12);
+      });
+    }
   });
 });
 
