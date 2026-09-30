@@ -59,7 +59,7 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
         "The expected line in the score graph showed 1000 before the player was in the simulation. Now the line starts at that time.",
       ),
       text(
-        "The calculation removes the random variation of a score at K = 32. For this reason, the gaps between the expected scores are a little smaller. At the top and the bottom of the leaderboard, the difference is about 15 points.",
+        "The calculation has no random variation from K = 32, so the gaps between the expected scores are up to about 15 points smaller.",
       ),
     ],
   },
@@ -462,7 +462,7 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
         "Set scores are newer than the league, so a rating is more exact over the recent period. A game with no score still counts in full.",
       ),
       text(
-        "The rating uses played games only. A retirement today does not change the history of any player, and the rating does not depend on who is on the leaderboard. A result from today also sharpens the estimate of a player months back, so a curve can change when new games arrive. The expected score simulation on the player page answers a different question: your place in the field of active players. Both numbers stay.",
+        "The rating uses played games only. A retirement today does not change the history of any player, and the rating does not depend on who is on the leaderboard. A result from today also sharpens the estimate of a player months back, so a curve can change when new games arrive. The expected score on the player page answers a different question: your place in the field of active players. Both numbers stay.",
       ),
     ],
   },
@@ -1425,7 +1425,7 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
     summary: "The standings if every player played every other player the same number of times.",
     body: [
       text(
-        "The app simulates the games that did not happen. It uses the prediction model for each pair of players, then ranks the results. The schedule has no effect on this leaderboard.",
+        "The app calculates the expected score of each player from the prediction model for each pair of players, then ranks the results. The schedule has no effect on this leaderboard.",
       ),
       text(
         "The real standings are part a rank of skill and part a rank of the players you played. If you beat the same 3 players 40 times, your rating says little. This page is not the real leaderboard and does not replace it.",

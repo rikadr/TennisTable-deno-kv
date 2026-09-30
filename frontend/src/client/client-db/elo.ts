@@ -38,10 +38,15 @@ export abstract class Elo {
     return playerMap;
   }
 
+  /** The expected result of a game for a player: the probability of a win. */
+  static expectedResult(score: number, opponentScore: number): number {
+    return 1 / (1 + Math.pow(10, (opponentScore - score) / this.DIVISOR));
+  }
+
   static calculateELO(winnersElo: number, losersElo: number) {
     // Calculate the expected scores for both players
-    const expectedScoreWinner = 1 / (1 + Math.pow(10, (losersElo - winnersElo) / this.DIVISOR));
-    const expectedScoreLoser = 1 / (1 + Math.pow(10, (winnersElo - losersElo) / this.DIVISOR));
+    const expectedScoreWinner = this.expectedResult(winnersElo, losersElo);
+    const expectedScoreLoser = this.expectedResult(losersElo, winnersElo);
 
     const winnersNewElo = winnersElo + Elo.K * (1 - expectedScoreWinner);
     const losersNewElo = losersElo + Elo.K * (0 - expectedScoreLoser);

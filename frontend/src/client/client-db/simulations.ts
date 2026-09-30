@@ -47,12 +47,15 @@ export class Simulations {
 
   expectedLeaderBoard(includeUnrankedPlayerId?: string): ExpectedLeaderboard {
     const { rankedPlayers } = this.parent.leaderboard.getLeaderboard();
-    const currentScores = new Map<string, number>();
-    this.parent.leaderboard.getCachedLeaderboardMap().forEach((player, id) => currentScores.set(id, player.elo));
+    const rankedIds = new Set(rankedPlayers.map((player) => player.id));
 
-    const expectedScores = this.expectedScores(this.parent.predictions, currentScores, includeUnrankedPlayerId);
+    const expectedScores = this.expectedScores(
+      this.parent.predictions,
+      this.parent.predictions.getExpectedScorePlayerIds(includeUnrankedPlayerId),
+      this.parent.leaderboard.getCachedLeaderboardMap(),
+    );
     const expected = Array.from(expectedScores, ([id, score]) => ({ id, score }))
-      .filter(({ id }) => id === includeUnrankedPlayerId || rankedPlayers.some((ranked) => ranked.id === id))
+      .filter(({ id }) => id === includeUnrankedPlayerId || rankedIds.has(id))
       .sort((a, b) => b.score - a.score)
       .map((player, index) => ({ ...player, rank: index + 1 }));
 
@@ -90,10 +93,12 @@ export class Simulations {
     times.forEach((gameTime, index) => {
       const relevantGames = allGames.filter((g) => g.playedAt <= gameTime);
       const predictions = new Predictions(this.parent, gameTime, relevantGames);
-      const scoresAtTime = new Map<string, number>();
-      Elo.eloCalculator(relevantGames, this.parent.allPlayers).forEach((p, id) => scoresAtTime.set(id, p.elo));
-
-      const elo = this.expectedScores(predictions, scoresAtTime).get(playerId);
+      const playerIds = predictions.getExpectedScorePlayerIds();
+      let elo: number | undefined;
+      if (playerIds.includes(playerId)) {
+        const scoresAtTime = Elo.eloCalculator(relevantGames, this.parent.allPlayers);
+        elo = this.expectedScores(predictions, playerIds, scoresAtTime).get(playerId);
+      }
       workerCallback({
         elements: elo === undefined ? [] : [{ elo, time: gameTime }],
         progress: (index + 1) / times.length,
@@ -107,12 +112,11 @@ export class Simulations {
    */
   private expectedScores(
     predictions: Predictions,
-    currentScores: Map<string, number>,
-    includeUnrankedPlayerId?: string,
+    playerIds: string[],
+    currentScores: Map<string, { elo: number }>,
   ): Map<string, number> {
-    const playerIds = predictions.getExpectedScorePlayerIds(includeUnrankedPlayerId);
     if (playerIds.length < 2) return new Map();
-    const startScores = new Map(playerIds.map((id) => [id, currentScores.get(id) ?? Elo.INITIAL_ELO]));
+    const startScores = new Map(playerIds.map((id) => [id, currentScores.get(id)?.elo ?? Elo.INITIAL_ELO]));
     return solveExpectedScores(startScores, predictions.getPairFractions(playerIds));
   }
 }

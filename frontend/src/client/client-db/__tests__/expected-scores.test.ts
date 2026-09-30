@@ -80,6 +80,22 @@ describe("solveExpectedScores", () => {
     }
   });
 
+  it("finds the exact scores when two groups connect through one lopsided pair", () => {
+    // Even games inside each group of 10 players. Only p0 and p10 play across the groups.
+    const ids = Array.from({ length: 20 }, (_, i) => `p${i}`);
+    const pairs: PairFraction[] = [];
+    for (let i = 0; i < ids.length; i++)
+      for (let j = i + 1; j < ids.length; j++)
+        if (Math.floor(i / 10) === Math.floor(j / 10)) pairs.push({ a: ids[i], b: ids[j], fraction: 0.5 });
+    pairs.push({ a: "p0", b: "p10", fraction: 0.99 });
+
+    const scores = solveExpectedScores(new Map(ids.map((id) => [id, 1000])), pairs);
+
+    expect(scores.get("p0")! - scores.get("p10")!).toBeCloseTo(gapFor(0.99), 6);
+    expect(scores.get("p9")! - scores.get("p19")!).toBeCloseTo(gapFor(0.99), 6);
+    expect(total(scores)).toBeCloseTo(20 * 1000, 6);
+  });
+
   it("limits a fraction of 1, so the scores stay finite", () => {
     const scores = solveExpectedScores(
       new Map([
