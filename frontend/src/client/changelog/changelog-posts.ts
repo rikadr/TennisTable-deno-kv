@@ -42,6 +42,26 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
+    slug: "recent-games-tags",
+    title: "Tags on the recent games page",
+    date: "2026-10-01",
+    tags: ["feature-update"],
+    summary: "The recent games page shows tags for notable games, for example tournament games and achievements.",
+    body: [
+      text("A game can have these tags:"),
+      list(
+        "🏆 The tournament round, when the game is a tournament game.",
+        "⚡ Upset: the winner had 100 or more Elo less than the loser before the game.",
+        "🆕 First meeting: the first game between the 2 players.",
+        "🔄 Comeback: the winner lost the first set. This tag needs the set scores of the game.",
+        "Each achievement that the game earned, with its icon. 1 tag names all the players who earned it.",
+      ),
+      text(
+        "On a wide screen the tags have their own column. On a phone they show on a line below the game. Hold the pointer on a tag to see the full text.",
+      ),
+    ],
+  },
+  {
     slug: "dashboard",
     title: "A new dashboard replaces the leaderboard page",
     date: "2026-10-01",

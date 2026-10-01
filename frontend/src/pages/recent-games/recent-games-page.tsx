@@ -10,12 +10,19 @@ import { useMediaQuery } from "../../hooks/use-media-query";
 import { session } from "../../services/auth";
 import { ProfilePicture } from "../player/profile-picture";
 import { GameMarkers } from "../game/game-markers";
+import { GameTagList } from "./game-tag-list";
 
 type View = "overall" | "season";
 
 const MIN_GAMES_DEFAULT = 20;
 const MIN_GAMES_ADMIN = 100;
 const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
+
+// Each game is its own tbody, so the game row and its tag row below md share the hover and the click
+const GAME_GROUP_CLASS_NAME =
+  "group cursor-pointer border-t border-primary-text/50 first-of-type:border-t-0 text-xs xs:text-sm md:text-base";
+const GAME_ROW_CLASS_NAME =
+  "bg-primary-background group-hover:bg-secondary-background group-hover:text-secondary-text transition-colors";
 
 type DisplayGame = Game & {
   pointsDiff: number;
@@ -106,7 +113,7 @@ export const RecentGamesPage: React.FC = () => {
 
   return (
     <div className="w-full px-4 flex flex-col items-center">
-      <div className="w-full max-w-2xl">
+      <div className="w-full max-w-4xl">
         <div className="bg-primary-background rounded-lg w-full overflow-hidden">
           <h1 className="text-2xl md:text-4xl text-center mt-2 md:mt-4 text-primary-text">Recent games</h1>
           <p className="text-center text-sm md:text-base text-primary-text/60 mb-1 md:mb-2">
@@ -159,6 +166,7 @@ export const RecentGamesPage: React.FC = () => {
                     <th className="py-1 px-1 xs:px-2 md:px-3 text-right font-medium">Loser 💔</th>
                     <th className="py-1 px-1 md:px-2 text-right font-medium whitespace-nowrap">W pts</th>
                     <th className="py-1 px-1 md:px-2 text-right font-normal whitespace-nowrap">L pts</th>
+                    {isMediumScreen && <th className="py-1 px-1 xs:px-2 md:px-3 text-left font-medium">Tags</th>}
                     <th className="py-1 px-1 xs:px-2 md:px-3"></th>
                   </tr>
                 ) : (
@@ -167,29 +175,41 @@ export const RecentGamesPage: React.FC = () => {
                     <th className="py-1 px-1 md:px-2 text-center font-medium whitespace-nowrap">Score</th>
                     <th className="py-1 px-1 xs:px-2 md:px-3 text-right font-medium">Loser 💔</th>
                     <th className="py-1 px-1 xs:px-2 md:px-3 text-right font-medium whitespace-nowrap">Elo won</th>
+                    {isMediumScreen && <th className="py-1 px-1 xs:px-2 md:px-3 text-left font-medium">Tags</th>}
                     <th className="py-1 px-1 xs:px-2 md:px-3"></th>
                   </tr>
                 )}
               </thead>
-              <tbody className="divide-y divide-primary-text/50 text-xs xs:text-sm md:text-base">
-                {processedGames.map((game, index) => {
-                  const rowClick = () => navigate(`/game?time=${game.playedAt}`);
+              {processedGames.map((game, index) => {
+                const rowClick = () => navigate(`/game?time=${game.playedAt}`);
+                const tags = context.gameTags.getTags(game);
+                // From md the tags have their own column. Below md there is no room for one,
+                // so they take a second row under the game, across all the columns.
+                const tagsCell = isMediumScreen && (
+                  <td className="py-1 px-1 xs:px-2 md:px-3 w-[30%] max-w-0">
+                    <GameTagList tags={tags} />
+                  </td>
+                );
+                const tagsRow = !isMediumScreen && tags.length > 0 && (
+                  <tr className={GAME_ROW_CLASS_NAME}>
+                    <td colSpan={view === "season" ? 6 : 5} className="pb-1 px-1 xs:px-2">
+                      <GameTagList tags={tags} />
+                    </td>
+                  </tr>
+                );
 
-                  if (view === "season") {
-                    return (
-                      <tr
-                        key={index}
-                        onClick={rowClick}
-                        className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text cursor-pointer transition-colors"
-                      >
-                        <td className="py-1 px-1 xs:px-2 md:px-3 w-[30%] max-w-0">
+                if (view === "season") {
+                  return (
+                    <tbody key={index} onClick={rowClick} className={GAME_GROUP_CLASS_NAME}>
+                      <tr className={GAME_ROW_CLASS_NAME}>
+                        <td className="py-1 px-1 xs:px-2 md:px-3 w-[22%] max-w-0">
                           <div className="flex items-center gap-1 md:gap-2 min-w-0">
                             <ProfilePicture playerId={game.winner} size={profilePictureSize} border={2} />
                             <span className="font-medium truncate">{context.playerName(game.winner)}</span>
                           </div>
                         </td>
                         <td className="py-1 px-1 md:px-2 text-center whitespace-nowrap w-[1%]">{renderScore(game)}</td>
-                        <td className="py-1 px-1 xs:px-2 md:px-3 w-[30%] max-w-0">
+                        <td className="py-1 px-1 xs:px-2 md:px-3 w-[22%] max-w-0">
                           <div className="flex items-center justify-end gap-1 md:gap-2 min-w-0">
                             <span className="font-medium truncate">{context.playerName(game.loser)}</span>
                             <ProfilePicture playerId={game.loser} size={profilePictureSize} border={2} />
@@ -203,27 +223,27 @@ export const RecentGamesPage: React.FC = () => {
                             ? fmtNum(game.loserPointsDiff, { signedPositive: true })
                             : ""}
                         </td>
+                        {tagsCell}
                         <td className="py-1 px-1 xs:px-2 md:px-3 text-right whitespace-nowrap w-[1%]">
                           <RelativeTime date={new Date(game.playedAt)} variant="auto" />
                         </td>
                       </tr>
-                    );
-                  }
+                      {tagsRow}
+                    </tbody>
+                  );
+                }
 
-                  return (
-                    <tr
-                      key={index}
-                      onClick={rowClick}
-                      className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text cursor-pointer transition-colors"
-                    >
-                      <td className="py-1 px-1 xs:px-2 md:px-3 w-[35%] max-w-0">
+                return (
+                  <tbody key={index} onClick={rowClick} className={GAME_GROUP_CLASS_NAME}>
+                    <tr className={GAME_ROW_CLASS_NAME}>
+                      <td className="py-1 px-1 xs:px-2 md:px-3 w-[26%] max-w-0">
                         <div className="flex items-center gap-1 md:gap-2 min-w-0">
                           <ProfilePicture playerId={game.winner} size={profilePictureSize} border={2} />
                           <span className="font-medium truncate">{context.playerName(game.winner)}</span>
                         </div>
                       </td>
                       <td className="py-1 px-1 md:px-2 text-center whitespace-nowrap w-[1%]">{renderScore(game)}</td>
-                      <td className="py-1 px-1 xs:px-2 md:px-3 w-[35%] max-w-0">
+                      <td className="py-1 px-1 xs:px-2 md:px-3 w-[26%] max-w-0">
                         <div className="flex items-center justify-end gap-1 md:gap-2 min-w-0">
                           <span className="font-medium truncate">{context.playerName(game.loser)}</span>
                           <ProfilePicture playerId={game.loser} size={profilePictureSize} border={2} />
@@ -232,13 +252,15 @@ export const RecentGamesPage: React.FC = () => {
                       <td className="py-1 px-1 xs:px-2 md:px-3 text-right font-medium w-[1%] whitespace-nowrap">
                         {fmtNum(game.pointsDiff, { signedPositive: true })}
                       </td>
+                      {tagsCell}
                       <td className="py-1 px-1 xs:px-2 md:px-3 text-right whitespace-nowrap w-[1%]">
                         <RelativeTime date={new Date(game.playedAt)} variant="auto" />
                       </td>
                     </tr>
-                  );
-                })}
-              </tbody>
+                    {tagsRow}
+                  </tbody>
+                );
+              })}
             </table>
           )}
 

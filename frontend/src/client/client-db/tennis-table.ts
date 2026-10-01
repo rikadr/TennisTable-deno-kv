@@ -16,6 +16,7 @@ import { Predictions } from "./predictions";
 import { HallOfFame } from "./hall-of-fame";
 import { HallOfFameHistory } from "./hall-of-fame-history";
 import { Whr } from "./whr";
+import { GameTags } from "./game-tags";
 
 export class TennisTable {
   // --------------------------------------------------------------------------
@@ -58,6 +59,7 @@ export class TennisTable {
   hallOfFame: HallOfFame;
   hallOfFameHistory: HallOfFameHistory;
   whr: Whr;
+  gameTags: GameTags;
 
   constructor(data: { events: EventType[]; gameLimitForRankedOverride?: number; referenceTime?: number }) {
     this.events = data.events;
@@ -82,6 +84,7 @@ export class TennisTable {
     this.hallOfFame = new HallOfFame(this);
     this.hallOfFameHistory = new HallOfFameHistory(this);
     this.whr = new Whr(this);
+    this.gameTags = new GameTags(this);
   }
 
   /** Returns list of only active players */
