@@ -1,21 +1,33 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { fmtNum } from "../../common/number-utils";
-import { useUnrankedExpectedScoreWorker } from "../../hooks/use-unranked-expected-score-worker";
+import { usePlayerExpectedScoreWorker } from "../../hooks/use-player-expected-score-worker";
+import { useEventDbContext } from "../../wrappers/event-db-context";
 
 type Props = {
   playerId: string;
+  /** A retired player is put back among the active players for the calculation */
+  retired: boolean;
 };
 
 /**
- * Compact overview widget for unranked players: calculates their expected score
- * with every ranked player plus this player, like the expected leaderboard. The
- * first click arms an insufficient-data warning; the second click on the same
- * button runs the calculation.
+ * Compact overview widget for unranked and retired players: calculates their expected score
+ * with every ranked player plus this player, like the expected leaderboard. The first click
+ * arms a warning about the data; the second click on the same button runs the calculation.
  */
-export const UnrankedExpectedScore: React.FC<Props> = ({ playerId }) => {
-  const { start, result, running } = useUnrankedExpectedScoreWorker(playerId);
+export const PlayerExpectedScore: React.FC<Props> = ({ playerId, retired }) => {
+  const context = useEventDbContext();
+  const { start, result, running } = usePlayerExpectedScoreWorker(playerId);
   const [armed, setArmed] = useState(false);
+
+  const gameLimit = context.client.gameLimitForRanked;
+  const tooFewGames = context.leaderboard.getPlayerSummary(playerId).games.length < gameLimit;
+  const warnings = [
+    retired && "This player is retired. The calculation uses old games, so the result can be out of date.",
+    tooFewGames &&
+      `This player has played fewer than ${gameLimit} games. The result is based on insufficient data and may be unreliable.`,
+  ].filter((warning): warning is string => !!warning);
+  const shortWarning = retired ? "player is retired" : "player is not ranked";
 
   const playerEntry = result?.expected.find((p) => p.id === playerId);
 
@@ -25,11 +37,12 @@ export const UnrankedExpectedScore: React.FC<Props> = ({ playerId }) => {
 
       {!result && !running && (
         <>
-          {armed && (
-            <span className="text-xs text-primary-text/80">
-              ⚠️ This player is not ranked. The result is based on insufficient data and may be unreliable.
-            </span>
-          )}
+          {armed &&
+            warnings.map((warning) => (
+              <span key={warning} className="text-xs text-primary-text/80">
+                ⚠️ {warning}
+              </span>
+            ))}
           <button
             onClick={() => (armed ? start() : setArmed(true))}
             className="rounded-md bg-tertiary-background px-3 py-1.5 text-xs font-medium text-tertiary-text hover:bg-tertiary-background/70 transition-colors"
@@ -54,9 +67,9 @@ export const UnrankedExpectedScore: React.FC<Props> = ({ playerId }) => {
               <Link to="/simulations/expected-leaderboard" className="underline hover:text-primary-text/70">
                 expected leaderboard
               </Link>
-              , not the current leaderboard
+              {retired ? ", if the player played against the active players today" : ", not the current leaderboard"}
             </span>
-            <span className="text-xs text-primary-text/60">⚠️ May be unreliable — player is not ranked</span>
+            <span className="text-xs text-primary-text/60">⚠️ May be unreliable — {shortWarning}</span>
           </>
         ) : (
           <span className="text-xs text-primary-text/80">

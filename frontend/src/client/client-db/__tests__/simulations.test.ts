@@ -4,7 +4,7 @@ import { EventType, EventTypeEnum } from "../event-store/event-types";
 // Default GuestClient has gameLimitForRanked = 5.
 const T0 = 1_000_000;
 
-function buildTennisTable(games: [winner: string, loser: string][]): TennisTable {
+function buildTennisTable(games: [winner: string, loser: string][], retired: string[] = []): TennisTable {
   const players = Array.from(new Set(games.flat()));
   const events: EventType[] = players.map((p, i) => ({
     time: 1000 + i,
@@ -20,7 +20,10 @@ function buildTennisTable(games: [winner: string, loser: string][]): TennisTable
       data: { playedAt: T0 + i, winner, loser },
     });
   });
-  return new TennisTable({ events, referenceTime: T0 + games.length });
+  retired.forEach((p, i) => {
+    events.push({ time: T0 + games.length + i, stream: p, type: EventTypeEnum.PLAYER_DEACTIVATED, data: null });
+  });
+  return new TennisTable({ events, referenceTime: T0 + games.length + retired.length });
 }
 
 const repeat = (game: [string, string], times: number): [string, string][] => Array.from({ length: times }, () => game);
@@ -56,6 +59,18 @@ describe("Simulations.expectedLeaderBoard", () => {
 
     expect(expected.map((p) => p.id).sort()).toEqual(["A", "B", "C", "D"]);
     expect(sum(expected)).toBeCloseTo(sum(current) + unrankedScore, 6);
+  });
+
+  it("leaves a retired player out, and adds the score of an included retired player to the pool", () => {
+    const tennisTable = buildTennisTable(games, ["C"]);
+    const retiredScore = tennisTable.leaderboard.getCachedLeaderboardMap().get("C")!.elo;
+
+    const withoutRetired = tennisTable.simulations.expectedLeaderBoard();
+    expect(withoutRetired.expected.map((p) => p.id).sort()).toEqual(["A", "B"]);
+
+    const { current, expected } = tennisTable.simulations.expectedLeaderBoard("C");
+    expect(expected.map((p) => p.id).sort()).toEqual(["A", "B", "C"]);
+    expect(sum(expected)).toBeCloseTo(sum(current) + retiredScore, 6);
   });
 
   it("gives the same result each time", () => {

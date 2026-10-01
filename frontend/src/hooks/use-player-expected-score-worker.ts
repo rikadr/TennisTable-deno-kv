@@ -5,11 +5,11 @@ import { ExpectedLeaderboard } from "../client/client-db/simulations";
 import { createModernWorker } from "./use-elo-simulation-worker";
 
 /**
- * Expected leaderboard that also includes one unranked player, so
+ * Expected leaderboard that also includes one unranked or retired player, so
  * their expected score can be shown on the player page. Unlike
  * useExpectedLeaderboardWorker it does not start on mount — call start().
  */
-export function useUnrankedExpectedScoreWorker(playerId: string) {
+export function usePlayerExpectedScoreWorker(playerId: string) {
   const context = useEventDbContext();
 
   const workerRef = useRef<Worker | null>(null);
@@ -46,7 +46,7 @@ export function useUnrankedExpectedScoreWorker(playerId: string) {
 
     const message: WorkerMessage = {
       type: "start-expected-leaderboard",
-      data: { events: context.events, includeUnrankedPlayerId: playerId },
+      data: { events: context.events, includePlayerId: playerId },
     };
     worker.postMessage(message);
     // eslint-disable-next-line react-hooks/exhaustive-deps

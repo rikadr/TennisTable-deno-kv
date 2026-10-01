@@ -16,7 +16,7 @@ import { PlayerPredictionsPage } from "./player-predictions-page";
 import { PlayerSeasonStats } from "./player-season-stats";
 import { PlayerPairings } from "./player-pairings";
 import { ContentCard } from "./content-card";
-import { UnrankedExpectedScore } from "./unranked-expected-score";
+import { PlayerExpectedScore } from "./player-expected-score";
 import { usePlayerLinkSearch } from "../../hooks/use-player-link-search";
 import { GameMarkers } from "../game/game-markers";
 import { GameScoreLink } from "../game/game-score-link";
@@ -227,9 +227,9 @@ export const PlayerPage: React.FC = () => {
               )}
             </ContentCard>
 
-            {/* Expected score simulation for unranked players */}
-            {playerId && isActive && !summary.isRanked && summary.games.length > 0 && (
-              <UnrankedExpectedScore playerId={playerId} />
+            {/* Expected score simulation for unranked and retired players */}
+            {playerId && (!isActive || !summary.isRanked) && summary.games.length > 0 && (
+              <PlayerExpectedScore playerId={playerId} retired={!isActive} />
             )}
 
             {/* Quick Stats */}

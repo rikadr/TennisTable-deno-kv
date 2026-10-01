@@ -45,17 +45,17 @@ export class Simulations {
     return wins / (loss || 1);
   }
 
-  expectedLeaderBoard(includeUnrankedPlayerId?: string): ExpectedLeaderboard {
+  expectedLeaderBoard(includePlayerId?: string): ExpectedLeaderboard {
     const { rankedPlayers } = this.parent.leaderboard.getLeaderboard();
     const rankedIds = new Set(rankedPlayers.map((player) => player.id));
 
     const expectedScores = this.expectedScores(
       this.parent.predictions,
-      this.parent.predictions.getExpectedScorePlayerIds(includeUnrankedPlayerId),
+      this.parent.predictions.getExpectedScorePlayerIds(includePlayerId),
       this.parent.leaderboard.getCachedLeaderboardMap(),
     );
     const expected = Array.from(expectedScores, ([id, score]) => ({ id, score }))
-      .filter(({ id }) => id === includeUnrankedPlayerId || rankedIds.has(id))
+      .filter(({ id }) => id === includePlayerId || rankedIds.has(id))
       .sort((a, b) => b.score - a.score)
       .map((player, index) => ({ ...player, rank: index + 1 }));
 
