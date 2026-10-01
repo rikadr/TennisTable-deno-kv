@@ -461,6 +461,10 @@ type OpponentResult = {
   skipped: boolean;
   /** When the game was played. Undefined for a game that is not played or that was skipped */
   playedAt?: number;
+  /** The game can be played now */
+  isPending: boolean;
+  /** The skip to undo. Undefined for a game that was not skipped */
+  skipId?: string;
 };
 
 /** One entry per player of the group, in the order of the standings */
@@ -471,6 +475,7 @@ const GroupPlayers: React.FC<{ tournament: Tournament; groupIndex: number; avata
 }) => {
   const groupPlay = tournament.groupPlay!;
   const group = groupPlay.groups[groupIndex];
+  const canUndoSkip = groupPlay.groupPlayEnded === undefined || Date.now() - groupPlay.groupPlayEnded < 60 * 60 * 1_000; // 1 hour buffer to undo skips
   const players = Array.from(groupPlay.groupScores)
     .filter(([name]) => group.players.includes(name))
     .sort(TournamentGroupPlay.sortGroupScores)
@@ -488,25 +493,35 @@ const GroupPlayers: React.FC<{ tournament: Tournament; groupIndex: number; avata
           won: game?.winner === undefined ? undefined : game.winner === player,
           skipped: !!game?.skipped,
           playedAt: game?.winner !== undefined && !game.skipped ? game.completedAt : undefined,
+          isPending: !!game && group.pending.includes(game),
+          skipId: game?.skipped?.skipId,
         };
       });
 
   return (
     <div className="space-y-1.5">
       {players.map((player) => (
-        <GroupPlayerEntry key={player} player={player} results={resultsOf(player)} avatarSize={avatarSize} />
+        <GroupPlayerEntry
+          key={player}
+          player={player}
+          results={resultsOf(player)}
+          avatarSize={avatarSize}
+          tournamentId={tournament.id}
+          canUndoSkip={canUndoSkip}
+        />
       ))}
     </div>
   );
 };
 
-const GroupPlayerEntry: React.FC<{ player: string; results: OpponentResult[]; avatarSize: number }> = ({
-  player,
-  results,
-  avatarSize,
-}) => {
+const GroupPlayerEntry: React.FC<{
+  player: string;
+  results: OpponentResult[];
+  avatarSize: number;
+  tournamentId: string;
+  canUndoSkip: boolean;
+}> = ({ player, results, avatarSize, tournamentId, canUndoSkip }) => {
   const context = useEventDbContext();
-  const navigate = useNavigate();
   const [expanded, setExpanded] = useState(false);
   const [rowRef, rowWidth] = useElementWidth<HTMLButtonElement>();
   // The row's padding, the player's picture, the chevron and the 3 gaps between the 4 parts
@@ -550,29 +565,30 @@ const GroupPlayerEntry: React.FC<{ player: string; results: OpponentResult[]; av
             const sets =
               score && (result.won ? [score.gameWinner, score.gameLoser] : [score.gameLoser, score.gameWinner]);
             return (
-              <div
-                key={result.opponent}
-                onClick={result.playedAt === undefined ? undefined : () => navigate(`/game?time=${result.playedAt}`)}
-                className={classNames(
-                  "flex items-center gap-2 pl-4 pr-2 py-1",
-                  "bg-secondary-background",
-                  result.playedAt !== undefined && "cursor-pointer hover:bg-secondary-background/70 transition-colors",
-                )}
-              >
-                <ProfilePicture playerId={result.opponent} size={32} shape="circle" border={2} />
-                <span className="flex-1 min-w-0 truncate">{context.playerName(result.opponent)}</span>
-                <span className="shrink-0 whitespace-nowrap text-xs xs:text-sm">
-                  {result.won === undefined ? (
-                    "Not played yet"
-                  ) : (
-                    <>
-                      {resultEmoji(result)} {result.won ? "Won" : "Lost"}
-                      {sets && ` ${sets[0]}–${sets[1]}`}
-                      {result.skipped && " (skipped)"}
-                    </>
-                  )}
-                </span>
-              </div>
+              <Menu key={result.opponent}>
+                <div>
+                  <MenuButton className="w-full flex items-center gap-2 pl-4 pr-2 py-1 text-left bg-secondary-background hover:bg-secondary-background/70 transition-colors">
+                    <ProfilePicture playerId={result.opponent} size={32} shape="circle" border={2} />
+                    <span className="flex-1 min-w-0 truncate">{context.playerName(result.opponent)}</span>
+                    {result.won !== undefined && (
+                      <span className="shrink-0 whitespace-nowrap text-xs xs:text-sm">
+                        {resultEmoji(result)} {result.won ? "Won" : "Lost"}
+                        {sets && ` ${sets[0]}–${sets[1]}`}
+                        {result.skipped && " (skipped)"}
+                      </span>
+                    )}
+                  </MenuButton>
+                  <GameMenuItems
+                    player1={player}
+                    player2={result.opponent}
+                    showCompare
+                    showRegisterResult={result.isPending}
+                    showSkipGame={{ show: result.isPending, tournamentId }}
+                    showUndoSkip={{ show: result.skipped && canUndoSkip, skipId: result.skipId || "", tournamentId }}
+                    showGameDetails={{ show: result.playedAt !== undefined, playedAt: result.playedAt }}
+                  />
+                </div>
+              </Menu>
             );
           })}
         </div>
