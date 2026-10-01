@@ -290,7 +290,6 @@ export const TournamentGroups: React.FC<{
   tournament: Tournament;
   itemRefs: ItemRefs;
 }> = ({ tournament, itemRefs }) => {
-  const { player1: paramPlayer1, player2: paramPlayer2 } = useTennisParams();
   const isMediumScreen = useMediaQuery("(min-width: 768px)");
   const avatarSize = isMediumScreen ? 32 : 28;
 
@@ -298,111 +297,304 @@ export const TournamentGroups: React.FC<{
     return null;
   }
 
-  const groupPlay = tournament.groupPlay;
-  const canUndoSkip = groupPlay.groupPlayEnded === undefined || Date.now() - groupPlay.groupPlayEnded < 60 * 60 * 1_000; // 1 hour buffer to undo skips
-
   return (
     <section>
       <SectionTitle>Groups</SectionTitle>
       <div className="grid gap-4 grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3">
-        {groupPlay.groups.map((group, groupIndex) => {
-          const played = group.groupGames.length - group.pending.length;
-          const factor = group.players[0] ? groupPlay.groupScores.get(group.players[0])?.groupSizeAdjustmentFactor : 1;
-          // Games left to play first, so players find their next game at the top
-          const games = group.groupGames
-            .map((game, gameIndex) => ({ game, gameIndex, isPending: group.pending.includes(game) }))
-            .sort((a, b) => Number(b.isPending) - Number(a.isPending));
-
-          return (
-            <div
-              key={groupIndex}
-              className="min-w-0 rounded-lg ring-1 ring-secondary-background bg-secondary-background/20 p-2 xs:p-3 space-y-2"
-            >
-              <div className="space-y-1 px-1">
-                <div className="flex justify-between items-baseline gap-2">
-                  <h3 className="text-lg md:text-xl font-semibold">Group {groupIndex + 1}</h3>
-                  <p className="text-xs xs:text-sm whitespace-nowrap">
-                    {fmtNum(played)} of {fmtNum(group.groupGames.length)} games played
-                  </p>
-                </div>
-                <div className="h-1.5 rounded-full bg-primary-text/20 overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-primary-text transition-all"
-                    style={{ width: `${group.groupGames.length ? (played / group.groupGames.length) * 100 : 0}%` }}
-                  />
-                </div>
-                <p className="text-xs xs:text-sm">
-                  {fmtNum(group.players.length)} players
-                  {factor !== undefined && factor !== 1 && <> · group size factor ×{fmtNum(factor, { digits: 2 })}</>}
-                </p>
-              </div>
-
-              <div className="space-y-1.5">
-                {games.map(({ game, gameIndex, isPending }) => {
-                  const gameKey =
-                    game.player1 && game.player2
-                      ? getGameKeyFromPlayers(game.player1, game.player2, "group")
-                      : "GR" + groupIndex + "G" + gameIndex;
-                  const isParamSelectedGame = gameKey === getGameKeyFromPlayers(paramPlayer1, paramPlayer2, "group");
-
-                  return (
-                    <Menu key={gameKey} ref={(el) => (itemRefs.current[gameKey] = el)}>
-                      <div>
-                        <MenuButton
-                          className={classNames(
-                            "w-full grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 px-2 py-1.5 rounded-lg",
-                            "text-secondary-text text-sm xs:text-base hover:bg-secondary-background/70 transition-colors",
-                            isPending
-                              ? "bg-secondary-background ring-2 ring-secondary-text"
-                              : "bg-secondary-background/60",
-                            isParamSelectedGame && "animate-wiggle",
-                          )}
-                        >
-                          <GameSide
-                            player={game.player1}
-                            winner={game.winner}
-                            skipped={!!game.skipped}
-                            avatarSize={avatarSize}
-                          />
-                          <span className={classNames("text-xs font-semibold", !isPending && "opacity-50")}>VS</span>
-                          <GameSide
-                            player={game.player2}
-                            winner={game.winner}
-                            skipped={!!game.skipped}
-                            avatarSize={avatarSize}
-                            alignRight
-                          />
-                        </MenuButton>
-                        <GameMenuItems
-                          player1={game.player1}
-                          player2={game.player2}
-                          showCompare
-                          showRegisterResult={isPending}
-                          showSkipGame={{
-                            show: isPending,
-                            tournamentId: tournament.id,
-                          }}
-                          showUndoSkip={{
-                            show: !!game.skipped && canUndoSkip,
-                            skipId: game.skipped?.skipId || "",
-                            tournamentId: tournament.id,
-                          }}
-                          showGameDetails={{
-                            // A skipped game carries a winner and a time, but nobody played it
-                            show: !!game.winner && !game.skipped && game.completedAt !== undefined,
-                            playedAt: game.completedAt,
-                          }}
-                        />
-                      </div>
-                    </Menu>
-                  );
-                })}
-              </div>
-            </div>
-          );
-        })}
+        {tournament.groupPlay.groups.map((_, groupIndex) => (
+          <GroupCard
+            key={groupIndex}
+            tournament={tournament}
+            groupIndex={groupIndex}
+            itemRefs={itemRefs}
+            avatarSize={avatarSize}
+          />
+        ))}
       </div>
     </section>
+  );
+};
+
+type GroupCardView = "games" | "players";
+
+const GroupCard: React.FC<{
+  tournament: Tournament;
+  groupIndex: number;
+  itemRefs: ItemRefs;
+  avatarSize: number;
+}> = ({ tournament, groupIndex, itemRefs, avatarSize }) => {
+  const [view, setView] = useState<GroupCardView>("games");
+  const groupPlay = tournament.groupPlay!;
+  const group = groupPlay.groups[groupIndex];
+  const played = group.groupGames.length - group.pending.length;
+  const factor = group.players[0] ? groupPlay.groupScores.get(group.players[0])?.groupSizeAdjustmentFactor : 1;
+
+  return (
+    <div className="min-w-0 rounded-lg ring-1 ring-secondary-background bg-secondary-background/20 p-2 xs:p-3 space-y-2">
+      <div className="space-y-1 px-1">
+        <div className="flex justify-between items-baseline gap-2">
+          <h3 className="text-lg md:text-xl font-semibold">Group {groupIndex + 1}</h3>
+          <p className="text-xs xs:text-sm whitespace-nowrap">
+            {fmtNum(played)} of {fmtNum(group.groupGames.length)} games played
+          </p>
+        </div>
+        <div className="h-1.5 rounded-full bg-primary-text/20 overflow-hidden">
+          <div
+            className="h-full rounded-full bg-primary-text transition-all"
+            style={{ width: `${group.groupGames.length ? (played / group.groupGames.length) * 100 : 0}%` }}
+          />
+        </div>
+        <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
+          <p className="text-xs xs:text-sm">
+            {fmtNum(group.players.length)} players
+            {factor !== undefined && factor !== 1 && <> · group size factor ×{fmtNum(factor, { digits: 2 })}</>}
+          </p>
+          <div className="inline-flex rounded-lg ring-1 ring-primary-text/25 p-0.5" role="group">
+            {(
+              [
+                ["games", "All games"],
+                ["players", "Players"],
+              ] as const
+            ).map(([value, label]) => (
+              <button
+                key={value}
+                onClick={() => setView(value)}
+                aria-pressed={view === value}
+                className={classNames(
+                  "px-2.5 py-1 rounded-md text-xs font-medium transition-colors",
+                  view === value ? "bg-secondary-background text-secondary-text" : "hover:bg-primary-text/10",
+                )}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {view === "games" ? (
+        <GroupGames tournament={tournament} groupIndex={groupIndex} itemRefs={itemRefs} avatarSize={avatarSize} />
+      ) : (
+        <GroupPlayers tournament={tournament} groupIndex={groupIndex} avatarSize={avatarSize} />
+      )}
+    </div>
+  );
+};
+
+const GroupGames: React.FC<{
+  tournament: Tournament;
+  groupIndex: number;
+  itemRefs: ItemRefs;
+  avatarSize: number;
+}> = ({ tournament, groupIndex, itemRefs, avatarSize }) => {
+  const { player1: paramPlayer1, player2: paramPlayer2 } = useTennisParams();
+  const groupPlay = tournament.groupPlay!;
+  const group = groupPlay.groups[groupIndex];
+  const canUndoSkip = groupPlay.groupPlayEnded === undefined || Date.now() - groupPlay.groupPlayEnded < 60 * 60 * 1_000; // 1 hour buffer to undo skips
+  // Games left to play first, so players find their next game at the top
+  const games = group.groupGames
+    .map((game, gameIndex) => ({ game, gameIndex, isPending: group.pending.includes(game) }))
+    .sort((a, b) => Number(b.isPending) - Number(a.isPending));
+
+  return (
+    <div className="space-y-1.5">
+      {games.map(({ game, gameIndex, isPending }) => {
+        const gameKey =
+          game.player1 && game.player2
+            ? getGameKeyFromPlayers(game.player1, game.player2, "group")
+            : "GR" + groupIndex + "G" + gameIndex;
+        const isParamSelectedGame = gameKey === getGameKeyFromPlayers(paramPlayer1, paramPlayer2, "group");
+
+        return (
+          <Menu key={gameKey} ref={(el) => (itemRefs.current[gameKey] = el)}>
+            <div>
+              <MenuButton
+                className={classNames(
+                  "w-full grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 px-2 py-1.5 rounded-lg",
+                  "text-secondary-text text-sm xs:text-base hover:bg-secondary-background/70 transition-colors",
+                  isPending ? "bg-secondary-background ring-2 ring-secondary-text" : "bg-secondary-background/60",
+                  isParamSelectedGame && "animate-wiggle",
+                )}
+              >
+                <GameSide player={game.player1} winner={game.winner} skipped={!!game.skipped} avatarSize={avatarSize} />
+                <span className={classNames("text-xs font-semibold", !isPending && "opacity-50")}>VS</span>
+                <GameSide
+                  player={game.player2}
+                  winner={game.winner}
+                  skipped={!!game.skipped}
+                  avatarSize={avatarSize}
+                  alignRight
+                />
+              </MenuButton>
+              <GameMenuItems
+                player1={game.player1}
+                player2={game.player2}
+                showCompare
+                showRegisterResult={isPending}
+                showSkipGame={{
+                  show: isPending,
+                  tournamentId: tournament.id,
+                }}
+                showUndoSkip={{
+                  show: !!game.skipped && canUndoSkip,
+                  skipId: game.skipped?.skipId || "",
+                  tournamentId: tournament.id,
+                }}
+                showGameDetails={{
+                  // A skipped game carries a winner and a time, but nobody played it
+                  show: !!game.winner && !game.skipped && game.completedAt !== undefined,
+                  playedAt: game.completedAt,
+                }}
+              />
+            </div>
+          </Menu>
+        );
+      })}
+    </div>
+  );
+};
+
+type OpponentResult = {
+  opponent: string;
+  /** Undefined while the game is not played */
+  won?: boolean;
+  skipped: boolean;
+  /** When the game was played. Undefined for a game that is not played or that was skipped */
+  playedAt?: number;
+};
+
+/** One entry per player of the group, in the order of the standings */
+const GroupPlayers: React.FC<{ tournament: Tournament; groupIndex: number; avatarSize: number }> = ({
+  tournament,
+  groupIndex,
+  avatarSize,
+}) => {
+  const groupPlay = tournament.groupPlay!;
+  const group = groupPlay.groups[groupIndex];
+  const players = Array.from(groupPlay.groupScores)
+    .filter(([name]) => group.players.includes(name))
+    .sort(TournamentGroupPlay.sortGroupScores)
+    .map(([name]) => name);
+
+  const resultsOf = (player: string): OpponentResult[] =>
+    group.players
+      .filter((opponent) => opponent !== player)
+      .map((opponent) => {
+        const game = group.groupGames.find(
+          (g) => (g.player1 === player && g.player2 === opponent) || (g.player1 === opponent && g.player2 === player),
+        );
+        return {
+          opponent,
+          won: game?.winner === undefined ? undefined : game.winner === player,
+          skipped: !!game?.skipped,
+          playedAt: game?.winner !== undefined && !game.skipped ? game.completedAt : undefined,
+        };
+      });
+
+  return (
+    <div className="space-y-1.5">
+      {players.map((player) => (
+        <GroupPlayerEntry key={player} player={player} results={resultsOf(player)} avatarSize={avatarSize} />
+      ))}
+    </div>
+  );
+};
+
+const GroupPlayerEntry: React.FC<{ player: string; results: OpponentResult[]; avatarSize: number }> = ({
+  player,
+  results,
+  avatarSize,
+}) => {
+  const context = useEventDbContext();
+  const navigate = useNavigate();
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <div className="rounded-lg bg-secondary-background/60 text-secondary-text text-sm xs:text-base overflow-hidden">
+      <button
+        onClick={() => setExpanded((value) => !value)}
+        aria-expanded={expanded}
+        className="w-full flex items-center gap-2 px-2 py-1.5 hover:bg-secondary-background/70 transition-colors"
+      >
+        <ProfilePicture playerId={player} size={avatarSize} shape="circle" border={2} />
+        <span className="flex-1 min-w-0 truncate text-left font-normal">{context.playerName(player)}</span>
+        <OpponentStack results={results} />
+        <svg
+          className={classNames("w-5 h-5 shrink-0 transition-transform", expanded && "rotate-180")}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={2}
+          viewBox="0 0 24 24"
+          aria-hidden
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+      {expanded && (
+        <div className="divide-y divide-secondary-text/20 border-t border-secondary-text/20">
+          {results.map((result) => {
+            const score =
+              result.playedAt === undefined
+                ? undefined
+                : context.games.find((g) => g.playedAt === result.playedAt)?.score?.setsWon;
+            const sets =
+              score && (result.won ? [score.gameWinner, score.gameLoser] : [score.gameLoser, score.gameWinner]);
+            return (
+              <div
+                key={result.opponent}
+                onClick={result.playedAt === undefined ? undefined : () => navigate(`/game?time=${result.playedAt}`)}
+                className={classNames(
+                  "flex items-center gap-2 pl-4 pr-2 py-1",
+                  result.playedAt !== undefined && "cursor-pointer hover:bg-secondary-background/70",
+                  result.won === false && "opacity-60",
+                )}
+              >
+                <ProfilePicture playerId={result.opponent} size={24} shape="circle" border={2} />
+                <span className="flex-1 min-w-0 truncate">{context.playerName(result.opponent)}</span>
+                <span className="shrink-0 whitespace-nowrap text-xs xs:text-sm">
+                  {result.won === undefined ? (
+                    "Not played yet"
+                  ) : (
+                    <>
+                      {result.won ? "🏆 Won" : "💔 Lost"}
+                      {sets && ` ${sets[0]}–${sets[1]}`}
+                      {result.skipped && " (skipped)"}
+                    </>
+                  )}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const STACK_PICTURE_SIZE = 28;
+/** The stack is never wider than this. With many opponents the pictures move closer */
+const STACK_MAX_WIDTH = 150;
+
+/** The opponents' pictures, overlapping in a row, each with 🏆 or 💔 below it for the result against that opponent */
+const OpponentStack: React.FC<{ results: OpponentResult[] }> = ({ results }) => {
+  const count = results.length;
+  const offset = count > 1 ? Math.min(STACK_PICTURE_SIZE - 8, (STACK_MAX_WIDTH - STACK_PICTURE_SIZE) / (count - 1)) : 0;
+  const width = count > 0 ? (count - 1) * offset + STACK_PICTURE_SIZE : 0;
+
+  return (
+    <div className="relative shrink-0" style={{ width, height: STACK_PICTURE_SIZE + 16 }}>
+      {results.map((result, index) => (
+        <div
+          key={result.opponent}
+          className="absolute top-0 flex flex-col items-center"
+          // The first opponent is on top, like the stacks on the dashboard
+          style={{ left: index * offset, width: STACK_PICTURE_SIZE, zIndex: count - index }}
+        >
+          <ProfilePicture playerId={result.opponent} size={STACK_PICTURE_SIZE} shape="circle" border={2} />
+          <span className="text-xs leading-4 h-4">{result.won === undefined ? "" : result.won ? "🏆" : "💔"}</span>
+        </div>
+      ))}
+    </div>
   );
 };
 
