@@ -75,7 +75,7 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
         "Very wide screens show 4 columns. Live games and tournaments get a column only when they have content.",
       ),
       text(
-        "The top 3 players stand on a podium, and the table continues from rank 4. The Overall and Season buttons are on the leaderboard card.",
+        "The top 3 players stand on a podium with their score. The table below lists all ranks, also the top 3. It shows the interval, and the win-loss ratio on the overall leaderboard. The Overall and Season buttons are on the leaderboard card.",
       ),
       text(
         "The buttons also select the data of the recent games, the leaderboard changes and the unranked players. The dashboard shows all the information of the old leaderboard page.",

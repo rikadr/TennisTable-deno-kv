@@ -11,7 +11,7 @@ import { Podium, PodiumEntry } from "./podium";
 import { DashboardSeasonState, LeaderboardView } from "./dashboard-season";
 import { DASHBOARD_ROW_CLASS_NAME, PlayerNameCell } from "./dashboard-table";
 
-/** The podium shows the top 3. The table continues from this rank */
+/** The podium shows the top 3. The table lists every rank, the top 3 too, with the details the podium leaves out */
 const PODIUM_PLACES = 3;
 
 type Row = {
@@ -121,11 +121,7 @@ export const LeaderboardCard: React.FC<Props> = ({ view, setView, season }) => {
   }));
 
   return (
-    <DashboardCard
-      title="Leaderboard"
-      subtitle={`${fmtNum(rows.length)} ranked players · ${fmtNum(context.games.length)} games`}
-      action={toggle}
-    >
+    <DashboardCard title="Leaderboard" action={toggle}>
       <LeaderboardBody rows={rows} showWinLossRatio />
     </DashboardCard>
   );
@@ -135,7 +131,6 @@ const LeaderboardBody: React.FC<{ rows: Row[]; showWinLossRatio: boolean }> = ({
   const navigate = useNavigate();
 
   const podium: PodiumEntry[] = rows.slice(0, PODIUM_PLACES);
-  const tableRows = rows.slice(PODIUM_PLACES);
 
   const placeNumber = (place: number) => {
     const image = themedPlaceImage(place);
@@ -150,44 +145,42 @@ const LeaderboardBody: React.FC<{ rows: Row[]; showWinLossRatio: boolean }> = ({
   return (
     <>
       <Podium entries={podium} />
-      {tableRows.length > 0 && (
-        <table className="w-full text-primary-text border-collapse border-t border-primary-text/50">
-          <thead className="border-b border-primary-text/50">
-            <tr className="text-sm xs:text-lg md:text-xl text-primary-text">
-              <th className="py-1 px-1 xs:px-2 text-left font-light">#</th>
-              <th className="py-1 px-1 xs:px-2 text-left font-normal">Player</th>
-              <th className="py-1 px-1 xs:px-2 text-right font-light">Score</th>
-              <th className="py-1 px-1 xs:px-2 text-right font-light text-xs xs:text-sm md:text-base">Interval</th>
+      <table className="w-full text-primary-text border-collapse border-t border-primary-text/50">
+        <thead className="border-b border-primary-text/50">
+          <tr className="text-sm xs:text-lg md:text-xl text-primary-text">
+            <th className="py-1 px-1 xs:px-2 text-left font-light">#</th>
+            <th className="py-1 px-1 xs:px-2 text-left font-normal">Player</th>
+            <th className="py-1 px-1 xs:px-2 text-right font-light">Score</th>
+            <th className="py-1 px-1 xs:px-2 text-right font-light text-xs xs:text-sm md:text-base">Interval</th>
+            {showWinLossRatio && (
+              <th className="py-1 px-1 xs:px-2 text-right font-light text-xs xs:text-sm md:text-base whitespace-nowrap">
+                🏆:💔
+              </th>
+            )}
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-primary-text/50">
+          {rows.map((row) => (
+            <tr key={row.playerId} onClick={() => navigate(row.to)} className={DASHBOARD_ROW_CLASS_NAME}>
+              <td className="py-1 px-1 xs:px-2 italic w-[1%] whitespace-nowrap">{placeNumber(row.rank)}</td>
+              <PlayerNameCell playerId={row.playerId} />
+              <td className="py-1 px-1 xs:px-2 text-right w-[1%] whitespace-nowrap">
+                {fmtNum(row.score, { digits: 0 })}
+              </td>
+              <td className="py-1 px-1 xs:px-2 text-right w-[1%] whitespace-nowrap text-xs xs:text-sm md:text-base">
+                {row.interval !== undefined ? fmtNum(row.interval, { digits: 0 }) : "-"}
+              </td>
               {showWinLossRatio && (
-                <th className="py-1 px-1 xs:px-2 text-right font-light text-xs xs:text-sm md:text-base whitespace-nowrap">
-                  🏆:💔
-                </th>
+                <td className="py-1 px-1 xs:px-2 text-right w-[1%] whitespace-nowrap text-xs xs:text-sm md:text-base">
+                  {row.winLossRatio?.toLocaleString("no-NO", {
+                    maximumFractionDigits: 1,
+                  })}
+                </td>
               )}
             </tr>
-          </thead>
-          <tbody className="divide-y divide-primary-text/50">
-            {tableRows.map((row) => (
-              <tr key={row.playerId} onClick={() => navigate(row.to)} className={DASHBOARD_ROW_CLASS_NAME}>
-                <td className="py-1 px-1 xs:px-2 italic w-[1%] whitespace-nowrap">{placeNumber(row.rank)}</td>
-                <PlayerNameCell playerId={row.playerId} />
-                <td className="py-1 px-1 xs:px-2 text-right w-[1%] whitespace-nowrap">
-                  {fmtNum(row.score, { digits: 0 })}
-                </td>
-                <td className="py-1 px-1 xs:px-2 text-right w-[1%] whitespace-nowrap text-xs xs:text-sm md:text-base">
-                  {row.interval !== undefined ? fmtNum(row.interval, { digits: 0 }) : "-"}
-                </td>
-                {showWinLossRatio && (
-                  <td className="py-1 px-1 xs:px-2 text-right w-[1%] whitespace-nowrap text-xs xs:text-sm md:text-base">
-                    {row.winLossRatio?.toLocaleString("no-NO", {
-                      maximumFractionDigits: 1,
-                    })}
-                  </td>
-                )}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+          ))}
+        </tbody>
+      </table>
     </>
   );
 };
