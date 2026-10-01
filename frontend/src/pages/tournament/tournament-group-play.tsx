@@ -180,9 +180,9 @@ export const TournamentGroupScores: React.FC<{ tournament: Tournament }> = ({ to
   const columnCount = 7 + (hasGroupSizeAdjustment ? 2 : 0);
 
   // Below md, the stats go on a line under the name. Full words do not fit as column headers on a phone.
-  const statCell = "hidden md:table-cell py-1 px-2 text-right w-[1%] whitespace-nowrap";
+  const statCell = "hidden md:table-cell py-0.5 px-2 text-right w-[1%] whitespace-nowrap";
   const statHeader = "hidden md:table-cell py-1 px-2 text-right font-light whitespace-nowrap";
-  const factorCell = "hidden lg:table-cell py-1 px-2 text-right w-[1%] whitespace-nowrap";
+  const factorCell = "hidden lg:table-cell py-0.5 px-2 text-right w-[1%] whitespace-nowrap";
   const factorHeader = "hidden lg:table-cell py-1 px-2 text-right font-light whitespace-nowrap";
 
   const row = (player: GroupScorePlayer, place: number, isEliminated: boolean) => {
@@ -203,17 +203,17 @@ export const TournamentGroupScores: React.FC<{ tournament: Tournament }> = ({ to
           isEliminated && "text-primary-text/60",
         )}
       >
-        <td className="py-1 px-1 xs:px-2 text-right w-[1%] whitespace-nowrap">{place}</td>
-        <td className="py-1 px-1 xs:px-2 w-[100%] max-w-0">
+        <td className="py-0.5 px-1 xs:px-2 text-right w-[1%] whitespace-nowrap">{place}</td>
+        <td className="py-0.5 px-1 xs:px-2 w-[100%] max-w-0">
           <div className="flex items-center gap-2 min-w-0">
-            <ProfilePicture playerId={player.name} size={24} shape="circle" />
-            <div className="min-w-0">
+            <ProfilePicture playerId={player.name} size={24} shape="circle" border={2} />
+            <div className="min-w-0 leading-tight">
               <div className="truncate font-normal">{context.playerName(player.name)}</div>
-              <div className="md:hidden text-xs">{summary}</div>
+              <div className="md:hidden text-xs leading-tight">{summary}</div>
             </div>
           </div>
         </td>
-        <td className="py-1 px-1 xs:px-2 text-right w-[1%] whitespace-nowrap font-medium">
+        <td className="py-0.5 px-1 xs:px-2 text-right w-[1%] whitespace-nowrap font-medium">
           {fmtNum(player.adjustedScore, { digits: 1 })}
         </td>
         {hasGroupSizeAdjustment && (
@@ -236,7 +236,7 @@ export const TournamentGroupScores: React.FC<{ tournament: Tournament }> = ({ to
 
   return (
     <section>
-      <SectionTitle>Standings</SectionTitle>
+      <SectionTitle>Group play standings</SectionTitle>
       <div className="bg-primary-background rounded-lg w-full overflow-hidden ring-1 ring-secondary-background">
         <table className="w-full text-primary-text border-collapse text-sm xs:text-base">
           <thead className="border-b border-primary-text/50">
@@ -375,7 +375,7 @@ const GroupCard: React.FC<{
       {view === "games" ? (
         <GroupGames tournament={tournament} groupIndex={groupIndex} itemRefs={itemRefs} avatarSize={avatarSize} />
       ) : (
-        <GroupPlayers tournament={tournament} groupIndex={groupIndex} avatarSize={avatarSize} />
+        <GroupPlayers tournament={tournament} groupIndex={groupIndex} avatarSize={avatarSize + 8} />
       )}
     </div>
   );
@@ -559,7 +559,7 @@ const GroupPlayerEntry: React.FC<{ player: string; results: OpponentResult[]; av
                   result.won === false && "opacity-60",
                 )}
               >
-                <ProfilePicture playerId={result.opponent} size={24} shape="circle" border={2} />
+                <ProfilePicture playerId={result.opponent} size={32} shape="circle" border={2} />
                 <span className="flex-1 min-w-0 truncate">{context.playerName(result.opponent)}</span>
                 <span className="shrink-0 whitespace-nowrap text-xs xs:text-sm">
                   {result.won === undefined ? (
@@ -588,7 +588,7 @@ function resultEmoji(result: OpponentResult): string {
   return result.skipped ? "🆓" : "🏆";
 }
 
-const STACK_PICTURE_SIZE = 28;
+const STACK_PICTURE_SIZE = 36;
 /** The space between 2 pictures when there is room for all of them side by side */
 const STACK_GAP = 4;
 /** How far each picture moves right of the one before it when the row is narrow. Keeps the result icons readable */
