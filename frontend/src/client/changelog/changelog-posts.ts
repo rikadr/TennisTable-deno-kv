@@ -51,15 +51,15 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
     body: [
       list(
         "The standings show the number of games that each player has left to play.",
-        "A dashed line shows the bracket cut-off. Below the line, the players are muted.",
-        "Each group card shows a progress bar. The games left to play are at the top of the card.",
-        "When the groups have different sizes, each group card shows its group size factor.",
+        "A dashed line shows the cut-off for the finals. Below the line, the players are muted.",
+        "Each group card shows a progress bar. In the All games view, the games left to play are at the top.",
+        "A group card shows its group size factor when the factor is not 1.",
       ),
       text(
         "On a phone the standings show the points in a column. The wins, the losses, the skips and the games left are on a line below each name. On a wider screen each value has its own column.",
       ),
       text(
-        "Each group card has 2 views: Players and All games. The Players view shows first. It shows 1 row for each player, with the number of games completed and the pictures of the opponents. An icon below each picture shows the result against that opponent: 🏆 for a win, 🆓 for a win on a skip, 💔 for a loss and ⛔ for a loss on a skip. The rows are in the tie-breaker order.",
+        "Each group card has 2 views: Players and All games. The Players view shows first. It shows 1 row for each player, with the number of games completed and the pictures of the opponents. A ribbon below each picture shows the result: 🏆 win, 🆓 win on a skip, 💔 loss, ⛔ loss on a skip. The rows are in the tie-breaker order.",
       ),
       text(
         "Open a row to see 1 line for each opponent, with the result and the sets. Select a line to open the same menu as a game. A link to a group game opens the row of player 1 and moves the page to the line of player 2.",

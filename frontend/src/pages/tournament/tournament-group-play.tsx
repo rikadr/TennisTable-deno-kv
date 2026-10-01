@@ -395,7 +395,7 @@ const GroupGames: React.FC<{
   const { player1: paramPlayer1, player2: paramPlayer2 } = useTennisParams();
   const groupPlay = tournament.groupPlay!;
   const group = groupPlay.groups[groupIndex];
-  const canUndoSkip = groupPlay.groupPlayEnded === undefined || Date.now() - groupPlay.groupPlayEnded < 60 * 60 * 1_000; // 1 hour buffer to undo skips
+  const canUndoSkip = canUndoSkipIn(groupPlay);
   // Games left to play first, so players find their next game at the top
   const games = group.groupGames
     .map((game, gameIndex) => ({ game, gameIndex, isPending: group.pending.includes(game) }))
@@ -472,7 +472,12 @@ type OpponentResult = {
   skipId?: string;
 };
 
-/** One entry per player of the group, in the order of the standings */
+/** A skip can be undone during group play and for 1 hour after it ends */
+function canUndoSkipIn(groupPlay: TournamentGroupPlay): boolean {
+  return groupPlay.groupPlayEnded === undefined || Date.now() - groupPlay.groupPlayEnded < 60 * 60 * 1_000;
+}
+
+/** One entry per player of the group, in the tie-breaker order */
 const GroupPlayers: React.FC<{
   tournament: Tournament;
   groupIndex: number;
@@ -481,7 +486,7 @@ const GroupPlayers: React.FC<{
 }> = ({ tournament, groupIndex, itemRefs, avatarSize }) => {
   const groupPlay = tournament.groupPlay!;
   const group = groupPlay.groups[groupIndex];
-  const canUndoSkip = groupPlay.groupPlayEnded === undefined || Date.now() - groupPlay.groupPlayEnded < 60 * 60 * 1_000; // 1 hour buffer to undo skips
+  const canUndoSkip = canUndoSkipIn(groupPlay);
   // The group's players are in the tie-breaker order, so a row keeps its place when the standings change
   const players = group.players;
 
@@ -626,7 +631,7 @@ const STACK_PICTURE_SIZE = 36;
 const STACK_GAP = 4;
 /** How far each picture moves right of the one before it when the row is narrow. Keeps the result icons readable */
 const STACK_MIN_OFFSET = 14;
-/** The stack always leaves this much room for the player's name */
+/** The stack leaves this much room for the player's name, unless the pictures already overlap as much as they can */
 const MIN_NAME_WIDTH = 96;
 /** The height of the result icon below each picture */
 const STACK_RESULT_HEIGHT = 18;
@@ -659,11 +664,11 @@ const OpponentStack: React.FC<{ results: OpponentResult[]; availableWidth: numbe
   results,
   availableWidth,
 }) => {
-  const count = results.length;
-  const sideBySideWidth = count * STACK_PICTURE_SIZE + (count - 1) * STACK_GAP;
-  const narrowestWidth = STACK_PICTURE_SIZE + (count - 1) * STACK_MIN_OFFSET;
-  const width = count > 0 ? Math.max(narrowestWidth, Math.min(sideBySideWidth, availableWidth)) : 0;
-  const offset = count > 1 ? (width - STACK_PICTURE_SIZE) / (count - 1) : 0;
+  const opponentCount = results.length;
+  const sideBySideWidth = opponentCount * STACK_PICTURE_SIZE + (opponentCount - 1) * STACK_GAP;
+  const narrowestWidth = STACK_PICTURE_SIZE + (opponentCount - 1) * STACK_MIN_OFFSET;
+  const width = opponentCount > 0 ? Math.max(narrowestWidth, Math.min(sideBySideWidth, availableWidth)) : 0;
+  const offset = opponentCount > 1 ? (width - STACK_PICTURE_SIZE) / (opponentCount - 1) : 0;
 
   return (
     <div className="relative isolate shrink-0" style={{ width, height: STACK_PICTURE_SIZE + STACK_RESULT_HEIGHT }}>
@@ -679,7 +684,7 @@ const OpponentStack: React.FC<{ results: OpponentResult[]; availableWidth: numbe
               top: STACK_PICTURE_SIZE / 2,
               bottom: 0,
               width: STACK_RIBBON_WIDTH,
-              zIndex: count - index,
+              zIndex: opponentCount - index,
             }}
           />
         ),
@@ -689,7 +694,7 @@ const OpponentStack: React.FC<{ results: OpponentResult[]; availableWidth: numbe
           key={`picture-${result.opponent}`}
           className="absolute top-0"
           // The first opponent is on top, like the stacks on the dashboard
-          style={{ left: index * offset, zIndex: 2 * count - index }}
+          style={{ left: index * offset, zIndex: 2 * opponentCount - index }}
         >
           <ProfilePicture playerId={result.opponent} size={STACK_PICTURE_SIZE} shape="circle" border={2} />
         </div>
@@ -703,7 +708,7 @@ const OpponentStack: React.FC<{ results: OpponentResult[]; availableWidth: numbe
             top: STACK_PICTURE_SIZE,
             width: STACK_PICTURE_SIZE,
             height: STACK_RESULT_HEIGHT,
-            zIndex: 3 * count - index,
+            zIndex: 3 * opponentCount - index,
           }}
         >
           {resultEmoji(result)}
