@@ -42,6 +42,25 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
+    slug: "group-play-tab-refresh",
+    title: "New layout for the group play tab",
+    date: "2026-10-01",
+    tags: ["feature-update"],
+    summary:
+      "The group play tab has new standings and group cards. The tab fits all screen sizes without a sideways scroll.",
+    body: [
+      list(
+        "The standings show the group of each player and the number of games that each player has left to play.",
+        "A dashed line shows the bracket cut-off. Below the line, the players are muted.",
+        "Each group card shows a progress bar. The games left to play are at the top of the card.",
+        "When the groups have different sizes, each group card shows its group size factor.",
+      ),
+      text(
+        "On a phone the tab shows the standings, the groups and the rules, in that order. On a wide screen the groups are next to the standings.",
+      ),
+    ],
+  },
+  {
     slug: "recent-games-tags",
     title: "Tags on the recent games page",
     date: "2026-10-01",

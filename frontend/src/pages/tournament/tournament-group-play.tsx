@@ -7,33 +7,41 @@ import { GroupScorePlayer, TournamentGroupPlay } from "../../client/client-db/to
 import { getGameKeyFromPlayers } from "./tournament-page";
 import { Menu, MenuButton } from "@headlessui/react";
 import { useTennisParams } from "../../hooks/use-tennis-params";
+import { useMediaQuery } from "../../hooks/use-media-query";
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { GameMenuItems, QuestionMark, winStateEmoji } from "./tournament-bracket";
+
+type ItemRefs = React.MutableRefObject<{ [key: string]: HTMLElement | null }>;
 
 export const TournamentGroupPlayComponent: React.FC<{
   tournament: Tournament;
-  itemRefs: React.MutableRefObject<{
-    [key: string]: HTMLElement | null;
-  }>;
+  itemRefs: ItemRefs;
 }> = ({ tournament, itemRefs }) => {
   if (tournament.tournamentConfig.groupPlay === false) {
     return null;
   }
 
+  // Phones and tablets read top to bottom: standings, games, rules.
+  // From xl the games take the right column, so the standings stay next to them.
   return (
-    <div className="text-primary-text">
-      {/* <GroupDistribution tournament={tournament} /> */}
-      <div className="lg:flex space-y-6 gap-6">
+    <div className="text-primary-text grid gap-6 xl:grid-cols-2 xl:grid-rows-[auto_1fr] 2xl:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
+      <div className="min-w-0 xl:col-start-1 xl:row-start-1">
         <TournamentGroupScores tournament={tournament} />
-        <GroupPlayRules tournament={tournament} />
       </div>
-      <div className="flex flex-wrap justify-center gap-x-6 gap-y-10 mt-10">
+      <div className="min-w-0 xl:col-start-2 xl:row-start-1 xl:row-span-2">
         <TournamentGroups tournament={tournament} itemRefs={itemRefs} />
+      </div>
+      <div className="min-w-0 xl:col-start-1 xl:row-start-2">
+        <GroupPlayRules tournament={tournament} />
       </div>
     </div>
   );
 };
+
+const SectionTitle: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <h2 className="text-xl md:text-2xl font-bold mb-2">{children}</h2>
+);
 
 const GroupPlayRules: React.FC<{ tournament: Tournament }> = ({ tournament }) => {
   const hasRandomGroupSeeding = tournament.groupPlay?.hasRandomGroupSeeding ?? false;
@@ -41,76 +49,61 @@ const GroupPlayRules: React.FC<{ tournament: Tournament }> = ({ tournament }) =>
     ? new Set(tournament.groupPlay.groups.map((g) => g.players.length)).size > 1
     : false;
 
+  const tieBreakers = [
+    "Most wins",
+    "Fewest skips",
+    ...(hasUnequalGroups ? ["Highest score before the group size adjustment"] : []),
+    "Fewest losses",
+    "Highest leaderboard rank at the tournament start",
+    "First to sign up to the tournament",
+    hasRandomGroupSeeding
+      ? "Group play tie-breaker order (see the Info tab)"
+      : "Group seeding order (see the Info tab)",
+  ];
+
   return (
-    <div className="text-primary-text bg-primary-background rounded-lg h-fit shadow-sm">
-      <h3 className="text-2xl font-bold mb-6">Rules</h3>
-
-      {/* Scoring Section */}
-      <div className="bg-secondary-background/30 text-primary-text rounded-lg p-5 mb-4 border border-secondary-background/40">
-        <h4 className="font-semibold text-lg mb-4 text-primary-text">Point System</h4>
-
-        <div className="flex gap-6 mb-4 text-lg">
-          <div className="flex items-center gap-2">
-            <span className="font-semibold">Win:</span>
-            <span className="font-bold text-primary-text">{fmtNum(Tournament.GROUP_POINTS.WIN)}</span>
+    <section>
+      <SectionTitle>Rules</SectionTitle>
+      <div className="rounded-lg ring-1 ring-secondary-background bg-secondary-background/20 p-3 md:p-4 space-y-4 text-sm">
+        <div className="space-y-2">
+          <h3 className="font-semibold text-base">Points</h3>
+          <div className="grid grid-cols-3 gap-2 text-center">
+            {[
+              { label: "Win", points: Tournament.GROUP_POINTS.WIN },
+              { label: "Loss", points: Tournament.GROUP_POINTS.LOSS },
+              { label: "Skip", points: Tournament.GROUP_POINTS.SKIP },
+            ].map(({ label, points }) => (
+              <div key={label} className="rounded-lg bg-secondary-background/40 py-1.5">
+                <div className="text-xl font-bold">{fmtNum(points)}</div>
+                <div className="text-xs">{label}</div>
+              </div>
+            ))}
           </div>
-          <div className="flex items-center gap-2">
-            <span className="font-semibold">Loss:</span>
-            <span className="font-bold text-primary-text">{fmtNum(Tournament.GROUP_POINTS.LOSS)}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="font-semibold">Skip:</span>
-            <span className="font-bold text-primary-text">{fmtNum(Tournament.GROUP_POINTS.SKIP)}</span>
-          </div>
-        </div>
-
-        <div className="space-y-3 text-sm">
-          <p className="text-primary-text/80 leading-relaxed">
-            Scores are multiplied by the{" "}
-            <span className="font-semibold text-primary-text underline decoration-primary-text/50">
-              group size adjustment factor
-            </span>{" "}
-            to account for smaller groups having fewer games to score points in.
-          </p>
-
-          <div className="bg-secondary-background/20 rounded p-3 border-l-4 border-secondary-background/60">
-            <p className="text-xs text-primary-text/70 italic">
-              <span className="font-semibold not-italic text-primary-text">Note:</span> If a game is skipped, the
-              advancing player scores as a <span className="font-semibold">winner</span> and the other player scores as
-              a <span className="font-semibold">skip</span>.
+          {hasUnequalGroups && (
+            <p>
+              The groups have different sizes. The points of a player in a smaller group are multiplied by the{" "}
+              <span className="font-semibold">group size factor</span>, because smaller groups play fewer games.
             </p>
-          </div>
+          )}
+          <p>A player who skips a game gets the skip points. The other player gets the win points.</p>
+        </div>
+
+        <div className="space-y-2">
+          <h3 className="font-semibold text-base">Tie-breakers</h3>
+          <p>When players have equal points, these rules decide the order:</p>
+          <ol className="space-y-1">
+            {tieBreakers.map((text, i) => (
+              <li key={i} className="flex items-start gap-2">
+                <span className="shrink-0 w-5 h-5 mt-px rounded-full bg-secondary-background/60 flex items-center justify-center text-xs font-bold">
+                  {i + 1}
+                </span>
+                <span>{text}</span>
+              </li>
+            ))}
+          </ol>
         </div>
       </div>
-
-      {/* Tie-breaker Section */}
-      <div className="bg-secondary-background/30 text-primary-text rounded-lg p-5 border border-secondary-background/40">
-        <h4 className="font-semibold text-lg mb-4 text-primary-text">Tie-breaker Priority</h4>
-
-        <p className="text-sm mb-4 text-primary-text/80">
-          When players have equal adjusted scores, ties are resolved using the following criteria in order:
-        </p>
-
-        {[
-          "Most wins",
-          "Least skips",
-          ...(hasUnequalGroups ? ["Highest score before group size adjustment"] : []),
-          "Least losses",
-          "Highest overall leaderboard rank at tournament start",
-          "First to sign up to the tournament",
-          hasRandomGroupSeeding
-            ? "Group play tie-breaker order. Found in the info tab"
-            : "Group seeding order. Found in the info tab",
-        ].map((text, i) => (
-          <div key={i} className="flex items-start gap-3 py-1.5 px-3">
-            <div className="flex-shrink-0 w-6 h-6 rounded-full bg-secondary-background/50 flex items-center justify-center">
-              <span className="text-xs font-bold text-primary-text">{i + 1}</span>
-            </div>
-            <p className="text-sm text-primary-text/90 leading-relaxed pt-0.5">{text}</p>
-          </div>
-        ))}
-      </div>
-    </div>
+    </section>
   );
 };
 
@@ -160,252 +153,293 @@ export const GroupDistribution: React.FC<{ tournament: Tournament }> = ({ tourna
     </div>
   );
 };
+
 export const TournamentGroupScores: React.FC<{ tournament: Tournament }> = ({ tournament }) => {
   const context = useEventDbContext();
+  const navigate = useNavigate();
 
   if (tournament.groupPlay?.groupScores === undefined) {
     return null;
   }
 
-  const scores = Array.from(tournament.groupPlay.groupScores).sort(TournamentGroupPlay.sortGroupScores);
-  const cutOffIndex = tournament.groupPlay.getBracketSize();
+  const groupPlay = tournament.groupPlay;
+  const scores = Array.from(groupPlay.groupScores)
+    .sort(TournamentGroupPlay.sortGroupScores)
+    .map(([_, player]) => player);
+  const cutOffIndex = groupPlay.getBracketSize();
+  const groupOf = new Map(groupPlay.groups.flatMap((group, index) => group.players.map((p) => [p, index + 1])));
+  const remainingOf = new Map<string, number>();
+  groupPlay.groups.forEach((group) =>
+    group.pending.forEach((game) =>
+      [game.player1, game.player2].forEach((p) => p && remainingOf.set(p, (remainingOf.get(p) ?? 0) + 1)),
+    ),
+  );
 
-  const hasGroupSizeAdjustment = scores.some(([_, s]) => s.groupSizeAdjustmentFactor !== 1);
+  const hasGroupSizeAdjustment = scores.some((s) => s.groupSizeAdjustmentFactor !== 1);
   const hasEliminationZone = cutOffIndex < scores.length;
+  const hasEnded = groupPlay.groupPlayEnded !== undefined;
+  const columnCount = 8 + (hasGroupSizeAdjustment ? 2 : 0);
 
-  const row = (player: GroupScorePlayer, place: number, isEliminated: boolean = false) => (
+  const row = (player: GroupScorePlayer, place: number, isEliminated: boolean) => (
     <tr
       key={player.name}
+      onClick={() => navigate(`/player/${player.name}`)}
       className={classNames(
-        "transition-colors border-b border-secondary-background/20",
-        isEliminated
-          ? "hover:bg-secondary-background/40 bg-secondary-background/20"
-          : "hover:bg-secondary-background/30",
+        "bg-primary-background hover:bg-secondary-background hover:text-secondary-text cursor-pointer transition-colors font-light",
+        isEliminated && "text-primary-text/60",
       )}
     >
-      <td className="px-4 py-1 text-center font-semibold">{place}</td>
-      <td className="px-4 py-1 font-medium">
-        <Link to={`/player/${player.name}`} className="text-primary-text hover:text-primary-text/80 hover:underline">
-          {context.playerName(player.name)}
-        </Link>
+      <td className="py-1 px-1 xs:px-2 text-right w-[1%] whitespace-nowrap">{place}</td>
+      <td className="py-1 px-1 xs:px-2 w-[100%] max-w-0">
+        <div className="flex items-center gap-2 min-w-0">
+          <ProfilePicture playerId={player.name} size={24} shape="circle" />
+          <span className="truncate font-normal">{context.playerName(player.name)}</span>
+        </div>
       </td>
-      <td className="px-4 py-1 text-center bg-secondary-background/30 font-bold text-lg">
+      <td className="py-1 px-1 xs:px-2 text-center w-[1%] whitespace-nowrap">{groupOf.get(player.name)}</td>
+      <td className="py-1 px-1 xs:px-2 text-right w-[1%] whitespace-nowrap font-medium">
         {fmtNum(player.adjustedScore, { digits: 1 })}
       </td>
       {hasGroupSizeAdjustment && (
         <>
-          <td className="px-4 py-1 text-center text-primary-text/70">{fmtNum(player.score, { digits: 1 })}</td>
-          <td className="px-4 py-1 text-center text-primary-text/70">
-            {player.groupSizeAdjustmentFactor === 1 ? (
-              <span className="text-primary-text/40">—</span>
-            ) : (
-              fmtNum(player.groupSizeAdjustmentFactor, { digits: 2 })
-            )}
+          <td className="hidden md:table-cell py-1 px-2 text-right w-[1%] whitespace-nowrap">
+            {fmtNum(player.score, { digits: 1 })}
+          </td>
+          <td className="hidden md:table-cell py-1 px-2 text-right w-[1%] whitespace-nowrap">
+            {player.groupSizeAdjustmentFactor === 1
+              ? ""
+              : "×" + fmtNum(player.groupSizeAdjustmentFactor, { digits: 2 })}
           </td>
         </>
       )}
-      <td className="px-4 py-1 text-center text-primary-text font-medium">{fmtNum(player.wins)}</td>
-      <td className="px-4 py-1 text-center text-primary-text font-medium">{fmtNum(player.loss)}</td>
-      <td className="px-4 py-1 text-center text-primary-text/60">{fmtNum(player.skips)}</td>
+      <td className="py-1 px-1 xs:px-2 text-right w-[1%] whitespace-nowrap">{fmtNum(player.wins)}</td>
+      <td className="py-1 px-1 xs:px-2 text-right w-[1%] whitespace-nowrap">{fmtNum(player.loss)}</td>
+      <td className="py-1 px-1 xs:px-2 text-right w-[1%] whitespace-nowrap">{fmtNum(player.skips)}</td>
+      <td className="py-1 px-1 xs:px-2 text-right w-[1%] whitespace-nowrap">
+        {remainingOf.get(player.name) ? fmtNum(remainingOf.get(player.name)!) : ""}
+      </td>
     </tr>
   );
 
   return (
-    <div className="text-primary-text bg-primary-background rounded-lg shadow-sm">
-      <h1 className="text-2xl font-bold mb-6">Score Board</h1>
-
-      <div className="overflow-x-auto rounded-lg border border-secondary-background/30 shadow-sm">
-        <table className="min-w-full border-collapse bg-primary-background">
-          <thead className="bg-secondary-background/20">
-            <tr className="border-b-2 border-secondary-background/40">
-              <th className="px-4 py-3 text-center font-semibold text-primary-text">#</th>
-              <th className="px-4 py-3 text-left font-semibold text-primary-text">Player</th>
-              {hasGroupSizeAdjustment ? (
-                <th className="px-4 py-3 text-center font-semibold text-primary-text">
-                  <div>Adjusted</div>
-                  <div className="text-xs font-normal text-primary-text/60">Score</div>
-                </th>
-              ) : (
-                <th className="px-4 py-3 text-center font-semibold text-primary-text">
-                  <div>Score</div>
-                </th>
-              )}
+    <section>
+      <SectionTitle>Standings</SectionTitle>
+      <div className="bg-primary-background rounded-lg w-full overflow-hidden ring-1 ring-secondary-background">
+        <table className="w-full text-primary-text border-collapse text-sm xs:text-base">
+          <thead className="border-b border-primary-text/50">
+            <tr>
+              <th className="py-1 px-1 xs:px-2 text-right font-light">#</th>
+              <th className="py-1 px-1 xs:px-2 text-left font-normal">Player</th>
+              <th className="py-1 px-1 xs:px-2 text-center font-light" title="Group">
+                Grp
+              </th>
+              <th className="py-1 px-1 xs:px-2 text-right font-medium" title="Points">
+                Pts
+              </th>
               {hasGroupSizeAdjustment && (
                 <>
-                  <th className="px-4 py-3 text-center font-semibold text-primary-text">
-                    <div>Score</div>
-                    <div className="text-xs font-normal text-primary-text/60">Before Adjustment</div>
+                  <th
+                    className="hidden md:table-cell py-1 px-2 text-right font-light"
+                    title="Points before the group size factor"
+                  >
+                    Raw
                   </th>
-                  <th className="px-4 py-3 text-center font-semibold text-primary-text">
-                    <div>Group Size</div>
-                    <div className="text-xs font-normal text-primary-text/60">Adjustment Factor</div>
+                  <th className="hidden md:table-cell py-1 px-2 text-right font-light" title="Group size factor">
+                    Factor
                   </th>
                 </>
               )}
-              <th className="px-4 py-3 text-center font-semibold text-primary-text">Wins</th>
-              <th className="px-4 py-3 text-center font-semibold text-primary-text">Loss</th>
-              <th className="px-4 py-3 text-center font-semibold text-primary-text">Skips</th>
+              <th className="py-1 px-1 xs:px-2 text-right font-light" title="Wins">
+                W
+              </th>
+              <th className="py-1 px-1 xs:px-2 text-right font-light" title="Losses">
+                L
+              </th>
+              <th className="py-1 px-1 xs:px-2 text-right font-light" title="Skips">
+                S
+              </th>
+              <th className="py-1 px-1 xs:px-2 text-right font-light" title="Games left to play">
+                Left
+              </th>
             </tr>
           </thead>
-          <tbody>
-            {/* Qualified Players */}
-            {scores.slice(0, cutOffIndex).map(([_name, player], index) => row(player, index + 1, false))}
-
-            {hasEliminationZone && (
-              <>
-                {/* Elimination Zone Divider */}
-                <tr className="bg-secondary-background/50 border-y-2 border-secondary-background/60">
-                  <td className="px-4 py-2 text-center">
-                    <span className="text-primary-text">⚠️</span>
-                  </td>
-                  <td colSpan={2} className="px-4 py-2 font-bold text-primary-text">
-                    Elimination Zone
-                  </td>
-                  <td colSpan={5} className="px-4 py-2 text-center text-primary-text/80 text-sm">
-                    Players below this line are eliminated from advancing
-                  </td>
-                </tr>
-                <tr className="border-b-2 border-secondary-background/40">
-                  <th className="px-4 py-1 text-sm text-center font-semibold text-primary-text">#</th>
-                  <th className="px-4 py-1 text-sm text-left font-semibold text-primary-text">Player</th>
-                  {hasGroupSizeAdjustment ? (
-                    <th className="px-4 py-1 text-sm text-center font-semibold text-primary-text">
-                      <div>Adjusted</div>
-                      <div className="text-xs font-normal text-primary-text/60">Score</div>
-                    </th>
-                  ) : (
-                    <th className="px-4 py-1 text-sm text-center font-semibold text-primary-text">
-                      <div>Score</div>
-                    </th>
-                  )}
-                  {hasGroupSizeAdjustment && (
-                    <>
-                      <th className="px-4 py-1 text-sm text-center font-semibold text-primary-text">
-                        <div>Score</div>
-                        <div className="text-xs font-normal text-primary-text/60">Before Adjustment</div>
-                      </th>
-                      <th className="px-4 py-1 text-sm text-center font-semibold text-primary-text">
-                        <div>Group Size</div>
-                        <div className="text-xs font-normal text-primary-text/60">Adjustment Factor</div>
-                      </th>
-                    </>
-                  )}
-                  <th className="px-4 py-1 text-sm text-center font-semibold text-primary-text">Wins</th>
-                  <th className="px-4 py-1 text-sm text-center font-semibold text-primary-text">Loss</th>
-                  <th className="px-4 py-1 text-sm text-center font-semibold text-primary-text">Skips</th>
-                </tr>
-                {/* Eliminated Players */}
-                {scores.slice(cutOffIndex).map(([_name, player], index) => row(player, index + cutOffIndex + 1, true))}
-              </>
-            )}
+          <tbody className="divide-y divide-primary-text/50">
+            {scores.slice(0, cutOffIndex).map((player, index) => row(player, index + 1, false))}
           </tbody>
+          {hasEliminationZone && (
+            <>
+              <tbody>
+                <tr className="border-y-2 border-dashed border-primary-text">
+                  <td colSpan={columnCount} className="py-1 px-2 text-center text-xs xs:text-sm font-normal">
+                    ▲ The top {fmtNum(cutOffIndex)} {hasEnded ? "advanced" : "advance"} to the bracket
+                  </td>
+                </tr>
+              </tbody>
+              <tbody className="divide-y divide-primary-text/50">
+                {scores.slice(cutOffIndex).map((player, index) => row(player, index + cutOffIndex + 1, true))}
+              </tbody>
+            </>
+          )}
         </table>
       </div>
-    </div>
+      <p className="mt-1 text-xs text-primary-text/80">
+        Grp = group, Pts = points, W = wins, L = losses, S = skips, Left = games left to play
+        {hasGroupSizeAdjustment && (
+          <span className="hidden md:inline">, Raw = points before the group size factor</span>
+        )}
+      </p>
+    </section>
   );
 };
 
 export const TournamentGroups: React.FC<{
   tournament: Tournament;
-  itemRefs: React.MutableRefObject<{
-    [key: string]: HTMLElement | null;
-  }>;
+  itemRefs: ItemRefs;
 }> = ({ tournament, itemRefs }) => {
   const { player1: paramPlayer1, player2: paramPlayer2 } = useTennisParams();
-  const context = useEventDbContext();
+  const isMediumScreen = useMediaQuery("(min-width: 768px)");
+  const avatarSize = isMediumScreen ? 32 : 28;
 
   if (tournament.groupPlay?.groups === undefined) {
     return null;
   }
 
-  return tournament.groupPlay.groups.map((group, groupIndex) => (
-    <div key={groupIndex} className="max-w-96 w-full space-y-2">
-      <div className="rounded-lg ring-2 ring-secondary-background bg-primary-background text-primary-text p-2 px-4">
-        <section className="flex justify-between items-baseline">
-          <h2 className="text-xl font-normal">Group {groupIndex + 1}</h2>
-          <p className="text-xs">
-            {fmtNum(group.groupGames.length - group.pending.length)} of {fmtNum(group.groupGames.length)} games
-            completed
-          </p>
-        </section>
-        <p className="text-xs">{fmtNum(group.players.length)} players:</p>
-        <p>{group.players.map((p) => context.playerName(p)).join(", ")}</p>
-      </div>
-      {group.groupGames.map((game, gameIndex) => {
-        const gameKey =
-          game.player1 && game.player2
-            ? getGameKeyFromPlayers(game.player1, game.player2, "group")
-            : "GR" + groupIndex + "G" + gameIndex;
+  const groupPlay = tournament.groupPlay;
+  const canUndoSkip = groupPlay.groupPlayEnded === undefined || Date.now() - groupPlay.groupPlayEnded < 60 * 60 * 1_000; // 1 hour buffer to undo skips
 
-        const isParamSelectedGame = gameKey === getGameKeyFromPlayers(paramPlayer1, paramPlayer2, "group");
-        const p1IsWinner = !!game.winner && game.winner === game.player1;
-        const p2IsWinner = !!game.winner && game.winner === game.player2;
-        const p1IsLoser = !!game.winner && game.winner !== game.player1;
-        const p2IsLoser = !!game.winner && game.winner !== game.player2;
-        const isPending = group.pending.includes(game);
+  return (
+    <section>
+      <SectionTitle>Groups</SectionTitle>
+      <div className="grid gap-4 grid-cols-1 lg:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
+        {groupPlay.groups.map((group, groupIndex) => {
+          const played = group.groupGames.length - group.pending.length;
+          const factor = group.players[0] ? groupPlay.groupScores.get(group.players[0])?.groupSizeAdjustmentFactor : 1;
+          // Games left to play first, so players find their next game at the top
+          const games = group.groupGames
+            .map((game, gameIndex) => ({ game, gameIndex, isPending: group.pending.includes(game) }))
+            .sort((a, b) => Number(b.isPending) - Number(a.isPending));
 
-        return (
-          <Menu key={gameKey} ref={(el) => (itemRefs.current[gameKey] = el)}>
-            <div>
-              <MenuButton
-                className={classNames(
-                  "relative w-full px-4 py-2 rounded-lg flex items-center gap-x-4 h-12 text-secondary-text",
-                  "hover:bg-secondary-background/70",
-                  isPending ? "bg-secondary-background ring-2 ring-secondary-text" : "bg-secondary-background/60",
-                  isParamSelectedGame && "animate-wiggle",
-                )}
-              >
-                <h2 className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2">VS</h2>
-                <div className="flex gap-3 items-center justify-center">
-                  {game.player1 ? (
-                    <ProfilePicture playerId={game.player1} size={35} shape="circle" clickToEdit={false} border={3} />
-                  ) : (
-                    <QuestionMark size={38} />
-                  )}
-                  <h3 className={classNames(p1IsWinner && "font-semibold", p1IsLoser && "line-through font-thin")}>
-                    {context.playerName(game.player1)} {winStateEmoji(p1IsWinner, game.skipped)}
-                  </h3>
+          return (
+            <div
+              key={groupIndex}
+              className="min-w-0 rounded-lg ring-1 ring-secondary-background bg-secondary-background/20 p-2 xs:p-3 space-y-2"
+            >
+              <div className="space-y-1 px-1">
+                <div className="flex justify-between items-baseline gap-2">
+                  <h3 className="text-lg md:text-xl font-semibold">Group {groupIndex + 1}</h3>
+                  <p className="text-xs xs:text-sm whitespace-nowrap">
+                    {fmtNum(played)} of {fmtNum(group.groupGames.length)} games played
+                  </p>
                 </div>
-                <div className="grow" />
-                <div className="flex gap-3 items-center justify-center">
-                  <h3 className={classNames(p2IsWinner && "font-semibold", p2IsLoser && "line-through font-thin")}>
-                    {winStateEmoji(p2IsWinner, game.skipped)} {context.playerName(game.player2)}
-                  </h3>
-                  {game.player2 ? (
-                    <ProfilePicture playerId={game.player2} size={35} shape="circle" clickToEdit={false} border={3} />
-                  ) : (
-                    <QuestionMark size={38} />
-                  )}
+                <div className="h-1.5 rounded-full bg-primary-text/20 overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-primary-text transition-all"
+                    style={{ width: `${group.groupGames.length ? (played / group.groupGames.length) * 100 : 0}%` }}
+                  />
                 </div>
-              </MenuButton>
-              <GameMenuItems
-                player1={game.player1}
-                player2={game.player2}
-                showCompare
-                showRegisterResult={isPending}
-                showSkipGame={{
-                  show: isPending,
-                  tournamentId: tournament.id,
-                }}
-                showUndoSkip={{
-                  show:
-                    !!game.skipped &&
-                    !!tournament.groupPlay &&
-                    (tournament.groupPlay.groupPlayEnded === undefined ||
-                      Date.now() - tournament.groupPlay.groupPlayEnded < 60 * 60 * 1_000), // 1 hour buffer to undo skips
-                  skipId: game.skipped?.skipId || "",
-                  tournamentId: tournament.id,
-                }}
-                showGameDetails={{
-                  // A skipped game carries a winner and a time, but nobody played it
-                  show: !!game.winner && !game.skipped && game.completedAt !== undefined,
-                  playedAt: game.completedAt,
-                }}
-              />
+                <p className="text-xs xs:text-sm">
+                  {fmtNum(group.players.length)} players
+                  {factor !== undefined && factor !== 1 && <> · points ×{fmtNum(factor, { digits: 2 })}</>}
+                </p>
+              </div>
+
+              <div className="space-y-1.5">
+                {games.map(({ game, gameIndex, isPending }) => {
+                  const gameKey =
+                    game.player1 && game.player2
+                      ? getGameKeyFromPlayers(game.player1, game.player2, "group")
+                      : "GR" + groupIndex + "G" + gameIndex;
+                  const isParamSelectedGame = gameKey === getGameKeyFromPlayers(paramPlayer1, paramPlayer2, "group");
+
+                  return (
+                    <Menu key={gameKey} ref={(el) => (itemRefs.current[gameKey] = el)}>
+                      <div>
+                        <MenuButton
+                          className={classNames(
+                            "w-full grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 px-2 py-1.5 rounded-lg",
+                            "text-secondary-text text-sm xs:text-base hover:bg-secondary-background/70 transition-colors",
+                            isPending
+                              ? "bg-secondary-background ring-2 ring-secondary-text"
+                              : "bg-secondary-background/60",
+                            isParamSelectedGame && "animate-wiggle",
+                          )}
+                        >
+                          <GameSide
+                            player={game.player1}
+                            winner={game.winner}
+                            skipped={!!game.skipped}
+                            avatarSize={avatarSize}
+                          />
+                          <span className={classNames("text-xs font-semibold", !isPending && "opacity-50")}>VS</span>
+                          <GameSide
+                            player={game.player2}
+                            winner={game.winner}
+                            skipped={!!game.skipped}
+                            avatarSize={avatarSize}
+                            alignRight
+                          />
+                        </MenuButton>
+                        <GameMenuItems
+                          player1={game.player1}
+                          player2={game.player2}
+                          showCompare
+                          showRegisterResult={isPending}
+                          showSkipGame={{
+                            show: isPending,
+                            tournamentId: tournament.id,
+                          }}
+                          showUndoSkip={{
+                            show: !!game.skipped && canUndoSkip,
+                            skipId: game.skipped?.skipId || "",
+                            tournamentId: tournament.id,
+                          }}
+                          showGameDetails={{
+                            // A skipped game carries a winner and a time, but nobody played it
+                            show: !!game.winner && !game.skipped && game.completedAt !== undefined,
+                            playedAt: game.completedAt,
+                          }}
+                        />
+                      </div>
+                    </Menu>
+                  );
+                })}
+              </div>
             </div>
-          </Menu>
-        );
-      })}
+          );
+        })}
+      </div>
+    </section>
+  );
+};
+
+const GameSide: React.FC<{
+  player?: string;
+  winner?: string;
+  skipped: boolean;
+  avatarSize: number;
+  alignRight?: boolean;
+}> = ({ player, winner, skipped, avatarSize, alignRight = false }) => {
+  const context = useEventDbContext();
+  const isWinner = !!winner && winner === player;
+  const isLoser = !!winner && winner !== player;
+
+  return (
+    <div
+      className={classNames(
+        "flex items-center gap-2 min-w-0",
+        alignRight && "flex-row-reverse",
+        isLoser && "opacity-50",
+      )}
+    >
+      {player ? (
+        <ProfilePicture playerId={player} size={avatarSize} shape="circle" border={2} />
+      ) : (
+        <QuestionMark size={avatarSize} />
+      )}
+      <span className={classNames("truncate", isWinner && "font-semibold", isLoser && "line-through")}>
+        {context.playerName(player)}
+      </span>
+      {isWinner && <span className="shrink-0">{winStateEmoji(true, skipped)}</span>}
     </div>
-  ));
+  );
 };
