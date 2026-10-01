@@ -42,6 +42,31 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
+    slug: "group-play-tab-refresh",
+    title: "New layout for the group play tab",
+    date: "2026-10-01",
+    tags: ["feature-update"],
+    summary:
+      "The group play tab has new standings and group cards. The tab fits all screen sizes without a sideways scroll.",
+    body: [
+      list(
+        "The standings show the number of games that each player has left to play.",
+        "A dashed line shows the cut-off for the finals. Below the line, the players are muted.",
+        "Each group card shows a progress bar. In the All games view, the games left to play are at the top.",
+        "A group card shows its group size factor when the factor is not 1.",
+      ),
+      text(
+        "On a phone the standings show the points in a column. The wins, the losses, the skips and the games left are on a line below each name. On a wider screen each value has its own column.",
+      ),
+      text(
+        "Each group card has 2 views: Players and All games. The Players view shows first. It shows 1 row for each player, with the number of games completed and the pictures of the opponents. A ribbon below each picture shows the result: 🏆 a win, 🆓 a win on a skip, 💔 a loss, ⛔ a loss on a skip. The rows are in the tie-breaker order.",
+      ),
+      text(
+        "Open a row to see 1 line for each opponent, with the result and the sets. Select a line to open the same menu as a game card. A link to a group game opens the row of player 1 and moves the page to the line of player 2.",
+      ),
+    ],
+  },
+  {
     slug: "recent-games-tags",
     title: "Tags on the recent games page",
     date: "2026-10-01",
