@@ -62,7 +62,7 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
         "Each group card has 2 views: Players and All games. The Players view shows first. It shows 1 row for each player, with the number of games completed and the pictures of the opponents. A ribbon below each picture shows the result: 🏆 a win, 🆓 a win on a skip, 💔 a loss, ⛔ a loss on a skip. The rows are in the tie-breaker order.",
       ),
       text(
-        "Open a row to see 1 line for each opponent, with the result and the sets. Select a line to open the same menu as a game card. A link to a group game opens the row of player 1 and moves the page to the line of player 2.",
+        "Open a row to see 1 line for each opponent, with the result and the sets. Select a line to open the same menu as a game card. A link to a group game opens the row of player 1 and moves the page to the line of player 2. Select a player in the standings to move the page to the row of that player in the group card. Select the picture or the name in a row to open the player page.",
       ),
     ],
   },

@@ -8,8 +8,8 @@ import { getGameKeyFromPlayers } from "./tournament-page";
 import { Menu, MenuButton } from "@headlessui/react";
 import { useTennisParams } from "../../hooks/use-tennis-params";
 import { useMediaQuery } from "../../hooks/use-media-query";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import { GameMenuItems, QuestionMark, winStateEmoji } from "./tournament-bracket";
 
 type ItemRefs = React.MutableRefObject<{ [key: string]: HTMLElement | null }>;
@@ -18,6 +18,10 @@ export const TournamentGroupPlayComponent: React.FC<{
   tournament: Tournament;
   itemRefs: ItemRefs;
 }> = ({ tournament, itemRefs }) => {
+  // A row in the standings asks the group cards to show that player. The entry of the player clears the request
+  const [focusedPlayer, setFocusedPlayer] = useState<string>();
+  const clearFocusedPlayer = useCallback(() => setFocusedPlayer(undefined), []);
+
   if (tournament.tournamentConfig.groupPlay === false) {
     return null;
   }
@@ -27,10 +31,15 @@ export const TournamentGroupPlayComponent: React.FC<{
   return (
     <div className="text-primary-text grid gap-6 xl:grid-cols-[minmax(0,56rem)_minmax(0,1fr)]">
       <div className="min-w-0 xl:col-start-1 xl:row-start-1">
-        <TournamentGroupScores tournament={tournament} />
+        <TournamentGroupScores tournament={tournament} onSelectPlayer={setFocusedPlayer} />
       </div>
       <div className="min-w-0 xl:col-span-2 xl:row-start-2">
-        <TournamentGroups tournament={tournament} itemRefs={itemRefs} />
+        <TournamentGroups
+          tournament={tournament}
+          itemRefs={itemRefs}
+          focusedPlayer={focusedPlayer}
+          onPlayerFocused={clearFocusedPlayer}
+        />
       </div>
       <div className="min-w-0 xl:col-start-2 xl:row-start-1">
         <GroupPlayRules tournament={tournament} />
@@ -154,9 +163,11 @@ export const GroupDistribution: React.FC<{ tournament: Tournament }> = ({ tourna
   );
 };
 
-export const TournamentGroupScores: React.FC<{ tournament: Tournament }> = ({ tournament }) => {
+export const TournamentGroupScores: React.FC<{
+  tournament: Tournament;
+  onSelectPlayer: (player: string) => void;
+}> = ({ tournament, onSelectPlayer }) => {
   const context = useEventDbContext();
-  const navigate = useNavigate();
 
   if (tournament.groupPlay?.groupScores === undefined) {
     return null;
@@ -197,7 +208,7 @@ export const TournamentGroupScores: React.FC<{ tournament: Tournament }> = ({ to
     return (
       <tr
         key={player.name}
-        onClick={() => navigate(`/player/${player.name}`)}
+        onClick={() => onSelectPlayer(player.name)}
         className={classNames(
           "bg-primary-background hover:bg-secondary-background hover:text-secondary-text cursor-pointer transition-colors font-light",
           isEliminated && "text-primary-text/60",
@@ -286,10 +297,19 @@ function count(value: number, singular: string, plural: string): string {
   return `${fmtNum(value)} ${value === 1 ? singular : plural}`;
 }
 
-export const TournamentGroups: React.FC<{
-  tournament: Tournament;
-  itemRefs: ItemRefs;
-}> = ({ tournament, itemRefs }) => {
+type PlayerFocus = {
+  /** The player to scroll to and wiggle */
+  focusedPlayer?: string;
+  /** Called by the entry of the focused player, when it has scrolled to itself */
+  onPlayerFocused: () => void;
+};
+
+export const TournamentGroups: React.FC<
+  {
+    tournament: Tournament;
+    itemRefs: ItemRefs;
+  } & PlayerFocus
+> = ({ tournament, itemRefs, focusedPlayer, onPlayerFocused }) => {
   const isMediumScreen = useMediaQuery("(min-width: 768px)");
   const avatarSize = isMediumScreen ? 32 : 28;
 
@@ -300,7 +320,8 @@ export const TournamentGroups: React.FC<{
   return (
     <section>
       <SectionTitle>Groups</SectionTitle>
-      <div className="grid gap-4 grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3">
+      {/* A new column starts when there is room for one more card. A card is not much wider than a phone */}
+      <div className="grid gap-4 grid-cols-[repeat(auto-fill,minmax(min(100%,20rem),1fr))]">
         {tournament.groupPlay.groups.map((_, groupIndex) => (
           <GroupCard
             key={groupIndex}
@@ -308,6 +329,8 @@ export const TournamentGroups: React.FC<{
             groupIndex={groupIndex}
             itemRefs={itemRefs}
             avatarSize={avatarSize}
+            focusedPlayer={focusedPlayer}
+            onPlayerFocused={onPlayerFocused}
           />
         ))}
       </div>
@@ -317,20 +340,26 @@ export const TournamentGroups: React.FC<{
 
 type GroupCardView = "games" | "players";
 
-const GroupCard: React.FC<{
-  tournament: Tournament;
-  groupIndex: number;
-  itemRefs: ItemRefs;
-  avatarSize: number;
-}> = ({ tournament, groupIndex, itemRefs, avatarSize }) => {
+const GroupCard: React.FC<
+  {
+    tournament: Tournament;
+    groupIndex: number;
+    itemRefs: ItemRefs;
+    avatarSize: number;
+  } & PlayerFocus
+> = ({ tournament, groupIndex, itemRefs, avatarSize, focusedPlayer, onPlayerFocused }) => {
   const [view, setView] = useState<GroupCardView>("players");
   const groupPlay = tournament.groupPlay!;
   const group = groupPlay.groups[groupIndex];
+  // Only the Players view has an entry to scroll to
+  useEffect(() => {
+    if (focusedPlayer !== undefined && group.players.includes(focusedPlayer)) setView("players");
+  }, [focusedPlayer, group.players]);
   const played = group.groupGames.length - group.pending.length;
   const factor = group.players[0] ? groupPlay.groupScores.get(group.players[0])?.groupSizeAdjustmentFactor : 1;
 
   return (
-    <div className="min-w-0 rounded-lg ring-1 ring-secondary-background bg-secondary-background/20 p-2 xs:p-3 space-y-2">
+    <div className="min-w-0 w-full max-w-md rounded-lg ring-1 ring-secondary-background bg-secondary-background/20 p-2 xs:p-3 space-y-2">
       <div className="space-y-1 px-1">
         <div className="flex justify-between items-baseline gap-2">
           <h3 className="text-lg md:text-xl font-semibold">Group {groupIndex + 1}</h3>
@@ -378,6 +407,8 @@ const GroupCard: React.FC<{
           groupIndex={groupIndex}
           itemRefs={itemRefs}
           avatarSize={avatarSize + 16}
+          focusedPlayer={focusedPlayer}
+          onPlayerFocused={onPlayerFocused}
         />
       ) : (
         <GroupGames tournament={tournament} groupIndex={groupIndex} itemRefs={itemRefs} avatarSize={avatarSize} />
@@ -478,12 +509,14 @@ function canUndoSkipIn(groupPlay: TournamentGroupPlay): boolean {
 }
 
 /** One entry per player of the group, in the tie-breaker order */
-const GroupPlayers: React.FC<{
-  tournament: Tournament;
-  groupIndex: number;
-  itemRefs: ItemRefs;
-  avatarSize: number;
-}> = ({ tournament, groupIndex, itemRefs, avatarSize }) => {
+const GroupPlayers: React.FC<
+  {
+    tournament: Tournament;
+    groupIndex: number;
+    itemRefs: ItemRefs;
+    avatarSize: number;
+  } & PlayerFocus
+> = ({ tournament, groupIndex, itemRefs, avatarSize, focusedPlayer, onPlayerFocused }) => {
   const groupPlay = tournament.groupPlay!;
   const group = groupPlay.groups[groupIndex];
   const canUndoSkip = canUndoSkipIn(groupPlay);
@@ -518,6 +551,8 @@ const GroupPlayers: React.FC<{
           tournamentId={tournament.id}
           canUndoSkip={canUndoSkip}
           itemRefs={itemRefs}
+          isFocused={player === focusedPlayer}
+          onFocused={onPlayerFocused}
         />
       ))}
     </div>
@@ -531,7 +566,9 @@ const GroupPlayerEntry: React.FC<{
   tournamentId: string;
   canUndoSkip: boolean;
   itemRefs: ItemRefs;
-}> = ({ player, results, avatarSize, tournamentId, canUndoSkip, itemRefs }) => {
+  isFocused: boolean;
+  onFocused: () => void;
+}> = ({ player, results, avatarSize, tournamentId, canUndoSkip, itemRefs, isFocused, onFocused }) => {
   const context = useEventDbContext();
   const { player1: paramPlayer1, player2: paramPlayer2 } = useTennisParams();
   // A link to a group game opens the row of player 1, so the page can scroll to the line of player 2
@@ -540,21 +577,50 @@ const GroupPlayerEntry: React.FC<{
   useEffect(() => {
     if (holdsParamGame) setExpanded(true);
   }, [holdsParamGame]);
-  const [rowRef, rowWidth] = useElementWidth<HTMLButtonElement>();
+  const entryRef = useRef<HTMLDivElement>(null);
+  const [wiggle, setWiggle] = useState(false);
+  useEffect(() => {
+    if (!isFocused) return;
+    entryRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    setWiggle(true);
+    onFocused();
+  }, [isFocused, onFocused]);
+  const [rowRef, rowWidth] = useElementWidth<HTMLDivElement>();
   // The row's padding, the player's picture, the chevron and the 3 gaps between the 4 parts
   const fixedWidth = 16 + avatarSize + 20 + 3 * 8;
 
   return (
-    <div className="rounded-lg text-secondary-text text-sm xs:text-base overflow-hidden">
-      <button
+    <div
+      ref={entryRef}
+      className={classNames(
+        "rounded-lg text-secondary-text text-sm xs:text-base overflow-hidden",
+        wiggle && "animate-wiggle",
+      )}
+      // A line of the opened row can wiggle too. Only the end of the entry's own wiggle stops it
+      onAnimationEnd={(event) => event.target === event.currentTarget && setWiggle(false)}
+    >
+      {/* The button lies behind the row and opens it. The picture and the name lie above the button and open the player page */}
+      <div
         ref={rowRef}
-        onClick={() => setExpanded((value) => !value)}
-        aria-expanded={expanded}
-        className="w-full flex items-center gap-2 px-2 py-1.5 bg-secondary-background hover:bg-secondary-background/70 transition-colors"
+        className="relative flex items-center gap-2 px-2 py-1.5 bg-secondary-background hover:bg-secondary-background/70 transition-colors"
       >
-        <ProfilePicture playerId={player} size={avatarSize} shape="circle" border={2} />
+        <button
+          onClick={() => setExpanded((value) => !value)}
+          aria-expanded={expanded}
+          aria-label={`${expanded ? "Close" : "Open"} the games of ${context.playerName(player)}`}
+          className="absolute inset-0 rounded-t-lg outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-secondary-text"
+        />
+        {/* The name is the same link for a screen reader */}
+        <Link to={`/player/${player}`} className="relative block shrink-0" tabIndex={-1} aria-hidden>
+          <ProfilePicture playerId={player} size={avatarSize} shape="circle" border={2} />
+        </Link>
         <div className="flex-1 min-w-0 text-left">
-          <div className="truncate font-normal">{context.playerName(player)}</div>
+          <Link
+            to={`/player/${player}`}
+            className="relative block w-fit max-w-full truncate font-normal hover:underline"
+          >
+            {context.playerName(player)}
+          </Link>
           {/* Games completed, a skipped game too, of all the games of the player in the group */}
           <div className="text-xs font-light">
             {fmtNum(results.filter((result) => result.won !== undefined).length)} of {fmtNum(results.length)}
@@ -571,7 +637,7 @@ const GroupPlayerEntry: React.FC<{
         >
           <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
         </svg>
-      </button>
+      </div>
       {expanded && (
         <div className="divide-y divide-secondary-text/20 border-t border-secondary-text/20">
           {results.map((result) => {
@@ -671,7 +737,11 @@ const OpponentStack: React.FC<{ results: OpponentResult[]; availableWidth: numbe
   const offset = opponentCount > 1 ? (width - STACK_PICTURE_SIZE) / (opponentCount - 1) : 0;
 
   return (
-    <div className="relative isolate shrink-0" style={{ width, height: STACK_PICTURE_SIZE + STACK_RESULT_HEIGHT }}>
+    // The stack lies above the button of the row. Clicks go through it to the button
+    <div
+      className="relative isolate shrink-0 pointer-events-none"
+      style={{ width, height: STACK_PICTURE_SIZE + STACK_RESULT_HEIGHT }}
+    >
       {/* 3 layers: the ribbons at the bottom, then the pictures, then the icons. No ribbon covers an icon */}
       {results.map((result, index) =>
         result.won === undefined ? null : (
