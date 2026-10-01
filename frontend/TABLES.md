@@ -185,6 +185,10 @@ names truncate next to it. Time columns are hug columns.
 - Clickable rows: `onClick` + `useNavigate` on the `<tr>` with `cursor-pointer`,
   `hover:bg-secondary-background hover:text-secondary-text transition-colors`.
   Do not wrap rows in `<Link>`.
+- An item that takes 2 rows (e.g. the tags line under a game on the recent
+  games page below `md`) is its own `<tbody>` with the `onClick`, `group` and
+  a `border-t`; its rows use `group-hover:` classes so both rows highlight
+  together. See `src/pages/recent-games/recent-games-page.tsx`.
 - Weights within a row: base `font-light`, names `font-normal`, emphasized
   numbers (primary points) `font-medium`.
 
