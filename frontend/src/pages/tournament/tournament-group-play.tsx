@@ -647,7 +647,7 @@ const OpponentStack: React.FC<{ results: OpponentResult[]; availableWidth: numbe
   const offset = count > 1 ? (width - STACK_PICTURE_SIZE) / (count - 1) : 0;
 
   return (
-    <div className="relative shrink-0" style={{ width, height: STACK_PICTURE_SIZE + STACK_RESULT_HEIGHT }}>
+    <div className="relative isolate shrink-0" style={{ width, height: STACK_PICTURE_SIZE + STACK_RESULT_HEIGHT }}>
       {/* 3 layers: the ribbons at the bottom, then the pictures, then the icons. No ribbon covers an icon */}
       {results.map((result, index) =>
         result.won === undefined ? null : (
