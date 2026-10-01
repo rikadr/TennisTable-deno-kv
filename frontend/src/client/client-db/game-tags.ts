@@ -13,9 +13,7 @@ export type GameTag =
   /** `eloGap` is how much more Elo the loser had than the winner just before the game */
   | { type: "upset"; eloGap: number }
   /** The first game between the 2 players */
-  | { type: "first-meeting" }
-  /** The winner lost the first set */
-  | { type: "comeback" };
+  | { type: "first-meeting" };
 
 export class GameTags {
   private parent: TennisTable;
@@ -26,7 +24,7 @@ export class GameTags {
     this.parent = parent;
   }
 
-  /** The tags of a game, in display order: tournament, upset, first meeting, comeback, achievements */
+  /** The tags of a game, in display order: tournament, upset, first meeting, achievements */
   getTags(game: Game): GameTag[] {
     const tags: GameTag[] = [];
 
@@ -41,11 +39,6 @@ export class GameTags {
 
     if (this.#getFirstMeetings().has(game.id)) {
       tags.push({ type: "first-meeting" });
-    }
-
-    const firstSet = game.score?.setPoints?.[0];
-    if (firstSet && firstSet.gameWinner < firstSet.gameLoser) {
-      tags.push({ type: "comeback" });
     }
 
     for (const achievement of this.parent.achievements.getAchievementsEarnedByGame(game.id)) {

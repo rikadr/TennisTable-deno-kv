@@ -19,28 +19,16 @@ function playerEvents(players: string[]): EventType[] {
   }));
 }
 
-/** A game, and a score when set points are given. Returns the events and the game id */
-function game(
-  winner: string,
-  loser: string,
-  setPoints?: { gameWinner: number; gameLoser: number }[],
-): { events: EventType[]; id: string; playedAt: number } {
+/** A game. Returns its events, its id and the time it was played */
+function game(winner: string, loser: string): { events: EventType[]; id: string; playedAt: number } {
   gameTime += 10;
   const playedAt = gameTime;
   const id = `game-${playedAt}`;
-  const events: EventType[] = [
-    { time: playedAt, stream: id, type: EventTypeEnum.GAME_CREATED, data: { playedAt, winner, loser } },
-  ];
-  if (setPoints) {
-    const won = setPoints.filter((set) => set.gameWinner > set.gameLoser).length;
-    events.push({
-      time: playedAt + 1,
-      stream: id,
-      type: EventTypeEnum.GAME_SCORE,
-      data: { setsWon: { gameWinner: won, gameLoser: setPoints.length - won }, setPoints },
-    });
-  }
-  return { events, id, playedAt };
+  return {
+    events: [{ time: playedAt, stream: id, type: EventTypeEnum.GAME_CREATED, data: { playedAt, winner, loser } }],
+    id,
+    playedAt,
+  };
 }
 
 function tagsOf(events: EventType[], gameId: string): GameTag[] {
@@ -60,25 +48,6 @@ describe("Game tags", () => {
 
     expect(types(tagsOf(events, first.id))).toContain("first-meeting");
     expect(types(tagsOf(events, second.id))).not.toContain("first-meeting");
-  });
-
-  it("tags a comeback when the winner lost the first set", () => {
-    const comeback = game("A", "B", [
-      { gameWinner: 8, gameLoser: 11 },
-      { gameWinner: 11, gameLoser: 9 },
-      { gameWinner: 11, gameLoser: 7 },
-    ]);
-    const straight = game("A", "B", [
-      { gameWinner: 11, gameLoser: 9 },
-      { gameWinner: 9, gameLoser: 11 },
-      { gameWinner: 11, gameLoser: 7 },
-    ]);
-    const noScore = game("A", "B");
-    const events = [...playerEvents(["A", "B"]), ...comeback.events, ...straight.events, ...noScore.events];
-
-    expect(types(tagsOf(events, comeback.id))).toContain("comeback");
-    expect(types(tagsOf(events, straight.id))).not.toContain("comeback");
-    expect(types(tagsOf(events, noScore.id))).not.toContain("comeback");
   });
 
   it("tags an upset when the winner had at least UPSET_ELO_GAP less Elo before the game", () => {
@@ -152,15 +121,12 @@ describe("Game tags", () => {
   });
 
   it("lists the tags in display order", () => {
-    const first = game("A", "B", [
-      { gameWinner: 5, gameLoser: 11 },
-      { gameWinner: 11, gameLoser: 5 },
-      { gameWinner: 11, gameLoser: 5 },
-    ]);
+    const first = game("A", "B");
     const events = [...playerEvents(["A", "B"]), ...first.events];
 
     const tags = tagsOf(events, first.id);
-    expect(tags.map((tag) => tag.type).slice(0, 2)).toEqual(["first-meeting", "comeback"]);
-    expect(tags.slice(2).every((tag) => tag.type === "achievement")).toBe(true);
+    expect(tags[0].type).toBe("first-meeting");
+    expect(tags.length).toBeGreaterThan(1);
+    expect(tags.slice(1).every((tag) => tag.type === "achievement")).toBe(true);
   });
 });

@@ -31,9 +31,6 @@ function tagLabels(tags: GameTag[], context: TennisTable): TagLabel[] {
       case "first-meeting":
         labels.push({ icon: "🆕", label: "First meeting", title: "The first game between these 2 players" });
         break;
-      case "comeback":
-        labels.push({ icon: "🔄", label: "Comeback", title: "Comeback: the winner lost the first set" });
-        break;
       case "achievement": {
         const earners = achievementEarners.get(tag.achievement.type);
         const name = context.playerName(tag.achievement.earnedBy);
