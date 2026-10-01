@@ -49,16 +49,16 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
     summary:
       "The landing page is now a dashboard. It shows the leaderboard first and uses more columns on wider screens.",
     body: [
-      text(
-        "The dashboard shows the same information as the old leaderboard page: the leaderboard, live games, tournaments, recent games, leaderboard changes, achievements and unranked players.",
-      ),
       list(
         "Phones show 1 column. The leaderboard comes directly after the live game and tournament cards.",
         "Tablets show 2 columns, and laptops and office screens show 3.",
         "Very wide screens show 4 columns. Live games and tournaments get a column only when they have content.",
       ),
       text(
-        "The top 3 players stand on a podium, and the table continues from rank 4. The Overall and Season buttons are on the leaderboard card. They also change the recent games and the leaderboard changes.",
+        "The top 3 players stand on a podium, and the table continues from rank 4. The Overall and Season buttons are on the leaderboard card.",
+      ),
+      text(
+        "The buttons also select the data of the recent games, the leaderboard changes and the unranked players. The dashboard shows all the information of the old leaderboard page.",
       ),
       text("The page is at `/dashboard`. Links to `/leader-board` open the dashboard."),
     ],

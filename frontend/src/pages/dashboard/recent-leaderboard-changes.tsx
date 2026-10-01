@@ -5,9 +5,10 @@ import { ProfilePicture } from "../player/profile-picture";
 import { fmtNum } from "../../common/number-utils";
 import { Season } from "../../client/client-db/seasons/season";
 import { DashboardCard } from "./dashboard-card";
+import { LeaderboardView } from "./dashboard-season";
 
 type Props = {
-  view: "overall" | "season";
+  view: LeaderboardView;
 };
 
 export const RecentLeaderBoardChanges: React.FC<Props> = ({ view }) => {

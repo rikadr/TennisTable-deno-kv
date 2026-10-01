@@ -63,14 +63,15 @@ export const DashboardPage: React.FC = () => {
   const renderWidget = (widget: Widget) => {
     switch (widget) {
       case "now":
+        // A fragment, not a wrapper: each card renders nothing when it has nothing to show,
+        // and a column of only these cards must stay empty for `empty:hidden`
         return (
-          // Hidden when no live game, draw, retirement or tournament has something to show
-          <div key={widget} className="flex flex-col gap-3 empty:hidden">
+          <React.Fragment key={widget}>
             <LiveGameCard liveGameQuery={liveGameQuery} />
             <LiveDrawBanners />
             <RecentHallOfFame />
             <TournamentHighlightsAndPendingGames />
-          </div>
+          </React.Fragment>
         );
       case "leaderboard":
         return (

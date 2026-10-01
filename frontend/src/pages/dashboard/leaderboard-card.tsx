@@ -1,16 +1,15 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { useEventDbContext } from "../../wrappers/event-db-context";
-import { ProfilePicture } from "../player/profile-picture";
-import { getClientConfig, Theme, themeOrOverrideTheme } from "../../client/client-config/get-client-config";
-import { getEgg, getPumpkin } from "./themed-place-number";
+import { themedPlaceImage } from "./themed-place-number";
 import { fmtNum } from "../../common/number-utils";
 import { classNames } from "../../common/class-names";
 import { determineNextSeason } from "../../client/client-db/seasons/seasons";
-import { relativeTimeString } from "../../common/date-utils";
+import { RelativeTime } from "../../common/date-utils";
 import { DashboardCard } from "./dashboard-card";
 import { Podium, PodiumEntry } from "./podium";
 import { DashboardSeasonState, LeaderboardView } from "./dashboard-season";
+import { DASHBOARD_ROW_CLASS_NAME, PlayerNameCell } from "./dashboard-table";
 
 /** The podium shows the top 3. The table continues from this rank */
 const PODIUM_PLACES = 3;
@@ -48,7 +47,10 @@ export const LeaderboardCard: React.FC<Props> = ({ view, setView, season }) => {
           <div className="mx-3 mb-3 p-4 rounded-lg bg-secondary-background text-secondary-text text-center">
             {isOffSeason ? (
               <p className="text-lg font-medium text-center">
-                Next season starts {relativeTimeString(new Date(nextSeason.start)).toLowerCase()}
+                Next season starts{" "}
+                <span className="lowercase">
+                  <RelativeTime date={new Date(nextSeason.start)} />
+                </span>
               </p>
             ) : (
               <p className="text-lg font-medium text-center">The season has no games yet</p>
@@ -94,7 +96,14 @@ export const LeaderboardCard: React.FC<Props> = ({ view, setView, season }) => {
     return (
       <DashboardCard
         title="Leaderboard"
-        subtitle={`Season ends ${relativeTimeString(new Date(currentSeason.end)).toLowerCase()}`}
+        subtitle={
+          <>
+            Season ends{" "}
+            <span className="lowercase">
+              <RelativeTime date={new Date(currentSeason.end)} />
+            </span>
+          </>
+        }
         action={toggle}
       >
         <LeaderboardBody rows={rows} showWinLossRatio={false} />
@@ -123,15 +132,13 @@ export const LeaderboardCard: React.FC<Props> = ({ view, setView, season }) => {
 };
 
 const LeaderboardBody: React.FC<{ rows: Row[]; showWinLossRatio: boolean }> = ({ rows, showWinLossRatio }) => {
-  const context = useEventDbContext();
   const navigate = useNavigate();
-  const theme = themeOrOverrideTheme(getClientConfig().theme);
 
   const podium: PodiumEntry[] = rows.slice(0, PODIUM_PLACES);
   const tableRows = rows.slice(PODIUM_PLACES);
 
   const placeNumber = (place: number) => {
-    const image = theme === Theme.HALLOWEEN ? getPumpkin(place) : theme === Theme.EASTER ? getEgg(place) : undefined;
+    const image = themedPlaceImage(place);
     if (image) return <img className="h-7 w-7 scale-[140%]" src={image} alt={`Place ${place}`} />;
     return place;
   };
@@ -160,21 +167,14 @@ const LeaderboardBody: React.FC<{ rows: Row[]; showWinLossRatio: boolean }> = ({
           </thead>
           <tbody className="divide-y divide-primary-text/50">
             {tableRows.map((row) => (
-              <tr
-                key={row.playerId}
-                onClick={() => navigate(row.to)}
-                className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text cursor-pointer transition-colors text-sm xs:text-lg md:text-xl font-light"
-              >
+              <tr key={row.playerId} onClick={() => navigate(row.to)} className={DASHBOARD_ROW_CLASS_NAME}>
                 <td className="py-1 px-1 xs:px-2 italic w-[1%] whitespace-nowrap">{placeNumber(row.rank)}</td>
-                <td className="py-1 px-1 xs:px-2 w-full max-w-0">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <ProfilePicture playerId={row.playerId} size={28} border={2} />
-                    <span className="font-normal truncate">{context.playerName(row.playerId)}</span>
-                  </div>
+                <PlayerNameCell playerId={row.playerId} />
+                <td className="py-1 px-1 xs:px-2 text-right w-[1%] whitespace-nowrap">
+                  {fmtNum(row.score, { digits: 0 })}
                 </td>
-                <td className="py-1 px-1 xs:px-2 text-right w-[1%] whitespace-nowrap">{fmtNum(row.score)}</td>
                 <td className="py-1 px-1 xs:px-2 text-right w-[1%] whitespace-nowrap text-xs xs:text-sm md:text-base">
-                  {row.interval !== undefined ? fmtNum(row.interval) : "-"}
+                  {row.interval !== undefined ? fmtNum(row.interval, { digits: 0 }) : "-"}
                 </td>
                 {showWinLossRatio && (
                   <td className="py-1 px-1 xs:px-2 text-right w-[1%] whitespace-nowrap text-xs xs:text-sm md:text-base">

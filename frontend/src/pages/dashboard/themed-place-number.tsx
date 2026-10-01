@@ -63,26 +63,23 @@ export function getEgg(place?: number): string | undefined {
   return pumpkins[place - 1];
 }
 
+/** The place image of the active theme, or undefined when the theme has no place images */
+export function themedPlaceImage(place?: number): string | undefined {
+  const theme = themeOrOverrideTheme(getClientConfig().theme);
+  if (theme === Theme.HALLOWEEN) return getPumpkin(place);
+  if (theme === Theme.EASTER) return getEgg(place);
+}
+
 type Props = {
   size: "default" | "sm" | "xs";
   place?: number;
 };
 
 export const ThemedPlaceNumber: React.FC<Props> = ({ place, size }) => {
-  const client = getClientConfig();
-  const theme = themeOrOverrideTheme(client.theme);
   const placeNumberLength = place?.toString().length || 1;
-  if (theme === Theme.HALLOWEEN) {
-    const pumpkin = getPumpkin(place);
-    if (pumpkin) {
-      return <img className={classNames("scale-125", placeBoxSize[size])} src={pumpkin} alt="Pumpkin" />;
-    }
-  }
-  if (theme === Theme.EASTER) {
-    const pumpkin = getEgg(place);
-    if (pumpkin) {
-      return <img className={classNames("scale-125", placeBoxSize[size])} src={pumpkin} alt="Pumpkin" />;
-    }
+  const image = themedPlaceImage(place);
+  if (image) {
+    return <img className={classNames("scale-125", placeBoxSize[size])} src={image} alt="Pumpkin" />;
   }
 
   // Default theme

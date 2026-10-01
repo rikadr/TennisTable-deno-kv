@@ -5,8 +5,7 @@ import { fmtNum } from "../../common/number-utils";
 import { useMediaQuery } from "../../hooks/use-media-query";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { ProfilePicture } from "../player/profile-picture";
-import { getClientConfig, Theme, themeOrOverrideTheme } from "../../client/client-config/get-client-config";
-import { getEgg, getPumpkin } from "./themed-place-number";
+import { themedPlaceImage } from "./themed-place-number";
 
 export type PodiumEntry = {
   playerId: string;
@@ -24,20 +23,13 @@ const displayOrder = [1, 0, 2];
 export const Podium: React.FC<{ entries: PodiumEntry[] }> = ({ entries }) => {
   const context = useEventDbContext();
   const isLarge = useMediaQuery("(min-width: 470px)");
-  const theme = themeOrOverrideTheme(getClientConfig().theme);
-
-  const placeImage = (place: number) => {
-    if (theme === Theme.HALLOWEEN) return getPumpkin(place);
-    if (theme === Theme.EASTER) return getEgg(place);
-  };
-
   return (
     <div className="grid grid-cols-3 items-end gap-1.5 xs:gap-3 px-2 xs:px-3 pt-2">
       {displayOrder.map((index) => {
         const entry = entries[index];
         if (!entry) return <div key={index} />;
         const place = index + 1;
-        const image = placeImage(place);
+        const image = themedPlaceImage(place);
         return (
           <Link
             key={entry.playerId}
@@ -62,7 +54,7 @@ export const Podium: React.FC<{ entries: PodiumEntry[] }> = ({ entries }) => {
             </div>
             <div className="flex flex-col items-center leading-tight whitespace-nowrap">
               <span className={classNames("font-medium", place === 1 ? "text-lg xs:text-xl" : "text-base xs:text-lg")}>
-                {fmtNum(entry.score)}
+                {fmtNum(entry.score, { digits: 0 })}
               </span>
               {entry.winLossRatio !== undefined && (
                 <span className="text-xs xs:text-sm font-light">

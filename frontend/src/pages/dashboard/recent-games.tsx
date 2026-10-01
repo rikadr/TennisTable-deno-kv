@@ -5,9 +5,10 @@ import { RelativeTime } from "../../common/date-utils";
 import { fmtNum } from "../../common/number-utils";
 import { Game } from "../../client/client-db/event-store/projectors/games-projector";
 import { DashboardCard } from "./dashboard-card";
+import { LeaderboardView } from "./dashboard-season";
 
 type Props = {
-  view?: "overall" | "season";
+  view?: LeaderboardView;
   count?: number;
 };
 
