@@ -3,7 +3,7 @@ import {
   firstChanceLayerIndexToTournamentRound,
   layerIndexToTournamentRound,
   secondChanceRoundLabel,
-} from "../dashboard/tournament-pending-games";
+} from "./round-labels";
 
 type LabelContext = Pick<
   TournamentStagePredictionResult,

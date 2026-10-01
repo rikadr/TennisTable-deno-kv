@@ -8,7 +8,7 @@ import {
 import { classNames } from "../../../common/class-names";
 import { fmtNum } from "../../../common/number-utils";
 import { ONE_DAY } from "../../../common/time-in-ms";
-import { bracketLayerIndexToTournamentRound, secondChanceRoundLabel } from "../../dashboard/tournament-pending-games";
+import { bracketLayerIndexToTournamentRound, secondChanceRoundLabel } from "../round-labels";
 
 type Row = {
   key: string;

@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { relativeTimeString } from "../../common/date-utils";
-import { WinnerBox } from "../dashboard/tournament-pending-games";
+import { WinnerBox } from "./winner-box";
 import { session } from "../../services/auth";
 
 export const TournamentsListPage: React.FC = () => {

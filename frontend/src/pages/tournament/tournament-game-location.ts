@@ -1,6 +1,6 @@
 import { GameLocation } from "../../client/client-db/tournaments/tournament-connections";
 import { TournamentGamePlacement } from "../../client/client-db/tournaments/tournament";
-import { bracketLayerIndexToTournamentRound, secondChanceRoundLabel } from "../dashboard/tournament-pending-games";
+import { bracketLayerIndexToTournamentRound, secondChanceRoundLabel } from "./round-labels";
 
 /**
  * A link to one game on the tournament page. The tab has to come along, or the link would land on

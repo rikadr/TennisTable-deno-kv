@@ -1,6 +1,6 @@
 import { Tournament } from "../../client/client-db/tournaments/tournament";
 import { useEventDbContext } from "../../wrappers/event-db-context";
-import { WinnerBox } from "../dashboard/tournament-pending-games";
+import { WinnerBox } from "./winner-box";
 import { TournamentGameListCard } from "./tournament-bracket";
 
 export const TournamentGrandFinal = ({
