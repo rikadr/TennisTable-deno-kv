@@ -8,7 +8,7 @@ import { getGameKeyFromPlayers } from "./tournament-page";
 import { Menu, MenuButton } from "@headlessui/react";
 import { useTennisParams } from "../../hooks/use-tennis-params";
 import { useMediaQuery } from "../../hooks/use-media-query";
-import { useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { GameMenuItems, QuestionMark, winStateEmoji } from "./tournament-bracket";
 
@@ -323,7 +323,7 @@ const GroupCard: React.FC<{
   itemRefs: ItemRefs;
   avatarSize: number;
 }> = ({ tournament, groupIndex, itemRefs, avatarSize }) => {
-  const [view, setView] = useState<GroupCardView>("games");
+  const [view, setView] = useState<GroupCardView>("players");
   const groupPlay = tournament.groupPlay!;
   const group = groupPlay.groups[groupIndex];
   const played = group.groupGames.length - group.pending.length;
@@ -352,8 +352,8 @@ const GroupCard: React.FC<{
           <div className="inline-flex rounded-lg ring-1 ring-primary-text/25 p-0.5" role="group">
             {(
               [
-                ["games", "All games"],
                 ["players", "Players"],
+                ["games", "All games"],
               ] as const
             ).map(([value, label]) => (
               <button
@@ -372,10 +372,15 @@ const GroupCard: React.FC<{
         </div>
       </div>
 
-      {view === "games" ? (
-        <GroupGames tournament={tournament} groupIndex={groupIndex} itemRefs={itemRefs} avatarSize={avatarSize} />
+      {view === "players" ? (
+        <GroupPlayers
+          tournament={tournament}
+          groupIndex={groupIndex}
+          itemRefs={itemRefs}
+          avatarSize={avatarSize + 16}
+        />
       ) : (
-        <GroupPlayers tournament={tournament} groupIndex={groupIndex} avatarSize={avatarSize + 16} />
+        <GroupGames tournament={tournament} groupIndex={groupIndex} itemRefs={itemRefs} avatarSize={avatarSize} />
       )}
     </div>
   );
@@ -468,11 +473,12 @@ type OpponentResult = {
 };
 
 /** One entry per player of the group, in the order of the standings */
-const GroupPlayers: React.FC<{ tournament: Tournament; groupIndex: number; avatarSize: number }> = ({
-  tournament,
-  groupIndex,
-  avatarSize,
-}) => {
+const GroupPlayers: React.FC<{
+  tournament: Tournament;
+  groupIndex: number;
+  itemRefs: ItemRefs;
+  avatarSize: number;
+}> = ({ tournament, groupIndex, itemRefs, avatarSize }) => {
   const groupPlay = tournament.groupPlay!;
   const group = groupPlay.groups[groupIndex];
   const canUndoSkip = groupPlay.groupPlayEnded === undefined || Date.now() - groupPlay.groupPlayEnded < 60 * 60 * 1_000; // 1 hour buffer to undo skips
@@ -506,6 +512,7 @@ const GroupPlayers: React.FC<{ tournament: Tournament; groupIndex: number; avata
           avatarSize={avatarSize}
           tournamentId={tournament.id}
           canUndoSkip={canUndoSkip}
+          itemRefs={itemRefs}
         />
       ))}
     </div>
@@ -518,9 +525,16 @@ const GroupPlayerEntry: React.FC<{
   avatarSize: number;
   tournamentId: string;
   canUndoSkip: boolean;
-}> = ({ player, results, avatarSize, tournamentId, canUndoSkip }) => {
+  itemRefs: ItemRefs;
+}> = ({ player, results, avatarSize, tournamentId, canUndoSkip, itemRefs }) => {
   const context = useEventDbContext();
-  const [expanded, setExpanded] = useState(false);
+  const { player1: paramPlayer1, player2: paramPlayer2 } = useTennisParams();
+  // A link to a group game opens the row of player 1, so the page can scroll to the line of player 2
+  const holdsParamGame = player === paramPlayer1 && results.some((result) => result.opponent === paramPlayer2);
+  const [expanded, setExpanded] = useState(holdsParamGame);
+  useEffect(() => {
+    if (holdsParamGame) setExpanded(true);
+  }, [holdsParamGame]);
   const [rowRef, rowWidth] = useElementWidth<HTMLButtonElement>();
   // The row's padding, the player's picture, the chevron and the 3 gaps between the 4 parts
   const fixedWidth = 16 + avatarSize + 20 + 3 * 8;
@@ -564,8 +578,13 @@ const GroupPlayerEntry: React.FC<{
               score && (result.won ? [score.gameWinner, score.gameLoser] : [score.gameLoser, score.gameWinner]);
             return (
               <Menu key={result.opponent}>
-                <div>
-                  <MenuButton className="w-full flex items-center gap-2 pl-4 pr-2 py-1 text-left bg-secondary-background hover:bg-secondary-background/70 transition-colors">
+                <div ref={(el) => (itemRefs.current[getGameKeyFromPlayers(player, result.opponent, "group")] = el)}>
+                  <MenuButton
+                    className={classNames(
+                      "w-full flex items-center gap-2 pl-4 pr-2 py-1 text-left bg-secondary-background hover:bg-secondary-background/70 transition-colors",
+                      holdsParamGame && result.opponent === paramPlayer2 && "animate-wiggle",
+                    )}
+                  >
                     <ProfilePicture playerId={result.opponent} size={32} shape="circle" border={2} />
                     <span className="flex-1 min-w-0 truncate">{context.playerName(result.opponent)}</span>
                     {result.won !== undefined && (
