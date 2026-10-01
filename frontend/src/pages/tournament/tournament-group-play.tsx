@@ -22,17 +22,17 @@ export const TournamentGroupPlayComponent: React.FC<{
     return null;
   }
 
-  // Phones and tablets read top to bottom: standings, games, rules.
-  // From xl the games take the right column, so the standings stay next to them.
+  // Phones and tablets read top to bottom: standings, groups, rules.
+  // From xl the rules go next to the standings, and the groups get the full width below.
   return (
-    <div className="text-primary-text grid gap-6 xl:grid-cols-2 xl:grid-rows-[auto_1fr] 2xl:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
+    <div className="text-primary-text grid gap-6 xl:grid-cols-[minmax(0,56rem)_minmax(0,1fr)]">
       <div className="min-w-0 xl:col-start-1 xl:row-start-1">
         <TournamentGroupScores tournament={tournament} />
       </div>
-      <div className="min-w-0 xl:col-start-2 xl:row-start-1 xl:row-span-2">
+      <div className="min-w-0 xl:col-span-2 xl:row-start-2">
         <TournamentGroups tournament={tournament} itemRefs={itemRefs} />
       </div>
-      <div className="min-w-0 xl:col-start-1 xl:row-start-2">
+      <div className="min-w-0 xl:col-start-2 xl:row-start-1">
         <GroupPlayRules tournament={tournament} />
       </div>
     </div>
@@ -180,46 +180,62 @@ export const TournamentGroupScores: React.FC<{ tournament: Tournament }> = ({ to
   const hasEnded = groupPlay.groupPlayEnded !== undefined;
   const columnCount = 8 + (hasGroupSizeAdjustment ? 2 : 0);
 
-  const row = (player: GroupScorePlayer, place: number, isEliminated: boolean) => (
-    <tr
-      key={player.name}
-      onClick={() => navigate(`/player/${player.name}`)}
-      className={classNames(
-        "bg-primary-background hover:bg-secondary-background hover:text-secondary-text cursor-pointer transition-colors font-light",
-        isEliminated && "text-primary-text/60",
-      )}
-    >
-      <td className="py-1 px-1 xs:px-2 text-right w-[1%] whitespace-nowrap">{place}</td>
-      <td className="py-1 px-1 xs:px-2 w-[100%] max-w-0">
-        <div className="flex items-center gap-2 min-w-0">
-          <ProfilePicture playerId={player.name} size={24} shape="circle" />
-          <span className="truncate font-normal">{context.playerName(player.name)}</span>
-        </div>
-      </td>
-      <td className="py-1 px-1 xs:px-2 text-center w-[1%] whitespace-nowrap">{groupOf.get(player.name)}</td>
-      <td className="py-1 px-1 xs:px-2 text-right w-[1%] whitespace-nowrap font-medium">
-        {fmtNum(player.adjustedScore, { digits: 1 })}
-      </td>
-      {hasGroupSizeAdjustment && (
-        <>
-          <td className="hidden md:table-cell py-1 px-2 text-right w-[1%] whitespace-nowrap">
-            {fmtNum(player.score, { digits: 1 })}
-          </td>
-          <td className="hidden md:table-cell py-1 px-2 text-right w-[1%] whitespace-nowrap">
-            {player.groupSizeAdjustmentFactor === 1
-              ? ""
-              : "×" + fmtNum(player.groupSizeAdjustmentFactor, { digits: 2 })}
-          </td>
-        </>
-      )}
-      <td className="py-1 px-1 xs:px-2 text-right w-[1%] whitespace-nowrap">{fmtNum(player.wins)}</td>
-      <td className="py-1 px-1 xs:px-2 text-right w-[1%] whitespace-nowrap">{fmtNum(player.loss)}</td>
-      <td className="py-1 px-1 xs:px-2 text-right w-[1%] whitespace-nowrap">{fmtNum(player.skips)}</td>
-      <td className="py-1 px-1 xs:px-2 text-right w-[1%] whitespace-nowrap">
-        {remainingOf.get(player.name) ? fmtNum(remainingOf.get(player.name)!) : ""}
-      </td>
-    </tr>
-  );
+  // Below md, the stats go on a line under the name. Full words do not fit as column headers on a phone.
+  const statCell = "hidden md:table-cell py-1 px-2 text-right w-[1%] whitespace-nowrap";
+  const statHeader = "hidden md:table-cell py-1 px-2 text-right font-light whitespace-nowrap";
+  const factorCell = "hidden lg:table-cell py-1 px-2 text-right w-[1%] whitespace-nowrap";
+  const factorHeader = "hidden lg:table-cell py-1 px-2 text-right font-light whitespace-nowrap";
+
+  const row = (player: GroupScorePlayer, place: number, isEliminated: boolean) => {
+    const gamesLeft = remainingOf.get(player.name) ?? 0;
+    const summary = [
+      `Group ${groupOf.get(player.name)}`,
+      count(player.wins, "win", "wins"),
+      count(player.loss, "loss", "losses"),
+      ...(player.skips > 0 ? [count(player.skips, "skip", "skips")] : []),
+      ...(gamesLeft > 0 ? [count(gamesLeft, "game left", "games left")] : []),
+    ].join(" · ");
+
+    return (
+      <tr
+        key={player.name}
+        onClick={() => navigate(`/player/${player.name}`)}
+        className={classNames(
+          "bg-primary-background hover:bg-secondary-background hover:text-secondary-text cursor-pointer transition-colors font-light",
+          isEliminated && "text-primary-text/60",
+        )}
+      >
+        <td className="py-1 px-1 xs:px-2 text-right w-[1%] whitespace-nowrap">{place}</td>
+        <td className="py-1 px-1 xs:px-2 w-[100%] max-w-0">
+          <div className="flex items-center gap-2 min-w-0">
+            <ProfilePicture playerId={player.name} size={24} shape="circle" />
+            <div className="min-w-0">
+              <div className="truncate font-normal">{context.playerName(player.name)}</div>
+              <div className="md:hidden text-xs">{summary}</div>
+            </div>
+          </div>
+        </td>
+        <td className={classNames(statCell, "text-center")}>{groupOf.get(player.name)}</td>
+        <td className="py-1 px-1 xs:px-2 text-right w-[1%] whitespace-nowrap font-medium">
+          {fmtNum(player.adjustedScore, { digits: 1 })}
+        </td>
+        {hasGroupSizeAdjustment && (
+          <>
+            <td className={factorCell}>{fmtNum(player.score, { digits: 1 })}</td>
+            <td className={factorCell}>
+              {player.groupSizeAdjustmentFactor === 1
+                ? ""
+                : "×" + fmtNum(player.groupSizeAdjustmentFactor, { digits: 2 })}
+            </td>
+          </>
+        )}
+        <td className={statCell}>{fmtNum(player.wins)}</td>
+        <td className={statCell}>{fmtNum(player.loss)}</td>
+        <td className={statCell}>{fmtNum(player.skips)}</td>
+        <td className={statCell}>{gamesLeft > 0 ? fmtNum(gamesLeft) : ""}</td>
+      </tr>
+    );
+  };
 
   return (
     <section>
@@ -230,37 +246,18 @@ export const TournamentGroupScores: React.FC<{ tournament: Tournament }> = ({ to
             <tr>
               <th className="py-1 px-1 xs:px-2 text-right font-light">#</th>
               <th className="py-1 px-1 xs:px-2 text-left font-normal">Player</th>
-              <th className="py-1 px-1 xs:px-2 text-center font-light" title="Group">
-                Grp
-              </th>
-              <th className="py-1 px-1 xs:px-2 text-right font-medium" title="Points">
-                Pts
-              </th>
+              <th className={classNames(statHeader, "text-center")}>Group</th>
+              <th className="py-1 px-1 xs:px-2 text-right font-medium">Points</th>
               {hasGroupSizeAdjustment && (
                 <>
-                  <th
-                    className="hidden md:table-cell py-1 px-2 text-right font-light"
-                    title="Points before the group size factor"
-                  >
-                    Raw
-                  </th>
-                  <th className="hidden md:table-cell py-1 px-2 text-right font-light" title="Group size factor">
-                    Factor
-                  </th>
+                  <th className={factorHeader}>Raw points</th>
+                  <th className={factorHeader}>Factor</th>
                 </>
               )}
-              <th className="py-1 px-1 xs:px-2 text-right font-light" title="Wins">
-                W
-              </th>
-              <th className="py-1 px-1 xs:px-2 text-right font-light" title="Losses">
-                L
-              </th>
-              <th className="py-1 px-1 xs:px-2 text-right font-light" title="Skips">
-                S
-              </th>
-              <th className="py-1 px-1 xs:px-2 text-right font-light" title="Games left to play">
-                Left
-              </th>
+              <th className={statHeader}>Wins</th>
+              <th className={statHeader}>Losses</th>
+              <th className={statHeader}>Skips</th>
+              <th className={statHeader}>Games left</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-primary-text/50">
@@ -282,15 +279,16 @@ export const TournamentGroupScores: React.FC<{ tournament: Tournament }> = ({ to
           )}
         </table>
       </div>
-      <p className="mt-1 text-xs text-primary-text/80">
-        Grp = group, Pts = points, W = wins, L = losses, S = skips, Left = games left to play
-        {hasGroupSizeAdjustment && (
-          <span className="hidden md:inline">, Raw = points before the group size factor</span>
-        )}
-      </p>
+      {hasGroupSizeAdjustment && (
+        <p className="mt-1 text-xs xs:text-sm">The points include the group size factor. See the rules.</p>
+      )}
     </section>
   );
 };
+
+function count(value: number, singular: string, plural: string): string {
+  return `${fmtNum(value)} ${value === 1 ? singular : plural}`;
+}
 
 export const TournamentGroups: React.FC<{
   tournament: Tournament;
@@ -310,7 +308,7 @@ export const TournamentGroups: React.FC<{
   return (
     <section>
       <SectionTitle>Groups</SectionTitle>
-      <div className="grid gap-4 grid-cols-1 lg:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
+      <div className="grid gap-4 grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3">
         {groupPlay.groups.map((group, groupIndex) => {
           const played = group.groupGames.length - group.pending.length;
           const factor = group.players[0] ? groupPlay.groupScores.get(group.players[0])?.groupSizeAdjustmentFactor : 1;
@@ -339,7 +337,7 @@ export const TournamentGroups: React.FC<{
                 </div>
                 <p className="text-xs xs:text-sm">
                   {fmtNum(group.players.length)} players
-                  {factor !== undefined && factor !== 1 && <> · points ×{fmtNum(factor, { digits: 2 })}</>}
+                  {factor !== undefined && factor !== 1 && <> · group size factor ×{fmtNum(factor, { digits: 2 })}</>}
                 </p>
               </div>
 

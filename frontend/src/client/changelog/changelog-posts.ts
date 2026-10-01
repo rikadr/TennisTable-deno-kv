@@ -56,7 +56,7 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
         "When the groups have different sizes, each group card shows its group size factor.",
       ),
       text(
-        "On a phone the tab shows the standings, the groups and the rules, in that order. On a wide screen the groups are next to the standings.",
+        "On a phone the standings show the points in a column. The group, the wins, the losses, the skips and the games left are on a line below each name. On a wider screen each value has its own column.",
       ),
     ],
   },
