@@ -121,4 +121,24 @@ describe("Simulations.expectedPlayerEloOverTime", () => {
     expect(pool).toBeGreaterThan(2 * 1000 + 20);
     expect(latest.elo).toBeCloseTo(pool / 2, 3);
   });
+
+  const lastGameTimeOf = (tennisTable: TennisTable, playerId: string) =>
+    tennisTable.games.filter((g) => g.winner === playerId || g.loser === playerId).at(-1)!.playedAt;
+
+  it("ends an active player's line at the latest game", () => {
+    const tennisTable = buildTennisTable(games);
+    const points = expectedOverTime(tennisTable, "C").sort((a, b) => a.time - b.time);
+
+    expect(points.at(-1)!.time).toBe(tennisTable.games.at(-1)!.playedAt);
+  });
+
+  it("ends a retired player's line at the moment of retirement, after a point at the last game", () => {
+    const tennisTable = buildTennisTable(games, ["C"]);
+    const retiredAt = tennisTable.eventStore.playersProjector.getPlayer("C")!.retiredAt!;
+    const points = expectedOverTime(tennisTable, "C").sort((a, b) => a.time - b.time);
+
+    expect(retiredAt).toBe(T0 + games.length);
+    expect(points.at(-1)!.time).toBe(retiredAt);
+    expect(points.at(-2)!.time).toBe(lastGameTimeOf(tennisTable, "C"));
+  });
 });

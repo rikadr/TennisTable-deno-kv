@@ -83,8 +83,13 @@ export class Simulations {
         }
       }
     }
-    // Add latest game
-    playerGameTimes.add(allGames[allGames.length - 1].playedAt);
+    // The last point: the latest game for an active player, the moment of retirement for a retired one.
+    // Nothing stops a game with a retired player, so a game after the retirement moves the last point to that game.
+    const lastPointTime =
+      player.retiredAt === undefined
+        ? allGames[allGames.length - 1].playedAt
+        : Math.max(player.retiredAt, ...playerGameTimes);
+    playerGameTimes.add(lastPointTime);
 
     const sortedPlayerGameTimes = Array.from(playerGameTimes).sort((a, b) => a - b); // Verify ascending
 
@@ -93,7 +98,9 @@ export class Simulations {
     times.forEach((gameTime, index) => {
       const relevantGames = allGames.filter((g) => g.playedAt <= gameTime);
       const predictions = new Predictions(this.parent, gameTime, relevantGames);
-      const playerIds = predictions.getExpectedScorePlayerIds();
+      // A retired player counts as active in their own graph, from the moment they have enough games to be ranked
+      const isRankedAtTime = predictions.getPlayerTotalGames(playerId) >= this.parent.client.gameLimitForRanked;
+      const playerIds = predictions.getExpectedScorePlayerIds(isRankedAtTime ? playerId : undefined);
       let elo: number | undefined;
       if (playerIds.includes(playerId)) {
         const scoresAtTime = Elo.eloCalculator(relevantGames, this.parent.allPlayers);

@@ -697,6 +697,9 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
       text(
         "A warning shows before the calculation and with the result. An unranked player has insufficient data. A retired player has only old games, so the result can be out of date.",
       ),
+      text(
+        "The score graph of a retired player can also show the expected score. The line has a point at the last game of the player, and its last point is the moment the player retired.",
+      ),
     ],
   },
   {
