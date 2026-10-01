@@ -375,7 +375,7 @@ const GroupCard: React.FC<{
       {view === "games" ? (
         <GroupGames tournament={tournament} groupIndex={groupIndex} itemRefs={itemRefs} avatarSize={avatarSize} />
       ) : (
-        <GroupPlayers tournament={tournament} groupIndex={groupIndex} avatarSize={avatarSize + 8} />
+        <GroupPlayers tournament={tournament} groupIndex={groupIndex} avatarSize={avatarSize + 16} />
       )}
     </div>
   );
