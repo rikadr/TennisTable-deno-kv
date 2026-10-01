@@ -648,27 +648,47 @@ const OpponentStack: React.FC<{ results: OpponentResult[]; availableWidth: numbe
 
   return (
     <div className="relative shrink-0" style={{ width, height: STACK_PICTURE_SIZE + STACK_RESULT_HEIGHT }}>
+      {/* 3 layers: the ribbons at the bottom, then the pictures, then the icons. No ribbon covers an icon */}
+      {results.map((result, index) =>
+        result.won === undefined ? null : (
+          // A ribbon from behind the picture down below the icon, so the icon is easy to see on any background
+          <div
+            key={`ribbon-${result.opponent}`}
+            className="absolute rounded-full bg-secondary-text"
+            style={{
+              left: index * offset + (STACK_PICTURE_SIZE - STACK_RIBBON_WIDTH) / 2,
+              top: STACK_PICTURE_SIZE / 2,
+              bottom: 0,
+              width: STACK_RIBBON_WIDTH,
+              zIndex: count - index,
+            }}
+          />
+        ),
+      )}
       {results.map((result, index) => (
         <div
-          key={result.opponent}
-          className="absolute top-0 flex flex-col items-center"
+          key={`picture-${result.opponent}`}
+          className="absolute top-0"
           // The first opponent is on top, like the stacks on the dashboard
-          style={{ left: index * offset, width: STACK_PICTURE_SIZE, zIndex: count - index }}
+          style={{ left: index * offset, zIndex: 2 * count - index }}
         >
-          {result.won !== undefined && (
-            // A ribbon from behind the picture down below the icon, so the icon is easy to see on any background
-            <div
-              className="absolute rounded-full bg-secondary-text"
-              style={{ top: STACK_PICTURE_SIZE / 2, bottom: 0, width: STACK_RIBBON_WIDTH }}
-            />
-          )}
-          <div className="relative">
-            <ProfilePicture playerId={result.opponent} size={STACK_PICTURE_SIZE} shape="circle" border={2} />
-          </div>
-          <span className="relative text-xs flex items-center justify-center" style={{ height: STACK_RESULT_HEIGHT }}>
-            {resultEmoji(result)}
-          </span>
+          <ProfilePicture playerId={result.opponent} size={STACK_PICTURE_SIZE} shape="circle" border={2} />
         </div>
+      ))}
+      {results.map((result, index) => (
+        <span
+          key={`result-${result.opponent}`}
+          className="absolute text-xs flex items-center justify-center"
+          style={{
+            left: index * offset,
+            top: STACK_PICTURE_SIZE,
+            width: STACK_PICTURE_SIZE,
+            height: STACK_RESULT_HEIGHT,
+            zIndex: 3 * count - index,
+          }}
+        >
+          {resultEmoji(result)}
+        </span>
       ))}
     </div>
   );
