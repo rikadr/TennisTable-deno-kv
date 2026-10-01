@@ -556,7 +556,7 @@ const GroupPlayerEntry: React.FC<{ player: string; results: OpponentResult[]; av
                     "Not played yet"
                   ) : (
                     <>
-                      {result.won ? "🏆 Won" : "💔 Lost"}
+                      {resultEmoji(result)} {result.won ? "Won" : "Lost"}
                       {sets && ` ${sets[0]}–${sets[1]}`}
                       {result.skipped && " (skipped)"}
                     </>
@@ -571,11 +571,18 @@ const GroupPlayerEntry: React.FC<{ player: string; results: OpponentResult[]; av
   );
 };
 
+/** 🏆 for a win, 🆓 for a win on a skip, 💔 for a loss, nothing for a game that is not played */
+function resultEmoji(result: OpponentResult): string {
+  if (result.won === undefined) return "";
+  if (!result.won) return "💔";
+  return result.skipped ? "🆓" : "🏆";
+}
+
 const STACK_PICTURE_SIZE = 28;
 /** The stack is never wider than this. With many opponents the pictures move closer */
 const STACK_MAX_WIDTH = 150;
 
-/** The opponents' pictures, overlapping in a row, each with 🏆 or 💔 below it for the result against that opponent */
+/** The opponents' pictures, overlapping in a row, each with the result against that opponent below it */
 const OpponentStack: React.FC<{ results: OpponentResult[] }> = ({ results }) => {
   const count = results.length;
   const offset = count > 1 ? Math.min(STACK_PICTURE_SIZE - 8, (STACK_MAX_WIDTH - STACK_PICTURE_SIZE) / (count - 1)) : 0;
@@ -591,7 +598,7 @@ const OpponentStack: React.FC<{ results: OpponentResult[] }> = ({ results }) => 
           style={{ left: index * offset, width: STACK_PICTURE_SIZE, zIndex: count - index }}
         >
           <ProfilePicture playerId={result.opponent} size={STACK_PICTURE_SIZE} shape="circle" border={2} />
-          <span className="text-xs leading-4 h-4">{result.won === undefined ? "" : result.won ? "🏆" : "💔"}</span>
+          <span className="text-xs leading-4 h-4">{resultEmoji(result)}</span>
         </div>
       ))}
     </div>
