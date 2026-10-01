@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { useEventDbContext } from "../../wrappers/event-db-context";
-import { bracketLayerIndexToTournamentRound } from "../leaderboard/tournament-pending-games";
+import { bracketLayerIndexToTournamentRound } from "../dashboard/tournament-pending-games";
 
 function pendingGameRoundLabel(pendingGame: {
   layerIndex?: number;

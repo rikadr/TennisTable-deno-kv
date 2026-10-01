@@ -1,16 +1,17 @@
 import React, { useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { ProfilePicture } from "../player/profile-picture";
 import { ACHIEVEMENT_LABELS } from "../player/player-achievements";
 import { RelativeTime } from "../../common/date-utils";
 import { useRerender } from "../../hooks/use-rerender";
+import { DashboardCard } from "./dashboard-card";
 
 type Props = {
-  view?: "overall" | "season";
+  count?: number;
 };
 
-export const RecentAchievements: React.FC<Props> = ({ view = "overall" }) => {
+export const RecentAchievements: React.FC<Props> = ({ count = 5 }) => {
   const context = useEventDbContext();
   const navigate = useNavigate();
   const rerender = useRerender();
@@ -25,22 +26,14 @@ export const RecentAchievements: React.FC<Props> = ({ view = "overall" }) => {
   const allAchievements = Array.from(context.achievements.achievementMap.values())
     .flat()
     .sort((a, b) => b.earnedAt - a.earnedAt)
-    .slice(0, 5);
+    .slice(0, count);
 
   if (allAchievements.length === 0) {
     return null;
   }
 
   return (
-    <div className="bg-primary-background rounded-lg w-full overflow-hidden">
-      <Link
-        to="/achievements"
-        className="flex items-baseline justify-center gap-2 mb-2 mt-3 hover:opacity-80"
-        title="View all achievements"
-      >
-        <h1 className="text-2xl text-primary-text">Recent achievements</h1>
-        <span className="text-xs text-primary-text/50 hover:underline">see more</span>
-      </Link>
+    <DashboardCard title="Recent achievements" to="/achievements">
       <table className="w-full text-primary-text border-collapse">
         <thead>
           <tr className="text-primary-text">
@@ -85,6 +78,6 @@ export const RecentAchievements: React.FC<Props> = ({ view = "overall" }) => {
           })}
         </tbody>
       </table>
-    </div>
+    </DashboardCard>
   );
 };

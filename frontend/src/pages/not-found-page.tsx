@@ -7,10 +7,10 @@ export const NotFoundPage: React.FC = () => {
       <h2 className="text-3xl font-semibold text-primary-text">404 – Page not found</h2>
       <p className="text-primary-text/70">This page went out of bounds.</p>
       <Link
-        to="/leader-board"
+        to="/dashboard"
         className="px-6 py-3 rounded-lg bg-secondary-background text-secondary-text hover:opacity-80 transition-opacity"
       >
-        Back to leaderboard
+        Back to the dashboard
       </Link>
     </div>
   );

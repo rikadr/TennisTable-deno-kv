@@ -52,7 +52,7 @@ export const StandingsChangeTable: React.FC<{
       after: after.leaderboardRank,
       change: rankChange(before.leaderboardRank, after.leaderboardRank),
       digits: 0,
-      link: "/leader-board",
+      link: "/dashboard",
     },
     {
       label: "Leaderboard Elo",
@@ -60,7 +60,7 @@ export const StandingsChangeTable: React.FC<{
       after: after.leaderboardScore,
       change: scoreChange(before.leaderboardScore, after.leaderboardScore),
       digits: 0,
-      link: "/leader-board",
+      link: "/dashboard",
     },
   ];
 

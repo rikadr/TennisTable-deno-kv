@@ -13,7 +13,7 @@ import { WebSocketRefetcher } from "./wrappers/web-socket-refetcher";
 import { NavMenu } from "./wrappers/nav-menu";
 import { PvPPage } from "./pages/pvp-page";
 import { CameraPage } from "./pages/camera/camera-page";
-import { LeaderBoard } from "./pages/leaderboard/leader-board";
+import { DashboardPage } from "./pages/dashboard/dashboard-page";
 import { SimulationsPage } from "./pages/simulations/simulations-page";
 import { WinLoss } from "./pages/simulations/win-loss";
 import { TournamentsListPage } from "./pages/tournament/tournaments-list-page";
@@ -101,9 +101,10 @@ function App() {
                       <Routes>
                         <Route path="/live-game/overlay" element={<LiveGameOverlay />} />
                         <Route path="/" element={<NavMenu />}>
-                          <Route index element={<Navigate to="/leader-board" />} />
-                          <Route path="/tennis-table" element={<Navigate to="/leader-board" />} />
-                          <Route path="/leader-board" element={<LeaderBoard />} />
+                          <Route index element={<Navigate to="/dashboard" />} />
+                          <Route path="/tennis-table" element={<Navigate to="/dashboard" />} />
+                          <Route path="/leader-board" element={<Navigate to="/dashboard" />} />
+                          <Route path="/dashboard" element={<DashboardPage />} />
                           <Route path="/player/:name" element={<PlayerPage />} />
                           <Route path="/compare" element={<ComparePage />} />
                           <Route path="/1v1" element={<PvPPage />} />

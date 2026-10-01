@@ -42,6 +42,28 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
+    slug: "dashboard",
+    title: "A new dashboard replaces the leaderboard page",
+    date: "2026-10-01",
+    tags: ["feature-update"],
+    summary:
+      "The landing page is now a dashboard. It shows the leaderboard first and uses more columns on wider screens.",
+    body: [
+      text(
+        "The dashboard shows the same information as the old leaderboard page: the leaderboard, live games, tournaments, recent games, leaderboard changes, achievements and unranked players.",
+      ),
+      list(
+        "Phones show 1 column. The leaderboard comes directly after the live game and tournament cards.",
+        "Tablets show 2 columns, and laptops and office screens show 3.",
+        "Very wide screens show 4 columns. Live games and tournaments get a column only when they have content.",
+      ),
+      text(
+        "The top 3 players stand on a podium, and the table continues from rank 4. The Overall and Season buttons are on the leaderboard card. They also change the recent games and the leaderboard changes.",
+      ),
+      text("The page is at `/dashboard`. Links to `/leader-board` open the dashboard."),
+    ],
+  },
+  {
     slug: "symmetric-win-predictions",
     title: "Win predictions are the same in both directions",
     date: "2026-09-30",

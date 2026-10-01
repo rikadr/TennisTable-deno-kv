@@ -23,7 +23,7 @@ export const NavMenu: React.FC = () => {
 
   const renderMenuitems = () => {
     const items: { name: string; to: string }[] = [
-      { name: "🥇 Leaderboard", to: "/leader-board" },
+      { name: "🥇 Dashboard", to: "/dashboard" },
       { name: "🍁 Seasons", to: "/season/list" },
       { name: "🏓  Add game", to: "/add-game" },
       { name: "👤  New player", to: "/add-player" },
@@ -109,7 +109,7 @@ export const NavMenu: React.FC = () => {
           MENU_HEIGHT,
         )}
       >
-        <Link to="/leader-board" className={classNames("whitespace-nowrap rounded-full select-none text-primary-text")}>
+        <Link to="/dashboard" className={classNames("whitespace-nowrap rounded-full select-none text-primary-text")}>
           {themedLogo()}
         </Link>
         {renderMenuitems().slice(2, 3)}

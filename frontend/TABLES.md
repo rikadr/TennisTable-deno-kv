@@ -4,8 +4,8 @@ Rules for data tables in this app. Any table (or flexbox pseudo-table) should be
 compared against these rules and adjusted to match. Reference implementations,
 in order of authority:
 
-- `src/pages/leaderboard/recent-games.tsx` — card table (narrow widget)
-- `src/pages/leaderboard/recent-achievements.tsx` — card table with avatars/icons
+- `src/pages/dashboard/recent-games.tsx` — card table (narrow widget)
+- `src/pages/dashboard/recent-achievements.tsx` — card table with avatars/icons
 - `src/pages/recent-games/recent-games-page.tsx` — full-page table
 
 ## 1. Structure

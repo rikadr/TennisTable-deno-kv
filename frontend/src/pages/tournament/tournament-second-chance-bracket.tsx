@@ -1,6 +1,6 @@
 import { useSessionStorage } from "usehooks-ts";
 import { Tournament } from "../../client/client-db/tournaments/tournament";
-import { secondChanceRoundLabel } from "../leaderboard/tournament-pending-games";
+import { secondChanceRoundLabel } from "../dashboard/tournament-pending-games";
 import { GameTriangle, GrandFinalLinkCard, TournamentGameListCard, TreeListToggle } from "./tournament-bracket";
 
 export const TournamentSecondChanceBracket = ({
