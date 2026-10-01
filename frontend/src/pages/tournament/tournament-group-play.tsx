@@ -264,7 +264,7 @@ export const TournamentGroupScores: React.FC<{ tournament: Tournament }> = ({ to
               <tbody>
                 <tr className="border-y-2 border-dashed border-primary-text">
                   <td colSpan={columnCount} className="py-1 px-2 text-center text-xs xs:text-sm font-normal">
-                    ▲ The top {fmtNum(cutOffIndex)} {hasEnded ? "advanced" : "advance"} to the bracket
+                    ⚠️ The top {fmtNum(cutOffIndex)} {hasEnded ? "advanced" : "advance"} to the bracket
                   </td>
                 </tr>
               </tbody>
