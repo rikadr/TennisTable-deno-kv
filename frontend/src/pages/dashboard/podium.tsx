@@ -10,8 +10,6 @@ import { themedPlaceImage } from "./themed-place-number";
 export type PodiumEntry = {
   playerId: string;
   score: number;
-  /** Wins per loss. Left out where it does not apply, e.g. for season scores */
-  winLossRatio?: number;
   to: string;
 };
 
@@ -52,18 +50,13 @@ export const Podium: React.FC<{ entries: PodiumEntry[] }> = ({ entries }) => {
             >
               {context.playerName(entry.playerId)}
             </div>
-            <div className="flex flex-col items-center leading-tight whitespace-nowrap">
-              <span className={classNames("font-medium", place === 1 ? "text-lg xs:text-xl" : "text-base xs:text-lg")}>
-                {fmtNum(entry.score, { digits: 0 })}
-              </span>
-              {entry.winLossRatio !== undefined && (
-                <span className="text-xs xs:text-sm font-light">
-                  🏆:💔{" "}
-                  {entry.winLossRatio.toLocaleString("no-NO", {
-                    maximumFractionDigits: 1,
-                  })}
-                </span>
+            <div
+              className={classNames(
+                "font-medium whitespace-nowrap",
+                place === 1 ? "text-lg xs:text-xl" : "text-base xs:text-lg",
               )}
+            >
+              {fmtNum(entry.score, { digits: 0 })}
             </div>
             <div
               className={classNames(
