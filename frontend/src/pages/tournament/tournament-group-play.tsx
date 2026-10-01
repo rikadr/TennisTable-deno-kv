@@ -557,7 +557,6 @@ const GroupPlayerEntry: React.FC<{ player: string; results: OpponentResult[]; av
                   "flex items-center gap-2 pl-4 pr-2 py-1",
                   "bg-secondary-background",
                   result.playedAt !== undefined && "cursor-pointer hover:bg-secondary-background/70 transition-colors",
-                  result.won === false && "text-secondary-text/60",
                 )}
               >
                 <ProfilePicture playerId={result.opponent} size={32} shape="circle" border={2} />
