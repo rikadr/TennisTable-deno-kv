@@ -8,7 +8,7 @@ import { getGameKeyFromPlayers } from "./tournament-page";
 import { Menu, MenuButton } from "@headlessui/react";
 import { useTennisParams } from "../../hooks/use-tennis-params";
 import { useMediaQuery } from "../../hooks/use-media-query";
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { GameMenuItems, QuestionMark, winStateEmoji } from "./tournament-bracket";
 
@@ -508,17 +508,21 @@ const GroupPlayerEntry: React.FC<{ player: string; results: OpponentResult[]; av
   const context = useEventDbContext();
   const navigate = useNavigate();
   const [expanded, setExpanded] = useState(false);
+  const [rowRef, rowWidth] = useElementWidth<HTMLButtonElement>();
+  // The row's padding, the player's picture, the chevron and the 3 gaps between the 4 parts
+  const fixedWidth = 16 + avatarSize + 20 + 3 * 8;
 
   return (
     <div className="rounded-lg bg-secondary-background/60 text-secondary-text text-sm xs:text-base overflow-hidden">
       <button
+        ref={rowRef}
         onClick={() => setExpanded((value) => !value)}
         aria-expanded={expanded}
         className="w-full flex items-center gap-2 px-2 py-1.5 hover:bg-secondary-background/70 transition-colors"
       >
         <ProfilePicture playerId={player} size={avatarSize} shape="circle" border={2} />
         <span className="flex-1 min-w-0 truncate text-left font-normal">{context.playerName(player)}</span>
-        <OpponentStack results={results} />
+        <OpponentStack results={results} availableWidth={rowWidth - fixedWidth - MIN_NAME_WIDTH} />
         <svg
           className={classNames("w-5 h-5 shrink-0 transition-transform", expanded && "rotate-180")}
           fill="none"
@@ -579,14 +583,44 @@ function resultEmoji(result: OpponentResult): string {
 }
 
 const STACK_PICTURE_SIZE = 28;
-/** The stack is never wider than this. With many opponents the pictures move closer */
-const STACK_MAX_WIDTH = 150;
+/** The space between 2 pictures when there is room for all of them side by side */
+const STACK_GAP = 4;
+/** How far each picture moves right of the one before it when the row is narrow. Keeps the result icons readable */
+const STACK_MIN_OFFSET = 14;
+/** The stack always leaves this much room for the player's name */
+const MIN_NAME_WIDTH = 96;
 
-/** The opponents' pictures, overlapping in a row, each with the result against that opponent below it */
-const OpponentStack: React.FC<{ results: OpponentResult[] }> = ({ results }) => {
+/** The width of an element, updated when it changes */
+function useElementWidth<T extends HTMLElement>(): [React.RefObject<T>, number] {
+  const ref = useRef<T>(null);
+  const [width, setWidth] = useState(0);
+  useLayoutEffect(() => {
+    const element = ref.current;
+    if (!element) return;
+    const measure = () => setWidth(element.getBoundingClientRect().width);
+    measure();
+    if (typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(measure);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
+  return [ref, width];
+}
+
+/**
+ * The opponents' pictures in a row, each with the result against that opponent below it. The pictures
+ * spread over the available width: they overlap when the row is narrow, and stand side by side with a
+ * small gap when there is room.
+ */
+const OpponentStack: React.FC<{ results: OpponentResult[]; availableWidth: number }> = ({
+  results,
+  availableWidth,
+}) => {
   const count = results.length;
-  const offset = count > 1 ? Math.min(STACK_PICTURE_SIZE - 8, (STACK_MAX_WIDTH - STACK_PICTURE_SIZE) / (count - 1)) : 0;
-  const width = count > 0 ? (count - 1) * offset + STACK_PICTURE_SIZE : 0;
+  const sideBySideWidth = count * STACK_PICTURE_SIZE + (count - 1) * STACK_GAP;
+  const narrowestWidth = STACK_PICTURE_SIZE + (count - 1) * STACK_MIN_OFFSET;
+  const width = count > 0 ? Math.max(narrowestWidth, Math.min(sideBySideWidth, availableWidth)) : 0;
+  const offset = count > 1 ? (width - STACK_PICTURE_SIZE) / (count - 1) : 0;
 
   return (
     <div className="relative shrink-0" style={{ width, height: STACK_PICTURE_SIZE + 16 }}>
