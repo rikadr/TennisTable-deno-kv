@@ -513,12 +513,12 @@ const GroupPlayerEntry: React.FC<{ player: string; results: OpponentResult[]; av
   const fixedWidth = 16 + avatarSize + 20 + 3 * 8;
 
   return (
-    <div className="rounded-lg bg-secondary-background/60 text-secondary-text text-sm xs:text-base overflow-hidden">
+    <div className="rounded-lg text-secondary-text text-sm xs:text-base overflow-hidden">
       <button
         ref={rowRef}
         onClick={() => setExpanded((value) => !value)}
         aria-expanded={expanded}
-        className="w-full flex items-center gap-2 px-2 py-1.5 hover:bg-secondary-background/70 transition-colors"
+        className="w-full flex items-center gap-2 px-2 py-1.5 bg-secondary-background hover:bg-secondary-background/70 transition-colors"
       >
         <ProfilePicture playerId={player} size={avatarSize} shape="circle" border={2} />
         <div className="flex-1 min-w-0 text-left">
@@ -555,8 +555,9 @@ const GroupPlayerEntry: React.FC<{ player: string; results: OpponentResult[]; av
                 onClick={result.playedAt === undefined ? undefined : () => navigate(`/game?time=${result.playedAt}`)}
                 className={classNames(
                   "flex items-center gap-2 pl-4 pr-2 py-1",
-                  result.playedAt !== undefined && "cursor-pointer hover:bg-secondary-background/70",
-                  result.won === false && "opacity-60",
+                  "bg-secondary-background",
+                  result.playedAt !== undefined && "cursor-pointer hover:bg-secondary-background/70 transition-colors",
+                  result.won === false && "text-secondary-text/60",
                 )}
               >
                 <ProfilePicture playerId={result.opponent} size={32} shape="circle" border={2} />
