@@ -614,10 +614,10 @@ const GroupPlayerEntry: React.FC<{
   );
 };
 
-/** 🏆 for a win, 🆓 for a win on a skip, 💔 for a loss, nothing for a game that is not played */
+/** 🏆 for a win, 🆓 for a win on a skip, 💔 for a loss, ⛔ for a loss on a skip, nothing for a game that is not played */
 function resultEmoji(result: OpponentResult): string {
   if (result.won === undefined) return "";
-  if (!result.won) return "💔";
+  if (!result.won) return result.skipped ? "⛔" : "💔";
   return result.skipped ? "🆓" : "🏆";
 }
 
