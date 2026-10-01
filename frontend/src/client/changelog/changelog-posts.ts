@@ -51,9 +51,7 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
       text("A game can have these tags:"),
       list(
         "🏆 The tournament round, when the game is a tournament game.",
-        "⚡ Upset: the winner had 100 or more Elo less than the loser before the game.",
         "🆕 First meeting: the first game between the 2 players.",
-        "🔄 Comeback: the winner lost the first set. This tag needs the set scores of the game.",
         "Each achievement that the game earned, with its icon. 1 tag names all the players who earned it.",
       ),
       text(

@@ -1,6 +1,5 @@
 import React from "react";
 import { GameTag } from "../../client/client-db/game-tags";
-import { fmtNum } from "../../common/number-utils";
 import { TennisTable } from "../../client/client-db/tennis-table";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { getAchievementLabel } from "../player/player-achievements";
@@ -21,18 +20,8 @@ function tagLabels(tags: GameTag[], context: TennisTable): TagLabel[] {
         labels.push({ icon: "🏆", label: round, title: `${tag.placement.tournament.name}: ${place}` });
         break;
       }
-      case "upset":
-        labels.push({
-          icon: "⚡",
-          label: "Upset",
-          title: `Upset: the winner had ${fmtNum(tag.eloGap, { digits: 0 })} less Elo before the game`,
-        });
-        break;
       case "first-meeting":
         labels.push({ icon: "🆕", label: "First meeting", title: "The first game between these 2 players" });
-        break;
-      case "comeback":
-        labels.push({ icon: "🔄", label: "Comeback", title: "Comeback: the winner lost the first set" });
         break;
       case "achievement": {
         const earners = achievementEarners.get(tag.achievement.type);
