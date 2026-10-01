@@ -521,7 +521,13 @@ const GroupPlayerEntry: React.FC<{ player: string; results: OpponentResult[]; av
         className="w-full flex items-center gap-2 px-2 py-1.5 hover:bg-secondary-background/70 transition-colors"
       >
         <ProfilePicture playerId={player} size={avatarSize} shape="circle" border={2} />
-        <span className="flex-1 min-w-0 truncate text-left font-normal">{context.playerName(player)}</span>
+        <div className="flex-1 min-w-0 text-left">
+          <div className="truncate font-normal">{context.playerName(player)}</div>
+          {/* Games completed, a skipped game too, of all the games of the player in the group */}
+          <div className="text-xs font-light">
+            {fmtNum(results.filter((result) => result.won !== undefined).length)} of {fmtNum(results.length)}
+          </div>
+        </div>
         <OpponentStack results={results} availableWidth={rowWidth - fixedWidth - MIN_NAME_WIDTH} />
         <svg
           className={classNames("w-5 h-5 shrink-0 transition-transform", expanded && "rotate-180")}
