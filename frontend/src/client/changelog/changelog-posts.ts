@@ -59,7 +59,7 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
         "On a phone the standings show the points in a column. The wins, the losses, the skips and the games left are on a line below each name. On a wider screen each value has its own column.",
       ),
       text(
-        "Each group card has 2 views: All games and Players. The Players view shows 1 row for each player, with the number of games completed and the pictures of the opponents. A 🏆, a 🆓 for a win on a skip, or a 💔 below each picture shows the result against that opponent. Open a row to see 1 line for each opponent, with the result and the sets.",
+        "Each group card has 2 views: All games and Players. The Players view shows 1 row for each player, with the number of games completed and the pictures of the opponents. A 🏆, a 🆓 for a win on a skip, or a 💔 below each picture shows the result against that opponent. The rows are in the tie-breaker order. Open a row to see 1 line for each opponent, with the result and the sets. Select a line to open the same menu as a game.",
       ),
     ],
   },

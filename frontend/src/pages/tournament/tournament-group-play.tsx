@@ -476,10 +476,8 @@ const GroupPlayers: React.FC<{ tournament: Tournament; groupIndex: number; avata
   const groupPlay = tournament.groupPlay!;
   const group = groupPlay.groups[groupIndex];
   const canUndoSkip = groupPlay.groupPlayEnded === undefined || Date.now() - groupPlay.groupPlayEnded < 60 * 60 * 1_000; // 1 hour buffer to undo skips
-  const players = Array.from(groupPlay.groupScores)
-    .filter(([name]) => group.players.includes(name))
-    .sort(TournamentGroupPlay.sortGroupScores)
-    .map(([name]) => name);
+  // The group's players are in the tie-breaker order, so a row keeps its place when the standings change
+  const players = group.players;
 
   const resultsOf = (player: string): OpponentResult[] =>
     group.players
