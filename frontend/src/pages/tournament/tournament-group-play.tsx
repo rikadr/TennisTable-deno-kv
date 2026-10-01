@@ -609,6 +609,10 @@ const STACK_GAP = 4;
 const STACK_MIN_OFFSET = 14;
 /** The stack always leaves this much room for the player's name */
 const MIN_NAME_WIDTH = 96;
+/** The height of the result icon below each picture */
+const STACK_RESULT_HEIGHT = 18;
+/** The width of the ribbon that hangs below a picture and holds the result icon */
+const STACK_RIBBON_WIDTH = 20;
 
 /** The width of an element, updated when it changes */
 function useElementWidth<T extends HTMLElement>(): [React.RefObject<T>, number] {
@@ -643,7 +647,7 @@ const OpponentStack: React.FC<{ results: OpponentResult[]; availableWidth: numbe
   const offset = count > 1 ? (width - STACK_PICTURE_SIZE) / (count - 1) : 0;
 
   return (
-    <div className="relative shrink-0" style={{ width, height: STACK_PICTURE_SIZE + 16 }}>
+    <div className="relative shrink-0" style={{ width, height: STACK_PICTURE_SIZE + STACK_RESULT_HEIGHT }}>
       {results.map((result, index) => (
         <div
           key={result.opponent}
@@ -651,8 +655,19 @@ const OpponentStack: React.FC<{ results: OpponentResult[]; availableWidth: numbe
           // The first opponent is on top, like the stacks on the dashboard
           style={{ left: index * offset, width: STACK_PICTURE_SIZE, zIndex: count - index }}
         >
-          <ProfilePicture playerId={result.opponent} size={STACK_PICTURE_SIZE} shape="circle" border={2} />
-          <span className="text-xs leading-4 h-4">{resultEmoji(result)}</span>
+          {result.won !== undefined && (
+            // A ribbon from behind the picture down below the icon, so the icon is easy to see on any background
+            <div
+              className="absolute rounded-full bg-secondary-text"
+              style={{ top: STACK_PICTURE_SIZE / 2, bottom: 0, width: STACK_RIBBON_WIDTH }}
+            />
+          )}
+          <div className="relative">
+            <ProfilePicture playerId={result.opponent} size={STACK_PICTURE_SIZE} shape="circle" border={2} />
+          </div>
+          <span className="relative text-xs flex items-center justify-center" style={{ height: STACK_RESULT_HEIGHT }}>
+            {resultEmoji(result)}
+          </span>
         </div>
       ))}
     </div>
