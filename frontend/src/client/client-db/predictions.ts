@@ -476,12 +476,14 @@ export class Predictions {
   // Expected score inputs
   // ---------------------------------------------------------------------------
 
-  /** The players in an expected score calculation: the active players with enough games to be ranked. */
-  getExpectedScorePlayerIds(includeUnrankedPlayerId?: string): string[] {
+  /**
+   * The players in an expected score calculation: the active players with enough games to be ranked.
+   * `includePlayerId` joins the calculation also when that player is unranked or retired.
+   */
+  getExpectedScorePlayerIds(includePlayerId?: string): string[] {
     return this.getAllPlayerIds().filter((id) => {
+      if (id === includePlayerId) return true;
       const isActive = this.parent.eventStore.playersProjector.getPlayer(id)?.active === true;
-      // The explicitly included player joins the calculation regardless of game count
-      if (id === includeUnrankedPlayerId) return isActive;
       return this.getPlayerTotalGames(id) >= this.parent.client.gameLimitForRanked && isActive;
     });
   }

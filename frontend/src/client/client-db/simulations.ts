@@ -45,17 +45,17 @@ export class Simulations {
     return wins / (loss || 1);
   }
 
-  expectedLeaderBoard(includeUnrankedPlayerId?: string): ExpectedLeaderboard {
+  expectedLeaderBoard(includePlayerId?: string): ExpectedLeaderboard {
     const { rankedPlayers } = this.parent.leaderboard.getLeaderboard();
     const rankedIds = new Set(rankedPlayers.map((player) => player.id));
 
     const expectedScores = this.expectedScores(
       this.parent.predictions,
-      this.parent.predictions.getExpectedScorePlayerIds(includeUnrankedPlayerId),
+      this.parent.predictions.getExpectedScorePlayerIds(includePlayerId),
       this.parent.leaderboard.getCachedLeaderboardMap(),
     );
     const expected = Array.from(expectedScores, ([id, score]) => ({ id, score }))
-      .filter(({ id }) => id === includeUnrankedPlayerId || rankedIds.has(id))
+      .filter(({ id }) => id === includePlayerId || rankedIds.has(id))
       .sort((a, b) => b.score - a.score)
       .map((player, index) => ({ ...player, rank: index + 1 }));
 
@@ -83,8 +83,13 @@ export class Simulations {
         }
       }
     }
-    // Add latest game
-    playerGameTimes.add(allGames[allGames.length - 1].playedAt);
+    // The last point: the latest game for an active player, the moment of retirement for a retired one.
+    // Nothing stops a game with a retired player, so a game after the retirement moves the last point to that game.
+    const lastPointTime =
+      player.retiredAt === undefined
+        ? allGames[allGames.length - 1].playedAt
+        : Math.max(player.retiredAt, ...playerGameTimes);
+    playerGameTimes.add(lastPointTime);
 
     const sortedPlayerGameTimes = Array.from(playerGameTimes).sort((a, b) => a - b); // Verify ascending
 
@@ -93,7 +98,9 @@ export class Simulations {
     times.forEach((gameTime, index) => {
       const relevantGames = allGames.filter((g) => g.playedAt <= gameTime);
       const predictions = new Predictions(this.parent, gameTime, relevantGames);
-      const playerIds = predictions.getExpectedScorePlayerIds();
+      // A retired player counts as active in their own graph, from the moment they have enough games to be ranked
+      const isRankedAtTime = predictions.getPlayerTotalGames(playerId) >= this.parent.client.gameLimitForRanked;
+      const playerIds = predictions.getExpectedScorePlayerIds(isRankedAtTime ? playerId : undefined);
       let elo: number | undefined;
       if (playerIds.includes(playerId)) {
         const scoresAtTime = Elo.eloCalculator(relevantGames, this.parent.allPlayers);

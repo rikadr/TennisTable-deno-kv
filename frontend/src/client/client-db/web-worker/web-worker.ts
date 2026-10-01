@@ -14,7 +14,7 @@ export type WorkerMessage =
       data: {
         events: EventType[];
         referenceTime?: number;
-        includeUnrankedPlayerId?: string;
+        includePlayerId?: string;
       };
     }
   | { type: "expected-leaderboard-result"; data: { result: ExpectedLeaderboard } }
@@ -65,7 +65,7 @@ function handleWorkerMessage(message: WorkerMessage) {
         events: message.data.events,
         referenceTime: message.data.referenceTime,
       });
-      const result = tennisTableForLeaderboard.simulations.expectedLeaderBoard(message.data.includeUnrankedPlayerId);
+      const result = tennisTableForLeaderboard.simulations.expectedLeaderBoard(message.data.includePlayerId);
       postWorkerMessage({ type: "expected-leaderboard-result", data: { result } });
       break;
     }

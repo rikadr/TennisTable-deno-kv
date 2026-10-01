@@ -192,7 +192,7 @@ export const PlayerEloGraph: React.FC<{ playerId: string }> = ({ playerId }) => 
           )}
         </div>
       )}
-      {!showExpectedElo && isActive && summary.games.length >= context.client.gameLimitForRanked && (
+      {!showExpectedElo && summary.games.length >= context.client.gameLimitForRanked && (
         <button
           className="mb-4 px-2 py-1 bg-secondary-background text-secondary-text hover:bg-secondary-background/50 rounded-lg"
           onClick={() =>
@@ -238,7 +238,9 @@ export const PlayerEloGraph: React.FC<{ playerId: string }> = ({ playerId }) => 
             )}
           {lastGame.simulatedElo && lastEntry.simulatedElo && (
             <div className="p-1">
-              <p className="text-sm mb-1 whitespace-nowrap">Since your last game</p>
+              <p className="text-sm mb-1 whitespace-nowrap">
+                {isActive ? "Since your last game" : "From last game to retirement"}
+              </p>
               <p className="text-2xl font-bold">
                 {lastGame.time === lastEntry.time
                   ? "-"

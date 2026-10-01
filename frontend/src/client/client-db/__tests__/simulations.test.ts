@@ -4,7 +4,7 @@ import { EventType, EventTypeEnum } from "../event-store/event-types";
 // Default GuestClient has gameLimitForRanked = 5.
 const T0 = 1_000_000;
 
-function buildTennisTable(games: [winner: string, loser: string][]): TennisTable {
+function buildTennisTable(games: [winner: string, loser: string][], retired: string[] = []): TennisTable {
   const players = Array.from(new Set(games.flat()));
   const events: EventType[] = players.map((p, i) => ({
     time: 1000 + i,
@@ -20,7 +20,10 @@ function buildTennisTable(games: [winner: string, loser: string][]): TennisTable
       data: { playedAt: T0 + i, winner, loser },
     });
   });
-  return new TennisTable({ events, referenceTime: T0 + games.length });
+  retired.forEach((p, i) => {
+    events.push({ time: T0 + games.length + i, stream: p, type: EventTypeEnum.PLAYER_DEACTIVATED, data: null });
+  });
+  return new TennisTable({ events, referenceTime: T0 + games.length + retired.length });
 }
 
 const repeat = (game: [string, string], times: number): [string, string][] => Array.from({ length: times }, () => game);
@@ -56,6 +59,18 @@ describe("Simulations.expectedLeaderBoard", () => {
 
     expect(expected.map((p) => p.id).sort()).toEqual(["A", "B", "C", "D"]);
     expect(sum(expected)).toBeCloseTo(sum(current) + unrankedScore, 6);
+  });
+
+  it("leaves a retired player out, and adds the score of an included retired player to the pool", () => {
+    const tennisTable = buildTennisTable(games, ["C"]);
+    const retiredScore = tennisTable.leaderboard.getCachedLeaderboardMap().get("C")!.elo;
+
+    const withoutRetired = tennisTable.simulations.expectedLeaderBoard();
+    expect(withoutRetired.expected.map((p) => p.id).sort()).toEqual(["A", "B"]);
+
+    const { current, expected } = tennisTable.simulations.expectedLeaderBoard("C");
+    expect(expected.map((p) => p.id).sort()).toEqual(["A", "B", "C"]);
+    expect(sum(expected)).toBeCloseTo(sum(current) + retiredScore, 6);
   });
 
   it("gives the same result each time", () => {
@@ -105,5 +120,25 @@ describe("Simulations.expectedPlayerEloOverTime", () => {
     // A 50/50 record splits the pool of A and B evenly.
     expect(pool).toBeGreaterThan(2 * 1000 + 20);
     expect(latest.elo).toBeCloseTo(pool / 2, 3);
+  });
+
+  const lastGameTimeOf = (tennisTable: TennisTable, playerId: string) =>
+    tennisTable.games.filter((g) => g.winner === playerId || g.loser === playerId).at(-1)!.playedAt;
+
+  it("ends an active player's line at the latest game", () => {
+    const tennisTable = buildTennisTable(games);
+    const points = expectedOverTime(tennisTable, "C").sort((a, b) => a.time - b.time);
+
+    expect(points.at(-1)!.time).toBe(tennisTable.games.at(-1)!.playedAt);
+  });
+
+  it("ends a retired player's line at the moment of retirement, after a point at the last game", () => {
+    const tennisTable = buildTennisTable(games, ["C"]);
+    const retiredAt = tennisTable.eventStore.playersProjector.getPlayer("C")!.retiredAt!;
+    const points = expectedOverTime(tennisTable, "C").sort((a, b) => a.time - b.time);
+
+    expect(retiredAt).toBe(T0 + games.length);
+    expect(points.at(-1)!.time).toBe(retiredAt);
+    expect(points.at(-2)!.time).toBe(lastGameTimeOf(tennisTable, "C"));
   });
 });

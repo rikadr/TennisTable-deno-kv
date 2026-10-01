@@ -8,6 +8,8 @@ export type Player = {
   createdAt: number;
   updatedAt: number;
   updateAction?: string;
+  /** When the player was deactivated. Set only while the player is inactive */
+  retiredAt?: number;
 };
 
 export class PlyersProjector {
@@ -57,6 +59,7 @@ export class PlyersProjector {
       player.active = false;
       player.updatedAt = event.time;
       player.updateAction = "Deactivated";
+      player.retiredAt = event.time;
     }
   }
 
@@ -77,6 +80,7 @@ export class PlyersProjector {
       player.active = true;
       player.updatedAt = event.time;
       player.updateAction = "Re-activated";
+      player.retiredAt = undefined;
     }
   }
 
