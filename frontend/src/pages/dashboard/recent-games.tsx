@@ -1,14 +1,15 @@
 import { useMemo } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { RelativeTime } from "../../common/date-utils";
 import { fmtNum } from "../../common/number-utils";
 import { Game } from "../../client/client-db/event-store/projectors/games-projector";
-
-const GAMES_COUNT = 5;
+import { DashboardCard } from "./dashboard-card";
+import { LeaderboardView } from "./dashboard-season";
 
 type Props = {
-  view?: "overall" | "season";
+  view?: LeaderboardView;
+  count?: number;
 };
 
 type DisplayGame = Game & {
@@ -16,7 +17,7 @@ type DisplayGame = Game & {
   loserPointsDiff?: number;
 };
 
-export const RecentGames: React.FC<Props> = ({ view = "overall" }) => {
+export const RecentGames: React.FC<Props> = ({ view = "overall", count = 6 }) => {
   const context = useEventDbContext();
   const navigate = useNavigate();
   const leaderboardMap = context.leaderboard.getCachedLeaderboardMap();
@@ -36,7 +37,7 @@ export const RecentGames: React.FC<Props> = ({ view = "overall" }) => {
     displayGames = currentSeason.games;
   }
 
-  const lastGames = displayGames.toReversed().slice(0, GAMES_COUNT + 1);
+  const lastGames = displayGames.toReversed().slice(0, count);
 
   function getGame(game: Game): DisplayGame | undefined {
     if (view === "season") {
@@ -64,11 +65,7 @@ export const RecentGames: React.FC<Props> = ({ view = "overall" }) => {
   const processedGames = lastGames.map(getGame).filter((g): g is DisplayGame => !!g);
 
   return (
-    <div className="bg-primary-background rounded-lg w-full overflow-hidden">
-      <Link to="/recent-games" className="flex items-baseline justify-center gap-2 mb-2 mt-3 hover:opacity-80">
-        <h1 className="text-2xl text-primary-text">Recent games</h1>
-        <span className="text-xs text-primary-text/50 hover:underline">see more</span>
-      </Link>
+    <DashboardCard title="Recent games" badge={view === "season" ? "Season" : undefined} to="/recent-games">
       <table className="w-full text-primary-text border-collapse">
         <thead>
           {view === "season" ? (
@@ -141,6 +138,6 @@ export const RecentGames: React.FC<Props> = ({ view = "overall" }) => {
           })}
         </tbody>
       </table>
-    </div>
+    </DashboardCard>
   );
 };

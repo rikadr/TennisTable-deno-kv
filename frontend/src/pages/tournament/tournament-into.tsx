@@ -5,7 +5,7 @@ import { classNames } from "../../common/class-names";
 import { relativeTimeString } from "../../common/date-utils";
 import { session } from "../../services/auth";
 import { useEventDbContext } from "../../wrappers/event-db-context";
-import { WinnerBox } from "../leaderboard/tournament-pending-games";
+import { WinnerBox } from "./winner-box";
 import { tournamentDrawUrl } from "./draw/tournament-draw-page";
 
 const formatDate = (date: Date) => {

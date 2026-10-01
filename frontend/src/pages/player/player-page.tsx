@@ -2,7 +2,7 @@ import { classNames } from "../../common/class-names";
 import { fmtNum } from "../../common/number-utils";
 import { Shimmer } from "../../common/shimmer";
 import { useEventDbContext } from "../../wrappers/event-db-context";
-import { ThemedPlaceNumber } from "../leaderboard/themed-place-number";
+import { ThemedPlaceNumber } from "../dashboard/themed-place-number";
 import { ProfilePicture } from "./profile-picture";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { PlayerEloGraph } from "./player-elo-graph";

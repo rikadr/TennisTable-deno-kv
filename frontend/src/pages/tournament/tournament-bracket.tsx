@@ -4,7 +4,7 @@ import { useSessionStorage } from "usehooks-ts";
 import { classNames } from "../../common/class-names";
 import { useTennisParams } from "../../hooks/use-tennis-params";
 import { useEventDbContext } from "../../wrappers/event-db-context";
-import { bracketLayerIndexToTournamentRound } from "../leaderboard/tournament-pending-games";
+import { bracketLayerIndexToTournamentRound } from "./round-labels";
 import { ProfilePicture } from "../player/profile-picture";
 import { getGameKeyFromPlayers } from "./tournament-page";
 import { Link, useNavigate } from "react-router-dom";
