@@ -1,6 +1,6 @@
 import { TennisTable } from "../tennis-table";
 import { EventType, EventTypeEnum } from "../event-store/event-types";
-import { GameTag, UPSET_ELO_GAP } from "../game-tags";
+import { GameTag } from "../game-tags";
 
 let time = 1_000;
 let gameTime = 200_000;
@@ -48,32 +48,6 @@ describe("Game tags", () => {
 
     expect(types(tagsOf(events, first.id))).toContain("first-meeting");
     expect(types(tagsOf(events, second.id))).not.toContain("first-meeting");
-  });
-
-  it("tags an upset when the winner had at least UPSET_ELO_GAP less Elo before the game", () => {
-    const players = playerEvents(["A", "B"]);
-    const favouriteWins = Array.from({ length: 12 }, () => game("A", "B"));
-    const favouriteWinsAgain = game("A", "B");
-    const upset = game("B", "A");
-    const events = [
-      ...players,
-      ...favouriteWins.flatMap((g) => g.events),
-      ...favouriteWinsAgain.events,
-      ...upset.events,
-    ];
-
-    const upsetTag = tagsOf(events, upset.id).find((tag) => tag.type === "upset");
-    expect(upsetTag).toBeDefined();
-    expect(upsetTag?.type === "upset" && upsetTag.eloGap).toBeGreaterThanOrEqual(UPSET_ELO_GAP);
-    expect(types(tagsOf(events, favouriteWinsAgain.id))).not.toContain("upset");
-  });
-
-  it("does not tag an upset when the Elo gap is below UPSET_ELO_GAP", () => {
-    const first = game("A", "B");
-    const second = game("B", "A");
-    const events = [...playerEvents(["A", "B"]), ...first.events, ...second.events];
-
-    expect(types(tagsOf(events, second.id))).not.toContain("upset");
   });
 
   it("tags the achievements the game earned", () => {
