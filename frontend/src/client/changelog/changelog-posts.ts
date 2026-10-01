@@ -50,13 +50,13 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
       "The group play tab has new standings and group cards. The tab fits all screen sizes without a sideways scroll.",
     body: [
       list(
-        "The standings show the group of each player and the number of games that each player has left to play.",
+        "The standings show the number of games that each player has left to play.",
         "A dashed line shows the bracket cut-off. Below the line, the players are muted.",
         "Each group card shows a progress bar. The games left to play are at the top of the card.",
         "When the groups have different sizes, each group card shows its group size factor.",
       ),
       text(
-        "On a phone the standings show the points in a column. The group, the wins, the losses, the skips and the games left are on a line below each name. On a wider screen each value has its own column.",
+        "On a phone the standings show the points in a column. The wins, the losses, the skips and the games left are on a line below each name. On a wider screen each value has its own column.",
       ),
     ],
   },

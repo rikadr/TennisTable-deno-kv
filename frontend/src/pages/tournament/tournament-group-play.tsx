@@ -167,7 +167,6 @@ export const TournamentGroupScores: React.FC<{ tournament: Tournament }> = ({ to
     .sort(TournamentGroupPlay.sortGroupScores)
     .map(([_, player]) => player);
   const cutOffIndex = groupPlay.getBracketSize();
-  const groupOf = new Map(groupPlay.groups.flatMap((group, index) => group.players.map((p) => [p, index + 1])));
   const remainingOf = new Map<string, number>();
   groupPlay.groups.forEach((group) =>
     group.pending.forEach((game) =>
@@ -178,7 +177,7 @@ export const TournamentGroupScores: React.FC<{ tournament: Tournament }> = ({ to
   const hasGroupSizeAdjustment = scores.some((s) => s.groupSizeAdjustmentFactor !== 1);
   const hasEliminationZone = cutOffIndex < scores.length;
   const hasEnded = groupPlay.groupPlayEnded !== undefined;
-  const columnCount = 8 + (hasGroupSizeAdjustment ? 2 : 0);
+  const columnCount = 7 + (hasGroupSizeAdjustment ? 2 : 0);
 
   // Below md, the stats go on a line under the name. Full words do not fit as column headers on a phone.
   const statCell = "hidden md:table-cell py-1 px-2 text-right w-[1%] whitespace-nowrap";
@@ -189,7 +188,6 @@ export const TournamentGroupScores: React.FC<{ tournament: Tournament }> = ({ to
   const row = (player: GroupScorePlayer, place: number, isEliminated: boolean) => {
     const gamesLeft = remainingOf.get(player.name) ?? 0;
     const summary = [
-      `Group ${groupOf.get(player.name)}`,
       count(player.wins, "win", "wins"),
       count(player.loss, "loss", "losses"),
       ...(player.skips > 0 ? [count(player.skips, "skip", "skips")] : []),
@@ -215,7 +213,6 @@ export const TournamentGroupScores: React.FC<{ tournament: Tournament }> = ({ to
             </div>
           </div>
         </td>
-        <td className={classNames(statCell, "text-center")}>{groupOf.get(player.name)}</td>
         <td className="py-1 px-1 xs:px-2 text-right w-[1%] whitespace-nowrap font-medium">
           {fmtNum(player.adjustedScore, { digits: 1 })}
         </td>
@@ -246,7 +243,6 @@ export const TournamentGroupScores: React.FC<{ tournament: Tournament }> = ({ to
             <tr>
               <th className="py-1 px-1 xs:px-2 text-right font-light">#</th>
               <th className="py-1 px-1 xs:px-2 text-left font-normal">Player</th>
-              <th className={classNames(statHeader, "text-center")}>Group</th>
               <th className="py-1 px-1 xs:px-2 text-right font-medium">Points</th>
               {hasGroupSizeAdjustment && (
                 <>
