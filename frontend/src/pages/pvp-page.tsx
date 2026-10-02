@@ -7,8 +7,9 @@ import { ProfilePicture } from "./player/profile-picture";
 import { PvPGameHistory, PvPWins, WinChancePrediction } from "./pvp-stats";
 
 // The left column stays on the screen while the games scroll. Only a screen with enough
-// height does this: on a shorter screen the bottom of the column would stay below the screen
-const STICKY_ON_TALL_SCREENS = "lg:[@media(min-height:820px)]:sticky lg:top-16";
+// height does this: on a shorter screen the bottom of the column would stay below the screen.
+// The highest column (with the unranked warning) is about 680px, plus the 64px top offset
+const STICKY_ON_TALL_SCREENS = "lg:[@media(min-height:760px)]:sticky lg:top-16";
 
 export const PvPPage: React.FC = () => {
   const { player1, player2 } = useTennisParams();
