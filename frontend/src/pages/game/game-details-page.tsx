@@ -20,6 +20,7 @@ import { GameAchievements } from "./game-achievements-panel";
 import { GameTournaments } from "./game-tournaments-panel";
 import { useGameHallOfFameChange } from "../../hooks/use-game-hall-of-fame-change";
 import { StandingsChangeTable } from "./game-standings-panel";
+import { GameTagList } from "../recent-games/game-tag-list";
 
 /**
  * Details about a single game, identified by its played-at timestamp (unique
@@ -146,6 +147,11 @@ export const GameDetailsPage: React.FC = () => {
           <p className="text-center text-sm md:text-base text-primary-text/60 mb-2 md:mb-3">
             {fullDateTimeString(game.playedAt)} - <RelativeTime date={new Date(game.playedAt)} variant="auto" />
           </p>
+          {context.gameTags.isFirstMeeting(game) && (
+            <div className="flex justify-center mb-2 md:mb-3 text-primary-text">
+              <GameTagList tags={[{ type: "first-meeting" }]} />
+            </div>
+          )}
 
           {/* Who played, the score, and the Elo the game moved */}
           <div className="flex justify-center items-center gap-3 xs:gap-6 px-4 text-primary-text">

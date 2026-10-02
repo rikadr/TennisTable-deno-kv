@@ -27,7 +27,7 @@ export class GameTags {
       tags.push({ type: "tournament", placement });
     }
 
-    if (this.#getFirstMeetings().has(game.id)) {
+    if (this.isFirstMeeting(game)) {
       tags.push({ type: "first-meeting" });
     }
 
@@ -36,6 +36,11 @@ export class GameTags {
     }
 
     return tags;
+  }
+
+  /** True when the game was the first between its 2 players */
+  isFirstMeeting(game: Game): boolean {
+    return this.#getFirstMeetings().has(game.id);
   }
 
   #getFirstMeetings(): Set<string> {
