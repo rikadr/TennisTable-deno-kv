@@ -1,5 +1,5 @@
 import React from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { classNames } from "../common/class-names";
 import { useTennisParams } from "../hooks/use-tennis-params";
 import { useEventDbContext } from "../wrappers/event-db-context";
@@ -48,7 +48,7 @@ export const PvPPage: React.FC = () => {
               disabled={!bothSelected}
               title="Swap the players"
               aria-label="Swap the players"
-              className="mb-6 rounded-full w-9 h-9 flex items-center justify-center bg-secondary-background text-secondary-text hover:bg-secondary-background/70 disabled:opacity-40 transition-colors"
+              className="mb-0.5 rounded-full w-9 h-9 flex items-center justify-center bg-secondary-background text-secondary-text hover:bg-secondary-background/70 disabled:opacity-40 transition-colors"
             >
               <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2}>
                 <path d="M7 4 3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7" strokeLinecap="round" strokeLinejoin="round" />
@@ -78,8 +78,8 @@ export const PvPPage: React.FC = () => {
 };
 
 /**
- * The picture and the name of a player, with a native select on top of them.
- * A phone opens its own list of players, a computer opens a dropdown.
+ * The picture opens the player page. The name is a dropdown with a native select on top of it:
+ * a phone opens its own list of players, a computer opens a dropdown.
  */
 const PlayerPicker: React.FC<{ value?: string; otherPlayer?: string; onChange: (value: string) => void }> = ({
   value,
@@ -88,29 +88,46 @@ const PlayerPicker: React.FC<{ value?: string; otherPlayer?: string; onChange: (
 }) => {
   const context = useEventDbContext();
   const sortedPlayers = [...context.players].sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
+  const name = value ? context.playerName(value) : undefined;
 
   return (
-    <div className="relative group flex flex-col items-center gap-2 min-w-0">
-      <div className="rounded-full ring-2 ring-transparent group-hover:ring-primary-text/40 group-focus-within:ring-primary-text transition">
-        <ProfilePicture playerId={value} size={64} border={3} />
+    <div className="flex flex-col items-center gap-2 min-w-0 w-full">
+      {value ? (
+        <Link
+          to={`/player/${value}`}
+          title={`Open the player page of ${name}`}
+          className="rounded-full ring-2 ring-transparent hover:ring-primary-text/40 focus-visible:ring-primary-text outline-none transition"
+        >
+          <ProfilePicture playerId={value} size={64} border={3} />
+        </Link>
+      ) : (
+        <ProfilePicture size={64} border={3} />
+      )}
+      <div className="relative w-full max-w-[14rem] flex items-center gap-1 h-10 pl-3 pr-2 rounded-lg ring-1 ring-primary-text/30 hover:ring-primary-text/60 focus-within:ring-2 focus-within:ring-primary-text transition">
+        <span className="flex-1 min-w-0 truncate text-center font-bold text-sm xs:text-base sm:text-lg">
+          {name ?? "Select player"}
+        </span>
+        <svg viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 shrink-0 opacity-70" aria-hidden>
+          <path
+            fillRule="evenodd"
+            d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.17l3.71-3.94a.75.75 0 1 1 1.08 1.04l-4.25 4.5a.75.75 0 0 1-1.08 0l-4.25-4.5a.75.75 0 0 1 .02-1.06Z"
+            clipRule="evenodd"
+          />
+        </svg>
+        <select
+          aria-label="Select player"
+          value={value ?? ""}
+          onChange={(e) => onChange(e.target.value)}
+          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+        >
+          {!value && <option value="">Select player</option>}
+          {sortedPlayers.map((player) => (
+            <option value={player.id} key={player.id} disabled={player.id === otherPlayer}>
+              {player.name}
+            </option>
+          ))}
+        </select>
       </div>
-      <div className="w-full text-center font-bold text-base sm:text-lg truncate">
-        {value ? context.playerName(value) : "Select player"}
-        <span className="ml-1 text-xs opacity-50 group-hover:opacity-100">▾</span>
-      </div>
-      <select
-        aria-label="Select player"
-        value={value ?? ""}
-        onChange={(e) => onChange(e.target.value)}
-        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-      >
-        {!value && <option value="">Select player</option>}
-        {sortedPlayers.map((player) => (
-          <option value={player.id} key={player.id} disabled={player.id === otherPlayer}>
-            {player.name}
-          </option>
-        ))}
-      </select>
     </div>
   );
 };
