@@ -24,14 +24,18 @@ type Widget = "now" | "leaderboard" | "unranked" | "games" | "changes" | "achiev
 /**
  * The widgets of each column, per number of columns. The leaderboard keeps the
  * first column at every width, so it does not move when other widgets show or hide.
+ * The recent games, then the recent achievements, come before the leaderboard changes
+ * and the unranked players: they are the most recent news. From 3 columns, the "now"
+ * widgets do not share a column with them, so a long list of tournament games does not
+ * push them below the screen.
  */
 const LAYOUTS: Record<1 | 2 | 3 | 4, Widget[][]> = {
-  1: [["now", "leaderboard", "games", "changes", "achievements", "unranked"]],
+  1: [["now", "leaderboard", "games", "achievements", "changes", "unranked"]],
   2: [
-    ["leaderboard", "unranked"],
-    ["now", "games", "changes", "achievements"],
+    ["leaderboard", "changes", "unranked"],
+    ["now", "games", "achievements"],
   ],
-  3: [["leaderboard"], ["now", "games", "achievements"], ["changes", "unranked"]],
+  3: [["leaderboard"], ["now", "changes", "unranked"], ["games", "achievements"]],
   // A column with no content hides, so the "now" column shows only when something happens
   4: [["leaderboard"], ["now"], ["games", "changes"], ["achievements", "unranked"]],
 };
