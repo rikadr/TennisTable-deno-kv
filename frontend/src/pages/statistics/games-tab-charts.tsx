@@ -28,13 +28,7 @@ import {
   SERIES_COLOR,
   TooltipCard,
 } from "./percent-chart";
-import {
-  DetailLevelPoint,
-  PointLevelStats,
-  SetLevelStats,
-  SIDE_HOURS_PER_GROUP,
-  SideSwingByHour,
-} from "./statistics-aggregations";
+import { DetailLevelPoint, PointLevelStats, SetLevelStats, SideSwingByHour } from "./statistics-aggregations";
 
 const formatMonth = (key: string): string => {
   const [year, month] = key.split("-");
@@ -258,14 +252,14 @@ export const PointsPerGameChart: React.FC<{
   </ResponsiveContainer>
 );
 
-/** A difference of 2 percentages, as "−2,1 pp". */
-export const swingLabel = (value: number): string => `${fmtNum(value, { digits: 1, signedPositive: true })} pp`;
+/** Points per set with a sign, as "−1,2". */
+export const pointsPerSetLabel = (value: number): string => fmtNum(value, { digits: 1, signedPositive: true }) ?? "–";
 
 const hourLabel = (hour: number): string => `${String(hour % 24).padStart(2, "0")}:00`;
 
 /**
- * The difference the bad side makes, by the time of the day the game starts.
- * A bar below 0 is a time when the bad side costs points.
+ * The points per set the bad side costs, by the hour the game starts in. A bar
+ * below 0 is an hour when the bad side costs points.
  */
 export const SideSwingByHourChart: React.FC<{ data: SideSwingByHour[] }> = ({ data }) => (
   <ResponsiveContainer width="100%" height={200}>
@@ -275,7 +269,9 @@ export const SideSwingByHourChart: React.FC<{ data: SideSwingByHour[] }> = ({ da
       <YAxis
         stroke={AXIS_COLOR}
         tick={{ fontSize: 11 }}
-        tickFormatter={(value: number) => fmtNum(value, { digits: 1, signedPositive: true }) ?? ""}
+        tickFormatter={pointsPerSetLabel}
+        // The bars grow from 0, so the axis always holds it.
+        domain={[(dataMin: number) => Math.min(0, dataMin), (dataMax: number) => Math.max(0, dataMax)]}
       />
       <ReferenceLine y={0} stroke={AXIS_COLOR} />
       <Tooltip
@@ -284,13 +280,13 @@ export const SideSwingByHourChart: React.FC<{ data: SideSwingByHour[] }> = ({ da
           if (!active || !payload?.length) return null;
           const hour = Number(label);
           return (
-            <TooltipCard title={`${hourLabel(hour)} to ${hourLabel(hour + SIDE_HOURS_PER_GROUP)}`}>
-              <p>{swingLabel(Number(payload[0].value))} of the points on the bad side</p>
+            <TooltipCard title={`${hourLabel(hour)} to ${hourLabel(hour + 1)}`}>
+              <p>{pointsPerSetLabel(Number(payload[0].value))} points per set on the bad side</p>
             </TooltipCard>
           );
         }}
       />
-      <Bar dataKey="swing" fill={SERIES_COLOR} radius={[4, 4, 4, 4]} isAnimationActive={false} />
+      <Bar dataKey="pointsPerSet" fill={SERIES_COLOR} radius={[4, 4, 4, 4]} isAnimationActive={false} />
     </BarChart>
   </ResponsiveContainer>
 );

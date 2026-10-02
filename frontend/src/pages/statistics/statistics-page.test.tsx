@@ -150,8 +150,7 @@ describe("StatisticsPage", () => {
     expect(screen.getByText("Median points in a set")).toBeInTheDocument();
     expect(screen.getByText("Median game length")).toBeInTheDocument();
     expect(screen.getByText("To close a set")).toBeInTheDocument();
-    expect(screen.getByText("Points won on the bad side")).toBeInTheDocument();
-    expect(screen.getByText("Point share on the bad side")).toBeInTheDocument();
+    expect(screen.getByText("Points per set on the bad side")).toBeInTheDocument();
     expect(screen.getByText("The stronger player takes the bad side")).toBeInTheDocument();
     expect(screen.queryByText(/Not enough/)).not.toBeInTheDocument();
   });

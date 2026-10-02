@@ -15,8 +15,8 @@ import {
   PointsPerGameChart,
   SetScorePie,
   SetsPlayedChart,
+  pointsPerSetLabel,
   SideSwingByHourChart,
-  swingLabel,
 } from "./games-tab-charts";
 import {
   detailLevels,
@@ -25,9 +25,11 @@ import {
   leaguePace,
   pointLevelStats,
   MIN_GAMES_PER_BUCKET,
+  CLOSE_MATCHUP_GAP,
   setLevelStats,
-  SIDE_HOURS_PER_GROUP,
   sideSwingByHour,
+  TableSideRatingStats,
+  TableSideStats,
   tableSideStats,
   tableSidesByRating,
   trackedLevelStats,
@@ -96,6 +98,51 @@ const ClosingOutCard: React.FC<{ stats: TrackedLevelStats }> = ({ stats }) => {
           </>
         )}
       </p>
+    </div>
+  );
+};
+
+/**
+ * The 2 numbers a player asks about the bad side: the points it costs in a set,
+ * and the games it costs in a close matchup.
+ */
+const BadSideCard: React.FC<{ sides: TableSideStats; rating?: TableSideRatingStats }> = ({ sides, rating }) => {
+  const { pointsPerSet } = sides;
+  const moreBadSideSets = rating?.moreBadSideSets;
+  const winDifference = moreBadSideSets === undefined ? undefined : moreBadSideSets.won - moreBadSideSets.expected;
+
+  return (
+    <div className="grid grid-cols-1 xs:grid-cols-2 gap-2">
+      <div className="flex flex-col gap-0.5 rounded-lg bg-secondary-background text-secondary-text px-3 py-2">
+        <span className="text-xs md:text-sm opacity-80">Points per set on the bad side</span>
+        <span className="text-2xl md:text-3xl font-semibold leading-tight">
+          {pointsPerSet === undefined ? "–" : pointsPerSetLabel(pointsPerSet)}
+        </span>
+        <span className="text-sm">
+          {pointsPerSet === undefined
+            ? "Needs a game with a change of sides after set 1, and the points of both sets."
+            : `A player wins ${fmtNum(Math.abs(pointsPerSet), { digits: 1 })} ${
+                pointsPerSet <= 0 ? "fewer" : "more"
+              } points per set on the bad side than on the good side.`}
+        </span>
+        <span className="text-xs opacity-70">The same player in the same game, in sets 1 and 2.</span>
+      </div>
+      <div className="flex flex-col gap-0.5 rounded-lg bg-secondary-background text-secondary-text px-3 py-2">
+        <span className="text-xs md:text-sm opacity-80">More sets on the bad side, in a close matchup</span>
+        <span className="text-2xl md:text-3xl font-semibold leading-tight">
+          {moreBadSideSets === undefined ? "–" : percentLabel(moreBadSideSets.won)}
+        </span>
+        <span className="text-sm">
+          {moreBadSideSets === undefined || winDifference === undefined
+            ? "Needs a close matchup where 1 player had the bad side in more sets."
+            : `of these games go to the player with more sets on the bad side. The ratings expect ${percentLabel(
+                moreBadSideSets.expected,
+              )}, so the difference is ${pointsPerSetLabel(winDifference)} percentage points.`}
+        </span>
+        <span className="text-xs opacity-70">
+          A rating gap below {CLOSE_MATCHUP_GAP} before the game. Most of these games go to a deciding set.
+        </span>
+      </div>
     </div>
   );
 };
@@ -251,49 +298,25 @@ export const GamesTab: React.FC<{ range: TimeRange; setRange: (range: TimeRange)
 
           <ContentCard
             title="The bad side of the table"
-            description="The players change sides after set 1. So in sets 1 and 2 the same 2 players play once on each side. This card compares a player on the bad side with the same player on the good side, in the same game. The difference in level between the 2 players has no effect on the result."
+            description="What the bad side costs a player. Both numbers remove the difference in level between the 2 players."
           >
-            {tableSides?.sameGameSwing === undefined ? (
-              <NotEnoughGames what="games with a change of sides after set 1" />
+            {tableSides === undefined ? (
+              <NotEnoughGames what="games with sides" />
             ) : (
-              <div className="flex flex-col gap-3">
-                <StatTileRow columns={3}>
-                  <StatTile
-                    label="Point share on the bad side"
-                    value={swingLabel(tableSides.sameGameSwing)}
-                    note="against the same player on the good side"
-                  />
-                  <StatTile
-                    label="Points per set"
-                    value={orDash(fmtNum(tableSides.pointsPerSetSwing, { digits: 1, signedPositive: true }))}
-                    note="on the bad side, against the good side"
-                  />
-                  <StatTile
-                    label="Sets won in an even matchup"
-                    value={orDash(
-                      tableSides.evenMatchupSetsWon === undefined
-                        ? undefined
-                        : percentLabel(tableSides.evenMatchupSetsWon),
-                    )}
-                    note="by the player on the bad side"
-                  />
-                </StatTileRow>
-                <p className="text-xs text-primary-text/60">
-                  A value below 0 means that the bad side costs points. &ldquo;pp&rdquo; is percentage points. An even
-                  matchup is 2 players who each win 50% of the points over both sides.
-                </p>
+              <div className="flex flex-col gap-4">
+                <BadSideCard sides={tableSides} rating={tableSidesRating} />
                 <div className="flex flex-col gap-1">
-                  <span className="text-sm text-primary-text">By the time of the day</span>
+                  <span className="text-sm text-primary-text">By the hour of the day</span>
                   {sideSwingHours.length === 0 ? (
                     <p className="text-xs text-primary-text/60">
-                      A {SIDE_HOURS_PER_GROUP}-hour slot shows when it has {MIN_GAMES_PER_BUCKET} of these games.
+                      An hour shows when it has {MIN_GAMES_PER_BUCKET} games with a change of sides after set 1.
                     </p>
                   ) : (
                     <>
                       <SideSwingByHourChart data={sideSwingHours} />
                       <p className="text-xs text-primary-text/60 text-center">
-                        The points won on the bad side, by the {SIDE_HOURS_PER_GROUP}-hour slot the game starts in. A
-                        slot with fewer than {MIN_GAMES_PER_BUCKET} of these games is not shown.
+                        The points per set the bad side costs, by the hour the game starts in. An hour with fewer than{" "}
+                        {MIN_GAMES_PER_BUCKET} of these games is not shown.
                       </p>
                     </>
                   )}
@@ -303,79 +326,42 @@ export const GamesTab: React.FC<{ range: TimeRange; setRange: (range: TimeRange)
           </ContentCard>
 
           <ContentCard
-            title="Who takes the bad side"
-            description="Over all the sets with a worse side. These shares include the difference in level between the players, so they do not show the effect of the side alone."
+            title="More about the bad side"
+            description="Who takes the bad side, and how often games record it."
           >
             {tableSides === undefined ? (
               <NotEnoughGames what="games with sides" />
             ) : (
-              <div className="flex flex-col gap-3">
-                <StatTileRow columns={3}>
-                  <StatTile
-                    label="The stronger player takes the bad side"
-                    value={orDash(
-                      tableSidesRating?.strongerTakesTheBadSide === undefined
-                        ? undefined
-                        : percentLabel(tableSidesRating.strongerTakesTheBadSide),
-                    )}
-                    note="in set 1, by the rating before the game"
-                  />
-                  <StatTile
-                    label="Sets with equal sides"
-                    value={percentLabel(tableSides.neutralSets)}
-                    note="of the sets with recorded sides"
-                  />
-                  <StatTile
-                    label="Games that record the sides"
-                    value={percentLabel(tableSides.sidesRecorded)}
-                    note="of the games with a score in this period"
-                  />
-                </StatTileRow>
-                <div className="flex flex-col gap-1">
-                  <span className="text-sm text-primary-text">The bad side, by the rating gap</span>
-                  <StatTileRow>
-                    <StatTile
-                      label="Points won on the bad side"
-                      value={orDash(
-                        tableSides.pointsWonOnTheBadSide === undefined
-                          ? undefined
-                          : percentLabel(tableSides.pointsWonOnTheBadSide),
-                      )}
-                      note={
-                        tableSides.setsWonOnTheBadSide === undefined
-                          ? "all rating gaps"
-                          : `all rating gaps, and ${percentLabel(tableSides.setsWonOnTheBadSide)} of the sets`
-                      }
-                    />
-                    {tableSidesRating?.byRatingGap.map((group) => (
-                      <StatTile
-                        key={group.from}
-                        label={
-                          group.to === undefined
-                            ? `Rating gap of ${group.from} or more`
-                            : group.from === 0
-                              ? `Rating gap below ${group.to}`
-                              : `Rating gap of ${group.from} to ${group.to}`
-                        }
-                        value={orDash(
-                          group.pointsWonOnTheBadSide === undefined
-                            ? undefined
-                            : percentLabel(group.pointsWonOnTheBadSide),
-                        )}
-                        note={
-                          group.setsWonOnTheBadSide === undefined
-                            ? `needs ${MIN_GAMES_PER_BUCKET} games`
-                            : `and ${percentLabel(group.setsWonOnTheBadSide)} of the sets`
-                        }
-                      />
-                    ))}
-                  </StatTileRow>
-                  <span className="text-xs text-primary-text/60">
-                    50% means that the side costs nothing. The rating gap is from before the game. The rating of a new
-                    player can be far from their true level, so use these groups only as an indication.
-                  </span>
-                </div>
-              </div>
+              <StatTileRow>
+                <StatTile
+                  label="The stronger player takes the bad side"
+                  value={orDash(
+                    tableSidesRating?.strongerTakesTheBadSide === undefined
+                      ? undefined
+                      : percentLabel(tableSidesRating.strongerTakesTheBadSide),
+                  )}
+                  note="in set 1, by the rating before the game"
+                />
+                <StatTile
+                  label="Sets won in an even matchup"
+                  value={orDash(
+                    tableSides.evenMatchupSetsWon === undefined
+                      ? undefined
+                      : percentLabel(tableSides.evenMatchupSetsWon),
+                  )}
+                  note="by the player on the bad side, from the points per set"
+                />
+                <StatTile
+                  label="Sets with equal sides"
+                  value={percentLabel(tableSides.neutralSets)}
+                  note="of the sets with recorded sides"
+                />
+                <StatTile
+                  label="Games that record the sides"
+                  value={percentLabel(tableSides.sidesRecorded)}
+                  note="of the games with a score in this period"
+                />
+              </StatTileRow>
             )}
           </ContentCard>
         </DetailLevelSection>

@@ -911,21 +911,15 @@ export type TableSideStats = {
   sidesRecorded: number;
   /** Share of the recorded sets where the 2 sides are equally good. */
   neutralSets: number;
-  /** Share of the sets with a worse side won by the player on it. */
-  setsWonOnTheBadSide?: number;
-  /** Share of the points of those sets won by the player on the bad side. */
-  pointsWonOnTheBadSide?: number;
   /**
-   * The point share of a player on the bad side minus the point share of the
-   * same player on the good side, in percentage points, averaged over the
-   * games. Below 0 means the bad side costs points. See `sideSwing`.
+   * The points per set a player wins on the bad side minus the points per set
+   * the same player wins on the good side, averaged over the games. Below 0
+   * means the bad side costs points. See `sideSwing`.
    */
-  sameGameSwing?: number;
-  /** `sameGameSwing` as points of an average set of those games. */
-  pointsPerSetSwing?: number;
+  pointsPerSet?: number;
   /**
    * Share of the sets the player on the bad side wins when the 2 players are
-   * equally good, from `sameGameSwing` and the 11 point set model.
+   * equally good, from the same comparison and the 11 point set model.
    */
   evenMatchupSetsWon?: number;
 };
@@ -943,8 +937,11 @@ export type TableSideStats = {
  * Only sets 1 and 2 count, because every game plays them. A deciding set is
  * only played when the first sets are split, and the game winner always wins
  * it, so it would pull the result towards the player who has its side.
+ *
+ * `swing` is in percentage points. `pointsPerSet` is the same difference in
+ * points, for a set as long as the average of the 2 sets.
  */
-function sideSwing(game: Game): { swing: number; points: number } | undefined {
+function sideSwing(game: Game): { swing: number; pointsPerSet: number } | undefined {
   const sides = game.score?.gameWinnerSides;
   const setPoints = game.score?.setPoints;
   if (sides === undefined || setPoints === undefined || setPoints.length < 2) return undefined;
@@ -958,10 +955,8 @@ function sideSwing(game: Game): { swing: number; points: number } | undefined {
   const goodPoints = good.gameWinner + good.gameLoser;
   if (badPoints === 0 || goodPoints === 0) return undefined;
 
-  return {
-    swing: percent(bad.gameWinner, badPoints) - percent(good.gameWinner, goodPoints),
-    points: (badPoints + goodPoints) / 2,
-  };
+  const swing = percent(bad.gameWinner, badPoints) - percent(good.gameWinner, goodPoints);
+  return { swing, pointsPerSet: (swing / 100) * ((badPoints + goodPoints) / 2) };
 }
 
 /** The ways to choose `k` of `n`. */
@@ -989,125 +984,67 @@ export function setWinChance(pointChance: number): number {
 }
 
 /**
- * What playing on the bad side of the table costs.
+ * What playing on the bad side of the table costs in points.
  *
  * Any game with a score can record which player had the bad side in each set,
  * or that the 2 sides were equally good — a tracker does it live, and the add
  * game form takes what the players remember, with or without the points of
- * each set. Every set with a worse side has exactly one player on it, so 50%
- * is the neutral reading of the set and point shares.
+ * each set.
  *
- * Those shares mix the side with the level of the players. The stronger player
- * often takes the bad side, and a large difference in level decides most sets
- * whatever the side. `sameGameSwing` compares each player with themselves, and
- * so it measures the side alone. See `sideSwing`.
- *
- * A neutral set holds no bad side, so it only counts towards `neutralSets`.
- * The set and point shares need the points of the set.
+ * A share of the sets or the points won on the bad side mixes the side with
+ * the level of the players: the stronger player often takes the bad side, and
+ * a large difference in level decides most sets whatever the side. So this
+ * compares each player with themselves. See `sideSwing`.
  */
 export function tableSideStats(games: Game[]): TableSideStats | undefined {
   const withScore = games.filter((game) => game.score !== undefined);
   const withSides = withScore.filter((game) => game.score!.gameWinnerSides?.some((side) => side !== null));
   if (withSides.length === 0) return undefined;
 
-  let recordedSets = 0;
-  let neutralSets = 0;
-  let unequalSets = 0;
-  let setsToTheBadSide = 0;
-  let unequalPoints = 0;
-  let pointsToTheBadSide = 0;
-  const swings: number[] = [];
-  const swingSetPoints: number[] = [];
+  const recordedSides = withSides.flatMap((game) => game.score!.gameWinnerSides!.filter((side) => side !== null));
+  const swings = withSides.map(sideSwing).filter((swing) => swing !== undefined);
+  const swing = average(swings.map((game) => game.swing));
 
-  for (const game of withSides) {
-    const sides = game.score!.gameWinnerSides!;
-    for (let setIndex = 0; setIndex < sides.length; setIndex++) {
-      const side = sides[setIndex];
-      if (side === null) continue;
-
-      recordedSets++;
-      if (side === "N") {
-        neutralSets++;
-        continue;
-      }
-
-      // Who won the set, and its points, are only known when the game
-      // records the points of each set.
-      const set = game.score!.setPoints?.[setIndex];
-      if (set === undefined) continue;
-
-      const gameWinnerOnTheBadSide = side === "B";
-      unequalSets++;
-      unequalPoints += set.gameWinner + set.gameLoser;
-      pointsToTheBadSide += gameWinnerOnTheBadSide ? set.gameWinner : set.gameLoser;
-      const gameWinnerWonTheSet = set.gameWinner > set.gameLoser;
-      if (gameWinnerWonTheSet === gameWinnerOnTheBadSide) setsToTheBadSide++;
-    }
-
-    const swing = sideSwing(game);
-    if (swing !== undefined) {
-      swings.push(swing.swing);
-      swingSetPoints.push(swing.points);
-    }
-  }
-
-  const sameGameSwing = average(swings);
   return {
     sidesRecorded: percent(withSides.length, withScore.length),
-    neutralSets: percent(neutralSets, recordedSets),
-    setsWonOnTheBadSide: unequalSets === 0 ? undefined : percent(setsToTheBadSide, unequalSets),
-    pointsWonOnTheBadSide: unequalPoints === 0 ? undefined : percent(pointsToTheBadSide, unequalPoints),
-    sameGameSwing,
-    pointsPerSetSwing: sameGameSwing === undefined ? undefined : (sameGameSwing / 100) * average(swingSetPoints)!,
+    neutralSets: percent(recordedSides.filter((side) => side === "N").length, recordedSides.length),
+    pointsPerSet: average(swings.map((game) => game.pointsPerSet)),
     // In an even matchup a player wins half the points over both sides. The
     // swing splits evenly around that half, so the bad side wins 50% plus half
     // of the swing.
-    evenMatchupSetsWon: sameGameSwing === undefined ? undefined : setWinChance(0.5 + sameGameSwing / 200) * 100,
+    evenMatchupSetsWon: swing === undefined ? undefined : setWinChance(0.5 + swing / 200) * 100,
   };
 }
 
-/** The length of a time of the day group of `sideSwingByHour`, in hours. */
-export const SIDE_HOURS_PER_GROUP = 1;
-
 export type SideSwingByHour = {
-  /** The first hour of the group, 0-23. */
+  /** The hour the games start in, 0-23. */
   hour: number;
-  /** `TableSideStats.sameGameSwing` over the games that start in the group. */
-  swing: number;
+  /** `TableSideStats.pointsPerSet` over the games that start in the hour. */
+  pointsPerSet: number;
 };
 
 /**
- * `TableSideStats.sameGameSwing` by the time of the day the game starts. The
- * light from a window can make one side worse, and the light changes during
- * the day. A group with fewer than MIN_GAMES_PER_BUCKET games is left out,
- * because the swing of one game is mostly noise.
+ * `TableSideStats.pointsPerSet` by the hour the game starts in. The light from
+ * a window can make one side worse, and the light changes during the day. An
+ * hour with fewer than MIN_GAMES_PER_BUCKET games is left out, because the
+ * comparison of one game is mostly noise.
  */
 export function sideSwingByHour(games: Game[]): SideSwingByHour[] {
-  const groups = new Map<number, number[]>();
+  const hours = new Map<number, number[]>();
   for (const game of games) {
     const swing = sideSwing(game);
     if (swing === undefined) continue;
-    const hour = Math.floor(new Date(game.playedAt).getHours() / SIDE_HOURS_PER_GROUP) * SIDE_HOURS_PER_GROUP;
-    groups.set(hour, [...(groups.get(hour) ?? []), swing.swing]);
+    const hour = new Date(game.playedAt).getHours();
+    hours.set(hour, [...(hours.get(hour) ?? []), swing.pointsPerSet]);
   }
-  return Array.from(groups)
-    .filter(([, swings]) => swings.length >= MIN_GAMES_PER_BUCKET)
+  return Array.from(hours)
+    .filter(([, values]) => values.length >= MIN_GAMES_PER_BUCKET)
     .sort(([a], [b]) => a - b)
-    .map(([hour, swings]) => ({ hour, swing: average(swings)! }));
+    .map(([hour, values]) => ({ hour, pointsPerSet: average(values)! }));
 }
 
-/** The upper edges of the rating gap groups of `tableSidesByRating`. */
-export const SIDE_GAP_EDGES = [100, 200];
-
-export type SideGapGroup = {
-  /** The smallest gap of the group, in rating points. */
-  from: number;
-  /** The first gap past the group, or undefined for the last group. */
-  to?: number;
-  /** Undefined when the group holds fewer than MIN_GAMES_PER_BUCKET games. */
-  pointsWonOnTheBadSide?: number;
-  setsWonOnTheBadSide?: number;
-};
+/** The largest rating gap before the game of a close matchup. */
+export const CLOSE_MATCHUP_GAP = 100;
 
 export type TableSideRatingStats = {
   /**
@@ -1115,23 +1052,35 @@ export type TableSideRatingStats = {
    * had it. `weakerPlayer` decides who is stronger.
    */
   strongerTakesTheBadSide?: number;
-  /** The set and point shares of `TableSideStats`, by the rating gap. */
-  byRatingGap: SideGapGroup[];
+  /**
+   * The close matchups where one player had the bad side in more sets than the
+   * other: the share of them that player won, and the share the ratings expect
+   * them to win.
+   */
+  moreBadSideSets?: { won: number; expected: number };
 };
 
 /**
  * The bad side against the ratings of the players before the game.
  *
  * The whole history walks for the ratings, and only the games from `cutoff`
- * on are aggregated. A rating can be far from the true level of a player, most
- * of all for a new player, so these groups are only an indication.
+ * on are aggregated.
+ *
+ * `moreBadSideSets` takes the close matchups only, because the stronger player
+ * often takes the bad side. A rating can still be far from the true level of a
+ * player, most of all for a new player. So it also gives what the ratings
+ * expect, and the difference between the 2 shares is the effect of the side.
+ * A game with as many bad sides for each player is left out. With a change of
+ * sides after every set that is every game of 2 or 4 sets, so most of these
+ * games went to a deciding set.
  */
 export function tableSidesByRating(games: Game[], players: Player[], cutoff: number): TableSideRatingStats | undefined {
-  const edges = [0, ...SIDE_GAP_EDGES];
-  const groups = edges.map(() => ({ games: 0, sets: 0, setsToTheBadSide: 0, points: 0, pointsToTheBadSide: 0 }));
   let withSides = 0;
   let firstSetUnequal = 0;
   let strongerOnTheBadSide = 0;
+  let unevenCloseGames = 0;
+  let wonWithMoreBadSides = 0;
+  let expectedWithMoreBadSides = 0;
 
   forEachGameWithPreGameStanding(games, players, (game, standing) => {
     if (game.playedAt < cutoff) return;
@@ -1147,36 +1096,32 @@ export function tableSidesByRating(games: Game[], players: Player[], cutoff: num
       if (strongerIsTheGameWinner === (firstSide === "B")) strongerOnTheBadSide++;
     }
 
-    const gap = Math.abs(standing.elo.winner - standing.elo.loser);
-    const group = groups[edges.filter((edge) => gap >= edge).length - 1];
-    let counted = false;
-    sides.forEach((side, setIndex) => {
-      const set = game.score!.setPoints?.[setIndex];
-      if ((side !== "B" && side !== "G") || set === undefined) return;
-      counted = true;
-      const gameWinnerOnTheBadSide = side === "B";
-      const gameWinnerWonTheSet = set.gameWinner > set.gameLoser;
-      group.sets++;
-      if (gameWinnerWonTheSet === gameWinnerOnTheBadSide) group.setsToTheBadSide++;
-      group.points += set.gameWinner + set.gameLoser;
-      group.pointsToTheBadSide += gameWinnerOnTheBadSide ? set.gameWinner : set.gameLoser;
-    });
-    if (counted) group.games++;
+    const { elo } = standing;
+    if (Math.abs(elo.winner - elo.loser) >= CLOSE_MATCHUP_GAP) return;
+    const winnerBadSides = sides.filter((side) => side === "B").length;
+    const loserBadSides = sides.filter((side) => side === "G").length;
+    if (winnerBadSides === loserBadSides) return;
+
+    unevenCloseGames++;
+    if (winnerBadSides > loserBadSides) {
+      wonWithMoreBadSides++;
+      expectedWithMoreBadSides += Elo.expectedResult(elo.winner, elo.loser);
+    } else {
+      expectedWithMoreBadSides += Elo.expectedResult(elo.loser, elo.winner);
+    }
   });
 
   if (withSides === 0) return undefined;
 
   return {
     strongerTakesTheBadSide: firstSetUnequal === 0 ? undefined : percent(strongerOnTheBadSide, firstSetUnequal),
-    byRatingGap: groups.map((group, index) => {
-      const enough = group.games >= MIN_GAMES_PER_BUCKET && group.points > 0;
-      return {
-        from: edges[index],
-        to: edges[index + 1],
-        pointsWonOnTheBadSide: enough ? percent(group.pointsToTheBadSide, group.points) : undefined,
-        setsWonOnTheBadSide: enough ? percent(group.setsToTheBadSide, group.sets) : undefined,
-      };
-    }),
+    moreBadSideSets:
+      unevenCloseGames === 0
+        ? undefined
+        : {
+            won: percent(wonWithMoreBadSides, unevenCloseGames),
+            expected: percent(expectedWithMoreBadSides, unevenCloseGames),
+          },
   };
 }
 

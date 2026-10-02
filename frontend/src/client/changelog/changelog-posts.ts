@@ -47,19 +47,17 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
     date: "2026-10-02",
     tags: ["feature-update"],
     summary:
-      "The bad side card on the statistics page compares a player on the bad side with the same player on the good side. The difference in level between the 2 players has no effect on the new numbers.",
+      "The bad side card on the statistics page shows the points per set the bad side costs, and how often a player with more sets on the bad side wins a close matchup.",
     body: [
-      text(
-        "The players change sides after set 1. So sets 1 and 2 put the same 2 players once on each side. The card takes the share of the points a player wins on the bad side, minus their share on the good side. It shows this difference in percentage points, as points per set, and as the sets the bad side wins when 2 equal players meet.",
+      list(
+        "Points per set on the bad side: the points a player loses per set on the bad side. It compares the player with themselves on the good side. It uses sets 1 and 2, because the players change sides after set 1.",
+        "More sets on the bad side, in a close matchup: how often the player with more sets on the bad side wins the game. It uses games with a rating gap below 100. It also shows the share that the ratings expect.",
       ),
       text(
-        "A chart shows the same difference by the time of the day. The light can make one side worse, and the light changes during the day. A 1-hour slot shows when it has 20 of these games.",
+        "A chart shows the points per set by the hour the game starts in, because the light changes during the day. An hour shows when it has 20 of these games.",
       ),
       text(
-        "A second card, Who takes the bad side, shows how often the stronger player takes the bad side in set 1. It also shows the share of the points the bad side wins, by the rating gap before the game. The rating of a new player can be far from their true level, so use these groups only as an indication.",
-      ),
-      text(
-        "The old share of the sets and the points on the bad side mixes the side with the level of the players. The stronger player often takes the bad side, and then wins most sets on it. If you used that share to judge the bad side, use the new numbers instead. The statistic for the games won with more sets on the bad side is removed for the same reason.",
+        "The old share of the sets and the points won on the bad side mixed the side with the level of the players. The stronger player often takes the bad side, and then wins most sets on it. If you used those shares to judge the bad side, use the new numbers instead. The old shares are removed.",
       ),
     ],
   },
