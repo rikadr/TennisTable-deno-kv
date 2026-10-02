@@ -76,7 +76,7 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
       text("A game can have these tags:"),
       list(
         "🏆 The tournament round, when the game is a tournament game.",
-        "🆕 First meeting: the first game between the 2 players.",
+        "🆕 First meeting: the first game between the 2 players. The game details page also shows this tag.",
         "Each achievement that the game earned, with its icon. 1 tag names all the players who earned it.",
       ),
       text(

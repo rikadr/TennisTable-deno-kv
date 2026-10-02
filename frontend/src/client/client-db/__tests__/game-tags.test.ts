@@ -50,6 +50,15 @@ describe("Game tags", () => {
     expect(types(tagsOf(events, second.id))).not.toContain("first-meeting");
   });
 
+  it("tells if a game was the first meeting of its pair", () => {
+    const first = game("A", "B");
+    const second = game("B", "A");
+    const tt = new TennisTable({ events: [...playerEvents(["A", "B"]), ...first.events, ...second.events] });
+
+    expect(tt.gameTags.isFirstMeeting(tt.games.find((g) => g.id === first.id)!)).toBe(true);
+    expect(tt.gameTags.isFirstMeeting(tt.games.find((g) => g.id === second.id)!)).toBe(false);
+  });
+
   it("tags the achievements the game earned", () => {
     const first = game("A", "B");
     const events = [...playerEvents(["A", "B"]), ...first.events];
