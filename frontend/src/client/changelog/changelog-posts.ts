@@ -70,7 +70,7 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
       "Compare 1v1 shows the wins, the win chance and the games between 2 players. On a wide screen the games are next to the wins.",
     body: [
       text(
-        "Select the picture or the name of a player to change the player. A button between the players swaps the 2 sides.",
+        "Select the name of a player to change the player. Select the picture to open the player page. A button between the players swaps the 2 sides.",
       ),
       text(
         "Each player has a pillar with the number of wins. Below the pillars, the page shows the share of the games that each player won. The win chance box has a Prediction history button that opens the predictions tab of the player page.",
