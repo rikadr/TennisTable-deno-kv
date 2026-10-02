@@ -112,9 +112,12 @@ export const TournamentPage: React.FC = () => {
   const itemRefs = useRef<{ [key: string]: HTMLElement | null }>({});
   const gameKeyBracket = getGameKeyFromPlayers(player1 ?? "", player2 ?? "", "bracket");
   const gameKeyGroup = getGameKeyFromPlayers(player1 ?? "", player2 ?? "", "group");
+  // A link can name the players of a game in the other order, for example a link from a player page
+  const swappedGameKeyBracket = getGameKeyFromPlayers(player2 ?? "", player1 ?? "", "bracket");
+  const swappedGameKeyGroup = getGameKeyFromPlayers(player2 ?? "", player1 ?? "", "group");
   const scrollToGame = useCallback(() => {
-    const elementBracket = itemRefs.current[gameKeyBracket];
-    const elementGroup = itemRefs.current[gameKeyGroup];
+    const elementBracket = itemRefs.current[gameKeyBracket] ?? itemRefs.current[swappedGameKeyBracket];
+    const elementGroup = itemRefs.current[gameKeyGroup] ?? itemRefs.current[swappedGameKeyGroup];
     if (elementBracket || elementGroup) {
       (elementBracket ?? elementGroup)?.scrollIntoView({
         behavior: "smooth",
@@ -124,7 +127,7 @@ export const TournamentPage: React.FC = () => {
     } else {
       console.warn(`Item with ID '${gameKeyBracket}' nor '${gameKeyGroup}' not found.`);
     }
-  }, [gameKeyBracket, gameKeyGroup]);
+  }, [gameKeyBracket, gameKeyGroup, swappedGameKeyBracket, swappedGameKeyGroup]);
 
   useEffect(() => {
     // Run the scroll function after a short delay to ensure rendering is complete
@@ -166,6 +169,19 @@ export const TournamentPage: React.FC = () => {
     </div>
   );
 };
+
+/** True when the url names the players of the game, in any order */
+export function isParamGame(
+  game: { player1?: string | null; player2?: string | null },
+  paramPlayer1: string | null,
+  paramPlayer2: string | null,
+): boolean {
+  if (!game.player1 || !game.player2) return false;
+  return (
+    (game.player1 === paramPlayer1 && game.player2 === paramPlayer2) ||
+    (game.player1 === paramPlayer2 && game.player2 === paramPlayer1)
+  );
+}
 
 export function getGameKeyFromPlayers(
   player1: string | undefined | null,

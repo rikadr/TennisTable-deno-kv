@@ -4,7 +4,7 @@ import { useEventDbContext } from "../../wrappers/event-db-context";
 import { ProfilePicture } from "../player/profile-picture";
 import { Tournament } from "../../client/client-db/tournaments/tournament";
 import { GroupScorePlayer, TournamentGroupPlay } from "../../client/client-db/tournaments/group-play";
-import { getGameKeyFromPlayers } from "./tournament-page";
+import { getGameKeyFromPlayers, isParamGame } from "./tournament-page";
 import { Menu, MenuButton } from "@headlessui/react";
 import { useTennisParams } from "../../hooks/use-tennis-params";
 import { useMediaQuery } from "../../hooks/use-media-query";
@@ -190,11 +190,11 @@ export const TournamentGroupScores: React.FC<{
   const hasEnded = groupPlay.groupPlayEnded !== undefined;
   const columnCount = 7 + (hasGroupSizeAdjustment ? 2 : 0);
 
-  // Below md, the stats go on a line under the name. Full words do not fit as column headers on a phone.
-  const statCell = "hidden md:table-cell py-0.5 px-2 text-right w-[1%] whitespace-nowrap";
-  const statHeader = "hidden md:table-cell py-1 px-2 text-right font-light whitespace-nowrap";
-  const factorCell = "hidden lg:table-cell py-0.5 px-2 text-right w-[1%] whitespace-nowrap";
-  const factorHeader = "hidden lg:table-cell py-1 px-2 text-right font-light whitespace-nowrap";
+  // Below sm, the stats go on a line under the name. Full words do not fit as column headers on a phone.
+  const statCell = "hidden sm:table-cell py-0.5 px-2 text-right w-[1%] whitespace-nowrap";
+  const statHeader = "hidden sm:table-cell py-1 px-2 text-right font-light whitespace-nowrap";
+  const factorCell = "hidden md:table-cell py-0.5 px-2 text-right w-[1%] whitespace-nowrap";
+  const factorHeader = "hidden md:table-cell py-1 px-2 text-right font-light whitespace-nowrap";
 
   const row = (player: GroupScorePlayer, place: number, isEliminated: boolean) => {
     const gamesLeft = remainingOf.get(player.name) ?? 0;
@@ -220,7 +220,7 @@ export const TournamentGroupScores: React.FC<{
             <ProfilePicture playerId={player.name} size={24} shape="circle" border={2} />
             <div className="min-w-0 leading-tight">
               <div className="truncate font-normal">{context.playerName(player.name)}</div>
-              <div className="md:hidden text-xs leading-tight">{summary}</div>
+              <div className="sm:hidden text-xs leading-tight">{summary}</div>
             </div>
           </div>
         </td>
@@ -250,7 +250,7 @@ export const TournamentGroupScores: React.FC<{
       <SectionTitle>Group play standings</SectionTitle>
       <div className="bg-primary-background rounded-lg w-full overflow-hidden ring-1 ring-secondary-background">
         <table className="w-full text-primary-text border-collapse text-sm xs:text-base">
-          <thead className="border-b border-primary-text/50">
+          <thead className="bg-secondary-background text-secondary-text">
             <tr>
               <th className="py-1 px-1 xs:px-2 text-right font-light">#</th>
               <th className="py-1 px-1 xs:px-2 text-left font-normal">Player</th>
@@ -320,8 +320,8 @@ export const TournamentGroups: React.FC<
   return (
     <section>
       <SectionTitle>Groups</SectionTitle>
-      {/* A new column starts when there is room for one more card. A card is not much wider than a phone */}
-      <div className="grid gap-4 grid-cols-[repeat(auto-fill,minmax(min(100%,20rem),1fr))]">
+      {/* A new column starts when there is room for one more card. A card is not much wider than a phone, and sits in the middle of its column */}
+      <div className="grid gap-4 justify-items-center grid-cols-[repeat(auto-fill,minmax(min(100%,20rem),1fr))]">
         {tournament.groupPlay.groups.map((_, groupIndex) => (
           <GroupCard
             key={groupIndex}
@@ -439,7 +439,7 @@ const GroupGames: React.FC<{
           game.player1 && game.player2
             ? getGameKeyFromPlayers(game.player1, game.player2, "group")
             : "GR" + groupIndex + "G" + gameIndex;
-        const isParamSelectedGame = gameKey === getGameKeyFromPlayers(paramPlayer1, paramPlayer2, "group");
+        const isParamSelectedGame = isParamGame(game, paramPlayer1, paramPlayer2);
 
         return (
           <Menu key={gameKey} ref={(el) => (itemRefs.current[gameKey] = el)}>
@@ -628,7 +628,8 @@ const GroupPlayerEntry: React.FC<{
         </div>
         <OpponentStack results={results} availableWidth={rowWidth - fixedWidth - MIN_NAME_WIDTH} />
         <svg
-          className={classNames("w-5 h-5 shrink-0 transition-transform", expanded && "rotate-180")}
+          // The rotation puts the chevron above the button of the row. Clicks go through it to the button
+          className={classNames("w-5 h-5 shrink-0 transition-transform pointer-events-none", expanded && "rotate-180")}
           fill="none"
           stroke="currentColor"
           strokeWidth={2}
