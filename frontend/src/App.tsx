@@ -12,6 +12,7 @@ import { SignupPage } from "./pages/sign-up";
 import { WebSocketRefetcher } from "./wrappers/web-socket-refetcher";
 import { NavMenu } from "./wrappers/nav-menu";
 import { PvPPage } from "./pages/pvp-page";
+import { PvpProtoPage } from "./pages/pvp-proto/pvp-proto-page";
 import { CameraPage } from "./pages/camera/camera-page";
 import { DashboardPage } from "./pages/dashboard/dashboard-page";
 import { SimulationsPage } from "./pages/simulations/simulations-page";
@@ -108,6 +109,7 @@ function App() {
                           <Route path="/player/:name" element={<PlayerPage />} />
                           <Route path="/compare" element={<ComparePage />} />
                           <Route path="/1v1" element={<PvPPage />} />
+                          <Route path="/1v1-proto" element={<PvpProtoPage />} />
                           <Route path="/compare-players" element={<ComparePlayersPage />} />
                           <Route path="/player-network" element={<PlayerNetwork />} />
                           <Route path="/tournament">
