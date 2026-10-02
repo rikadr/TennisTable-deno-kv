@@ -183,7 +183,8 @@ export const PlayerPage: React.FC = () => {
                     {tournament.games.map((game) => (
                       <Link
                         key={tournament.tournament.id + playerId + game.oponent}
-                        to={`/tournament?tournament=${tournament.tournament.id}&player1=${game.player1}&player2=${game.player2}`}
+                        // This player is player 1, so the group play tab opens the row of this player
+                        to={`/tournament?tournament=${tournament.tournament.id}&player1=${playerId}&player2=${game.oponent}`}
                       >
                         <div className="relative w-full max-w-96 px-4 py-2 mt-2 rounded-lg flex items-center gap-x-4 h-12 hover:bg-secondary-background/70 bg-secondary-background ring-2 ring-secondary-text text-secondary-text">
                           <h2 className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2">VS</h2>

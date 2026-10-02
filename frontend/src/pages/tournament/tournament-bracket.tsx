@@ -6,8 +6,8 @@ import { useTennisParams } from "../../hooks/use-tennis-params";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { bracketLayerIndexToTournamentRound } from "./round-labels";
 import { ProfilePicture } from "../player/profile-picture";
-import { getGameKeyFromPlayers } from "./tournament-page";
-import { Link, useNavigate } from "react-router-dom";
+import { getGameKeyFromPlayers, isParamGame } from "./tournament-page";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 
 export const TournamentBracket = ({
   tournament,
@@ -242,7 +242,7 @@ export const TournamentGameListCard: React.FC<TournamentGameListCardProps> = ({
       ? getGameKeyFromPlayers(game.player1, game.player2, "bracket")
       : fallbackKey;
 
-  const isParamSelectedGame = !ghost && gameKey === getGameKeyFromPlayers(player1, player2, "bracket");
+  const isParamSelectedGame = !ghost && !useFallbackKey && isParamGame(game, player1, player2);
 
   const cardClassName = classNames(
     "relative w-full rounded-lg flex items-center gap-x-4 text-secondary-text",
@@ -529,7 +529,7 @@ export const GameTriangle: React.FC<GameTriangleProps> = ({
       ? getGameKeyFromPlayers(game.player1, game.player2, "bracket")
       : "L" + layerIndex + "G+" + gameIndex;
 
-  const isParamSelectedGame = gameKey === getGameKeyFromPlayers(player1, player2, "bracket");
+  const isParamSelectedGame = isParamGame(game, player1, player2);
 
   const cardClassName = classNames(
     wrapperStyles[size],
@@ -751,6 +751,23 @@ type GameMenuItemsProps = {
   showGameDetails: { show: boolean; playedAt?: number };
 };
 export const GameMenuItems: React.FC<GameMenuItemsProps> = (props) => {
+  const [, setSearchParams] = useSearchParams();
+  // Puts the game in the url of the tournament page before the game details open. Back then scrolls to the game
+  const rememberGameInUrl = () => {
+    if (!props.player1 || !props.player2) return;
+    const player1 = props.player1;
+    const player2 = props.player2;
+    setSearchParams(
+      (previous) => {
+        const params = new URLSearchParams(previous);
+        params.set("player1", player1);
+        params.set("player2", player2);
+        return params;
+      },
+      { replace: true },
+    );
+  };
+
   return (
     <MenuItems
       anchor="bottom"
@@ -794,6 +811,7 @@ export const GameMenuItems: React.FC<GameMenuItemsProps> = (props) => {
         <MenuItem>
           <Link
             to={`/game?time=${props.showGameDetails.playedAt}`}
+            onClick={rememberGameInUrl}
             className="w-full px-4 py-2 text-left data-[focus]:bg-secondary-text/30"
           >
             🔍 Game details
