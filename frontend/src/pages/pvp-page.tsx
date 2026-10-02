@@ -6,6 +6,10 @@ import { useEventDbContext } from "../wrappers/event-db-context";
 import { ProfilePicture } from "./player/profile-picture";
 import { PvPGameHistory, PvPWins, WinChancePrediction } from "./pvp-stats";
 
+// The left column stays on the screen while the games scroll. Only a screen with enough
+// height does this: on a shorter screen the bottom of the column would stay below the screen
+const STICKY_ON_TALL_SCREENS = "lg:[@media(min-height:820px)]:sticky lg:top-16";
+
 export const PvPPage: React.FC = () => {
   const { player1, player2 } = useTennisParams();
   const [, setSearchParams] = useSearchParams();
@@ -31,7 +35,7 @@ export const PvPPage: React.FC = () => {
           bothSelected && "lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]",
         )}
       >
-        <div className={classNames("space-y-3", bothSelected ? "lg:sticky lg:top-16" : "max-w-xl w-full mx-auto")}>
+        <div className={classNames("space-y-3", bothSelected ? STICKY_ON_TALL_SCREENS : "max-w-xl w-full mx-auto")}>
           <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-end gap-2">
             <PlayerPicker
               value={player1 ?? undefined}
@@ -86,7 +90,7 @@ const PlayerPicker: React.FC<{ value?: string; otherPlayer?: string; onChange: (
 
   return (
     <div className="relative group flex flex-col items-center gap-2 min-w-0">
-      <div className="rounded-full ring-2 ring-transparent group-hover:ring-primary-text/40 transition">
+      <div className="rounded-full ring-2 ring-transparent group-hover:ring-primary-text/40 group-focus-within:ring-primary-text transition">
         <ProfilePicture playerId={value} size={64} border={3} />
       </div>
       <div className="w-full text-center font-bold text-base sm:text-lg truncate">

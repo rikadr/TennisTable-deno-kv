@@ -56,9 +56,9 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
         "Each player has a pillar with the number of wins. Below the pillars, the page shows the share of the games that each player won. The win chance box has a Prediction history button that opens the predictions tab of the player page.",
       ),
       text(
-        "The match history shows 1 line for each game. The trophy is in the column of the winner, with the elo that the winner got. The column headers stay on the screen when you scroll.",
+        "The list of games shows 1 line for each game. The trophy is in the column of the winner, with the Elo that the winner got. The column headers stay on the screen when you scroll. Select a name in the column headers to open the player page.",
       ),
-      text("The box with the streaks, the score comparison and the score exchange is removed."),
+      text("The page no longer shows the box with the streaks, the score comparison and the score exchange."),
     ],
   },
   {

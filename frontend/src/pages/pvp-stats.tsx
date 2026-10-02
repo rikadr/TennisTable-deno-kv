@@ -12,11 +12,13 @@ type Props = {
   player2: string;
 };
 
-const percent = (part: number, whole: number) => (whole === 0 ? 0 : Math.round((part / whole) * 100));
-
 export const PvPWins: React.FC<Props> = ({ player1, player2 }) => {
   const context = useEventDbContext();
-  const { player1: p1, player2: p2, games } = context.pvp.compare(player1, player2);
+  const { player1: p1, player2: p2 } = context.pvp.compare(player1, player2);
+  const total = p1.wins + p2.wins;
+  // Player 2 gets the rest, so the 2 shares always add up to 100%
+  const p1Share = total === 0 ? 0 : Math.round((p1.wins / total) * 100);
+  const p2Share = total === 0 ? 0 : 100 - p1Share;
 
   return (
     <div>
@@ -25,9 +27,9 @@ export const PvPWins: React.FC<Props> = ({ player1, player2 }) => {
         <WinsPillar wins={p2.wins} oponentWins={p1.wins} />
       </div>
       <div className="flex justify-between gap-2 text-xs text-primary-text/70 px-1 mt-2">
-        <span>{percent(p1.wins, games.length)}% of the games</span>
-        <span>{games.length} games</span>
-        <span>{percent(p2.wins, games.length)}% of the games</span>
+        <span>{p1Share}% of the games</span>
+        <span>{total} games</span>
+        <span>{p2Share}% of the games</span>
       </div>
     </div>
   );
@@ -245,10 +247,14 @@ export const PvPGameHistory: React.FC<Props> = ({ player1, player2 }) => {
 const PlayerHeader: React.FC<{ playerId: string }> = ({ playerId }) => {
   const context = useEventDbContext();
   return (
-    <div className="flex items-center justify-center gap-1.5 min-w-0">
+    <Link
+      to={`/player/${playerId}`}
+      className="flex items-center justify-center gap-1.5 min-w-0 hover:underline"
+      title={`Open the player page of ${context.playerName(playerId)}`}
+    >
       <ProfilePicture playerId={playerId} size={20} />
       <span className="truncate">{context.playerName(playerId)}</span>
-    </div>
+    </Link>
   );
 };
 
