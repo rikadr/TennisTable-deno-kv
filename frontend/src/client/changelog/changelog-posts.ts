@@ -42,6 +42,26 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
+    slug: "compare-1v1-layout",
+    title: "New layout for Compare 1v1",
+    date: "2026-10-02",
+    tags: ["feature-update", "removed-feature"],
+    summary:
+      "Compare 1v1 shows the wins, the win chance and the games between 2 players. On a wide screen the games are next to the wins.",
+    body: [
+      text(
+        "Select the picture or the name of a player to change the player. A button between the players swaps the 2 sides.",
+      ),
+      text(
+        "Each player has a pillar with the number of wins. Below the pillars, the page shows the share of the games that each player won. The win chance box has a Prediction history button that opens the predictions tab of the player page.",
+      ),
+      text(
+        "The match history shows 1 line for each game. The trophy is in the column of the winner, with the elo that the winner got. The column headers stay on the screen when you scroll.",
+      ),
+      text("The box with the streaks, the score comparison and the score exchange is removed."),
+    ],
+  },
+  {
     slug: "group-play-tab-refresh",
     title: "New layout for the group play tab",
     date: "2026-10-01",
