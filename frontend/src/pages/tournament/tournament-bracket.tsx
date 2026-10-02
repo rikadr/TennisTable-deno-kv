@@ -752,7 +752,7 @@ type GameMenuItemsProps = {
 };
 export const GameMenuItems: React.FC<GameMenuItemsProps> = (props) => {
   const [, setSearchParams] = useSearchParams();
-  // Puts the game in the url of the tournament page before the game details open. Back then scrolls to the game
+  // Puts the game in the url of the tournament page before the game details or the comparison open. Back then scrolls to the game
   const rememberGameInUrl = () => {
     if (!props.player1 || !props.player2) return;
     const player1 = props.player1;
@@ -822,6 +822,7 @@ export const GameMenuItems: React.FC<GameMenuItemsProps> = (props) => {
         <MenuItem>
           <Link
             to={`/1v1/?player1=${props.player1 || ""}&player2=${props.player2 || ""}`}
+            onClick={rememberGameInUrl}
             className="w-full px-4 py-2 text-left data-[focus]:bg-secondary-text/30"
           >
             🥊👀 Compare 1v1
