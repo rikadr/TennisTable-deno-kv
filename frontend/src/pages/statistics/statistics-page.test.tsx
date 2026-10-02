@@ -62,18 +62,21 @@ function buildEvents(gameCount = 120): EventType[] {
         data:
           index % 4 === 0
             ? {
-                setsWon: { gameWinner: 1, gameLoser: 0 },
-                setPoints: [{ gameWinner: 11, gameLoser: 4 }],
+                setsWon: { gameWinner: 2, gameLoser: 0 },
+                setPoints: [
+                  { gameWinner: 11, gameLoser: 4 },
+                  { gameWinner: 11, gameLoser: 4 },
+                ],
                 // Half of the tracked games record the side of the table.
-                gameWinnerSides: index % 8 === 0 ? ["B" as const] : undefined,
-                pointSequences: ["WWWWLWWWWLWWLWL"],
+                gameWinnerSides: index % 8 === 0 ? ["B" as const, "G" as const] : undefined,
+                pointSequences: ["WWWWLWWWWLWWLWL", "WWWWLWWWWLWWLWL"],
                 tracking: {
                   version: 1,
                   source: index % 8 === 0 ? "live-game" : "track-game",
                   startedAt: playedAt,
-                  pointDeltas: [new Array(15).fill(80)],
+                  pointDeltas: [new Array(15).fill(80), new Array(15).fill(80)],
                   endedAfter: 20,
-                  firstServers: "W",
+                  firstServers: "WL",
                   corrections: 0,
                 },
               }
@@ -148,6 +151,8 @@ describe("StatisticsPage", () => {
     expect(screen.getByText("Median game length")).toBeInTheDocument();
     expect(screen.getByText("To close a set")).toBeInTheDocument();
     expect(screen.getByText("Points won on the bad side")).toBeInTheDocument();
+    expect(screen.getByText("Point share on the bad side")).toBeInTheDocument();
+    expect(screen.getByText("The stronger player takes the bad side")).toBeInTheDocument();
     expect(screen.queryByText(/Not enough/)).not.toBeInTheDocument();
   });
 

@@ -28,7 +28,13 @@ import {
   SERIES_COLOR,
   TooltipCard,
 } from "./percent-chart";
-import { DetailLevelPoint, PointLevelStats, SetLevelStats } from "./statistics-aggregations";
+import {
+  DetailLevelPoint,
+  PointLevelStats,
+  SetLevelStats,
+  SIDE_HOURS_PER_GROUP,
+  SideSwingByHour,
+} from "./statistics-aggregations";
 
 const formatMonth = (key: string): string => {
   const [year, month] = key.split("-");
@@ -249,5 +255,42 @@ export const PointsPerGameChart: React.FC<{
         isAnimationActive={false}
       />
     </LineChart>
+  </ResponsiveContainer>
+);
+
+/** A difference of 2 percentages, as "−2,1 pp". */
+export const swingLabel = (value: number): string => `${fmtNum(value, { digits: 1, signedPositive: true })} pp`;
+
+const hourLabel = (hour: number): string => `${String(hour % 24).padStart(2, "0")}:00`;
+
+/**
+ * The difference the bad side makes, by the time of the day the game starts.
+ * A bar below 0 is a time when the bad side costs points.
+ */
+export const SideSwingByHourChart: React.FC<{ data: SideSwingByHour[] }> = ({ data }) => (
+  <ResponsiveContainer width="100%" height={200}>
+    <BarChart data={data} margin={{ top: 10, right: 10, bottom: 10, left: -10 }}>
+      <CartesianGrid strokeDasharray="3 3" stroke={AXIS_COLOR} opacity={0.3} />
+      <XAxis dataKey="hour" stroke={AXIS_COLOR} tick={{ fontSize: 11 }} tickFormatter={hourLabel} />
+      <YAxis
+        stroke={AXIS_COLOR}
+        tick={{ fontSize: 11 }}
+        tickFormatter={(value: number) => fmtNum(value, { digits: 1, signedPositive: true }) ?? ""}
+      />
+      <ReferenceLine y={0} stroke={AXIS_COLOR} />
+      <Tooltip
+        cursor={false}
+        content={({ active, payload, label }) => {
+          if (!active || !payload?.length) return null;
+          const hour = Number(label);
+          return (
+            <TooltipCard title={`${hourLabel(hour)} to ${hourLabel(hour + SIDE_HOURS_PER_GROUP)}`}>
+              <p>{swingLabel(Number(payload[0].value))} of the points on the bad side</p>
+            </TooltipCard>
+          );
+        }}
+      />
+      <Bar dataKey="swing" fill={SERIES_COLOR} radius={[4, 4, 4, 4]} isAnimationActive={false} />
+    </BarChart>
   </ResponsiveContainer>
 );
