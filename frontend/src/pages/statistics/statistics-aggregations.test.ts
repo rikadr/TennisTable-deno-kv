@@ -5,6 +5,7 @@ import { Elo } from "../../client/client-db/elo";
 import {
   GapView,
   activityTrend,
+  CLOSE_MATCHUP_GAP,
   detailLevels,
   detailLevelTrend,
   forEachGameWithPreGameStanding,
@@ -19,7 +20,10 @@ import {
   pointLevelStats,
   ratingGapDistribution,
   setLevelStats,
+  setWinChance,
+  sideSwingByHour,
   tableSideStats,
+  tableSidesByRating,
   timeOfDayShares,
   trackedLevelStats,
   upsetRate,
@@ -863,66 +867,62 @@ describe("tableSideStats", () => {
   const SET_TO_THE_WINNER = "WWWWWWWWWWWLL";
   /** 11-2 to the game loser. */
   const SET_TO_THE_LOSER = "LLLLLLLLLLLWW";
+  /** 11-9 to the game winner. */
+  const CLOSE_TO_THE_WINNER = "WWWWWWWWWLLLLLLLLLWW";
 
   it("stays silent when no game records the sides", () => {
     expect(tableSideStats([...games(10), sidedGame([SET_TO_THE_WINNER])])).toBeUndefined();
   });
 
-  it("gives the sets and the points the player on the bad side won", () => {
-    // Set 1: the game winner is on the bad side and takes 11 of 13 points.
-    // Set 2: the game loser is on the bad side and takes 11 of 13 points.
-    // The bad side wins both sets, with 22 of the 26 points.
-    const played = [sidedGame([SET_TO_THE_WINNER, SET_TO_THE_LOSER], "BG")];
+  it("compares the bad side of sets 1 and 2 with the good side of the same game", () => {
+    // Set 1 on the bad side: 11 of 20 points. Set 2 on the good side: 11 of
+    // 13 points. The player wins a smaller share on the bad side.
+    const stats = tableSideStats([sidedGame([CLOSE_TO_THE_WINNER, SET_TO_THE_WINNER], "BG")])!;
 
-    const stats = tableSideStats(played)!;
-
-    expect(stats.setsWonOnTheBadSide).toBe(100);
-    expect(stats.pointsWonOnTheBadSide).toBeCloseTo((22 / 26) * 100);
+    expect(stats.pointsPerSet).toBeCloseTo((11 / 20 - 11 / 13) * 16.5);
+    expect(stats.evenMatchupSetsWon).toBeLessThan(50);
   });
 
-  it("counts a neutral set apart, and not as a set with a bad side", () => {
-    const played = [sidedGame([SET_TO_THE_WINNER, SET_TO_THE_LOSER], "NB")];
+  it("gives the same points per set from the view of either player", () => {
+    // The same 2 sets, with the game loser on the bad side in set 1 instead.
+    const fromTheWinner = tableSideStats([sidedGame([CLOSE_TO_THE_WINNER, SET_TO_THE_WINNER], "BG")])!;
+    const fromTheLoser = tableSideStats([sidedGame([SET_TO_THE_WINNER, CLOSE_TO_THE_WINNER], "GB")])!;
+
+    expect(fromTheLoser.pointsPerSet).toBeCloseTo(fromTheWinner.pointsPerSet!);
+  });
+
+  it("reads 0 when a player wins the same share on both sides, whatever the gap in level", () => {
+    const stats = tableSideStats([sidedGame([SET_TO_THE_WINNER, SET_TO_THE_WINNER], "BG")])!;
+
+    expect(stats.pointsPerSet).toBeCloseTo(0);
+    expect(stats.evenMatchupSetsWon).toBeCloseTo(50);
+  });
+
+  it("leaves out the deciding set, and the games that keep the same side", () => {
+    // Sets 1 and 2 decide it. The deciding set is left out.
+    const decider = sidedGame([SET_TO_THE_WINNER, SET_TO_THE_LOSER, CLOSE_TO_THE_WINNER], "BGB");
+    const sameSide = sidedGame([CLOSE_TO_THE_WINNER, SET_TO_THE_WINNER], "BB");
+    const neutral = sidedGame([CLOSE_TO_THE_WINNER, SET_TO_THE_WINNER], "NB");
+
+    // Set 1: 11 of 13 on the bad side. Set 2: 2 of 13 on the good side.
+    expect(tableSideStats([decider])!.pointsPerSet).toBeCloseTo((11 / 13 - 2 / 13) * 13);
+    expect(tableSideStats([sameSide, neutral])!.pointsPerSet).toBeUndefined();
+  });
+
+  it("counts the neutral sets, and measures the coverage over the games with a score only", () => {
+    const played = [
+      sidedGame([SET_TO_THE_WINNER, SET_TO_THE_LOSER], "NB"),
+      sidedGame([SET_TO_THE_WINNER]),
+      ...games(10),
+    ];
 
     const stats = tableSideStats(played)!;
 
     expect(stats.neutralSets).toBe(50);
-    // Only set 2 has a bad side. The game winner is on it and loses the set.
-    expect(stats.setsWonOnTheBadSide).toBe(0);
-    expect(stats.pointsWonOnTheBadSide).toBeCloseTo((2 / 13) * 100);
-  });
-
-  it("holds every share back when every recorded set is neutral", () => {
-    const stats = tableSideStats([sidedGame([SET_TO_THE_WINNER], "N")])!;
-
-    expect(stats.neutralSets).toBe(100);
-    expect(stats.setsWonOnTheBadSide).toBeUndefined();
-    expect(stats.pointsWonOnTheBadSide).toBeUndefined();
-    expect(stats.wonWithMoreBadSideSets).toBeUndefined();
-  });
-
-  it("finds the games won with more sets on the bad side than the opponent", () => {
-    // The game winner has the bad side in 2 of the 3 sets and wins the game.
-    const uneven = sidedGame([SET_TO_THE_WINNER, SET_TO_THE_LOSER, SET_TO_THE_WINNER], "BGB");
-    // Both players have the bad side once, so the game has no player with more.
-    const even = sidedGame([SET_TO_THE_WINNER, SET_TO_THE_WINNER], "BG");
-
-    expect(tableSideStats([uneven])!.wonWithMoreBadSideSets).toBe(100);
-    expect(tableSideStats([even])!.wonWithMoreBadSideSets).toBeUndefined();
-  });
-
-  it("counts only the sets with a recorded side when a game records some", () => {
-    // Only set 1 has a side: the game winner is on the bad side and wins it.
-    const played = [sidedGame([SET_TO_THE_WINNER, SET_TO_THE_LOSER], "B")];
-
-    const stats = tableSideStats(played)!;
-
-    expect(stats.setsWonOnTheBadSide).toBe(100);
-    expect(stats.pointsWonOnTheBadSide).toBeCloseTo((11 / 13) * 100);
+    expect(stats.sidesRecorded).toBe(50);
   });
 
   it("counts a game that records the sides without the set points", () => {
-    // Sets won 2-1 with sides but no points: the game-level share works, and
-    // the set and point shares have nothing to read.
     const noPoints = game({
       score: { setsWon: { gameWinner: 2, gameLoser: 1 }, gameWinnerSides: ["B", "G", "B"] },
     });
@@ -930,23 +930,109 @@ describe("tableSideStats", () => {
     const stats = tableSideStats([noPoints])!;
 
     expect(stats.sidesRecorded).toBe(100);
-    expect(stats.neutralSets).toBe(0);
-    expect(stats.setsWonOnTheBadSide).toBeUndefined();
-    expect(stats.pointsWonOnTheBadSide).toBeUndefined();
-    // The game winner had the bad side in 2 of the 3 sets and won the game.
-    expect(stats.wonWithMoreBadSideSets).toBe(100);
+    expect(stats.pointsPerSet).toBeUndefined();
+  });
+});
+
+describe("setWinChance", () => {
+  it("is 50% for an even point and grows with the chance to win a point", () => {
+    expect(setWinChance(0.5)).toBeCloseTo(0.5);
+    expect(setWinChance(0.55)).toBeGreaterThan(0.6);
+    expect(setWinChance(0.45)).toBeCloseTo(1 - setWinChance(0.55));
+    expect(setWinChance(1)).toBeCloseTo(1);
+    expect(setWinChance(0)).toBeCloseTo(0);
+  });
+});
+
+describe("sideSwingByHour", () => {
+  function swingGame(hour: number): Game {
+    return game({
+      playedAt: new Date(2024, 0, 1, hour, 30).getTime(),
+      score: {
+        setsWon: { gameWinner: 2, gameLoser: 0 },
+        setPoints: [
+          { gameWinner: 11, gameLoser: 9 },
+          { gameWinner: 11, gameLoser: 2 },
+        ],
+        gameWinnerSides: ["B", "G"],
+      },
+    });
+  }
+
+  it("gives the points per set by the hour the game starts in, and leaves out a small hour", () => {
+    const played = [
+      ...Array.from({ length: MIN_GAMES_PER_BUCKET }, () => swingGame(8)),
+      ...Array.from({ length: MIN_GAMES_PER_BUCKET }, () => swingGame(9)),
+      ...Array.from({ length: MIN_GAMES_PER_BUCKET - 1 }, () => swingGame(14)),
+    ];
+
+    const hours = sideSwingByHour(played);
+
+    expect(hours.map((slot) => slot.hour)).toEqual([8, 9]);
+    expect(hours[0].pointsPerSet).toBeCloseTo((11 / 20 - 11 / 13) * 16.5);
+  });
+});
+
+describe("tableSidesByRating", () => {
+  const players = [player("alice"), player("bob")];
+
+  function sided(partial: Partial<Game>, gameWinnerSides: ("B" | "G" | "N")[]): Game {
+    return game({
+      ...partial,
+      score: {
+        setsWon: { gameWinner: 1, gameLoser: 0 },
+        setPoints: [{ gameWinner: 11, gameLoser: 5 }],
+        gameWinnerSides,
+      },
+    });
+  }
+
+  it("finds how often the stronger player takes the bad side in set 1", () => {
+    // Game 1 is even, so it has no stronger player. Alice is stronger after it.
+    const played = [
+      sided({ winner: "alice", loser: "bob" }, ["B"]),
+      sided({ winner: "alice", loser: "bob" }, ["B"]),
+      sided({ winner: "bob", loser: "alice" }, ["G"]),
+      sided({ winner: "alice", loser: "bob" }, ["G"]),
+    ];
+
+    // Games 2 and 3 put alice on the bad side. Game 4 puts bob on it.
+    expect(tableSidesByRating(played, players, 0)!.strongerTakesTheBadSide).toBeCloseTo((2 / 3) * 100);
   });
 
-  it("measures the coverage over the games with a score only", () => {
-    const played = [sidedGame([SET_TO_THE_WINNER], "B"), sidedGame([SET_TO_THE_WINNER]), ...games(10)];
+  it("gives the games won with more sets on the bad side in a close matchup, against the ratings", () => {
+    const played = [
+      // Even ratings: the game winner had the bad side in 2 of 3 sets.
+      sided({ winner: "alice", loser: "bob" }, ["B", "G", "B"]),
+      // Alice is 32 points ahead. Bob had the bad side in 2 of 3 sets, and lost.
+      sided({ winner: "alice", loser: "bob" }, ["G", "B", "G"]),
+      // 1 bad side each: left out.
+      sided({ winner: "bob", loser: "alice" }, ["B", "G"]),
+    ];
 
-    expect(tableSideStats(played)!.sidesRecorded).toBe(50);
+    const { moreBadSideSets } = tableSidesByRating(played, players, 0)!;
+
+    expect(moreBadSideSets!.won).toBe(50);
+    const bobExpected = Elo.expectedResult(Elo.INITIAL_ELO - Elo.K / 2, Elo.INITIAL_ELO + Elo.K / 2);
+    expect(moreBadSideSets!.expected).toBeCloseTo(((0.5 + bobExpected) / 2) * 100);
   });
 
-  it("reports shares and never a count", () => {
-    const stats = tableSideStats([sidedGame([SET_TO_THE_WINNER], "B")])!;
+  it("leaves out the matchups with a large rating gap", () => {
+    // Alice wins every game, so the gap grows past the close matchup limit.
+    const played = Array.from({ length: 30 }, () => sided({ winner: "alice", loser: "bob" }, ["B"]));
 
-    expect(Object.values(stats).every((value) => value === undefined || (value >= 0 && value <= 100))).toBe(true);
+    const close = tableSidesByRating(played.slice(0, 2), players, 0)!.moreBadSideSets!;
+    const all = tableSidesByRating(played, players, 0)!.moreBadSideSets!;
+
+    expect(close.won).toBe(100);
+    // The far matchups do not count, so the expected share stays near even.
+    expect(all.expected).toBeLessThan(Elo.expectedResult(Elo.INITIAL_ELO + CLOSE_MATCHUP_GAP, Elo.INITIAL_ELO) * 100);
+  });
+
+  it("aggregates only the games from the cutoff, and stays silent without sides", () => {
+    const played = [sided({ playedAt: MONDAY - DAY_MS }, ["B"]), game()];
+
+    expect(tableSidesByRating(played, players, MONDAY)).toBeUndefined();
   });
 });
 

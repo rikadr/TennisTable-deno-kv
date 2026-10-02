@@ -28,7 +28,7 @@ import {
   SERIES_COLOR,
   TooltipCard,
 } from "./percent-chart";
-import { DetailLevelPoint, PointLevelStats, SetLevelStats } from "./statistics-aggregations";
+import { DetailLevelPoint, PointLevelStats, SetLevelStats, SideSwingByHour } from "./statistics-aggregations";
 
 const formatMonth = (key: string): string => {
   const [year, month] = key.split("-");
@@ -249,5 +249,44 @@ export const PointsPerGameChart: React.FC<{
         isAnimationActive={false}
       />
     </LineChart>
+  </ResponsiveContainer>
+);
+
+/** Points per set with a sign, as "−1,2". */
+export const pointsPerSetLabel = (value: number): string => fmtNum(value, { digits: 1, signedPositive: true }) ?? "–";
+
+const hourLabel = (hour: number): string => `${String(hour % 24).padStart(2, "0")}:00`;
+
+/**
+ * The points per set the bad side costs, by the hour the game starts in. A bar
+ * below 0 is an hour when the bad side costs points.
+ */
+export const SideSwingByHourChart: React.FC<{ data: SideSwingByHour[] }> = ({ data }) => (
+  <ResponsiveContainer width="100%" height={200}>
+    <BarChart data={data} margin={{ top: 10, right: 10, bottom: 10, left: -10 }}>
+      <CartesianGrid strokeDasharray="3 3" stroke={AXIS_COLOR} opacity={0.3} />
+      <XAxis dataKey="hour" stroke={AXIS_COLOR} tick={{ fontSize: 11 }} tickFormatter={hourLabel} />
+      <YAxis
+        stroke={AXIS_COLOR}
+        tick={{ fontSize: 11 }}
+        tickFormatter={pointsPerSetLabel}
+        // The bars grow from 0, so the axis always holds it.
+        domain={[(dataMin: number) => Math.min(0, dataMin), (dataMax: number) => Math.max(0, dataMax)]}
+      />
+      <ReferenceLine y={0} stroke={AXIS_COLOR} />
+      <Tooltip
+        cursor={false}
+        content={({ active, payload, label }) => {
+          if (!active || !payload?.length) return null;
+          const hour = Number(label);
+          return (
+            <TooltipCard title={`${hourLabel(hour)} to ${hourLabel(hour + 1)}`}>
+              <p>{pointsPerSetLabel(Number(payload[0].value))} points per set on the bad side</p>
+            </TooltipCard>
+          );
+        }}
+      />
+      <Bar dataKey="pointsPerSet" fill={SERIES_COLOR} radius={[4, 4, 4, 4]} isAnimationActive={false} />
+    </BarChart>
   </ResponsiveContainer>
 );

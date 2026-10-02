@@ -42,6 +42,26 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
+    slug: "bad-side-compared-with-the-same-player",
+    title: "Bad side statistics that remove the difference in level",
+    date: "2026-10-02",
+    tags: ["feature-update"],
+    summary:
+      "The bad side card on the statistics page shows the points per set the bad side costs, and how often a player with more sets on the bad side wins a close matchup.",
+    body: [
+      list(
+        "Points per set on the bad side: the points a player loses per set on the bad side. It compares the player with themselves on the good side. It uses sets 1 and 2, because the players change sides after set 1.",
+        "More sets on the bad side, in a close matchup: how often the player with more sets on the bad side wins the game. It uses games with a rating gap below 100. It also shows the share that the ratings expect.",
+      ),
+      text(
+        "A chart shows the points per set by the hour the game starts in, because the light changes during the day. An hour shows when it has 20 of these games.",
+      ),
+      text(
+        "The old share of the sets and the points won on the bad side mixed the side with the level of the players. The stronger player often takes the bad side, and then wins most sets on it. If you used those shares to judge the bad side, use the new numbers instead. The old shares are removed.",
+      ),
+    ],
+  },
+  {
     slug: "compare-1v1-layout",
     title: "New layout for Compare 1v1",
     date: "2026-10-02",
