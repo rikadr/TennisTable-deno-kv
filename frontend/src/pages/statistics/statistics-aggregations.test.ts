@@ -1021,9 +1021,8 @@ describe("sideSwingByHour", () => {
 
     const hours = sideSwingByHour(played);
 
-    // 08:30 and 09:30 are in the same 2-hour slot, and 14:30 has too few games.
-    expect(hours).toHaveLength(1);
-    expect(hours[0].hour).toBe(8);
+    // Each hour is its own slot, and 14:30 has too few games.
+    expect(hours.map((slot) => slot.hour)).toEqual([8, 9]);
     expect(hours[0].swing).toBeCloseTo((11 / 20) * 100 - (11 / 13) * 100);
   });
 });

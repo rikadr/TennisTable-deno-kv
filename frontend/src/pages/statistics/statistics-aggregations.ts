@@ -1066,8 +1066,8 @@ export function tableSideStats(games: Game[]): TableSideStats | undefined {
   };
 }
 
-/** A game starts in the group of this many hours from the start of an even hour. */
-export const SIDE_HOURS_PER_GROUP = 2;
+/** The length of a time of the day group of `sideSwingByHour`, in hours. */
+export const SIDE_HOURS_PER_GROUP = 1;
 
 export type SideSwingByHour = {
   /** The first hour of the group, 0-23. */

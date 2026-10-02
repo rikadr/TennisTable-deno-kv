@@ -53,7 +53,7 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
         "The players change sides after set 1. So sets 1 and 2 put the same 2 players once on each side. The card takes the share of the points a player wins on the bad side, minus their share on the good side. It shows this difference in percentage points, as points per set, and as the sets the bad side wins when 2 equal players meet.",
       ),
       text(
-        "A chart shows the same difference by the time of the day. The light can make one side worse, and the light changes during the day. A 2-hour slot shows when it has 20 of these games.",
+        "A chart shows the same difference by the time of the day. The light can make one side worse, and the light changes during the day. A 1-hour slot shows when it has 20 of these games.",
       ),
       text(
         "A second card, Who takes the bad side, shows how often the stronger player takes the bad side in set 1. It also shows the share of the points the bad side wins, by the rating gap before the game. The rating of a new player can be far from their true level, so use these groups only as an indication.",
