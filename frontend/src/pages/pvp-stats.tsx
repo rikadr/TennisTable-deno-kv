@@ -1,162 +1,66 @@
 import { useEventDbContext } from "../wrappers/event-db-context";
 import { classNames } from "../common/class-names";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { RelativeTime } from "../common/date-utils";
 import { fmtNum } from "../common/number-utils";
 import { useEffect, useState } from "react";
 import { GameMarkers } from "./game/game-markers";
+import { ProfilePicture } from "./player/profile-picture";
 
 type Props = {
-  player1?: string;
-  player2?: string;
+  player1: string;
+  player2: string;
 };
 
-export const PvPStats: React.FC<Props> = ({ player1, player2 }) => {
+export const PvPWins: React.FC<Props> = ({ player1, player2 }) => {
   const context = useEventDbContext();
-  const navigate = useNavigate();
-
-  if (!player1 || !player2) {
-    return (
-      <div className="text-primary-text bg-primary-background rounded-lg p-8 text-center">
-        <p className="text-lg text-secondary-text/70">Please select players to compare</p>
-      </div>
-    );
-  }
-
-  const { player1: p1, player2: p2, games } = context.pvp.compare(player1, player2);
+  const { player1: p1, player2: p2 } = context.pvp.compare(player1, player2);
+  const total = p1.wins + p2.wins;
+  // Player 2 gets the rest, so the 2 shares always add up to 100%
+  const p1Share = total === 0 ? 0 : Math.round((p1.wins / total) * 100);
+  const p2Share = total === 0 ? 0 : 100 - p1Share;
 
   return (
-    <div className="space-y-6 text-primary-text">
-      {/* Win Rate Pillars */}
-      <div className="flex gap-4">
-        <WinsPillar name={p1.name} wins={p1.wins} oponentWins={p2.wins} />
-        <WinsPillar name={p2.name} wins={p2.wins} oponentWins={p1.wins} />
+    <div>
+      <div className="flex items-end gap-3 h-56 sm:h-64">
+        <WinsPillar wins={p1.wins} oponentWins={p2.wins} />
+        <WinsPillar wins={p2.wins} oponentWins={p1.wins} />
       </div>
-
-      {/* Prediction Section */}
-      <WinChancePrediction player1={player1} player2={player2} player1Name={p1.name} player2Name={p2.name} />
-
-      {/* Stats Grid */}
-      <CombinedStatCard player1={p1} player2={p2} />
-
-      {/* Games History */}
-      <div className="bg-primary-background rounded-lg p-3 xs:p-5 border border-secondary-background/30">
-        <h3 className="text-xl font-semibold mb-4">Match History</h3>
-        {games.length === 0 ? (
-          <div className="text-center py-8 text-primary-text/60">No games played yet</div>
-        ) : (
-          <div className="max-w-xl mx-auto">
-            <table className="w-full text-primary-text border-collapse">
-              <thead className="border-b border-primary-text/50">
-                <tr className="text-xs xs:text-sm md:text-base text-primary-text">
-                  <th className="py-1 px-1 xs:px-2 md:px-3 text-center font-medium">Winner</th>
-                  <th className="py-1 px-1 xs:px-2 md:px-3 text-right font-light">Pts</th>
-                  <th className="py-1 px-1 xs:px-2 md:px-3 text-center font-semibold">Score</th>
-                  <th className="py-1 px-1 xs:px-2 md:px-3 text-right font-normal">Time</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-primary-text/50">
-                {games.map((_, index, list) => {
-                  const game = list[list.length - 1 - index];
-                  const isPlayer1Win = game.result === "win";
-                  const winner = isPlayer1Win ? p1 : p2;
-                  const setStrings =
-                    game.score?.setPoints?.map((set) =>
-                      isPlayer1Win ? `${set.gameWinner}-${set.gameLoser}` : `${set.gameLoser}-${set.gameWinner}`,
-                    ) ?? [];
-                  // Max 3 sets per line on tiny screens
-                  const setLines = Array.from({ length: Math.ceil(setStrings.length / 3) }, (_, i) =>
-                    setStrings.slice(i * 3, i * 3 + 3).join(", "),
-                  );
-
-                  return (
-                    <tr
-                      key={`${p1.playerId}-${p2.playerId}-${index}`}
-                      onClick={() => navigate(`/game?time=${game.time}`)}
-                      className="bg-primary-background hover:bg-secondary-background hover:text-secondary-text cursor-pointer transition-colors text-xs xs:text-sm md:text-base"
-                    >
-                      {/* Three slots: player 1's trophy | winner name | player 2's trophy.
-                        Below xs the trophy shrinks and the empty opposite slot collapses. */}
-                      <td className="py-1 px-1 xs:px-2 md:px-3 w-full max-w-0">
-                        <div className="flex items-center min-w-0">
-                          <span
-                            className={classNames(
-                              "shrink-0 text-center text-sm xs:text-lg w-4 xs:w-6",
-                              !isPlayer1Win && "hidden xs:block",
-                            )}
-                          >
-                            {isPlayer1Win && "🏆"}
-                          </span>
-                          <span className="font-medium truncate flex-1 text-center">{winner.name}</span>
-                          <span
-                            className={classNames(
-                              "shrink-0 text-center text-sm xs:text-lg w-4 xs:w-6",
-                              isPlayer1Win && "hidden xs:block",
-                            )}
-                          >
-                            {!isPlayer1Win && "🏆"}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="py-1 px-1 xs:px-2 md:px-3 text-right font-light italic w-[1%] whitespace-nowrap">
-                        {fmtNum(Math.abs(game.pointsDiff), { signedPositive: true })}
-                      </td>
-                      <td className="py-1 px-1 xs:px-2 md:px-3 text-center w-[1%] whitespace-nowrap">
-                        {/* Tiny screens: sets on top, per-set points below (max 3 per line). xs+: inline. */}
-                        <div className="flex flex-col xs:flex-row xs:flex-nowrap xs:items-baseline xs:justify-center xs:gap-x-2">
-                          {game.score && (
-                            <span className="font-semibold text-[11px] xs:text-sm md:text-base">
-                              {isPlayer1Win
-                                ? `${game.score.setsWon.gameWinner} - ${game.score.setsWon.gameLoser}`
-                                : `${game.score.setsWon.gameLoser} - ${game.score.setsWon.gameWinner}`}
-                              <GameMarkers score={game.score} />
-                            </span>
-                          )}
-                          {setStrings.length > 0 && (
-                            <>
-                              <span className="xs:hidden text-[10px] opacity-60 italic">
-                                {setLines.map((line, lineIndex) => (
-                                  <span key={lineIndex} className="block whitespace-nowrap">
-                                    {line}
-                                  </span>
-                                ))}
-                              </span>
-                              <span className="hidden xs:inline text-xs opacity-60 italic whitespace-nowrap">
-                                {setStrings.join(", ")}
-                              </span>
-                            </>
-                          )}
-                        </div>
-                      </td>
-                      <td className="py-1 px-1 xs:px-2 md:px-3 text-right text-xs md:text-sm opacity-70 w-[1%] whitespace-nowrap">
-                        <RelativeTime date={new Date(game.time)} variant="auto" />
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
+      <div className="flex justify-between gap-2 text-xs text-primary-text/70 px-1 mt-2">
+        <span>{p1Share}% of the games</span>
+        <span>{total} games</span>
+        <span>{p2Share}% of the games</span>
       </div>
     </div>
   );
 };
 
+const WinsPillar: React.FC<{ wins: number; oponentWins: number }> = ({ wins, oponentWins }) => {
+  // A pillar with few wins keeps a minimum height, so its number and label stay inside it
+  const height = (wins / Math.max(wins, oponentWins, 1)) * 100;
+
+  return (
+    <div
+      className="flex-1 flex flex-col items-center pt-3 rounded-t-[2rem] bg-secondary-background text-secondary-text shadow-lg transition-all duration-500"
+      style={{ height: `max(${height}%, 6.5rem)` }}
+    >
+      <span className="text-5xl sm:text-6xl font-bold tabular-nums leading-none">{wins}</span>
+      <span className="text-[11px] uppercase tracking-widest opacity-80 mt-1">wins</span>
+    </div>
+  );
+};
+
 const PredictionCard: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <div className="bg-secondary-background/20 rounded-lg p-4 border border-secondary-background/30">
-    <h3 className="text-lg font-semibold text-center">Win Chanse Prediction</h3>
+  <div className="bg-secondary-background/20 rounded-2xl p-3 sm:p-4 ring-1 ring-secondary-background/40">
+    <h3 className="text-xs uppercase tracking-wider text-primary-text/70 text-center">Win chance in the next game</h3>
     {children}
   </div>
 );
 
-const WinChancePrediction: React.FC<{
-  player1: string;
-  player2: string;
-  player1Name: string;
-  player2Name: string;
-}> = ({ player1, player2, player1Name, player2Name }) => {
+export const WinChancePrediction: React.FC<Props> = ({ player1, player2 }) => {
   const context = useEventDbContext();
+  const player1Name = context.playerName(player1);
+  const player2Name = context.playerName(player2);
 
   // Mirror the player-page predictions tab: when at least one player is unranked
   // the prediction is gated behind a warning the user must acknowledge before it
@@ -212,7 +116,7 @@ const WinChancePrediction: React.FC<{
   if (!bothRanked && !revealed) {
     return (
       <PredictionCard>
-        <div className="mx-auto mt-3 max-w-md rounded-xl border border-yellow-500/40 bg-yellow-500/10 p-6 text-center">
+        <div className="mx-auto mt-3 max-w-md rounded-xl border border-yellow-500/40 bg-yellow-500/10 p-5 text-center">
           <div className="text-3xl mb-2">⚠️</div>
           <p className="text-lg font-semibold mb-1">{unrankedLabel}</p>
           <p className="text-sm text-primary-text/70 mb-4">
@@ -232,208 +136,137 @@ const WinChancePrediction: React.FC<{
   return (
     <PredictionCard>
       {!bothRanked && (
-        <div className="mt-3 mb-1 flex items-center gap-2 rounded-lg border border-yellow-500/40 bg-yellow-500/10 px-4 py-2 text-sm">
+        <div className="mt-3 flex items-center gap-2 rounded-lg border border-yellow-500/40 bg-yellow-500/10 px-3 py-2 text-sm">
           <span>⚠️</span>
           <span>{unrankedLabel} — the prediction is based on insufficient data and may be unreliable.</span>
         </div>
       )}
-      <div className="flex items-center gap-4">
-        {/* Player 1 Probability */}
-        <div className="flex-1 text-center">
-          <div className="text-3xl font-bold text-primary-text">{fmtNum(prediction.fraction * 100)}%</div>
-          <div className="text-sm text-primary-text/70 mt-1">{player1Name}</div>
-        </div>
-
-        {/* Visual Bar */}
-        <div className="flex-[3] h-8 bg-secondary-background/30 rounded-full overflow-hidden relative">
+      <div className="flex items-center gap-3 mt-2">
+        <span className="text-2xl sm:text-3xl font-bold tabular-nums w-16 text-center">
+          {fmtNum(prediction.fraction * 100, { digits: 0 })}%
+        </span>
+        <div className="flex-1 h-3 rounded-full bg-secondary-background/30 overflow-hidden">
           <div
             className="h-full bg-secondary-background transition-all duration-500"
             style={{ width: `${prediction.fraction * 100}%` }}
           />
-          <div className="absolute inset-0 flex items-center justify-center text-xs font-semibold text-secondary-text">
-            VS
-          </div>
         </div>
-
-        {/* Player 2 Probability */}
-        <div className="flex-1 text-center">
-          <div className="text-3xl font-bold text-primary-text">{fmtNum((1 - prediction.fraction) * 100)}%</div>
-          <div className="text-sm text-primary-text/70 mt-1">{player2Name}</div>
-        </div>
+        <span className="text-2xl sm:text-3xl font-bold tabular-nums w-16 text-center">
+          {fmtNum((1 - prediction.fraction) * 100, { digits: 0 })}%
+        </span>
       </div>
-      <p className="text-center text-primary-text/50">At {fmtNum(prediction.confidence * 100)}% confidence</p>
-      <Link
-        to={`/player/${player1}?tab=predictions&predictionTab=history&compareWith=${player2}`}
-        className="block w-fit mx-auto mt-3 text-xs text-tertiary-text bg-tertiary-background hover:bg-tertiary-background/50 px-3 py-1.5 rounded-full transition-colors"
-      >
-        See prediction history
-      </Link>
+      <div className="flex flex-wrap items-center justify-between gap-2 mt-3">
+        <span className="text-xs text-primary-text/60">At {fmtNum(prediction.confidence * 100)}% confidence</span>
+        <Link
+          to={`/player/${player1}?tab=predictions&predictionTab=history&compareWith=${player2}`}
+          className="inline-flex items-center gap-1 text-sm font-semibold text-tertiary-text bg-tertiary-background hover:bg-tertiary-background/70 px-3 py-1.5 rounded-full transition-colors"
+        >
+          Prediction history <span aria-hidden>→</span>
+        </Link>
+      </div>
     </PredictionCard>
   );
 };
 
-const CombinedStatCard: React.FC<{
-  player1: any;
-  player2: any;
-}> = ({ player1, player2 }) => {
-  const [show, setShow] = useState(false);
-  const eloDiff = player1.points.currentElo - player2.points.currentElo;
-  const pointsNet1 = player1.points.gained - player1.points.lost;
-  const pointsNet2 = player2.points.gained - player2.points.lost;
-
-  if (!show) {
-    return (
-      <button
-        onClick={() => setShow(true)}
-        className="w-full bg-secondary-background/20 text-primary-text rounded-lg p-4 border border-secondary-background/30"
-      >
-        <div className="flex gap-6 justify-center">
-          <h4>🔥 Streaks</h4>
-          <h4>⭐ Score Comparison</h4>
-          <h4>📊 Score Exchange</h4>
-        </div>
-        <p className="w-full text-center font-light text-primary-text/50 mt-3">Click to see details</p>
-      </button>
-    );
-  }
+/**
+ * Every game in 1 line, the newest first. The trophy is in the column of the winner,
+ * so the side of the trophies shows how the 2 players compare.
+ */
+export const PvPGameHistory: React.FC<Props> = ({ player1, player2 }) => {
+  const context = useEventDbContext();
+  const { games } = context.pvp.compare(player1, player2);
+  const columns =
+    "grid grid-cols-[minmax(0,1fr)_minmax(7rem,auto)_minmax(0,1fr)_2.75rem] sm:grid-cols-[minmax(0,1fr)_12rem_minmax(0,1fr)_4.5rem] md:grid-cols-[minmax(0,1fr)_12rem_minmax(0,1fr)_6.5rem] items-center gap-1";
 
   return (
-    <div className="bg-secondary-background/20 text-primary-text rounded-lg p-4 border border-secondary-background/30">
-      {/* Player Names Header */}
-      <div className="grid grid-cols-3 gap-2 mb-3 pb-2 border-b border-secondary-background/30">
-        <div className="text-right">
-          <h3 className="text-lg font-bold">{player1.name}</h3>
-        </div>
-        <div></div>
-        <div className="text-left">
-          <h3 className="text-lg font-bold">{player2.name}</h3>
-        </div>
-      </div>
-
-      <div className="space-y-3">
-        {/* Streaks */}
-        <div>
-          <div className="flex items-center justify-center gap-2 mb-1.5">
-            <span className="text-base">🔥</span>
-            <h4 className="font-semibold text-sm">Streaks</h4>
-          </div>
-          <div className="grid grid-cols-3 gap-2 text-sm">
-            <div className="text-right space-y-0.5">
-              <div className="font-semibold">{player1.streak.longest}</div>
-              <div className="font-semibold">{player1.streak.current}</div>
-            </div>
-            <div className="text-center space-y-0.5 text-xs">
-              <div>Longest</div>
-              <div>Current</div>
-            </div>
-            <div className="text-left space-y-0.5">
-              <div className="font-semibold">{player2.streak.longest}</div>
-              <div className="font-semibold">{player2.streak.current}</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Score Comparison */}
-        <div>
-          <div className="flex items-center justify-center gap-2 mb-1.5">
-            <span className="text-base">⭐</span>
-            <h4 className="font-semibold text-sm">Score Comparison</h4>
-          </div>
-          <div className="grid grid-cols-3 gap-2 text-sm">
-            <div className="text-right space-y-0.5">
-              <div className="font-semibold">{fmtNum(player1.points.currentElo)}</div>
-              <div className={classNames("font-semibold")}>
-                {eloDiff > 0 ? "+" : ""}
-                {fmtNum(eloDiff)}
-              </div>
-            </div>
-            <div className="text-center space-y-0.5 text-xs">
-              <div>Current</div>
-              <div>Difference</div>
-            </div>
-            <div className="text-left space-y-0.5">
-              <div className="font-semibold">{fmtNum(player2.points.currentElo)}</div>
-              <div className={classNames("font-semibold")}>
-                {eloDiff < 0 ? "+" : ""}
-                {fmtNum(-eloDiff)}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Score Exchange */}
-        <div>
-          <div className="flex items-center justify-center gap-2 mb-1.5">
-            <span className="text-base">📊</span>
-            <h4 className="font-semibold text-sm">Score Exchange</h4>
-          </div>
-          <div className="grid grid-cols-3 gap-2 text-sm">
-            <div className="text-right space-y-0.5">
-              <div className="font-semibold ">{fmtNum(player1.points.gained)}</div>
-              <div className="font-semibold /60">{fmtNum(player1.points.lost)}</div>
-              <div className={classNames("font-bold pt-0.5")}>
-                {pointsNet1 > 0 ? "+" : ""}
-                {fmtNum(pointsNet1)}
-              </div>
-            </div>
-            <div className="text-center space-y-0.5 text-xs">
-              <div>Gained</div>
-              <div>Lost</div>
-              <div className="pt-0.5 border-t border-secondary-background/30">Net</div>
-            </div>
-            <div className="text-left space-y-0.5">
-              <div className="font-semibold ">{fmtNum(player2.points.gained)}</div>
-              <div className="font-semibold /60">{fmtNum(player2.points.lost)}</div>
-              <div className={classNames("font-bold pt-0.5")}>
-                {pointsNet2 > 0 ? "+" : ""}
-                {fmtNum(pointsNet2)}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-export const WinsPillar: React.FC<{ name: string; wins: number; oponentWins: number }> = ({
-  name,
-  wins,
-  oponentWins,
-}) => {
-  const BASE_HEIGHT = 45;
-  const MAX_HEIGHT = 250;
-  const TEXT_INSIDE_THRESHOLD = 100;
-
-  const heightPerWin = MAX_HEIGHT / (Math.max(wins, oponentWins) || 1);
-  const pillarHeight = Math.max(wins * heightPerWin, BASE_HEIGHT);
-  const showTextInside = pillarHeight >= TEXT_INSIDE_THRESHOLD;
-
-  const winsText = () => (
-    <div
-      className={classNames(
-        "flex flex-col items-center transition-colors",
-        showTextInside ? "text-secondary-text" : "text-primary-text",
-      )}
-    >
-      <div className="text-5xl font-semibold sm:text-6xl transition-all duration-500">{wins}</div>
-    </div>
-  );
-
-  return (
-    <div className="w-full flex flex-col">
-      <div className="grow" />
-      {!showTextInside && winsText()}
+    <div className="rounded-2xl bg-secondary-background/20 ring-1 ring-secondary-background/40 overflow-clip">
+      {/* The column headers stay on the screen while the page scrolls */}
       <div
-        className="w-full mt-1 py-1 flex flex-col justify-between items-center bg-secondary-background rounded-t-[2rem] md:rounded-t-[3rem] transition-all duration-500 shadow-lg"
-        style={{ height: `${pillarHeight}px` }}
+        className={classNames(
+          columns,
+          "sticky top-16 md:top-12 z-10 bg-secondary-background text-secondary-text px-2 sm:px-3 py-2 text-xs sm:text-sm font-semibold",
+        )}
       >
-        {showTextInside && winsText()}
-        <div className="grow" />
-        <p className="text-secondary-text text-xl sm:text-2xl md:text-3xl uppercase font-bold tracking-tight transition-all duration-500 px-2 text-center">
-          {name}
-        </p>
+        <PlayerHeader playerId={player1} />
+        <div className="text-center">Score</div>
+        <PlayerHeader playerId={player2} />
+        <div className="text-right">When</div>
       </div>
+
+      {games.length === 0 ? (
+        <div className="text-center py-8 text-primary-text/60">No games played yet</div>
+      ) : (
+        <ul className="divide-y divide-primary-text/10">
+          {games.map((_, index, list) => {
+            const game = list[list.length - 1 - index];
+            const isPlayer1Win = game.result === "win";
+            const setsWon = game.score?.setsWon;
+            const player1Sets = isPlayer1Win ? setsWon?.gameWinner : setsWon?.gameLoser;
+            const player2Sets = isPlayer1Win ? setsWon?.gameLoser : setsWon?.gameWinner;
+            const setStrings =
+              game.score?.setPoints?.map((set) =>
+                isPlayer1Win ? `${set.gameWinner}-${set.gameLoser}` : `${set.gameLoser}-${set.gameWinner}`,
+              ) ?? [];
+            const points = Math.abs(game.pointsDiff);
+
+            return (
+              <li key={game.time}>
+                <Link
+                  to={`/game?time=${game.time}`}
+                  className={classNames(
+                    columns,
+                    "px-2 sm:px-3 py-1 hover:bg-secondary-background hover:text-secondary-text transition-colors",
+                  )}
+                >
+                  <WinnerCell won={isPlayer1Win} points={points} />
+                  <div className="text-center leading-tight">
+                    <span className="font-semibold tabular-nums text-sm">
+                      {setsWon ? `${player1Sets} - ${player2Sets}` : "–"}
+                    </span>
+                    <GameMarkers score={game.score} />
+                    {setStrings.length > 0 && (
+                      <span className="block sm:inline sm:ml-2 text-[10px] sm:text-xs opacity-60 italic tabular-nums whitespace-nowrap">
+                        {setStrings.join(", ")}
+                      </span>
+                    )}
+                  </div>
+                  <WinnerCell won={!isPlayer1Win} points={points} />
+                  <div className="text-right text-[11px] sm:text-xs opacity-60 whitespace-nowrap">
+                    <RelativeTime date={new Date(game.time)} variant="auto" />
+                  </div>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      )}
     </div>
   );
 };
+
+const PlayerHeader: React.FC<{ playerId: string }> = ({ playerId }) => {
+  const context = useEventDbContext();
+  return (
+    <Link
+      to={`/player/${playerId}`}
+      className="flex items-center justify-center gap-1.5 min-w-0 hover:underline"
+      title={`Open the player page of ${context.playerName(playerId)}`}
+    >
+      <ProfilePicture playerId={playerId} size={20} />
+      <span className="truncate">{context.playerName(playerId)}</span>
+    </Link>
+  );
+};
+
+const WinnerCell: React.FC<{ won: boolean; points: number }> = ({ won, points }) => (
+  <div className="flex items-center justify-center gap-1">
+    {won && (
+      <>
+        <span className="text-base sm:text-lg">🏆</span>
+        <span className="text-[11px] sm:text-xs italic opacity-70 tabular-nums">
+          {fmtNum(points, { signedPositive: true })}
+        </span>
+      </>
+    )}
+  </div>
+);
