@@ -36,16 +36,28 @@ export const PvPWins: React.FC<Props> = ({ player1, player2 }) => {
 };
 
 const WinsPillar: React.FC<{ wins: number; oponentWins: number }> = ({ wins, oponentWins }) => {
-  // A pillar with few wins keeps a minimum height, so its number and label stay inside it
+  // The height of the pillar is in proportion to the wins. A pillar with few wins keeps a
+  // small base, so it stays visible
   const height = (wins / Math.max(wins, oponentWins, 1)) * 100;
+  // The number and the label need about half of the height. A lower pillar shows them above it
+  const textInside = height >= 50;
 
-  return (
-    <div
-      className="flex-1 flex flex-col items-center pt-3 rounded-t-[2rem] bg-secondary-background text-secondary-text shadow-lg transition-all duration-500"
-      style={{ height: `max(${height}%, 6.5rem)` }}
-    >
+  const winsText = (
+    <div className={classNames("flex flex-col items-center", textInside ? "pt-3" : "pb-1 text-primary-text")}>
       <span className="text-5xl sm:text-6xl font-bold tabular-nums leading-none">{wins}</span>
       <span className="text-[11px] uppercase tracking-widest opacity-80 mt-1">wins</span>
+    </div>
+  );
+
+  return (
+    <div className="flex-1 h-full flex flex-col justify-end">
+      {!textInside && winsText}
+      <div
+        className="rounded-t-[2rem] bg-secondary-background text-secondary-text shadow-lg transition-all duration-500"
+        style={{ height: `max(${height}%, 2.5rem)` }}
+      >
+        {textInside && winsText}
+      </div>
     </div>
   );
 };
