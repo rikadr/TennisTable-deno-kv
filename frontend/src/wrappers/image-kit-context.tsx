@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState } from "react";
 import { ImageKitProvider } from "@imagekit/react";
 
+export const IMAGE_KIT_URL_ENDPOINT = "https://ik.imagekit.io/tennistable";
+
 // Define the type for our context state
 interface ImageKitTimestampContextType {
   timestamp: number;
@@ -16,7 +18,7 @@ export const ImageKitContext: React.FC<{ children: React.ReactNode }> = ({ child
   const [timestamp, setTimestamp] = useState<number>(Date.now());
 
   return (
-    <ImageKitProvider urlEndpoint="https://ik.imagekit.io/tennistable">
+    <ImageKitProvider urlEndpoint={IMAGE_KIT_URL_ENDPOINT}>
       <ImageKitTimestampContext.Provider
         value={{
           timestamp,
