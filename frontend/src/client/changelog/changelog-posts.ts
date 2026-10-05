@@ -50,7 +50,7 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
       "First to Finish ✅ is a new achievement for the first player who completes all their matches in the group play of a tournament.",
     body: [
       text(
-        "A match is complete when it has a result. A skipped match also has a result. When 1 match completes the group play of its 2 players, both players earn the achievement.",
+        "Your last match must be a played game or a skipped match that you win. A player who loses a skipped match as the last match does not earn it. When 1 game completes the group play of its 2 players, both players earn the achievement.",
       ),
       text(
         "You can earn it 1 time in each tournament. The app also checks the tournaments that are already played. The Competition group holds the achievement, next to Group Play Star ⭐.",

@@ -91,7 +91,7 @@ describe("First to Finish Achievement", () => {
     expect(awards).toHaveLength(0);
   });
 
-  it("counts a skipped match as a completed match", () => {
+  it("counts a skipped match the player won as a completed match", () => {
     const awards = firstToFinish([
       ...players,
       ...tournament,
@@ -110,6 +110,33 @@ describe("First to Finish Achievement", () => {
         type: "first-to-finish",
         earnedBy: "alice",
         earnedAt: PAST_START + 300,
+        data: { tournamentId: "t1" },
+      },
+    ]);
+  });
+
+  it("does not award a player whose last match is a skip they lost", () => {
+    const awards = firstToFinish([
+      ...players,
+      ...tournament,
+      game("g1", PAST_START + 100, "alice", "dave"),
+      game("g2", PAST_START + 200, "bob", "dave"),
+      {
+        type: EventTypeEnum.TOURNAMENT_SKIP_GAME,
+        stream: "t1",
+        time: PAST_START + 300,
+        data: { skipId: "skip1", winner: "carol", loser: "dave" }, // Dave has a result in all matches first
+      },
+      game("g3", PAST_START + 400, "bob", "carol"),
+      game("g4", PAST_START + 500, "bob", "alice"), // Bob is the first to finish with a played match
+    ]);
+
+    expect(awards).toStrictEqual([
+      {
+        type: "first-to-finish",
+        earnedBy: "bob",
+        earnedAt: PAST_START + 500,
+        earnedByGame: "g4",
         data: { tournamentId: "t1" },
       },
     ]);

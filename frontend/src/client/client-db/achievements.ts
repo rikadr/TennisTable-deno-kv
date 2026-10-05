@@ -2916,15 +2916,19 @@ export class Achievements {
       }
 
       // First to Finish: the first player to have a result in all their group
-      // matches. A skipped match has a result too. Only the 2 players of one
-      // match can finish at the same time, so at most 2 players earn it.
+      // matches. A skipped match has a result too, but a player whose last
+      // match is a skip they lost does not finish and cannot earn it. Only the
+      // 2 players of one match can finish at the same time, so at most 2
+      // players earn it.
       if (t.groupPlay) {
         const finishedAt = new Map<string, number>();
         t.groupPlay.groups.forEach((group) => {
           group.players.forEach((playerId) => {
             const games = group.groupGames.filter((g) => g.player1 === playerId || g.player2 === playerId);
             if (games.length === 0 || games.some((g) => g.completedAt === undefined)) return;
-            finishedAt.set(playerId, Math.max(...games.map((g) => g.completedAt!)));
+            const lastGame = games.reduce((last, g) => (g.completedAt! > last.completedAt! ? g : last));
+            if (lastGame.skipped && lastGame.skipped.winner !== playerId) return;
+            finishedAt.set(playerId, lastGame.completedAt!);
           });
         });
         const firstFinish = Math.min(...finishedAt.values());
