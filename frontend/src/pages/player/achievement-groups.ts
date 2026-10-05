@@ -118,6 +118,7 @@ export const ACHIEVEMENT_GROUPS: AchievementGroup[] = [
       "tournament-participated",
       "tournament-winner",
       "group-stage-star",
+      "first-to-finish",
       "sweet-revenge",
       "season-winner",
       "so-close",

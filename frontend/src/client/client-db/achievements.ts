@@ -2914,6 +2914,28 @@ export class Achievements {
           }
         });
       }
+
+      // First to Finish: the first player to have a result in all their group
+      // matches. A skipped match has a result too. Only the 2 players of one
+      // match can finish at the same time, so at most 2 players earn it.
+      if (t.groupPlay) {
+        const finishedAt = new Map<string, number>();
+        t.groupPlay.groups.forEach((group) => {
+          group.players.forEach((playerId) => {
+            const games = group.groupGames.filter((g) => g.player1 === playerId || g.player2 === playerId);
+            if (games.length === 0 || games.some((g) => g.completedAt === undefined)) return;
+            finishedAt.set(playerId, Math.max(...games.map((g) => g.completedAt!)));
+          });
+        });
+        const firstFinish = Math.min(...finishedAt.values());
+        finishedAt.forEach((at, playerId) => {
+          if (at !== firstFinish) return;
+          this.#addAchievement(
+            playerId,
+            this.#createAchievement("first-to-finish", playerId, at, { tournamentId }, this.#gameIdPlayedAt(at)),
+          );
+        });
+      }
     });
   }
 
@@ -3380,6 +3402,7 @@ export class Achievements {
       "tournament-participated": { earned: 0 },
       "tournament-winner": { earned: 0 },
       "group-stage-star": { earned: 0 },
+      "first-to-finish": { earned: 0 },
       "sweet-revenge": { current: 0, target: 0, missing: new Set(), earned: 0 },
       "season-winner": { current: 0, target: 1, earned: 0 },
       "so-close": { earned: 0 },
@@ -4430,6 +4453,7 @@ type AchievementDefinitions = {
   // streak-record data shape and growth behaviour.
   "yin-yang": StreakRecordAchievementData;
   "group-stage-star": { tournamentId: string; wins: number };
+  "first-to-finish": { tournamentId: string };
   "full-house": { count: number; firstGameAt: number };
   humbled: { count: number; firstGameAt: number };
   // Played every currently ranked player at least once (wins and losses
@@ -4564,6 +4588,7 @@ export const ACHIEVEMENT_IS_REACHIEVABLE: Record<AchievementType, boolean> = {
   "longest-lose-streak": true,
   "yin-yang": true,
   "group-stage-star": true, // Per tournament's group play
+  "first-to-finish": true, // Per tournament's group play
   "full-house": false,
   humbled: false,
   "everybodys-opponent": false,
@@ -4895,6 +4920,7 @@ export type AchievementProgression = {
   "hero-of-the-week": HeroRecordProgression;
   "hero-of-the-month": HeroRecordProgression;
   "group-stage-star": GroupPlayStarProgression;
+  "first-to-finish": BaseProgression;
   "sweet-revenge": MissingPlayersProgression;
   "full-house": MissingPlayersProgression;
   humbled: MissingPlayersProgression;
