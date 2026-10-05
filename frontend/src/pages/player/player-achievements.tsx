@@ -60,6 +60,11 @@ export const ACHIEVEMENT_LABELS: Record<AchievementType, { title: string; descri
     description: "Gave away 5 donut sets",
     icon: "🧑‍🍳",
   },
+  "double-donut": {
+    title: "Double Donut",
+    description: "Won 2 donut sets in one game",
+    icon: "🥨",
+  },
   "streak-all-10": {
     title: "Unstoppable",
     description: "Won 10 games in a row",
