@@ -42,6 +42,21 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
+    slug: "double-donut-achievement",
+    title: "New achievement: Double Donut 🥨",
+    date: "2026-10-05",
+    tags: ["feature-update"],
+    summary: "Double Donut 🥨 is a new achievement for the player who wins 2 donut sets in one game.",
+    body: [
+      text(
+        "A donut set is a set that the loser of the game loses without a point. Win 2 or more donut sets in one game to earn Double Donut 🥨. You can earn it again in each game that qualifies.",
+      ),
+      text(
+        "The app also checks the games that are already played. The Game Feats group holds the achievement, next to the other donut achievements.",
+      ),
+    ],
+  },
+  {
     slug: "bad-side-compared-with-the-same-player",
     title: "Bad side statistics that remove the difference in level",
     date: "2026-10-02",

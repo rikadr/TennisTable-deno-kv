@@ -69,6 +69,7 @@ export const ACHIEVEMENT_GROUPS: AchievementGroup[] = [
       "donut-1",
       "donut-5",
       "donut-baker",
+      "double-donut",
       "nice-game",
       "less-is-more",
       "close-calls",

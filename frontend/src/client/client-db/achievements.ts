@@ -2302,6 +2302,14 @@ export class Achievements {
       }
     });
 
+    // "Double Donut": 2 or more donut sets in one game earn it 1 time
+    if (donutsEarned >= 2) {
+      this.#addAchievement(
+        winner,
+        this.#createAchievement("double-donut", winner, playedAt, { gameId, opponent: loser }, gameId),
+      );
+    }
+
     return donutsEarned;
   }
 
@@ -3295,6 +3303,7 @@ export class Achievements {
       "donut-1": { current: 0, target: 1, earned: 0 },
       "donut-5": { current: 0, target: 5, earned: 0 },
       "donut-baker": { current: 0, target: DONUT_BAKER_TARGET, earned: 0 },
+      "double-donut": { earned: 0 },
       "nice-game": { earned: 0 },
       "less-is-more": { earned: 0 },
       "close-calls": { current: 0, target: 5, earned: 0 },
@@ -4312,6 +4321,7 @@ type AchievementDefinitions = {
   // Career donut sets given away — sets lost without scoring a point —
   // reached DONUT_BAKER_TARGET. A pure counter crossing, no game to point at.
   "donut-baker": undefined;
+  "double-donut": { gameId: string; opponent: string };
   "streak-all-10": { startedAt: number };
   "streak-player-10": { opponent: string; startedAt: number };
   "streak-player-20": { opponent: string; startedAt: number };
@@ -4499,6 +4509,7 @@ export const ACHIEVEMENT_IS_REACHIEVABLE: Record<AchievementType, boolean> = {
   "donut-1": true, // Per donut set
   "donut-5": false,
   "donut-baker": false,
+  "double-donut": true, // Per qualifying game
   "streak-all-10": true, // Per streak — a new streak of 10 earns again
   "streak-player-10": true, // Per streak per opponent
   "streak-player-20": true,
@@ -4827,6 +4838,7 @@ export type AchievementProgression = {
   "donut-1": ProgressionWithTarget;
   "donut-5": ProgressionWithTarget;
   "donut-baker": ProgressionWithTarget;
+  "double-donut": BaseProgression;
   "streak-all-10": ProgressionWithTarget;
   "streak-player-10": StreakPlayerProgression;
   "streak-player-20": StreakPlayerProgression;
