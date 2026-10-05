@@ -345,6 +345,11 @@ export const ACHIEVEMENT_LABELS: Record<AchievementType, { title: string; descri
     description: "Go undefeated in a tournament's group play",
     icon: "⭐",
   },
+  "first-to-finish": {
+    title: "First to Finish",
+    description: "Be the first player to complete all your matches in a tournament's group play",
+    icon: "✅",
+  },
   "sweet-revenge": {
     title: "Sweet Revenge",
     description: "Beat a player in a tournament match after they beat you in an earlier tournament match",
