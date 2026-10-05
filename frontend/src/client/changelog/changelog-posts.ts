@@ -42,33 +42,21 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
-    slug: "first-to-finish-achievement",
-    title: "New achievement: First to Finish ✅",
-    date: "2026-10-05",
-    tags: ["feature-update"],
-    summary:
-      "First to Finish ✅ is a new achievement for the first player who completes all their matches in the group play of a tournament.",
-    body: [
-      text(
-        "Your last match must be a played game or a skipped match that you win. A player who loses a skipped match as the last match does not earn it. When 1 game completes the group play of its 2 players, both players earn the achievement.",
-      ),
-      text(
-        "You can earn it 1 time in each tournament. The app also checks the tournaments that are already played. The Competition group holds the achievement, next to Group Play Star ⭐.",
-      ),
-    ],
-  },
-  {
     slug: "double-donut-achievement",
-    title: "New achievement: Double Donut 🥨",
+    title: "2 new achievements: Double Donut and First to Finish",
     date: "2026-10-05",
     tags: ["feature-update"],
-    summary: "Double Donut 🥨 is a new achievement for the player who wins 2 donut sets in one game.",
+    summary: "Double Donut 🥨 and First to Finish ✅ are new achievements. You can earn each of them more than 1 time.",
     body: [
-      text(
-        "A donut set is a set that the loser of the game loses without a point. Win 2 or more donut sets in one game to earn Double Donut 🥨. You can earn it again in each game that qualifies.",
+      list(
+        "Double Donut 🥨 - win 2 or more donut sets in one game. You can earn it again in each game that qualifies.",
+        "First to Finish ✅ - be the first player to complete all your matches in the group play of a tournament.",
       ),
       text(
-        "The app also checks the games that are already played. The Game Feats group holds the achievement, next to the other donut achievements.",
+        "For First to Finish, your last match must be a played game or a skipped match that you win. When 1 game completes the group play of its 2 players, both players earn it. You can earn it 1 time in each tournament.",
+      ),
+      text(
+        "The app also checks the games and tournaments that are already played. Double Donut is in the Game Feats group. First to Finish is in the Competition group.",
       ),
     ],
   },
