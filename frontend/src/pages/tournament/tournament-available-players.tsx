@@ -80,10 +80,14 @@ export const TournamentAvailablePlayers = ({ tournament }: { tournament: Tournam
           (game.player2 === playerId && checkedPlayers.has(game.player1)),
       );
 
-      const opponents = gamesAgainstChecked.map((game) => ({
-        opponentId: game.player1 === playerId ? game.player2 : game.player1,
-        link: tournamentGameLink(tournament.id, game),
-      }));
+      const opponents = gamesAgainstChecked.map((game) => {
+        const opponentId = game.player1 === playerId ? game.player2 : game.player1;
+        // The player is player 1, so a group game link opens the row of the player
+        return {
+          opponentId,
+          link: tournamentGameLink(tournament.id, { ...game, player1: playerId, player2: opponentId }),
+        };
+      });
 
       return { playerId, opponents };
     })
