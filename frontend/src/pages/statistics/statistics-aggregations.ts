@@ -913,10 +913,12 @@ export type TableSideStats = {
   neutralSets: number;
   /**
    * The points per set a player wins on the bad side minus the points per set
-   * the same player wins on the good side, averaged over the games. Below 0
-   * means the bad side costs points. See `sideSwing`.
+   * the same player wins on the good side, averaged over the close matchups.
+   * Below 0 means the bad side costs points. See `sideSwing`.
    */
   pointsPerSet?: number;
+  /** `pointsPerSet` over all games, with no limit on the rating gap. */
+  pointsPerSetAllGames?: number;
   /**
    * Share of the sets the player on the bad side wins when the 2 players are
    * equally good, from the same comparison and the 11 point set model.
@@ -995,20 +997,26 @@ export function setWinChance(pointChance: number): number {
  * the level of the players: the stronger player often takes the bad side, and
  * a large difference in level decides most sets whatever the side. So this
  * compares each player with themselves. See `sideSwing`.
+ *
+ * The comparison takes `closeGames` only, from `closeMatchups`. In an uneven
+ * matchup the stronger player wins almost all points on either side, so the
+ * side makes almost no difference and pulls the average towards 0.
  */
-export function tableSideStats(games: Game[]): TableSideStats | undefined {
+export function tableSideStats(games: Game[], closeGames: Game[]): TableSideStats | undefined {
   const withScore = games.filter((game) => game.score !== undefined);
   const withSides = withScore.filter((game) => game.score!.gameWinnerSides?.some((side) => side !== null));
   if (withSides.length === 0) return undefined;
 
   const recordedSides = withSides.flatMap((game) => game.score!.gameWinnerSides!.filter((side) => side !== null));
-  const swings = withSides.map(sideSwing).filter((swing) => swing !== undefined);
+  const swings = closeGames.map(sideSwing).filter((swing) => swing !== undefined);
   const swing = average(swings.map((game) => game.swing));
+  const allSwings = withSides.map(sideSwing).filter((swing) => swing !== undefined);
 
   return {
     sidesRecorded: percent(withSides.length, withScore.length),
     neutralSets: percent(recordedSides.filter((side) => side === "N").length, recordedSides.length),
     pointsPerSet: average(swings.map((game) => game.pointsPerSet)),
+    pointsPerSetAllGames: average(allSwings.map((game) => game.pointsPerSet)),
     // In an even matchup a player wins half the points over both sides. The
     // swing splits evenly around that half, so the bad side wins 50% plus half
     // of the swing.
@@ -1027,11 +1035,12 @@ export type SideSwingByHour = {
  * `TableSideStats.pointsPerSet` by the hour the game starts in. The light from
  * a window can make one side worse, and the light changes during the day. An
  * hour with fewer than MIN_GAMES_PER_BUCKET games is left out, because the
- * comparison of one game is mostly noise.
+ * comparison of one game is mostly noise. Give it the close matchups only, as
+ * `tableSideStats` uses.
  */
-export function sideSwingByHour(games: Game[]): SideSwingByHour[] {
+export function sideSwingByHour(closeGames: Game[]): SideSwingByHour[] {
   const hours = new Map<number, number[]>();
-  for (const game of games) {
+  for (const game of closeGames) {
     const swing = sideSwing(game);
     if (swing === undefined) continue;
     const hour = new Date(game.playedAt).getHours();
@@ -1046,6 +1055,18 @@ export function sideSwingByHour(games: Game[]): SideSwingByHour[] {
 /** The largest rating gap before the game of a close matchup. */
 export const CLOSE_MATCHUP_GAP = 100;
 
+/**
+ * The games from `cutoff` on where the rating gap before the game is below
+ * CLOSE_MATCHUP_GAP. The whole history walks for the ratings.
+ */
+export function closeMatchups(games: Game[], players: Player[], cutoff: number): Game[] {
+  const close: Game[] = [];
+  forEachGameWithPreGameStanding(games, players, (game, { elo }) => {
+    if (game.playedAt >= cutoff && Math.abs(elo.winner - elo.loser) < CLOSE_MATCHUP_GAP) close.push(game);
+  });
+  return close;
+}
+
 export type TableSideRatingStats = {
   /**
    * Share of the games with a worse side in set 1 where the stronger player
@@ -1057,8 +1078,35 @@ export type TableSideRatingStats = {
    * other: the share of them that player won, and the share the ratings expect
    * them to win.
    */
-  moreBadSideSets?: { won: number; expected: number };
+  moreBadSideSets?: BadSideSetsResult;
+  /** `moreBadSideSets` over all games, with no limit on the rating gap. */
+  moreBadSideSetsAllGames?: BadSideSetsResult;
 };
+
+type BadSideSetsResult = { won: number; expected: number };
+
+type BadSideSetsCount = { games: number; won: number; expected: number };
+
+/** Adds a game where one player had the bad side in more sets. */
+function countBadSideSets(
+  count: BadSideSetsCount,
+  winnerBadSides: number,
+  loserBadSides: number,
+  elo: PreGameStanding["elo"],
+): void {
+  count.games++;
+  if (winnerBadSides > loserBadSides) {
+    count.won++;
+    count.expected += Elo.expectedResult(elo.winner, elo.loser);
+  } else {
+    count.expected += Elo.expectedResult(elo.loser, elo.winner);
+  }
+}
+
+function badSideSetsResult({ games, won, expected }: BadSideSetsCount): BadSideSetsResult | undefined {
+  if (games === 0) return undefined;
+  return { won: percent(won, games), expected: percent(expected, games) };
+}
 
 /**
  * The bad side against the ratings of the players before the game.
@@ -1067,7 +1115,8 @@ export type TableSideRatingStats = {
  * on are aggregated.
  *
  * `moreBadSideSets` takes the close matchups only, because the stronger player
- * often takes the bad side. A rating can still be far from the true level of a
+ * often takes the bad side. `moreBadSideSetsAllGames` takes all games, to
+ * compare with it. A rating can still be far from the true level of a
  * player, most of all for a new player. So it also gives what the ratings
  * expect, and the difference between the 2 shares is the effect of the side.
  * A game with as many bad sides for each player is left out. With a change of
@@ -1078,9 +1127,8 @@ export function tableSidesByRating(games: Game[], players: Player[], cutoff: num
   let withSides = 0;
   let firstSetUnequal = 0;
   let strongerOnTheBadSide = 0;
-  let unevenCloseGames = 0;
-  let wonWithMoreBadSides = 0;
-  let expectedWithMoreBadSides = 0;
+  const close: BadSideSetsCount = { games: 0, won: 0, expected: 0 };
+  const all: BadSideSetsCount = { games: 0, won: 0, expected: 0 };
 
   forEachGameWithPreGameStanding(games, players, (game, standing) => {
     if (game.playedAt < cutoff) return;
@@ -1097,31 +1145,21 @@ export function tableSidesByRating(games: Game[], players: Player[], cutoff: num
     }
 
     const { elo } = standing;
-    if (Math.abs(elo.winner - elo.loser) >= CLOSE_MATCHUP_GAP) return;
     const winnerBadSides = sides.filter((side) => side === "B").length;
     const loserBadSides = sides.filter((side) => side === "G").length;
     if (winnerBadSides === loserBadSides) return;
 
-    unevenCloseGames++;
-    if (winnerBadSides > loserBadSides) {
-      wonWithMoreBadSides++;
-      expectedWithMoreBadSides += Elo.expectedResult(elo.winner, elo.loser);
-    } else {
-      expectedWithMoreBadSides += Elo.expectedResult(elo.loser, elo.winner);
-    }
+    countBadSideSets(all, winnerBadSides, loserBadSides, elo);
+    if (Math.abs(elo.winner - elo.loser) < CLOSE_MATCHUP_GAP)
+      countBadSideSets(close, winnerBadSides, loserBadSides, elo);
   });
 
   if (withSides === 0) return undefined;
 
   return {
     strongerTakesTheBadSide: firstSetUnequal === 0 ? undefined : percent(strongerOnTheBadSide, firstSetUnequal),
-    moreBadSideSets:
-      unevenCloseGames === 0
-        ? undefined
-        : {
-            won: percent(wonWithMoreBadSides, unevenCloseGames),
-            expected: percent(expectedWithMoreBadSides, unevenCloseGames),
-          },
+    moreBadSideSets: badSideSetsResult(close),
+    moreBadSideSetsAllGames: badSideSetsResult(all),
   };
 }
 
