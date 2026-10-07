@@ -1049,7 +1049,7 @@ export function sideSwingByHour(closeGames: Game[]): SideSwingByHour[] {
 }
 
 /** The largest rating gap before the game of a close matchup. */
-export const CLOSE_MATCHUP_GAP = 200;
+export const CLOSE_MATCHUP_GAP = 100;
 
 /**
  * The games from `cutoff` on where the rating gap before the game is below
