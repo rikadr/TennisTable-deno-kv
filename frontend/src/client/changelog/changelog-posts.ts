@@ -70,7 +70,10 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
     body: [
       list(
         "Points per set on the bad side: the points a player loses per set on the bad side. It compares the player with themselves on the good side. It uses sets 1 and 2, because the players change sides after set 1.",
-        "More sets on the bad side, in a close matchup: how often the player with more sets on the bad side wins the game. It uses games with a rating gap below 100. It also shows the share that the ratings expect.",
+        "More sets on the bad side, in a close matchup: how often the player with more sets on the bad side wins the game. It also shows the share that the ratings expect.",
+      ),
+      text(
+        "Both numbers use only close matchups: games with a rating gap below 200 before the game. In an uneven matchup the stronger player wins almost all points on both sides, so the side shows almost no effect.",
       ),
       text(
         "A chart shows the points per set by the hour the game starts in, because the light changes during the day. An hour shows when it has 20 of these games.",

@@ -26,6 +26,7 @@ import {
   pointLevelStats,
   MIN_GAMES_PER_BUCKET,
   CLOSE_MATCHUP_GAP,
+  closeMatchups,
   setLevelStats,
   sideSwingByHour,
   TableSideRatingStats,
@@ -120,12 +121,14 @@ const BadSideCard: React.FC<{ sides: TableSideStats; rating?: TableSideRatingSta
         </span>
         <span className="text-sm">
           {pointsPerSet === undefined
-            ? "Needs a game with a change of sides after set 1, and the points of both sets."
+            ? "Needs a close matchup with a change of sides after set 1, and the points of both sets."
             : `A player wins ${fmtNum(Math.abs(pointsPerSet), { digits: 1 })} ${
                 pointsPerSet <= 0 ? "fewer" : "more"
               } points per set on the bad side than on the good side.`}
         </span>
-        <span className="text-xs opacity-70">The same player in the same game, in sets 1 and 2.</span>
+        <span className="text-xs opacity-70">
+          The same player in the same game, in sets 1 and 2. A rating gap below {CLOSE_MATCHUP_GAP} before the game.
+        </span>
       </div>
       <div className="flex flex-col gap-0.5 rounded-lg bg-secondary-background text-secondary-text px-3 py-2">
         <span className="text-xs md:text-sm opacity-80">More sets on the bad side, in a close matchup</span>
@@ -166,8 +169,9 @@ export const GamesTab: React.FC<{ range: TimeRange; setRange: (range: TimeRange)
   const setLevel = useMemo(() => setLevelStats(gamesInRange), [gamesInRange]);
   const pointLevel = useMemo(() => pointLevelStats(gamesInRange), [gamesInRange]);
   const trackedLevel = useMemo(() => trackedLevelStats(gamesInRange), [gamesInRange]);
-  const tableSides = useMemo(() => tableSideStats(gamesInRange), [gamesInRange]);
-  const sideSwingHours = useMemo(() => sideSwingByHour(gamesInRange), [gamesInRange]);
+  const closeGamesInRange = useMemo(() => closeMatchups(context.games, context.allPlayers, cutoff), [context, cutoff]);
+  const tableSides = useMemo(() => tableSideStats(gamesInRange, closeGamesInRange), [gamesInRange, closeGamesInRange]);
+  const sideSwingHours = useMemo(() => sideSwingByHour(closeGamesInRange), [closeGamesInRange]);
   const tableSidesRating = useMemo(
     () => tableSidesByRating(context.games, context.allPlayers, cutoff),
     [context, cutoff],
@@ -309,7 +313,8 @@ export const GamesTab: React.FC<{ range: TimeRange; setRange: (range: TimeRange)
                   <span className="text-sm text-primary-text">By the hour of the day</span>
                   {sideSwingHours.length === 0 ? (
                     <p className="text-xs text-primary-text/60">
-                      An hour shows when it has {MIN_GAMES_PER_BUCKET} games with a change of sides after set 1.
+                      An hour shows when it has {MIN_GAMES_PER_BUCKET} close matchups with a change of sides after set
+                      1.
                     </p>
                   ) : (
                     <>

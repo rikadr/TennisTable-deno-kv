@@ -913,8 +913,8 @@ export type TableSideStats = {
   neutralSets: number;
   /**
    * The points per set a player wins on the bad side minus the points per set
-   * the same player wins on the good side, averaged over the games. Below 0
-   * means the bad side costs points. See `sideSwing`.
+   * the same player wins on the good side, averaged over the close matchups.
+   * Below 0 means the bad side costs points. See `sideSwing`.
    */
   pointsPerSet?: number;
   /**
@@ -995,14 +995,18 @@ export function setWinChance(pointChance: number): number {
  * the level of the players: the stronger player often takes the bad side, and
  * a large difference in level decides most sets whatever the side. So this
  * compares each player with themselves. See `sideSwing`.
+ *
+ * The comparison takes `closeGames` only, from `closeMatchups`. In an uneven
+ * matchup the stronger player wins almost all points on either side, so the
+ * side makes almost no difference and pulls the average towards 0.
  */
-export function tableSideStats(games: Game[]): TableSideStats | undefined {
+export function tableSideStats(games: Game[], closeGames: Game[]): TableSideStats | undefined {
   const withScore = games.filter((game) => game.score !== undefined);
   const withSides = withScore.filter((game) => game.score!.gameWinnerSides?.some((side) => side !== null));
   if (withSides.length === 0) return undefined;
 
   const recordedSides = withSides.flatMap((game) => game.score!.gameWinnerSides!.filter((side) => side !== null));
-  const swings = withSides.map(sideSwing).filter((swing) => swing !== undefined);
+  const swings = closeGames.map(sideSwing).filter((swing) => swing !== undefined);
   const swing = average(swings.map((game) => game.swing));
 
   return {
@@ -1027,11 +1031,12 @@ export type SideSwingByHour = {
  * `TableSideStats.pointsPerSet` by the hour the game starts in. The light from
  * a window can make one side worse, and the light changes during the day. An
  * hour with fewer than MIN_GAMES_PER_BUCKET games is left out, because the
- * comparison of one game is mostly noise.
+ * comparison of one game is mostly noise. Give it the close matchups only, as
+ * `tableSideStats` uses.
  */
-export function sideSwingByHour(games: Game[]): SideSwingByHour[] {
+export function sideSwingByHour(closeGames: Game[]): SideSwingByHour[] {
   const hours = new Map<number, number[]>();
-  for (const game of games) {
+  for (const game of closeGames) {
     const swing = sideSwing(game);
     if (swing === undefined) continue;
     const hour = new Date(game.playedAt).getHours();
@@ -1044,7 +1049,19 @@ export function sideSwingByHour(games: Game[]): SideSwingByHour[] {
 }
 
 /** The largest rating gap before the game of a close matchup. */
-export const CLOSE_MATCHUP_GAP = 100;
+export const CLOSE_MATCHUP_GAP = 200;
+
+/**
+ * The games from `cutoff` on where the rating gap before the game is below
+ * CLOSE_MATCHUP_GAP. The whole history walks for the ratings.
+ */
+export function closeMatchups(games: Game[], players: Player[], cutoff: number): Game[] {
+  const close: Game[] = [];
+  forEachGameWithPreGameStanding(games, players, (game, { elo }) => {
+    if (game.playedAt >= cutoff && Math.abs(elo.winner - elo.loser) < CLOSE_MATCHUP_GAP) close.push(game);
+  });
+  return close;
+}
 
 export type TableSideRatingStats = {
   /**
