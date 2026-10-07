@@ -103,47 +103,71 @@ const ClosingOutCard: React.FC<{ stats: TrackedLevelStats }> = ({ stats }) => {
   );
 };
 
+/** A value for the close matchups next to the same value for all games. */
+const CloseAndAllValues: React.FC<{ close?: string; all?: string }> = ({ close, all }) => (
+  <div className="flex gap-4">
+    <div className="flex flex-col">
+      <span className="text-2xl md:text-3xl font-semibold leading-tight">{close ?? "–"}</span>
+      <span className="text-xs opacity-70">Close matchups</span>
+    </div>
+    <div className="flex flex-col">
+      <span className="text-2xl md:text-3xl font-semibold leading-tight opacity-70">{all ?? "–"}</span>
+      <span className="text-xs opacity-70">All games</span>
+    </div>
+  </div>
+);
+
 /**
  * The 2 numbers a player asks about the bad side: the points it costs in a set,
- * and the games it costs in a close matchup.
+ * and the games it costs. Each shows the close matchups next to all games, to
+ * show how much the difference in level changes the number.
  */
 const BadSideCard: React.FC<{ sides: TableSideStats; rating?: TableSideRatingStats }> = ({ sides, rating }) => {
-  const { pointsPerSet } = sides;
+  const { pointsPerSet, pointsPerSetAllGames } = sides;
   const moreBadSideSets = rating?.moreBadSideSets;
-  const winDifference = moreBadSideSets === undefined ? undefined : moreBadSideSets.won - moreBadSideSets.expected;
+  const moreBadSideSetsAllGames = rating?.moreBadSideSetsAllGames;
+  const expectedLabel = (result: { won: number; expected: number }) =>
+    `the ratings expect ${percentLabel(result.expected)}, a difference of ${pointsPerSetLabel(
+      result.won - result.expected,
+    )} percentage points`;
 
   return (
     <div className="grid grid-cols-1 xs:grid-cols-2 gap-2">
       <div className="flex flex-col gap-0.5 rounded-lg bg-secondary-background text-secondary-text px-3 py-2">
         <span className="text-xs md:text-sm opacity-80">Points per set on the bad side</span>
-        <span className="text-2xl md:text-3xl font-semibold leading-tight">
-          {pointsPerSet === undefined ? "–" : pointsPerSetLabel(pointsPerSet)}
-        </span>
+        <CloseAndAllValues
+          close={pointsPerSet === undefined ? undefined : pointsPerSetLabel(pointsPerSet)}
+          all={pointsPerSetAllGames === undefined ? undefined : pointsPerSetLabel(pointsPerSetAllGames)}
+        />
         <span className="text-sm">
           {pointsPerSet === undefined
             ? "Needs a close matchup with a change of sides after set 1, and the points of both sets."
-            : `A player wins ${fmtNum(Math.abs(pointsPerSet), { digits: 1 })} ${
+            : `In a close matchup, a player wins ${fmtNum(Math.abs(pointsPerSet), { digits: 1 })} ${
                 pointsPerSet <= 0 ? "fewer" : "more"
               } points per set on the bad side than on the good side.`}
         </span>
         <span className="text-xs opacity-70">
-          The same player in the same game, in sets 1 and 2. A rating gap below {CLOSE_MATCHUP_GAP} before the game.
+          The same player in the same game, in sets 1 and 2. A close matchup has a rating gap below {CLOSE_MATCHUP_GAP}{" "}
+          before the game.
         </span>
       </div>
       <div className="flex flex-col gap-0.5 rounded-lg bg-secondary-background text-secondary-text px-3 py-2">
-        <span className="text-xs md:text-sm opacity-80">More sets on the bad side, in a close matchup</span>
-        <span className="text-2xl md:text-3xl font-semibold leading-tight">
-          {moreBadSideSets === undefined ? "–" : percentLabel(moreBadSideSets.won)}
-        </span>
+        <span className="text-xs md:text-sm opacity-80">More sets on the bad side</span>
+        <CloseAndAllValues
+          close={moreBadSideSets === undefined ? undefined : percentLabel(moreBadSideSets.won)}
+          all={moreBadSideSetsAllGames === undefined ? undefined : percentLabel(moreBadSideSetsAllGames.won)}
+        />
         <span className="text-sm">
-          {moreBadSideSets === undefined || winDifference === undefined
+          {moreBadSideSets === undefined
             ? "Needs a close matchup where 1 player had the bad side in more sets."
-            : `of these games go to the player with more sets on the bad side. The ratings expect ${percentLabel(
-                moreBadSideSets.expected,
-              )}, so the difference is ${pointsPerSetLabel(winDifference)} percentage points.`}
+            : `of these games go to the player with more sets on the bad side. In a close matchup ${expectedLabel(
+                moreBadSideSets,
+              )}.`}
+          {moreBadSideSetsAllGames !== undefined && ` In all games ${expectedLabel(moreBadSideSetsAllGames)}.`}
         </span>
         <span className="text-xs opacity-70">
-          A rating gap below {CLOSE_MATCHUP_GAP} before the game. Most of these games go to a deciding set.
+          A close matchup has a rating gap below {CLOSE_MATCHUP_GAP} before the game. Most of these games go to a
+          deciding set.
         </span>
       </div>
     </div>

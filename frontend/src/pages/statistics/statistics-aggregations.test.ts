@@ -1018,6 +1018,8 @@ describe("closeMatchups", () => {
     const stats = tableSideStats([close, far], [close])!;
 
     expect(stats.pointsPerSet).toBeCloseTo((11 / 20 - 11 / 13) * 16.5);
+    // The far game reads 0, and all games take the average of the 2.
+    expect(stats.pointsPerSetAllGames).toBeCloseTo(((11 / 20 - 11 / 13) * 16.5) / 2);
     expect(stats.sidesRecorded).toBe(100);
   });
 });
@@ -1071,11 +1073,16 @@ describe("tableSidesByRating", () => {
     const played = Array.from({ length: 30 }, () => sided({ winner: "alice", loser: "bob" }, ["B"]));
 
     const close = tableSidesByRating(played.slice(0, 2), players, 0)!.moreBadSideSets!;
-    const all = tableSidesByRating(played, players, 0)!.moreBadSideSets!;
+    const stats = tableSidesByRating(played, players, 0)!;
+    const all = stats.moreBadSideSets!;
+    const limit = Elo.expectedResult(Elo.INITIAL_ELO + CLOSE_MATCHUP_GAP, Elo.INITIAL_ELO) * 100;
 
     expect(close.won).toBe(100);
     // The far matchups do not count, so the expected share stays near even.
-    expect(all.expected).toBeLessThan(Elo.expectedResult(Elo.INITIAL_ELO + CLOSE_MATCHUP_GAP, Elo.INITIAL_ELO) * 100);
+    expect(all.expected).toBeLessThan(limit);
+    // Without the limit the far matchups count too.
+    expect(stats.moreBadSideSetsAllGames!.won).toBe(100);
+    expect(stats.moreBadSideSetsAllGames!.expected).toBeGreaterThan(limit);
   });
 
   it("aggregates only the games from the cutoff, and stays silent without sides", () => {
