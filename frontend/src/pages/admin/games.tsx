@@ -4,7 +4,6 @@ import { useEventDbContext } from "../../wrappers/event-db-context";
 import { relativeTimeString } from "../../common/date-utils";
 import { fmtNum } from "../../common/number-utils";
 import { classNames } from "../../common/class-names";
-import { PillSelect } from "../../common/pill-select";
 import { Game } from "../../client/client-db/event-store/projectors/games-projector";
 
 type FilterValue = "any" | "yes" | "no";
@@ -28,6 +27,10 @@ const dataChecks: { key: FilterKey; label: string; short: string; test: (game: G
 ];
 
 const noFilters: Record<FilterKey, FilterValue> = { sets: "any", points: "any", tracked: "any", sides: "any" };
+
+const filterInput = "bg-primary-background text-primary-text border border-primary-text/20 rounded px-2 py-1";
+// Marks a filter that is not "any", so a reader sees which filters limit the list.
+const activeFilter = "border-secondary-text ring-1 ring-secondary-text";
 
 const cell = "border-b border-primary-text/20 px-1 md:px-3 py-1 md:py-1.5";
 
@@ -109,23 +112,9 @@ export const AdminGamesTab: React.FC<AdminGamesTabProps> = ({ onDeleteGame }) =>
       </p>
 
       {/* Filters */}
-      <div className="bg-secondary-background/30 rounded-lg p-2 md:p-4 space-y-3">
-        <div className="flex flex-wrap justify-center gap-3 md:gap-6">
-          {dataChecks.map((check) => (
-            <PillSelect<FilterValue>
-              key={check.key}
-              label={check.label}
-              value={filters[check.key]}
-              onChange={(value) => setFilter(check.key, value)}
-              options={[
-                { value: "any", label: "Any" },
-                { value: "yes", label: `Yes ${fmtNum(counts[check.key])}` },
-                { value: "no", label: `No ${fmtNum(games.length - counts[check.key])}` },
-              ]}
-            />
-          ))}
-        </div>
-        <div className="flex flex-wrap items-center justify-center gap-2 md:gap-4 text-xs md:text-sm">
+      <div className="flex flex-wrap items-end gap-2 md:gap-3 bg-secondary-background/30 rounded-lg p-2 md:p-3 text-xs md:text-sm">
+        <label className="flex flex-col gap-0.5">
+          <span className="text-primary-text/60">Player</span>
           <input
             type="search"
             value={playerSearch}
@@ -133,20 +122,34 @@ export const AdminGamesTab: React.FC<AdminGamesTabProps> = ({ onDeleteGame }) =>
               setPlayerSearch(e.target.value);
               setCurrentPage(1);
             }}
-            placeholder="Filter on player name"
-            className="bg-primary-background text-primary-text border border-primary-text/20 rounded px-2 py-1 w-52"
+            placeholder="Name"
+            className={classNames(filterInput, "w-40", search !== "" && activeFilter)}
           />
-          <button
-            onClick={clearFilters}
-            disabled={!hasFilters}
-            className="px-3 py-1 rounded border border-primary-text/20 hover:bg-secondary-background hover:text-secondary-text disabled:opacity-40 disabled:pointer-events-none"
-          >
-            Clear filters
-          </button>
-          <span>
-            <span className="font-semibold">{fmtNum(filteredGames.length)}</span> of {fmtNum(games.length)} games
-          </span>
-        </div>
+        </label>
+        {dataChecks.map((check) => (
+          <label key={check.key} className="flex flex-col gap-0.5">
+            <span className="text-primary-text/60">{check.label}</span>
+            <select
+              value={filters[check.key]}
+              onChange={(e) => setFilter(check.key, e.target.value as FilterValue)}
+              className={classNames(filterInput, filters[check.key] !== "any" && activeFilter)}
+            >
+              <option value="any">Any</option>
+              <option value="yes">Yes ({fmtNum(counts[check.key])})</option>
+              <option value="no">No ({fmtNum(games.length - counts[check.key])})</option>
+            </select>
+          </label>
+        ))}
+        <button
+          onClick={clearFilters}
+          disabled={!hasFilters}
+          className="px-3 py-1 rounded border border-primary-text/20 hover:bg-secondary-background hover:text-secondary-text disabled:opacity-40 disabled:pointer-events-none"
+        >
+          Clear
+        </button>
+        <span className="py-1 md:ml-auto">
+          <span className="font-semibold">{fmtNum(filteredGames.length)}</span> of {fmtNum(games.length)} games
+        </span>
       </div>
 
       {/* Pagination Controls */}
