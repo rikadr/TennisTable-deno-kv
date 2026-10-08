@@ -162,6 +162,15 @@ export const AchievementFacts: React.FC<{ achievement: Achievement }> = ({ achie
             : " (first league record!)"}
         </span>
       )}
+      {achievement.type === "choker" && achievement.data && (
+        <span className="text-[11px] opacity-80">
+          Led {achievement.data.leadPoints}–{achievement.data.leadOpponentPoints} in set {achievement.data.setNumber},
+          lost {achievement.data.setLoserPoints}–{achievement.data.setWinnerPoints}
+          {achievement.data.previousRecord !== undefined
+            ? ` (prev record ${achievement.data.previousRecord})`
+            : " (first league record!)"}
+        </span>
+      )}
       {achievement.type === "hero-of-the-day" && achievement.data && (
         <span className="text-[11px] opacity-80">
           {achievement.data.gamesPlayed} games in one day

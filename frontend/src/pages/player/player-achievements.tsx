@@ -6,6 +6,7 @@ import {
   Achievement,
   AchievementProgression,
   AchievementType,
+  CHOKER_RECORD_FLOOR,
   GAMES_IN_PERIOD_RECORD_FLOOR,
   isReachievableAchievement,
   YIN_YANG_RECORD_FLOOR,
@@ -319,6 +320,11 @@ export const ACHIEVEMENT_LABELS: Record<AchievementType, { title: string; descri
     title: "Shootout",
     description: "Play the highest-scoring game in league history (the 3 highest-scoring legal sets count)",
     icon: "💥",
+  },
+  choker: {
+    title: "Choker",
+    description: "Lose a set you led by as many points as the record, or more (tracked games only)",
+    icon: "😬",
   },
   "hero-of-the-day": {
     title: "Hero of the Day",
@@ -716,6 +722,17 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
                     {achievement.data.points} points across the {achievement.data.sets.length} highest-scoring set
                     {achievement.data.sets.length !== 1 ? "s" : ""}:{" "}
                     {achievement.data.sets.map((set) => `${set.playerPoints}–${set.opponentPoints}`).join(", ")}
+                    {achievement.data.previousRecord !== undefined
+                      ? ` (previous record: ${achievement.data.previousRecord})`
+                      : " (first league record!)"}
+                  </p>
+                )}
+
+                {achievement.type === "choker" && achievement.data && (
+                  <p className="text-xs text-secondary-text/70 mt-2">
+                    Led by {achievement.data.lead} at {achievement.data.leadPoints}–
+                    {achievement.data.leadOpponentPoints} in set {achievement.data.setNumber}, lost the set{" "}
+                    {achievement.data.setLoserPoints}–{achievement.data.setWinnerPoints}
                     {achievement.data.previousRecord !== undefined
                       ? ` (previous record: ${achievement.data.previousRecord})`
                       : " (first league record!)"}
@@ -1531,6 +1548,20 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                               </div>
                             )}
 
+                            {/* Record holder for choker. An equal lead earns it, so
+                          the target IS the record. */}
+                            {type === "choker" && "recordHolder" in data && data.recordHolder && (
+                              <div className="mt-1.5 text-xs text-secondary-text/70">
+                                League record held by{" "}
+                                <Link to={{ pathname: "/player/" + data.recordHolder, search }}>
+                                  <span className="text-secondary-text underline">
+                                    {context.playerName(data.recordHolder)}
+                                  </span>
+                                </Link>
+                                . Lose a set you led by {data.target} or more points to earn it.
+                              </div>
+                            )}
+
                             {/* Record holder for leap-frog */}
                             {type === "leap-frog" && "recordHolder" in data && (
                               <div className="mt-1.5 text-xs text-secondary-text/70">
@@ -1645,6 +1676,11 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                           <div className="mt-1.5 text-xs text-secondary-text/70">
                             No league record yet — play a {SHOOTOUT_RECORD_FLOOR}+ point game (the{" "}
                             {SHOOTOUT_SETS_COUNTED} highest-scoring legal sets count) to set the first record.
+                          </div>
+                        ) : type === "choker" ? (
+                          <div className="mt-1.5 text-xs text-secondary-text/70">
+                            No league record yet — lose a set you led by {CHOKER_RECORD_FLOOR} or more points to set the
+                            first record.
                           </div>
                         ) : type === "leap-frog" ? (
                           <div className="mt-1.5 text-xs text-secondary-text/70">
