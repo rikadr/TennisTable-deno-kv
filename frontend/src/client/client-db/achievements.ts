@@ -94,6 +94,66 @@ export function isTrackedGame(game: Game): boolean {
   return (game.score?.pointSequences?.length ?? 0) > 0;
 }
 
+// Smallest lead lost that can establish the very first Choker record. A lead
+// of 1 or 2 points changes hands in almost every set; losing a 5-point lead
+// takes a real collapse. Once a record exists the floor is irrelevant — a
+// lead that equals or beats the record earns the award.
+export const CHOKER_RECORD_FLOOR = 5;
+
+// The largest lead the set loser held in each set of a tracked game, with the
+// score at the first moment they held it. Only a game with a point log can
+// tell, so an untracked game gives no sets. A set with equal points has no
+// loser and is left out.
+export function leadsLostInSets(game: Game): {
+  setNumber: number;
+  setLoser: "gameWinner" | "gameLoser";
+  lead: number;
+  // The score when the lead was largest, from the set loser's side.
+  leadPoints: number;
+  leadOpponentPoints: number;
+  // The final score of the set, from the set loser's side.
+  setLoserPoints: number;
+  setWinnerPoints: number;
+}[] {
+  const sequences = game.score?.pointSequences;
+  const setPoints = game.score?.setPoints;
+  if (sequences === undefined || setPoints === undefined) return [];
+
+  return sequences.flatMap((sequence, index) => {
+    const set = setPoints[index];
+    if (set === undefined || set.gameWinner === set.gameLoser) return [];
+    const setLoser = set.gameWinner < set.gameLoser ? "gameWinner" : "gameLoser";
+    const loserChar = setLoser === "gameWinner" ? "W" : "L";
+
+    let loserPoints = 0;
+    let winnerPoints = 0;
+    let lead = 0;
+    let leadPoints = 0;
+    let leadOpponentPoints = 0;
+    for (const point of sequence) {
+      if (point === loserChar) loserPoints++;
+      else winnerPoints++;
+      if (loserPoints - winnerPoints > lead) {
+        lead = loserPoints - winnerPoints;
+        leadPoints = loserPoints;
+        leadOpponentPoints = winnerPoints;
+      }
+    }
+    if (lead === 0) return [];
+    return [
+      {
+        setNumber: index + 1,
+        setLoser,
+        lead,
+        leadPoints,
+        leadOpponentPoints,
+        setLoserPoints: Math.min(set.gameWinner, set.gameLoser),
+        setWinnerPoints: Math.max(set.gameWinner, set.gameLoser),
+      },
+    ];
+  });
+}
+
 // Career sets won from the bad side of the table for "Bad Side Bandit". One
 // side of a table is often worse than the other, and a game can record which
 // player had it in each set. A set counts when the player on the bad side won
@@ -222,6 +282,17 @@ export class Achievements {
   // Each player's own largest single-game leaderboard jump (ranked before
   // and after). Used for Leap Frog progression.
   bestRankJump: Map<string, number> = new Map();
+  // League-wide running record for the Choker achievement: the largest lead
+  // a player held in a set they went on to lose, from games tracked point by
+  // point. Undefined until a lead of CHOKER_RECORD_FLOOR establishes it.
+  // Equalling the record earns the award but leaves the record, and its
+  // holder, where they are. Used by the progression view.
+  chokerRecord: { lead: number | undefined; holder: string | undefined } = {
+    lead: undefined,
+    holder: undefined,
+  };
+  // Each player's own largest lead lost in a set. Used for Choker progression.
+  biggestLeadLost: Map<string, number> = new Map();
   // Best (lowest) leaderboard rank each player has ever held, recorded only
   // while the ranked cohort had ≥5 players — the same gate the On the
   // Podium / Touched the Throne awards use, so a "best" here always means a
@@ -319,6 +390,8 @@ export class Achievements {
     this.marathonSetRecord = { score: undefined, holder: undefined };
     this.leapFrogRecord = { ranksJumped: undefined, holder: undefined };
     this.bestRankJump.clear();
+    this.chokerRecord = { lead: undefined, holder: undefined };
+    this.biggestLeadLost.clear();
     this.bestRankEver.clear();
     this.bestBeatenRank.clear();
     this.bestClimb.clear();
@@ -869,6 +942,12 @@ export class Achievements {
         // the table. It needs the recorded sides as well as the points, so it
         // only moves on a game that has both.
         this.#checkBadSideBanditAchievement(game, winner, loser);
+      }
+
+      // Check for "Choker": a lead lost in a set that equals or beats the
+      // league record. Only a game tracked point by point can tell.
+      if (isTrackedGame(game)) {
+        this.#checkChokerAchievements(game);
       }
 
       // Check for "On the Record": career games tracked point by point.
@@ -2132,6 +2211,48 @@ export class Achievements {
     });
   }
 
+  // Awards "Choker" to the set loser for every set of a tracked game, in the
+  // order played, where the largest lead they held equals or beats the
+  // league-wide record. CHOKER_RECORD_FLOOR establishes the first record. Only
+  // a bigger lead moves the record; an equal lead earns the award and leaves
+  // the record with its holder. Both players can earn it in one game, and one
+  // player can earn it in more than 1 set.
+  #checkChokerAchievements(game: Game) {
+    leadsLostInSets(game).forEach((set) => {
+      const playerId = set.setLoser === "gameWinner" ? game.winner : game.loser;
+      const opponent = playerId === game.winner ? game.loser : game.winner;
+
+      if (set.lead > (this.biggestLeadLost.get(playerId) ?? 0)) this.biggestLeadLost.set(playerId, set.lead);
+
+      const currentRecord = this.chokerRecord.lead;
+      if (set.lead < (currentRecord ?? CHOKER_RECORD_FLOOR)) return;
+
+      this.#addAchievement(
+        playerId,
+        this.#createAchievement(
+          "choker",
+          playerId,
+          game.playedAt,
+          {
+            gameId: game.id,
+            opponent,
+            setNumber: set.setNumber,
+            lead: set.lead,
+            leadPoints: set.leadPoints,
+            leadOpponentPoints: set.leadOpponentPoints,
+            setLoserPoints: set.setLoserPoints,
+            setWinnerPoints: set.setWinnerPoints,
+            previousRecord: currentRecord,
+          },
+          game.id,
+        ),
+      );
+      if (currentRecord === undefined || set.lead > currentRecord) {
+        this.chokerRecord = { lead: set.lead, holder: playerId };
+      }
+    });
+  }
+
   // Awards "Deuce Demon" when a player's career total of won deuce sets
   // (winner ≥ 12, loser ≥ 10 — the Marathon Set qualifying rule) reaches
   // DEUCE_DEMON_TARGET. One game can contain several qualifying sets and can
@@ -3351,6 +3472,14 @@ export class Achievements {
         target: this.shootoutRecord.points === undefined ? undefined : this.shootoutRecord.points + 1,
         recordHolders: this.shootoutRecord.holders,
       },
+      // Choker is earned by reaching the record, not by passing it, so the
+      // target IS the record.
+      choker: {
+        earned: 0,
+        current: 0,
+        target: this.chokerRecord.lead,
+        recordHolder: this.chokerRecord.holder,
+      },
       "hero-of-the-day": {
         earned: 0,
         current: 0,
@@ -4158,6 +4287,10 @@ export class Achievements {
     // record they must strictly exceed to earn the award.
     progression["shootout"].current = this.bestShootout.get(playerId) ?? 0;
 
+    // Choker progression: the player's own largest lead lost in a set of a
+    // tracked game, compared against the league record they must reach.
+    progression["choker"].current = this.biggestLeadLost.get(playerId) ?? 0;
+
     // Milestone Game progression is league-wide (everyone shares it) and
     // restarts at every milestone: current is the games played since the
     // previous milestone (0 right after one) and target is the 500-game
@@ -4511,6 +4644,23 @@ type AchievementDefinitions = {
     sets: { playerPoints: number; opponentPoints: number }[];
     previousRecord?: number;
   };
+  // Lost a set of a tracked game after a lead that equals or beats the league
+  // record. `lead` is the largest lead the badge owner held in the set, and
+  // `leadPoints`–`leadOpponentPoints` the score when they first held it.
+  // `setLoserPoints`–`setWinnerPoints` is the final score of the set, from the
+  // badge owner's side. Undefined previousRecord means the set established
+  // the very first league record.
+  choker: {
+    gameId: string;
+    opponent: string;
+    setNumber: number;
+    lead: number;
+    leadPoints: number;
+    leadOpponentPoints: number;
+    setLoserPoints: number;
+    setWinnerPoints: number;
+    previousRecord?: number;
+  };
   // Awarded to both players of a season's very first game.
   "season-opener": { seasonStart: number; gameId: string; opponent: string };
   // Awarded to both players of every 500th league game. `milestone` is that
@@ -4604,6 +4754,7 @@ export const ACHIEVEMENT_IS_REACHIEVABLE: Record<AchievementType, boolean> = {
   "earliest-game": true, // League records — can be retaken
   "latest-game": true,
   shootout: true, // League record
+  choker: true, // League record — an equal lead earns it again
   "season-opener": true, // Per season
   "milestone-game": true, // Per 500th league game
 };
@@ -4784,6 +4935,16 @@ type ShootoutProgression = BaseProgression & {
   recordHolders?: string[];
 };
 
+type ChokerProgression = BaseProgression & {
+  // Player's own largest lead lost in a set of a tracked game (0 if none).
+  current: number;
+  // The league record — a lead lost that equals it earns the award. Undefined
+  // when no one has set a record yet (a CHOKER_RECORD_FLOOR lead takes it).
+  target?: number;
+  // Player who currently holds the league record, if any.
+  recordHolder?: string;
+};
+
 type MarathonSetProgression = BaseProgression & {
   // Player's own highest winning set score from a true-deuce set
   // they won (winner ≥ 12, loser ≥ 10). 0 if they have none.
@@ -4916,6 +5077,7 @@ export type AchievementProgression = {
   climber: ClimberProgression;
   "marathon-set": MarathonSetProgression;
   shootout: ShootoutProgression;
+  choker: ChokerProgression;
   "streak-ender": BaseProgression;
   "longest-win-streak": StreakRecordProgression;
   "longest-lose-streak": StreakRecordProgression;

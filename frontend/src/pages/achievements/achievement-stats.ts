@@ -44,6 +44,7 @@ export const ACHIEVEMENT_METRICS: Partial<Record<AchievementType, AchievementMet
   "on-the-podium": { label: "Score on the podium", format: score },
   "marathon-set": { label: "Points of the set winner", format: points },
   shootout: { label: "Points in the counted sets", format: points },
+  choker: { label: "Lead lost", format: points },
   "less-is-more": { label: "Points behind the loser", format: points },
   "leap-frog": { label: "Ranks jumped", format: (value) => `${fmtNum(value)} rank${value === 1 ? "" : "s"}` },
   "giant-hunting": { label: "Largest Score gap", format: score },
@@ -99,6 +100,8 @@ export function achievementValue(achievement: Achievement): number | undefined {
       return achievement.data.setWinnerScore;
     case "shootout":
       return achievement.data.points;
+    case "choker":
+      return achievement.data.lead;
     case "less-is-more":
       return achievement.data.opponentPoints - achievement.data.playerPoints;
     case "leap-frog":
@@ -159,6 +162,7 @@ export const RECORD_ACHIEVEMENTS: AchievementType[] = [
   "goliath",
   "marathon-set",
   "shootout",
+  "choker",
   "leap-frog",
   "earliest-game",
   "latest-game",
@@ -532,8 +536,8 @@ export function valueBuckets(sortedValues: number[], metric: AchievementMetric):
 /**
  * The record over time. A step is one value of the record, and it holds every
  * player who reached that value: both players of a game earn some records at
- * once, and Leap Frog awards a jump that equals the standing record, which
- * matches the record rather than replacing it. A step keeps the time it was
+ * once, and Leap Frog and Choker award a value that equals the standing
+ * record, which matches the record rather than replacing it. A step keeps the time it was
  * first set, so the step that stands says how long the record has stood.
  */
 export function recordHistory(earnings: Achievement[]): RecordStep[] {
