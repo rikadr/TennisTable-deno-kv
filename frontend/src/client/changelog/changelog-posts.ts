@@ -47,7 +47,7 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
     date: "2026-10-08",
     tags: ["feature-update"],
     summary:
-      "Choker 😬 is a new league record achievement. Lose a set after a lead that is equal to or larger than the record for the largest lead lost.",
+      "Choker 😬 is a new league record achievement. Lose a set you led by as many points as the record, or more.",
     body: [
       text(
         "The lead is the largest number of points you were ahead in the set. Only games tracked point by point count, because only they show the score during the set.",

@@ -323,8 +323,7 @@ export const ACHIEVEMENT_LABELS: Record<AchievementType, { title: string; descri
   },
   choker: {
     title: "Choker",
-    description:
-      "Lose a set after a lead as large as or larger than the league record for the largest lead lost (only games tracked point by point count)",
+    description: "Lose a set you led by as many points as the record, or more (tracked games only)",
     icon: "😬",
   },
   "hero-of-the-day": {
@@ -1559,8 +1558,7 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                                     {context.playerName(data.recordHolder)}
                                   </span>
                                 </Link>
-                                . Lose a set after a lead of {data.target} or more points (in a game tracked point by
-                                point) to earn it.
+                                . Lose a set you led by {data.target} or more points to earn it.
                               </div>
                             )}
 
@@ -1681,8 +1679,8 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                           </div>
                         ) : type === "choker" ? (
                           <div className="mt-1.5 text-xs text-secondary-text/70">
-                            No league record yet — lose a set after a lead of {CHOKER_RECORD_FLOOR} or more points (in a
-                            game tracked point by point) to set the first record.
+                            No league record yet — lose a set you led by {CHOKER_RECORD_FLOOR} or more points to set the
+                            first record.
                           </div>
                         ) : type === "leap-frog" ? (
                           <div className="mt-1.5 text-xs text-secondary-text/70">
