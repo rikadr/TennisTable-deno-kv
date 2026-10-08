@@ -95,10 +95,10 @@ export function isTrackedGame(game: Game): boolean {
 }
 
 // Smallest lead lost that can establish the very first Choker record. A lead
-// of 1 or 2 points changes hands in almost every set; losing a 5-point lead
-// takes a real collapse. Once a record exists the floor is irrelevant — a
-// lead that equals or beats the record earns the award.
-export const CHOKER_RECORD_FLOOR = 5;
+// of 1 or 2 points changes hands in almost every set, so the first record
+// takes at least 3. Once a record exists the floor is irrelevant — a lead
+// that equals or beats the record earns the award.
+export const CHOKER_RECORD_FLOOR = 3;
 
 // The largest lead the set loser held in each set of a tracked game, with the
 // score at the first moment they held it. Only a game with a point log can
