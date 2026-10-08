@@ -1,32 +1,36 @@
 import React, { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { relativeTimeString } from "../../common/date-utils";
 import { fmtNum } from "../../common/number-utils";
 import { classNames } from "../../common/class-names";
 import { Game } from "../../client/client-db/event-store/projectors/games-projector";
+import { GameMarkers } from "../game/game-markers";
 
 type FilterValue = "any" | "yes" | "no";
 type FilterKey = "sets" | "points" | "tracked" | "sides";
 
-const dataChecks: { key: FilterKey; label: string; short: string; test: (game: Game) => boolean }[] = [
-  { key: "sets", label: "Sets recorded", short: "Sets", test: (game) => game.score !== undefined },
-  { key: "points", label: "Points recorded", short: "Points", test: (game) => Boolean(game.score?.setPoints?.length) },
+const dataChecks: { key: FilterKey; label: string; test: (game: Game) => boolean }[] = [
+  { key: "sets", label: "Sets recorded", test: (game) => game.score !== undefined },
+  { key: "points", label: "Points recorded", test: (game) => Boolean(game.score?.setPoints?.length) },
   {
     key: "tracked",
     label: "Tracked live",
-    short: "Live",
     test: (game) => Boolean(game.score?.pointSequences?.length),
   },
   {
     key: "sides",
     label: "Bad side recorded",
-    short: "Side",
     test: (game) => Boolean(game.score?.gameWinnerSides?.some((side) => side !== null)),
   },
 ];
 
-const noFilters: Record<FilterKey, FilterValue> = { sets: "any", points: "any", tracked: "any", sides: "any" };
+const pageSizes = [25, 50, 100, 200];
+const defaultPageSize = 50;
+
+function parseFilter(value: string | null): FilterValue {
+  return value === "yes" || value === "no" ? value : "any";
+}
 
 const filterInput = "bg-primary-background text-primary-text border border-primary-text/20 rounded px-2 py-1";
 // Marks a filter that is not "any", so a reader sees which filters limit the list.
@@ -40,13 +44,39 @@ interface AdminGamesTabProps {
 
 export const AdminGamesTab: React.FC<AdminGamesTabProps> = ({ onDeleteGame }) => {
   const context = useEventDbContext();
-  const navigate = useNavigate();
 
-  const [filters, setFilters] = useState(noFilters);
-  const [playerSearch, setPlayerSearch] = useState("");
-  const [newestFirst, setNewestFirst] = useState(true);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [gamesPerPage, setGamesPerPage] = useState(50);
+  // The filters, sort order and page live in the URL, so they stay when the admin goes back from a game.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const filters = Object.fromEntries(
+    dataChecks.map((check) => [check.key, parseFilter(searchParams.get(check.key))]),
+  ) as Record<FilterKey, FilterValue>;
+  // Local state keeps typing smooth; the URL gets each change too.
+  const [playerSearch, setPlayerSearch] = useState(() => searchParams.get("player") ?? "");
+  const newestFirst = searchParams.get("order") !== "oldest";
+  const currentPage = Math.max(1, Number(searchParams.get("page")) || 1);
+  const perPageParam = Number(searchParams.get("perPage"));
+  const gamesPerPage = pageSizes.includes(perPageParam) ? perPageParam : defaultPageSize;
+
+  /** Sets or removes (undefined) URL params. Every change except a page change goes back to page 1. */
+  function updateParams(changes: Record<string, string | undefined>) {
+    setSearchParams(
+      () => {
+        // Read the live URL: the hook's own params are from the last render, so 2 quick changes would drop one.
+        const next = new URLSearchParams(window.location.search);
+        if (!("page" in changes)) next.delete("page");
+        for (const [key, value] of Object.entries(changes)) {
+          if (value === undefined) next.delete(key);
+          else next.set(key, value);
+        }
+        return next;
+      },
+      { replace: true },
+    );
+  }
+
+  function setCurrentPage(page: number) {
+    updateParams({ page: page > 1 ? String(page) : undefined });
+  }
 
   const games = context.eventStore.gamesProjector.games;
 
@@ -84,14 +114,12 @@ export const AdminGamesTab: React.FC<AdminGamesTabProps> = ({ onDeleteGame }) =>
   const hasFilters = search !== "" || dataChecks.some((check) => filters[check.key] !== "any");
 
   function setFilter(key: FilterKey, value: FilterValue) {
-    setFilters((prev) => ({ ...prev, [key]: value }));
-    setCurrentPage(1);
+    updateParams({ [key]: value === "any" ? undefined : value });
   }
 
   function clearFilters() {
-    setFilters(noFilters);
     setPlayerSearch("");
-    setCurrentPage(1);
+    updateParams({ player: undefined, ...Object.fromEntries(dataChecks.map((check) => [check.key, undefined])) });
   }
 
   function confirmDelete(game: Game) {
@@ -120,7 +148,7 @@ export const AdminGamesTab: React.FC<AdminGamesTabProps> = ({ onDeleteGame }) =>
             value={playerSearch}
             onChange={(e) => {
               setPlayerSearch(e.target.value);
-              setCurrentPage(1);
+              updateParams({ player: e.target.value || undefined });
             }}
             placeholder="Name"
             className={classNames(filterInput, "w-40", search !== "" && activeFilter)}
@@ -160,15 +188,16 @@ export const AdminGamesTab: React.FC<AdminGamesTabProps> = ({ onDeleteGame }) =>
             <select
               value={gamesPerPage}
               onChange={(e) => {
-                setGamesPerPage(Number(e.target.value));
-                setCurrentPage(1);
+                const size = Number(e.target.value);
+                updateParams({ perPage: size === defaultPageSize ? undefined : String(size) });
               }}
               className="bg-primary-background text-primary-text border border-primary-text/20 rounded px-1 md:px-2 py-0.5 md:py-1 text-xs md:text-sm"
             >
-              <option value={25}>25</option>
-              <option value={50}>50</option>
-              <option value={100}>100</option>
-              <option value={200}>200</option>
+              {pageSizes.map((size) => (
+                <option key={size} value={size}>
+                  {size}
+                </option>
+              ))}
             </select>
           </div>
           <div className="text-xs md:text-sm">
@@ -214,10 +243,7 @@ export const AdminGamesTab: React.FC<AdminGamesTabProps> = ({ onDeleteGame }) =>
             <tr>
               <th className={classNames(cell, "text-right")}>
                 <button
-                  onClick={() => {
-                    setNewestFirst((prev) => !prev);
-                    setCurrentPage(1);
-                  }}
+                  onClick={() => updateParams({ order: newestFirst ? "oldest" : undefined })}
                   title={newestFirst ? "Newest first" : "Oldest first"}
                   className="font-semibold hover:underline whitespace-nowrap"
                 >
@@ -246,14 +272,14 @@ export const AdminGamesTab: React.FC<AdminGamesTabProps> = ({ onDeleteGame }) =>
                   {fmtNum(gameNumbers.get(game.id))}
                 </td>
                 <td className={classNames(cell, "font-semibold whitespace-nowrap")}>
-                  <button className="hover:underline" onClick={() => navigate(`/player/${game.winner}`)}>
+                  <Link className="hover:underline" to={`/player/${game.winner}`}>
                     {context.playerName(game.winner)}
-                  </button>
+                  </Link>
                 </td>
                 <td className={classNames(cell, "whitespace-nowrap")}>
-                  <button className="hover:underline" onClick={() => navigate(`/player/${game.loser}`)}>
+                  <Link className="hover:underline" to={`/player/${game.loser}`}>
                     {context.playerName(game.loser)}
-                  </button>
+                  </Link>
                 </td>
                 <td className={classNames(cell, "whitespace-nowrap")}>
                   <p>{relativeTimeString(new Date(game.playedAt))}</p>
@@ -269,11 +295,7 @@ export const AdminGamesTab: React.FC<AdminGamesTabProps> = ({ onDeleteGame }) =>
                   </p>
                 </td>
                 <td className={cell}>
-                  <button
-                    className="text-left hover:underline"
-                    title="Game details"
-                    onClick={() => navigate(`/game?time=${game.playedAt}`)}
-                  >
+                  <Link className="block hover:underline" title="Game details" to={`/game?time=${game.playedAt}`}>
                     {game.score ? (
                       <>
                         <span className="font-bold whitespace-nowrap">
@@ -290,37 +312,19 @@ export const AdminGamesTab: React.FC<AdminGamesTabProps> = ({ onDeleteGame }) =>
                     ) : (
                       <span className="text-primary-text/40">-</span>
                     )}
-                  </button>
+                  </Link>
                 </td>
-                <td className={cell}>
-                  <div className="flex gap-1">
-                    {dataChecks.map((check) => {
-                      const has = check.test(game);
-                      return (
-                        <span
-                          key={check.key}
-                          title={`${check.label}: ${has ? "yes" : "no"}`}
-                          className={classNames(
-                            "px-1.5 py-0.5 rounded text-[10px] md:text-xs whitespace-nowrap border",
-                            has
-                              ? "bg-secondary-background text-secondary-text border-secondary-background"
-                              : "border-primary-text/20 text-primary-text/30 line-through",
-                          )}
-                        >
-                          {check.short}
-                        </span>
-                      );
-                    })}
-                  </div>
+                <td className={classNames(cell, "text-center whitespace-nowrap")}>
+                  <GameMarkers score={game.score} />
                 </td>
                 <td className={classNames(cell, "text-center")}>
                   <div className="flex gap-1 md:gap-2 justify-center">
-                    <button
+                    <Link
                       className="text-[10px] md:text-xs bg-blue-500 hover:bg-blue-700 text-white px-1 md:px-2 py-0.5 md:py-1 rounded-md whitespace-nowrap"
-                      onClick={() => navigate(`/game/edit/score?gameId=${game.id}`)}
+                      to={`/game/edit/score?gameId=${game.id}`}
                     >
                       Edit
-                    </button>
+                    </Link>
                     <button
                       className="text-[10px] md:text-xs bg-red-500 hover:bg-red-800 text-white px-1 md:px-2 py-0.5 md:py-1 rounded-md whitespace-nowrap"
                       onClick={() => confirmDelete(game)}
