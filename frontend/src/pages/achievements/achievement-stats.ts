@@ -189,6 +189,7 @@ export const MUTUAL_ACHIEVEMENTS: AchievementType[] = [
   "nice-game",
   "best-friends",
   "photo-finish",
+  "even-steven",
 ];
 
 export type RarityEntry = {

@@ -465,6 +465,7 @@ export class Achievements {
         lostFirstGame: boolean;
         collectorLosingScores: Set<number>; // Losing scores of the 11–x sets won, for Collector
         winsAgainst: Map<string, number>; // Wins against each opponent, for Even Steven
+        evenStevenEarned: boolean;
         hatTrickWins: { playedAt: number }[]; // Track recent wins for hat-trick
         gamesPlayed: number; // Total games played, used for the "ranked" achievement
       }
@@ -534,6 +535,7 @@ export class Achievements {
           lostFirstGame: false,
           collectorLosingScores: new Set(),
           winsAgainst: new Map(),
+          evenStevenEarned: false,
           hatTrickWins: [],
           gamesPlayed: 0,
         });
@@ -571,6 +573,7 @@ export class Achievements {
           lostFirstGame: false,
           collectorLosingScores: new Set(),
           winsAgainst: new Map(),
+          evenStevenEarned: false,
           hatTrickWins: [],
           gamesPlayed: 0,
         });
@@ -833,9 +836,12 @@ export class Achievements {
       winner.winsAgainst.set(game.loser, winsAgainstLoser);
       const winsAgainstWinner = loser.winsAgainst.get(game.winner) ?? 0;
       if (winnerOpponentData.count >= EVEN_STEVEN_MIN_GAMES && winsAgainstLoser === winsAgainstWinner) {
-        [game.winner, game.loser].forEach((playerId) => {
-          if (this.#hasAchievement(playerId, "even-steven")) return;
-          const opponent = playerId === game.winner ? game.loser : game.winner;
+        [
+          { playerId: game.winner, opponent: game.loser, tracker: winner },
+          { playerId: game.loser, opponent: game.winner, tracker: loser },
+        ].forEach(({ playerId, opponent, tracker }) => {
+          if (tracker.evenStevenEarned) return;
+          tracker.evenStevenEarned = true;
           this.#addAchievement(
             playerId,
             this.#createAchievement(
@@ -851,11 +857,7 @@ export class Achievements {
 
       // Check for "Student Becomes Master": the first win against the
       // opponent who beat the player in their first game. Earned once.
-      if (
-        winner.lostFirstGame &&
-        winner.firstOpponent === game.loser &&
-        !this.#hasAchievement(game.winner, "student-becomes-master")
-      ) {
+      if (winner.lostFirstGame && winner.firstOpponent === game.loser && winsAgainstLoser === 1) {
         this.#addAchievement(
           game.winner,
           this.#createAchievement(
@@ -1008,8 +1010,8 @@ export class Achievements {
 
         // Check for "Collector": a set won 11–x with every x from 0 to 9.
         // Either player can win a set, whoever wins the game.
-        this.#checkCollectorAchievement(game, game.winner, winner, true);
-        this.#checkCollectorAchievement(game, game.loser, loser, false);
+        this.#checkCollectorAchievement(game, game.score.setPoints, game.winner, winner, true);
+        this.#checkCollectorAchievement(game, game.score.setPoints, game.loser, loser, false);
       }
 
       // Check for "Bad Side Bandit": career games won with more sets on the
@@ -2394,13 +2396,14 @@ export class Achievements {
   // scores in sets won 11–x. Earned once.
   #checkCollectorAchievement(
     game: Game,
+    setPoints: { gameWinner: number; gameLoser: number }[],
     playerId: string,
     tracker: { collectorLosingScores: Set<number> },
     playerIsGameWinner: boolean,
   ) {
     const scores = tracker.collectorLosingScores;
     if (scores.size === COLLECTOR_LOSING_SCORES.length) return;
-    game.score?.setPoints?.forEach((set) => {
+    setPoints.forEach((set) => {
       const losingScore = collectorLosingScore(set, playerIsGameWinner);
       if (losingScore !== undefined) scores.add(losingScore);
     });
@@ -3321,10 +3324,6 @@ export class Achievements {
     return this.#gamesByPlayedAt.get(playedAt);
   }
 
-  #hasAchievement(playerId: string, type: AchievementType): boolean {
-    return this.achievementMap.get(playerId)?.some((achievement) => achievement.type === type) ?? false;
-  }
-
   #addAchievement(playerId: string, achievement: Achievement) {
     if (!this.achievementMap.has(playerId)) {
       this.achievementMap.set(playerId, []);
@@ -3614,9 +3613,9 @@ export class Achievements {
       "global-player": { current: 0, target: 20, opponents: new Set(), earned: 0 },
       "best-friends": { current: 0, target: 50, perOpponent: new Map(), earned: 0 },
       reunion: { current: 0, target: ONE_YEAR, earned: 0 },
+      "even-steven": { current: 0, target: EVEN_STEVEN_MIN_GAMES, earned: 0 },
       "welcome-committee": { current: 0, target: 3, newPlayers: new Set(), earned: 0 },
       "community-builder": { current: 0, target: 10, newPlayers: new Set(), earned: 0 },
-      "even-steven": { current: 0, target: EVEN_STEVEN_MIN_GAMES, earned: 0 },
       "student-becomes-master": { earned: 0 },
       // Filled in below from the leaderboard: last place is 0 and 3rd place
       // is the target.
@@ -3715,7 +3714,7 @@ export class Achievements {
     let bestReunionGapOpponent: string | undefined = undefined;
 
     // Track first games for each player to determine who was their first opponent
-    const playerFirstGames = new Map<string, { opponent: string; timestamp: number }>();
+    const playerFirstGames = new Map<string, { opponent: string; timestamp: number; won: boolean }>();
 
     // This player's own earliest / latest time-of-day (minutes past local
     // midnight, browser timezone) across all their games — used to show how
@@ -3726,10 +3725,10 @@ export class Achievements {
     this.parent.games.forEach((game) => {
       // Track first opponent for each player
       if (!playerFirstGames.has(game.winner)) {
-        playerFirstGames.set(game.winner, { opponent: game.loser, timestamp: game.playedAt });
+        playerFirstGames.set(game.winner, { opponent: game.loser, timestamp: game.playedAt, won: true });
       }
       if (!playerFirstGames.has(game.loser)) {
-        playerFirstGames.set(game.loser, { opponent: game.winner, timestamp: game.playedAt });
+        playerFirstGames.set(game.loser, { opponent: game.winner, timestamp: game.playedAt, won: false });
       }
 
       // Track this player's own earliest / latest time-of-day.
@@ -3755,6 +3754,13 @@ export class Achievements {
       }
     });
 
+    // Student Becomes Master: the first game decides who to beat.
+    const ownFirstGame = playerFirstGames.get(playerId);
+    if (ownFirstGame !== undefined) {
+      progression["student-becomes-master"].firstOpponent = ownFirstGame.opponent;
+      progression["student-becomes-master"].lostFirstGame = !ownFirstGame.won;
+    }
+
     progression["welcome-committee"].current = firstOpponentForSet.size;
     progression["welcome-committee"].newPlayers = firstOpponentForSet;
     progression["community-builder"].current = firstOpponentForSet.size;
@@ -3769,12 +3775,6 @@ export class Achievements {
 
       gamesPlayedCount++;
       playerGameTimes.push(game.playedAt);
-
-      // Student Becomes Master: the first game decides who to beat.
-      if (gamesPlayedCount === 1) {
-        progression["student-becomes-master"].firstOpponent = isWinner ? game.loser : game.winner;
-        progression["student-becomes-master"].lostFirstGame = isLoser;
-      }
 
       game.score?.setPoints?.forEach((set) => {
         const losingScore = collectorLosingScore(set, isWinner);

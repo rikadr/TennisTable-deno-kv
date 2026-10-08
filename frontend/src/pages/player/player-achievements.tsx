@@ -1284,8 +1284,26 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                             <div className="mt-1">
                               <div className="text-sm text-secondary-text">
                                 <span className="font-medium">
-                                  {isTimePeriod ? formatTimePeriod(data.current) : fmtNum(data.current)} /{" "}
-                                  {isTimePeriod ? formatTimePeriod(data.target) : fmtNum(data.target)}
+                                  {/* The Mentor scale counts ranks, which says little as a
+                                number. The rank of the closest player says more. */}
+                                  {type === "mentor" ? (
+                                    "closestProtege" in data && data.closestProtege ? (
+                                      <>
+                                        Closest:{" "}
+                                        <Link to={{ pathname: "/player/" + data.closestProtege, search }}>
+                                          <span className="underline">{context.playerName(data.closestProtege)}</span>
+                                        </Link>{" "}
+                                        at rank #{data.closestProtegeRank}
+                                      </>
+                                    ) : (
+                                      "No ranked player had you as first opponent"
+                                    )
+                                  ) : (
+                                    <>
+                                      {isTimePeriod ? formatTimePeriod(data.current) : fmtNum(data.current)} /{" "}
+                                      {isTimePeriod ? formatTimePeriod(data.target) : fmtNum(data.target)}
+                                    </>
+                                  )}
                                   {type === "season-winner" && (
                                     <span className="text-xs text-secondary-text/70 font-normal ml-2">
                                       (Current leader's points)
@@ -1382,18 +1400,6 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                                   , {data.gamesFromEven} game{data.gamesFromEven === 1 ? "" : "s"} from equal
                                 </div>
                               )}
-
-                            {type === "mentor" && "closestProtege" in data && data.closestProtege && (
-                              <div className="mt-1.5 text-xs text-secondary-text/70">
-                                Closest:{" "}
-                                <Link to={{ pathname: "/player/" + data.closestProtege, search }}>
-                                  <span className="text-secondary-text underline">
-                                    {context.playerName(data.closestProtege)}
-                                  </span>
-                                </Link>{" "}
-                                at rank #{data.closestProtegeRank}
-                              </div>
-                            )}
 
                             {/* Show last active time for back-after achievements */}
                             {type.startsWith("back-after-") && "lastActiveAt" in data && data.lastActiveAt && (
@@ -1809,7 +1815,9 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                             {"lostFirstGame" in data && data.earned === 0 && data.firstOpponent && (
                               <span className="ml-2">
                                 {data.lostFirstGame
-                                  ? `Beat ${context.playerName(data.firstOpponent)} to earn it.`
+                                  ? context.players.some((player) => player.id === data.firstOpponent)
+                                    ? `Beat ${context.playerName(data.firstOpponent)} to earn it.`
+                                    : `${context.playerName(data.firstOpponent)} is retired, so you cannot earn it now.`
                                   : `You won your first game against ${context.playerName(data.firstOpponent)}, so you cannot earn it.`}
                               </span>
                             )}
