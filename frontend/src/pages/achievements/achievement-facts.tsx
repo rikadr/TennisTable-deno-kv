@@ -162,6 +162,11 @@ export const AchievementFacts: React.FC<{ achievement: Achievement }> = ({ achie
             : " (first league record!)"}
         </span>
       )}
+      {achievement.type === "mentor" && achievement.data && (
+        <span className="text-[11px] opacity-80">
+          {context.playerName(achievement.data.protege)} reached #{achievement.data.rank}
+        </span>
+      )}
       {achievement.type === "choker" && achievement.data && (
         <span className="text-[11px] opacity-80">
           Led {achievement.data.leadPoints}–{achievement.data.leadOpponentPoints} in set {achievement.data.setNumber},

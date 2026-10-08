@@ -178,6 +178,29 @@ export function wonFromTheBadSide(game: Game): boolean {
   return winnerBadSideSets > loserBadSideSets;
 }
 
+// The losing scores of a set won 11–x that "Collector" asks for: every score
+// from 0 to 9. A player must win a set with each of them once in a career.
+export const COLLECTOR_LOSING_SCORES = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+
+// The losing score of a set the player won 11–x, or undefined when the set
+// does not count for "Collector": the player lost it, or the winner did not
+// stop at 11 (a deuce set).
+export function collectorLosingScore(
+  set: { gameWinner: number; gameLoser: number },
+  playerIsGameWinner: boolean,
+): number | undefined {
+  const playerPoints = playerIsGameWinner ? set.gameWinner : set.gameLoser;
+  const opponentPoints = playerIsGameWinner ? set.gameLoser : set.gameWinner;
+  if (playerPoints !== 11 || opponentPoints > 9) return undefined;
+  return opponentPoints;
+}
+
+// Fewest games 2 players must play against each other before an equal head
+// to head earns "Even Steven". Below this an equal record is too common. It
+// is also the progress scale: a head to head this many games from equal is at
+// 0%.
+export const EVEN_STEVEN_MIN_GAMES = 20;
+
 // Fewest players a season must have for "Full Coverage" — playing everyone
 // in a tiny season is not a feat. Matches the ≥5 cohort gate the rank and
 // full-house achievements use.
@@ -436,6 +459,12 @@ export class Achievements {
         opponentsPlayed: Set<string>;
         gamesPerOpponent: Map<string, { count: number; firstGame: number; lastGame: number }>;
         firstOpponentFor: Set<string>; // Track players this person was first opponent for
+        // Student Becomes Master: the opponent of the player's first game, and
+        // whether the player lost that game.
+        firstOpponent: string | undefined;
+        lostFirstGame: boolean;
+        collectorLosingScores: Set<number>; // Losing scores of the 11–x sets won, for Collector
+        winsAgainst: Map<string, number>; // Wins against each opponent, for Even Steven
         hatTrickWins: { playedAt: number }[]; // Track recent wins for hat-trick
         gamesPlayed: number; // Total games played, used for the "ranked" achievement
       }
@@ -501,6 +530,10 @@ export class Achievements {
           opponentsPlayed: new Set(),
           gamesPerOpponent: new Map(),
           firstOpponentFor: new Set(),
+          firstOpponent: undefined,
+          lostFirstGame: false,
+          collectorLosingScores: new Set(),
+          winsAgainst: new Map(),
           hatTrickWins: [],
           gamesPlayed: 0,
         });
@@ -534,6 +567,10 @@ export class Achievements {
           opponentsPlayed: new Set(),
           gamesPerOpponent: new Map(),
           firstOpponentFor: new Set(),
+          firstOpponent: undefined,
+          lostFirstGame: false,
+          collectorLosingScores: new Set(),
+          winsAgainst: new Map(),
           hatTrickWins: [],
           gamesPlayed: 0,
         });
@@ -569,6 +606,13 @@ export class Achievements {
             game.id,
           ),
         );
+      }
+
+      // Student Becomes Master needs the opponent of each player's first game.
+      if (winner.gamesPlayed === 1) winner.firstOpponent = game.loser;
+      if (loser.gamesPlayed === 1) {
+        loser.firstOpponent = game.winner;
+        loser.lostFirstGame = true;
       }
 
       // Check for "Ranked" achievement: awarded on the game that pushes a
@@ -782,6 +826,48 @@ export class Achievements {
         );
       }
 
+      // Check for "Even Steven": the head to head of the pair is equal after
+      // EVEN_STEVEN_MIN_GAMES or more games. The record is the same for both
+      // players, so both earn it. Earned once.
+      const winsAgainstLoser = (winner.winsAgainst.get(game.loser) ?? 0) + 1;
+      winner.winsAgainst.set(game.loser, winsAgainstLoser);
+      const winsAgainstWinner = loser.winsAgainst.get(game.winner) ?? 0;
+      if (winnerOpponentData.count >= EVEN_STEVEN_MIN_GAMES && winsAgainstLoser === winsAgainstWinner) {
+        [game.winner, game.loser].forEach((playerId) => {
+          if (this.#hasAchievement(playerId, "even-steven")) return;
+          const opponent = playerId === game.winner ? game.loser : game.winner;
+          this.#addAchievement(
+            playerId,
+            this.#createAchievement(
+              "even-steven",
+              playerId,
+              game.playedAt,
+              { gameId: game.id, opponent, gamesPlayed: winnerOpponentData.count },
+              game.id,
+            ),
+          );
+        });
+      }
+
+      // Check for "Student Becomes Master": the first win against the
+      // opponent who beat the player in their first game. Earned once.
+      if (
+        winner.lostFirstGame &&
+        winner.firstOpponent === game.loser &&
+        !this.#hasAchievement(game.winner, "student-becomes-master")
+      ) {
+        this.#addAchievement(
+          game.winner,
+          this.#createAchievement(
+            "student-becomes-master",
+            game.winner,
+            game.playedAt,
+            { gameId: game.id, opponent: game.loser, gamesPlayed: winnerOpponentData.count },
+            game.id,
+          ),
+        );
+      }
+
       // Check for "Back After" achievements before updating lastActiveAt
       this.#checkBackAfterAchievement(game.winner, winner.lastActiveAt, game.playedAt, game.id);
       this.#checkBackAfterAchievement(game.loser, loser.lastActiveAt, game.playedAt, game.id);
@@ -919,6 +1005,11 @@ export class Achievements {
         // Check for "Deuce Demon": career deuce sets won. Either player can
         // win a qualifying set regardless of who wins the game.
         this.#checkDeuceDemonAchievement(game, winner, loser);
+
+        // Check for "Collector": a set won 11–x with every x from 0 to 9.
+        // Either player can win a set, whoever wins the game.
+        this.#checkCollectorAchievement(game, game.winner, winner, true);
+        this.#checkCollectorAchievement(game, game.loser, loser, false);
       }
 
       // Check for "Bad Side Bandit": career games won with more sets on the
@@ -1671,6 +1762,19 @@ export class Achievements {
     // long it took the player to reach that rank.
     const firstGameAt = new Map<string, number>();
 
+    // The opponent of each player's first game. When a player first reaches
+    // the top 3, that opponent earns Mentor.
+    const firstOpponentOf = new Map<string, string>();
+
+    // Awards "Mentor" to the opponent of the first game of `protege`, who
+    // reached the top 3 for the first time. On the Podium is earned once, so
+    // a mentor earns it one time for each protege.
+    const awardMentor = (protege: string, rank: number, time: number, gameId?: string) => {
+      const mentor = firstOpponentOf.get(protege);
+      if (mentor === undefined) return;
+      this.#addAchievement(mentor, this.#createAchievement("mentor", mentor, time, { protege, rank }, gameId));
+    };
+
     // The player currently sitting at rank #1 in the leaderboard pool.
     // Updated AFTER each game / recheck — used as the "dethroned" field
     // when someone takes the throne next. Stays null until the first
@@ -1780,6 +1884,7 @@ export class Achievements {
               gameId,
             ),
           );
+          awardMentor(playerId, rank, time, gameId);
         }
       }
     };
@@ -1816,6 +1921,8 @@ export class Achievements {
 
       if (!firstGameAt.has(game.winner)) firstGameAt.set(game.winner, game.playedAt);
       if (!firstGameAt.has(game.loser)) firstGameAt.set(game.loser, game.playedAt);
+      if (!firstOpponentOf.has(game.winner)) firstOpponentOf.set(game.winner, game.loser);
+      if (!firstOpponentOf.has(game.loser)) firstOpponentOf.set(game.loser, game.winner);
 
       // Pre-match ranks (loser's rank needed for Kingslayer; winner's for
       // Leap Frog's "from" rank).
@@ -1996,6 +2103,7 @@ export class Achievements {
             game.id,
           ),
         );
+        awardMentor(game.winner, winnerRankAfter, game.playedAt, game.id);
       }
       if (
         loserRankBefore !== null &&
@@ -2015,6 +2123,7 @@ export class Achievements {
             game.id,
           ),
         );
+        awardMentor(game.loser, loserRankAfter, game.playedAt, game.id);
       }
 
       // Leap Frog: awarded to a winner who jumps leaderboard ranks in a
@@ -2279,6 +2388,25 @@ export class Achievements {
     };
     applyDeuceSets(game.winner, winnerTracker, winnerDeuceSets);
     applyDeuceSets(game.loser, loserTracker, loserDeuceSets);
+  }
+
+  // Awards "Collector" at the game that completes the player's set of losing
+  // scores in sets won 11–x. Earned once.
+  #checkCollectorAchievement(
+    game: Game,
+    playerId: string,
+    tracker: { collectorLosingScores: Set<number> },
+    playerIsGameWinner: boolean,
+  ) {
+    const scores = tracker.collectorLosingScores;
+    if (scores.size === COLLECTOR_LOSING_SCORES.length) return;
+    game.score?.setPoints?.forEach((set) => {
+      const losingScore = collectorLosingScore(set, playerIsGameWinner);
+      if (losingScore !== undefined) scores.add(losingScore);
+    });
+    if (scores.size === COLLECTOR_LOSING_SCORES.length) {
+      this.#addAchievement(playerId, this.#createAchievement("collector", playerId, game.playedAt, undefined, game.id));
+    }
   }
 
   // The sets that count toward a game's Shootout score: its
@@ -3193,6 +3321,10 @@ export class Achievements {
     return this.#gamesByPlayedAt.get(playedAt);
   }
 
+  #hasAchievement(playerId: string, type: AchievementType): boolean {
+    return this.achievementMap.get(playerId)?.some((achievement) => achievement.type === type) ?? false;
+  }
+
   #addAchievement(playerId: string, achievement: Achievement) {
     if (!this.achievementMap.has(playerId)) {
       this.achievementMap.set(playerId, []);
@@ -3424,6 +3556,12 @@ export class Achievements {
       "deuce-demon": { current: 0, target: DEUCE_DEMON_TARGET, earned: 0 },
       "on-the-record": { current: 0, target: ON_THE_RECORD_TARGET, earned: 0 },
       "bad-side-bandit": { current: 0, target: BAD_SIDE_BANDIT_TARGET, earned: 0 },
+      collector: {
+        current: 0,
+        target: COLLECTOR_LOSING_SCORES.length,
+        missingScores: [...COLLECTOR_LOSING_SCORES],
+        earned: 0,
+      },
       "photo-finish": { earned: 0 },
       "marathon-set": {
         earned: 0,
@@ -3478,6 +3616,11 @@ export class Achievements {
       reunion: { current: 0, target: ONE_YEAR, earned: 0 },
       "welcome-committee": { current: 0, target: 3, newPlayers: new Set(), earned: 0 },
       "community-builder": { current: 0, target: 10, newPlayers: new Set(), earned: 0 },
+      "even-steven": { current: 0, target: EVEN_STEVEN_MIN_GAMES, earned: 0 },
+      "student-becomes-master": { earned: 0 },
+      // Filled in below from the leaderboard: last place is 0 and 3rd place
+      // is the target.
+      mentor: { current: 0, target: 1, earned: 0 },
 
       // Loyalty & activity
       "active-6-months": { current: 0, target: SIX_MONTHS, earned: 0 },
@@ -3560,6 +3703,11 @@ export class Achievements {
     const opponentsPlayed = new Set<string>();
     const gamesPerOpponent = new Map<string, { count: number; firstGame: number; lastGame: number }>();
     const firstOpponentForSet = new Set<string>();
+    // Wins against each opponent, for Even Steven. The losses are the games
+    // in gamesPerOpponent minus these wins.
+    const winsPerOpponent = new Map<string, number>();
+    // Losing scores of the sets the player won 11–x, for Collector.
+    const collectorScores = new Set<number>();
     // Longest gap ever between two consecutive games against the same
     // opponent — the Reunion best. Open gaps against active opponents are
     // folded in after the loop.
@@ -3621,6 +3769,17 @@ export class Achievements {
 
       gamesPlayedCount++;
       playerGameTimes.push(game.playedAt);
+
+      // Student Becomes Master: the first game decides who to beat.
+      if (gamesPlayedCount === 1) {
+        progression["student-becomes-master"].firstOpponent = isWinner ? game.loser : game.winner;
+        progression["student-becomes-master"].lostFirstGame = isLoser;
+      }
+
+      game.score?.setPoints?.forEach((set) => {
+        const losingScore = collectorLosingScore(set, isWinner);
+        if (losingScore !== undefined) collectorScores.add(losingScore);
+      });
 
       // Track first active time
       if (firstActiveAt === null) {
@@ -3700,6 +3859,7 @@ export class Achievements {
 
       if (isWinner) {
         playerWinTimes.push(game.playedAt);
+        winsPerOpponent.set(opponent, (winsPerOpponent.get(opponent) ?? 0) + 1);
 
         // Track win streak against all
         currentWinStreakAll++;
@@ -4409,6 +4569,56 @@ export class Achievements {
       progression["reunion"].bestOpponent = bestReunionGapOpponent;
     }
 
+    // Collector progression: the losing scores collected, and the ones still
+    // to collect.
+    progression["collector"].current = collectorScores.size;
+    progression["collector"].missingScores = COLLECTOR_LOSING_SCORES.filter((score) => !collectorScores.has(score));
+
+    // Even Steven progression: the active opponent of EVEN_STEVEN_MIN_GAMES or
+    // more games whose head to head is closest to equal. A head to head
+    // EVEN_STEVEN_MIN_GAMES or more games from equal is at 0, and an equal one
+    // at the target.
+    let closestGamesFromEven: number | undefined = undefined;
+    gamesPerOpponent.forEach((data, opponent) => {
+      if (data.count < EVEN_STEVEN_MIN_GAMES || !activePlayerIds.has(opponent)) return;
+      const wins = winsPerOpponent.get(opponent) ?? 0;
+      const gamesFromEven = Math.abs(wins - (data.count - wins));
+      if (closestGamesFromEven === undefined || gamesFromEven < closestGamesFromEven) {
+        closestGamesFromEven = gamesFromEven;
+        progression["even-steven"].closestOpponent = opponent;
+      }
+    });
+    if (closestGamesFromEven !== undefined) {
+      progression["even-steven"].gamesFromEven = closestGamesFromEven;
+      progression["even-steven"].current = Math.max(EVEN_STEVEN_MIN_GAMES - closestGamesFromEven, 0);
+    }
+
+    // Mentor progression: the player who had this player as first opponent,
+    // has not earned this player a Mentor yet, and is highest on the
+    // leaderboard. Last place is 0 and 3rd place is the target. Like On the
+    // Podium, Mentor needs 5 or more ranked players, so a smaller leaderboard
+    // shows 0.
+    const rankedPlayers = this.parent.leaderboard.getLeaderboard().rankedPlayers;
+    const mentoredProteges = new Set(
+      this.getAchievements(playerId).flatMap((achievement) =>
+        achievement.type === "mentor" ? [achievement.data.protege] : [],
+      ),
+    );
+    const closestProtege = rankedPlayers.find(
+      (player) => firstOpponentForSet.has(player.id) && !mentoredProteges.has(player.id),
+    );
+    progression["mentor"].target = Math.max(rankedPlayers.length - 3, 1);
+    if (closestProtege !== undefined) {
+      progression["mentor"].closestProtege = closestProtege.id;
+      progression["mentor"].closestProtegeRank = closestProtege.rank;
+      if (rankedPlayers.length >= 5) {
+        progression["mentor"].current = Math.min(
+          rankedPlayers.length - closestProtege.rank,
+          progression["mentor"].target,
+        );
+      }
+    }
+
     // Count earned achievements
     const achievements = this.getAchievements(playerId);
     achievements.forEach((achievement) => {
@@ -4626,6 +4836,19 @@ type AchievementDefinitions = {
     setWinnerPoints: number;
     previousRecord?: number;
   };
+  // Won a set 11–x with every x from 0 to 9. Earned by the game that won the
+  // last missing score.
+  collector: undefined;
+  // The head to head of the pair is equal after EVEN_STEVEN_MIN_GAMES or more
+  // games. `gamesPlayed` is the games of the pair, so each player has half of
+  // them as wins.
+  "even-steven": { gameId: string; opponent: string; gamesPlayed: number };
+  // Beat the opponent of the first game, who won that game. `gamesPlayed` is
+  // the games against that opponent, this game included.
+  "student-becomes-master": { gameId: string; opponent: string; gamesPlayed: number };
+  // `protege` played their first game against the badge owner and reached
+  // the top 3 for the first time, at `rank`.
+  mentor: { protege: string; rank: number };
   // Awarded to both players of a season's very first game.
   "season-opener": { seasonStart: number; gameId: string; opponent: string };
   // Awarded to both players of every 500th league game. `milestone` is that
@@ -4722,6 +4945,10 @@ export const ACHIEVEMENT_IS_REACHIEVABLE: Record<AchievementType, boolean> = {
   choker: true, // League record — an equal lead earns it again
   "season-opener": true, // Per season
   "milestone-game": true, // Per 500th league game
+  collector: false,
+  "even-steven": false,
+  "student-becomes-master": false,
+  mentor: true, // Per player who had the badge owner as first opponent
 };
 
 // String-keyed lookup for UI code that carries achievement types as plain
@@ -4816,6 +5043,32 @@ type StreakPlayerProgression = ProgressionWithTarget & {
   perOpponent?: Map<string, number>; // Breakdown of current streaks per opponent
   // Who the best-ever streak was against, shown next to the best value.
   bestOpponent?: string;
+};
+
+type CollectorProgression = ProgressionWithTarget & {
+  // The losing scores still to win a set 11–x with, lowest first.
+  missingScores: number[];
+};
+
+type EvenStevenProgression = ProgressionWithTarget & {
+  // The active opponent of EVEN_STEVEN_MIN_GAMES or more games whose head to
+  // head is closest to equal, and how many wins it is from equal.
+  closestOpponent?: string;
+  gamesFromEven?: number;
+};
+
+type StudentBecomesMasterProgression = BaseProgression & {
+  // The opponent of the player's first game, and whether the player lost it.
+  // Only a lost first game can earn the achievement.
+  firstOpponent?: string;
+  lostFirstGame?: boolean;
+};
+
+type MentorProgression = ProgressionWithTarget & {
+  // The player who had the badge owner as first opponent, does not have a
+  // Mentor for the badge owner yet, and is highest on the leaderboard.
+  closestProtege?: string;
+  closestProtegeRank?: number;
 };
 
 type VarietyPlayerProgression = ProgressionWithTarget & {
@@ -5063,4 +5316,8 @@ export type AchievementProgression = {
   "party-pooper": BaseProgression;
   "earliest-game": TimeOfDayRecordProgression;
   "latest-game": TimeOfDayRecordProgression;
+  collector: CollectorProgression;
+  "even-steven": EvenStevenProgression;
+  "student-becomes-master": StudentBecomesMasterProgression;
+  mentor: MentorProgression;
 };

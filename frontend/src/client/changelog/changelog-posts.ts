@@ -42,6 +42,29 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
+    slug: "collector-even-steven-student-mentor-achievements",
+    title: "4 new achievements: Collector, Even Steven, Student Becomes Master and Mentor",
+    date: "2026-10-08",
+    tags: ["feature-update"],
+    summary:
+      "Collector 🃏, Even Steven ⚖️, Student Becomes Master 🎓 and Mentor 🧑‍🏫 are new achievements. The Progress tab shows how close you are to each of them.",
+    body: [
+      list(
+        "Collector 🃏 - win a set with each losing score from 11–0 to 11–9. A deuce set does not count.",
+        "Even Steven ⚖️ - have as many wins as losses against one opponent, after 20 or more games together. Both players earn it.",
+        "Student Becomes Master 🎓 - beat your first opponent after you lost your first game to them.",
+        "Mentor 🧑‍🏫 - a player who played their first game against you reaches the top 3 on the leaderboard.",
+      ),
+      text("You can earn Mentor 1 time for each player. You can earn each of the other 3 achievements 1 time."),
+      text(
+        "Progress for Even Steven uses the active opponent of 20 or more games who is closest to equal. 0% is 20 or more games from equal. Progress for Mentor uses your highest player on the leaderboard without a Mentor. 0% is last place and 100% is 3rd place.",
+      ),
+      text(
+        "The app also checks the games that are already played. Collector is in the Game Feats group. The other 3 are in the Social group.",
+      ),
+    ],
+  },
+  {
     slug: "bad-side-bandit-new-rule",
     title: "Bad Side Bandit has a new rule",
     date: "2026-10-08",

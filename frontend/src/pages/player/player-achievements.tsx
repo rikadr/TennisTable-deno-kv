@@ -412,6 +412,27 @@ export const ACHIEVEMENT_LABELS: Record<AchievementType, { title: string; descri
     description: "Play the latest game of the day on record",
     icon: "🌙",
   },
+  collector: {
+    title: "Collector",
+    description: "Win a set with each losing score from 11–0 to 11–9",
+    icon: "🃏",
+  },
+  "even-steven": {
+    title: "Even Steven",
+    description: "Have as many wins as losses against one opponent, after 20 or more games together",
+    icon: "⚖️",
+  },
+  "student-becomes-master": {
+    title: "Student Becomes Master",
+    description: "Beat your first opponent after you lost your first game to them",
+    icon: "🎓",
+  },
+  mentor: {
+    title: "Mentor",
+    description:
+      "A player who played their first game against you reaches the top 3 on the leaderboard, one time for each player",
+    icon: "🧑‍🏫",
+  },
 };
 
 // Resolves the display label for an achievement type, filling in any
@@ -781,6 +802,24 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
                     </p>
                     {achievement.data.dethroned && <p>Dethroned {context.playerName(achievement.data.dethroned)}</p>}
                   </div>
+                )}
+
+                {achievement.type === "even-steven" && achievement.data && (
+                  <p className="text-xs text-secondary-text/70 mt-2">
+                    {achievement.data.gamesPlayed / 2} wins and {achievement.data.gamesPlayed / 2} losses
+                  </p>
+                )}
+
+                {achievement.type === "student-becomes-master" && achievement.data && (
+                  <p className="text-xs text-secondary-text/70 mt-2">
+                    First win in game {achievement.data.gamesPlayed} against them
+                  </p>
+                )}
+
+                {achievement.type === "mentor" && achievement.data && (
+                  <p className="text-xs text-secondary-text/70 mt-2">
+                    {context.playerName(achievement.data.protege)} reached rank #{achievement.data.rank}
+                  </p>
                 )}
 
                 {achievement.type === "on-the-podium" && achievement.data && (
@@ -1320,6 +1359,42 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                                 </div>
                               )}
 
+                            {type === "collector" &&
+                              "missingScores" in data &&
+                              data.missingScores.length > 0 &&
+                              data.missingScores.length < data.target && (
+                                <div className="mt-1.5 text-xs text-secondary-text/70">
+                                  Missing: {data.missingScores.map((score) => `11–${score}`).join(", ")}
+                                </div>
+                              )}
+
+                            {type === "even-steven" &&
+                              "closestOpponent" in data &&
+                              data.closestOpponent &&
+                              data.gamesFromEven !== undefined && (
+                                <div className="mt-1.5 text-xs text-secondary-text/70">
+                                  Closest:{" "}
+                                  <Link to={{ pathname: "/player/" + data.closestOpponent, search }}>
+                                    <span className="text-secondary-text underline">
+                                      {context.playerName(data.closestOpponent)}
+                                    </span>
+                                  </Link>
+                                  , {data.gamesFromEven} game{data.gamesFromEven === 1 ? "" : "s"} from equal
+                                </div>
+                              )}
+
+                            {type === "mentor" && "closestProtege" in data && data.closestProtege && (
+                              <div className="mt-1.5 text-xs text-secondary-text/70">
+                                Closest:{" "}
+                                <Link to={{ pathname: "/player/" + data.closestProtege, search }}>
+                                  <span className="text-secondary-text underline">
+                                    {context.playerName(data.closestProtege)}
+                                  </span>
+                                </Link>{" "}
+                                at rank #{data.closestProtegeRank}
+                              </div>
+                            )}
+
                             {/* Show last active time for back-after achievements */}
                             {type.startsWith("back-after-") && "lastActiveAt" in data && data.lastActiveAt && (
                               <div className="mt-1.5 text-xs text-secondary-text/70">
@@ -1731,6 +1806,13 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                             {data.earned > 0
                               ? `Earned ${data.earned} time${data.earned > 1 ? "s" : ""}`
                               : "No progress yet"}
+                            {"lostFirstGame" in data && data.earned === 0 && data.firstOpponent && (
+                              <span className="ml-2">
+                                {data.lostFirstGame
+                                  ? `Beat ${context.playerName(data.firstOpponent)} to earn it.`
+                                  : `You won your first game against ${context.playerName(data.firstOpponent)}, so you cannot earn it.`}
+                              </span>
+                            )}
                             {"slainOpponents" in data && data.slainOpponents.length > 0 ? (
                               <span className="ml-2">
                                 Beat: {data.slainOpponents.map((player) => context.playerName(player)).join(", ")}
