@@ -53,7 +53,7 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
         "The lead is the largest number of points you were ahead in the set. Only games tracked point by point count, because only they show the score during the set.",
       ),
       text(
-        "A lead of 5 points sets the first record. After that, a lead equal to the record earns Choker. Only a larger lead changes the record holder.",
+        "A lead of 3 points sets the first record. After that, a lead equal to the record earns Choker. Only a larger lead changes the record holder.",
       ),
       text(
         "The game winner can also earn it for a set they lost. The app also checks the tracked games that are already played. Choker is in the Game Feats group.",
