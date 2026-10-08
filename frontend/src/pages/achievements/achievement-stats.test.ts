@@ -344,6 +344,7 @@ describe("achievementDetails", () => {
       [
         "best-friends",
         "earliest-game",
+        "even-steven",
         "latest-game",
         "milestone-game",
         "nice-game",
