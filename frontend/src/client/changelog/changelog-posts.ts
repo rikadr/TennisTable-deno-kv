@@ -42,6 +42,22 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
+    slug: "bad-side-bandit-new-rule",
+    title: "Bad Side Bandit has a new rule",
+    date: "2026-10-08",
+    tags: ["feature-update"],
+    summary:
+      "To earn Bad Side Bandit 😵, win 10 games where you played more sets on the bad side of the table than your opponent.",
+    body: [
+      text(
+        "A game counts when you win it and the game records more sets with you on the bad side than with your opponent on the bad side. A set with 2 equal sides, or with no recorded side, does not count.",
+      ),
+      text(
+        "The previous rule counted the sets you won from the bad side. The app calculates the achievement again from all games, so some players can lose it and other players can get it.",
+      ),
+    ],
+  },
+  {
     slug: "choker-achievement",
     title: "New achievement: Choker",
     date: "2026-10-08",

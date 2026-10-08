@@ -388,7 +388,7 @@ export const ACHIEVEMENT_LABELS: Record<AchievementType, { title: string; descri
   },
   "bad-side-bandit": {
     title: "Bad Side Bandit",
-    description: "Win 10 sets from the bad side of the table",
+    description: "Win 10 games where you played more sets on the bad side of the table than your opponent",
     icon: "😵",
   },
   "giant-hunting": {
