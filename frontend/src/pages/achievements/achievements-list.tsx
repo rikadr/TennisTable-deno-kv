@@ -3,45 +3,29 @@ import { Link, useSearchParams } from "react-router-dom";
 import { Achievement } from "../../client/client-db/achievements";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { getAchievementLabel } from "../player/player-achievements";
-import {
-  ACHIEVEMENT_GROUPS,
-  ACHIEVEMENT_TYPE_TO_GROUP_ID,
-  OTHER_ACHIEVEMENT_GROUP,
-} from "../player/achievement-groups";
 import { calendarDaysBetween, clockTimeString, fullDateString } from "../../common/date-utils";
-import { classNames } from "../../common/class-names";
 import { ProfilePicture } from "../player/profile-picture";
-import { achievementsLink, ALL_GROUPS, useAchievementsFilter } from "./use-achievements-filter";
+import { achievementsLink, useAchievementsFilter } from "./use-achievements-filter";
 import { AchievementFacts } from "./achievement-facts";
 
 /** The rows the list shows first, and adds for each "Show more". */
 const RECENT_PAGE_SIZE = 100;
 
-const GROUPS = [...ACHIEVEMENT_GROUPS, OTHER_ACHIEVEMENT_GROUP];
-
-function groupOf(type: string): string {
-  return ACHIEVEMENT_TYPE_TO_GROUP_ID.get(type) ?? OTHER_ACHIEVEMENT_GROUP.id;
-}
-
 interface AchievementsListProps {
   achievements: Achievement[];
-  /** The group chips filter the list only when no single achievement is selected. */
-  showGroups: boolean;
 }
 
-export const AchievementsList: React.FC<AchievementsListProps> = ({ achievements, showGroups }) => {
+export const AchievementsList: React.FC<AchievementsListProps> = ({ achievements }) => {
   const context = useEventDbContext();
   const [searchParams] = useSearchParams();
-  const { search, group, setSearch, setGroup, clearSearchAndGroup } = useAchievementsFilter();
+  const { search, setSearch } = useAchievementsFilter();
   const [visibleCount, setVisibleCount] = useState(RECENT_PAGE_SIZE);
 
   const query = search.trim().toLowerCase();
-  // A url can name a group that does not exist. It reads as no group.
-  const selectedGroup = showGroups && GROUPS.some((candidate) => candidate.id === group) ? group : ALL_GROUPS;
 
   // The search matches the achievement's title, description and type, and the
   // name of the player who earned it.
-  const searched = useMemo(() => {
+  const shown = useMemo(() => {
     if (!query) return achievements;
     const labelText = new Map<string, string>();
     return achievements.filter((achievement) => {
@@ -54,23 +38,6 @@ export const AchievementsList: React.FC<AchievementsListProps> = ({ achievements
       return text.includes(query) || context.playerName(achievement.earnedBy).toLowerCase().includes(query);
     });
   }, [achievements, query, context]);
-
-  const groupCounts = useMemo(() => {
-    const counts = new Map<string, number>();
-    searched.forEach((achievement) => {
-      const id = groupOf(achievement.type);
-      counts.set(id, (counts.get(id) ?? 0) + 1);
-    });
-    return counts;
-  }, [searched]);
-
-  const shown = useMemo(
-    () =>
-      selectedGroup === ALL_GROUPS
-        ? searched
-        : searched.filter((achievement) => groupOf(achievement.type) === selectedGroup),
-    [searched, selectedGroup],
-  );
 
   useEffect(() => setVisibleCount(RECENT_PAGE_SIZE), [shown]);
 
@@ -107,61 +74,22 @@ export const AchievementsList: React.FC<AchievementsListProps> = ({ achievements
 
   return (
     <div className="max-w-3xl">
-      <div className="space-y-2 mb-2">
-        <div className="flex items-center gap-3">
-          <input
-            type="search"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search achievement or player…"
-            aria-label="Search achievements by name or player"
-            className="w-full min-w-0 flex-1 px-3 py-2 bg-secondary-background text-secondary-text border border-secondary-text rounded-lg text-sm placeholder:text-secondary-text/50"
-          />
-          <span className="text-xs opacity-70 whitespace-nowrap">
-            {shown.length} achievement{shown.length !== 1 && "s"}
-          </span>
-        </div>
-
-        {showGroups && (
-          <div
-            role="radiogroup"
-            aria-label="Filter achievements by group"
-            className="flex gap-1.5 overflow-x-auto scrollbar-hide sm:flex-wrap"
-          >
-            {[{ id: ALL_GROUPS, icon: "", title: "All" }, ...GROUPS].map((candidate) => {
-              const count = candidate.id === ALL_GROUPS ? searched.length : (groupCounts.get(candidate.id) ?? 0);
-              if (candidate.id === OTHER_ACHIEVEMENT_GROUP.id && count === 0) return null;
-              const isSelected = selectedGroup === candidate.id;
-              return (
-                <button
-                  key={candidate.id}
-                  role="radio"
-                  aria-checked={isSelected}
-                  onClick={() => setGroup(candidate.id)}
-                  className={classNames(
-                    "shrink-0 whitespace-nowrap rounded-full border border-secondary-text px-2.5 py-1 text-xs transition-colors",
-                    isSelected
-                      ? "bg-secondary-text text-secondary-background font-medium"
-                      : "bg-secondary-background text-secondary-text hover:bg-secondary-text/20",
-                    !isSelected && count === 0 && "opacity-50",
-                  )}
-                >
-                  {candidate.icon && `${candidate.icon} `}
-                  {candidate.title} <span className="opacity-70">{count}</span>
-                </button>
-              );
-            })}
-          </div>
-        )}
+      <div className="flex items-center gap-3 mb-2">
+        <input
+          type="search"
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          placeholder="Search achievement or player…"
+          aria-label="Search achievements by name or player"
+          className="w-full min-w-0 flex-1 px-3 py-2 bg-secondary-background text-secondary-text border border-secondary-text rounded-lg text-sm placeholder:text-secondary-text/50"
+        />
+        <span className="text-xs opacity-70 whitespace-nowrap">
+          {shown.length} achievement{shown.length !== 1 && "s"}
+        </span>
       </div>
 
       {shown.length === 0 && (
-        <div className="text-center py-8 text-sm">
-          <p className="opacity-70">No achievements match the search and the group.</p>
-          <button onClick={clearSearchAndGroup} className="mt-2 underline">
-            Clear the search and the group
-          </button>
-        </div>
+        <div className="text-center text-sm py-8 opacity-70">No achievements match "{search.trim()}".</div>
       )}
 
       {days.map((day) => (

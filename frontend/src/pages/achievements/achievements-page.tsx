@@ -113,9 +113,7 @@ export const AchievementsPage: React.FC = () => {
       {/* Content Area. The window scrolls the page. The recent list keeps
           this wrapper overflow-visible, so its day headings stick below the nav. */}
       <div className={classNames("flex-1 p-3 sm:p-6", view !== "recent" && "overflow-y-auto")}>
-        {view === "recent" && (
-          <AchievementsList achievements={filteredAchievements} showGroups={selectedType === ALL_ACHIEVEMENTS} />
-        )}
+        {view === "recent" && <AchievementsList achievements={filteredAchievements} />}
         {view === "details" &&
           (selectedType === ALL_ACHIEVEMENTS ? (
             <AchievementLeagueStats detailsLink={(type) => achievementsLink(searchParams, { type, view: "details" })} />

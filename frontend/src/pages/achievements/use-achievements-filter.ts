@@ -5,13 +5,9 @@ import { ACHIEVEMENT_LABELS } from "../player/player-achievements";
 export const ACHIEVEMENTS_FILTER_PARAM = "filter";
 export const ACHIEVEMENTS_VIEW_PARAM = "view";
 export const ACHIEVEMENTS_SEARCH_PARAM = "q";
-export const ACHIEVEMENTS_GROUP_PARAM = "group";
 
 /** The value that means "no type filter". */
 export const ALL_ACHIEVEMENTS = "all";
-
-/** The value that means "no group filter". */
-export const ALL_GROUPS = "all";
 
 /**
  * The three views of the achievements page. "recent" is the default and needs
@@ -43,10 +39,9 @@ export function useAchievementsFilter() {
     ? (viewParam as AchievementsView)
     : "recent";
 
-  // The search and the group of the recent list. A search replaces the
-  // history entry, so the back button does not step through each keystroke.
+  // The search of the recent list. It replaces the history entry, so the back
+  // button does not step through each keystroke.
   const search = searchParams.get(ACHIEVEMENTS_SEARCH_PARAM) ?? "";
-  const group = searchParams.get(ACHIEVEMENTS_GROUP_PARAM) ?? ALL_GROUPS;
 
   function setSelectedType(type: string) {
     setSearchParams((previous) => achievementsParams(previous, { type }));
@@ -57,33 +52,18 @@ export function useAchievementsFilter() {
   }
 
   function setSearch(next: string) {
-    setSearchParams((previous) => withParam(previous, ACHIEVEMENTS_SEARCH_PARAM, next, ""), { replace: true });
+    setSearchParams(
+      (previous) => {
+        const params = new URLSearchParams(previous);
+        if (next === "") params.delete(ACHIEVEMENTS_SEARCH_PARAM);
+        else params.set(ACHIEVEMENTS_SEARCH_PARAM, next);
+        return params;
+      },
+      { replace: true },
+    );
   }
 
-  function setGroup(next: string) {
-    setSearchParams((previous) => withParam(previous, ACHIEVEMENTS_GROUP_PARAM, next, ALL_GROUPS));
-  }
-
-  // One update for both, since a second update in the same event reads the
-  // params from before the first.
-  function clearSearchAndGroup() {
-    setSearchParams((previous) => {
-      const params = new URLSearchParams(previous);
-      params.delete(ACHIEVEMENTS_SEARCH_PARAM);
-      params.delete(ACHIEVEMENTS_GROUP_PARAM);
-      return params;
-    });
-  }
-
-  return { selectedType, view, search, group, setSelectedType, setView, setSearch, setGroup, clearSearchAndGroup };
-}
-
-/** The params with one param set, or left out at its default value. */
-function withParam(current: URLSearchParams, name: string, value: string, defaultValue: string): URLSearchParams {
-  const params = new URLSearchParams(current);
-  if (value === defaultValue) params.delete(name);
-  else params.set(name, value);
-  return params;
+  return { selectedType, view, search, setSelectedType, setView, setSearch };
 }
 
 /** Whether a name from the url is an achievement the app knows. */
