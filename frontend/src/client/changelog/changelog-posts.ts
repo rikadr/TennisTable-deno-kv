@@ -42,6 +42,23 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
+    slug: "recent-achievements-search",
+    title: "Search and groups on the recent achievements list",
+    date: "2026-10-09",
+    tags: ["feature-update"],
+    summary:
+      "The Recent view of the achievements page has a search field and a filter for each group. More achievements fit on one screen.",
+    body: [
+      text(
+        "Type in the search field to find an achievement by its name or description, or by the player who earned it. Select a group, such as Win Streaks or Social, to show only the achievements in that group. Each group shows how many achievements match the search.",
+      ),
+      text(
+        "The list puts the achievements under a heading for each day. Each row is smaller, so more achievements fit on the screen. The list shows 100 achievements first, and Show more adds 100 more.",
+      ),
+      text("The search and the group are in the url, so you can share a link."),
+    ],
+  },
+  {
     slug: "collector-even-steven-student-mentor-achievements",
     title: "4 new achievements: Collector, Even Steven, Student Becomes Master and Mentor",
     date: "2026-10-08",

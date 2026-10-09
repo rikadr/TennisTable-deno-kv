@@ -163,6 +163,69 @@ describe("navigation from the achievements page", () => {
     expect(currentUrl()).toBe("/achievements");
   });
 
+  it("searches the recent list on the achievement, and keeps the search out of the history", async () => {
+    renderPage("/achievements", <AchievementsPage />);
+    await userEvent.click(screen.getByRole("radio", { name: /Game Feats/ }));
+
+    await userEvent.type(screen.getByLabelText("Search achievements by name or player"), "hero");
+
+    expect(currentUrl()).toBe("/achievements?group=game-feats&q=hero");
+    expect(screen.getAllByRole("link", { name: "Hero of the Day" }).length).toBeGreaterThan(0);
+    expect(screen.queryByRole("link", { name: "Perfect Day" })).not.toBeInTheDocument();
+
+    // Each keystroke replaces the url, so one step back goes to the url before
+    // the group.
+    await userEvent.click(screen.getByRole("button", { name: "history back" }));
+    expect(currentUrl()).toBe("/achievements");
+  });
+
+  it("searches the recent list on the player who earned it", async () => {
+    renderPage("/achievements?q=bob", <AchievementsPage />);
+
+    // Only Alice holds the Hero of the Day record.
+    expect(screen.getAllByRole("link", { name: "First Game" })).toHaveLength(1);
+    expect(screen.queryByRole("link", { name: "Hero of the Day" })).not.toBeInTheDocument();
+    expect(screen.getAllByRole("link", { name: "bob" }).length).toBeGreaterThan(0);
+    expect(screen.queryByRole("link", { name: "alice" })).not.toBeInTheDocument();
+  });
+
+  it("filters the recent list on a group", async () => {
+    renderPage("/achievements", <AchievementsPage />);
+
+    await userEvent.click(screen.getByRole("radio", { name: /Getting Started/ }));
+
+    expect(currentUrl()).toBe("/achievements?group=getting-started");
+    expect(screen.getByRole("radio", { name: /Getting Started/ })).toBeChecked();
+    expect(screen.getAllByRole("link", { name: "First Game" })).toHaveLength(3);
+    expect(screen.queryByRole("link", { name: "Hero of the Day" })).not.toBeInTheDocument();
+  });
+
+  it("hides the groups when the filter names one achievement", () => {
+    renderPage("/achievements?filter=first-game&group=game-feats", <AchievementsPage />);
+
+    expect(screen.queryByRole("radiogroup", { name: "Filter achievements by group" })).not.toBeInTheDocument();
+    expect(screen.getAllByRole("link", { name: "First Game" })).toHaveLength(3);
+  });
+
+  it("puts the recent list under a heading for each day", () => {
+    renderPage("/achievements", <AchievementsPage />);
+
+    // The first day of play, years before the test runs.
+    expect(
+      screen.getByRole("heading", { level: 2, name: /^Mandag 1\. Januar 2024 · \d+ days ago$/ }),
+    ).toBeInTheDocument();
+  });
+
+  it("offers to clear a search and a group that match nothing", async () => {
+    renderPage("/achievements?q=nothing-matches-this&group=social", <AchievementsPage />);
+
+    await userEvent.click(screen.getByRole("button", { name: "Clear the search and the group" }));
+
+    expect(screen.getByLabelText("Search achievements by name or player")).toHaveValue("");
+    expect(screen.getByRole("radio", { name: /All/ })).toBeChecked();
+    expect(screen.getAllByRole("link", { name: "First Game" })).toHaveLength(3);
+  });
+
   it("switches between the three views, and keeps the achievement", async () => {
     renderPage("/achievements?filter=first-game", <AchievementsPage />);
 

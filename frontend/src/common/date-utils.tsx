@@ -85,12 +85,11 @@ export function dateString(time: number) {
   });
 }
 
-// Full date and time with the weekday, e.g. "Mandag 1. April 2026 08:37".
-// Norwegian locale writes weekdays and months in lowercase; capitalize them
-// so the line reads as a heading.
-export function fullDateTimeString(time: number): string {
-  const date = new Date(time);
-  const datePart = date
+// Full date with the weekday, e.g. "Mandag 1. April 2026". Norwegian locale
+// writes weekdays and months in lowercase; capitalize them so the line reads
+// as a heading.
+export function fullDateString(time: number): string {
+  return new Date(time)
     .toLocaleDateString("nb-NO", {
       weekday: "long",
       day: "numeric",
@@ -98,8 +97,11 @@ export function fullDateTimeString(time: number): string {
       year: "numeric",
     })
     .replace(/\p{L}+/gu, (word) => word[0].toUpperCase() + word.slice(1));
-  const timePart = date.toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit" });
-  return `${datePart} ${timePart}`;
+}
+
+// Full date and time with the weekday, e.g. "Mandag 1. April 2026 08:37".
+export function fullDateTimeString(time: number): string {
+  return `${fullDateString(time)} ${clockTimeString(time)}`;
 }
 
 // Clock time only, e.g. "08:37". For a time whose date is already on screen.
