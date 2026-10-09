@@ -65,18 +65,10 @@ export const AchievementsPage: React.FC = () => {
   return (
     <div className="flex flex-col h-full text-primary-text bg-primary-background">
       {/* Header with the filter and the three views */}
-      <div className="p-6 pb-0 border-b border-primary-text">
-        <div className="flex items-center justify-between mb-4">
-          <h1 className="text-2xl font-bold text-primary-text">All Achievements</h1>
-          {view === "recent" && (
-            <div className="text-sm">
-              {filteredAchievements.length} achievement
-              {filteredAchievements.length !== 1 && "s"}
-            </div>
-          )}
-        </div>
+      <div className="px-3 pt-3 sm:px-6 sm:pt-6 border-b border-primary-text">
+        <h1 className="text-xl sm:text-2xl font-bold text-primary-text mb-2 sm:mb-4">All Achievements</h1>
 
-        <div className="flex items-center gap-3 mb-4">
+        <div className="flex items-center gap-3 mb-2 sm:mb-4">
           <label htmlFor="achievement-filter" className="text-sm font-medium">
             Filter:
           </label>
@@ -118,8 +110,9 @@ export const AchievementsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Content Area */}
-      <div className="flex-1 overflow-y-auto p-6">
+      {/* Content Area. The window scrolls the page. The recent list keeps
+          this wrapper overflow-visible, so its day headings stick below the nav. */}
+      <div className={classNames("flex-1 p-3 sm:p-6", view !== "recent" && "overflow-y-auto")}>
         {view === "recent" && <AchievementsList achievements={filteredAchievements} />}
         {view === "details" &&
           (selectedType === ALL_ACHIEVEMENTS ? (

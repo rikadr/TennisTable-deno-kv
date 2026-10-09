@@ -163,6 +163,47 @@ describe("navigation from the achievements page", () => {
     expect(currentUrl()).toBe("/achievements");
   });
 
+  it("searches the recent list on the achievement, and keeps the search out of the history", async () => {
+    renderPage("/achievements", <AchievementsPage />);
+    await userEvent.selectOptions(screen.getByLabelText("Filter:"), "hero-of-the-day");
+
+    await userEvent.type(screen.getByLabelText("Search achievements by name or player"), "hero");
+
+    expect(currentUrl()).toBe("/achievements?filter=hero-of-the-day&q=hero");
+    expect(screen.getAllByRole("link", { name: "Hero of the Day" }).length).toBeGreaterThan(0);
+
+    // Each keystroke replaces the url, so one step back goes to the url before
+    // the filter.
+    await userEvent.click(screen.getByRole("button", { name: "history back" }));
+    expect(currentUrl()).toBe("/achievements");
+  });
+
+  it("searches the recent list on the player who earned it", async () => {
+    renderPage("/achievements?q=bob", <AchievementsPage />);
+
+    // Only Alice holds the Hero of the Day record.
+    expect(screen.getAllByRole("link", { name: "First Game" })).toHaveLength(1);
+    expect(screen.queryByRole("link", { name: "Hero of the Day" })).not.toBeInTheDocument();
+    expect(screen.getAllByRole("link", { name: "bob" }).length).toBeGreaterThan(0);
+    expect(screen.queryByRole("link", { name: "alice" })).not.toBeInTheDocument();
+  });
+
+  it("puts the recent list under a heading for each day", () => {
+    renderPage("/achievements", <AchievementsPage />);
+
+    // The first day of play, years before the test runs.
+    expect(
+      screen.getByRole("heading", { level: 2, name: /^Mandag 1\. Januar 2024 · \d+ days ago$/ }),
+    ).toBeInTheDocument();
+  });
+
+  it("says when the search matches nothing", () => {
+    renderPage("/achievements?q=nothing-matches-this", <AchievementsPage />);
+
+    expect(screen.getByText('No achievements match "nothing-matches-this".')).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "First Game" })).not.toBeInTheDocument();
+  });
+
   it("switches between the three views, and keeps the achievement", async () => {
     renderPage("/achievements?filter=first-game", <AchievementsPage />);
 

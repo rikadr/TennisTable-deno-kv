@@ -4,6 +4,7 @@ import { ACHIEVEMENT_LABELS } from "../player/player-achievements";
 
 export const ACHIEVEMENTS_FILTER_PARAM = "filter";
 export const ACHIEVEMENTS_VIEW_PARAM = "view";
+export const ACHIEVEMENTS_SEARCH_PARAM = "q";
 
 /** The value that means "no type filter". */
 export const ALL_ACHIEVEMENTS = "all";
@@ -38,6 +39,10 @@ export function useAchievementsFilter() {
     ? (viewParam as AchievementsView)
     : "recent";
 
+  // The search of the recent list. It replaces the history entry, so the back
+  // button does not step through each keystroke.
+  const search = searchParams.get(ACHIEVEMENTS_SEARCH_PARAM) ?? "";
+
   function setSelectedType(type: string) {
     setSearchParams((previous) => achievementsParams(previous, { type }));
   }
@@ -46,7 +51,19 @@ export function useAchievementsFilter() {
     setSearchParams((previous) => achievementsParams(previous, { view: next }));
   }
 
-  return { selectedType, view, setSelectedType, setView };
+  function setSearch(next: string) {
+    setSearchParams(
+      (previous) => {
+        const params = new URLSearchParams(previous);
+        if (next === "") params.delete(ACHIEVEMENTS_SEARCH_PARAM);
+        else params.set(ACHIEVEMENTS_SEARCH_PARAM, next);
+        return params;
+      },
+      { replace: true },
+    );
+  }
+
+  return { selectedType, view, search, setSelectedType, setView, setSearch };
 }
 
 /** Whether a name from the url is an achievement the app knows. */
