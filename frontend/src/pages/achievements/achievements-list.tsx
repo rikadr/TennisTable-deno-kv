@@ -155,7 +155,7 @@ export const AchievementsList: React.FC<AchievementsListProps> = ({ achievements
       {remaining > 0 && (
         <button
           onClick={() => setVisibleCount((count) => count + RECENT_PAGE_SIZE)}
-          className="w-full mt-3 py-2 rounded-lg border border-secondary-text bg-secondary-background text-secondary-text text-sm hover:bg-secondary-text/20"
+          className="w-full mt-3 py-2 rounded-lg border border-secondary-text bg-secondary-background text-secondary-text text-sm hover:opacity-80"
         >
           Show {Math.min(RECENT_PAGE_SIZE, remaining)} more ({remaining} left)
         </button>
