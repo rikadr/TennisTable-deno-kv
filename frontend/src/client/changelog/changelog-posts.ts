@@ -42,6 +42,25 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
+    slug: "record-grace-period",
+    title: "No awards for 5 league records in the first 7 days of a league",
+    date: "2026-10-10",
+    tags: ["feature-update"],
+    summary:
+      "Earliest Game, Latest Game and Hero of the Day, Week and Month give no awards in the first 7 days after the first game of a league.",
+    body: [
+      text(
+        "When a league starts, all records are low, so almost every game set one of these records. In the first 7 days, the records change, but nobody earns them.",
+      ),
+      text(
+        "After the 7 days, a game must reach the records that the first 7 days set. The other league records already need a minimum value, so they do not change.",
+      ),
+      text(
+        "The app calculates the achievements from the full game history. Awards from the first 7 days of the league are gone.",
+      ),
+    ],
+  },
+  {
     slug: "record-achievements-award-a-tie",
     title: "League record achievements now award a tie",
     date: "2026-10-10",

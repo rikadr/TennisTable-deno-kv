@@ -29,8 +29,22 @@ function eventsForGames(games: GameSpec[]): EventType[] {
   ];
 }
 
-function calculate(games: GameSpec[]): TennisTable {
-  const tt = new TennisTable({ events: eventsForGames(games) });
+// The league's first game, in an earlier month, so the grace period is over
+// before the games of a test start.
+const leagueStart: EventType[] = [
+  { type: EventTypeEnum.PLAYER_CREATED, stream: "opener-1", time: 1000, data: { name: "opener-1" } },
+  { type: EventTypeEnum.PLAYER_CREATED, stream: "opener-2", time: 1001, data: { name: "opener-2" } },
+  {
+    type: EventTypeEnum.GAME_CREATED,
+    stream: "opener",
+    time: new Date(2023, 10, 1, 12).getTime(),
+    data: { winner: "opener-1", loser: "opener-2", playedAt: new Date(2023, 10, 1, 12).getTime() },
+  },
+];
+
+function calculate(games: GameSpec[], { afterGracePeriod = true } = {}): TennisTable {
+  const events = eventsForGames(games);
+  const tt = new TennisTable({ events: afterGracePeriod ? [...leagueStart, ...events] : events });
   tt.achievements.calculateAchievements();
   return tt;
 }
@@ -88,6 +102,27 @@ describe("Hero of the Day achievement", () => {
       count: GAMES_IN_PERIOD_RECORD_FLOOR,
       holder: "alice",
     });
+  });
+
+  it("builds up the record in the grace period after the league's first game, but gives no award", () => {
+    const tt = calculate(
+      [
+        // The league's first day: 5 games, in the grace period.
+        ...gamesOnDay(1, "alice", "bob", 5),
+        // Day 10, after the grace period: 5 games tie the record.
+        ...gamesOnDay(10, "alice", "bob", 5),
+      ],
+      { afterGracePeriod: false },
+    );
+
+    const aliceAwards = heroAwards(tt, "alice");
+    expect(aliceAwards).toHaveLength(1);
+    expect(aliceAwards[0].data).toStrictEqual({
+      day: new Date(2024, 0, 10).getTime(),
+      gamesPlayed: 5,
+      previousRecord: 5,
+    });
+    expect(tt.achievements.gamesInDayRecord).toStrictEqual({ count: 5, holder: "alice" });
   });
 
   it("grows a single award's game count as the record day continues, earned at the record-taking game", () => {

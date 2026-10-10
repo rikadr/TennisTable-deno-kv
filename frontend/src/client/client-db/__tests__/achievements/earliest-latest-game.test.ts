@@ -1,3 +1,4 @@
+import { RECORD_GRACE_PERIOD_DAYS } from "../../achievements";
 import { TennisTable } from "../../tennis-table";
 import { EventType, EventTypeEnum } from "../../event-store/event-types";
 
@@ -5,16 +6,19 @@ import { EventType, EventTypeEnum } from "../../event-store/event-types";
 // record-breaking achievements. A game that sets a new earliest / latest
 // time-of-day (in the browser's local timezone) awards the achievement to
 // BOTH players. The very first game only seeds the records — there is no
-// prior record to break — so it awards neither.
+// prior record to break — so it awards neither. Games in the grace period
+// after the league's first game only move the records.
 //
 // Timestamps are built with `new Date(y, m, d, h, min)` so they are created
 // and read back in the same local timezone, keeping the test deterministic
 // regardless of the machine's TZ. Games are chronologically increasing (by
-// day) while their time-of-day varies to trigger records.
+// day) while their time-of-day varies to trigger records. The test days are
+// more than the grace period apart, so only the day-1 game is in it.
 
 describe("Earliest / Latest Game Achievements", () => {
-  // Local-time timestamp for a given day and time-of-day.
-  const at = (day: number, hour: number, minute: number): number => new Date(2024, 0, day, hour, minute).getTime();
+  // Local-time timestamp for a given test day and time-of-day.
+  const at = (day: number, hour: number, minute: number): number =>
+    new Date(2024, 0, 1 + (day - 1) * (RECORD_GRACE_PERIOD_DAYS + 1), hour, minute).getTime();
 
   const game = (id: string, time: number, winner: string, loser: string): EventType => ({
     time,
@@ -116,6 +120,24 @@ describe("Earliest / Latest Game Achievements", () => {
     expect(latest(tt, "alice")).toHaveLength(1);
     expect(latest(tt, "alice")[0].data.gameId).toBe("g2");
     expect(earliest(tt, "alice")).toHaveLength(0);
+  });
+
+  it("only moves the records in the grace period, and awards a later game that reaches them", () => {
+    const events: EventType[] = [
+      ...players(),
+      game("g1", new Date(2024, 0, 1, 12, 0).getTime(), "alice", "bob"), // seeds 12:00
+      game("g2", new Date(2024, 0, 3, 9, 0).getTime(), "alice", "bob"), // in the grace period: earliest -> 09:00
+      game("g3", new Date(2024, 0, 3, 20, 0).getTime(), "alice", "bob"), // in the grace period: latest -> 20:00
+      game("g4", at(2, 9, 0), "alice", "bob"), // after it: ties 09:00 -> earliest
+    ];
+
+    const tt = new TennisTable({ events });
+    tt.achievements.calculateAchievements();
+
+    expect(earliest(tt, "alice").map((a) => a.data.gameId)).toEqual(["g4"]);
+    expect(latest(tt, "alice")).toHaveLength(0);
+    expect(tt.achievements.earliestGameRecord.minutesIntoDay).toBe(9 * 60);
+    expect(tt.achievements.latestGameRecord.minutesIntoDay).toBe(20 * 60);
   });
 
   it("awards on a tie with the current record", () => {
