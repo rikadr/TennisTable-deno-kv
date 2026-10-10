@@ -549,8 +549,8 @@ export function valueBuckets(sortedValues: number[], metric: AchievementMetric):
 /**
  * The record over time. A step is one value of the record, and it holds every
  * player who reached that value: both players of a game earn some records at
- * once, and Leap Frog and Choker award a value that equals the standing
- * record, which matches the record rather than replacing it. A step keeps the time it was
+ * once, and every record awards a value that equals the standing record, which
+ * matches the record rather than replacing it. A step keeps the time it was
  * first set, so the step that stands says how long the record has stood.
  */
 export function recordHistory(earnings: Achievement[]): RecordStep[] {

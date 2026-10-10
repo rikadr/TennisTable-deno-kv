@@ -7,14 +7,14 @@ import { TennisTable } from "./tennis-table";
 
 // Shortest streak that can establish the very first Longest Win / Lose Streak
 // record. Below this a run is too ordinary to be a record worth holding. Once
-// a record exists the floor is irrelevant — only beating the record counts.
+// a record exists the floor is irrelevant — only reaching the record counts.
 export const STREAK_RECORD_FLOOR = 3;
 
 // Fewest games in one calendar day / week / month that can establish the very
 // first Hero of the Day / Week / Month record. Below this a period is too
 // ordinary to be a record worth holding. The floor is deliberately the same
 // low bar for all three periods — it only matters until the first record
-// exists; after that only beating the record counts, and the longer periods
+// exists; after that only reaching the record counts, and the longer periods
 // naturally accumulate higher records on their own.
 export const GAMES_IN_PERIOD_RECORD_FLOOR = 3;
 
@@ -22,8 +22,8 @@ export const GAMES_IN_PERIOD_RECORD_FLOOR = 3;
 // Goliath record (the same game sets both — Elo is zero-sum, so the winner's
 // gain is the loser's loss). An evenly matched win moves 16 points, so 20
 // takes a real upset (the winner roughly 90+ Elo below the loser). The floor
-// only matters until the first record exists; after that only a strictly
-// bigger swing takes it.
+// only matters until the first record exists; after that a swing must reach
+// the record.
 export const UPSET_RECORD_FLOOR = 20;
 
 // How many sets count toward a game's Shootout score. Most games are best of
@@ -57,7 +57,7 @@ export const DEUCE_DEMON_TARGET = 10;
 // loss, win, loss, win) — that can establish the very first Yin Yang
 // record. Every game is trivially a run of 1 and any two mixed results a run
 // of 2, so the first record should take a genuinely long see-saw. Once a
-// record exists the floor is irrelevant — only beating the record counts.
+// record exists the floor is irrelevant — only reaching the record counts.
 export const YIN_YANG_RECORD_FLOOR = 5;
 
 // Wins over higher-ranked opponents a player needs within one local calendar
@@ -183,7 +183,7 @@ export function leadChangesInSets(game: Game): number[] {
 // Shortest run of alternating points that can establish the very first Yin
 // Yang Points record. A short run of alternating points happens in almost
 // every set, so the first record takes a long one. Once a record exists the
-// floor is irrelevant — only beating the record counts.
+// floor is irrelevant — only reaching the record counts.
 export const YIN_YANG_POINTS_RECORD_FLOOR = 8;
 
 // The longest run of alternating points in a tracked game: each point goes to
@@ -302,7 +302,7 @@ export class Achievements {
   // same game always sets both (Elo is zero-sum) so the values are equal —
   // only the holders differ (David's winner, Goliath's loser). Undefined
   // until a swing reaches UPSET_RECORD_FLOOR and establishes the first
-  // record. Used by the progression view so players can see the mark to beat.
+  // record. Used by the progression view so players can see the mark to reach.
   davidRecord: { eloGain: number | undefined; holder: string | undefined } = {
     eloGain: undefined,
     holder: undefined,
@@ -332,7 +332,7 @@ export class Achievements {
   // highest winning set score from a true-deuce set (winner ≥ 12,
   // loser ≥ 10). Undefined until the first qualifying set establishes
   // the record. Used by the progression view so players can see what
-  // they need to beat.
+  // they need to reach.
   marathonSetRecord: { score: number | undefined; holder: string | undefined } = {
     score: undefined,
     holder: undefined,
@@ -341,7 +341,7 @@ export class Achievements {
   // leaderboard ranks a player has jumped in a single game (while ranked
   // both before and after). Undefined until the first ≥2-rank jump
   // establishes it. Used by the progression view so players can see the
-  // record they need to beat.
+  // record they need to reach.
   leapFrogRecord: { ranksJumped: number | undefined; holder: string | undefined } = {
     ranksJumped: undefined,
     holder: undefined,
@@ -399,14 +399,14 @@ export class Achievements {
   // the earliest and latest time-of-day (minutes past local midnight, in the
   // browser's timezone) any game has been played to date. Undefined until the
   // first game seeds them — that first game does not award, since there is no
-  // prior record to break.
+  // prior record to reach.
   earliestGameRecord: { minutesIntoDay: number | undefined } = { minutesIntoDay: undefined };
   latestGameRecord: { minutesIntoDay: number | undefined } = { minutesIntoDay: undefined };
   // League-wide running records for the Longest Win Streak / Longest Lose
   // Streak achievements: the longest run of consecutive wins / losses any
   // player has put together to date. Undefined until a streak reaches
   // STREAK_RECORD_FLOOR and establishes the first record. Used by the
-  // progression view so players can see the mark they need to beat.
+  // progression view so players can see the mark they need to reach.
   winStreakRecord: { length: number | undefined; holder: string | undefined } = {
     length: undefined,
     holder: undefined,
@@ -419,7 +419,7 @@ export class Achievements {
   // run of strictly alternating results (win, loss, win, loss — or the
   // mirror) any player has put together to date. Undefined until a run
   // reaches YIN_YANG_RECORD_FLOOR and establishes the first record. Used by
-  // the progression view so players can see the mark they need to beat.
+  // the progression view so players can see the mark they need to reach.
   yinYangRecord: { length: number | undefined; holder: string | undefined } = {
     length: undefined,
     holder: undefined,
@@ -428,7 +428,7 @@ export class Achievements {
   // achievements: the most games a single player has played in one local
   // calendar day / week (Monday-start) / month. Undefined until a period
   // reaches its record floor and establishes the first record. Used by the
-  // progression view so players can see the mark they need to beat.
+  // progression view so players can see the mark they need to reach.
   gamesInDayRecord: { count: number | undefined; holder: string | undefined } = {
     count: undefined,
     holder: undefined,
@@ -502,17 +502,16 @@ export class Achievements {
         loseStreakAllStartedAt: number;
         winStreakPlayer: Map<string, { count: number; startedAt: number }>;
         // The Longest Win / Lose Streak achievement earned by the streak
-        // that is running right now, while this player still holds the
-        // record with it — the one that grows as the streak grows. Cleared
-        // when the streak breaks, and left in place (but no longer grown)
-        // once another player takes the record over.
+        // that is running right now — the one that grows as the streak
+        // grows, while it stays level with the record. Cleared when the
+        // streak breaks, and left in place (but no longer grown) once
+        // another player passes it.
         openWinStreakRecord: StreakRecordAchievement | undefined;
         openLoseStreakRecord: StreakRecordAchievement | undefined;
         // Yin Yang chase state: the run of strictly alternating results the
         // player is on right now, the result of their previous game (undefined
         // before their first), and — like the streak records — the award the
-        // running alternation earned while the player still holds the record
-        // with it.
+        // running alternation earned.
         yinYangStreak: number;
         yinYangStartedAt: number;
         yinYangLastWasWin: boolean | undefined;
@@ -520,10 +519,9 @@ export class Achievements {
         // Per-period state for the Hero of the Day / Week / Month records:
         // the local calendar period (its start timestamp) the player last
         // played in, how many games they have played in it so far, and the
-        // Hero award that period's run earned while the player holds the
-        // record with it — its game count grows game by game, but it stays
-        // earned at the game that took the record. Cleared when the period
-        // ends.
+        // Hero award that period's run earned — its game count grows game by
+        // game while it is level with the record, but it stays earned at the
+        // game that reached the record. Cleared when the period ends.
         heroOfTheDay: HeroPeriodState;
         heroOfTheWeek: HeroPeriodState;
         heroOfTheMonth: HeroPeriodState;
@@ -730,17 +728,23 @@ export class Achievements {
 
       // Check for "Hero of the Day / Week / Month": the records for most games
       // by one player in a single day / week / month. Both players played this
-      // game; the winner is checked first, so when both cross the same count
-      // at once the win breaks the tie.
-      this.#checkHeroAchievements(game.winner, winner, game.playedAt, game.id);
-      this.#checkHeroAchievements(game.loser, loser, game.playedAt, game.id);
+      // game; when both reach the same count at once both earn the award, and
+      // the winner is checked first, so the win takes the record holder.
+      const heroRecordsBeforeGame: HeroRecordCounts = {
+        day: this.gamesInDayRecord.count,
+        week: this.gamesInWeekRecord.count,
+        month: this.gamesInMonthRecord.count,
+      };
+      this.#checkHeroAchievements(game.winner, winner, game.playedAt, game.id, heroRecordsBeforeGame);
+      this.#checkHeroAchievements(game.loser, loser, game.playedAt, game.id, heroRecordsBeforeGame);
 
       // Check for "Yin Yang": the league record for the longest run of
       // strictly alternating results. Both players' runs move on every game;
-      // the winner is checked first, so when both reach the record length at
-      // once the win breaks the tie.
-      this.#updateYinYangStreak(game.winner, winner, true, game.playedAt, game.id);
-      this.#updateYinYangStreak(game.loser, loser, false, game.playedAt, game.id);
+      // when both reach the record length at once both earn the award, and
+      // the winner is checked first, so the win takes the record holder.
+      const yinYangRecordBeforeGame = this.yinYangRecord.length;
+      this.#updateYinYangStreak(game.winner, winner, true, game.playedAt, game.id, yinYangRecordBeforeGame);
+      this.#updateYinYangStreak(game.loser, loser, false, game.playedAt, game.id, yinYangRecordBeforeGame);
 
       // Check for Welcome Committee achievement
       // If this is the loser's first game ever, the winner is their first opponent
@@ -967,7 +971,8 @@ export class Achievements {
       }
       winner.winStreakAll++;
 
-      // Longest Win Streak: the league-wide record for consecutive wins.
+      // Longest Win Streak: the league-wide record for consecutive wins. Only
+      // the winner of a game can move it, so it still stands as before the game.
       winner.openWinStreakRecord = this.#checkStreakRecordAchievement(
         "longest-win-streak",
         this.winStreakRecord,
@@ -978,6 +983,7 @@ export class Achievements {
         game.id,
         winner.openWinStreakRecord,
         STREAK_RECORD_FLOOR,
+        this.winStreakRecord.length,
       );
 
       // Check if winner just broke a lose streak
@@ -1039,6 +1045,8 @@ export class Achievements {
       loser.loseStreakAll++;
 
       // Longest Lose Streak: the league-wide record for consecutive losses.
+      // Only the loser of a game can move it, so it still stands as before the
+      // game.
       loser.openLoseStreakRecord = this.#checkStreakRecordAchievement(
         "longest-lose-streak",
         this.loseStreakRecord,
@@ -1049,6 +1057,7 @@ export class Achievements {
         game.id,
         loser.openLoseStreakRecord,
         STREAK_RECORD_FLOOR,
+        this.loseStreakRecord.length,
       );
 
       // Check for lose streak achievements for loser
@@ -2333,11 +2342,12 @@ export class Achievements {
       // David: the league record for the biggest single-game Elo gain.
       // Goliath: mirror image — the record for the biggest single-game Elo
       // loss. Elo is zero-sum, so the loser's loss magnitude equals the
-      // winner's gain and one game always sets (or beats) both records at
-      // once. Both players must have been ranked at the time of playing the
-      // match (pre-match ranks non-null) for the game to count. A swing of
-      // UPSET_RECORD_FLOOR establishes the first record; after that only a
-      // strictly bigger swing takes the records over.
+      // winner's gain and one game always reaches both records at once. Both
+      // players must have been ranked at the time of playing the match
+      // (pre-match ranks non-null) for the game to count. A swing of
+      // UPSET_RECORD_FLOOR establishes the first record; after that a swing
+      // that equals the records earns both awards, and only a bigger swing
+      // moves the records and their holders.
       if (winnerRankBefore !== null && loserRankBefore !== null) {
         const prevBest = this.bestDavidGain.get(game.winner) ?? 0;
         if (eloGain > prevBest) {
@@ -2348,9 +2358,7 @@ export class Achievements {
           this.worstGoliathLoss.set(game.loser, eloGain);
         }
         const currentUpsetRecord = this.davidRecord.eloGain;
-        const beatsUpsetRecord =
-          currentUpsetRecord === undefined ? eloGain >= UPSET_RECORD_FLOOR : eloGain > currentUpsetRecord;
-        if (beatsUpsetRecord) {
+        if (eloGain >= (currentUpsetRecord ?? UPSET_RECORD_FLOOR)) {
           this.#addAchievement(
             game.winner,
             this.#createAchievement(
@@ -2371,8 +2379,10 @@ export class Achievements {
               game.id,
             ),
           );
-          this.davidRecord = { eloGain, holder: game.winner };
-          this.goliathRecord = { eloLoss: eloGain, holder: game.loser };
+          if (currentUpsetRecord === undefined || eloGain > currentUpsetRecord) {
+            this.davidRecord = { eloGain, holder: game.winner };
+            this.goliathRecord = { eloLoss: eloGain, holder: game.loser };
+          }
         }
       }
 
@@ -2417,10 +2427,12 @@ export class Achievements {
   }
 
   // Awards "Marathon Set" to the set winner for every set in this
-  // game (evaluated in order) whose winning score strictly exceeds
+  // game (evaluated in order) whose winning score equals or beats
   // the league-wide running record AND that was a true-deuce set
-  // (winner ≥ 12, loser ≥ 10). Multiple awards from one game are
-  // possible if successive sets each beat the running record.
+  // (winner ≥ 12, loser ≥ 10). Only a higher score moves the record;
+  // an equal score earns the award and leaves the record with its
+  // holder. Multiple awards from one game are possible if successive
+  // sets each reach the running record.
   #checkMarathonSetAchievements(
     gameWinner: string,
     gameLoser: string,
@@ -2434,7 +2446,7 @@ export class Achievements {
       const setLoserScore = Math.min(set.gameWinner, set.gameLoser);
       if (setWinnerScore < 12 || setLoserScore < 10) return;
       const currentRecord = this.marathonSetRecord.score;
-      if (currentRecord !== undefined && setWinnerScore <= currentRecord) return;
+      if (currentRecord !== undefined && setWinnerScore < currentRecord) return;
 
       const setWinnerId = set.gameWinner > set.gameLoser ? gameWinner : gameLoser;
       const setLoserId = setWinnerId === gameWinner ? gameLoser : gameWinner;
@@ -2450,7 +2462,9 @@ export class Achievements {
         ),
       );
 
-      this.marathonSetRecord = { score: setWinnerScore, holder: setWinnerId };
+      if (currentRecord === undefined || setWinnerScore > currentRecord) {
+        this.marathonSetRecord = { score: setWinnerScore, holder: setWinnerId };
+      }
     });
   }
 
@@ -2526,10 +2540,10 @@ export class Achievements {
   }
 
   // Awards "Yin Yang Points" to both players of a tracked game whose longest
-  // run of alternating points beats the league record. The players score the
-  // run together, so they hold the record together. A run of
+  // run of alternating points equals or beats the league record. The players
+  // score the run together, so they hold the record together. A run of
   // YIN_YANG_POINTS_RECORD_FLOOR establishes the first record; after that only
-  // a strictly longer run takes it over.
+  // a longer run moves the record and its holders.
   #checkYinYangPointsAchievement(game: Game) {
     const run = longestAlternatingPointRun(game);
     if (run === undefined) return;
@@ -2541,9 +2555,7 @@ export class Achievements {
     });
 
     const currentRecord = this.yinYangPointsRecord.points;
-    const beatsRecord =
-      currentRecord === undefined ? run.points >= YIN_YANG_POINTS_RECORD_FLOOR : run.points > currentRecord;
-    if (!beatsRecord) return;
+    if (run.points < (currentRecord ?? YIN_YANG_POINTS_RECORD_FLOOR)) return;
 
     [
       { playerId: game.winner, opponent: game.loser },
@@ -2567,7 +2579,9 @@ export class Achievements {
         ),
       );
     });
-    this.yinYangPointsRecord = { points: run.points, holders: [game.winner, game.loser] };
+    if (currentRecord === undefined || run.points > currentRecord) {
+      this.yinYangPointsRecord = { points: run.points, holders: [game.winner, game.loser] };
+    }
   }
 
   // Awards "Deuce Demon" when a player's career total of won deuce sets
@@ -2652,10 +2666,11 @@ export class Achievements {
     return (winnerScore === 11 && loserScore <= 9) || (winnerScore > 11 && winnerScore - loserScore === 2);
   }
 
-  // Awards "Shootout" to BOTH players of a game whose Shootout score beats
-  // the league-wide record — the points were scored together, so the record
-  // is held together. A score of SHOOTOUT_RECORD_FLOOR establishes the first
-  // record; after that only a strictly higher score takes it over.
+  // Awards "Shootout" to BOTH players of a game whose Shootout score equals
+  // or beats the league-wide record — the points were scored together, so the
+  // record is held together. A score of SHOOTOUT_RECORD_FLOOR establishes the
+  // first record; after that only a higher score moves the record and its
+  // holders.
   #checkShootoutAchievement(
     winner: string,
     loser: string,
@@ -2676,8 +2691,7 @@ export class Achievements {
     if (points > (this.bestShootout.get(loser) ?? 0)) this.bestShootout.set(loser, points);
 
     const currentRecord = this.shootoutRecord.points;
-    const beatsRecord = currentRecord === undefined ? points >= SHOOTOUT_RECORD_FLOOR : points > currentRecord;
-    if (!beatsRecord) return;
+    if (points < (currentRecord ?? SHOOTOUT_RECORD_FLOOR)) return;
 
     this.#addAchievement(
       winner,
@@ -2711,7 +2725,9 @@ export class Achievements {
         gameId,
       ),
     );
-    this.shootoutRecord = { points, holders: [winner, loser] };
+    if (currentRecord === undefined || points > currentRecord) {
+      this.shootoutRecord = { points, holders: [winner, loser] };
+    }
   }
 
   #checkDonutAchievements(
@@ -2906,18 +2922,22 @@ export class Achievements {
   // strictly alternating results. Called with the player's streak as it
   // stands after the game just played.
   //
-  // A streak takes the record the moment it passes the standing one (or
-  // reaches `recordFloor`, when nobody holds it yet). Extending that
-  // same streak while still holding the record does not award again — the
-  // achievement already earned grows with the streak instead, so an
-  // 11th straight win reads as one award worth 11 rather than two worth
-  // 10 and 11. Its `earnedAt` moves to the game that extended it, so the
-  // award always spans the whole of the record streak.
+  // A streak earns the award the moment it equals the standing record (or
+  // reaches `recordFloor`, when nobody holds it yet). Only a longer streak
+  // moves the record; an equal one leaves the record with its holder.
+  // Extending that same streak while its award was level with the record
+  // before the game (`recordBeforeGame`) does not award again — the
+  // achievement already earned grows with the streak instead, so an 11th
+  // straight win reads as one award worth 11 rather than two worth 10 and 11.
+  // Its `earnedAt` moves to the game that extended it, so the award always
+  // spans the whole of the record streak. The value before the game lets 2
+  // players who reach the record in the same game both keep growing.
   //
-  // Being overtaken mid-streak resets that: once another player holds the
-  // record, passing them again earns a second award, and the first keeps
-  // the length it had while it was the record. A streak that has been
-  // broken always earns its own award when it takes the record back.
+  // Being overtaken mid-streak resets that: once another player has passed
+  // the award in an earlier game, reaching the record again earns a second
+  // award, and the first keeps the length it had while it was level with the
+  // record. A streak that has been broken always earns its own award when it
+  // reaches the record.
   //
   // Returns the award this streak now owns, to be stored on the player's
   // tracker and passed back in on their next game.
@@ -2931,25 +2951,30 @@ export class Achievements {
     gameId: string,
     openRecord: StreakRecordAchievement | undefined,
     recordFloor: number,
+    recordBeforeGame: number | undefined,
   ): StreakRecordAchievement | undefined {
-    const beatsRecord = record.length === undefined ? streakLength >= recordFloor : streakLength > record.length;
-    if (!beatsRecord) {
+    if (streakLength < (record.length ?? recordFloor)) {
       return openRecord;
     }
 
-    // Same streak, still the record holder: grow the award instead of
-    // handing out another one.
-    if (openRecord !== undefined && record.holder === playerId) {
+    // Same streak, its award level with the record before this game: grow
+    // the award instead of handing out another one. The streak grows by 1 a
+    // game, so growing always reaches the record, also when the other player
+    // of this game moved it first.
+    if (openRecord !== undefined && openRecord.data.streakLength === recordBeforeGame) {
       openRecord.data.streakLength = streakLength;
       openRecord.earnedAt = playedAt;
       // One award, so it belongs to one game: the link follows `earnedAt` to
       // the game that extended the streak.
       openRecord.earnedByGame = gameId;
-      record.length = streakLength;
+      if (record.length === undefined || streakLength > record.length) {
+        record.length = streakLength;
+        record.holder = playerId;
+      }
       return openRecord;
     }
 
-    const data = { streakLength, startedAt, previousRecord: record.length };
+    const data = { streakLength, startedAt, previousRecord: recordBeforeGame };
     const achievement: StreakRecordAchievement =
       type === "longest-win-streak"
         ? this.#createAchievement("longest-win-streak", playerId, playedAt, data, gameId)
@@ -2957,8 +2982,10 @@ export class Achievements {
           ? this.#createAchievement("longest-lose-streak", playerId, playedAt, data, gameId)
           : this.#createAchievement("yin-yang", playerId, playedAt, data, gameId);
     this.#addAchievement(playerId, achievement);
-    record.length = streakLength;
-    record.holder = playerId;
+    if (record.length === undefined || streakLength > record.length) {
+      record.length = streakLength;
+      record.holder = playerId;
+    }
     return achievement;
   }
 
@@ -2969,8 +2996,8 @@ export class Achievements {
   // run of 1 — the game itself), and a player's first ever game also starts
   // at 1. The record machinery is shared with the streak records: the first
   // run to reach YIN_YANG_RECORD_FLOOR establishes the record, after that
-  // only a longer run takes it, and the holder's award grows while their
-  // alternation continues instead of handing out one per game.
+  // a run that equals the record earns the award, and the award grows while
+  // the alternation continues instead of handing out one per game.
   #updateYinYangStreak(
     playerId: string,
     tracker: {
@@ -2982,6 +3009,7 @@ export class Achievements {
     won: boolean,
     playedAt: number,
     gameId: string,
+    recordBeforeGame: number | undefined,
   ) {
     if (tracker.yinYangLastWasWin === undefined || tracker.yinYangLastWasWin === won) {
       tracker.yinYangStreak = 1;
@@ -3002,6 +3030,7 @@ export class Achievements {
       gameId,
       tracker.openYinYangRecord,
       YIN_YANG_RECORD_FLOOR,
+      recordBeforeGame,
     );
   }
 
@@ -3030,24 +3059,27 @@ export class Achievements {
   // Hero of the Day / Week / Month: the league-wide records for most games by
   // one player in a single local calendar day / week / month. All three work
   // like the streak records: the first period to reach the record floor
-  // establishes the record, after that only playing more games in one period
-  // than the record takes it. The award is earned at the game that took the
-  // record; while the record holder keeps playing in their record period the
-  // award's game count grows with the record instead of handing out one per
-  // game — once the period ends (or someone else takes the record over) a
-  // later run is a fresh chase. The three periods run independently — a busy
-  // record day also feeds that week's and month's counts.
+  // establishes the record, after that playing as many games in one period as
+  // the record earns the award, and only playing more moves the record. The
+  // award is earned at the game that reached the record; while the player
+  // keeps playing in that period the award's game count grows with the record
+  // instead of handing out one per game — once the period ends (or someone
+  // else passes the award) a later run is a fresh chase. The three periods
+  // run independently — a busy record day also feeds that week's and month's
+  // counts.
   #checkHeroAchievements(
     playerId: string,
     tracker: { heroOfTheDay: HeroPeriodState; heroOfTheWeek: HeroPeriodState; heroOfTheMonth: HeroPeriodState },
     playedAt: number,
     gameId: string,
+    recordsBeforeGame: HeroRecordCounts,
   ) {
     this.#checkHeroRecordAchievement(
       "hero-of-the-day",
       playerId,
       tracker.heroOfTheDay,
       this.gamesInDayRecord,
+      recordsBeforeGame.day,
       this.#dayStartOf(playedAt),
       playedAt,
       gameId,
@@ -3057,6 +3089,7 @@ export class Achievements {
       playerId,
       tracker.heroOfTheWeek,
       this.gamesInWeekRecord,
+      recordsBeforeGame.week,
       this.#weekStartOf(playedAt),
       playedAt,
       gameId,
@@ -3066,6 +3099,7 @@ export class Achievements {
       playerId,
       tracker.heroOfTheMonth,
       this.gamesInMonthRecord,
+      recordsBeforeGame.month,
       this.#monthStartOf(playedAt),
       playedAt,
       gameId,
@@ -3077,6 +3111,7 @@ export class Achievements {
     playerId: string,
     state: HeroPeriodState,
     record: { count: number | undefined; holder: string | undefined },
+    recordBeforeGame: number | undefined,
     periodStart: number,
     playedAt: number,
     gameId: string,
@@ -3088,24 +3123,26 @@ export class Achievements {
     }
     state.gamesInPeriod++;
 
-    const beatsRecord =
-      record.count === undefined
-        ? state.gamesInPeriod >= GAMES_IN_PERIOD_RECORD_FLOOR
-        : state.gamesInPeriod > record.count;
-    if (!beatsRecord) {
+    if (state.gamesInPeriod < (record.count ?? GAMES_IN_PERIOD_RECORD_FLOOR)) {
       return;
     }
 
-    // Same period, still the record holder: grow the award's game count with
-    // the record, but keep it earned at the game that took the record.
-    if (state.openRecord !== undefined && record.holder === playerId) {
+    // Same period, its award level with the record before this game: grow
+    // the award's game count with the record, but keep it earned at the game
+    // that reached the record. The count grows by 1 a game, so growing always
+    // reaches the record, also when the other player of this game moved it
+    // first.
+    if (state.openRecord !== undefined && state.openRecord.data.gamesPlayed === recordBeforeGame) {
       state.openRecord.data.gamesPlayed = state.gamesInPeriod;
-      record.count = state.gamesInPeriod;
+      if (record.count === undefined || state.gamesInPeriod > record.count) {
+        record.count = state.gamesInPeriod;
+        record.holder = playerId;
+      }
       return;
     }
 
     const gamesPlayed = state.gamesInPeriod;
-    const previousRecord = record.count;
+    const previousRecord = recordBeforeGame;
     let achievement: HeroRecordAchievement;
     if (type === "hero-of-the-day") {
       achievement = this.#createAchievement(
@@ -3133,8 +3170,10 @@ export class Achievements {
       );
     }
     this.#addAchievement(playerId, achievement);
-    record.count = gamesPlayed;
-    record.holder = playerId;
+    if (record.count === undefined || gamesPlayed > record.count) {
+      record.count = gamesPlayed;
+      record.holder = playerId;
+    }
     state.openRecord = achievement;
   }
 
@@ -3563,9 +3602,9 @@ export class Achievements {
 
   // Awards the "Earliest Game" and "Latest Game" record-breaking achievements.
   // The time-of-day is derived in the browser's local timezone: 00:00 is the
-  // earliest possible and 23:59 the latest. When a game strictly beats the
+  // earliest possible and 23:59 the latest. When a game equals or beats the
   // running earliest / latest record it is awarded to BOTH players. The very
-  // first game only seeds the records (no prior record exists to break).
+  // first game only seeds the records (no prior record exists to reach).
   #checkTimeOfDayAchievements(game: Game) {
     const playedDate = new Date(game.playedAt);
     const minutesIntoDay = playedDate.getHours() * 60 + playedDate.getMinutes();
@@ -3574,7 +3613,7 @@ export class Achievements {
     // Earliest Game
     if (this.earliestGameRecord.minutesIntoDay === undefined) {
       this.earliestGameRecord.minutesIntoDay = minutesIntoDay;
-    } else if (minutesIntoDay < this.earliestGameRecord.minutesIntoDay) {
+    } else if (minutesIntoDay <= this.earliestGameRecord.minutesIntoDay) {
       this.earliestGameRecord.minutesIntoDay = minutesIntoDay;
       this.#addAchievement(
         game.winner,
@@ -3601,7 +3640,7 @@ export class Achievements {
     // Latest Game
     if (this.latestGameRecord.minutesIntoDay === undefined) {
       this.latestGameRecord.minutesIntoDay = minutesIntoDay;
-    } else if (minutesIntoDay > this.latestGameRecord.minutesIntoDay) {
+    } else if (minutesIntoDay >= this.latestGameRecord.minutesIntoDay) {
       this.latestGameRecord.minutesIntoDay = minutesIntoDay;
       this.#addAchievement(
         game.winner,
@@ -3692,14 +3731,14 @@ export class Achievements {
       "perfect-week": { current: 0, target: 5, earned: 0 },
       "streak-ender": { earned: 0 },
       "party-pooper": { earned: 0 },
-      // Record-chasing achievements are earned by strictly exceeding the
-      // league record, so their target is one beyond it — reaching the
-      // target is what earns the award, same as every other progress bar.
+      // Record-chasing achievements are earned by equalling the league
+      // record, so their target IS the record — reaching the target is what
+      // earns the award, same as every other progress bar.
       "longest-win-streak": {
         earned: 0,
         current: 0,
         best: 0,
-        target: this.winStreakRecord.length === undefined ? undefined : this.winStreakRecord.length + 1,
+        target: this.winStreakRecord.length,
         recordHolder: this.winStreakRecord.holder,
       },
 
@@ -3712,14 +3751,14 @@ export class Achievements {
         earned: 0,
         current: 0,
         best: 0,
-        target: this.loseStreakRecord.length === undefined ? undefined : this.loseStreakRecord.length + 1,
+        target: this.loseStreakRecord.length,
         recordHolder: this.loseStreakRecord.holder,
       },
       "yin-yang": {
         earned: 0,
         current: 0,
         best: 0,
-        target: this.yinYangRecord.length === undefined ? undefined : this.yinYangRecord.length + 1,
+        target: this.yinYangRecord.length,
         recordHolder: this.yinYangRecord.holder,
       },
 
@@ -3731,16 +3770,12 @@ export class Achievements {
       // Giant Hunting resets at local midnight: current is today's wins over
       // higher-ranked opponents, best the most in any single day.
       "giant-hunting": { current: 0, target: GIANT_HUNTING_TARGET, best: 0, earned: 0 },
-      // Leap Frog is earned by reaching the record, not by passing it, so the
-      // target IS the record.
       "leap-frog": {
         earned: 0,
         current: 0,
         target: this.leapFrogRecord.ranksJumped,
         recordHolder: this.leapFrogRecord.holder,
       },
-      // David / Goliath chase a fractional Elo record, so unlike the integer
-      // records the target IS the record — it must be strictly exceeded.
       david: {
         earned: 0,
         current: 0,
@@ -3781,17 +3816,15 @@ export class Achievements {
       "marathon-set": {
         earned: 0,
         current: 0,
-        target: this.marathonSetRecord.score === undefined ? undefined : this.marathonSetRecord.score + 1,
+        target: this.marathonSetRecord.score,
         recordHolder: this.marathonSetRecord.holder,
       },
       shootout: {
         earned: 0,
         current: 0,
-        target: this.shootoutRecord.points === undefined ? undefined : this.shootoutRecord.points + 1,
+        target: this.shootoutRecord.points,
         recordHolders: this.shootoutRecord.holders,
       },
-      // Choker is earned by reaching the record, not by passing it, so the
-      // target IS the record.
       choker: {
         earned: 0,
         current: 0,
@@ -3804,28 +3837,28 @@ export class Achievements {
       "yin-yang-points": {
         earned: 0,
         current: 0,
-        target: this.yinYangPointsRecord.points === undefined ? undefined : this.yinYangPointsRecord.points + 1,
+        target: this.yinYangPointsRecord.points,
         recordHolders: this.yinYangPointsRecord.holders,
       },
       "hero-of-the-day": {
         earned: 0,
         current: 0,
         best: 0,
-        target: this.gamesInDayRecord.count === undefined ? undefined : this.gamesInDayRecord.count + 1,
+        target: this.gamesInDayRecord.count,
         recordHolder: this.gamesInDayRecord.holder,
       },
       "hero-of-the-week": {
         earned: 0,
         current: 0,
         best: 0,
-        target: this.gamesInWeekRecord.count === undefined ? undefined : this.gamesInWeekRecord.count + 1,
+        target: this.gamesInWeekRecord.count,
         recordHolder: this.gamesInWeekRecord.holder,
       },
       "hero-of-the-month": {
         earned: 0,
         current: 0,
         best: 0,
-        target: this.gamesInMonthRecord.count === undefined ? undefined : this.gamesInMonthRecord.count + 1,
+        target: this.gamesInMonthRecord.count,
         recordHolder: this.gamesInMonthRecord.holder,
       },
       // Record-breaking, no progress bar. recordMinutes is the current league
@@ -4624,7 +4657,7 @@ export class Achievements {
 
     // Leap Frog progression: the player's own biggest single-game
     // leaderboard jump (ranked before and after), compared against the
-    // league record they must strictly exceed to earn the award.
+    // league record they must reach to earn the award.
     progression["leap-frog"].current = this.bestRankJump.get(playerId) ?? 0;
 
     // Goliath progression: largest Elo lost from a single match where
@@ -4635,7 +4668,7 @@ export class Achievements {
 
     // Shootout progression: the player's own highest Shootout score (combined
     // points of a game's highest-scoring sets), compared against the league
-    // record they must strictly exceed to earn the award.
+    // record they must reach to earn the award.
     progression["shootout"].current = this.bestShootout.get(playerId) ?? 0;
 
     // Choker progression: the player's own largest lead lost in a set of a
@@ -4647,7 +4680,7 @@ export class Achievements {
     progression["tug-of-war"].current = Math.min(this.mostLeadChanges.get(playerId) ?? 0, TUG_OF_WAR_MIN_LEAD_CHANGES);
 
     // Yin Yang Points progression: the player's own longest run of alternating
-    // points, compared against the league record they must strictly exceed.
+    // points, compared against the league record they must reach.
     progression["yin-yang-points"].current = this.longestAlternatingPoints.get(playerId) ?? 0;
 
     // Milestone Game progression is league-wide (everyone shares it) and
@@ -5249,9 +5282,9 @@ type StreakRecordAchievement =
   | GenericAchievement<"longest-lose-streak">
   | GenericAchievement<"yin-yang">;
 
-// The award for taking a games-in-a-period record — earned at the game that
-// took the record, while its game count keeps growing with the record as the
-// holder's period continues. The three share `gamesPlayed`, so the code that
+// The award for reaching a games-in-a-period record — earned at the game that
+// reached the record, while its game count keeps growing with the record as
+// the player's period continues. The three share `gamesPlayed`, so the code that
 // grows one can treat them interchangeably.
 type HeroRecordAchievement =
   | GenericAchievement<"hero-of-the-day">
@@ -5260,13 +5293,17 @@ type HeroRecordAchievement =
 
 // Per-player, per-period chase state for a Hero record: the period being
 // played (its start timestamp), the games in it so far, and the open award
-// whose game count still grows with it (if the player holds the record with
-// this period) — earned at the game that took the record.
+// whose game count still grows with it (while it is level with the record) —
+// earned at the game that reached the record.
 type HeroPeriodState = {
   periodStart: number;
   gamesInPeriod: number;
   openRecord: HeroRecordAchievement | undefined;
 };
+
+// The Hero of the Day / Week / Month record counts, as they stood before a
+// game.
+type HeroRecordCounts = { day: number | undefined; week: number | undefined; month: number | undefined };
 
 // Progression Types
 type BaseProgression = {
@@ -5377,22 +5414,21 @@ type MissingPlayersProgression = ProgressionWithTarget & {
 type LeapFrogProgression = BaseProgression & {
   // Player's own biggest single-game leaderboard jump (0 if none).
   current: number;
-  // One rank beyond the league record — the jump that earns the next Leap
-  // Frog award. Undefined when no one has set a record yet (a ≥ 2-rank
-  // jump wins it outright).
+  // The league record — a jump that equals it earns the award. Undefined
+  // when no one has set a record yet (a ≥ 2-rank jump wins it outright).
   target?: number;
   // Player who currently holds the league record, if any.
   recordHolder?: string;
 };
 
 // David / Goliath chase the league record for the biggest single-game Elo
-// swing. The record is fractional, so unlike the integer records the target
-// is the record itself and must be strictly exceeded.
+// swing.
 type UpsetRecordProgression = BaseProgression & {
   // Player's own biggest qualifying single-game gain / loss (0 if none).
   current: number;
-  // The league record to strictly exceed. Undefined when no one has set a
-  // record yet (a swing of UPSET_RECORD_FLOOR takes it outright).
+  // The league record — a swing that equals it earns the award. Undefined
+  // when no one has set a record yet (a swing of UPSET_RECORD_FLOOR takes it
+  // outright).
   target?: number;
   // Player who currently holds the league record, if any.
   recordHolder?: string;
@@ -5402,7 +5438,7 @@ type ShootoutProgression = BaseProgression & {
   // Player's own highest Shootout score: combined points of one game's
   // highest-scoring sets (at most SHOOTOUT_SETS_COUNTED of them). 0 if none.
   current: number;
-  // One point beyond the league record — the score that takes it. Undefined
+  // The league record — a score that equals it earns the award. Undefined
   // when no one has set a record yet (a SHOOTOUT_RECORD_FLOOR-point game
   // takes it outright).
   target?: number;
@@ -5414,7 +5450,7 @@ type YinYangPointsProgression = BaseProgression & {
   // Player's own longest run of alternating points in a tracked game. 0 if
   // none.
   current: number;
-  // One point beyond the league record — the run that takes it. Undefined
+  // The league record — a run that equals it earns the award. Undefined
   // when no one has set a record yet (a run of YIN_YANG_POINTS_RECORD_FLOOR
   // takes it outright).
   target?: number;
@@ -5436,9 +5472,9 @@ type MarathonSetProgression = BaseProgression & {
   // Player's own highest winning set score from a true-deuce set
   // they won (winner ≥ 12, loser ≥ 10). 0 if they have none.
   current: number;
-  // One point beyond the league-wide record — the winning score that
-  // earns the next Marathon Set award. Undefined when no one has set a
-  // record yet (next qualifying deuce set wins it outright).
+  // The league-wide record — a winning score that equals it earns the
+  // award. Undefined when no one has set a record yet (next qualifying
+  // deuce set wins it outright).
   target?: number;
   // Player who currently holds the league record, if any.
   recordHolder?: string;
@@ -5449,9 +5485,9 @@ type HeroRecordProgression = BaseProgression & {
   // week / this month) — only the current period's total can still grow into
   // the record, so this is what the progress bar measures.
   current: number;
-  // One beyond the league record — the single-period games count that takes
-  // it. Undefined while nobody holds it (a floor-reaching period takes it
-  // outright).
+  // The league record — a single-period games count that equals it earns
+  // the award. Undefined while nobody holds it (a floor-reaching period takes
+  // it outright).
   target?: number;
   // Player who currently holds the league record, if any.
   recordHolder?: string;
@@ -5465,7 +5501,7 @@ type StreakRecordProgression = BaseProgression & {
   // the other way). Only a live streak can grow into the record, so this is
   // what the progress bar measures.
   current: number;
-  // One beyond the league record — the streak that takes it. Undefined
+  // The league record — a streak that equals it earns the award. Undefined
   // while nobody holds it (a streak of STREAK_RECORD_FLOOR takes it
   // outright).
   target?: number;
@@ -5498,12 +5534,12 @@ type ClimberProgression = ProgressionWithTarget & {
 };
 
 // Earliest / Latest Game are record-breaking achievements with no numeric
-// progress bar — you either hold the record or you don't. Instead of a
+// progress bar — you either reach the record or you don't. Instead of a
 // percentage, the progress view shows the current league record and the
 // player's own best so they can gauge how far off they are. Both values are
 // minutes past local midnight (browser timezone); undefined when unknown.
 type TimeOfDayRecordProgression = BaseProgression & {
-  // The current league-wide record time-of-day — the mark to beat.
+  // The current league-wide record time-of-day — the mark to reach.
   recordMinutes?: number;
   // The player's own best (earliest / latest) time-of-day.
   playerMinutes?: number;

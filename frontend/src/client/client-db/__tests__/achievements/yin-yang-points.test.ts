@@ -2,10 +2,11 @@ import { EventType, EventTypeEnum } from "../../event-store/event-types";
 import { TennisTable } from "../../tennis-table";
 import { longestAlternatingPointRun, YIN_YANG_POINTS_RECORD_FLOOR } from "../../achievements";
 
-// Yin Yang Points: play the longest run of alternating points in league
-// history, in a tracked game. The run continues across sets. Both players
-// earn it. A run of YIN_YANG_POINTS_RECORD_FLOOR establishes the first record;
-// after that only a strictly longer run takes it.
+// Yin Yang Points: play as many alternating points in a row as anyone in
+// league history, in a tracked game. The run continues across sets. Both
+// players earn it. A run of YIN_YANG_POINTS_RECORD_FLOOR establishes the first
+// record; after that a run that equals it earns the award, and only a longer
+// run takes it.
 
 describe("Yin Yang Points Achievement", () => {
   const baseEvents: EventType[] = [
@@ -103,12 +104,12 @@ describe("Yin Yang Points Achievement", () => {
     );
   });
 
-  it("awards only a strictly longer run once a record exists", () => {
+  it("awards a run that equals the record, and only a longer run takes it", () => {
     const tt = new TennisTable({
       events: [
         ...baseEvents,
         ...trackedGame("g1", 100, "alice", "bob", [setWithRun(YIN_YANG_POINTS_RECORD_FLOOR + 2)]),
-        // Equal to the record: no award.
+        // Equal to the record: an award, and the record stays.
         ...trackedGame("g2", 200, "chris", "bob", [setWithRun(YIN_YANG_POINTS_RECORD_FLOOR + 2)]),
         // 1 longer: takes the record.
         ...trackedGame("g3", 300, "chris", "alice", [setWithRun(YIN_YANG_POINTS_RECORD_FLOOR + 3)]),
@@ -117,16 +118,17 @@ describe("Yin Yang Points Achievement", () => {
     tt.achievements.calculateAchievements();
 
     expect(awards(tt, "chris").map((a) => [a.data.gameId, a.data.previousRecord])).toEqual([
+      ["g2", YIN_YANG_POINTS_RECORD_FLOOR + 2],
       ["g3", YIN_YANG_POINTS_RECORD_FLOOR + 2],
     ]);
     expect(awards(tt, "alice")).toHaveLength(2);
-    expect(awards(tt, "bob")).toHaveLength(1);
+    expect(awards(tt, "bob")).toHaveLength(2);
     expect(tt.achievements.yinYangPointsRecord).toEqual({
       points: YIN_YANG_POINTS_RECORD_FLOOR + 3,
       holders: ["chris", "alice"],
     });
     expect(tt.achievements.getPlayerProgression("bob")["yin-yang-points"].target).toBe(
-      YIN_YANG_POINTS_RECORD_FLOOR + 4,
+      YIN_YANG_POINTS_RECORD_FLOOR + 3,
     );
   });
 

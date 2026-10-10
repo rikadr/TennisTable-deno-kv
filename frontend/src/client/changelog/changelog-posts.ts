@@ -42,6 +42,30 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
+    slug: "record-achievements-award-a-tie",
+    title: "League record achievements now award a tie",
+    date: "2026-10-10",
+    tags: ["feature-update"],
+    summary:
+      "A result that equals a league record now earns the achievement. Only a better result moves the record and its holder.",
+    body: [
+      text("These achievements now go to a result that equals the league record:"),
+      list(
+        "Longest Win Streak, Longest Lose Streak and Yin Yang",
+        "David and Goliath",
+        "Marathon Set, Shootout and Yin Yang Points",
+        "Hero of the Day, Hero of the Week and Hero of the Month",
+        "Earliest Game and Latest Game",
+      ),
+      text(
+        "A tie earns the achievement, but the record and its holder do not change. Only a better result moves the record. Leap Frog and Choker already use this rule.",
+      ),
+      text(
+        "When 2 players reach the record in the same game, both players earn it. The progress bar ends at the record, not at 1 more than the record. The app calculates the achievements from the full game history, so players get new awards for games they played before this change.",
+      ),
+    ],
+  },
+  {
     slug: "recent-achievements-search",
     title: "Search on the recent achievements list",
     date: "2026-10-09",
@@ -72,11 +96,11 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
         "Student Becomes Master 🎓 - beat your first opponent after you lost your first game to them.",
         "Mentor 🧑‍🏫 - a player who played their first game against you reaches the top 3 on the leaderboard.",
         "Tug of War 🤼 - play a set where the lead changes 5 or more times. A tie is not a lead change. Only tracked games count. Both players earn it.",
-        "Yin Yang Points 🌗 - play the longest run of alternating points in the league history. The run continues across sets. Only tracked games count. Both players earn it.",
+        "Yin Yang Points 🌗 - play as many alternating points in a row as anyone in the league history. The run continues across sets. Only tracked games count. Both players earn it.",
         "Rock Paper Scissors ✂️ - in one day, you beat a player and that player beats a third player. The third player beats you. All 3 players earn it with the last game of the cycle.",
       ),
       text(
-        "You can earn Mentor 1 time for each player, Tug of War 1 time for each game, and Rock Paper Scissors 1 time for each cycle. Yin Yang Points is a league record. A longer run takes it from the players who hold it. You can earn each of the other 3 achievements 1 time.",
+        "You can earn Mentor 1 time for each player, Tug of War 1 time for each game, and Rock Paper Scissors 1 time for each cycle. Yin Yang Points is a league record. A run that equals the record earns it, and only a longer run takes the record from the players who hold it. You can earn each of the other 3 achievements 1 time.",
       ),
       text(
         "Progress for Even Steven uses the active opponent of 20 or more games who is closest to equal. 0% is 20 or more games from equal. Progress for Mentor uses your highest player on the leaderboard without a Mentor. 0% is last place and 100% is 3rd place.",

@@ -3,8 +3,9 @@ import { EventType, EventTypeEnum } from "../../event-store/event-types";
 
 // David is the league record for the biggest single-game Elo gain. A gain of
 // UPSET_RECORD_FLOOR (20 — requiring the loser to have been roughly 90+ Elo
-// above the winner) establishes the first record; after that only a strictly
-// bigger gain takes the record over and awards again. Both players must be
+// above the winner) establishes the first record; after that a gain that equals
+// the record awards again, and only a bigger gain takes the record over. Both
+// players must be
 // ranked at the time of the match. The fixtures here produce ≥30-point
 // swings, comfortably past the floor.
 
@@ -65,7 +66,7 @@ describe("David Achievement", () => {
     });
   });
 
-  it("does NOT award again for a swing that fails to beat the standing record", () => {
+  it("does NOT award again for a swing that fails to reach the standing record", () => {
     // After the first upset the Elo gap between the pair has narrowed, so a
     // rematch win yields a strictly smaller gain — no new award.
     const events: EventType[] = [...buildGoliath(200), createPlayer("david", 5000)];
@@ -84,6 +85,35 @@ describe("David Achievement", () => {
     const davids = tt.achievements.getAchievements("david").filter((a) => a.type === "david");
     expect(davids).toHaveLength(1);
     expect(davids[0].data?.gameId).toBe("upset");
+  });
+
+  it("awards a swing that equals the record, and keeps the records with their holders", () => {
+    // david-2 and goliath-2 play the same games as david and goliath, so they
+    // reach the same ratings, and the second upset gives the same swing.
+    const pair = (suffix: string, start: number): EventType[] => {
+      const events: EventType[] = [createPlayer(`goliath${suffix}`, start)];
+      for (let i = 0; i < 200; i++) events.push(createPlayer(`gopp${suffix}-${i}`, start + 10 + i));
+      for (let i = 0; i < 200; i++)
+        events.push(game(`gg${suffix}-${i}`, start + 1000 + i, `goliath${suffix}`, `gopp${suffix}-${i}`));
+      events.push(createPlayer(`david${suffix}`, start + 2000));
+      for (let i = 0; i < 5; i++) events.push(createPlayer(`dopp${suffix}-${i}`, start + 2010 + i));
+      for (let i = 0; i < 5; i++)
+        events.push(game(`dg${suffix}-${i}`, start + 3000 + i, `david${suffix}`, `dopp${suffix}-${i}`));
+      events.push(game(`upset${suffix}`, start + 4000, `david${suffix}`, `goliath${suffix}`));
+      return events;
+    };
+    const tt = new TennisTable({ events: [...pair("", 1), ...pair("-2", 10000)] });
+    tt.achievements.calculateAchievements();
+
+    const firstDavid = tt.achievements.getAchievements("david").find((a) => a.type === "david");
+    const secondDavid = tt.achievements.getAchievements("david-2").find((a) => a.type === "david");
+    expect(firstDavid).toBeDefined();
+    expect(secondDavid?.data?.eloGain).toBe(firstDavid?.data?.eloGain);
+    expect(secondDavid?.data?.previousRecord).toBe(firstDavid?.data?.eloGain);
+    const secondGoliath = tt.achievements.getAchievements("goliath-2").find((a) => a.type === "goliath");
+    expect(secondGoliath?.data?.eloLoss).toBe(firstDavid?.data?.eloGain);
+    expect(tt.achievements.davidRecord.holder).toBe("david");
+    expect(tt.achievements.goliathRecord.holder).toBe("goliath");
   });
 
   it("awards again with previousRecord when a strictly bigger swing breaks the record", () => {

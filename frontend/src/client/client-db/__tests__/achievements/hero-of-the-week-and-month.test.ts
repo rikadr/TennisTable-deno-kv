@@ -72,7 +72,7 @@ describe("Hero of the Week achievement", () => {
     expect(tt.achievements.gamesInWeekRecord).toStrictEqual({ count: undefined, holder: undefined });
   });
 
-  it("establishes the first record accumulated across the days of a week, tie going to the winner", () => {
+  it("establishes the first record accumulated across the days of a week, earned by both players", () => {
     // 2 games on Monday + 1 on Wednesday reach the floor of 3 mid-week.
     const tt = calculate([
       ...gamesOnDay(1, "alice", "bob", GAMES_IN_PERIOD_RECORD_FLOOR - 1),
@@ -92,7 +92,9 @@ describe("Hero of the Week achievement", () => {
         previousRecord: undefined,
       },
     });
-    expect(weekAwards(tt, "bob")).toHaveLength(0);
+    // Bob reached the floor in the same game. Alice won it, so she holds the
+    // record.
+    expect(weekAwards(tt, "bob").map((award) => award.data)).toStrictEqual([aliceAwards[0].data]);
     expect(tt.achievements.gamesInWeekRecord).toStrictEqual({
       count: GAMES_IN_PERIOD_RECORD_FLOOR,
       holder: "alice",
@@ -111,13 +113,13 @@ describe("Hero of the Week achievement", () => {
     expect(tt.achievements.gamesInWeekRecord).toStrictEqual({ count: 12, holder: "alice" });
   });
 
-  it("resets the count at the week boundary and requires strictly beating the record", () => {
+  it("resets the count at the week boundary and awards a week that ties the record", () => {
     const tt = calculate([
       // Week of Jan 1: record set and grown to 10.
       ...gamesOnDay(1, "alice", "bob", 10),
-      // Week of Jan 8: 10 games only tie the record — no award...
+      // Week of Jan 8: 10 games tie the record — a new award...
       ...gamesOnDay(8, "alice", "bob", 10),
-      // ...an 11th game in the same week takes it.
+      // ...that grows when an 11th game in the same week passes it.
       { winner: "alice", loser: "bob", playedAt: at(9, 0) },
     ]);
 
@@ -128,7 +130,8 @@ describe("Hero of the Week achievement", () => {
       gamesPlayed: 11,
       previousRecord: 10,
     });
-    expect(weekAwards(tt, "bob")).toHaveLength(0);
+    expect(aliceAwards[1].earnedAt).toBe(at(8, 9));
+    expect(weekAwards(tt, "bob")).toHaveLength(2);
     expect(tt.achievements.gamesInWeekRecord).toStrictEqual({ count: 11, holder: "alice" });
   });
 
@@ -142,15 +145,16 @@ describe("Hero of the Week achievement", () => {
     const alice = tt.achievements.getPlayerProgression("alice")["hero-of-the-week"];
     expect(alice.current).toBe(0); // no games this week
     expect(alice.best).toBe(13);
-    expect(alice.target).toBe(14); // one beyond the record of 13
+    expect(alice.target).toBe(13); // the record
     expect(alice.recordHolder).toBe("alice");
     expect(alice.earned).toBe(2);
 
     const bob = tt.achievements.getPlayerProgression("bob")["hero-of-the-week"];
     expect(bob.best).toBe(13);
-    expect(bob.target).toBe(14);
+    expect(bob.target).toBe(13);
     expect(bob.recordHolder).toBe("alice");
-    expect(bob.earned).toBe(0);
+    // Bob reached the same counts in the same games, so he earned both too.
+    expect(bob.earned).toBe(2);
   });
 
   it("leaves the progression target unset until someone holds the record", () => {
@@ -173,7 +177,7 @@ describe("Hero of the Month achievement", () => {
     expect(tt.achievements.gamesInMonthRecord).toStrictEqual({ count: undefined, holder: undefined });
   });
 
-  it("establishes the first record accumulated across the weeks of a month, tie going to the winner", () => {
+  it("establishes the first record accumulated across the weeks of a month, earned by both players", () => {
     // 2 games in the first week + 1 in the third reach the floor of 3.
     const tt = calculate([
       ...gamesOnDay(1, "alice", "bob", GAMES_IN_PERIOD_RECORD_FLOOR - 1),
@@ -193,7 +197,9 @@ describe("Hero of the Month achievement", () => {
         previousRecord: undefined,
       },
     });
-    expect(monthAwards(tt, "bob")).toHaveLength(0);
+    // Bob reached the floor in the same game. Alice won it, so she holds the
+    // record.
+    expect(monthAwards(tt, "bob").map((award) => award.data)).toStrictEqual([aliceAwards[0].data]);
     expect(tt.achievements.gamesInMonthRecord).toStrictEqual({
       count: GAMES_IN_PERIOD_RECORD_FLOOR,
       holder: "alice",
@@ -212,15 +218,15 @@ describe("Hero of the Month achievement", () => {
     expect(tt.achievements.gamesInMonthRecord).toStrictEqual({ count: 20, holder: "alice" });
   });
 
-  it("resets the count at the month boundary and requires strictly beating the record", () => {
+  it("resets the count at the month boundary and awards a month that ties the record", () => {
     const tt = calculate([
       // January: record set and grown to 20.
       ...gamesOnDay(1, "alice", "bob", 10),
       ...gamesOnDay(15, "alice", "bob", 10),
-      // February (day 32 = Feb 1): 20 games only tie the record — no award...
+      // February (day 32 = Feb 1): 20 games tie the record — a new award...
       ...gamesOnDay(32, "alice", "bob", 10),
       ...gamesOnDay(40, "alice", "bob", 10),
-      // ...a 21st game in the same month takes it.
+      // ...that grows when a 21st game in the same month passes it.
       { winner: "alice", loser: "bob", playedAt: at(41, 0) },
     ]);
 
@@ -231,7 +237,8 @@ describe("Hero of the Month achievement", () => {
       gamesPlayed: 21,
       previousRecord: 20,
     });
-    expect(monthAwards(tt, "bob")).toHaveLength(0);
+    expect(aliceAwards[1].earnedAt).toBe(at(40, 9));
+    expect(monthAwards(tt, "bob")).toHaveLength(2);
     expect(tt.achievements.gamesInMonthRecord).toStrictEqual({ count: 21, holder: "alice" });
   });
 
@@ -246,15 +253,16 @@ describe("Hero of the Month achievement", () => {
     const alice = tt.achievements.getPlayerProgression("alice")["hero-of-the-month"];
     expect(alice.current).toBe(0); // no games this month
     expect(alice.best).toBe(25);
-    expect(alice.target).toBe(26); // one beyond the record of 25
+    expect(alice.target).toBe(25); // the record
     expect(alice.recordHolder).toBe("alice");
     expect(alice.earned).toBe(2);
 
     const bob = tt.achievements.getPlayerProgression("bob")["hero-of-the-month"];
     expect(bob.best).toBe(25);
-    expect(bob.target).toBe(26);
+    expect(bob.target).toBe(25);
     expect(bob.recordHolder).toBe("alice");
-    expect(bob.earned).toBe(0);
+    // Bob reached the same counts in the same games, so he earned both too.
+    expect(bob.earned).toBe(2);
   });
 
   it("leaves the progression target unset until someone holds the record", () => {
