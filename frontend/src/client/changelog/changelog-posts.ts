@@ -42,28 +42,6 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
-    slug: "tug-of-war-rock-paper-scissors-achievements",
-    title: "2 new achievements: Tug of War and Rock Paper Scissors",
-    date: "2026-10-10",
-    tags: ["feature-update"],
-    summary: "Tug of War 🤼 and Rock Paper Scissors ✂️ are new achievements.",
-    body: [
-      list(
-        "Tug of War 🤼 - play a set where the lead changes 5 or more times. Only tracked games count. Both players earn it.",
-        "Rock Paper Scissors ✂️ - in one day, you beat a player and that player beats a third player. The third player beats you. All 3 players earn it.",
-      ),
-      text(
-        "A lead change is a point that puts the other player in front. A tie does not count as a change. You can earn Tug of War 1 time for each game.",
-      ),
-      text(
-        "The game that completes a Rock Paper Scissors cycle earns it at once. You earn it 1 time for each cycle, so you can earn it more than 1 time in a day.",
-      ),
-      text(
-        "The app also checks the games that are already played. Tug of War is in the Game Feats group. Rock Paper Scissors is in the Social group.",
-      ),
-    ],
-  },
-  {
     slug: "recent-achievements-search",
     title: "Search on the recent achievements list",
     date: "2026-10-09",
@@ -81,24 +59,29 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
   },
   {
     slug: "collector-even-steven-student-mentor-achievements",
-    title: "4 new achievements: Collector, Even Steven, Student Becomes Master and Mentor",
+    title:
+      "6 new achievements: Collector, Even Steven, Student Becomes Master, Mentor, Tug of War and Rock Paper Scissors",
     date: "2026-10-08",
     tags: ["feature-update"],
     summary:
-      "Collector 🃏, Even Steven ⚖️, Student Becomes Master 🎓 and Mentor 🧑‍🏫 are new achievements. The Progress tab shows how close you are to each of them.",
+      "Collector 🃏, Even Steven ⚖️, Student Becomes Master 🎓, Mentor 🧑‍🏫, Tug of War 🤼 and Rock Paper Scissors ✂️ are new achievements.",
     body: [
       list(
         "Collector 🃏 - win a set with each losing score from 11–0 to 11–9. A deuce set does not count.",
         "Even Steven ⚖️ - have as many wins as losses against one opponent, after 20 or more games together. Both players earn it.",
         "Student Becomes Master 🎓 - beat your first opponent after you lost your first game to them.",
         "Mentor 🧑‍🏫 - a player who played their first game against you reaches the top 3 on the leaderboard.",
+        "Tug of War 🤼 - play a set where the lead changes 5 or more times. A tie is not a lead change. Only tracked games count. Both players earn it.",
+        "Rock Paper Scissors ✂️ - in one day, you beat a player and that player beats a third player. The third player beats you. All 3 players earn it with the last game of the cycle.",
       ),
-      text("You can earn Mentor 1 time for each player. You can earn each of the other 3 achievements 1 time."),
+      text(
+        "You can earn Mentor 1 time for each player, Tug of War 1 time for each game, and Rock Paper Scissors 1 time for each cycle. You can earn each of the other 3 achievements 1 time.",
+      ),
       text(
         "Progress for Even Steven uses the active opponent of 20 or more games who is closest to equal. 0% is 20 or more games from equal. Progress for Mentor uses your highest player on the leaderboard without a Mentor. 0% is last place and 100% is 3rd place.",
       ),
       text(
-        "The app also checks the games that are already played. Collector is in the Game Feats group. The other 3 are in the Social group.",
+        "The app also checks the games that players played before this change. Collector and Tug of War are in the Game Feats group. The other 4 are in the Social group.",
       ),
     ],
   },
