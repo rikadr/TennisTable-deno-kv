@@ -1,11 +1,11 @@
 import { EventType, EventTypeEnum } from "../../event-store/event-types";
 import { TennisTable } from "../../tennis-table";
-import { leadChangesInSets, SEESAW_MIN_LEAD_CHANGES } from "../../achievements";
+import { leadChangesInSets, TUG_OF_WAR_MIN_LEAD_CHANGES } from "../../achievements";
 
-// Seesaw: play a set of a tracked game where the lead changes
-// SEESAW_MIN_LEAD_CHANGES or more times. Both players earn it, once per game.
+// Tug of War: play a set of a tracked game where the lead changes
+// TUG_OF_WAR_MIN_LEAD_CHANGES or more times. Both players earn it, once per game.
 
-describe("Seesaw Achievement", () => {
+describe("Tug of War Achievement", () => {
   const baseEvents: EventType[] = [
     { type: EventTypeEnum.PLAYER_CREATED, stream: "alice", time: 1, data: { name: "Alice" } },
     { type: EventTypeEnum.PLAYER_CREATED, stream: "bob", time: 2, data: { name: "Bob" } },
@@ -45,8 +45,8 @@ describe("Seesaw Achievement", () => {
     },
   ];
 
-  const seesaws = (tt: TennisTable, playerId: string) =>
-    tt.achievements.getAchievements(playerId).filter((a) => a.type === "seesaw");
+  const awards = (tt: TennisTable, playerId: string) =>
+    tt.achievements.getAchievements(playerId).filter((a) => a.type === "tug-of-war");
 
   it("counts a change only when the other player goes in front", () => {
     const game = trackedGame("g1", 100, ["WLLWWL" + "W".repeat(10), "WWLL" + "W".repeat(9)]);
@@ -59,31 +59,34 @@ describe("Seesaw Achievement", () => {
 
   it("awards both players when a set reaches the minimum", () => {
     const tt = new TennisTable({
-      events: [...baseEvents, ...trackedGame("g1", 100, ["W".repeat(11), setWithLeadChanges(SEESAW_MIN_LEAD_CHANGES)])],
+      events: [
+        ...baseEvents,
+        ...trackedGame("g1", 100, ["W".repeat(11), setWithLeadChanges(TUG_OF_WAR_MIN_LEAD_CHANGES)]),
+      ],
     });
     tt.achievements.calculateAchievements();
 
-    const alice = seesaws(tt, "alice");
+    const alice = awards(tt, "alice");
     expect(alice).toHaveLength(1);
     expect(alice[0].earnedByGame).toBe("g1");
     expect(alice[0].data).toEqual({
       gameId: "g1",
       opponent: "bob",
       setNumber: 2,
-      leadChanges: SEESAW_MIN_LEAD_CHANGES,
+      leadChanges: TUG_OF_WAR_MIN_LEAD_CHANGES,
     });
-    expect(seesaws(tt, "bob")).toHaveLength(1);
-    expect(seesaws(tt, "bob")[0].data.opponent).toBe("alice");
+    expect(awards(tt, "bob")).toHaveLength(1);
+    expect(awards(tt, "bob")[0].data.opponent).toBe("alice");
   });
 
   it("does NOT award a set below the minimum, and shows the best set as progress", () => {
     const tt = new TennisTable({
-      events: [...baseEvents, ...trackedGame("g1", 100, [setWithLeadChanges(SEESAW_MIN_LEAD_CHANGES - 1)])],
+      events: [...baseEvents, ...trackedGame("g1", 100, [setWithLeadChanges(TUG_OF_WAR_MIN_LEAD_CHANGES - 1)])],
     });
     tt.achievements.calculateAchievements();
 
-    expect(seesaws(tt, "alice")).toHaveLength(0);
-    expect(tt.achievements.getPlayerProgression("bob").seesaw.current).toBe(SEESAW_MIN_LEAD_CHANGES - 1);
+    expect(awards(tt, "alice")).toHaveLength(0);
+    expect(tt.achievements.getPlayerProgression("bob")["tug-of-war"].current).toBe(TUG_OF_WAR_MIN_LEAD_CHANGES - 1);
   });
 
   it("awards once per game, for the set with the most lead changes", () => {
@@ -91,20 +94,20 @@ describe("Seesaw Achievement", () => {
       events: [
         ...baseEvents,
         ...trackedGame("g1", 100, [
-          setWithLeadChanges(SEESAW_MIN_LEAD_CHANGES),
-          setWithLeadChanges(SEESAW_MIN_LEAD_CHANGES + 2),
+          setWithLeadChanges(TUG_OF_WAR_MIN_LEAD_CHANGES),
+          setWithLeadChanges(TUG_OF_WAR_MIN_LEAD_CHANGES + 2),
         ]),
-        ...trackedGame("g2", 200, [setWithLeadChanges(SEESAW_MIN_LEAD_CHANGES)]),
+        ...trackedGame("g2", 200, [setWithLeadChanges(TUG_OF_WAR_MIN_LEAD_CHANGES)]),
       ],
     });
     tt.achievements.calculateAchievements();
 
-    const alice = seesaws(tt, "alice");
+    const alice = awards(tt, "alice");
     expect(alice.map((a) => [a.data.gameId, a.data.setNumber, a.data.leadChanges])).toEqual([
-      ["g1", 2, SEESAW_MIN_LEAD_CHANGES + 2],
-      ["g2", 1, SEESAW_MIN_LEAD_CHANGES],
+      ["g1", 2, TUG_OF_WAR_MIN_LEAD_CHANGES + 2],
+      ["g2", 1, TUG_OF_WAR_MIN_LEAD_CHANGES],
     ]);
-    expect(tt.achievements.getPlayerProgression("alice").seesaw.earned).toBe(2);
+    expect(tt.achievements.getPlayerProgression("alice")["tug-of-war"].earned).toBe(2);
   });
 
   it("does NOT award a game without a point log", () => {
@@ -127,6 +130,6 @@ describe("Seesaw Achievement", () => {
     });
     tt.achievements.calculateAchievements();
 
-    expect(seesaws(tt, "alice")).toHaveLength(0);
+    expect(awards(tt, "alice")).toHaveLength(0);
   });
 });

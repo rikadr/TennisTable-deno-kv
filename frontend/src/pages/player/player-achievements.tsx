@@ -434,10 +434,10 @@ export const ACHIEVEMENT_LABELS: Record<AchievementType, { title: string; descri
       "A player who played their first game against you reaches the top 3 on the leaderboard, one time for each player",
     icon: "🧑‍🏫",
   },
-  seesaw: {
-    title: "Seesaw",
+  "tug-of-war": {
+    title: "Tug of War",
     description: "Play a set where the lead changes 5 or more times (tracked games only)",
-    icon: "🎢",
+    icon: "🤼",
   },
   "rock-paper-scissors": {
     title: "Rock Paper Scissors",
@@ -833,7 +833,7 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
                   </p>
                 )}
 
-                {achievement.type === "seesaw" && achievement.data && (
+                {achievement.type === "tug-of-war" && achievement.data && (
                   <GameScoreLink
                     playedAt={achievement.earnedAt}
                     className="block text-xs text-secondary-text/70 mt-2 underline"

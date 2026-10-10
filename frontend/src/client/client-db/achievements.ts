@@ -154,10 +154,10 @@ export function leadsLostInSets(game: Game): {
   });
 }
 
-// Lead changes a set of a tracked game must have for "Seesaw". A lead change
+// Lead changes a set of a tracked game must have for "Tug of War". A lead change
 // is a point that puts the other player in front. A tie on the way is not a
 // change, so 3–2, 3–3, 3–4 is 1 change.
-export const SEESAW_MIN_LEAD_CHANGES = 5;
+export const TUG_OF_WAR_MIN_LEAD_CHANGES = 5;
 
 // How many times the lead changed in each set of a tracked game, in the order
 // played. Only a game with a point log can tell, so an untracked game gives no
@@ -325,7 +325,7 @@ export class Achievements {
   // Each player's own largest lead lost in a set. Used for Choker progression.
   biggestLeadLost: Map<string, number> = new Map();
   // Each player's most lead changes in one set of a tracked game. Used for
-  // Seesaw progression.
+  // Tug of War progression.
   mostLeadChanges: Map<string, number> = new Map();
   // Best (lowest) leaderboard rank each player has ever held, recorded only
   // while the ranked cohort had ≥5 players — the same gate the On the
@@ -1063,10 +1063,10 @@ export class Achievements {
         this.#checkChokerAchievements(game);
       }
 
-      // Check for "Seesaw": a set of a tracked game where the lead changed
-      // SEESAW_MIN_LEAD_CHANGES or more times.
+      // Check for "Tug of War": a set of a tracked game where the lead changed
+      // TUG_OF_WAR_MIN_LEAD_CHANGES or more times.
       if (isTrackedGame(game)) {
-        this.#checkSeesawAchievement(game);
+        this.#checkTugOfWarAchievement(game);
       }
 
       // Check for "On the Record": career games tracked point by point.
@@ -2445,16 +2445,16 @@ export class Achievements {
     });
   }
 
-  // Awards "Seesaw" to both players of a tracked game when a set has
-  // SEESAW_MIN_LEAD_CHANGES or more lead changes. Earned once per game, for
+  // Awards "Tug of War" to both players of a tracked game when a set has
+  // TUG_OF_WAR_MIN_LEAD_CHANGES or more lead changes. Earned once per game, for
   // the set with the most lead changes (the first such set on a tie).
-  #checkSeesawAchievement(game: Game) {
+  #checkTugOfWarAchievement(game: Game) {
     const changesPerSet = leadChangesInSets(game);
     const leadChanges = Math.max(0, ...changesPerSet);
     [game.winner, game.loser].forEach((playerId) => {
       if (leadChanges > (this.mostLeadChanges.get(playerId) ?? 0)) this.mostLeadChanges.set(playerId, leadChanges);
     });
-    if (leadChanges < SEESAW_MIN_LEAD_CHANGES) return;
+    if (leadChanges < TUG_OF_WAR_MIN_LEAD_CHANGES) return;
 
     const setNumber = changesPerSet.indexOf(leadChanges) + 1;
     [
@@ -2464,7 +2464,7 @@ export class Achievements {
       this.#addAchievement(
         playerId,
         this.#createAchievement(
-          "seesaw",
+          "tug-of-war",
           playerId,
           game.playedAt,
           { gameId: game.id, opponent, setNumber, leadChanges },
@@ -3704,7 +3704,7 @@ export class Achievements {
       },
       // Filled in below: the most lead changes in one set the player has
       // played, up to the target.
-      seesaw: { current: 0, target: SEESAW_MIN_LEAD_CHANGES, earned: 0 },
+      "tug-of-war": { current: 0, target: TUG_OF_WAR_MIN_LEAD_CHANGES, earned: 0 },
       "hero-of-the-day": {
         earned: 0,
         current: 0,
@@ -4540,9 +4540,9 @@ export class Achievements {
     // tracked game, compared against the league record they must reach.
     progression["choker"].current = this.biggestLeadLost.get(playerId) ?? 0;
 
-    // Seesaw progression: the most lead changes in one set of a tracked game
+    // Tug of War progression: the most lead changes in one set of a tracked game
     // the player has played.
-    progression["seesaw"].current = Math.min(this.mostLeadChanges.get(playerId) ?? 0, SEESAW_MIN_LEAD_CHANGES);
+    progression["tug-of-war"].current = Math.min(this.mostLeadChanges.get(playerId) ?? 0, TUG_OF_WAR_MIN_LEAD_CHANGES);
 
     // Milestone Game progression is league-wide (everyone shares it) and
     // restarts at every milestone: current is the games played since the
@@ -4977,10 +4977,10 @@ type AchievementDefinitions = {
   // `protege` played their first game against the badge owner and reached
   // the top 3 for the first time, at `rank`.
   mentor: { protege: string; rank: number };
-  // A set of a tracked game had SEESAW_MIN_LEAD_CHANGES or more lead changes.
+  // A set of a tracked game had TUG_OF_WAR_MIN_LEAD_CHANGES or more lead changes.
   // Awarded to both players. `setNumber` is the set with the most changes and
   // `leadChanges` how many it had.
-  seesaw: { gameId: string; opponent: string; setNumber: number; leadChanges: number };
+  "tug-of-war": { gameId: string; opponent: string; setNumber: number; leadChanges: number };
   // On the local day starting at `day`, the badge owner beat `beat`, `beat`
   // beat `lostTo`, and `lostTo` beat the badge owner. Awarded to all 3
   // players of the cycle.
@@ -5085,7 +5085,7 @@ export const ACHIEVEMENT_IS_REACHIEVABLE: Record<AchievementType, boolean> = {
   "even-steven": false,
   "student-becomes-master": false,
   mentor: true, // Per player who had the badge owner as first opponent
-  seesaw: true, // Per qualifying game
+  "tug-of-war": true, // Per qualifying game
   "rock-paper-scissors": true, // Per cycle
 };
 
@@ -5458,6 +5458,6 @@ export type AchievementProgression = {
   "even-steven": EvenStevenProgression;
   "student-becomes-master": StudentBecomesMasterProgression;
   mentor: MentorProgression;
-  seesaw: ProgressionWithTarget;
+  "tug-of-war": ProgressionWithTarget;
   "rock-paper-scissors": BaseProgression;
 };

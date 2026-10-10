@@ -168,7 +168,7 @@ export const AchievementFacts: React.FC<{ achievement: Achievement }> = ({ achie
           {context.playerName(achievement.data.protege)} reached #{achievement.data.rank}
         </span>
       )}
-      {achievement.type === "seesaw" && achievement.data && (
+      {achievement.type === "tug-of-war" && achievement.data && (
         <GameScoreLink playedAt={achievement.earnedAt} className="text-[11px] opacity-80 underline">
           {achievement.data.leadChanges} lead changes in set {achievement.data.setNumber}
         </GameScoreLink>
