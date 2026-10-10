@@ -154,6 +154,32 @@ export function leadsLostInSets(game: Game): {
   });
 }
 
+// Lead changes a set of a tracked game must have for "Seesaw". A lead change
+// is a point that puts the other player in front. A tie on the way is not a
+// change, so 3–2, 3–3, 3–4 is 1 change.
+export const SEESAW_MIN_LEAD_CHANGES = 5;
+
+// How many times the lead changed in each set of a tracked game, in the order
+// played. Only a game with a point log can tell, so an untracked game gives no
+// sets.
+export function leadChangesInSets(game: Game): number[] {
+  return (game.score?.pointSequences ?? []).map((sequence) => {
+    let winnerPoints = 0;
+    let loserPoints = 0;
+    let leader: "W" | "L" | undefined = undefined;
+    let changes = 0;
+    for (const point of sequence) {
+      if (point === "W") winnerPoints++;
+      else loserPoints++;
+      if (winnerPoints === loserPoints) continue;
+      const pointLeader = winnerPoints > loserPoints ? "W" : "L";
+      if (leader !== undefined && pointLeader !== leader) changes++;
+      leader = pointLeader;
+    }
+    return changes;
+  });
+}
+
 // Career games won with more sets on the bad side of the table than the
 // opponent, for "Bad Side Bandit". One side of a table is often worse than the
 // other, and a game can record which player had it in each set. Recording the
@@ -298,6 +324,9 @@ export class Achievements {
   };
   // Each player's own largest lead lost in a set. Used for Choker progression.
   biggestLeadLost: Map<string, number> = new Map();
+  // Each player's most lead changes in one set of a tracked game. Used for
+  // Seesaw progression.
+  mostLeadChanges: Map<string, number> = new Map();
   // Best (lowest) leaderboard rank each player has ever held, recorded only
   // while the ranked cohort had ≥5 players — the same gate the On the
   // Podium / Touched the Throne awards use, so a "best" here always means a
@@ -397,6 +426,7 @@ export class Achievements {
     this.bestRankJump.clear();
     this.chokerRecord = { lead: undefined, holder: undefined };
     this.biggestLeadLost.clear();
+    this.mostLeadChanges.clear();
     this.bestRankEver.clear();
     this.bestBeatenRank.clear();
     this.bestClimb.clear();
@@ -1033,6 +1063,12 @@ export class Achievements {
         this.#checkChokerAchievements(game);
       }
 
+      // Check for "Seesaw": a set of a tracked game where the lead changed
+      // SEESAW_MIN_LEAD_CHANGES or more times.
+      if (isTrackedGame(game)) {
+        this.#checkSeesawAchievement(game);
+      }
+
       // Check for "On the Record": career games tracked point by point.
       // Awarded to both players when the count crosses the target — the game
       // was tracked for the pair, so both take the credit. Earned once.
@@ -1209,8 +1245,64 @@ export class Achievements {
     this.#calculateEloAchievements();
     this.#checkFullHouseAndHumbledAchievements();
     this.#checkPerfectDayAndWeekAchievements();
+    this.#checkRockPaperScissorsAchievements();
     this.#checkRetirementAchievements();
     this.hasCalculated = true;
+  }
+
+  // Awards "Rock Paper Scissors" to the 3 players of a cycle of wins in one
+  // local calendar day: A beat B, B beat C and C beat A. The order of the 3
+  // games in the day does not matter, so the game that completes the cycle
+  // earns it. Each player earns it once per day.
+  #checkRockPaperScissorsAchievements() {
+    const dayStartOf = (ms: number): number => {
+      const d = new Date(ms);
+      d.setHours(0, 0, 0, 0);
+      return d.getTime();
+    };
+
+    let currentDay: number | undefined = undefined;
+    // The players each player beat in the current day.
+    let beatenBy = new Map<string, Set<string>>();
+    let earnedToday = new Set<string>();
+
+    this.parent.games.forEach((game) => {
+      const day = dayStartOf(game.playedAt);
+      if (day !== currentDay) {
+        currentDay = day;
+        beatenBy = new Map();
+        earnedToday = new Set();
+      }
+
+      const winnerBeat = beatenBy.get(game.winner) ?? new Set<string>();
+      beatenBy.set(game.winner, winnerBeat);
+      // A repeated win adds no new cycle: any cycle with it was found when
+      // the first win was played.
+      if (winnerBeat.has(game.loser)) return;
+      winnerBeat.add(game.loser);
+
+      // The third player beat the winner and lost to the loser.
+      const third = [...(beatenBy.get(game.loser) ?? [])].find((player) => beatenBy.get(player)?.has(game.winner));
+      if (third === undefined) return;
+
+      // Each player beat the next player in the list, and the last player
+      // beat the first.
+      const cycle = [game.winner, game.loser, third];
+      cycle.forEach((playerId, index) => {
+        if (earnedToday.has(playerId)) return;
+        earnedToday.add(playerId);
+        this.#addAchievement(
+          playerId,
+          this.#createAchievement(
+            "rock-paper-scissors",
+            playerId,
+            game.playedAt,
+            { day, beat: cycle[(index + 1) % 3], lostTo: cycle[(index + 2) % 3] },
+            game.id,
+          ),
+        );
+      });
+    });
   }
 
   // Awards "Retired" for every PLAYER_DEACTIVATED event and "Back From The
@@ -2351,6 +2443,35 @@ export class Achievements {
       if (currentRecord === undefined || set.lead > currentRecord) {
         this.chokerRecord = { lead: set.lead, holder: playerId };
       }
+    });
+  }
+
+  // Awards "Seesaw" to both players of a tracked game when a set has
+  // SEESAW_MIN_LEAD_CHANGES or more lead changes. Earned once per game, for
+  // the set with the most lead changes (the first such set on a tie).
+  #checkSeesawAchievement(game: Game) {
+    const changesPerSet = leadChangesInSets(game);
+    const leadChanges = Math.max(0, ...changesPerSet);
+    [game.winner, game.loser].forEach((playerId) => {
+      if (leadChanges > (this.mostLeadChanges.get(playerId) ?? 0)) this.mostLeadChanges.set(playerId, leadChanges);
+    });
+    if (leadChanges < SEESAW_MIN_LEAD_CHANGES) return;
+
+    const setNumber = changesPerSet.indexOf(leadChanges) + 1;
+    [
+      { playerId: game.winner, opponent: game.loser },
+      { playerId: game.loser, opponent: game.winner },
+    ].forEach(({ playerId, opponent }) => {
+      this.#addAchievement(
+        playerId,
+        this.#createAchievement(
+          "seesaw",
+          playerId,
+          game.playedAt,
+          { gameId: game.id, opponent, setNumber, leadChanges },
+          game.id,
+        ),
+      );
     });
   }
 
@@ -3582,6 +3703,9 @@ export class Achievements {
         target: this.chokerRecord.lead,
         recordHolder: this.chokerRecord.holder,
       },
+      // Filled in below: the most lead changes in one set the player has
+      // played, up to the target.
+      seesaw: { current: 0, target: SEESAW_MIN_LEAD_CHANGES, earned: 0 },
       "hero-of-the-day": {
         earned: 0,
         current: 0,
@@ -3617,6 +3741,7 @@ export class Achievements {
       "welcome-committee": { current: 0, target: 3, newPlayers: new Set(), earned: 0 },
       "community-builder": { current: 0, target: 10, newPlayers: new Set(), earned: 0 },
       "student-becomes-master": { earned: 0 },
+      "rock-paper-scissors": { earned: 0 },
       // Filled in below from the leaderboard: last place is 0 and 3rd place
       // is the target.
       mentor: { current: 0, target: 1, earned: 0 },
@@ -4416,6 +4541,10 @@ export class Achievements {
     // tracked game, compared against the league record they must reach.
     progression["choker"].current = this.biggestLeadLost.get(playerId) ?? 0;
 
+    // Seesaw progression: the most lead changes in one set of a tracked game
+    // the player has played.
+    progression["seesaw"].current = Math.min(this.mostLeadChanges.get(playerId) ?? 0, SEESAW_MIN_LEAD_CHANGES);
+
     // Milestone Game progression is league-wide (everyone shares it) and
     // restarts at every milestone: current is the games played since the
     // previous milestone (0 right after one) and target is the 500-game
@@ -4849,6 +4978,14 @@ type AchievementDefinitions = {
   // `protege` played their first game against the badge owner and reached
   // the top 3 for the first time, at `rank`.
   mentor: { protege: string; rank: number };
+  // A set of a tracked game had SEESAW_MIN_LEAD_CHANGES or more lead changes.
+  // Awarded to both players. `setNumber` is the set with the most changes and
+  // `leadChanges` how many it had.
+  seesaw: { gameId: string; opponent: string; setNumber: number; leadChanges: number };
+  // On the local day starting at `day`, the badge owner beat `beat`, `beat`
+  // beat `lostTo`, and `lostTo` beat the badge owner. Awarded to all 3
+  // players of the cycle.
+  "rock-paper-scissors": { day: number; beat: string; lostTo: string };
   // Awarded to both players of a season's very first game.
   "season-opener": { seasonStart: number; gameId: string; opponent: string };
   // Awarded to both players of every 500th league game. `milestone` is that
@@ -4949,6 +5086,8 @@ export const ACHIEVEMENT_IS_REACHIEVABLE: Record<AchievementType, boolean> = {
   "even-steven": false,
   "student-becomes-master": false,
   mentor: true, // Per player who had the badge owner as first opponent
+  seesaw: true, // Per qualifying game
+  "rock-paper-scissors": true, // Per day
 };
 
 // String-keyed lookup for UI code that carries achievement types as plain
@@ -5320,4 +5459,6 @@ export type AchievementProgression = {
   "even-steven": EvenStevenProgression;
   "student-becomes-master": StudentBecomesMasterProgression;
   mentor: MentorProgression;
+  seesaw: ProgressionWithTarget;
+  "rock-paper-scissors": BaseProgression;
 };

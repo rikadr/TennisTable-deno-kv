@@ -351,6 +351,7 @@ describe("achievementDetails", () => {
         "photo-finish",
         "reunion",
         "season-opener",
+        "seesaw",
         "shootout",
       ].sort(),
     );

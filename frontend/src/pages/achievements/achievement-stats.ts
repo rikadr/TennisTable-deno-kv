@@ -45,6 +45,7 @@ export const ACHIEVEMENT_METRICS: Partial<Record<AchievementType, AchievementMet
   "marathon-set": { label: "Points of the set winner", format: points },
   shootout: { label: "Points in the counted sets", format: points },
   choker: { label: "Lead lost", format: points },
+  seesaw: { label: "Lead changes in the set", format: (value) => `${fmtNum(value)} change${value === 1 ? "" : "s"}` },
   "less-is-more": { label: "Points behind the loser", format: points },
   "leap-frog": { label: "Ranks jumped", format: (value) => `${fmtNum(value)} rank${value === 1 ? "" : "s"}` },
   "giant-hunting": { label: "Largest Score gap", format: score },
@@ -102,6 +103,8 @@ export function achievementValue(achievement: Achievement): number | undefined {
       return achievement.data.points;
     case "choker":
       return achievement.data.lead;
+    case "seesaw":
+      return achievement.data.leadChanges;
     case "less-is-more":
       return achievement.data.opponentPoints - achievement.data.playerPoints;
     case "leap-frog":
@@ -190,6 +193,7 @@ export const MUTUAL_ACHIEVEMENTS: AchievementType[] = [
   "best-friends",
   "photo-finish",
   "even-steven",
+  "seesaw",
 ];
 
 export type RarityEntry = {

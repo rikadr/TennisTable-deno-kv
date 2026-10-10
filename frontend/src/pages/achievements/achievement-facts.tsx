@@ -167,6 +167,18 @@ export const AchievementFacts: React.FC<{ achievement: Achievement }> = ({ achie
           {context.playerName(achievement.data.protege)} reached #{achievement.data.rank}
         </span>
       )}
+      {achievement.type === "seesaw" && achievement.data && (
+        <span className="text-[11px] opacity-80">
+          {achievement.data.leadChanges} lead changes in set {achievement.data.setNumber}
+        </span>
+      )}
+      {achievement.type === "rock-paper-scissors" && achievement.data && (
+        <span className="text-[11px] opacity-80">
+          Beat {context.playerName(achievement.data.beat)}, {context.playerName(achievement.data.beat)} beat{" "}
+          {context.playerName(achievement.data.lostTo)}, {context.playerName(achievement.data.lostTo)} beat{" "}
+          {context.playerName(achievement.earnedBy)}
+        </span>
+      )}
       {achievement.type === "choker" && achievement.data && (
         <span className="text-[11px] opacity-80">
           Led {achievement.data.leadPoints}–{achievement.data.leadOpponentPoints} in set {achievement.data.setNumber},

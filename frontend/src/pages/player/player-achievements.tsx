@@ -433,6 +433,16 @@ export const ACHIEVEMENT_LABELS: Record<AchievementType, { title: string; descri
       "A player who played their first game against you reaches the top 3 on the leaderboard, one time for each player",
     icon: "🧑‍🏫",
   },
+  seesaw: {
+    title: "Seesaw",
+    description: "Play a set where the lead changes 5 or more times (tracked games only)",
+    icon: "🎢",
+  },
+  "rock-paper-scissors": {
+    title: "Rock Paper Scissors",
+    description: "In one day, beat a player who beats a third player who beats you",
+    icon: "✂️",
+  },
 };
 
 // Resolves the display label for an achievement type, filling in any
@@ -819,6 +829,20 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
                 {achievement.type === "mentor" && achievement.data && (
                   <p className="text-xs text-secondary-text/70 mt-2">
                     {context.playerName(achievement.data.protege)} reached rank #{achievement.data.rank}
+                  </p>
+                )}
+
+                {achievement.type === "seesaw" && achievement.data && (
+                  <p className="text-xs text-secondary-text/70 mt-2">
+                    The lead changed {achievement.data.leadChanges} times in set {achievement.data.setNumber}
+                  </p>
+                )}
+
+                {achievement.type === "rock-paper-scissors" && achievement.data && (
+                  <p className="text-xs text-secondary-text/70 mt-2">
+                    On {dateString(achievement.data.day)}: you beat {context.playerName(achievement.data.beat)},{" "}
+                    {context.playerName(achievement.data.beat)} beat {context.playerName(achievement.data.lostTo)} and{" "}
+                    {context.playerName(achievement.data.lostTo)} beat you
                   </p>
                 )}
 

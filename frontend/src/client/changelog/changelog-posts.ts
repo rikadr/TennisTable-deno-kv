@@ -42,6 +42,25 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
+    slug: "seesaw-rock-paper-scissors-achievements",
+    title: "2 new achievements: Seesaw and Rock Paper Scissors",
+    date: "2026-10-10",
+    tags: ["feature-update"],
+    summary: "Seesaw 🎢 and Rock Paper Scissors ✂️ are new achievements.",
+    body: [
+      list(
+        "Seesaw 🎢 - play a set where the lead changes 5 or more times. Only tracked games count. Both players earn it.",
+        "Rock Paper Scissors ✂️ - in one day, you beat a player and that player beats a third player. The third player beats you. All 3 players earn it.",
+      ),
+      text(
+        "A lead change is a point that puts the other player in front. A tie does not count as a change. You can earn Seesaw 1 time for each game, and Rock Paper Scissors 1 time for each day.",
+      ),
+      text(
+        "The app also checks the games that are already played. Seesaw is in the Game Feats group. Rock Paper Scissors is in the Social group.",
+      ),
+    ],
+  },
+  {
     slug: "recent-achievements-search",
     title: "Search on the recent achievements list",
     date: "2026-10-09",
