@@ -405,7 +405,7 @@ const NavButton: React.FC<{ to: string; label: string; alignEnd?: boolean; child
     )}
   >
     {!alignEnd && children}
-    <span className="truncate hidden sm:inline">{label}</span>
+    <span className="truncate min-w-0">{label}</span>
     {alignEnd && children}
   </Link>
 );
