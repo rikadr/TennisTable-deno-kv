@@ -30,8 +30,22 @@ function eventsForGames(games: GameSpec[]): EventType[] {
   ];
 }
 
-function calculate(games: GameSpec[]): TennisTable {
-  const tt = new TennisTable({ events: eventsForGames(games) });
+// The league's first game, in an earlier month, so the grace period is over
+// before the games of a test start.
+const leagueStart: EventType[] = [
+  { type: EventTypeEnum.PLAYER_CREATED, stream: "opener-1", time: 1000, data: { name: "opener-1" } },
+  { type: EventTypeEnum.PLAYER_CREATED, stream: "opener-2", time: 1001, data: { name: "opener-2" } },
+  {
+    type: EventTypeEnum.GAME_CREATED,
+    stream: "opener",
+    time: new Date(2023, 10, 1, 12).getTime(),
+    data: { winner: "opener-1", loser: "opener-2", playedAt: new Date(2023, 10, 1, 12).getTime() },
+  },
+];
+
+function calculate(games: GameSpec[], { afterGracePeriod = true } = {}): TennisTable {
+  const events = eventsForGames(games);
+  const tt = new TennisTable({ events: afterGracePeriod ? [...leagueStart, ...events] : events });
   tt.achievements.calculateAchievements();
   return tt;
 }

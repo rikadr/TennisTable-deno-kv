@@ -44,6 +44,9 @@ const START = new Date(2024, 0, 1, 12, 0).getTime();
 const PLAYERS = ["alice", "bob", "carol"];
 
 /**
+ * The league opens with 1 game, 40 days before the rest, so the grace period
+ * for the records is over when they start.
+ *
  * Four days of play, 40 days apart, with 3, then 4, then 5 games. Alice plays
  * every game of a day, so each day beats the Hero of the Day record of the day
  * before it — a record that moves across three months. The fourth day has 5
@@ -60,6 +63,7 @@ function buildEvents(): EventType[] {
 
   let game = 0;
   [
+    { dayOffset: -40, games: 1, aliceOnly: false },
     { dayOffset: 0, games: 3, aliceOnly: false },
     { dayOffset: 40, games: 4, aliceOnly: false },
     { dayOffset: 80, games: 5, aliceOnly: false },

@@ -18,6 +18,12 @@ export const STREAK_RECORD_FLOOR = 3;
 // naturally accumulate higher records on their own.
 export const GAMES_IN_PERIOD_RECORD_FLOOR = 3;
 
+// Days from the league's first game in which Earliest / Latest Game and Hero
+// of the Day / Week / Month give no awards. Every record is low when a league
+// starts, so nearly any game would set one. The records still build up in
+// this time, and the first award after it must reach them.
+export const RECORD_GRACE_PERIOD_DAYS = 7;
+
 // Smallest single-game Elo swing that can establish the very first David /
 // Goliath record (the same game sets both — Elo is zero-sum, so the winner's
 // gain is the loser's loss). An evenly matched win moves 16 points, so 20
@@ -449,6 +455,9 @@ export class Achievements {
   lastGiantDay: Map<string, { day: number; count: number }> = new Map();
   bestGiantDayCount: Map<string, number> = new Map();
 
+  // End of the RECORD_GRACE_PERIOD_DAYS after the league's first game.
+  #recordGraceEndsAt = 0;
+
   constructor(parent: TennisTable) {
     this.parent = parent;
   }
@@ -490,6 +499,7 @@ export class Achievements {
     this.gamesInMonthRecord = { count: undefined, holder: undefined };
     this.lastGiantDay.clear();
     this.bestGiantDayCount.clear();
+    this.#recordGraceEndsAt = (this.parent.games[0]?.playedAt ?? 0) + RECORD_GRACE_PERIOD_DAYS * 24 * 60 * 60 * 1000;
 
     const playerTracker = new Map<
       string,
@@ -3066,7 +3076,8 @@ export class Achievements {
   // instead of handing out one per game — once the period ends (or someone
   // else passes the award) a later run is a fresh chase. The three periods
   // run independently — a busy record day also feeds that week's and month's
-  // counts.
+  // counts. In the RECORD_GRACE_PERIOD_DAYS after the league's first game the
+  // records build up, but nobody earns them.
   #checkHeroAchievements(
     playerId: string,
     tracker: { heroOfTheDay: HeroPeriodState; heroOfTheWeek: HeroPeriodState; heroOfTheMonth: HeroPeriodState },
@@ -3124,6 +3135,15 @@ export class Achievements {
     state.gamesInPeriod++;
 
     if (state.gamesInPeriod < (record.count ?? GAMES_IN_PERIOD_RECORD_FLOOR)) {
+      return;
+    }
+
+    // In the grace period the record builds up, but nobody earns it.
+    if (playedAt < this.#recordGraceEndsAt) {
+      if (record.count === undefined || state.gamesInPeriod > record.count) {
+        record.count = state.gamesInPeriod;
+        record.holder = playerId;
+      }
       return;
     }
 
@@ -3603,18 +3623,23 @@ export class Achievements {
   // Awards the "Earliest Game" and "Latest Game" record-breaking achievements.
   // The time-of-day is derived in the browser's local timezone: 00:00 is the
   // earliest possible and 23:59 the latest. When a game equals or beats the
-  // running earliest / latest record it is awarded to BOTH players. The very
-  // first game only seeds the records (no prior record exists to reach).
+  // running earliest / latest record it is awarded to BOTH players. In the
+  // grace period after the league's first game the games only move the
+  // records. The first game is always in it, so it only seeds the records.
   #checkTimeOfDayAchievements(game: Game) {
     const playedDate = new Date(game.playedAt);
     const minutesIntoDay = playedDate.getHours() * 60 + playedDate.getMinutes();
     const time = `${String(playedDate.getHours()).padStart(2, "0")}:${String(playedDate.getMinutes()).padStart(2, "0")}`;
+    const inGracePeriod = game.playedAt < this.#recordGraceEndsAt;
 
     // Earliest Game
-    if (this.earliestGameRecord.minutesIntoDay === undefined) {
+    if (
+      this.earliestGameRecord.minutesIntoDay === undefined ||
+      minutesIntoDay < this.earliestGameRecord.minutesIntoDay
+    ) {
       this.earliestGameRecord.minutesIntoDay = minutesIntoDay;
-    } else if (minutesIntoDay <= this.earliestGameRecord.minutesIntoDay) {
-      this.earliestGameRecord.minutesIntoDay = minutesIntoDay;
+    }
+    if (!inGracePeriod && minutesIntoDay === this.earliestGameRecord.minutesIntoDay) {
       this.#addAchievement(
         game.winner,
         this.#createAchievement(
@@ -3638,10 +3663,10 @@ export class Achievements {
     }
 
     // Latest Game
-    if (this.latestGameRecord.minutesIntoDay === undefined) {
+    if (this.latestGameRecord.minutesIntoDay === undefined || minutesIntoDay > this.latestGameRecord.minutesIntoDay) {
       this.latestGameRecord.minutesIntoDay = minutesIntoDay;
-    } else if (minutesIntoDay >= this.latestGameRecord.minutesIntoDay) {
-      this.latestGameRecord.minutesIntoDay = minutesIntoDay;
+    }
+    if (!inGracePeriod && minutesIntoDay === this.latestGameRecord.minutesIntoDay) {
       this.#addAchievement(
         game.winner,
         this.#createAchievement(
