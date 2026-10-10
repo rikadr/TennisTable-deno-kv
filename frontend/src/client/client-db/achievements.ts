@@ -180,6 +180,42 @@ export function leadChangesInSets(game: Game): number[] {
   });
 }
 
+// Shortest run of alternating points that can establish the very first Yin
+// Yang Points record. A short run of alternating points happens in almost
+// every set, so the first record takes a long one. Once a record exists the
+// floor is irrelevant — only beating the record counts.
+export const YIN_YANG_POINTS_RECORD_FLOOR = 8;
+
+// The longest run of alternating points in a tracked game: each point goes to
+// the other player than the point before it. The sets are read in the order
+// played as one sequence, so a run continues from the last point of a set to
+// the first point of the next. `fromSet` and `toSet` are the sets where the
+// run starts and ends. Undefined for a game without a point log.
+export function longestAlternatingPointRun(game: Game): { points: number; fromSet: number; toSet: number } | undefined {
+  const sequences = game.score?.pointSequences;
+  if (sequences === undefined || sequences.length === 0) return undefined;
+
+  let best: { points: number; fromSet: number; toSet: number } | undefined = undefined;
+  let run = 0;
+  let runFromSet = 1;
+  let previous: string | undefined = undefined;
+  sequences.forEach((sequence, index) => {
+    const setNumber = index + 1;
+    for (const point of sequence) {
+      if (point === previous) {
+        run = 1;
+        runFromSet = setNumber;
+      } else {
+        if (run === 0) runFromSet = setNumber;
+        run++;
+      }
+      previous = point;
+      if (best === undefined || run > best.points) best = { points: run, fromSet: runFromSet, toSet: setNumber };
+    }
+  });
+  return best;
+}
+
 // Career games won with more sets on the bad side of the table than the
 // opponent, for "Bad Side Bandit". One side of a table is often worse than the
 // other, and a game can record which player had it in each set. Recording the
@@ -327,6 +363,17 @@ export class Achievements {
   // Each player's most lead changes in one set of a tracked game. Used for
   // Tug of War progression.
   mostLeadChanges: Map<string, number> = new Map();
+  // League-wide running record for the Yin Yang Points achievement: the
+  // longest run of alternating points in a tracked game, counted across sets.
+  // Both players of the record game hold it together. Undefined until a run
+  // reaches YIN_YANG_POINTS_RECORD_FLOOR and establishes the first record.
+  yinYangPointsRecord: { points: number | undefined; holders: string[] } = {
+    points: undefined,
+    holders: [],
+  };
+  // Each player's own longest run of alternating points in a tracked game.
+  // Used for Yin Yang Points progression.
+  longestAlternatingPoints: Map<string, number> = new Map();
   // Best (lowest) leaderboard rank each player has ever held, recorded only
   // while the ranked cohort had ≥5 players — the same gate the On the
   // Podium / Touched the Throne awards use, so a "best" here always means a
@@ -427,6 +474,8 @@ export class Achievements {
     this.chokerRecord = { lead: undefined, holder: undefined };
     this.biggestLeadLost.clear();
     this.mostLeadChanges.clear();
+    this.yinYangPointsRecord = { points: undefined, holders: [] };
+    this.longestAlternatingPoints.clear();
     this.bestRankEver.clear();
     this.bestBeatenRank.clear();
     this.bestClimb.clear();
@@ -1057,16 +1106,18 @@ export class Achievements {
         }
       }
 
-      // Check for "Choker": a lead lost in a set that equals or beats the
-      // league record. Only a game tracked point by point can tell.
+      // The achievements that read the point log. Only a game tracked point
+      // by point can tell.
       if (isTrackedGame(game)) {
+        // "Choker": a lead lost in a set that equals or beats the league
+        // record.
         this.#checkChokerAchievements(game);
-      }
-
-      // Check for "Tug of War": a set of a tracked game where the lead changed
-      // TUG_OF_WAR_MIN_LEAD_CHANGES or more times.
-      if (isTrackedGame(game)) {
+        // "Tug of War": a set where the lead changed
+        // TUG_OF_WAR_MIN_LEAD_CHANGES or more times.
         this.#checkTugOfWarAchievement(game);
+        // "Yin Yang Points": the longest run of alternating points in league
+        // history, counted across sets.
+        this.#checkYinYangPointsAchievement(game);
       }
 
       // Check for "On the Record": career games tracked point by point.
@@ -2474,6 +2525,51 @@ export class Achievements {
     });
   }
 
+  // Awards "Yin Yang Points" to both players of a tracked game whose longest
+  // run of alternating points beats the league record. The players score the
+  // run together, so they hold the record together. A run of
+  // YIN_YANG_POINTS_RECORD_FLOOR establishes the first record; after that only
+  // a strictly longer run takes it over.
+  #checkYinYangPointsAchievement(game: Game) {
+    const run = longestAlternatingPointRun(game);
+    if (run === undefined) return;
+
+    [game.winner, game.loser].forEach((playerId) => {
+      if (run.points > (this.longestAlternatingPoints.get(playerId) ?? 0)) {
+        this.longestAlternatingPoints.set(playerId, run.points);
+      }
+    });
+
+    const currentRecord = this.yinYangPointsRecord.points;
+    const beatsRecord =
+      currentRecord === undefined ? run.points >= YIN_YANG_POINTS_RECORD_FLOOR : run.points > currentRecord;
+    if (!beatsRecord) return;
+
+    [
+      { playerId: game.winner, opponent: game.loser },
+      { playerId: game.loser, opponent: game.winner },
+    ].forEach(({ playerId, opponent }) => {
+      this.#addAchievement(
+        playerId,
+        this.#createAchievement(
+          "yin-yang-points",
+          playerId,
+          game.playedAt,
+          {
+            gameId: game.id,
+            opponent,
+            points: run.points,
+            fromSet: run.fromSet,
+            toSet: run.toSet,
+            previousRecord: currentRecord,
+          },
+          game.id,
+        ),
+      );
+    });
+    this.yinYangPointsRecord = { points: run.points, holders: [game.winner, game.loser] };
+  }
+
   // Awards "Deuce Demon" when a player's career total of won deuce sets
   // (winner ≥ 12, loser ≥ 10 — the Marathon Set qualifying rule) reaches
   // DEUCE_DEMON_TARGET. One game can contain several qualifying sets and can
@@ -3705,6 +3801,12 @@ export class Achievements {
       // Filled in below: the most lead changes in one set the player has
       // played, up to the target.
       "tug-of-war": { current: 0, target: TUG_OF_WAR_MIN_LEAD_CHANGES, earned: 0 },
+      "yin-yang-points": {
+        earned: 0,
+        current: 0,
+        target: this.yinYangPointsRecord.points === undefined ? undefined : this.yinYangPointsRecord.points + 1,
+        recordHolders: this.yinYangPointsRecord.holders,
+      },
       "hero-of-the-day": {
         earned: 0,
         current: 0,
@@ -4544,6 +4646,10 @@ export class Achievements {
     // the player has played.
     progression["tug-of-war"].current = Math.min(this.mostLeadChanges.get(playerId) ?? 0, TUG_OF_WAR_MIN_LEAD_CHANGES);
 
+    // Yin Yang Points progression: the player's own longest run of alternating
+    // points, compared against the league record they must strictly exceed.
+    progression["yin-yang-points"].current = this.longestAlternatingPoints.get(playerId) ?? 0;
+
     // Milestone Game progression is league-wide (everyone shares it) and
     // restarts at every milestone: current is the games played since the
     // previous milestone (0 right after one) and target is the 500-game
@@ -4981,6 +5087,18 @@ type AchievementDefinitions = {
   // Awarded to both players. `setNumber` is the set with the most changes and
   // `leadChanges` how many it had.
   "tug-of-war": { gameId: string; opponent: string; setNumber: number; leadChanges: number };
+  // Record-breaking run of alternating points in a tracked game, counted
+  // across sets. Awarded to both players. `points` is the length of the run,
+  // and `fromSet` / `toSet` the sets where it starts and ends. Undefined
+  // previousRecord means the game established the very first league record.
+  "yin-yang-points": {
+    gameId: string;
+    opponent: string;
+    points: number;
+    fromSet: number;
+    toSet: number;
+    previousRecord?: number;
+  };
   // On the local day starting at `day`, the badge owner beat `beat`, `beat`
   // beat `lostTo`, and `lostTo` beat the badge owner. Awarded to all 3
   // players of the cycle.
@@ -5086,6 +5204,7 @@ export const ACHIEVEMENT_IS_REACHIEVABLE: Record<AchievementType, boolean> = {
   "student-becomes-master": false,
   mentor: true, // Per player who had the badge owner as first opponent
   "tug-of-war": true, // Per qualifying game
+  "yin-yang-points": true, // League record
   "rock-paper-scissors": true, // Per cycle
 };
 
@@ -5291,6 +5410,18 @@ type ShootoutProgression = BaseProgression & {
   recordHolders?: string[];
 };
 
+type YinYangPointsProgression = BaseProgression & {
+  // Player's own longest run of alternating points in a tracked game. 0 if
+  // none.
+  current: number;
+  // One point beyond the league record — the run that takes it. Undefined
+  // when no one has set a record yet (a run of YIN_YANG_POINTS_RECORD_FLOOR
+  // takes it outright).
+  target?: number;
+  // Both players of the record game hold the record together.
+  recordHolders?: string[];
+};
+
 type ChokerProgression = BaseProgression & {
   // Player's own largest lead lost in a set of a tracked game (0 if none).
   current: number;
@@ -5459,5 +5590,6 @@ export type AchievementProgression = {
   "student-becomes-master": StudentBecomesMasterProgression;
   mentor: MentorProgression;
   "tug-of-war": ProgressionWithTarget;
+  "yin-yang-points": YinYangPointsProgression;
   "rock-paper-scissors": BaseProgression;
 };

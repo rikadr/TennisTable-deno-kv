@@ -60,11 +60,11 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
     slug: "collector-even-steven-student-mentor-achievements",
     title:
-      "6 new achievements: Collector, Even Steven, Student Becomes Master, Mentor, Tug of War and Rock Paper Scissors",
+      "7 new achievements: Collector, Even Steven, Student Becomes Master, Mentor, Tug of War, Yin Yang Points and Rock Paper Scissors",
     date: "2026-10-08",
     tags: ["feature-update"],
     summary:
-      "Collector 🃏, Even Steven ⚖️, Student Becomes Master 🎓, Mentor 🧑‍🏫, Tug of War 🤼 and Rock Paper Scissors ✂️ are new achievements.",
+      "Collector 🃏, Even Steven ⚖️, Student Becomes Master 🎓, Mentor 🧑‍🏫, Tug of War 🤼, Yin Yang Points 🌗 and Rock Paper Scissors ✂️ are new achievements.",
     body: [
       list(
         "Collector 🃏 - win a set with each losing score from 11–0 to 11–9. A deuce set does not count.",
@@ -72,16 +72,17 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
         "Student Becomes Master 🎓 - beat your first opponent after you lost your first game to them.",
         "Mentor 🧑‍🏫 - a player who played their first game against you reaches the top 3 on the leaderboard.",
         "Tug of War 🤼 - play a set where the lead changes 5 or more times. A tie is not a lead change. Only tracked games count. Both players earn it.",
+        "Yin Yang Points 🌗 - play the longest run of alternating points in the league history. The run continues across sets. Only tracked games count. Both players earn it.",
         "Rock Paper Scissors ✂️ - in one day, you beat a player and that player beats a third player. The third player beats you. All 3 players earn it with the last game of the cycle.",
       ),
       text(
-        "You can earn Mentor 1 time for each player, Tug of War 1 time for each game, and Rock Paper Scissors 1 time for each cycle. You can earn each of the other 3 achievements 1 time.",
+        "You can earn Mentor 1 time for each player, Tug of War 1 time for each game, and Rock Paper Scissors 1 time for each cycle. Yin Yang Points is a league record. A longer run takes it from the players who hold it. You can earn each of the other 3 achievements 1 time.",
       ),
       text(
         "Progress for Even Steven uses the active opponent of 20 or more games who is closest to equal. 0% is 20 or more games from equal. Progress for Mentor uses your highest player on the leaderboard without a Mentor. 0% is last place and 100% is 3rd place.",
       ),
       text(
-        "The app also checks the games that players played before this change. Collector and Tug of War are in the Game Feats group. The other 4 are in the Social group.",
+        "The app also checks the games that players played before this change. Collector, Tug of War and Yin Yang Points are in the Game Feats group. The other 4 are in the Social group.",
       ),
     ],
   },

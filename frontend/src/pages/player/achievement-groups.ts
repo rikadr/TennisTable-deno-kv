@@ -84,6 +84,7 @@ export const ACHIEVEMENT_GROUPS: AchievementGroup[] = [
       "shootout",
       "choker",
       "tug-of-war",
+      "yin-yang-points",
       "hero-of-the-day",
       "hero-of-the-week",
       "hero-of-the-month",

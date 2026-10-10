@@ -353,6 +353,7 @@ describe("achievementDetails", () => {
         "season-opener",
         "shootout",
         "tug-of-war",
+        "yin-yang-points",
       ].sort(),
     );
   });

@@ -10,6 +10,7 @@ import {
   GAMES_IN_PERIOD_RECORD_FLOOR,
   isReachievableAchievement,
   YIN_YANG_RECORD_FLOOR,
+  YIN_YANG_POINTS_RECORD_FLOOR,
   SHOOTOUT_RECORD_FLOOR,
   SHOOTOUT_SETS_COUNTED,
   STREAK_RECORD_FLOOR,
@@ -439,6 +440,12 @@ export const ACHIEVEMENT_LABELS: Record<AchievementType, { title: string; descri
     description: "Play a set where the lead changes 5 or more times (tracked games only)",
     icon: "🤼",
   },
+  "yin-yang-points": {
+    title: "Yin Yang Points",
+    description:
+      "Play the longest run of alternating points in league history. The run continues across sets (tracked games only)",
+    icon: "🌗",
+  },
   "rock-paper-scissors": {
     title: "Rock Paper Scissors",
     description: "In one day, beat a player who beats a third player who beats you",
@@ -839,6 +846,21 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
                     className="block text-xs text-secondary-text/70 mt-2 underline"
                   >
                     The lead changed {achievement.data.leadChanges} times in set {achievement.data.setNumber}
+                  </GameScoreLink>
+                )}
+
+                {achievement.type === "yin-yang-points" && achievement.data && (
+                  <GameScoreLink
+                    playedAt={achievement.earnedAt}
+                    className="block text-xs text-secondary-text/70 mt-2 underline"
+                  >
+                    {achievement.data.points} alternating points
+                    {achievement.data.fromSet === achievement.data.toSet
+                      ? ` in set ${achievement.data.fromSet}`
+                      : ` in sets ${achievement.data.fromSet}–${achievement.data.toSet}`}
+                    {achievement.data.previousRecord !== undefined
+                      ? ` (previous record: ${achievement.data.previousRecord})`
+                      : " (first league record!)"}
                   </GameScoreLink>
                 )}
 
@@ -1657,6 +1679,28 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                               </div>
                             )}
 
+                            {/* Record holders for yin-yang-points — both players of
+                          the record game hold it together. */}
+                            {type === "yin-yang-points" &&
+                              "recordHolders" in data &&
+                              data.recordHolders &&
+                              data.recordHolders.length > 0 && (
+                                <div className="mt-1.5 text-xs text-secondary-text/70">
+                                  League record held by{" "}
+                                  {data.recordHolders.map((holder, i) => (
+                                    <span key={holder}>
+                                      {i > 0 && " and "}
+                                      <Link to={{ pathname: "/player/" + holder, search }}>
+                                        <span className="text-secondary-text underline">
+                                          {context.playerName(holder)}
+                                        </span>
+                                      </Link>
+                                    </span>
+                                  ))}
+                                  . Play {data.target} alternating points in a row in a tracked game to take it.
+                                </div>
+                              )}
+
                             {/* Record holder for choker. An equal lead earns it, so
                           the target IS the record. */}
                             {type === "choker" && "recordHolder" in data && data.recordHolder && (
@@ -1785,6 +1829,11 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                           <div className="mt-1.5 text-xs text-secondary-text/70">
                             No league record yet — play a {SHOOTOUT_RECORD_FLOOR}+ point game (the{" "}
                             {SHOOTOUT_SETS_COUNTED} highest-scoring legal sets count) to set the first record.
+                          </div>
+                        ) : type === "yin-yang-points" ? (
+                          <div className="mt-1.5 text-xs text-secondary-text/70">
+                            No league record yet — play {YIN_YANG_POINTS_RECORD_FLOOR} alternating points in a row in a
+                            tracked game to set the first record.
                           </div>
                         ) : type === "choker" ? (
                           <div className="mt-1.5 text-xs text-secondary-text/70">
