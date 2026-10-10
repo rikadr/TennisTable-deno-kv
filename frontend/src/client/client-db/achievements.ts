@@ -1252,8 +1252,9 @@ export class Achievements {
 
   // Awards "Rock Paper Scissors" to the 3 players of a cycle of wins in one
   // local calendar day: A beat B, B beat C and C beat A. The order of the 3
-  // games in the day does not matter, so the game that completes the cycle
-  // earns it. Each player earns it once per day.
+  // games in the day does not matter: the game that completes the cycle earns
+  // it at once. Each cycle earns it, so a player in 2 cycles of one day earns
+  // it 2 times, and one game can complete more than 1 cycle.
   #checkRockPaperScissorsAchievements() {
     const dayStartOf = (ms: number): number => {
       const d = new Date(ms);
@@ -1264,43 +1265,41 @@ export class Achievements {
     let currentDay: number | undefined = undefined;
     // The players each player beat in the current day.
     let beatenBy = new Map<string, Set<string>>();
-    let earnedToday = new Set<string>();
 
     this.parent.games.forEach((game) => {
       const day = dayStartOf(game.playedAt);
       if (day !== currentDay) {
         currentDay = day;
         beatenBy = new Map();
-        earnedToday = new Set();
       }
 
       const winnerBeat = beatenBy.get(game.winner) ?? new Set<string>();
       beatenBy.set(game.winner, winnerBeat);
-      // A repeated win adds no new cycle: any cycle with it was found when
-      // the first win was played.
+      // A cycle is complete when its last win is played, so each cycle is
+      // found 1 time. A repeated win adds no new cycle: the cycles with it
+      // were found when the first win was played.
       if (winnerBeat.has(game.loser)) return;
       winnerBeat.add(game.loser);
 
-      // The third player beat the winner and lost to the loser.
-      const third = [...(beatenBy.get(game.loser) ?? [])].find((player) => beatenBy.get(player)?.has(game.winner));
-      if (third === undefined) return;
-
-      // Each player beat the next player in the list, and the last player
-      // beat the first.
-      const cycle = [game.winner, game.loser, third];
-      cycle.forEach((playerId, index) => {
-        if (earnedToday.has(playerId)) return;
-        earnedToday.add(playerId);
-        this.#addAchievement(
-          playerId,
-          this.#createAchievement(
-            "rock-paper-scissors",
+      // Each third player who beat the winner and lost to the loser completes
+      // a cycle.
+      const thirds = [...(beatenBy.get(game.loser) ?? [])].filter((player) => beatenBy.get(player)?.has(game.winner));
+      thirds.forEach((third) => {
+        // Each player beat the next player in the list, and the last player
+        // beat the first.
+        const cycle = [game.winner, game.loser, third];
+        cycle.forEach((playerId, index) => {
+          this.#addAchievement(
             playerId,
-            game.playedAt,
-            { day, beat: cycle[(index + 1) % 3], lostTo: cycle[(index + 2) % 3] },
-            game.id,
-          ),
-        );
+            this.#createAchievement(
+              "rock-paper-scissors",
+              playerId,
+              game.playedAt,
+              { day, beat: cycle[(index + 1) % 3], lostTo: cycle[(index + 2) % 3] },
+              game.id,
+            ),
+          );
+        });
       });
     });
   }
@@ -5087,7 +5086,7 @@ export const ACHIEVEMENT_IS_REACHIEVABLE: Record<AchievementType, boolean> = {
   "student-becomes-master": false,
   mentor: true, // Per player who had the badge owner as first opponent
   seesaw: true, // Per qualifying game
-  "rock-paper-scissors": true, // Per day
+  "rock-paper-scissors": true, // Per cycle
 };
 
 // String-keyed lookup for UI code that carries achievement types as plain

@@ -2,7 +2,8 @@ import { EventType, EventTypeEnum } from "../../event-store/event-types";
 import { TennisTable } from "../../tennis-table";
 
 // Rock Paper Scissors: in one local day, A beats B, B beats C and C beats A.
-// All 3 players earn it, once per day each.
+// All 3 players earn it at the game that completes the cycle, 1 time for each
+// cycle.
 
 describe("Rock Paper Scissors Achievement", () => {
   const baseEvents: EventType[] = ["alice", "bob", "chris", "dana"].map((id, i) => ({
@@ -75,7 +76,7 @@ describe("Rock Paper Scissors Achievement", () => {
     expect(awards(tt, "alice")).toHaveLength(0);
   });
 
-  it("awards each player once per day, and again on another day", () => {
+  it("awards every cycle of a day, so a player can earn it more than 1 time in a day", () => {
     const tt = new TennisTable({
       events: [
         ...baseEvents,
@@ -85,6 +86,50 @@ describe("Rock Paper Scissors Achievement", () => {
         // A second cycle the same day: alice, bob and dana.
         gameAt(15, 12, "bob", "dana"),
         gameAt(15, 13, "dana", "alice"),
+      ],
+    });
+    tt.achievements.calculateAchievements();
+
+    const day = new Date(2024, 0, 15).getTime();
+    expect(awards(tt, "alice").map((a) => [a.earnedByGame, a.data])).toEqual([
+      ["g-15-11", { day, beat: "bob", lostTo: "chris" }],
+      ["g-15-13", { day, beat: "bob", lostTo: "dana" }],
+    ]);
+    expect(awards(tt, "bob")).toHaveLength(2);
+    expect(awards(tt, "chris")).toHaveLength(1);
+    expect(awards(tt, "dana")).toHaveLength(1);
+    expect(tt.achievements.getPlayerProgression("alice")["rock-paper-scissors"].earned).toBe(2);
+  });
+
+  it("awards each cycle that one game completes", () => {
+    const tt = new TennisTable({
+      events: [
+        ...baseEvents,
+        gameAt(15, 9, "bob", "chris"),
+        gameAt(15, 10, "bob", "dana"),
+        gameAt(15, 11, "chris", "alice"),
+        gameAt(15, 12, "dana", "alice"),
+        // Completes alice-bob-chris and alice-bob-dana.
+        gameAt(15, 13, "alice", "bob"),
+      ],
+    });
+    tt.achievements.calculateAchievements();
+
+    expect(awards(tt, "alice").map((a) => a.earnedByGame)).toEqual(["g-15-13", "g-15-13"]);
+    expect(awards(tt, "alice").map((a) => a.data.lostTo)).toEqual(["chris", "dana"]);
+    expect(awards(tt, "bob")).toHaveLength(2);
+    expect(awards(tt, "chris")).toHaveLength(1);
+    expect(awards(tt, "dana")).toHaveLength(1);
+  });
+
+  it("does NOT award a cycle again when one of its wins is repeated", () => {
+    const tt = new TennisTable({
+      events: [
+        ...baseEvents,
+        gameAt(15, 9, "alice", "bob"),
+        gameAt(15, 10, "bob", "chris"),
+        gameAt(15, 11, "chris", "alice"),
+        gameAt(15, 12, "alice", "bob"),
         gameAt(17, 9, "alice", "bob"),
         gameAt(17, 10, "bob", "chris"),
         gameAt(17, 11, "chris", "alice"),
@@ -92,10 +137,6 @@ describe("Rock Paper Scissors Achievement", () => {
     });
     tt.achievements.calculateAchievements();
 
-    expect(awards(tt, "alice")).toHaveLength(2);
-    expect(awards(tt, "bob")).toHaveLength(2);
-    expect(awards(tt, "dana")).toHaveLength(1);
-    expect(awards(tt, "dana")[0].data).toEqual({ day: new Date(2024, 0, 15).getTime(), beat: "alice", lostTo: "bob" });
-    expect(tt.achievements.getPlayerProgression("alice")["rock-paper-scissors"].earned).toBe(2);
+    expect(awards(tt, "alice").map((a) => a.earnedByGame)).toEqual(["g-15-11", "g-17-11"]);
   });
 });
