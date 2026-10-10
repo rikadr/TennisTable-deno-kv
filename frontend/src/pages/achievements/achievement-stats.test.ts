@@ -352,6 +352,7 @@ describe("achievementDetails", () => {
         "reunion",
         "season-opener",
         "shootout",
+        "tug-of-war",
       ].sort(),
     );
   });
