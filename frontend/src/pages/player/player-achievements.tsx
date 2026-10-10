@@ -26,6 +26,7 @@ import {
 } from "./player-achievement-link";
 import { ACHIEVEMENT_GROUPS, ACHIEVEMENT_TYPE_TO_GROUP_ID, OTHER_ACHIEVEMENT_GROUP } from "./achievement-groups";
 import { achievementDetailsPageLink } from "../achievements/use-achievements-filter";
+import { GameScoreLink } from "../game/game-score-link";
 
 type Props = {
   playerId?: string;
@@ -833,9 +834,12 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
                 )}
 
                 {achievement.type === "seesaw" && achievement.data && (
-                  <p className="text-xs text-secondary-text/70 mt-2">
+                  <GameScoreLink
+                    playedAt={achievement.earnedAt}
+                    className="block text-xs text-secondary-text/70 mt-2 underline"
+                  >
                     The lead changed {achievement.data.leadChanges} times in set {achievement.data.setNumber}
-                  </p>
+                  </GameScoreLink>
                 )}
 
                 {achievement.type === "rock-paper-scissors" && achievement.data && (

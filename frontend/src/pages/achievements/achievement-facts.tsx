@@ -3,6 +3,7 @@ import { Achievement } from "../../client/client-db/achievements";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { dateString, daysBetweenCeiled } from "../../common/date-utils";
 import { fmtNum } from "../../common/number-utils";
+import { GameScoreLink } from "../game/game-score-link";
 
 /**
  * What one earning of an achievement says beyond its name: the opponent, the
@@ -168,9 +169,9 @@ export const AchievementFacts: React.FC<{ achievement: Achievement }> = ({ achie
         </span>
       )}
       {achievement.type === "seesaw" && achievement.data && (
-        <span className="text-[11px] opacity-80">
+        <GameScoreLink playedAt={achievement.earnedAt} className="text-[11px] opacity-80 underline">
           {achievement.data.leadChanges} lead changes in set {achievement.data.setNumber}
-        </span>
+        </GameScoreLink>
       )}
       {achievement.type === "rock-paper-scissors" && achievement.data && (
         <span className="text-[11px] opacity-80">
