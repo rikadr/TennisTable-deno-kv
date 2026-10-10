@@ -173,6 +173,17 @@ export const AchievementFacts: React.FC<{ achievement: Achievement }> = ({ achie
           {achievement.data.leadChanges} lead changes in set {achievement.data.setNumber}
         </GameScoreLink>
       )}
+      {achievement.type === "yin-yang-points" && achievement.data && (
+        <GameScoreLink playedAt={achievement.earnedAt} className="text-[11px] opacity-80 underline">
+          {achievement.data.points} alternating points
+          {achievement.data.fromSet === achievement.data.toSet
+            ? ` in set ${achievement.data.fromSet}`
+            : ` in sets ${achievement.data.fromSet}–${achievement.data.toSet}`}
+          {achievement.data.previousRecord !== undefined
+            ? ` (prev record ${achievement.data.previousRecord})`
+            : " (first league record!)"}
+        </GameScoreLink>
+      )}
       {achievement.type === "rock-paper-scissors" && achievement.data && (
         <span className="text-[11px] opacity-80">
           Beat {context.playerName(achievement.data.beat)}, {context.playerName(achievement.data.beat)} beat{" "}

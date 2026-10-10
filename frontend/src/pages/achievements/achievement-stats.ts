@@ -45,6 +45,7 @@ export const ACHIEVEMENT_METRICS: Partial<Record<AchievementType, AchievementMet
   "marathon-set": { label: "Points of the set winner", format: points },
   shootout: { label: "Points in the counted sets", format: points },
   choker: { label: "Lead lost", format: points },
+  "yin-yang-points": { label: "Alternating points", format: points },
   "tug-of-war": {
     label: "Lead changes in the set",
     format: (value) => `${fmtNum(value)} change${value === 1 ? "" : "s"}`,
@@ -108,6 +109,8 @@ export function achievementValue(achievement: Achievement): number | undefined {
       return achievement.data.lead;
     case "tug-of-war":
       return achievement.data.leadChanges;
+    case "yin-yang-points":
+      return achievement.data.points;
     case "less-is-more":
       return achievement.data.opponentPoints - achievement.data.playerPoints;
     case "leap-frog":
@@ -169,6 +172,7 @@ export const RECORD_ACHIEVEMENTS: AchievementType[] = [
   "marathon-set",
   "shootout",
   "choker",
+  "yin-yang-points",
   "leap-frog",
   "earliest-game",
   "latest-game",
@@ -197,6 +201,7 @@ export const MUTUAL_ACHIEVEMENTS: AchievementType[] = [
   "photo-finish",
   "even-steven",
   "tug-of-war",
+  "yin-yang-points",
 ];
 
 export type RarityEntry = {
