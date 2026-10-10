@@ -42,10 +42,17 @@ describe("Achievements earned by a game", () => {
   });
 
   it("returns nothing for a game that earned nothing, and for an unknown game", () => {
-    const tt = calculate([...players, game("g1", 1_000, "a", "b"), game("g2", 2_000, "a", "b")]);
+    const noon = new Date(2024, 0, 15, 12).getTime();
+    const tt = calculate([
+      ...players,
+      game("g1", noon, "a", "b"),
+      game("g2", noon + 2 * 60_000, "c", "a"),
+      game("g3", noon + 24 * 60 * 60_000 + 60_000, "c", "b"),
+    ]);
 
-    // The second game between the same 2 players repeats what the first did.
-    expect(tt.achievements.getAchievementsEarnedByGame("g2")).toEqual([]);
+    // The third game is on the next day, at a time of day between the
+    // earliest and the latest game, and earns nothing new.
+    expect(tt.achievements.getAchievementsEarnedByGame("g3")).toEqual([]);
     expect(tt.achievements.getAchievementsEarnedByGame("no-such-game")).toEqual([]);
   });
 

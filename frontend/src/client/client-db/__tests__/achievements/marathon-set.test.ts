@@ -82,7 +82,7 @@ describe("Marathon Set Achievement", () => {
     expect(tt.achievements.marathonSetRecord).toStrictEqual({ score: undefined, holder: undefined });
   });
 
-  it("ties do NOT award (strictly greater only)", () => {
+  it("a tie awards, and leaves the record with its holder", () => {
     const events: EventType[] = [
       ...baseEvents,
       {
@@ -116,7 +116,7 @@ describe("Marathon Set Achievement", () => {
         data: {
           setsWon: { gameWinner: 2, gameLoser: 0 },
           setPoints: [
-            { gameWinner: 15, gameLoser: 13 }, // ties the record — should NOT award
+            { gameWinner: 15, gameLoser: 13 }, // ties the record — awards
             { gameWinner: 11, gameLoser: 0 },
           ],
         },
@@ -127,7 +127,9 @@ describe("Marathon Set Achievement", () => {
     tt.achievements.calculateAchievements();
 
     expect(tt.achievements.getAchievements("alice").filter((a) => a.type === "marathon-set")).toHaveLength(1);
-    expect(tt.achievements.getAchievements("bob").filter((a) => a.type === "marathon-set")).toHaveLength(0);
+    const bobAwards = tt.achievements.getAchievements("bob").filter((a) => a.type === "marathon-set");
+    expect(bobAwards).toHaveLength(1);
+    expect(bobAwards[0].data).toMatchObject({ setWinnerScore: 15, previousRecord: 15 });
     expect(tt.achievements.marathonSetRecord).toStrictEqual({ score: 15, holder: "alice" });
   });
 
@@ -302,20 +304,20 @@ describe("Marathon Set Achievement", () => {
 
     const aliceProg = tt.achievements.getPlayerProgression("alice")["marathon-set"];
     expect(aliceProg.current).toBe(14);
-    // The record is 14, so a winning score of 15 is what takes it.
-    expect(aliceProg.target).toBe(15);
+    // The record is 14, so a winning score of 14 earns the award.
+    expect(aliceProg.target).toBe(14);
     expect(aliceProg.recordHolder).toBe("alice");
     expect(aliceProg.earned).toBe(1);
 
     const bobProg = tt.achievements.getPlayerProgression("bob")["marathon-set"];
     expect(bobProg.current).toBe(13);
-    expect(bobProg.target).toBe(15);
+    expect(bobProg.target).toBe(14);
     expect(bobProg.recordHolder).toBe("alice");
     expect(bobProg.earned).toBe(0);
 
     const carolProg = tt.achievements.getPlayerProgression("carol")["marathon-set"];
     expect(carolProg.current).toBe(0);
-    expect(carolProg.target).toBe(15);
+    expect(carolProg.target).toBe(14);
     expect(carolProg.recordHolder).toBe("alice");
     expect(carolProg.earned).toBe(0);
   });

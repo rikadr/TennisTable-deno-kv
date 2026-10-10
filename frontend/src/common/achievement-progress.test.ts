@@ -7,8 +7,8 @@ describe("achievementProgressPercentage", () => {
   });
 
   it("measures marathon-set from 11 instead of 0", () => {
-    // Best deuce set won of 13 with a target of 16 (one beyond the league
-    // record of 15): 2 of 5 points.
+    // Best deuce set won of 13 with a target of 16 (the league record): 2 of
+    // 5 points.
     expect(achievementProgressPercentage("marathon-set", 13, 16)).toBe(40);
     expect(achievementProgressPercentage("marathon-set", 12, 16)).toBe(20);
     expect(achievementProgressPercentage("marathon-set", 14, 16)).toBe(60);

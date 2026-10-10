@@ -62,8 +62,9 @@ describe("Hero of the Day achievement", () => {
     expect(tt.achievements.gamesInDayRecord).toStrictEqual({ count: undefined, holder: undefined });
   });
 
-  it("establishes the first record at the floor, tie going to the winner of the crossing game", () => {
-    // Alice and Bob both reach 10 games on the same game; Alice won it.
+  it("establishes the first record at the floor, earned by both players of the crossing game", () => {
+    // Alice and Bob both reach the floor on the same game; Alice won it, so
+    // she holds the record.
     const tt = calculate(gamesOnDay(1, "alice", "bob", GAMES_IN_PERIOD_RECORD_FLOOR));
 
     const aliceAwards = heroAwards(tt, "alice");
@@ -79,7 +80,10 @@ describe("Hero of the Day achievement", () => {
         previousRecord: undefined,
       },
     });
-    expect(heroAwards(tt, "bob")).toHaveLength(0);
+    const bobAwards = heroAwards(tt, "bob");
+    expect(bobAwards).toHaveLength(1);
+    expect(bobAwards[0].earnedByGame).toBe("g2");
+    expect(bobAwards[0].data).toStrictEqual(aliceAwards[0].data);
     expect(tt.achievements.gamesInDayRecord).toStrictEqual({
       count: GAMES_IN_PERIOD_RECORD_FLOOR,
       holder: "alice",
@@ -96,24 +100,36 @@ describe("Hero of the Day achievement", () => {
     expect(aliceAwards[0].data.gamesPlayed).toBe(12);
     expect(aliceAwards[0].earnedAt).toBe(at(1, GAMES_IN_PERIOD_RECORD_FLOOR - 1));
     expect(tt.achievements.gamesInDayRecord).toStrictEqual({ count: 12, holder: "alice" });
+    // Bob reached every count in the same game as Alice, so his award grows
+    // with hers.
+    const bobAwards = heroAwards(tt, "bob");
+    expect(bobAwards).toHaveLength(1);
+    expect(bobAwards[0].data.gamesPlayed).toBe(12);
   });
 
-  it("requires a later day to strictly beat the record", () => {
+  it("awards a later day that ties the record, and grows that award when the day passes it", () => {
     const tt = calculate([
       ...gamesOnDay(1, "alice", "bob", 12),
-      // Day 2 only ties the record of 12 — no award.
+      // Day 2 ties the record of 12 — an award, and the record stays.
       ...gamesOnDay(2, "alice", "bob", 12),
-      // Day 3 beats it with 13.
+      // Day 3 ties it at 12 and passes it with 13 — one award.
       ...gamesOnDay(3, "alice", "bob", 13),
     ]);
 
     const aliceAwards = heroAwards(tt, "alice");
-    expect(aliceAwards).toHaveLength(2);
+    expect(aliceAwards).toHaveLength(3);
     expect(aliceAwards[1].data).toStrictEqual({
+      day: new Date(2024, 0, 2).getTime(),
+      gamesPlayed: 12,
+      previousRecord: 12,
+    });
+    expect(aliceAwards[2].data).toStrictEqual({
       day: new Date(2024, 0, 3).getTime(),
       gamesPlayed: 13,
       previousRecord: 12,
     });
+    // Earned at the game that tied the record, not the game that passed it.
+    expect(aliceAwards[2].earnedAt).toBe(at(3, 11));
     expect(tt.achievements.gamesInDayRecord).toStrictEqual({ count: 13, holder: "alice" });
   });
 
@@ -125,8 +141,8 @@ describe("Hero of the Day achievement", () => {
       ...gamesOnDay(2, "alice", "bob", 11),
       // ...Bob passes her with a 12th game against Carol...
       { winner: "bob", loser: "carol", playedAt: at(2, 20) },
-      // ...and Alice re-passes with two more games against Dave: 12 only
-      // ties Bob, 13 takes the record back as a NEW award.
+      // ...and Alice re-passes with two more games against Dave: 12 ties Bob
+      // and earns a NEW award, which grows to 13 and takes the record back.
       { winner: "alice", loser: "dave", playedAt: at(2, 30) },
       { winner: "alice", loser: "dave", playedAt: at(2, 31) },
     ]);
@@ -145,12 +161,15 @@ describe("Hero of the Day achievement", () => {
       previousRecord: 12,
     });
 
+    // Bob played the same games as Alice up to 11 on both days, so he has an
+    // award for each day. His day-2 award grows to 12 with the game against
+    // Carol.
     const bobAwards = heroAwards(tt, "bob");
-    expect(bobAwards).toHaveLength(1);
-    expect(bobAwards[0].data).toStrictEqual({
+    expect(bobAwards).toHaveLength(2);
+    expect(bobAwards[1].data).toStrictEqual({
       day: new Date(2024, 0, 2).getTime(),
       gamesPlayed: 12,
-      previousRecord: 11,
+      previousRecord: 10,
     });
 
     expect(tt.achievements.gamesInDayRecord).toStrictEqual({ count: 13, holder: "alice" });
@@ -162,15 +181,16 @@ describe("Hero of the Day achievement", () => {
     const alice = tt.achievements.getPlayerProgression("alice")["hero-of-the-day"];
     expect(alice.current).toBe(0); // no games today
     expect(alice.best).toBe(13);
-    expect(alice.target).toBe(14); // one beyond the record of 13
+    expect(alice.target).toBe(13); // the record
     expect(alice.recordHolder).toBe("alice");
     expect(alice.earned).toBe(2);
 
+    // Bob reached the same counts in the same games, so he earned both too.
     const bob = tt.achievements.getPlayerProgression("bob")["hero-of-the-day"];
     expect(bob.best).toBe(13);
-    expect(bob.target).toBe(14);
+    expect(bob.target).toBe(13);
     expect(bob.recordHolder).toBe("alice");
-    expect(bob.earned).toBe(0);
+    expect(bob.earned).toBe(2);
   });
 
   it("leaves the progression target unset until someone holds the record", () => {

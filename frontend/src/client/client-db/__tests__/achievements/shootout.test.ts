@@ -4,8 +4,9 @@ import { EventType, EventTypeEnum } from "../../event-store/event-types";
 // Shootout is the league record for the most combined points in a single
 // game, counting only the 3 highest-scoring sets so one-set games and
 // best-of-5 finals compete on equal terms. A 60-point game establishes the
-// first record; after that only a strictly higher score takes it. Both
-// players of the record game are awarded — the points were scored together.
+// first record; after that a score that equals it earns the award, and only a
+// higher score moves it. Both players of the record game are awarded — the
+// points were scored together.
 //
 // Only games where every set has a valid score count: first to 11 (loser at
 // 9 or below) or a deuce set won by exactly 2. House-rule scores like 15–12
@@ -116,7 +117,7 @@ describe("Shootout Achievement", () => {
     ]);
   });
 
-  it("only a strictly higher score takes the record, with previousRecord recorded", () => {
+  it("an equal score awards, and only a higher score takes the record, with previousRecord recorded", () => {
     const events: EventType[] = [
       ...baseEvents,
       // Establishes the record at 66.
@@ -125,7 +126,7 @@ describe("Shootout Achievement", () => {
         { gameWinner: 13, gameLoser: 11 },
         { gameWinner: 11, gameLoser: 9 },
       ]),
-      // Equal score — does not take the record.
+      // Equal score — awards, but does not take the record.
       ...scoredGame("g2", 200, "alice", "carol", [
         { gameWinner: 12, gameLoser: 10 },
         { gameWinner: 13, gameLoser: 11 },
@@ -142,12 +143,14 @@ describe("Shootout Achievement", () => {
     const tt = new TennisTable({ events });
     tt.achievements.calculateAchievements();
 
-    // Alice: only the g1 record (g2 tied, g3 not her game).
-    expect(tt.achievements.getAchievements("alice").filter((a) => a.type === "shootout")).toHaveLength(1);
-    // Carol: the g3 record only.
+    // Alice: the g1 record and the g2 tie (g3 not her game).
+    const alice = tt.achievements.getAchievements("alice").filter((a) => a.type === "shootout");
+    expect(alice.map((a) => a.data.gameId)).toStrictEqual(["g1", "g2"]);
+    expect(alice[1].data).toMatchObject({ points: 66, previousRecord: 66 });
+    // Carol: the g2 tie and the g3 record.
     const carol = tt.achievements.getAchievements("carol").filter((a) => a.type === "shootout");
-    expect(carol).toHaveLength(1);
-    expect(carol[0].data).toMatchObject({ gameId: "g3", points: 70, previousRecord: 66 });
+    expect(carol).toHaveLength(2);
+    expect(carol[1].data).toMatchObject({ gameId: "g3", points: 70, previousRecord: 66 });
     // Bob was in both record games.
     expect(tt.achievements.getAchievements("bob").filter((a) => a.type === "shootout")).toHaveLength(2);
     expect(tt.achievements.shootoutRecord).toStrictEqual({ points: 70, holders: ["carol", "bob"] });
@@ -213,7 +216,7 @@ describe("Shootout Achievement", () => {
 
     const carol = tt.achievements.getPlayerProgression("carol")["shootout"];
     expect(carol.current).toBe(52);
-    expect(carol.target).toBe(67); // one beyond the record
+    expect(carol.target).toBe(66); // the record
     expect(carol.recordHolders).toStrictEqual(["alice", "bob"]);
     expect(carol.earned).toBe(0);
 

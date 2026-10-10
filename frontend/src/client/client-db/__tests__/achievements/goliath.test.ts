@@ -3,9 +3,9 @@ import { EventType, EventTypeEnum } from "../../event-store/event-types";
 
 // Goliath is the league record for the biggest single-game Elo loss. A loss
 // of UPSET_RECORD_FLOOR (20 — requiring the winner to have been roughly 90+
-// Elo below the loser) establishes the first record; after that only a
-// strictly bigger loss takes the record over and awards again. Both players
-// must be ranked at the time of the match. It is the mirror of David — the
+// Elo below the loser) establishes the first record; after that a loss that
+// equals the record awards again, and only a bigger loss takes the record
+// over. Both players must be ranked at the time of the match. It is the mirror of David — the
 // game that sets the David record sets the Goliath record too. The fixtures
 // here produce ≥30-point swings, comfortably past the floor.
 

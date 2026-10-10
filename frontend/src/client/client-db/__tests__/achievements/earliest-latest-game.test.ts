@@ -118,18 +118,20 @@ describe("Earliest / Latest Game Achievements", () => {
     expect(earliest(tt, "alice")).toHaveLength(0);
   });
 
-  it("does not award on a tie with the current record (strictly break required)", () => {
+  it("awards on a tie with the current record", () => {
     const events: EventType[] = [
       ...players(),
       game("g1", at(1, 10, 0), "alice", "bob"), // seeds 10:00
-      game("g2", at(2, 10, 0), "alice", "bob"), // equal earliest & equal latest -> nothing
+      game("g2", at(2, 10, 0), "alice", "bob"), // equal earliest & equal latest -> both
     ];
 
     const tt = new TennisTable({ events });
     tt.achievements.calculateAchievements();
 
-    expect(earliest(tt, "alice")).toHaveLength(0);
-    expect(latest(tt, "alice")).toHaveLength(0);
+    expect(earliest(tt, "alice").map((a) => a.data.gameId)).toEqual(["g2"]);
+    expect(latest(tt, "alice").map((a) => a.data.gameId)).toEqual(["g2"]);
+    expect(earliest(tt, "bob")).toHaveLength(1);
+    expect(latest(tt, "bob")).toHaveLength(1);
   });
 
   it("awards again each time a record is broken further", () => {

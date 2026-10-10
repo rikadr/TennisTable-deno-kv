@@ -85,7 +85,7 @@ export const ACHIEVEMENT_LABELS: Record<AchievementType, { title: string; descri
   },
   "longest-win-streak": {
     title: "Longest Win Streak",
-    description: "Put together the longest run of consecutive wins in league history",
+    description: "Win as many games in a row as anyone in league history",
     icon: "🌋",
   },
   "punching-bag": {
@@ -100,12 +100,12 @@ export const ACHIEVEMENT_LABELS: Record<AchievementType, { title: string; descri
   },
   "longest-lose-streak": {
     title: "Longest Lose Streak",
-    description: "Suffer the longest run of consecutive losses in league history",
+    description: "Lose as many games in a row as anyone in league history",
     icon: "🕳️",
   },
   "yin-yang": {
     title: "Yin Yang",
-    description: "Put together the longest run of alternating wins and losses in league history",
+    description: "Alternate wins and losses for as many games in a row as anyone in league history",
     icon: "☯️",
   },
   "comeback-kid": {
@@ -300,12 +300,12 @@ export const ACHIEVEMENT_LABELS: Record<AchievementType, { title: string; descri
   },
   david: {
     title: "David",
-    description: "Gain more Score from a single win than anyone in league history",
+    description: "Gain as much Score from a single win as anyone in league history",
     icon: "🪨",
   },
   goliath: {
     title: "Goliath",
-    description: "Lose more Score from a single game than anyone in league history",
+    description: "Lose as much Score from a single game as anyone in league history",
     icon: "🗿",
   },
   climber: {
@@ -315,12 +315,12 @@ export const ACHIEVEMENT_LABELS: Record<AchievementType, { title: string; descri
   },
   "marathon-set": {
     title: "Marathon Set",
-    description: "Win a deuce set with the highest winning score in league history",
+    description: "Win a deuce set with a winning score as high as any in league history",
     icon: "🏓",
   },
   shootout: {
     title: "Shootout",
-    description: "Play the highest-scoring game in league history (the 3 highest-scoring legal sets count)",
+    description: "Play a game with as many points as any in league history (the 3 highest-scoring legal sets count)",
     icon: "💥",
   },
   choker: {
@@ -330,17 +330,17 @@ export const ACHIEVEMENT_LABELS: Record<AchievementType, { title: string; descri
   },
   "hero-of-the-day": {
     title: "Hero of the Day",
-    description: "Play more games in a single day than anyone in league history",
+    description: "Play as many games in a single day as anyone in league history",
     icon: "🦸",
   },
   "hero-of-the-week": {
     title: "Hero of the Week",
-    description: "Play more games in a single week than anyone in league history",
+    description: "Play as many games in a single week as anyone in league history",
     icon: "🦸‍♂️",
   },
   "hero-of-the-month": {
     title: "Hero of the Month",
-    description: "Play more games in a single month than anyone in league history",
+    description: "Play as many games in a single month as anyone in league history",
     icon: "🦸‍♀️",
   },
   "streak-ender": {
@@ -443,7 +443,7 @@ export const ACHIEVEMENT_LABELS: Record<AchievementType, { title: string; descri
   "yin-yang-points": {
     title: "Yin Yang Points",
     description:
-      "Play the longest run of alternating points in league history. The run continues across sets (tracked games only)",
+      "Play as many alternating points in a row as anyone in league history. The run continues across sets (tracked games only)",
     icon: "🌗",
   },
   "rock-paper-scissors": {
@@ -980,7 +980,7 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
                     </p>
                     <p>
                       {achievement.data.previousRecord !== undefined
-                        ? `Broke the previous record of ${achievement.data.previousRecord} rank${
+                        ? `${achievement.data.ranksJumped > achievement.data.previousRecord ? "Broke" : "Equalled"} the previous record of ${achievement.data.previousRecord} rank${
                             achievement.data.previousRecord !== 1 ? "s" : ""
                           }`
                         : "First league record!"}
@@ -1625,7 +1625,7 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                                         {context.playerName(data.recordHolder)}
                                       </span>
                                     </Link>
-                                    . Win a deuce set at {data.target} or higher to take it.
+                                    . Win a deuce set at {data.target} or higher to earn it.
                                   </>
                                 ) : (
                                   <>No record set yet — win a deuce set above 11 to start the record.</>
@@ -1633,9 +1633,7 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                               </div>
                             )}
 
-                            {/* Record holder for david / goliath. The record is a
-                          fractional Elo swing, so the target must be strictly
-                          exceeded rather than reached. */}
+                            {/* Record holder for david / goliath */}
                             {(type === "david" || type === "goliath") &&
                               "recordHolder" in data &&
                               data.recordHolder && (
@@ -1646,8 +1644,8 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                                       {context.playerName(data.recordHolder)}
                                     </span>
                                   </Link>
-                                  . {type === "david" ? "Gain" : "Lose"} more than {fmtNum(data.target, { digits: 1 })}{" "}
-                                  Score in one game to take it.
+                                  . {type === "david" ? "Gain" : "Lose"} {fmtNum(data.target, { digits: 1 })} or more
+                                  Score in one game to earn it.
                                 </div>
                               )}
 
@@ -1669,7 +1667,7 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                                       </span>
                                     ))}
                                     . Play a {data.target}+ point game (your {SHOOTOUT_SETS_COUNTED} highest-scoring
-                                    legal sets count) to take it.
+                                    legal sets count) to earn it.
                                   </>
                                 ) : (
                                   <>
@@ -1697,7 +1695,7 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                                       </Link>
                                     </span>
                                   ))}
-                                  . Play {data.target} alternating points in a row in a tracked game to take it.
+                                  . Play {data.target} alternating points in a row in a tracked game to earn it.
                                 </div>
                               )}
 
@@ -1726,7 +1724,7 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                                         {context.playerName(data.recordHolder)}
                                       </span>
                                     </Link>
-                                    . Jump {data.target} or more ranks in one game to take it.
+                                    . Jump {data.target} or more ranks in one game to earn it.
                                   </>
                                 ) : (
                                   <>No record set yet — jump 2 or more ranks in a single game to start the record.</>
@@ -1749,7 +1747,7 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                                           {context.playerName(data.recordHolder)}
                                         </span>
                                       </Link>
-                                      . Play {data.target} games in one {HERO_RECORD_PERIODS[type].noun} to take it.
+                                      . Play {data.target} games in one {HERO_RECORD_PERIODS[type].noun} to earn it.
                                     </>
                                   ) : (
                                     <>
@@ -1777,7 +1775,7 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                                           </span>
                                         </Link>
                                         . {type === "longest-win-streak" ? "Win" : "Lose"} {data.target} in a row to
-                                        take it.
+                                        earn it.
                                       </>
                                     ) : (
                                       <>
@@ -1803,7 +1801,7 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                                           {context.playerName(data.recordHolder)}
                                         </span>
                                       </Link>
-                                      . Alternate wins and losses for {data.target} games in a row to take it.
+                                      . Alternate wins and losses for {data.target} games in a row to earn it.
                                     </>
                                   ) : (
                                     <>

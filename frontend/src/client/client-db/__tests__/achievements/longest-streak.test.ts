@@ -96,7 +96,7 @@ describe("Longest Win Streak / Longest Lose Streak achievements", () => {
     expect(tt.achievements.winStreakRecord).toStrictEqual({ length: 6, holder: "alice" });
   });
 
-  it("awards a second time when a new streak beats the player's own record", () => {
+  it("awards a second time when a new streak reaches the player's own record", () => {
     const tt = calculate([
       // Alice takes the record with 4 in a row.
       ...wins("alice", ["bob", "carol"], 4),
@@ -126,8 +126,9 @@ describe("Longest Win Streak / Longest Lose Streak achievements", () => {
       ...wins("alice", ["bob", "carol"], 10),
       // Dave beats it with 11 while Alice's streak is still alive.
       ...wins("dave", ["bob", "carol"], 11),
-      // Alice wins 2 more — 11 ties Dave and does not award, 12 takes the
-      // record back and, because Dave broke it in between, earns again.
+      // Alice wins 2 more — 11 ties Dave and, because Dave broke the record
+      // in between, earns again. 12 grows that award and takes the record
+      // back.
       ...wins("alice", ["bob", "carol"], 2),
     ]);
 
@@ -152,12 +153,23 @@ describe("Longest Win Streak / Longest Lose Streak achievements", () => {
     expect(tt.achievements.winStreakRecord).toStrictEqual({ length: 12, holder: "alice" });
   });
 
-  it("does not award for tying the record", () => {
+  it("awards a streak that ties the record, and keeps the record with its holder", () => {
     const tt = calculate([...wins("alice", ["bob", "carol"], 5), ...wins("dave", ["bob", "carol"], 5)]);
 
     expect(achievementsOfType(tt, "alice", "longest-win-streak")).toHaveLength(1);
-    expect(achievementsOfType(tt, "dave", "longest-win-streak")).toHaveLength(0);
+    const daveAwards = achievementsOfType(tt, "dave", "longest-win-streak");
+    expect(daveAwards).toHaveLength(1);
+    expect(daveAwards[0].data).toMatchObject({ streakLength: 5, previousRecord: 5 });
     expect(tt.achievements.winStreakRecord).toStrictEqual({ length: 5, holder: "alice" });
+  });
+
+  it("grows the award of a streak that tied the record when it passes the record", () => {
+    const tt = calculate([...wins("alice", ["bob", "carol"], 5), ...wins("dave", ["bob", "carol"], 6)]);
+
+    const daveAwards = achievementsOfType(tt, "dave", "longest-win-streak");
+    expect(daveAwards).toHaveLength(1);
+    expect(daveAwards[0].data).toMatchObject({ streakLength: 6, previousRecord: 5 });
+    expect(tt.achievements.winStreakRecord).toStrictEqual({ length: 6, holder: "dave" });
   });
 
   it("keeps growing the award after a rival tried and failed to beat it", () => {
@@ -246,15 +258,15 @@ describe("Longest Win Streak / Longest Lose Streak achievements", () => {
     const aliceProgression = tt.achievements.getPlayerProgression("alice")["longest-win-streak"];
     expect(aliceProgression.current).toBe(2);
     expect(aliceProgression.best).toBe(5);
-    // The record is 5, so a streak of 6 is what takes it.
-    expect(aliceProgression.target).toBe(6);
+    // The record is 5, so a streak of 5 earns the award.
+    expect(aliceProgression.target).toBe(5);
     expect(aliceProgression.recordHolder).toBe("alice");
     expect(aliceProgression.earned).toBe(1);
 
     const bobProgression = tt.achievements.getPlayerProgression("bob")["longest-win-streak"];
     expect(bobProgression.current).toBe(0);
     expect(bobProgression.best).toBe(1);
-    expect(bobProgression.target).toBe(6);
+    expect(bobProgression.target).toBe(5);
     expect(bobProgression.recordHolder).toBe("alice");
     expect(bobProgression.earned).toBe(0);
   });
