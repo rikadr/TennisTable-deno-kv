@@ -33,7 +33,8 @@ function countGamesUpTo(games: Game[], time: number): number {
 /**
  * The accumulated stats of each player against each opponent. The
  * age-adjusted stats can be read at any reference time without a new pass over
- * the games, and `rewindTo` removes the latest games one at a time.
+ * the games. `advanceTo` adds the next games, and `rewindTo` removes the latest
+ * games.
  *
  * The age weight decays exponentially: 2^(-(T - t) / h) = 2^(-(A - t) / h) * 2^((A - T) / h),
  * for game time t, reference time T and anchor time A. Each game adds the first
@@ -53,10 +54,11 @@ export class PairStats {
   #factorTime: number | undefined;
   #factor = 1;
 
-  constructor(anchorTime: number, games: Game[] = []) {
+  /** The stats start with the first `gameCount` games. `advanceTo` adds the rest */
+  constructor(anchorTime: number, games: Game[] = [], gameCount = games.length) {
     this.#anchorTime = anchorTime;
     this.#games = games;
-    this.#gameCount = games.length;
+    this.#gameCount = gameCount;
     this.#build();
   }
 
@@ -84,6 +86,23 @@ export class PairStats {
     }
     while (this.#gameCount > 0 && this.#games[this.#gameCount - 1].playedAt > time) {
       this.#update(this.#games[--this.#gameCount], -1);
+    }
+  }
+
+  /**
+   * Adds the games up to the time. The games given to the constructor must be
+   * sorted by time, and each call must use a time at or after the time of the
+   * call before.
+   *
+   * A game after the anchor time would count as played at the anchor time. So
+   * before the stats add such a game, they move the anchor time 1 half-life
+   * after the time. Adding a game subtracts nothing, so it leaves no rounding
+   * error that a read can multiply.
+   */
+  advanceTo(time: number) {
+    if (time > this.#anchorTime) this.#moveAnchorTo(time + AGE_HALF_LIFE_DAYS * DAY_MS);
+    while (this.#gameCount < this.#games.length && this.#games[this.#gameCount].playedAt <= time) {
+      this.#update(this.#games[this.#gameCount++], 1);
     }
   }
 
@@ -119,6 +138,20 @@ export class PairStats {
     this.#opponents.clear();
     this.#factorTime = undefined;
     for (let i = 0; i < this.#gameCount; i++) this.#update(this.#games[i], 1);
+  }
+
+  /** Multiplies each age-adjusted total by the same factor, so that the weights are relative to the new anchor time */
+  #moveAnchorTo(anchorTime: number) {
+    const factor = Math.pow(2, (this.#anchorTime - anchorTime) / DAY_MS / AGE_HALF_LIFE_DAYS);
+    for (const opponents of this.#pairs.values()) {
+      for (const { anchored } of opponents.values()) {
+        anchored.games *= factor;
+        anchored.sets *= factor;
+        anchored.points *= factor;
+      }
+    }
+    this.#anchorTime = anchorTime;
+    this.#factorTime = undefined;
   }
 
   #factorAt(referenceTime: number): number {

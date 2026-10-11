@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { TennisTable } from "../../client/client-db/tennis-table";
 import { WorkerMessage } from "../../client/client-db/web-worker/web-worker";
-import { createModernWorker } from "../../hooks/use-elo-simulation-worker";
+import { createModernWorker } from "../../hooks/create-modern-worker";
 import { classNames } from "../../common/class-names";
 import { PillSelect } from "../../common/pill-select";
 import { fmtNum } from "../../common/number-utils";
@@ -18,6 +18,7 @@ import { Elo } from "../../client/client-db/elo";
 import { AbsentScore, absentScoreZero, buildDiffRows, RankedEntry, scoreDelta, SortBy } from "./what-changed-diff";
 import { FACTORS } from "../hall-of-fame/hall-of-fame-factors";
 import { ALL_PLAYERS, hallOfFameCategoryEntries } from "./what-changed-hall-of-fame-categories";
+import { WaitForAchievements } from "../../common/wait-for-achievements";
 
 type Source = "actual" | "expected";
 
@@ -385,8 +386,11 @@ export const WhatChangedPage: React.FC = () => {
   const startTime = useDebounced(timesReversed ? toMs : fromMs, 300);
   const endTime = useDebounced(timesReversed ? fromMs : toMs, 300);
 
-  const startState = useStateAt(startTime);
-  const endState = useStateAt(endTime);
+  // The Hall of Fame scores need the achievements of the 2 times. A web worker
+  // calculates them, only while the Hall of Fame tab shows.
+  const hallOfFameNeeded = activeTab === "leaderboards" && leaderboardTab === "hall-of-fame";
+  const startState = useStateAt(startTime, { achievements: hallOfFameNeeded });
+  const endState = useStateAt(endTime, { achievements: hallOfFameNeeded });
 
   const startActual = useMemo(
     () => startState?.leaderboard.getLeaderboard().rankedPlayers.map(({ id, rank, elo }) => ({ id, rank, score: elo })),
@@ -419,8 +423,16 @@ export const WhatChangedPage: React.FC = () => {
   // Hall of Fame score for every player, retired and active, at the two times.
   // The player rows and the category rows both come from these 2 lists, so the
   // breakdown costs no extra computation.
-  const startHallOfFameEntries = useMemo(() => startState?.hallOfFame.getFullHypotheticalLeaderboard(), [startState]);
-  const endHallOfFameEntries = useMemo(() => endState?.hallOfFame.getFullHypotheticalLeaderboard(), [endState]);
+  const startHallOfFameEntries = useMemo(
+    () => (startState?.achievements.isReady ? startState.hallOfFame.getFullHypotheticalLeaderboard() : undefined),
+    [startState],
+  );
+  const endHallOfFameEntries = useMemo(
+    () => (endState?.achievements.isReady ? endState.hallOfFame.getFullHypotheticalLeaderboard() : undefined),
+    [endState],
+  );
+  const calculatingHallOfFame =
+    hallOfFameNeeded && (startState?.achievements.isReady === false || endState?.achievements.isReady === false);
   const startHallOfFame = useMemo(
     () =>
       startHallOfFameEntries?.map((entry, index) => ({
@@ -695,7 +707,11 @@ export const WhatChangedPage: React.FC = () => {
 
               {/* Hall of Fame score changes between the two times */}
               {leaderboardTab === "hall-of-fame" &&
-                (breakdown === "all" ? (
+                (calculatingHallOfFame ? (
+                  <p className="text-center text-sm md:text-base text-primary-text/60 py-4">
+                    Calculating the Hall of Fame at the 2 times…
+                  </p>
+                ) : breakdown === "all" ? (
                   <>
                     <p className="text-center text-sm md:text-base text-primary-text/60 py-1 md:py-2">
                       The hypothetical Hall of Fame leaderboard for all players
@@ -743,7 +759,7 @@ export const WhatChangedPage: React.FC = () => {
 
           {/* Achievements earned between the two times */}
           {activeTab === "achievements" && (
-            <div>
+            <WaitForAchievements>
               <p className="text-center text-sm md:text-base text-primary-text/60 py-1 md:py-2">
                 {achievementsInWindow.length} {achievementsInWindow.length === 1 ? "achievement" : "achievements"}{" "}
                 between the two times
@@ -785,7 +801,7 @@ export const WhatChangedPage: React.FC = () => {
                   </button>
                 </div>
               )}
-            </div>
+            </WaitForAchievements>
           )}
 
           {/* Games played between the two times */}

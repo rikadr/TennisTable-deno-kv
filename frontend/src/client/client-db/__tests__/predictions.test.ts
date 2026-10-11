@@ -251,6 +251,17 @@ describe("Predictions symmetry", () => {
     expect(twoLayer.confidence).toBeCloseTo(expected.confidence, 10);
   });
 
+  it("gives exactly the same two-layer fraction for the first pair of a player as for a later pair", () => {
+    // The first pair of P1 links only the chains to P2. A later pair uses the chains from P1 to all players
+    const firstPair = buildTennisTable(games).predictions;
+    const laterPair = buildTennisTable(games).predictions;
+    laterPair.getTwoLayerFraction("P1", "B");
+
+    for (const p2 of ["P2", "A"]) {
+      expect(firstPair.getTwoLayerFraction("P1", p2)).toEqual(laterPair.getTwoLayerFraction("P1", p2));
+    }
+  });
+
   it("gives the complement fraction for the reverse pair, in each layer", () => {
     // A new TennisTable for each direction, so no value comes from the cache of the other direction
     const forward = buildTennisTable(games).predictions;

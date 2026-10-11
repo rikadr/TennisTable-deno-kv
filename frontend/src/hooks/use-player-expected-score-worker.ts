@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { WorkerMessage } from "../client/client-db/web-worker/web-worker";
 import { useEventDbContext } from "../wrappers/event-db-context";
 import { ExpectedLeaderboard } from "../client/client-db/simulations";
-import { createModernWorker } from "./use-elo-simulation-worker";
+import { createModernWorker } from "./create-modern-worker";
 
 /**
  * Expected leaderboard that also includes one unranked or retired player, so

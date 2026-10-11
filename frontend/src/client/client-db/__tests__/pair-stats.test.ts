@@ -125,6 +125,29 @@ describe("PairStats", () => {
     expectSameStats(stats, new PairStats(time, games.slice(0, 2)), time);
   });
 
+  it("gives the same stats after each advance as stats built from the games up to that time", () => {
+    const stats = new PairStats(START, GAMES, 0);
+    for (const day of [0, 5, 40, 150, 399, 401]) {
+      const time = START + day * DAY;
+      stats.advanceTo(time);
+      const gamesUpTo = GAMES.filter((g) => g.playedAt <= time);
+
+      expect(stats.gameCount).toBe(gamesUpTo.length);
+      expectSameStats(stats, new PairStats(time, gamesUpTo), time);
+    }
+  });
+
+  it("keeps the stats exact when an advance goes forward over many years", () => {
+    const games = Array.from({ length: 500 }, (_, i) =>
+      game(i, i * 11, i % 3 === 0 ? "B" : "A", i % 3 === 0 ? "A" : "B"),
+    );
+    const stats = new PairStats(START, games, 0);
+    for (let day = 0; day <= 5500; day += 7) stats.advanceTo(START + day * DAY);
+    const time = START + 5500 * DAY;
+
+    expectSameStats(stats, new PairStats(time, games), time);
+  });
+
   it("removes the games after the time at the first rewind", () => {
     const stats = new PairStats(START + 100 * DAY, GAMES);
     stats.rewindTo(START + 100 * DAY);

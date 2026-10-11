@@ -20,6 +20,7 @@ import { PlayerExpectedScore } from "./player-expected-score";
 import { usePlayerLinkSearch } from "../../hooks/use-player-link-search";
 import { GameMarkers } from "../game/game-markers";
 import { GameScoreLink } from "../game/game-score-link";
+import { WaitForAchievements } from "../../common/wait-for-achievements";
 
 type TabType = "overview" | "games" | "statistics" | "achievements" | "predictions" | "season";
 const tabs: { id: TabType; label: string }[] = [
@@ -392,7 +393,11 @@ export const PlayerPage: React.FC = () => {
             </div>
           </div>
         )}
-        {activeTab === "achievements" && playerId && <PlayerAchievements playerId={playerId} />}
+        {activeTab === "achievements" && playerId && (
+          <WaitForAchievements>
+            <PlayerAchievements playerId={playerId} />
+          </WaitForAchievements>
+        )}
         {activeTab === "predictions" && playerId && (
           <PlayerPredictionsPage playerId={playerId} isRanked={summary.isRanked} />
         )}

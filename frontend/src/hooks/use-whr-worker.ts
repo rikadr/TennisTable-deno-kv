@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { WorkerMessage } from "../client/client-db/web-worker/web-worker";
 import { useEventDbContext } from "../wrappers/event-db-context";
 import { WhrConfig, WhrResult } from "../client/client-db/whr";
-import { createModernWorker } from "./use-elo-simulation-worker";
+import { createModernWorker } from "./create-modern-worker";
 
 /**
  * Fits the Whole History Rating in a web worker. The fit restarts whenever the

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { HallOfFameHistoryResult } from "../client/client-db/hall-of-fame-history";
 import { WorkerMessage } from "../client/client-db/web-worker/web-worker";
 import { useEventDbContext } from "../wrappers/event-db-context";
-import { createModernWorker } from "./use-elo-simulation-worker";
+import { createModernWorker } from "./create-modern-worker";
 
 /** Simulates a player's Hall of Fame score over time in a web worker.
  * The result arrives in one piece when every point is done. `progress` tracks

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { HallOfFameChange, hallOfFameChangeAroundGame } from "../client/client-db/game-standings";
 import { WorkerMessage } from "../client/client-db/web-worker/web-worker";
 import { useEventDbContext } from "../wrappers/event-db-context";
-import { createModernWorker } from "./use-elo-simulation-worker";
+import { createModernWorker } from "./create-modern-worker";
 
 export type HallOfFameChanges = {
   /** The score before and after the game, by player id. Empty while pending. */
@@ -16,7 +16,7 @@ export type HallOfFameChanges = {
  * runs in a web worker and the page renders without waiting for it.
  */
 export function useGameHallOfFameChange(playedAt: number | undefined, playerIds: string[]): HallOfFameChanges {
-  const context = useEventDbContext();
+  const { events } = useEventDbContext();
   const [result, setResult] = useState<{ playedAt: number; changes: HallOfFameChange[] } | undefined>(undefined);
 
   // The player list is rebuilt on every render, so the effect depends on its
@@ -30,7 +30,7 @@ export function useGameHallOfFameChange(playedAt: number | undefined, playerIds:
     const worker = createModernWorker();
     if (!worker) {
       // Fallback: calculate on the main thread when workers are unavailable.
-      setResult({ playedAt, changes: hallOfFameChangeAroundGame(context.events, playedAt, ids) });
+      setResult({ playedAt, changes: hallOfFameChangeAroundGame(events, playedAt, ids) });
       return;
     }
 
@@ -42,12 +42,12 @@ export function useGameHallOfFameChange(playedAt: number | undefined, playerIds:
     });
     const message: WorkerMessage = {
       type: "start-game-hall-of-fame-change",
-      data: { events: context.events, playedAt, playerIds: ids },
+      data: { events, playedAt, playerIds: ids },
     };
     worker.postMessage(message);
 
     return () => worker.terminate();
-  }, [context, playedAt, players]);
+  }, [events, playedAt, players]);
 
   return useMemo(() => {
     const matches = result !== undefined && result.playedAt === playedAt;

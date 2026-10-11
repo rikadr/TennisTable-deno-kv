@@ -16,6 +16,7 @@ import { RecentGames } from "./recent-games";
 import { RecentLeaderBoardChanges } from "./recent-leaderboard-changes";
 import { RecentAchievements } from "./recent-achievements";
 import { dashboardSeasonState, LeaderboardView } from "./dashboard-season";
+import { WaitForAchievements } from "../../common/wait-for-achievements";
 
 const LIVE_GAME_CARD_POLL_MS = 10_000;
 
@@ -91,7 +92,11 @@ export const DashboardPage: React.FC = () => {
       case "changes":
         return <RecentLeaderBoardChanges key={widget} view={activityView} />;
       case "achievements":
-        return <RecentAchievements key={widget} count={columnCount === 1 ? 5 : 8} />;
+        return (
+          <WaitForAchievements key={widget}>
+            <RecentAchievements count={columnCount === 1 ? 5 : 8} />
+          </WaitForAchievements>
+        );
     }
   };
 
