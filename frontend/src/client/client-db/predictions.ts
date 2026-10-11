@@ -2,6 +2,7 @@ import { Game } from "./event-store/projectors/games-projector";
 import { gameToGame, pointToGame, setToGame } from "./future-elo-probability-lookups";
 import { TennisTable } from "./tennis-table";
 import { PairFraction } from "./expected-scores";
+import { PairStats, ScoreStats } from "./pair-stats";
 
 export type Fraction = { fraction: number; confidence: number };
 
@@ -33,111 +34,38 @@ export const POINT_CONFIDENCE_CONFIG: ConfidenceConfig = {
   curveExponent: 0.75,
 };
 
-type ScoreStats = {
-  raw: { games: number; sets: number; points: number };
-  ageAdjusted: { games: number; sets: number; points: number };
-};
-
-/** map[playerA][playerB] = playerA's accumulated stats in all games against playerB */
-type PairwiseStatsMap = Map<string, Map<string, ScoreStats>>;
-
 export class Predictions {
-  constructor(parent: TennisTable, referenceTime?: number, games?: Game[]) {
+  /**
+   * `source` is the games to predict from, or stats that are already accumulated. Shared stats let a
+   * calculation for many reference times add or remove games instead of a new pass over all the games.
+   * The instance reads the stats when it needs them, so do not change shared stats while you use it.
+   */
+  constructor(parent: TennisTable, referenceTime?: number, source?: Game[] | PairStats) {
     this.parent = parent;
     this.referenceTime = referenceTime ?? Date.now();
-    this.games = games ?? parent.games;
+    this.source = source ?? parent.games;
   }
   private parent: TennisTable;
   private referenceTime: number;
-  private games: Game[];
+  private source: Game[] | PairStats;
 
   // ---------------------------------------------------------------------------
-  // Pairwise stats — single pass over all games
+  // Pairwise stats
   // ---------------------------------------------------------------------------
 
-  #pairwiseStats: PairwiseStatsMap | undefined;
+  #pairStats: PairStats | undefined;
 
-  private get pairwiseStats(): PairwiseStatsMap {
-    if (!this.#pairwiseStats) {
-      this.#pairwiseStats = this.#buildPairwiseStats();
+  private get pairStats(): PairStats {
+    if (this.source instanceof PairStats) return this.source;
+    if (!this.#pairStats) {
+      this.#pairStats = new PairStats(this.referenceTime, this.source);
     }
-    return this.#pairwiseStats;
+    return this.#pairStats;
   }
-
-  #buildPairwiseStats(): PairwiseStatsMap {
-    const map: PairwiseStatsMap = new Map();
-    const now = this.referenceTime;
-
-    const ensureEntry = (a: string, b: string): ScoreStats => {
-      if (!map.has(a)) map.set(a, new Map());
-      const inner = map.get(a)!;
-      if (!inner.has(b)) {
-        inner.set(b, {
-          raw: { games: 0, sets: 0, points: 0 },
-          ageAdjusted: { games: 0, sets: 0, points: 0 },
-        });
-      }
-      return inner.get(b)!;
-    };
-
-    for (const game of this.games) {
-      const ageWeight = this.ageAdjustedWeight(1, game.playedAt, now);
-
-      // Winner's side
-      const winnerStats = ensureEntry(game.winner, game.loser);
-      winnerStats.raw.games += 1;
-      winnerStats.ageAdjusted.games += ageWeight;
-
-      if (game.score) {
-        winnerStats.raw.sets += game.score.setsWon.gameWinner;
-        winnerStats.ageAdjusted.sets += game.score.setsWon.gameWinner * ageWeight;
-      }
-      if (game.score?.setPoints) {
-        const pts = game.score.setPoints.reduce((sum, set) => sum + set.gameWinner, 0);
-        winnerStats.raw.points += pts;
-        winnerStats.ageAdjusted.points += pts * ageWeight;
-      }
-
-      // Loser's side (no game count increment — they lost this game)
-      const loserStats = ensureEntry(game.loser, game.winner);
-
-      if (game.score) {
-        loserStats.raw.sets += game.score.setsWon.gameLoser;
-        loserStats.ageAdjusted.sets += game.score.setsWon.gameLoser * ageWeight;
-      }
-      if (game.score?.setPoints) {
-        const pts = game.score.setPoints.reduce((sum, set) => sum + set.gameLoser, 0);
-        loserStats.raw.points += pts;
-        loserStats.ageAdjusted.points += pts * ageWeight;
-      }
-    }
-
-    return map;
-  }
-
-  // ---------------------------------------------------------------------------
-  // Adjacency map — who has played whom
-  // ---------------------------------------------------------------------------
-
-  #adjacencyMap: Map<string, Set<string>> | undefined;
 
   /** Set of player IDs that each player has at least one game against */
-  get adjacencyMap(): Map<string, Set<string>> {
-    if (!this.#adjacencyMap) {
-      this.#adjacencyMap = this.#buildAdjacencyMap();
-    }
-    return this.#adjacencyMap;
-  }
-
-  #buildAdjacencyMap(): Map<string, Set<string>> {
-    const adj = new Map<string, Set<string>>();
-    for (const game of this.games) {
-      if (!adj.has(game.winner)) adj.set(game.winner, new Set());
-      if (!adj.has(game.loser)) adj.set(game.loser, new Set());
-      adj.get(game.winner)!.add(game.loser);
-      adj.get(game.loser)!.add(game.winner);
-    }
-    return adj;
+  get adjacencyMap(): ReadonlyMap<string, ReadonlySet<string>> {
+    return this.pairStats.opponents;
   }
 
   /** All player IDs that appear in the game set */
@@ -147,14 +75,7 @@ export class Predictions {
 
   /** Total games played by a player (in the game set this Predictions was built from) */
   getPlayerTotalGames(playerId: string): number {
-    const inner = this.pairwiseStats.get(playerId);
-    if (!inner) return 0;
-    let total = 0;
-    for (const [opponentId, stats] of inner) {
-      total += stats.raw.games; // games this player won
-      total += this.pairwiseStats.get(opponentId)?.get(playerId)?.raw.games ?? 0; // games this player lost
-    }
-    return total;
+    return this.pairStats.getTotalGames(playerId);
   }
 
   /** Players who have played BOTH p1 and p2 — the only valid one-layer intermediaries */
@@ -177,14 +98,9 @@ export class Predictions {
   // Direct stats lookups — O(1) replacement for per-game iteration
   // ---------------------------------------------------------------------------
 
-  private static readonly EMPTY_STATS: ScoreStats = {
-    raw: { games: 0, sets: 0, points: 0 },
-    ageAdjusted: { games: 0, sets: 0, points: 0 },
-  };
-
   /** Get p1's accumulated stats against p2 (pre-computed, O(1) lookup) */
   getStats(p1: string, p2: string): ScoreStats {
-    return this.pairwiseStats.get(p1)?.get(p2) ?? Predictions.EMPTY_STATS;
+    return this.pairStats.getStats(p1, p2, this.referenceTime);
   }
 
   /** cache[p1][p2]. The two-layer prediction uses each direct fraction many times */
@@ -505,8 +421,7 @@ export class Predictions {
   // ---------------------------------------------------------------------------
 
   clearCache() {
-    this.#pairwiseStats = undefined;
-    this.#adjacencyMap = undefined;
+    this.#pairStats = undefined;
     this.#directCache.clear();
     this.#oneLayerCache.clear();
     this.#twoLayerCache.clear();
@@ -517,12 +432,6 @@ export class Predictions {
   // ---------------------------------------------------------------------------
   // Static helpers (shared math, moved out of FutureElo instances)
   // ---------------------------------------------------------------------------
-
-  private ageAdjustedWeight(value: number, gameTime: number, referenceTime: number): number {
-    const ageInDays = Math.max(referenceTime - gameTime, 0) / (24 * 60 * 60 * 1000);
-    const halfLife = 120;
-    return value * Math.pow(2, -ageInDays / halfLife);
-  }
 
   static getWinFractionWithConfidence(
     wins: number,

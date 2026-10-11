@@ -1,3 +1,4 @@
+import { PairStats } from "./pair-stats";
 import { Predictions } from "./predictions";
 import { TennisTable } from "./tennis-table";
 
@@ -26,7 +27,8 @@ export class PredictionsHistory {
     callback: (data: { entry: PredictionHistoryEntry; progress: number }) => void,
     timesCallback?: (times: number[]) => void,
   ): void {
-    const playersFirstGame = this.parent.games.find((g) => g.winner === playerId || g.loser === playerId);
+    const allGames = this.parent.games;
+    const playersFirstGame = allGames.find((g) => g.winner === playerId || g.loser === playerId);
     if (!playersFirstGame) return;
 
     const startTime = playersFirstGame.playedAt;
@@ -51,15 +53,17 @@ export class PredictionsHistory {
     const totalPoints = times.length;
     let processed = 0;
 
+    const pairStats = new PairStats(endTime, allGames);
+
     for (let i = times.length - 1; i >= 0; i--) {
       const time = times[i];
       const periodStart = i > 0 ? times[i - 1] : 0;
 
-      const games = this.parent.games.filter((g) => g.playedAt <= time);
-      const gamesInPeriod = this.parent.games.filter((g) => g.playedAt > periodStart && g.playedAt <= time);
+      pairStats.rewindTo(time);
+      const gamesInPeriod = allGames.filter((g) => g.playedAt > periodStart && g.playedAt <= time);
       const gamesPlayed = gamesInPeriod.filter((g) => g.winner === playerId || g.loser === playerId).length;
 
-      const predictions = new Predictions(this.parent, time, games);
+      const predictions = new Predictions(this.parent, time, pairStats);
 
       const oponentsOutput: Record<string, Prediction> = {};
 
