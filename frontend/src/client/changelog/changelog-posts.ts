@@ -42,6 +42,31 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
+    slug: "predictions-from-player-strengths",
+    title: "Win predictions use all games",
+    date: "2026-10-11",
+    tags: ["feature-update", "technical"],
+    summary:
+      "The app fits 1 strength to each player from all games, and predicts each game from the gap between the 2 strengths. The predictions are more accurate, most of all for players who never played each other.",
+    body: [
+      text(
+        "Each game has an effect on each prediction, through chains of opponents of any length. Before, the app used the games between the 2 players and chains through 1 or 2 other players only.",
+      ),
+      list(
+        "The game result counts most, then the sets, then the points. A game with no score adds only its result.",
+        "A player with few games stays near the average strength.",
+        "The confidence shows how much evidence there is for the gap between the 2 strengths.",
+        "The predictions tab of a player shows the head-to-head prediction and the prediction from all games.",
+      ),
+      text(
+        "A test predicted each of the last 1 734 games from the games before it. The log loss was 0.476, not 0.523. For players who never played each other, it was 0.316, not 0.493. A lower log loss is better.",
+      ),
+      text(
+        "With real data, the predictions between ranked players change by 8.5 percentage points on average. The largest changes are for players with few games who never played each other. 32 of 39 expected ranks change.",
+      ),
+    ],
+  },
+  {
     slug: "achievements-in-web-worker",
     title: "The app calculates achievements in the background",
     date: "2026-10-11",

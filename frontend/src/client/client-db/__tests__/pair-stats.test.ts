@@ -155,4 +155,22 @@ describe("PairStats", () => {
     expect(stats.gameCount).toBe(4);
     expectSameStats(stats, new PairStats(START + 100 * DAY, GAMES.slice(0, 4)), START + 100 * DAY);
   });
+
+  it("gives each pair once with the same totals as getStats", () => {
+    const stats = new PairStats(START + 400 * DAY, GAMES);
+    const time = START + 300 * DAY;
+    const seen: string[] = [];
+    stats.forEachPair(time, (p1, p2, p1Won, p2Won, factor) => {
+      seen.push(`${p1}-${p2}`);
+      expect(p1 < p2).toBe(true);
+      const expected1 = stats.getStats(p1, p2, time).ageAdjusted;
+      const expected2 = stats.getStats(p2, p1, time).ageAdjusted;
+      for (const key of ["games", "sets", "points"] as const) {
+        expect(p1Won[key] * factor).toBeCloseTo(expected1[key], 12);
+        expect(p2Won[key] * factor).toBeCloseTo(expected2[key], 12);
+      }
+    });
+
+    expect(seen.sort()).toEqual(["A-B", "A-C", "A-D", "B-C"]);
+  });
 });

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { ProfilePicture } from "./profile-picture";
 import { fmtNum } from "../../common/number-utils";
-import { Fraction, Predictions } from "../../client/client-db/predictions";
+import { Fraction } from "../../client/client-db/predictions";
 import { classNames } from "../../common/class-names";
 import { Link } from "react-router-dom";
 
@@ -35,13 +35,14 @@ export const PlayerPredictionsList = ({ playerId }: Props) => {
       {opponents.map((opponent) => {
         const oponentId = opponent.id;
         const isExpanded = expandedPlayers.has(oponentId);
-        const directFraction = predictions.getDirectFraction(playerId, oponentId);
-        const oneLayerFraction = predictions.getOneLayerFraction(playerId, oponentId);
-        const twoLayerFraction = predictions.getTwoLayerFraction(playerId, oponentId);
-        const fractions = [directFraction, oneLayerFraction, twoLayerFraction];
-        const combined = Predictions.combinePrioritizedFractions(fractions);
-        const winChance = combined?.fraction || 0;
-        const confidence = combined?.confidence || 0;
+        const predicted = predictions.getPredictedFraction(playerId, oponentId);
+        // Head-to-head first, in the row that the per-level columns point to
+        const sources = [
+          { label: "Head-to-head", fraction: predictions.getDirectFraction(playerId, oponentId) },
+          { label: "All games", fraction: predicted },
+        ];
+        const winChance = predicted?.fraction || 0;
+        const confidence = predicted?.confidence || 0;
 
         return (
           <div key={oponentId} className="border border-secondary-text/20 rounded-lg overflow-hidden">
@@ -80,39 +81,19 @@ export const PlayerPredictionsList = ({ playerId }: Props) => {
               <div className="p-4 bg-primary-background text-primary-text ">
                 <div className="flex gap-4 border-l-2 border-secondary-background py-2 overflow-auto pl-6">
                   {/* Probability Breakdown */}
-                  <div className="mt-4 -space-y-0 opacity-50">
-                    <p className="text-base rotate-90">&#x21b5;</p>
-                    <p className="text-base rotate-90">&#x21b5;</p>
-                    <p className="text-base rotate-90">&#x21b5;</p>
-                  </div>
                   <ul className="space-y-1">
-                    <li className="text-sm flex items-center gap-2 whitespace-nowrap">Indirect level analysis</li>
-                    {fractions.map((fraction, index) => {
+                    <li className="text-sm flex items-center gap-2 whitespace-nowrap">Prediction</li>
+                    {sources.map(({ label, fraction }) => {
                       const hasNoConfidence = (fraction?.confidence || 0) === 0;
-
-                      let lable = "";
-
-                      switch (index) {
-                        case 0:
-                          lable = "Direct";
-                          break;
-                        case 1:
-                          lable = "1 intermediary";
-                          break;
-                        case 2:
-                          lable = "2 intermediaries";
-                          break;
-                      }
-
                       return (
                         <li
-                          key={playerId + oponentId + index}
+                          key={playerId + oponentId + label}
                           className={classNames(
                             "text-sm flex items-center gap-2 whitespace-nowrap text-right",
                             hasNoConfidence && "line-through opacity-30",
                           )}
                         >
-                          <span className="opacity-70 font-light italic text-primary-text w-28">{lable}:</span>
+                          <span className="opacity-70 font-light italic text-primary-text w-28">{label}:</span>
                           <span>
                             {fmtNum((fraction?.fraction || 0) * 100)}% @{fmtNum((fraction?.confidence || 0) * 100)}%
                           </span>
@@ -305,7 +286,8 @@ export const PlayerPredictionsList = ({ playerId }: Props) => {
                   </ul>
                 </div>
                 <div className="text-xs pl-7 pt-4 font-light italic">
-                  *Prediction win% and confidence% are all age adjusted to promote recency bias.
+                  *Head-to-head: the games between the 2 players only. All games: a strength for each player, fitted to
+                  all games. This is the prediction at the top. Each game counts less as it gets older.
                 </div>
               </div>
             )}

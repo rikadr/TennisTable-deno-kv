@@ -113,13 +113,13 @@ describe("Simulations.expectedPlayerEloOverTime", () => {
     const tennisTable = buildTennisTable(overTimeGames);
     const leaderboardMap = tennisTable.leaderboard.getCachedLeaderboardMap();
     const pool = leaderboardMap.get("A")!.elo + leaderboardMap.get("B")!.elo;
-    const latest = expectedOverTime(tennisTable, "A").find(
-      (element) => element.time === T0 + overTimeGames.length - 1,
-    )!;
+    const latestOf = (playerId: string) =>
+      expectedOverTime(tennisTable, playerId).find((element) => element.time === T0 + overTimeGames.length - 1)!;
 
-    // A 50/50 record splits the pool of A and B evenly.
+    // The expected scores of A and B share the pool of A and B. A beat D, so A gets the larger part.
     expect(pool).toBeGreaterThan(2 * 1000 + 20);
-    expect(latest.elo).toBeCloseTo(pool / 2, 3);
+    expect(latestOf("A").elo + latestOf("B").elo).toBeCloseTo(pool, 3);
+    expect(latestOf("A").elo).toBeGreaterThan(pool / 2);
   });
 
   const lastGameTimeOf = (tennisTable: TennisTable, playerId: string) =>

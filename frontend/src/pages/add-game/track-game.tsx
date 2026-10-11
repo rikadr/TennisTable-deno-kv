@@ -19,7 +19,6 @@ import { BadSide, badSideLabel, gameWinnerSideOfBadSide, nextSetBadSide } from "
 import { TableSideDisplay } from "../../common/table-sides-display";
 import { LiveGamePredictionCard } from "../live-game/live-game-prediction-card";
 import { computeLiveWinPrediction } from "../live-game/live-game-win-probability";
-import { Predictions } from "../../client/client-db/predictions";
 import { WinPercentGraph } from "./win-percent-graph";
 import { session } from "../../services/auth";
 import { useLiveGameQuery, useUpdateLiveGameMutation } from "../live-game/use-live-game";
@@ -101,13 +100,10 @@ export const TrackGamePage: React.FC = () => {
   // Player 1's match-win chance at a given current-set score, from the same
   // model as the live prediction card below the score buttons.
   const computeWinPercent = (currentSet: SetPoint): number => {
-    const direct = context.predictions.getDirectFraction(player1 ?? "", player2 ?? "");
-    const oneLayer = context.predictions.getOneLayerFraction(player1 ?? "", player2 ?? "");
-    const twoLayer = context.predictions.getTwoLayerFraction(player1 ?? "", player2 ?? "");
-    const base = Predictions.combinePrioritizedFractions([direct, oneLayer, twoLayer]);
+    const base = context.predictions.getPredictedFraction(player1 ?? "", player2 ?? "");
     return computeLiveWinPrediction({
-      preGameWinChance: base.confidence > 0 ? base.fraction : 0.5,
-      preGameConfidence: base.confidence,
+      preGameWinChance: base?.fraction ?? 0.5,
+      preGameConfidence: base?.confidence ?? 0,
       setsWon: matchData.setsWon,
       currentSet,
       completedSets: matchData.setPoints ?? [],

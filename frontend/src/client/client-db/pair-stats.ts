@@ -5,7 +5,7 @@ export type ScoreStats = {
   ageAdjusted: { games: number; sets: number; points: number };
 };
 
-type Totals = { games: number; sets: number; points: number };
+export type Totals = { games: number; sets: number; points: number };
 
 type PairEntry = {
   /** Games between the two players, won or lost. The entry is removed at 0 */
@@ -119,6 +119,23 @@ export class PairStats {
         points: entry.anchored.points * factor,
       },
     };
+  }
+
+  /**
+   * Calls the callback once for each pair, with p1 before p2 in string order. The totals are
+   * relative to the anchor time: multiply them by `factor` for the age weights at the reference
+   * time. This reads all pairs without an object for each read. Do not change the totals.
+   */
+  forEachPair(
+    referenceTime: number,
+    callback: (p1: string, p2: string, p1Won: Readonly<Totals>, p2Won: Readonly<Totals>, factor: number) => void,
+  ) {
+    const factor = this.#factorAt(referenceTime);
+    for (const [p1, opponents] of this.#pairs) {
+      for (const [p2, entry] of opponents) {
+        if (p1 < p2) callback(p1, p2, entry.anchored, this.#pairs.get(p2)!.get(p1)!.anchored, factor);
+      }
+    }
   }
 
   /** The opponents of each player with at least 1 game */

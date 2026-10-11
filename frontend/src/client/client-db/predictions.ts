@@ -3,6 +3,7 @@ import { gameToGame, pointToGame, setToGame } from "./future-elo-probability-loo
 import { TennisTable } from "./tennis-table";
 import { PairFraction } from "./expected-scores";
 import { PairStats, ScoreStats } from "./pair-stats";
+import { PlayerStrengths } from "./player-strengths";
 
 export type Fraction = { fraction: number; confidence: number };
 
@@ -36,18 +37,19 @@ export const POINT_CONFIDENCE_CONFIG: ConfidenceConfig = {
 
 export class Predictions {
   /**
-   * `source` is the games to predict from, or stats that are already accumulated. Shared stats let a
-   * calculation for many reference times add or remove games instead of a new pass over all the games.
-   * The instance reads the stats when it needs them, so do not change shared stats while you use it.
+   * `source` is the games to predict from, or shared strengths with their stats. Shared strengths let
+   * a calculation for many reference times add or remove games instead of a new pass over all the
+   * games, and start each fit from the fit before. The instance reads the stats when it needs them,
+   * so do not change the shared stats while you use it.
    */
-  constructor(parent: TennisTable, referenceTime?: number, source?: Game[] | PairStats) {
+  constructor(parent: TennisTable, referenceTime?: number, source?: Game[] | PlayerStrengths) {
     this.parent = parent;
     this.referenceTime = referenceTime ?? Date.now();
     this.source = source ?? parent.games;
   }
   private parent: TennisTable;
   private referenceTime: number;
-  private source: Game[] | PairStats;
+  private source: Game[] | PlayerStrengths;
 
   // ---------------------------------------------------------------------------
   // Pairwise stats
@@ -56,7 +58,7 @@ export class Predictions {
   #pairStats: PairStats | undefined;
 
   private get pairStats(): PairStats {
-    if (this.source instanceof PairStats) return this.source;
+    if (this.source instanceof PlayerStrengths) return this.source.pairStats;
     if (!this.#pairStats) {
       this.#pairStats = new PairStats(this.referenceTime, this.source);
     }
@@ -78,22 +80,6 @@ export class Predictions {
     return this.pairStats.getTotalGames(playerId);
   }
 
-  /** Players who have played BOTH p1 and p2 — the only valid one-layer intermediaries */
-  getCommonOpponents(p1: string, p2: string): string[] {
-    const adj1 = this.adjacencyMap.get(p1);
-    const adj2 = this.adjacencyMap.get(p2);
-    if (!adj1 || !adj2) return [];
-
-    const [smaller, larger] = adj1.size <= adj2.size ? [adj1, adj2] : [adj2, adj1];
-    const result: string[] = [];
-    for (const id of smaller) {
-      if (larger.has(id) && id !== p1 && id !== p2) {
-        result.push(id);
-      }
-    }
-    return result;
-  }
-
   // ---------------------------------------------------------------------------
   // Direct stats lookups — O(1) replacement for per-game iteration
   // ---------------------------------------------------------------------------
@@ -103,12 +89,12 @@ export class Predictions {
     return this.pairStats.getStats(p1, p2, this.referenceTime);
   }
 
-  /** cache[p1][p2]. The two-layer prediction uses each direct fraction many times */
+  /** cache[p1][p2] */
   #directCache = new Map<string, Map<string, Fraction>>();
 
   /**
-   * Combined direct fraction (game+set+point levels merged) for p1 vs p2.
-   * Equivalent to FutureElo.getDirectFraction but with zero game iteration.
+   * The fraction from the games between p1 and p2 only, with the game, set and point levels merged.
+   * {@link getPredictedFraction} uses all games.
    */
   getDirectFraction(p1: string, p2: string): Fraction {
     let opponents = this.#directCache.get(p1);
@@ -118,8 +104,7 @@ export class Predictions {
     }
     let fraction = opponents.get(p2);
     if (!fraction) {
-      // Calculate each pair in one order, so the reverse is exactly the complement, also after rounding.
-      // A chain of a link near 0 and a link near 1 makes a small difference much larger.
+      // Calculate each pair in one order, so the reverse is exactly the complement, also after rounding
       if (p1 > p2) {
         const reverse = this.getDirectFraction(p2, p1);
         fraction =
@@ -245,155 +230,24 @@ export class Predictions {
   }
 
   // ---------------------------------------------------------------------------
-  // One-layer fraction (with adjacency pruning)
+  // Prediction from all games
   // ---------------------------------------------------------------------------
 
-  #oneLayerCache = new Map<string, Fraction>();
+  #strengths: PlayerStrengths | undefined;
 
-  private oneLayerCacheKey(p1: string, p2: string): string {
-    return `${p1}|${p2}`;
+  private get strengths(): PlayerStrengths {
+    if (this.source instanceof PlayerStrengths) return this.source;
+    this.#strengths ??= new PlayerStrengths(this.pairStats);
+    return this.#strengths;
   }
-
-  getOneLayerFraction(p1: string, p2: string): Fraction {
-    const key = this.oneLayerCacheKey(p1, p2);
-    const cached = this.#oneLayerCache.get(key);
-    if (cached) return cached;
-
-    const intermediaries = this.getCommonOpponents(p1, p2);
-    const fractions: Fraction[] = [];
-
-    for (const mid of intermediaries) {
-      const p1ToMid = this.getDirectFraction(p1, mid);
-      const midToP2 = this.getDirectFraction(mid, p2);
-      fractions.push(Predictions.linkFractions(p1ToMid, midToP2));
-    }
-
-    const result = Predictions.combineFractions(fractions);
-
-    this.#oneLayerCache.set(key, result);
-    this.#oneLayerCache.set(this.oneLayerCacheKey(p2, p1), {
-      fraction: 1 - result.fraction,
-      confidence: result.confidence,
-    });
-
-    return result;
-  }
-
-  // ---------------------------------------------------------------------------
-  // Two-layer fraction (with adjacency pruning)
-  // ---------------------------------------------------------------------------
-
-  #twoLayerCache = new Map<string, Fraction>();
-
-  /**
-   * The chains p1→a→b for each player b, with the first two links already linked. A prediction
-   * for p1 against many players uses the same chains, so they are calculated once for each p1.
-   */
-  #chainsFrom = new Map<string, Map<string, { via: string[]; fractions: number[]; confidences: number[] }>>();
-  /** The players that were p1 in a two-layer prediction before */
-  #twoLayerPlayers = new Set<string>();
-
-  #getChainsFrom(p1: string) {
-    const known = this.#chainsFrom.get(p1);
-    if (known) return known;
-
-    const chains = new Map<string, { via: string[]; fractions: number[]; confidences: number[] }>();
-    for (const a of this.adjacencyMap.get(p1) ?? []) {
-      const p1ToA = this.getDirectFraction(p1, a);
-      for (const b of this.adjacencyMap.get(a)!) {
-        if (b === p1) continue;
-        const link = Predictions.linkFractions(p1ToA, this.getDirectFraction(a, b));
-        // A contradictory link has no confidence, so it adds nothing to the combined fraction
-        if (link.confidence === 0) continue;
-        let toB = chains.get(b);
-        if (!toB) {
-          toB = { via: [], fractions: [], confidences: [] };
-          chains.set(b, toB);
-        }
-        toB.via.push(a);
-        toB.fractions.push(link.fraction);
-        toB.confidences.push(link.confidence);
-      }
-    }
-    this.#chainsFrom.set(p1, chains);
-    return chains;
-  }
-
-  /**
-   * All chains p1→a→b→p2, where each player in the chain played the next one, combined with
-   * {@link Predictions.combineFractions}. The chains p1→a→b→p2 and p1→b→a→p2 use different
-   * games, so both count.
-   */
-  getTwoLayerFraction(p1: string, p2: string): Fraction {
-    const key = `${p1}|${p2}`;
-    const cached = this.#twoLayerCache.get(key);
-    if (cached) return cached;
-
-    let weightedFractionSum = 0;
-    let weightedConfidenceSum = 0;
-    let totalWeight = 0;
-    // No object for each chain. A contradictory chain has no confidence, so it adds nothing
-    const addChain = (p1ToB: number, p1ToBConfidence: number, bToP2: Fraction) => {
-      const fraction = Predictions.linkFractionValues(p1ToB, bToP2.fraction);
-      if (fraction === undefined) return;
-      const confidence = p1ToBConfidence * bToP2.confidence;
-      weightedFractionSum += fraction * confidence;
-      weightedConfidenceSum += confidence * confidence;
-      totalWeight += confidence;
-    };
-
-    // The chains from p1 to all players pay off only when p1 is in more than 1 pair. The first
-    // pair of p1 links only the chains that end at p2. Both ways add the chains in the same order,
-    // so they give exactly the same result.
-    if (this.#chainsFrom.has(p1) || this.#twoLayerPlayers.has(p1)) {
-      const chains = this.#getChainsFrom(p1);
-      for (const b of this.adjacencyMap.get(p2) ?? []) {
-        if (b === p1) continue;
-        const toB = chains.get(b);
-        if (!toB) continue;
-        const bToP2 = this.getDirectFraction(b, p2);
-        for (let i = 0; i < toB.via.length; i++) {
-          if (toB.via[i] === p2) continue;
-          addChain(toB.fractions[i], toB.confidences[i], bToP2);
-        }
-      }
-    } else {
-      this.#twoLayerPlayers.add(p1);
-      const p1Opponents = this.adjacencyMap.get(p1) ?? [];
-      for (const b of this.adjacencyMap.get(p2) ?? []) {
-        if (b === p1) continue;
-        let bToP2: Fraction | undefined;
-        for (const a of p1Opponents) {
-          if (a === p2 || !this.adjacencyMap.get(a)!.has(b)) continue;
-          const link = Predictions.linkFractions(this.getDirectFraction(p1, a), this.getDirectFraction(a, b));
-          if (link.confidence === 0) continue;
-          bToP2 ??= this.getDirectFraction(b, p2);
-          addChain(link.fraction, link.confidence, bToP2);
-        }
-      }
-    }
-
-    const result =
-      totalWeight === 0
-        ? { fraction: 0, confidence: 0 }
-        : { fraction: weightedFractionSum / totalWeight, confidence: weightedConfidenceSum / totalWeight };
-
-    this.#twoLayerCache.set(key, result);
-    this.#twoLayerCache.set(`${p2}|${p1}`, {
-      fraction: 1 - result.fraction,
-      confidence: result.confidence,
-    });
-
-    return result;
-  }
-
-  // ---------------------------------------------------------------------------
-  // Combined prediction (all three layers)
-  // ---------------------------------------------------------------------------
 
   /** cache[p1][p2]. Null marks a pair with no prediction. Nested maps need no key string for each lookup */
   #predictedCache = new Map<string, Map<string, Fraction | null>>();
 
+  /**
+   * The chance that p1 wins against p2, from the strengths of all players fitted to all games.
+   * Undefined when a player has no games. See {@link PlayerStrengths}.
+   */
   getPredictedFraction(p1: string, p2: string): Fraction | undefined {
     let opponents = this.#predictedCache.get(p1);
     if (!opponents) {
@@ -403,12 +257,8 @@ export class Predictions {
     const cached = opponents.get(p2);
     if (cached !== undefined) return cached ?? undefined;
 
-    const direct = this.getDirectFraction(p1, p2);
-    const oneLayer = this.getOneLayerFraction(p1, p2);
-    const twoLayer = this.getTwoLayerFraction(p1, p2);
-
-    const combined = Predictions.combinePrioritizedFractions([direct, oneLayer, twoLayer]);
-    const result = combined.confidence === 0 ? undefined : combined;
+    this.strengths.fit(this.referenceTime);
+    const result = this.strengths.getPrediction(p1, p2);
     opponents.set(p2, result ?? null);
     return result;
   }
@@ -447,11 +297,8 @@ export class Predictions {
 
   clearCache() {
     this.#pairStats = undefined;
+    this.#strengths = undefined;
     this.#directCache.clear();
-    this.#oneLayerCache.clear();
-    this.#twoLayerCache.clear();
-    this.#chainsFrom.clear();
-    this.#twoLayerPlayers.clear();
     this.#predictedCache.clear();
   }
 
@@ -521,39 +368,5 @@ export class Predictions {
       fraction: weightedFractionSum / totalWeight,
       confidence: weightedConfidenceSum / totalWeight,
     };
-  }
-
-  static combineFractions(fractions: (Fraction | undefined)[]): Fraction {
-    let weightedFractionSum = 0;
-    let weightedConfidenceSum = 0;
-    let totalWeight = 0;
-
-    for (const item of fractions) {
-      if (item === undefined) continue;
-      weightedFractionSum += item.fraction * item.confidence;
-      weightedConfidenceSum += item.confidence * item.confidence;
-      totalWeight += item.confidence;
-    }
-
-    if (totalWeight === 0) return { fraction: 0, confidence: 0 };
-
-    return {
-      fraction: weightedFractionSum / totalWeight,
-      confidence: weightedConfidenceSum / totalWeight,
-    };
-  }
-
-  static linkFractions(fraction1: Fraction, fraction2: Fraction): Fraction {
-    const fraction = Predictions.linkFractionValues(fraction1.fraction, fraction2.fraction);
-    // A link of 0 and a link of 1 contradict each other, so the chain gives no information
-    if (fraction === undefined) return { fraction: 0.5, confidence: 0 };
-    return { fraction, confidence: fraction1.confidence * fraction2.confidence };
-  }
-
-  /** The Bradley-Terry link of two fractions. Undefined when a link of 0 meets a link of 1 */
-  static linkFractionValues(fraction1: number, fraction2: number): number | undefined {
-    const numerator = fraction1 * fraction2;
-    const denominator = numerator + (1 - fraction1) * (1 - fraction2);
-    return denominator === 0 ? undefined : numerator / denominator;
   }
 }
