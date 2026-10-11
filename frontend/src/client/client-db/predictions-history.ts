@@ -1,3 +1,4 @@
+import { PairStats, countGamesUpTo } from "./pair-stats";
 import { Predictions } from "./predictions";
 import { TennisTable } from "./tennis-table";
 
@@ -51,15 +52,21 @@ export class PredictionsHistory {
     const totalPoints = times.length;
     let processed = 0;
 
+    // The games are sorted, so the games up to a time are the first `gameCount` games.
+    // The times go backwards, so each time removes the games after it from the shared stats.
+    const allGames = this.parent.games;
+    let gameCount = countGamesUpTo(allGames, endTime);
+    const pairStats = new PairStats(endTime, allGames.slice(0, gameCount));
+
     for (let i = times.length - 1; i >= 0; i--) {
       const time = times[i];
       const periodStart = i > 0 ? times[i - 1] : 0;
 
-      const games = this.parent.games.filter((g) => g.playedAt <= time);
-      const gamesInPeriod = this.parent.games.filter((g) => g.playedAt > periodStart && g.playedAt <= time);
+      while (gameCount > 0 && allGames[gameCount - 1].playedAt > time) pairStats.remove(allGames[--gameCount]);
+      const gamesInPeriod = allGames.filter((g) => g.playedAt > periodStart && g.playedAt <= time);
       const gamesPlayed = gamesInPeriod.filter((g) => g.winner === playerId || g.loser === playerId).length;
 
-      const predictions = new Predictions(this.parent, time, games);
+      const predictions = new Predictions(this.parent, time, pairStats);
 
       const oponentsOutput: Record<string, Prediction> = {};
 
