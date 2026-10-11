@@ -274,9 +274,24 @@ export const EVEN_STEVEN_MIN_GAMES = 20;
 // full-house achievements use.
 export const FULL_COVERAGE_MIN_PLAYERS = 5;
 
+/** The output of the achievements calculation. The web worker calculates it and sends it to the main thread */
+export type AchievementsSnapshot = {
+  achievements: Map<string, Achievement[]>;
+  /** The progression of each player at the time of the calculation */
+  progression: Map<string, AchievementProgression>;
+};
+
+/**
+ * Where the achievements come from: "calculate" calculates them on the first
+ * read, "pending" has no achievements until the web worker sends a snapshot.
+ */
+export type AchievementsSource = "calculate" | "pending" | AchievementsSnapshot;
+
 export class Achievements {
   private parent: TennisTable;
   private hasCalculated = false;
+  #pending = false;
+  #progression: Map<string, AchievementProgression> | undefined;
 
   achievementMap: Map<string, Achievement[]> = new Map();
 
@@ -458,12 +473,33 @@ export class Achievements {
   // End of the RECORD_GRACE_PERIOD_DAYS after the league's first game.
   #recordGraceEndsAt = 0;
 
-  constructor(parent: TennisTable) {
+  constructor(parent: TennisTable, source: AchievementsSource = "calculate") {
     this.parent = parent;
+    if (source === "pending") {
+      this.#pending = true;
+    } else if (source !== "calculate") {
+      this.achievementMap = source.achievements;
+      this.#progression = source.progression;
+      this.hasCalculated = true;
+    }
+  }
+
+  /** False while the web worker calculates the achievements. Until then, the lists are empty and the progression is not correct */
+  get isReady(): boolean {
+    return !this.#pending;
+  }
+
+  /** Calculates the achievements and the progression of all players */
+  toSnapshot(): AchievementsSnapshot {
+    this.calculateAchievements();
+    const progression = new Map(
+      this.parent.allPlayers.map((player) => [player.id, this.getPlayerProgression(player.id)]),
+    );
+    return { achievements: this.achievementMap, progression };
   }
 
   calculateAchievements() {
-    if (this.hasCalculated === true) {
+    if (this.hasCalculated === true || this.#pending) {
       return;
     }
     // Clear existing achievements
@@ -3734,6 +3770,9 @@ export class Achievements {
 
   // Get player's progression towards all achievements
   getPlayerProgression(playerId: string): AchievementProgression {
+    const calculated = this.#progression?.get(playerId);
+    if (calculated) return calculated;
+
     const SIX_MONTHS = 6 * 30 * 24 * 60 * 60 * 1000;
     const ONE_YEAR = 365 * 24 * 60 * 60 * 1000;
     const TWO_YEARS = 2 * ONE_YEAR;
@@ -4371,9 +4410,10 @@ export class Achievements {
     const currentTime = Date.now();
     const recentWins: number[] = [];
 
-    // Iterate through games in reverse to find recent wins
-    for (let i = this.parent.games.length - 1; i >= 0; i--) {
-      const game = this.parent.games[i];
+    // Iterate through games in reverse to find recent wins. The getter sorts all games, so read it once
+    const games = this.parent.games;
+    for (let i = games.length - 1; i >= 0; i--) {
+      const game = games[i];
       if (game.winner === playerId && currentTime - game.playedAt <= NINETY_MINUTES) {
         recentWins.push(game.playedAt);
       } else if (game.winner === playerId || game.loser === playerId) {

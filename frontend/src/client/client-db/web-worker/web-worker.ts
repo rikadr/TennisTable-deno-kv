@@ -1,3 +1,4 @@
+import { AchievementsSnapshot } from "../achievements";
 import { EventType } from "../event-store/event-types";
 import { HallOfFameChange, hallOfFameChangeAroundGame } from "../game-standings";
 import { HallOfFameHistoryResult } from "../hall-of-fame-history";
@@ -50,7 +51,9 @@ export type WorkerMessage =
       type: "start-game-hall-of-fame-change";
       data: { events: EventType[]; playedAt: number; playerIds: string[] };
     }
-  | { type: "game-hall-of-fame-change-result"; data: { playedAt: number; changes: HallOfFameChange[] } };
+  | { type: "game-hall-of-fame-change-result"; data: { playedAt: number; changes: HallOfFameChange[] } }
+  | { type: "start-achievements"; data: { events: EventType[]; referenceTime?: number } }
+  | { type: "achievements-result"; data: { snapshot: AchievementsSnapshot } };
 
 // eslint-disable-next-line no-restricted-globals
 const scope = self as unknown as DedicatedWorkerGlobalScope;
@@ -60,6 +63,12 @@ scope.addEventListener("message", (event) => {
 
 function handleWorkerMessage(message: WorkerMessage) {
   switch (message.type) {
+    case "start-achievements": {
+      const { events, referenceTime } = message.data;
+      const snapshot = new TennisTable({ events, referenceTime }).achievements.toSnapshot();
+      postWorkerMessage({ type: "achievements-result", data: { snapshot } });
+      break;
+    }
     case "start-expected-leaderboard": {
       const tennisTableForLeaderboard = new TennisTable({
         events: message.data.events,

@@ -64,6 +64,7 @@ import { PerformancePage } from "./pages/performance/performance-page";
 import { NotFoundPage } from "./pages/not-found-page";
 import { NewVersionChecker } from "./wrappers/new-version-checker";
 import { ToastProvider } from "./wrappers/toast-provider";
+import { WaitForAchievements } from "./common/wait-for-achievements";
 
 const RequireAuth: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   if (!session.isAuthenticated) {
@@ -134,15 +135,36 @@ function App() {
                             }
                           />
                           <Route path="/recent-games" element={<RecentGamesPage />} />
-                          <Route path="/achievements" element={<AchievementsPage />} />
+                          <Route
+                            path="/achievements"
+                            element={
+                              <WaitForAchievements>
+                                <AchievementsPage />
+                              </WaitForAchievements>
+                            }
+                          />
                           <Route path="/changelog">
                             <Route index element={<ChangelogPage />} />
                             <Route path=":slug" element={<ChangelogPostPage />} />
                           </Route>
                           <Route path="/hall-of-fame">
-                            <Route index element={<HallOfFamePage />} />
+                            <Route
+                              index
+                              element={
+                                <WaitForAchievements>
+                                  <HallOfFamePage />
+                                </WaitForAchievements>
+                              }
+                            />
                             <Route path="leaderboard" element={<HallOfFameLeaderboardPage />} />
-                            <Route path=":playerId" element={<HallOfFamePlayerPage />} />
+                            <Route
+                              path=":playerId"
+                              element={
+                                <WaitForAchievements>
+                                  <HallOfFamePlayerPage />
+                                </WaitForAchievements>
+                              }
+                            />
                           </Route>
                           <Route path="/simulations">
                             <Route index element={<SimulationsPage />} />

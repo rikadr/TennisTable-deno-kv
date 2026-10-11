@@ -42,6 +42,25 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
+    slug: "achievements-in-web-worker",
+    title: "The app calculates achievements in the background",
+    date: "2026-10-11",
+    tags: ["technical"],
+    summary:
+      "A web worker calculates the achievements, so the pages show without waiting for them. The achievements and the Hall of Fame show when the calculation is done.",
+    body: [
+      text(
+        "The app calculates all achievements, and the progression of all players, in a web worker. Before, the browser calculated them when you opened a page, and the page stopped until the calculation was done.",
+      ),
+      text(
+        'While the calculation runs, the pages that need achievements show "Calculating achievements…". These are the achievements pages, the achievements tab of a player, the recent achievements on the dashboard and the Hall of Fame.',
+      ),
+      text(
+        "The progression of all players is also 7 times faster. With real data, it takes 0.2 seconds, not 1.5 seconds.",
+      ),
+    ],
+  },
+  {
     slug: "record-grace-period",
     title: "No awards for 5 league records in the first 7 days of a league",
     date: "2026-10-10",

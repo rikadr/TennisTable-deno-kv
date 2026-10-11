@@ -290,6 +290,8 @@ export class Predictions {
    * for p1 against many players uses the same chains, so they are calculated once for each p1.
    */
   #chainsFrom = new Map<string, Map<string, { via: string[]; fractions: number[]; confidences: number[] }>>();
+  /** The players that were p1 in a two-layer prediction before */
+  #twoLayerPlayers = new Set<string>();
 
   #getChainsFrom(p1: string) {
     const known = this.#chainsFrom.get(p1);
@@ -327,24 +329,47 @@ export class Predictions {
     const cached = this.#twoLayerCache.get(key);
     if (cached) return cached;
 
-    const chains = this.#getChainsFrom(p1);
     let weightedFractionSum = 0;
     let weightedConfidenceSum = 0;
     let totalWeight = 0;
-    for (const b of this.adjacencyMap.get(p2) ?? []) {
-      if (b === p1) continue;
-      const toB = chains.get(b);
-      if (!toB) continue;
-      const bToP2 = this.getDirectFraction(b, p2);
-      for (let i = 0; i < toB.via.length; i++) {
-        if (toB.via[i] === p2) continue;
-        // No object for each chain. A contradictory chain has no confidence, so it adds nothing
-        const fraction = Predictions.linkFractionValues(toB.fractions[i], bToP2.fraction);
-        if (fraction === undefined) continue;
-        const confidence = toB.confidences[i] * bToP2.confidence;
-        weightedFractionSum += fraction * confidence;
-        weightedConfidenceSum += confidence * confidence;
-        totalWeight += confidence;
+    // No object for each chain. A contradictory chain has no confidence, so it adds nothing
+    const addChain = (p1ToB: number, p1ToBConfidence: number, bToP2: Fraction) => {
+      const fraction = Predictions.linkFractionValues(p1ToB, bToP2.fraction);
+      if (fraction === undefined) return;
+      const confidence = p1ToBConfidence * bToP2.confidence;
+      weightedFractionSum += fraction * confidence;
+      weightedConfidenceSum += confidence * confidence;
+      totalWeight += confidence;
+    };
+
+    // The chains from p1 to all players pay off only when p1 is in more than 1 pair. The first
+    // pair of p1 links only the chains that end at p2. Both ways add the chains in the same order,
+    // so they give exactly the same result.
+    if (this.#chainsFrom.has(p1) || this.#twoLayerPlayers.has(p1)) {
+      const chains = this.#getChainsFrom(p1);
+      for (const b of this.adjacencyMap.get(p2) ?? []) {
+        if (b === p1) continue;
+        const toB = chains.get(b);
+        if (!toB) continue;
+        const bToP2 = this.getDirectFraction(b, p2);
+        for (let i = 0; i < toB.via.length; i++) {
+          if (toB.via[i] === p2) continue;
+          addChain(toB.fractions[i], toB.confidences[i], bToP2);
+        }
+      }
+    } else {
+      this.#twoLayerPlayers.add(p1);
+      const p1Opponents = this.adjacencyMap.get(p1) ?? [];
+      for (const b of this.adjacencyMap.get(p2) ?? []) {
+        if (b === p1) continue;
+        let bToP2: Fraction | undefined;
+        for (const a of p1Opponents) {
+          if (a === p2 || !this.adjacencyMap.get(a)!.has(b)) continue;
+          const link = Predictions.linkFractions(this.getDirectFraction(p1, a), this.getDirectFraction(a, b));
+          if (link.confidence === 0) continue;
+          bToP2 ??= this.getDirectFraction(b, p2);
+          addChain(link.fraction, link.confidence, bToP2);
+        }
       }
     }
 
@@ -426,6 +451,7 @@ export class Predictions {
     this.#oneLayerCache.clear();
     this.#twoLayerCache.clear();
     this.#chainsFrom.clear();
+    this.#twoLayerPlayers.clear();
     this.#predictedCache.clear();
   }
 

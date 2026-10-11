@@ -28,6 +28,7 @@ import { AdminGamesTab } from "./games";
 import { PlayerDiversityChart } from "./player-diversity-chart";
 import { PlayerGameCount } from "./player-game-count";
 import { HallOfFameCategoryBalance } from "./hall-of-fame-category-balance";
+import { WaitForAchievements } from "../../common/wait-for-achievements";
 
 type TabType = "stats" | "games" | "players" | "users" | "events" | "local";
 const tabs: { id: TabType; label: string }[] = [
@@ -194,12 +195,16 @@ export const AdminPage: React.FC = () => {
 
           <GamesPerWeekdayChart />
           <GamesPerTimeChart />
-          <TopGamingDays />
-          <TopPlayers />
+          <WaitForAchievements>
+            <TopGamingDays />
+            <TopPlayers />
+          </WaitForAchievements>
           <TopPlayerPairings />
           <PlayerGameCount />
           <PlayerDiversityChart />
-          <HallOfFameCategoryBalance />
+          <WaitForAchievements>
+            <HallOfFameCategoryBalance />
+          </WaitForAchievements>
           <h2>Total distribution of games played</h2>
           <AllPlayerGamesDistrubution />
         </>

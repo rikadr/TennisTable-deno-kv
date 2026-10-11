@@ -5,6 +5,7 @@ import { TennisTable } from "../client/client-db/tennis-table";
 import { EventType } from "../client/client-db/event-store/event-types";
 import { PingPongLoader } from "../common/ping-loader";
 import { useAutoSeedTournaments } from "../hooks/use-auto-seed-tournaments";
+import { useAchievementsSnapshot } from "../hooks/use-achievements-snapshot";
 
 export const EVENTS_LOCAL_STORAGE_KEY = "tennis-table-events";
 export const EVENTS_CACHE_TIMESTAMP_KEY = "tennis-table-events-cache-time";
@@ -132,11 +133,14 @@ export const EventDbWrapper: React.FC<{
 };
 
 const EventDbInner: React.FC<{ events: EventType[]; children: React.ReactNode }> = ({ events, children }) => {
+  // The achievements come from a web worker. While new events are calculated, the
+  // achievements of the earlier events stay, so the pages do not go empty.
+  const { snapshot } = useAchievementsSnapshot(events);
   const tennisTable = useMemo(() => {
-    const tennisTableClass = new TennisTable({ events });
+    const tennisTableClass = new TennisTable({ events, achievements: snapshot ?? "pending" });
     window.tennisTable = tennisTableClass;
     return tennisTableClass;
-  }, [events]);
+  }, [events, snapshot]);
 
   useAutoSeedTournaments(tennisTable);
 

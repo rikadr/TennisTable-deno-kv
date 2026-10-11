@@ -45,7 +45,8 @@
     "moduleNameMapper": {
       "^react-router/dom$": "react-router/dist/development/dom-export.js",
       "^.+\\.module\\.(css|sass|scss)$": "identity-obj-proxy",
-      "^.+\\.(css|sass|scss)$": "<rootDir>/src/__mocks__/styleMock.js"
+      "^.+\\.(css|sass|scss)$": "<rootDir>/src/__mocks__/styleMock.js",
+      "^.+/create-modern-worker$": "<rootDir>/src/__mocks__/create-modern-worker.ts"
     },
     "collectCoverageFrom": [
       "src/**/*.{ts,tsx}",
