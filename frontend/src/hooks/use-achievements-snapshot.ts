@@ -29,16 +29,27 @@ export function useAchievementsSnapshot(
   useEffect(() => {
     if (events === undefined) return;
 
-    const worker = createModernWorker();
-    if (!worker) {
-      // Fallback: calculate on the main thread when workers are unavailable.
+    const calculateOnMainThread = () =>
       setResult({
         events,
         referenceTime,
         snapshot: new TennisTable({ events, referenceTime }).achievements.toSnapshot(),
       });
+
+    const worker = createModernWorker();
+    if (!worker) {
+      // Fallback: calculate on the main thread when workers are unavailable.
+      calculateOnMainThread();
       return;
     }
+
+    // Without the fallback, a worker that fails to load or to calculate leaves the pages waiting
+    const onError = () => {
+      worker.terminate();
+      calculateOnMainThread();
+    };
+    worker.addEventListener("error", onError);
+    worker.addEventListener("messageerror", onError);
 
     worker.addEventListener("message", (e) => {
       const message = e.data as WorkerMessage;

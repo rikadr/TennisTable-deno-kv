@@ -2,7 +2,7 @@ import { useEffect, useRef, useCallback, useState } from "react";
 import { WorkerMessage } from "../client/client-db/web-worker/web-worker";
 import { useEventDbContext } from "../wrappers/event-db-context";
 import { TournamentPredictionResult } from "../client/client-db/tournaments/prediction";
-import { createModernWorker } from "./use-elo-simulation-worker";
+import { createModernWorker } from "./create-modern-worker";
 
 export function useTournamentPredictionWorker() {
   const context = useEventDbContext();

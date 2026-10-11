@@ -156,7 +156,14 @@ function App() {
                                 </WaitForAchievements>
                               }
                             />
-                            <Route path="leaderboard" element={<HallOfFameLeaderboardPage />} />
+                            <Route
+                              path="leaderboard"
+                              element={
+                                <WaitForAchievements>
+                                  <HallOfFameLeaderboardPage />
+                                </WaitForAchievements>
+                              }
+                            />
                             <Route
                               path=":playerId"
                               element={

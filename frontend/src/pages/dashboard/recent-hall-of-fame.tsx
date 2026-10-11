@@ -12,7 +12,8 @@ export const RecentHallOfFame: React.FC = () => {
     .filter(isRecentlyRetired)
     .sort((a, b) => b.updatedAt - a.updatedAt);
 
-  if (recentlyRetired.length === 0) return null;
+  // The score needs the achievements. The card shows nothing until they arrive
+  if (recentlyRetired.length === 0 || !context.achievements.isReady) return null;
 
   const multiple = recentlyRetired.length > 1;
 

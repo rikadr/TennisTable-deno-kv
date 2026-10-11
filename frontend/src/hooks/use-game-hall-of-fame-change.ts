@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { HallOfFameChange, hallOfFameChangeAroundGame } from "../client/client-db/game-standings";
 import { WorkerMessage } from "../client/client-db/web-worker/web-worker";
 import { useEventDbContext } from "../wrappers/event-db-context";
-import { createModernWorker } from "./use-elo-simulation-worker";
+import { createModernWorker } from "./create-modern-worker";
 
 export type HallOfFameChanges = {
   /** The score before and after the game, by player id. Empty while pending. */

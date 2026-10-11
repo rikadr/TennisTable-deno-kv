@@ -3,8 +3,6 @@ import { WorkerMessage } from "../client/client-db/web-worker/web-worker";
 import { useEventDbContext } from "../wrappers/event-db-context";
 import { createModernWorker } from "./create-modern-worker";
 
-export { createModernWorker };
-
 export function useEloSimulationWorker() {
   const context = useEventDbContext();
 

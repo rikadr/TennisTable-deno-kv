@@ -59,6 +59,17 @@ describe("Achievements snapshot", () => {
     expect([...snapshot.progression.keys()].sort()).toEqual(["a", "b", "c"]);
   });
 
+  it("waits for a new snapshot when the snapshot has no progression for a player of the events", () => {
+    const snapshot = new TennisTable({ events }).achievements.toSnapshot();
+    const withNewPlayer = new TennisTable({
+      events: [...events, player("d", START + 40 * DAY)],
+      achievements: snapshot,
+    });
+
+    expect(withNewPlayer.achievements.isReady).toBe(false);
+    expect(withNewPlayer.achievements.achievementMap.size).toBe(0);
+  });
+
   it("has no achievements while the snapshot is pending", () => {
     const pending = new TennisTable({ events, achievements: "pending" });
     pending.achievements.calculateAchievements();

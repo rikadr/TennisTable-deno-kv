@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { TennisTable } from "../../client/client-db/tennis-table";
 import { WorkerMessage } from "../../client/client-db/web-worker/web-worker";
-import { createModernWorker } from "../../hooks/use-elo-simulation-worker";
+import { createModernWorker } from "../../hooks/create-modern-worker";
 import { classNames } from "../../common/class-names";
 import { PillSelect } from "../../common/pill-select";
 import { fmtNum } from "../../common/number-utils";

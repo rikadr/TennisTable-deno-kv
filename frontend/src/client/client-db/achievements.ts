@@ -475,7 +475,12 @@ export class Achievements {
 
   constructor(parent: TennisTable, source: AchievementsSource = "calculate") {
     this.parent = parent;
-    if (source === "pending") {
+    // A snapshot without a player of the events is from before that player was
+    // created. The progression of that player needs the records, which only the
+    // calculation has, so the achievements wait for a new snapshot.
+    const snapshotMissesPlayer =
+      typeof source === "object" && parent.allPlayers.some((player) => !source.progression.has(player.id));
+    if (source === "pending" || snapshotMissesPlayer) {
       this.#pending = true;
     } else if (source !== "calculate") {
       this.achievementMap = source.achievements;
