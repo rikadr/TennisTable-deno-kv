@@ -1,6 +1,6 @@
 import { Elo } from "./elo";
 import { solveExpectedScores } from "./expected-scores";
-import { PairStats, countGamesUpTo } from "./pair-stats";
+import { PairStats } from "./pair-stats";
 import { Predictions } from "./predictions";
 import { TennisTable } from "./tennis-table";
 
@@ -96,13 +96,10 @@ export class Simulations {
 
     // Latest first, so the most recent part of the graph shows first
     const times = sortedPlayerGameTimes.toReversed();
-    // The games are sorted, so the games up to a time are the first `gameCount` games.
-    // The times go backwards, so each time removes the games after it from the shared stats.
-    let gameCount = countGamesUpTo(allGames, times[0]);
-    const pairStats = new PairStats(times[0], allGames.slice(0, gameCount));
+    const pairStats = new PairStats(times[0], allGames);
     times.forEach((gameTime, index) => {
-      while (gameCount > 0 && allGames[gameCount - 1].playedAt > gameTime) pairStats.remove(allGames[--gameCount]);
-      const relevantGames = allGames.slice(0, gameCount);
+      pairStats.rewindTo(gameTime);
+      const relevantGames = allGames.slice(0, pairStats.gameCount);
       const predictions = new Predictions(this.parent, gameTime, pairStats);
       // A retired player counts as active in their own graph, from the moment they have enough games to be ranked
       const isRankedAtTime = predictions.getPlayerTotalGames(playerId) >= this.parent.client.gameLimitForRanked;

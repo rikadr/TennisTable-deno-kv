@@ -1,5 +1,5 @@
 import { Game } from "../event-store/projectors/games-projector";
-import { AGE_HALF_LIFE_DAYS, PairStats, countGamesUpTo } from "../pair-stats";
+import { AGE_HALF_LIFE_DAYS, PairStats } from "../pair-stats";
 
 const DAY = 24 * 60 * 60 * 1000;
 const START = Date.UTC(2025, 0, 1);
@@ -71,17 +71,19 @@ describe("PairStats", () => {
     }
   });
 
-  it("gives the same stats after a removal as stats built without the game", () => {
+  it("gives the same stats after a rewind as stats built without the later games", () => {
     const stats = new PairStats(START + 400 * DAY, GAMES);
-    stats.remove(GAMES[5]);
-    stats.remove(GAMES[4]);
+    stats.rewindTo(START + 350 * DAY);
+    stats.rewindTo(START + 150 * DAY);
     const time = START + 150 * DAY;
+
+    expect(stats.gameCount).toBe(4);
     expectSameStats(stats, new PairStats(time, GAMES.slice(0, 4)), time);
   });
 
   it("removes a pair and a player with their last game", () => {
     const stats = new PairStats(START + 400 * DAY, GAMES);
-    stats.remove(GAMES[5]);
+    stats.rewindTo(START + 399 * DAY);
 
     expect(stats.opponents.has("D")).toBe(false);
     expect(stats.opponents.get("A")?.has("D")).toBe(false);
@@ -91,10 +93,12 @@ describe("PairStats", () => {
 
   it("gives exactly 0 for a total when the last game that added to it is removed", () => {
     // With these days, subtracting the weights in the reverse order leaves a rounding error
-    const scored = [game(2, 3, "A", "B"), game(3, 7, "A", "B")];
-    const stats = new PairStats(START + 400 * DAY, [game(1, 0, "A", "B", false), ...scored]);
-    stats.remove(scored[1]);
-    stats.remove(scored[0]);
+    const stats = new PairStats(START + 100 * DAY, [
+      game(1, 0, "A", "B", false),
+      game(2, 3, "A", "B"),
+      game(3, 7, "A", "B"),
+    ]);
+    stats.rewindTo(START + 1 * DAY);
     const time = START + 1 * DAY;
 
     expect(stats.getStats("A", "B", time).ageAdjusted.sets).toBe(0);
@@ -108,12 +112,24 @@ describe("PairStats", () => {
 
     expect(stats.getStats("A", "B", anchor).ageAdjusted.games).toBe(1);
   });
-});
 
-describe("countGamesUpTo", () => {
-  it("counts the sorted games at or before the time", () => {
-    expect(countGamesUpTo(GAMES, START + 100 * DAY)).toBe(4);
-    expect(countGamesUpTo(GAMES, START - 1)).toBe(0);
-    expect(countGamesUpTo(GAMES, START + 999 * DAY)).toBe(6);
+  it("keeps the stats exact when a rewind goes back over many years", () => {
+    // 1 old game, and 500 later games over 15 years. Without a new anchor time, the
+    // rounding error of the removals is multiplied by 2^(15 years / half-life)
+    const games = [game(0, 0, "A", "B"), ...Array.from({ length: 500 }, (_, i) => game(i + 1, 1 + i * 11, "A", "B"))];
+    const stats = new PairStats(START + 5500 * DAY, games);
+    for (let day = 5500; day >= 1; day -= 7) stats.rewindTo(START + day * DAY);
+    const time = START + 1 * DAY;
+
+    expect(stats.gameCount).toBe(2);
+    expectSameStats(stats, new PairStats(time, games.slice(0, 2)), time);
+  });
+
+  it("removes the games after the time at the first rewind", () => {
+    const stats = new PairStats(START + 100 * DAY, GAMES);
+    stats.rewindTo(START + 100 * DAY);
+
+    expect(stats.gameCount).toBe(4);
+    expectSameStats(stats, new PairStats(START + 100 * DAY, GAMES.slice(0, 4)), START + 100 * DAY);
   });
 });

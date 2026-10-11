@@ -1,4 +1,4 @@
-import { PairStats, countGamesUpTo } from "./pair-stats";
+import { PairStats } from "./pair-stats";
 import { Predictions } from "./predictions";
 import { TennisTable } from "./tennis-table";
 
@@ -27,7 +27,8 @@ export class PredictionsHistory {
     callback: (data: { entry: PredictionHistoryEntry; progress: number }) => void,
     timesCallback?: (times: number[]) => void,
   ): void {
-    const playersFirstGame = this.parent.games.find((g) => g.winner === playerId || g.loser === playerId);
+    const allGames = this.parent.games;
+    const playersFirstGame = allGames.find((g) => g.winner === playerId || g.loser === playerId);
     if (!playersFirstGame) return;
 
     const startTime = playersFirstGame.playedAt;
@@ -52,17 +53,13 @@ export class PredictionsHistory {
     const totalPoints = times.length;
     let processed = 0;
 
-    // The games are sorted, so the games up to a time are the first `gameCount` games.
-    // The times go backwards, so each time removes the games after it from the shared stats.
-    const allGames = this.parent.games;
-    let gameCount = countGamesUpTo(allGames, endTime);
-    const pairStats = new PairStats(endTime, allGames.slice(0, gameCount));
+    const pairStats = new PairStats(endTime, allGames);
 
     for (let i = times.length - 1; i >= 0; i--) {
       const time = times[i];
       const periodStart = i > 0 ? times[i - 1] : 0;
 
-      while (gameCount > 0 && allGames[gameCount - 1].playedAt > time) pairStats.remove(allGames[--gameCount]);
+      pairStats.rewindTo(time);
       const gamesInPeriod = allGames.filter((g) => g.playedAt > periodStart && g.playedAt <= time);
       const gamesPlayed = gamesInPeriod.filter((g) => g.winner === playerId || g.loser === playerId).length;
 

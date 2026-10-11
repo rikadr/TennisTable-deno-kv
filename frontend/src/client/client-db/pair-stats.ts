@@ -24,27 +24,29 @@ const EMPTY_STATS: ScoreStats = {
 };
 
 /** The number of games played at or before the time. The games must be sorted by time */
-export function countGamesUpTo(games: Game[], time: number): number {
+function countGamesUpTo(games: Game[], time: number): number {
   let count = games.length;
   while (count > 0 && games[count - 1].playedAt > time) count--;
   return count;
 }
 
 /**
- * The accumulated stats of each player against each opponent. Games can be
- * added and removed one at a time, and the age-adjusted stats can be read at
- * any reference time without a new pass over the games.
+ * The accumulated stats of each player against each opponent. The
+ * age-adjusted stats can be read at any reference time without a new pass over
+ * the games, and `rewindTo` removes the latest games one at a time.
  *
  * The age weight decays exponentially: 2^(-(T - t) / h) = 2^(-(A - t) / h) * 2^((A - T) / h),
  * for game time t, reference time T and anchor time A. Each game adds the first
  * factor, which does not change with T. A read multiplies by the second factor.
  *
  * A game after the anchor time counts as played at the anchor time, because the
- * age of a game is never below 0. Use an anchor time at or after the last game,
- * so that this has no effect when the reference time is earlier.
+ * age of a game is never below 0.
  */
 export class PairStats {
-  readonly anchorTime: number;
+  #anchorTime: number;
+  #games: Game[];
+  /** The stats hold the first `gameCount` games */
+  #gameCount: number;
   /** map[playerA][playerB] = playerA's accumulated stats in all games against playerB */
   #pairs = new Map<string, Map<string, PairEntry>>();
   #opponents = new Map<string, Set<string>>();
@@ -52,17 +54,37 @@ export class PairStats {
   #factor = 1;
 
   constructor(anchorTime: number, games: Game[] = []) {
-    this.anchorTime = anchorTime;
-    for (const game of games) this.add(game);
+    this.#anchorTime = anchorTime;
+    this.#games = games;
+    this.#gameCount = games.length;
+    this.#build();
   }
 
-  add(game: Game) {
-    this.#update(game, 1);
+  /** The stats hold this number of games from the start of the games given to the constructor */
+  get gameCount(): number {
+    return this.#gameCount;
   }
 
-  /** Removes a game that was added before */
-  remove(game: Game) {
-    this.#update(game, -1);
+  /**
+   * Removes the games after the time. The games given to the constructor must
+   * be sorted by time, and each call must use a time at or before the time of
+   * the call before.
+   *
+   * A removal subtracts the weight that the game added, which leaves a small
+   * rounding error. A read far before the anchor time multiplies that error, so
+   * the stats are built again with a new anchor time before the factor gets
+   * larger than 2.
+   */
+  rewindTo(time: number) {
+    if (this.#anchorTime - time > AGE_HALF_LIFE_DAYS * DAY_MS) {
+      this.#anchorTime = time;
+      this.#gameCount = countGamesUpTo(this.#games, time);
+      this.#build();
+      return;
+    }
+    while (this.#gameCount > 0 && this.#games[this.#gameCount - 1].playedAt > time) {
+      this.#update(this.#games[--this.#gameCount], -1);
+    }
   }
 
   /** p1's stats against p2, with the age weights at the reference time */
@@ -71,7 +93,7 @@ export class PairStats {
     if (!entry) return EMPTY_STATS;
     const factor = this.#factorAt(referenceTime);
     return {
-      raw: { ...entry.raw },
+      raw: entry.raw,
       ageAdjusted: {
         games: entry.anchored.games * factor,
         sets: entry.anchored.sets * factor,
@@ -92,16 +114,23 @@ export class PairStats {
     return total;
   }
 
+  #build() {
+    this.#pairs.clear();
+    this.#opponents.clear();
+    this.#factorTime = undefined;
+    for (let i = 0; i < this.#gameCount; i++) this.#update(this.#games[i], 1);
+  }
+
   #factorAt(referenceTime: number): number {
     if (this.#factorTime !== referenceTime) {
       this.#factorTime = referenceTime;
-      this.#factor = Math.pow(2, (this.anchorTime - referenceTime) / DAY_MS / AGE_HALF_LIFE_DAYS);
+      this.#factor = Math.pow(2, (this.#anchorTime - referenceTime) / DAY_MS / AGE_HALF_LIFE_DAYS);
     }
     return this.#factor;
   }
 
   #update(game: Game, sign: 1 | -1) {
-    const ageInDays = Math.max(this.anchorTime - game.playedAt, 0) / DAY_MS;
+    const ageInDays = Math.max(this.#anchorTime - game.playedAt, 0) / DAY_MS;
     const weight = sign * Math.pow(2, -ageInDays / AGE_HALF_LIFE_DAYS);
     const winner = this.#entry(game.winner, game.loser);
     const loser = this.#entry(game.loser, game.winner);
@@ -135,14 +164,15 @@ export class PairStats {
   }
 
   /**
-   * A subtracted weight can leave a small rounding error instead of 0. A
-   * prediction reads any total above 0 as data, so a total with no games must be
-   * exactly 0. The raw totals are integers, so they have no rounding errors.
+   * A subtracted weight can leave a small rounding error instead of 0, or a
+   * value below 0. A prediction reads any total above 0 as data, so a total with
+   * no games must be exactly 0. The raw totals are integers, so they have no
+   * rounding errors.
    */
   static #clearRoundingErrors(entry: PairEntry) {
-    if (entry.raw.games === 0) entry.anchored.games = 0;
-    if (entry.raw.sets === 0) entry.anchored.sets = 0;
-    if (entry.raw.points === 0) entry.anchored.points = 0;
+    for (const key of ["games", "sets", "points"] as const) {
+      entry.anchored[key] = entry.raw[key] === 0 ? 0 : Math.max(entry.anchored[key], 0);
+    }
   }
 
   #entry(p1: string, p2: string): PairEntry {
