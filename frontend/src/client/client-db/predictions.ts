@@ -246,7 +246,8 @@ export class Predictions {
 
   /**
    * The chance that p1 wins against p2, from the strengths of all players fitted to all games.
-   * Undefined when a player has no games. See {@link PlayerStrengths}.
+   * Undefined when a player has no games, or when no chain of opponents joins the 2 players.
+   * See {@link PlayerStrengths}.
    */
   getPredictedFraction(p1: string, p2: string): Fraction | undefined {
     let opponents = this.#predictedCache.get(p1);
@@ -257,8 +258,15 @@ export class Predictions {
     const cached = opponents.get(p2);
     if (cached !== undefined) return cached ?? undefined;
 
-    this.strengths.fit(this.referenceTime);
-    const result = this.strengths.getPrediction(p1, p2);
+    // Calculate each pair in one order, so the reverse is exactly the complement
+    let result: Fraction | undefined;
+    if (p1 > p2) {
+      const reverse = this.getPredictedFraction(p2, p1);
+      result = reverse && { fraction: 1 - reverse.fraction, confidence: reverse.confidence };
+    } else {
+      this.strengths.fit(this.referenceTime);
+      result = this.strengths.getPrediction(p1, p2);
+    }
     opponents.set(p2, result ?? null);
     return result;
   }

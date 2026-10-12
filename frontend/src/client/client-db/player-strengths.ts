@@ -70,8 +70,16 @@ export class PlayerStrengths {
 
   #index = new Map<string, number>();
   #theta = new Float64Array(0);
-  /** The lower triangular Cholesky factor of the Hessian at the fitted strengths, n by n */
+  /** The connected group of each player. 2 players in different groups have no chain of opponents */
+  #group: Int32Array = new Int32Array(0);
+  /**
+   * The lower triangular Cholesky factor of the Hessian of the last Newton step, n by n. That step
+   * moved no strength more than the tolerance, so the factor is also correct at the fitted strengths.
+   */
   #cholesky = new Float64Array(0);
+  /** H^-1, calculated at the second variance of a fit. A single pair needs only 1 forward substitution */
+  #inverse: Float64Array | undefined;
+  #varianceReads = 0;
 
   /**
    * Fits the strengths to the stats at the reference time. A second call with the same stats and
@@ -147,16 +155,15 @@ export class PlayerStrengths {
 
     this.#theta = theta;
     this.#cholesky = hessian;
+    this.#inverse = undefined;
+    this.#varianceReads = 0;
+    this.#group = PlayerStrengths.#groups(n, pairA, pairB);
     this.#strengths = new Map(ids.map((id, i) => [id, theta[i]]));
   }
 
-  /** The fitted strength of the player. Undefined for a player with no games */
-  getStrength(playerId: string): number | undefined {
-    return this.#strengths.get(playerId);
-  }
-
   /**
-   * The chance that p1 wins against p2, from the last fit. Undefined when a player has no games.
+   * The chance that p1 wins against p2, from the last fit. Undefined when a player has no games, or
+   * when no chain of opponents joins the 2 players. Then only the prior separates their strengths.
    *
    * The fraction includes the uncertainty of the gap, so an uncertain gap gives a fraction nearer
    * to 50%. The confidence is from the evidence for the gap, counted as games between 2 even players.
@@ -164,7 +171,7 @@ export class PlayerStrengths {
   getPrediction(p1: string, p2: string): Fraction | undefined {
     const a = this.#index.get(p1);
     const b = this.#index.get(p2);
-    if (a === undefined || b === undefined || a === b) return undefined;
+    if (a === undefined || b === undefined || a === b || this.#group[a] !== this.#group[b]) return undefined;
 
     const variance = this.#gapVariance(a, b);
     const gap = this.#theta[a] - this.#theta[b];
@@ -180,8 +187,12 @@ export class PlayerStrengths {
   /** The posterior variance of strength a - strength b: e' H^-1 e, with e = 1 at a and -1 at b */
   #gapVariance(a: number, b: number): number {
     const n = this.#theta.length;
-    const factor = this.#cholesky;
+    if (++this.#varianceReads === 2) this.#inverse = PlayerStrengths.#invert(this.#cholesky, n);
+    const inverse = this.#inverse;
+    if (inverse) return inverse[a * n + a] + inverse[b * n + b] - 2 * inverse[a * n + b];
+
     // Forward substitution of L y = e. The entries of y before the first non-zero entry of e are 0
+    const factor = this.#cholesky;
     const start = Math.min(a, b);
     const y = new Float64Array(n);
     let variance = 0;
@@ -192,6 +203,43 @@ export class PlayerStrengths {
       variance += y[i] * y[i];
     }
     return variance;
+  }
+
+  /** H^-1 = L^-T L^-1 from the Cholesky factor L */
+  static #invert(factor: Float64Array, n: number): Float64Array {
+    // The lower triangle of L^-1, column by column
+    const lowerInverse = new Float64Array(n * n);
+    for (let j = 0; j < n; j++) {
+      lowerInverse[j * n + j] = 1 / factor[j * n + j];
+      for (let i = j + 1; i < n; i++) {
+        let sum = 0;
+        for (let k = j; k < i; k++) sum -= factor[i * n + k] * lowerInverse[k * n + j];
+        lowerInverse[i * n + j] = sum / factor[i * n + i];
+      }
+    }
+    const inverse = new Float64Array(n * n);
+    for (let i = 0; i < n; i++) {
+      for (let j = 0; j <= i; j++) {
+        let sum = 0;
+        for (let k = i; k < n; k++) sum += lowerInverse[k * n + i] * lowerInverse[k * n + j];
+        inverse[i * n + j] = sum;
+        inverse[j * n + i] = sum;
+      }
+    }
+    return inverse;
+  }
+
+  /** A group number for each player. The players of a pair are in the same group */
+  static #groups(n: number, pairA: number[], pairB: number[]): Int32Array {
+    const parent = new Int32Array(n);
+    for (let i = 0; i < n; i++) parent[i] = i;
+    const root = (i: number): number => {
+      while (parent[i] !== i) i = parent[i] = parent[parent[i]];
+      return i;
+    };
+    for (let p = 0; p < pairA.length; p++) parent[root(pairA[p])] = root(pairB[p]);
+    for (let i = 0; i < n; i++) parent[i] = root(i);
+    return parent;
   }
 
   /** Replaces the lower triangle of the symmetric positive definite matrix with its Cholesky factor */

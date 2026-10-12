@@ -226,8 +226,8 @@ describe("Predictions from all games", () => {
     ]) {
       const there = forward.getPredictedFraction(p1, p2)!;
       const back = backward.getPredictedFraction(p2, p1)!;
-      expect(there.fraction + back.fraction).toBeCloseTo(1, 12);
-      expect(there.confidence).toBeCloseTo(back.confidence, 12);
+      expect(there.fraction + back.fraction).toBe(1);
+      expect(there.confidence).toBe(back.confidence);
     }
   });
 
@@ -270,14 +270,33 @@ describe("Predictions from all games", () => {
     expect(manyGames.confidence).toBeLessThan(1);
   });
 
-  it("gives 50% with low confidence for players with no chain of opponents between them", () => {
-    const predicted = buildTennisTable([
-      ["A", "B"],
-      ["C", "D"],
-    ]).predictions.getPredictedFraction("A", "C")!;
+  it("gives no prediction for players with no chain of opponents between them", () => {
+    // A and C are in separate groups. Only the prior separates their strengths
+    const predictions = buildTennisTable([
+      ...Array.from({ length: 20 }, (): [string, string] => ["A", "B"]),
+      ...Array.from({ length: 20 }, (): [string, string] => ["D", "C"]),
+    ]).predictions;
 
-    expect(predicted.fraction).toBeCloseTo(0.5, 10);
-    expect(predicted.confidence).toBeLessThan(0.1);
+    expect(predictions.getPredictedFraction("A", "C")).toBeUndefined();
+    expect(predictions.getPredictedFraction("C", "A")).toBeUndefined();
+    expect(predictions.getPredictedFraction("A", "B")!.fraction).toBeGreaterThan(0.9);
+  });
+
+  it("gives the same variance for many pairs as for 1 pair of a fit", () => {
+    // The second variance of a fit uses H^-1. The first uses a forward substitution
+    const pairs = [
+      ["P1", "P2"],
+      ["A", "B"],
+      ["B", "P2"],
+      ["P1", "A"],
+    ];
+    const many = buildTennisTable(games).predictions;
+    const manyResults = pairs.map(([p1, p2]) => many.getPredictedFraction(p1, p2)!);
+    pairs.forEach(([p1, p2], i) => {
+      const single = buildTennisTable(games).predictions.getPredictedFraction(p1, p2)!;
+      expect(manyResults[i].fraction).toBeCloseTo(single.fraction, 12);
+      expect(manyResults[i].confidence).toBeCloseTo(single.confidence, 12);
+    });
   });
 
   it("gives no prediction for a player with no games", () => {
@@ -339,7 +358,7 @@ describe("Predictions from all games", () => {
     const first = tt.predictions.getPredictedFraction("A", "B")!;
 
     expect(tt.predictions.getPredictedFraction("A", "B")).toEqual(first);
-    expect(tt.predictions.getPredictedFraction("B", "A")!.fraction).toBeCloseTo(1 - first.fraction, 12);
+    expect(tt.predictions.getPredictedFraction("B", "A")!.fraction).toBe(1 - first.fraction);
   });
 
   it("counts total games per player and lists all player ids", () => {

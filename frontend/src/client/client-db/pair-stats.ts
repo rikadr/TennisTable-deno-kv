@@ -5,7 +5,7 @@ export type ScoreStats = {
   ageAdjusted: { games: number; sets: number; points: number };
 };
 
-export type Totals = { games: number; sets: number; points: number };
+type Totals = { games: number; sets: number; points: number };
 
 type PairEntry = {
   /** Games between the two players, won or lost. The entry is removed at 0 */
