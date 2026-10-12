@@ -404,7 +404,7 @@ const HeadToHead = ({
                 </div>
                 {label !== "Games" && (
                   <div className="text-xs opacity-70">
-                    Game win chance from this {label === "Sets" ? "set" : "point"} share:{" "}
+                    Should equal a game win % of{" "}
                     <span className="font-semibold">{percent(stats.fraction.fraction, 0)}</span>
                   </div>
                 )}
