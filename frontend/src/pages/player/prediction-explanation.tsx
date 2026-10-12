@@ -32,7 +32,7 @@ export const PredictionExplanation = ({ playerId, opponentId }: Props) => {
       <Step
         number={1}
         title="1 strength for each player"
-        text="The app fits 1 strength to each player from all games. A player with few games stays near 0, the average player."
+        text="The app fits 1 strength to each player from all games. Each strength starts at 0, an average player. The first games move it far."
       >
         <StrengthLine details={details} playerId={playerId} opponentId={opponentId} name={name} />
       </Step>

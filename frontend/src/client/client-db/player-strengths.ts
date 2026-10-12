@@ -3,11 +3,15 @@ import type { Fraction } from "./predictions";
 import { DEFAULT_LEVEL_WEIGHTS, POINT_SLOPE, SET_SLOPE } from "./whr";
 
 /**
- * The standard deviation of the prior on a strength, on the natural log-strength scale. A player
- * with few games stays near the average player, and the games move the strength away from it.
- * A backtest on the real games gave the lowest log loss from about 2.5 to 3.5.
+ * The standard deviation of the prior on a strength, on the natural log-strength scale. Each
+ * strength starts at 0, an average player. A wide prior lets the first games move a new player
+ * far, so 1 bad game puts the player low at once. The uncertainty of the gap then keeps the
+ * prediction for such a player away from 0% and 100%.
+ *
+ * A backtest on the real games gave a log loss of 0.476 at 2.5, 0.474 at 6 and 0.474 at 10. For
+ * the games of a player with 1 or 2 games before, it gave 0.499 at 2.5 and 0.452 at 6.
  */
-export const STRENGTH_PRIOR_SD = 2.5;
+export const STRENGTH_PRIOR_SD = 6;
 
 /**
  * The confidence is 50% when the evidence for the strength gap is equal to this number of games
@@ -22,10 +26,10 @@ const EVEN_GAME_INFORMATION = 0.25;
 const MAX_NEWTON_STEP = 1;
 
 /**
- * The fit stops after a step that moves no strength more than this. Near the solution, the error
- * after a Newton step is about the square of the step, so the strengths are then exact to about 1e-6.
+ * The fit stops after a step that moves no strength more than this. Near the solution each Newton
+ * step makes the error much smaller, so a shared fit and a new fit give the same fraction to 5 digits.
  */
-const TOLERANCE = 1e-3;
+const TOLERANCE = 1e-4;
 
 const MAX_ITERATIONS = 50;
 

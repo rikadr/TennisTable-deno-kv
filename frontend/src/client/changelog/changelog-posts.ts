@@ -54,15 +54,15 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
       ),
       list(
         "The game result counts most, then the sets, then the points. A game with no score adds only its result.",
-        "A player with few games stays near the average strength.",
+        "Each player starts at the average strength. The first games move a new player far, so 1 bad game puts the player low at once.",
         "The confidence shows how much evidence there is for the gap between the 2 strengths.",
         "The predictions tab of a player shows how the app calculates each prediction: the 2 strengths, the gap, the evidence and the confidence.",
       ),
       text(
-        "A test predicted each of the last 1 734 games from the games before it. The log loss was 0.476, not 0.523. For players who never played each other, it was 0.316, not 0.493. A lower log loss is better.",
+        "A test predicted each of the last 1 734 games from the games before it. The log loss was 0.474, not 0.523. For players who never played each other, it was 0.305, not 0.493. A lower log loss is better.",
       ),
       text(
-        "With real data, the predictions between ranked players change by 8.5 percentage points on average. The largest changes are for players with few games who never played each other. 32 of 39 expected ranks change.",
+        "With real data, the predictions between ranked players change by 7.7 percentage points on average. The largest changes are for players with few games who never played each other. 25 of 39 expected ranks change.",
       ),
     ],
   },
