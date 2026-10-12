@@ -4,12 +4,14 @@ import { stringToColor } from "../../common/string-to-color";
 import { classNames } from "../../common/class-names";
 import { autoFillBadSides, BadSide } from "../../common/table-sides";
 import { TableSidePicker } from "../../common/table-sides-display";
+import { SetPointsSlot, updateSetPoints } from "../../common/set-points-fill";
 
 /**
  * One set as the add game form collects it: the points of both players, and
  * who had the bad side of the table — null when the players do not remember.
+ * `autoFilled` names the slot the form calculated from the points of the loser.
  */
-export type ManualSetPoints = { player1?: number; player2?: number; badSide: BadSide };
+export type ManualSetPoints = { player1?: number; player2?: number; autoFilled?: SetPointsSlot; badSide: BadSide };
 
 type SetPointsState = {
   setPoints: ManualSetPoints[];
@@ -49,7 +51,7 @@ export const StepAddScore: React.FC<{
 const SetPointsInput: React.FC<{
   playerId: string;
   setIndex: number;
-  playerIndex: "player1" | "player2";
+  playerIndex: SetPointsSlot;
   setPoints: SetPointsState;
 }> = ({ playerId, setIndex, playerIndex, setPoints: { setPoints, setSetPoints } }) => {
   const context = useEventDbContext();
@@ -63,7 +65,7 @@ const SetPointsInput: React.FC<{
     }
 
     const newPoints = [...setPoints];
-    newPoints[setIndex] = { ...newPoints[setIndex], [playerIndex]: value };
+    newPoints[setIndex] = updateSetPoints(newPoints[setIndex], playerIndex, value);
     setSetPoints(newPoints);
   }
   return (
@@ -118,7 +120,10 @@ const SetPoints: React.FC<{
             {index === 0 && (
               <>
                 <h2 className="text-center text-xl">Individual points pr. set</h2>
-                <p className="text-center mb-6">(Optional)</p>
+                <p className="text-center">(Optional)</p>
+                <p className="text-center text-sm mb-6">
+                  Type the points of the set loser. The app fills in the winner.
+                </p>
               </>
             )}
             <div className="flex flex-row items-start justify-evenly h-16 max-w-96 m-auto">
