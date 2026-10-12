@@ -345,8 +345,11 @@ const HeadToHead = ({
                 <div className="text-xs tabular-nums">{total === 0 ? "No scores" : `${percent(share, 0)} won`}</div>
                 {total > 0 && (
                   <div className="text-xs opacity-60 tabular-nums">
-                    Age-weighted {fmtNum(stats.weightedWins, { digits: 1 })} :{" "}
-                    {fmtNum(stats.weightedLost, { digits: 1 })}
+                    <div>Age-weighted</div>
+                    <div className="whitespace-nowrap">
+                      {fmtNum(stats.weightedWins, { digits: 1 })} : {fmtNum(stats.weightedLost, { digits: 1 })}
+                    </div>
+                    <div>{percent(stats.weightedWins / (stats.weightedWins + stats.weightedLost), 0)} won</div>
                   </div>
                 )}
               </div>
