@@ -398,6 +398,11 @@ const HeadToHead = ({
                     {fmtNum(stats.weightedWins, { digits: 1 })} : {fmtNum(stats.weightedLost, { digits: 1 })}
                   </span>
                   <span>({percent(weightedShare, 0)})</span>
+                  {label !== "Games" && (
+                    <span title="The game win chance that this share of the age-weighted sets or points gives">
+                      → {percent(stats.fraction.fraction, 0)} games
+                    </span>
+                  )}
                 </div>
                 <div className="opacity-70">
                   <SplitBar share={weightedShare} playerId={playerId} opponentId={opponentId} />
