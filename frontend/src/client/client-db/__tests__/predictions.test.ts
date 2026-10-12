@@ -125,44 +125,7 @@ describe("Predictions.combinePrioritizedFractions", () => {
   });
 });
 
-describe("Predictions direct win probability from games", () => {
-  it("predicts the head-to-head win fraction from game results", () => {
-    // A beats B 3 times, B beats A once: A wins 75% of games
-    const tt = buildTennisTable([
-      ["A", "B"],
-      ["A", "B"],
-      ["A", "B"],
-      ["B", "A"],
-    ]);
-    const fraction = tt.predictions.getDirectFraction("A", "B");
-
-    expect(fraction.fraction).toBeCloseTo(0.75, 5);
-    expect(fraction.confidence).toBeGreaterThan(0);
-    expect(fraction.confidence).toBeLessThan(1);
-  });
-
-  it("gives the complement fraction with the same confidence for the reverse matchup", () => {
-    const tt = buildTennisTable([
-      ["A", "B"],
-      ["A", "B"],
-      ["A", "B"],
-      ["B", "A"],
-    ]);
-    const forward = tt.predictions.getDirectFraction("A", "B");
-    const backward = tt.predictions.getDirectFraction("B", "A");
-
-    expect(forward.fraction + backward.fraction).toBeCloseTo(1, 5);
-    expect(forward.confidence).toBeCloseTo(backward.confidence, 10);
-  });
-
-  it("returns zero confidence for players who never met", () => {
-    const tt = buildTennisTable([
-      ["A", "B"],
-      ["C", "D"],
-    ]);
-    expect(tt.predictions.getDirectFraction("A", "C")).toEqual({ fraction: 0, confidence: 0 });
-  });
-
+describe("Predictions direct stats", () => {
   it("exposes raw and weighted game stats", () => {
     const tt = buildTennisTable([
       ["A", "B"],
@@ -351,6 +314,22 @@ describe("Predictions from all games", () => {
         expect(a.confidence).toBeCloseTo(b.confidence, 4);
       }
     }
+  });
+
+  it("explains a prediction with the strengths, the gap and the evidence of each pair", () => {
+    const predictions = buildTennisTable(games).predictions;
+    const details = predictions.getPredictionDetails("P1", "P2")!;
+    const predicted = predictions.getPredictedFraction("P1", "P2")!;
+
+    expect(details.fraction).toBeCloseTo(predicted.fraction, 12);
+    expect(details.confidence).toBeCloseTo(predicted.confidence, 12);
+    expect(details.gap).toBeCloseTo(details.p1.strength - details.p2.strength, 12);
+    // The shares of all pairs and of the prior make up all the evidence for the gap
+    const total = details.evidence.pairs.reduce((sum, pair) => sum + pair.share, 0) + details.evidence.prior;
+    expect(total).toBeCloseTo(1, 10);
+    // P1 and P2 never played each other, so all the evidence comes from other pairs and the prior
+    expect(details.evidence.pairs.some((pair) => [pair.p1, pair.p2].sort().join() === "P1,P2")).toBe(false);
+    expect(predictions.getPredictionDetails("P1", "X")).toBeUndefined();
   });
 
   it("gives the same prediction when called again, and the complement for the reverse pair", () => {

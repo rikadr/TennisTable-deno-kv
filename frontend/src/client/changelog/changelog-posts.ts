@@ -56,7 +56,7 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
         "The game result counts most, then the sets, then the points. A game with no score adds only its result.",
         "A player with few games stays near the average strength.",
         "The confidence shows how much evidence there is for the gap between the 2 strengths.",
-        "The predictions tab of a player shows the head-to-head prediction and the prediction from all games.",
+        "The predictions tab of a player shows how the app calculates each prediction: the 2 strengths, the gap, the evidence and the confidence.",
       ),
       text(
         "A test predicted each of the last 1 734 games from the games before it. The log loss was 0.476, not 0.523. For players who never played each other, it was 0.316, not 0.493. A lower log loss is better.",

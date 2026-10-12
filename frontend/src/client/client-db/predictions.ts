@@ -3,7 +3,7 @@ import { gameToGame, pointToGame, setToGame } from "./future-elo-probability-loo
 import { TennisTable } from "./tennis-table";
 import { PairFraction } from "./expected-scores";
 import { PairStats, ScoreStats } from "./pair-stats";
-import { PlayerStrengths } from "./player-strengths";
+import { PlayerStrengths, PredictionDetails } from "./player-strengths";
 
 export type Fraction = { fraction: number; confidence: number };
 
@@ -87,70 +87,6 @@ export class Predictions {
   /** Get p1's accumulated stats against p2 (pre-computed, O(1) lookup) */
   getStats(p1: string, p2: string): ScoreStats {
     return this.pairStats.getStats(p1, p2, this.referenceTime);
-  }
-
-  /** cache[p1][p2] */
-  #directCache = new Map<string, Map<string, Fraction>>();
-
-  /**
-   * The fraction from the games between p1 and p2 only, with the game, set and point levels merged.
-   * {@link getPredictedFraction} uses all games.
-   */
-  getDirectFraction(p1: string, p2: string): Fraction {
-    let opponents = this.#directCache.get(p1);
-    if (!opponents) {
-      opponents = new Map();
-      this.#directCache.set(p1, opponents);
-    }
-    let fraction = opponents.get(p2);
-    if (!fraction) {
-      // Calculate each pair in one order, so the reverse is exactly the complement, also after rounding
-      if (p1 > p2) {
-        const reverse = this.getDirectFraction(p2, p1);
-        fraction =
-          reverse.confidence === 0 ? reverse : { fraction: 1 - reverse.fraction, confidence: reverse.confidence };
-      } else {
-        fraction = this.#calculateDirectFraction(p1, p2);
-      }
-      opponents.set(p2, fraction);
-    }
-    return fraction;
-  }
-
-  #calculateDirectFraction(p1: string, p2: string): Fraction {
-    const p1Stats = this.getStats(p1, p2);
-    const p2Stats = this.getStats(p2, p1);
-
-    const predictions: Fraction[] = [];
-
-    // Game-level
-    const gameWins = p1Stats.ageAdjusted.games;
-    const gameLosses = p2Stats.ageAdjusted.games;
-    if (gameWins + gameLosses > 0) {
-      predictions.push(
-        Predictions.getWinFractionWithConfidence(gameWins, gameLosses, gameToGame, GAME_CONFIDENCE_CONFIG),
-      );
-    }
-
-    // Set-level
-    const setWins = p1Stats.ageAdjusted.sets;
-    const setLosses = p2Stats.ageAdjusted.sets;
-    if (setWins + setLosses > 0) {
-      predictions.push(Predictions.getWinFractionWithConfidence(setWins, setLosses, setToGame, SET_CONFIDENCE_CONFIG));
-    }
-
-    // Point-level
-    const pointWins = p1Stats.ageAdjusted.points;
-    const pointLosses = p2Stats.ageAdjusted.points;
-    if (pointWins + pointLosses > 0) {
-      predictions.push(
-        Predictions.getWinFractionWithConfidence(pointWins, pointLosses, pointToGame, POINT_CONFIDENCE_CONFIG),
-      );
-    }
-
-    if (predictions.length === 0) return { fraction: 0, confidence: 0 };
-
-    return Predictions.combinePrioritizedFractions(predictions);
   }
 
   /** Game-level stats for p1 vs p2 (raw + weighted totals and fraction) */
@@ -271,6 +207,12 @@ export class Predictions {
     return result;
   }
 
+  /** The steps from the strengths to the prediction for p1 against p2. See {@link PlayerStrengths.getPredictionDetails} */
+  getPredictionDetails(p1: string, p2: string): PredictionDetails | undefined {
+    this.strengths.fit(this.referenceTime);
+    return this.strengths.getPredictionDetails(p1, p2);
+  }
+
   // ---------------------------------------------------------------------------
   // Expected score inputs
   // ---------------------------------------------------------------------------
@@ -306,7 +248,6 @@ export class Predictions {
   clearCache() {
     this.#pairStats = undefined;
     this.#strengths = undefined;
-    this.#directCache.clear();
     this.#predictedCache.clear();
   }
 

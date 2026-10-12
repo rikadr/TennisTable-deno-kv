@@ -2,9 +2,8 @@ import { useState } from "react";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { ProfilePicture } from "./profile-picture";
 import { fmtNum } from "../../common/number-utils";
-import { Fraction } from "../../client/client-db/predictions";
-import { classNames } from "../../common/class-names";
 import { Link } from "react-router-dom";
+import { PredictionExplanation } from "./prediction-explanation";
 
 type Props = {
   playerId: string;
@@ -36,11 +35,6 @@ export const PlayerPredictionsList = ({ playerId }: Props) => {
         const oponentId = opponent.id;
         const isExpanded = expandedPlayers.has(oponentId);
         const predicted = predictions.getPredictedFraction(playerId, oponentId);
-        // Head-to-head first, in the row that the per-level columns point to
-        const sources = [
-          { label: "Head-to-head", fraction: predictions.getDirectFraction(playerId, oponentId) },
-          { label: "All games", fraction: predicted },
-        ];
         const winChance = predicted?.fraction || 0;
         const confidence = predicted?.confidence || 0;
 
@@ -78,217 +72,8 @@ export const PlayerPredictionsList = ({ playerId }: Props) => {
 
             {/* Player Content - Expandable */}
             {isExpanded && (
-              <div className="p-4 bg-primary-background text-primary-text ">
-                <div className="flex gap-4 border-l-2 border-secondary-background py-2 overflow-auto pl-6">
-                  {/* Probability Breakdown */}
-                  <ul className="space-y-1">
-                    <li className="text-sm flex items-center gap-2 whitespace-nowrap">Prediction</li>
-                    {sources.map(({ label, fraction }) => {
-                      const hasNoConfidence = (fraction?.confidence || 0) === 0;
-                      return (
-                        <li
-                          key={playerId + oponentId + label}
-                          className={classNames(
-                            "text-sm flex items-center gap-2 whitespace-nowrap text-right",
-                            hasNoConfidence && "line-through opacity-30",
-                          )}
-                        >
-                          <span className="opacity-70 font-light italic text-primary-text w-28">{label}:</span>
-                          <span>
-                            {fmtNum((fraction?.fraction || 0) * 100)}% @{fmtNum((fraction?.confidence || 0) * 100)}%
-                          </span>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                  <div className="mt-5 -space-y-1 opacity-50">
-                    <p className="text-lg">&larr;</p>
-                    <p className="text-base rotate-90">&#x21b5;</p>
-                    <p className="text-base rotate-90">&#x21b5;</p>
-                  </div>
-                  <ul className="space-y-1">
-                    <li className="text-sm flex items-center gap-2 whitespace-nowrap">Per score level analysis</li>
-
-                    {Array(3)
-                      .fill(1)
-                      .map((_, index) => {
-                        let fraction: Fraction | undefined = undefined;
-                        let lable = "";
-
-                        switch (index) {
-                          case 0:
-                            {
-                              const game = predictions.getDirectGameStats(playerId, oponentId);
-                              fraction = game.fraction;
-                              lable = "Games";
-                            }
-                            break;
-                          case 1:
-                            {
-                              const game = predictions.getDirectSetStats(playerId, oponentId);
-                              fraction = game.fraction;
-                              lable = "Sets -> game";
-                            }
-                            break;
-                          case 2:
-                            {
-                              const game = predictions.getDirectPointStats(playerId, oponentId);
-                              fraction = game.fraction;
-                              lable = "Points -> game";
-                            }
-                            break;
-                        }
-                        const hasNoConfidence = (fraction?.confidence || 0) === 0;
-
-                        return (
-                          <li
-                            key={"score fractions " + playerId + oponentId + index}
-                            className={classNames(
-                              "text-sm flex items-center gap-2 whitespace-nowrap",
-                              hasNoConfidence && "line-through opacity-30",
-                            )}
-                          >
-                            <span className="opacity-70 font-light italic text-primary-text w-28 text-right">
-                              {lable}:
-                            </span>
-                            <span className="w-20">
-                              {fmtNum((fraction?.fraction || 0) * 100)}% @{fmtNum((fraction?.confidence || 0) * 100)}%
-                            </span>
-                          </li>
-                        );
-                      })}
-                  </ul>
-                  <div className="mt-5 -space-y-1 opacity-50">
-                    <p className="text-lg">&larr;</p>
-                    <p className="text-lg">&larr;</p>
-                    <p className="text-lg">&larr;</p>
-                  </div>
-                  <ul className="space-y-1 pr-6">
-                    <li className="text-sm flex items-center gap-2 whitespace-nowrap">Recency bias adjusted scores</li>
-                    {Array(3)
-                      .fill(1)
-                      .map((_, index) => {
-                        let lable = "";
-                        let won = 0;
-                        let lost = 0;
-
-                        switch (index) {
-                          case 0:
-                            {
-                              const game = predictions.getDirectGameStats(playerId, oponentId);
-                              won = game.weightedWins;
-                              lost = game.weightedLost;
-                              lable = "Games";
-                            }
-                            break;
-                          case 1:
-                            {
-                              const game = predictions.getDirectSetStats(playerId, oponentId);
-                              won = game.weightedWins;
-                              lost = game.weightedLost;
-                              lable = "Sets";
-                            }
-                            break;
-                          case 2:
-                            {
-                              const game = predictions.getDirectPointStats(playerId, oponentId);
-                              won = game.weightedWins;
-                              lost = game.weightedLost;
-                              lable = "Points";
-                            }
-                            break;
-                        }
-                        const hasNoData = !won && !lost;
-
-                        return (
-                          <li
-                            key={"score fractions " + playerId + oponentId + index}
-                            className={classNames(
-                              "text-sm flex items-center gap-2 whitespace-nowrap",
-                              hasNoData && "line-through opacity-30",
-                            )}
-                          >
-                            <span className="opacity-70 font-light italic text-primary-text w-12 text-right">
-                              {lable}:
-                            </span>
-                            <span className="w-8">{!!won || !!lost ? fmtNum((won / (won + lost)) * 100) : "- "}%</span>
-                            {(!!won || !!lost) && (
-                              <span className="ml-2 px-2 py-0.5 bg-secondary-background text-secondary-text rounded text-xs">
-                                {fmtNum(won, { digits: 1 })} : {fmtNum(lost, { digits: 1 })}
-                              </span>
-                            )}
-                          </li>
-                        );
-                      })}
-                  </ul>
-                  <div className="mt-5 -space-y-1 opacity-50">
-                    <p className="text-lg">&larr;</p>
-                    <p className="text-lg">&larr;</p>
-                    <p className="text-lg">&larr;</p>
-                  </div>
-                  <ul className="space-y-1 pr-6">
-                    <li className="text-sm flex items-center gap-2 whitespace-nowrap">Total scored</li>
-                    {Array(3)
-                      .fill(1)
-                      .map((_, index) => {
-                        let lable = "";
-                        let won = 0;
-                        let lost = 0;
-
-                        switch (index) {
-                          case 0:
-                            {
-                              const game = predictions.getDirectGameStats(playerId, oponentId);
-                              won = game.won;
-                              lost = game.lost;
-                              lable = "Games";
-                            }
-                            break;
-                          case 1:
-                            {
-                              const game = predictions.getDirectSetStats(playerId, oponentId);
-                              won = game.won;
-                              lost = game.lost;
-                              lable = "Sets";
-                            }
-                            break;
-                          case 2:
-                            {
-                              const game = predictions.getDirectPointStats(playerId, oponentId);
-                              won = game.won;
-                              lost = game.lost;
-                              lable = "Points";
-                            }
-                            break;
-                        }
-                        const hasNoData = !won && !lost;
-
-                        return (
-                          <li
-                            key={"score fractions " + playerId + oponentId + index}
-                            className={classNames(
-                              "text-sm flex items-center gap-2 whitespace-nowrap",
-                              hasNoData && "line-through opacity-30",
-                            )}
-                          >
-                            <span className="opacity-70 font-light italic text-primary-text w-12 text-right">
-                              {lable}:
-                            </span>
-                            <span className="w-8">{!!won || !!lost ? fmtNum((won / (won + lost)) * 100) : "- "}%</span>
-                            {(!!won || !!lost) && (
-                              <span className="ml-2 px-2 py-0.5 bg-secondary-background text-secondary-text rounded text-xs">
-                                {fmtNum(won)} : {fmtNum(lost)}
-                              </span>
-                            )}
-                          </li>
-                        );
-                      })}
-                  </ul>
-                </div>
-                <div className="text-xs pl-7 pt-4 font-light italic">
-                  *Head-to-head: the games between the 2 players only. All games: a strength for each player, fitted to
-                  all games. This is the prediction at the top. Each game counts less as it gets older.
-                </div>
+              <div className="p-4 bg-primary-background text-primary-text">
+                <PredictionExplanation playerId={playerId} opponentId={oponentId} />
               </div>
             )}
           </div>

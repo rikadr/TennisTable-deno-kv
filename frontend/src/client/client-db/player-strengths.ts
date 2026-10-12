@@ -37,6 +37,25 @@ const LEVELS = [
 
 const PRIOR_PRECISION = 1 / (STRENGTH_PRIOR_SD * STRENGTH_PRIOR_SD);
 
+/** Elo points for 1 unit of natural log-strength. A gap of 400 points is a 10 to 1 win ratio */
+export const RATING_POINTS_PER_STRENGTH = 400 / Math.LN10;
+
+/** Strengths and gaps are on the natural log-strength scale. See {@link RATING_POINTS_PER_STRENGTH} */
+export type PredictionDetails = Fraction & {
+  p1: { strength: number; sd: number };
+  p2: { strength: number; sd: number };
+  gap: number;
+  gapSd: number;
+  /** sigmoid(gap). The fraction is nearer to 50%, because it includes the uncertainty of the gap */
+  fractionWithoutUncertainty: number;
+  /** The evidence for the gap, counted as games between 2 even players */
+  evidenceGames: number;
+  /** The share of each pair of players in the evidence, largest first, and the share of the prior */
+  evidence: { pairs: { p1: string; p2: string; share: number }[]; prior: number };
+  /** The fitted strength of each player in the fit */
+  strengths: { playerId: string; strength: number }[];
+};
+
 function sigmoid(x: number): number {
   return 1 / (1 + Math.exp(-x));
 }
@@ -115,6 +134,7 @@ export class PlayerStrengths {
 
     const gradient = new Float64Array(n);
     const hessian = new Float64Array(n * n);
+    const curvature = new Float64Array(pairA.length);
     for (let iteration = 0; iteration < MAX_ITERATIONS; iteration++) {
       // The gradient of the log posterior, and the negative of its Hessian
       hessian.fill(0);
@@ -138,6 +158,7 @@ export class PlayerStrengths {
         }
         gradient[a] += g;
         gradient[b] -= g;
+        curvature[p] = h;
         hessian[a * n + a] += h;
         hessian[b * n + b] += h;
         hessian[a * n + b] -= h;
@@ -159,6 +180,60 @@ export class PlayerStrengths {
     this.#varianceReads = 0;
     this.#group = PlayerStrengths.#groups(n, pairA, pairB);
     this.#strengths = new Map(ids.map((id, i) => [id, theta[i]]));
+    this.#ids = ids;
+    this.#pairs = { a: pairA, b: pairB, curvature };
+  }
+
+  #ids: string[] = [];
+  /** The pairs of the last fit, and the information of each pair at the last Newton step */
+  #pairs: { a: number[]; b: number[]; curvature: Float64Array } = { a: [], b: [], curvature: new Float64Array(0) };
+
+  /**
+   * The steps from the strengths to the prediction for p1 against p2, for a page that explains the
+   * prediction. Undefined when {@link getPrediction} gives no prediction.
+   *
+   * The evidence shows how much each pair of players adds to the precision of the gap. With
+   * u = H^-1 e, the variance of the gap is u' H u: the sum of curvature * (u_a - u_b)^2 for each
+   * pair, and of the prior precision * u_i^2 for each player. Each term divided by the variance
+   * is the share of that pair, or of the prior.
+   */
+  getPredictionDetails(p1: string, p2: string): PredictionDetails | undefined {
+    const prediction = this.getPrediction(p1, p2);
+    const a = this.#index.get(p1);
+    const b = this.#index.get(p2);
+    if (!prediction || a === undefined || b === undefined) return undefined;
+
+    const n = this.#theta.length;
+    this.#inverse ??= PlayerStrengths.#invert(this.#cholesky, n);
+    const inverse = this.#inverse;
+    const variance = inverse[a * n + a] + inverse[b * n + b] - 2 * inverse[a * n + b];
+    const u = new Float64Array(n);
+    for (let i = 0; i < n; i++) u[i] = inverse[i * n + a] - inverse[i * n + b];
+
+    const pairs: PredictionDetails["evidence"]["pairs"] = [];
+    for (let p = 0; p < this.#pairs.a.length; p++) {
+      const pa = this.#pairs.a[p];
+      const pb = this.#pairs.b[p];
+      const share = (this.#pairs.curvature[p] * (u[pa] - u[pb]) ** 2) / variance;
+      if (share > 0) pairs.push({ p1: this.#ids[pa], p2: this.#ids[pb], share });
+    }
+    pairs.sort((x, y) => y.share - x.share);
+    let prior = 0;
+    for (let i = 0; i < n; i++) prior += u[i] * u[i] * PRIOR_PRECISION;
+
+    const gap = this.#theta[a] - this.#theta[b];
+    const priorVariance = 2 * STRENGTH_PRIOR_SD * STRENGTH_PRIOR_SD;
+    return {
+      ...prediction,
+      p1: { strength: this.#theta[a], sd: Math.sqrt(inverse[a * n + a]) },
+      p2: { strength: this.#theta[b], sd: Math.sqrt(inverse[b * n + b]) },
+      gap,
+      gapSd: Math.sqrt(variance),
+      fractionWithoutUncertainty: sigmoid(gap),
+      evidenceGames: Math.max(1 / variance - 1 / priorVariance, 0) / EVEN_GAME_INFORMATION,
+      evidence: { pairs, prior: prior / variance },
+      strengths: this.#ids.map((id, i) => ({ playerId: id, strength: this.#theta[i] })),
+    };
   }
 
   /**
