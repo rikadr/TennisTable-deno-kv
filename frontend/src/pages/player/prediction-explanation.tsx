@@ -29,6 +29,9 @@ export const PredictionExplanation = ({ playerId, opponentId }: Props) => {
 
   return (
     <div className="grid gap-4 md:grid-cols-2">
+      <div className="md:col-span-2">
+        <HeadToHead playerId={playerId} opponentId={opponentId} name={name} />
+      </div>
       <Step
         number={1}
         title="1 strength for each player"
@@ -57,9 +60,6 @@ export const PredictionExplanation = ({ playerId, opponentId }: Props) => {
       >
         <Confidence details={details} />
       </Step>
-      <div className="md:col-span-2">
-        <HeadToHead playerId={playerId} opponentId={opponentId} name={name} />
-      </div>
     </div>
   );
 };
@@ -320,33 +320,39 @@ const HeadToHead = ({
   const hasGames = rows[0].stats.won + rows[0].stats.lost > 0;
 
   return (
-    <section className="rounded-lg border border-primary-text/15 p-3 space-y-2">
+    <section className="rounded-lg border border-primary-text/15 p-3 space-y-3">
       <h4 className="text-sm font-semibold">
-        Games between {name(playerId)} and {name(opponentId)}
+        {name(playerId)} against {name(opponentId)}
       </h4>
       {hasGames ? (
-        <table className="w-full text-xs tabular-nums">
-          <thead className="opacity-70">
-            <tr>
-              <th className="text-left font-normal">Level</th>
-              <th className="text-right font-normal">Age-weighted</th>
-              <th className="text-right font-normal">Total</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map(({ label, stats }) => (
-              <tr key={label} className={stats.won + stats.lost === 0 ? "opacity-40" : ""}>
-                <td>{label}</td>
-                <td className="text-right">
-                  {fmtNum(stats.weightedWins, { digits: 1 })} : {fmtNum(stats.weightedLost, { digits: 1 })}
-                </td>
-                <td className="text-right">
+        <div className="grid grid-cols-3 gap-2 sm:gap-4">
+          {rows.map(({ label, stats }) => {
+            const total = stats.won + stats.lost;
+            const share = total === 0 ? 0 : stats.won / total;
+            return (
+              <div key={label} className={"min-w-0 space-y-1" + (total === 0 ? " opacity-40" : "")}>
+                <div className="text-xs opacity-70">{label}</div>
+                <div className="text-base sm:text-xl font-semibold tabular-nums whitespace-nowrap">
                   {fmtNum(stats.won)} : {fmtNum(stats.lost)}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                </div>
+                <div className="flex h-1.5 w-full overflow-hidden rounded bg-primary-text/15">
+                  <div className="h-full" style={{ width: `${share * 100}%`, background: stringToColor(playerId) }} />
+                  <div
+                    className="h-full"
+                    style={{ width: `${(1 - share) * 100}%`, background: stringToColor(opponentId) }}
+                  />
+                </div>
+                <div className="text-xs tabular-nums">{total === 0 ? "No scores" : `${percent(share, 0)} won`}</div>
+                {total > 0 && (
+                  <div className="text-xs opacity-60 tabular-nums">
+                    Age-weighted {fmtNum(stats.weightedWins, { digits: 1 })} :{" "}
+                    {fmtNum(stats.weightedLost, { digits: 1 })}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
       ) : (
         <p className="text-xs opacity-80">They never played each other. The prediction comes from other games only.</p>
       )}
