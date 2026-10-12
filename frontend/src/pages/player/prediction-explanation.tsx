@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { PointerEvent, ReactNode, RefObject, useLayoutEffect, useRef, useState } from "react";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { fmtNum } from "../../common/number-utils";
 import { stringToColor } from "../../common/string-to-color";
@@ -32,49 +32,22 @@ export const PredictionExplanation = ({ playerId, opponentId }: Props) => {
       <div className="md:col-span-2">
         <HeadToHead playerId={playerId} opponentId={opponentId} name={name} />
       </div>
-      <Step
-        number={1}
-        title="1 strength for each player"
-        text="The app fits 1 strength to each player from all games. Each strength starts at 0, an average player. The first games move it far."
-      >
-        <StrengthLine details={details} playerId={playerId} opponentId={opponentId} name={name} />
-      </Step>
-      <Step
-        number={2}
-        title="From strength gap to win chance"
-        text="The gap between the 2 strengths gives the win chance. The uncertainty of the gap moves the chance toward 50%."
-      >
+      <div className="md:col-span-2">
+        <Step number={1} title="1 strength for each player">
+          <StrengthLine details={details} playerId={playerId} opponentId={opponentId} name={name} />
+        </Step>
+      </div>
+      <Step number={2} title="From strength gap to win chance">
         <GapCurve details={details} />
       </Step>
-      <Step
-        number={3}
-        title="Where the evidence comes from"
-        text="Games against other players also count. They fix the strengths of the common opponents. Each strength starts at 0, an average player, before the games move it."
-      >
+      <Step number={3} title="Where the evidence comes from">
         <Evidence details={details} playerId={playerId} opponentId={opponentId} name={name} />
-      </Step>
-      <Step
-        number={4}
-        title="Confidence"
-        text="The evidence for the gap, counted as games between 2 even players. 10 such games give 50% confidence."
-      >
-        <Confidence details={details} />
       </Step>
     </div>
   );
 };
 
-const Step = ({
-  number,
-  title,
-  text,
-  children,
-}: {
-  number: number;
-  title: string;
-  text: string;
-  children: ReactNode;
-}) => (
+const Step = ({ number, title, children }: { number: number; title: string; children: ReactNode }) => (
   <section className="rounded-lg border border-primary-text/15 p-3 space-y-2 min-w-0">
     <h4 className="text-sm font-semibold flex items-center gap-2">
       <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary-text/15 text-xs">
@@ -83,9 +56,43 @@ const Step = ({
       {title}
     </h4>
     {children}
-    <p className="text-xs opacity-70">{text}</p>
   </section>
 );
+
+const DIVIDER_WIDTH_PX = 4;
+
+/** A bar split between the 2 player colours. A white pill marks the split, because 2 player colours can look alike */
+const SplitBar = ({ share, playerId, opponentId }: { share: number; playerId: string; opponentId: string }) => {
+  const split = `calc(${DIVIDER_WIDTH_PX / 2}px + ${share} * (100% - ${DIVIDER_WIDTH_PX}px))`;
+  return (
+    <div className="relative">
+      <div className="flex h-2.5 w-full overflow-hidden rounded-full">
+        <div style={{ width: split, backgroundColor: stringToColor(playerId) }} />
+        <div className="flex-1" style={{ backgroundColor: stringToColor(opponentId) }} />
+      </div>
+      <div
+        className="pointer-events-none absolute -top-0.5 -bottom-0.5 -translate-x-1/2 rounded-full bg-white shadow-[0_0_0_1px_rgba(0,0,0,0.25)]"
+        style={{ left: split, width: DIVIDER_WIDTH_PX }}
+      />
+    </div>
+  );
+};
+
+/** The width of the element, so a chart can draw at its real size with readable text */
+function useWidth<T extends HTMLElement>(): [RefObject<T>, number] {
+  const ref = useRef<T>(null);
+  const [width, setWidth] = useState(0);
+  useLayoutEffect(() => {
+    const element = ref.current;
+    if (!element) return;
+    setWidth(element.getBoundingClientRect().width);
+    if (typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(([entry]) => setWidth(entry.contentRect.width));
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
+  return [ref, width];
+}
 
 const StrengthLine = ({
   details,
@@ -98,36 +105,70 @@ const StrengthLine = ({
   opponentId: string;
   name: (id: string) => string;
 }) => {
-  const W = 320;
-  const H = 86;
-  const all = details.strengths.map((s) => points(s.strength));
+  const [ref, measured] = useWidth<HTMLDivElement>();
+  const [hovered, setHovered] = useState<number>();
+  const W = Math.max(measured, 280);
+  const H = 104;
+  const pad = 16;
+  const all = details.strengths.map((s) => ({ playerId: s.playerId, value: points(s.strength) }));
   const ends = [
-    ...all,
+    ...all.map((s) => s.value),
     points(details.p1.strength - details.p1.sd),
     points(details.p1.strength + details.p1.sd),
     points(details.p2.strength - details.p2.sd),
     points(details.p2.strength + details.p2.sd),
   ];
   const limit = Math.ceil(Math.max(...ends.map(Math.abs)) / 200) * 200;
-  const x = (value: number) => 22 + ((value + limit) / (2 * limit)) * (W - 44);
-  const axisY = 58;
+  const x = (value: number) => pad + ((value + limit) / (2 * limit)) * (W - 2 * pad);
+  const axisY = 66;
   const players = [
-    { id: playerId, side: details.p1, y: 36 },
+    { id: playerId, side: details.p1, y: 32 },
     { id: opponentId, side: details.p2, y: 46 },
   ];
-  const ticks = [-limit, -limit / 2, 0, limit / 2, limit];
+  const tickCount = W < 500 ? 4 : 8;
+  const ticks = Array.from({ length: tickCount + 1 }, (_, i) => -limit + (2 * limit * i) / tickCount);
+
+  // The nearest dot to the pointer, so a quick move along the line shows each name at once
+  const onPointerMove = (event: PointerEvent<SVGSVGElement>) => {
+    const left = event.currentTarget.getBoundingClientRect().left;
+    const pointerX = event.clientX - left;
+    let nearest = 0;
+    all.forEach((s, i) => {
+      if (Math.abs(x(s.value) - pointerX) < Math.abs(x(all[nearest].value) - pointerX)) nearest = i;
+    });
+    setHovered(Math.abs(x(all[nearest].value) - pointerX) <= 12 ? nearest : undefined);
+  };
+  const tip = hovered === undefined ? undefined : all[hovered];
+  const tipText = tip && `${name(tip.playerId)} ${signed(tip.value)}`;
+  const tipWidth = tipText ? tipText.length * 6.2 + 12 : 0;
+  const tipX = tip ? Math.min(Math.max(x(tip.value) - tipWidth / 2, 2), W - tipWidth - 2) : 0;
 
   return (
-    <div>
-      <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label="Strengths of all players">
-        {all.map((value, i) => (
-          <circle key={i} cx={x(value)} cy={axisY} r={2.2} fill="currentColor" opacity={0.25} />
-        ))}
-        <line x1={22} x2={W - 22} y1={axisY + 6} y2={axisY + 6} stroke="currentColor" opacity={0.3} />
+    <div ref={ref} className="w-full">
+      <svg
+        width={W}
+        height={H}
+        role="img"
+        aria-label="Strengths of all players"
+        onPointerMove={onPointerMove}
+        onPointerLeave={() => setHovered(undefined)}
+        style={{ touchAction: "pan-y" }}
+      >
+        <line x1={pad} x2={W - pad} y1={axisY + 6} y2={axisY + 6} stroke="currentColor" opacity={0.3} />
         {ticks.map((t) => (
-          <text key={t} x={x(t)} y={axisY + 20} fontSize={9} textAnchor="middle" fill="currentColor" opacity={0.6}>
-            {t === 0 ? "0" : signed(t)}
+          <text key={t} x={x(t)} y={axisY + 20} fontSize={10} textAnchor="middle" fill="currentColor" opacity={0.6}>
+            {Math.round(t) === 0 ? "0" : signed(t)}
           </text>
+        ))}
+        {all.map((s, i) => (
+          <circle
+            key={s.playerId}
+            cx={x(s.value)}
+            cy={axisY}
+            r={i === hovered ? 4 : 2.6}
+            fill="currentColor"
+            opacity={i === hovered ? 0.9 : 0.25}
+          />
         ))}
         {players.map(({ id, side, y }) => {
           const color = stringToColor(id);
@@ -140,29 +181,39 @@ const StrengthLine = ({
                 y1={y}
                 y2={y}
                 stroke={color}
-                strokeWidth={2}
+                strokeWidth={2.5}
               />
               <line x1={center} x2={center} y1={y} y2={axisY} stroke={color} strokeWidth={1} opacity={0.6} />
-              <circle cx={center} cy={y} r={4} fill={color} />
+              <circle cx={center} cy={y} r={5} fill={color} stroke="white" strokeWidth={1} />
             </g>
           );
         })}
-        <text x={12} y={12} fontSize={10} fill="currentColor">
-          <tspan fill={stringToColor(playerId)} fontWeight={700}>
-            ●
-          </tspan>{" "}
-          {name(playerId)} {signed(points(details.p1.strength))} ± {fmtNum(Math.round(points(details.p1.sd)))}
+        <text x={pad} y={13} fontSize={12} fill="currentColor">
+          <tspan fill={stringToColor(playerId)}>●</tspan> {name(playerId)} {signed(points(details.p1.strength))} ±{" "}
+          {fmtNum(Math.round(points(details.p1.sd)))}
         </text>
-        <text x={W - 12} y={12} fontSize={10} fill="currentColor" textAnchor="end">
-          <tspan fill={stringToColor(opponentId)} fontWeight={700}>
-            ●
-          </tspan>{" "}
-          {name(opponentId)} {signed(points(details.p2.strength))} ± {fmtNum(Math.round(points(details.p2.sd)))}
+        <text x={W - pad} y={13} fontSize={12} fill="currentColor" textAnchor="end">
+          <tspan fill={stringToColor(opponentId)}>●</tspan> {name(opponentId)} {signed(points(details.p2.strength))} ±{" "}
+          {fmtNum(Math.round(points(details.p2.sd)))}
         </text>
+        {tip && (
+          <g pointerEvents="none">
+            <rect x={tipX} y={axisY - 26} width={tipWidth} height={18} rx={4} className="fill-primary-text" />
+            <text
+              x={tipX + tipWidth / 2}
+              y={axisY - 13}
+              fontSize={11}
+              textAnchor="middle"
+              className="fill-primary-background"
+            >
+              {tipText}
+            </text>
+          </g>
+        )}
       </svg>
       <p className="text-xs">
         Gap: <span className="font-semibold">{signed(points(details.gap))}</span> ±{" "}
-        {fmtNum(Math.round(points(details.gapSd)))} rating points
+        {fmtNum(Math.round(points(details.gapSd)))} rating points. 0 is an average player.
       </p>
     </div>
   );
@@ -185,7 +236,7 @@ const GapCurve = ({ details }: { details: PredictionDetails }) => {
     }).join("");
 
   return (
-    <div>
+    <div className="space-y-2">
       <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label="Win chance from the strength gap">
         <rect
           x={x(Math.max(-limit, gap - sd))}
@@ -212,9 +263,16 @@ const GapCurve = ({ details }: { details: PredictionDetails }) => {
         </text>
       </svg>
       <p className="text-xs">
-        Without uncertainty: {percent(details.fractionWithoutUncertainty)}. With the uncertainty:{" "}
-        <span className="font-semibold">{percent(details.fraction)}</span>
+        Win chance <span className="font-semibold">{percent(details.fraction)}</span>. The uncertainty of the gap moves
+        it from {percent(details.fractionWithoutUncertainty)} toward 50%.
       </p>
+      <div className="flex items-center gap-2 text-xs">
+        <span>Confidence</span>
+        <div className="h-2 flex-1 rounded bg-primary-text/15">
+          <div className="h-full rounded bg-primary-text" style={{ width: `${details.confidence * 100}%` }} />
+        </div>
+        <span className="font-semibold tabular-nums">{percent(details.confidence, 0)}</span>
+      </div>
     </div>
   );
 };
@@ -288,20 +346,6 @@ const Evidence = ({
   );
 };
 
-const Confidence = ({ details }: { details: PredictionDetails }) => (
-  <div className="space-y-2">
-    <div className="flex items-baseline gap-2">
-      <span className="text-2xl font-semibold">{percent(details.confidence, 0)}</span>
-      <span className="text-xs opacity-80">
-        from evidence equal to {fmtNum(details.evidenceGames, { digits: 1 })} even games
-      </span>
-    </div>
-    <div className="h-2 w-full rounded bg-primary-text/15">
-      <div className="h-full rounded bg-primary-text" style={{ width: `${details.confidence * 100}%` }} />
-    </div>
-  </div>
-);
-
 const HeadToHead = ({
   playerId,
   opponentId,
@@ -325,43 +369,46 @@ const HeadToHead = ({
         {name(playerId)} against {name(opponentId)}
       </h4>
       {hasGames ? (
-        <div className="grid grid-cols-3 gap-2 sm:gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
           {rows.map(({ label, stats }) => {
             const total = stats.won + stats.lost;
-            const share = total === 0 ? 0 : stats.won / total;
+            const weightedTotal = stats.weightedWins + stats.weightedLost;
+            if (total === 0) {
+              return (
+                <div key={label} className="min-w-0 opacity-40 text-xs">
+                  {label}: no scores
+                </div>
+              );
+            }
+            const share = stats.won / total;
+            const weightedShare = stats.weightedWins / weightedTotal;
             return (
-              <div key={label} className={"min-w-0 space-y-1" + (total === 0 ? " opacity-40" : "")}>
-                <div className="text-xs opacity-70">{label}</div>
-                <div className="text-base sm:text-xl font-semibold tabular-nums whitespace-nowrap">
-                  {fmtNum(stats.won)} : {fmtNum(stats.lost)}
+              <div key={label} className="min-w-0 space-y-1.5">
+                <div className="flex items-baseline gap-2 whitespace-nowrap tabular-nums">
+                  <span className="text-xs opacity-70 w-12 sm:w-auto">{label}</span>
+                  <span className="text-lg font-semibold">
+                    {fmtNum(stats.won)} : {fmtNum(stats.lost)}
+                  </span>
+                  <span className="text-xs opacity-80">({percent(share, 0)})</span>
                 </div>
-                <div className="flex h-1.5 w-full overflow-hidden rounded bg-primary-text/15">
-                  <div className="h-full" style={{ width: `${share * 100}%`, background: stringToColor(playerId) }} />
-                  <div
-                    className="h-full"
-                    style={{ width: `${(1 - share) * 100}%`, background: stringToColor(opponentId) }}
-                  />
+                <SplitBar share={share} playerId={playerId} opponentId={opponentId} />
+                <div className="flex items-baseline gap-2 whitespace-nowrap text-xs opacity-70 tabular-nums">
+                  <span>Age-weighted</span>
+                  <span>
+                    {fmtNum(stats.weightedWins, { digits: 1 })} : {fmtNum(stats.weightedLost, { digits: 1 })}
+                  </span>
+                  <span>({percent(weightedShare, 0)})</span>
                 </div>
-                <div className="text-xs tabular-nums">{total === 0 ? "No scores" : `${percent(share, 0)} won`}</div>
-                {total > 0 && (
-                  <div className="text-xs opacity-60 tabular-nums">
-                    <div>Age-weighted</div>
-                    <div className="whitespace-nowrap">
-                      {fmtNum(stats.weightedWins, { digits: 1 })} : {fmtNum(stats.weightedLost, { digits: 1 })}
-                    </div>
-                    <div>{percent(stats.weightedWins / (stats.weightedWins + stats.weightedLost), 0)} won</div>
-                  </div>
-                )}
+                <div className="opacity-70">
+                  <SplitBar share={weightedShare} playerId={playerId} opponentId={opponentId} />
+                </div>
               </div>
             );
           })}
         </div>
       ) : (
-        <p className="text-xs opacity-80">They never played each other. The prediction comes from other games only.</p>
+        <p className="text-xs opacity-80">They never played each other.</p>
       )}
-      <p className="text-xs opacity-70">
-        The fit counts a game result most, then the sets, then the points. A game counts half as much after 120 days.
-      </p>
     </section>
   );
 };
