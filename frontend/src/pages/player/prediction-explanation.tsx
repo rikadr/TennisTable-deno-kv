@@ -33,11 +33,11 @@ export const PredictionExplanation = ({ playerId, opponentId }: Props) => {
         <HeadToHead playerId={playerId} opponentId={opponentId} name={name} />
       </div>
       <div className="md:col-span-2">
-        <Step number={1} title="1 strength for each player">
+        <Step number={1} title="Relative skill of all players">
           <StrengthLine details={details} playerId={playerId} opponentId={opponentId} name={name} />
         </Step>
       </div>
-      <Step number={2} title="From strength gap to win chance">
+      <Step number={2} title="Skill gap → win chance">
         <GapCurve details={details} />
       </Step>
       <Step number={3} title="Where the evidence comes from">
@@ -149,7 +149,7 @@ const StrengthLine = ({
         width={W}
         height={H}
         role="img"
-        aria-label="Strengths of all players"
+        aria-label="Relative skill of all players"
         onPointerMove={onPointerMove}
         onPointerLeave={() => setHovered(undefined)}
         style={{ touchAction: "pan-y" }}
@@ -212,8 +212,8 @@ const StrengthLine = ({
         )}
       </svg>
       <p className="text-xs">
-        Gap: <span className="font-semibold">{signed(points(details.gap))}</span> ±{" "}
-        {fmtNum(Math.round(points(details.gapSd)))} rating points. 0 is an average player.
+        Skill gap: <span className="font-semibold">{signed(points(details.gap))}</span> ±{" "}
+        {fmtNum(Math.round(points(details.gapSd)))}. 0 is an average player.
       </p>
     </div>
   );
@@ -237,7 +237,7 @@ const GapCurve = ({ details }: { details: PredictionDetails }) => {
 
   return (
     <div className="space-y-2">
-      <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label="Win chance from the strength gap">
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label="Win chance from the skill gap">
         <rect
           x={x(Math.max(-limit, gap - sd))}
           y={y(1)}
@@ -259,12 +259,12 @@ const GapCurve = ({ details }: { details: PredictionDetails }) => {
         <line x1={x(gap)} x2={x(gap)} y1={y(1)} y2={y(0)} stroke="currentColor" opacity={0.5} />
         <circle cx={x(gap)} cy={y(details.fraction)} r={4} fill="currentColor" />
         <text x={(28 + W - 8) / 2} y={H - 4} fontSize={9} textAnchor="middle" fill="currentColor" opacity={0.6}>
-          Strength gap, rating points
+          Skill gap
         </text>
       </svg>
       <p className="text-xs">
-        Win chance <span className="font-semibold">{percent(details.fraction)}</span>. The uncertainty of the gap moves
-        it from {percent(details.fractionWithoutUncertainty)} toward 50%.
+        Win chance <span className="font-semibold">{percent(details.fraction)}</span>. The uncertainty of the skill gap
+        moves it from {percent(details.fractionWithoutUncertainty)} toward 50%.
       </p>
       <div className="flex items-center gap-2 text-xs">
         <span>Confidence</span>
@@ -394,7 +394,7 @@ const HeadToHead = ({
                 <SplitBar share={share} playerId={playerId} opponentId={opponentId} />
                 <div className="flex items-baseline gap-2 whitespace-nowrap text-xs opacity-70 tabular-nums">
                   <span>Age-weighted</span>
-                  <span>
+                  <span className="font-semibold">
                     {fmtNum(stats.weightedWins, { digits: 1 })} : {fmtNum(stats.weightedLost, { digits: 1 })}
                   </span>
                   <span>({percent(weightedShare, 0)})</span>

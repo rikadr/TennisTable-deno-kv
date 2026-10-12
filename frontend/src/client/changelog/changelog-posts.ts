@@ -47,16 +47,16 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
     date: "2026-10-11",
     tags: ["feature-update", "technical"],
     summary:
-      "The app fits 1 strength to each player from all games, and predicts each game from the gap between the 2 strengths. The predictions are more accurate, most of all for players who never played each other.",
+      "The app fits 1 skill level to each player from all games, and predicts each game from the gap between the 2 skill levels. The predictions are more accurate, most of all for players who never played each other.",
     body: [
       text(
         "Each game has an effect on each prediction, through chains of opponents of any length. Before, the app used the games between the 2 players and chains through 1 or 2 other players only.",
       ),
       list(
         "The game result counts most, then the sets, then the points. A game with no score adds only its result.",
-        "Each player starts at the average strength. The first games move a new player far, so 1 bad game puts the player low at once.",
-        "The confidence shows how much evidence there is for the gap between the 2 strengths.",
-        "The predictions tab of a player shows how the app calculates each prediction: the 2 strengths, the gap, the evidence and the confidence.",
+        "Each player starts at the average skill level. The first games move a new player far, so 1 bad game puts the player low at once.",
+        "The confidence shows how much evidence there is for the gap between the 2 skill levels.",
+        "The predictions tab of a player shows how the app calculates each prediction: the 2 skill levels, the gap, the evidence and the confidence.",
       ),
       text(
         "A test predicted each of the last 1 734 games from the games before it. The log loss was 0.474, not 0.523. For players who never played each other, it was 0.305, not 0.493. A lower log loss is better.",
