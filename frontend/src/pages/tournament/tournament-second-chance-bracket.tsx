@@ -1,7 +1,13 @@
 import { useSessionStorage } from "usehooks-ts";
 import { Tournament } from "../../client/client-db/tournaments/tournament";
 import { secondChanceRoundLabel } from "./round-labels";
-import { GameTriangle, GrandFinalLinkCard, TournamentGameListCard, TreeListToggle } from "./tournament-bracket";
+import {
+  BracketTreeScroller,
+  GameTriangle,
+  GrandFinalLinkCard,
+  TournamentGameListCard,
+  TreeListToggle,
+} from "./tournament-bracket";
 
 export const TournamentSecondChanceBracket = ({
   tournament,
@@ -44,7 +50,7 @@ export const TournamentSecondChanceBracket = ({
       <TreeListToggle showAsList={showAsList} setShowAsList={setShowAsList} />
       <GrandFinalLinkCard tournament={tournament} itemRefs={itemRefs} fromSection="second-chance" />
       {showAsList === false && (
-        <div className="flex flex-col gap-6 w-fit max-w-full m-auto bg-primary-background rounded-lg p-4 overflow-x-auto">
+        <BracketTreeScroller className="flex flex-col gap-6">
           {/* Rounds stacked vertically like the winners tree: second chance semi final at the top,
               round 1 at the bottom. Not a recursive tree: consecutive second chance rounds can
               have the same number of games */}
@@ -82,7 +88,7 @@ export const TournamentSecondChanceBracket = ({
               </div>
             );
           })}
-        </div>
+        </BracketTreeScroller>
       )}
       {showAsList && (
         <div className="flex flex-col items-center lg:flex-row-reverse lg:justify-end lg:items-start gap-2 bg-primary-background rounded-lg py-4">

@@ -8,6 +8,7 @@ import { bracketLayerIndexToTournamentRound } from "./round-labels";
 import { ProfilePicture } from "../player/profile-picture";
 import { getGameKeyFromPlayers, isParamGame } from "./tournament-page";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useLayoutEffect, useRef } from "react";
 
 export const TournamentBracket = ({
   tournament,
@@ -46,10 +47,31 @@ export const TournamentBracket = ({
       {showAsList ? (
         <GamesList tournament={tournament} itemRefs={itemRefs} />
       ) : (
-        <div className="w-fit m-auto bg-primary-background rounded-lg p-4 ">
+        <BracketTreeScroller>
           <GameTriangle tournament={tournament} layerIndex={0} gameIndex={0} itemRefs={itemRefs} />
-        </div>
+        </BracketTreeScroller>
       )}
+    </div>
+  );
+};
+
+/**
+ * Horizontal scroll box for a bracket tree. A tree can be much wider than the screen. Only this
+ * box scrolls, so the rest of the page keeps the screen width. The inner box keeps the full tree
+ * width, so all rows stay centred on each other. The box starts centred on the top of the tree.
+ */
+export const BracketTreeScroller: React.FC<{ children: React.ReactNode; className?: string }> = ({
+  children,
+  className,
+}) => {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const element = scrollRef.current;
+    if (element) element.scrollLeft = (element.scrollWidth - element.clientWidth) / 2;
+  }, []);
+  return (
+    <div ref={scrollRef} className="w-fit max-w-full mx-auto overflow-x-auto bg-primary-background rounded-lg">
+      <div className={classNames("w-fit p-4", className)}>{children}</div>
     </div>
   );
 };
