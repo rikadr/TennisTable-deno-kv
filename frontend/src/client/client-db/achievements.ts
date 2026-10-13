@@ -2,8 +2,10 @@ import { Elo } from "./elo";
 import { EventTypeEnum } from "./event-store/event-types";
 import { Game } from "./event-store/projectors/games-projector";
 import { SkippedGame } from "./event-store/projectors/tournaments-projector";
+import { PairFraction, solveExpectedScores } from "./expected-scores";
 import { PairStats } from "./pair-stats";
 import { PlayerStrengths } from "./player-strengths";
+import { Fraction } from "./predictions";
 import { determineNextSeason, determineSeason } from "./seasons/seasons";
 import { TennisTable } from "./tennis-table";
 
@@ -281,6 +283,35 @@ export const FULL_COVERAGE_MIN_PLAYERS = 5;
 // shows as 100%.
 export const HUNDRED_PERCENT_CONFIDENCE_MIN = 0.995;
 
+// Lowest confidence of the win chance before a game that counts for Against All
+// Odds, Biggest Upset and Clockwork. A player with few games has an uncertain
+// prediction, and such a prediction does not count.
+export const PREDICTION_MIN_CONFIDENCE = 0.5;
+
+// Largest win chance, in percent, of a win that earns "Against All Odds".
+export const AGAINST_ALL_ODDS_MAX_WIN_CHANCE = 10;
+
+// Largest win chance, in percent, of a win that can set the first "Biggest
+// Upset" record. After that, a win must reach the record.
+export const BIGGEST_UPSET_RECORD_FLOOR = 10;
+
+// "Perfect Match": the prediction after a game is at most this far from 50%,
+// in percentage points, with a confidence above the minimum.
+export const PERFECT_MATCH_MAX_DISTANCE = 0.5;
+export const PERFECT_MATCH_MIN_CONFIDENCE = 0.5;
+
+// Games in a row where the favourite won, for "Clockwork".
+export const CLOCKWORK_TARGET = 20;
+
+// How far below the expected score a score must go before reaching the
+// expected score earns "Prophecy Fulfilled".
+export const PROPHECY_FULFILLED_MIN_GAP = 100;
+
+// A fraction as a percent, rounded to 0.1 - the precision the app shows.
+function toPercent(fraction: number): number {
+  return Math.round(fraction * 1000) / 10;
+}
+
 /** The output of the achievements calculation. The web worker calculates it and sends it to the main thread */
 export type AchievementsSnapshot = {
   achievements: Map<string, Achievement[]>;
@@ -402,6 +433,24 @@ export class Achievements {
   // Each player's own longest run of alternating points in a tracked game.
   // Used for Yin Yang Points progression.
   longestAlternatingPoints: Map<string, number> = new Map();
+  // League-wide running record for Biggest Upset: the lowest win chance, in
+  // percent, of a win. Undefined until a win at BIGGEST_UPSET_RECORD_FLOOR or
+  // below sets the first record.
+  biggestUpsetRecord: { winChance: number | undefined; holder: string | undefined } = {
+    winChance: undefined,
+    holder: undefined,
+  };
+  // Each player's lowest win chance in a win. Used for Against All Odds and
+  // Biggest Upset progression.
+  lowestWinChanceWon: Map<string, number> = new Map();
+  // Each player's running Clockwork count, and the best count. Used to award
+  // Clockwork and for its progression.
+  clockworkRun: Map<string, { games: number; startedAt: number }> = new Map();
+  bestClockworkRun: Map<string, number> = new Map();
+  // Each player's expected score minus score at the last daily check, and
+  // when the gap reached PROPHECY_FULFILLED_MIN_GAP. Used to award Prophecy
+  // Fulfilled and for its progression.
+  prophecyState: Map<string, { gap: number; armedAt?: number; largestGap?: number }> = new Map();
   // Best (lowest) leaderboard rank each player has ever held, recorded only
   // while the ranked cohort had ≥5 players — the same gate the On the
   // Podium / Touched the Throne awards use, so a "best" here always means a
@@ -477,6 +526,9 @@ export class Achievements {
   lastGiantDay: Map<string, { day: number; count: number }> = new Map();
   bestGiantDayCount: Map<string, number> = new Map();
 
+  // The expected scores of the last daily check of Prophecy Fulfilled.
+  #lastExpectedScores: Map<string, number> | undefined;
+
   // End of the RECORD_GRACE_PERIOD_DAYS after the league's first game.
   #recordGraceEndsAt = 0;
 
@@ -533,6 +585,11 @@ export class Achievements {
     this.mostLeadChanges.clear();
     this.yinYangPointsRecord = { points: undefined, holders: [] };
     this.longestAlternatingPoints.clear();
+    this.biggestUpsetRecord = { winChance: undefined, holder: undefined };
+    this.lowestWinChanceWon.clear();
+    this.clockworkRun.clear();
+    this.bestClockworkRun.clear();
+    this.prophecyState.clear();
     this.bestRankEver.clear();
     this.bestBeatenRank.clear();
     this.bestClimb.clear();
@@ -1364,53 +1421,266 @@ export class Achievements {
     this.#checkFullHouseAndHumbledAchievements();
     this.#checkPerfectDayAndWeekAchievements();
     this.#checkRockPaperScissorsAchievements();
-    this.#checkHundredPercentConfidenceAchievements();
+    this.#checkPredictionAchievements();
     this.#checkRetirementAchievements();
     this.hasCalculated = true;
   }
 
-  // Awards "100% Confidence" to both players of a game when, after the game, the
-  // confidence of the prediction for the pair reaches HUNDRED_PERCENT_CONFIDENCE_MIN.
-  // The prediction uses the games up to the game, with the age weights at the
-  // time of the game. Earned 1 time for each pair.
+  // The achievements that read the predictions: 100% Confidence, Perfect
+  // Match, Against All Odds, Biggest Upset, Clockwork and Prophecy Fulfilled.
   //
-  // Each game that can award it needs a new fit of the strengths of all
-  // players. A pair that has the award needs no fit.
-  #checkHundredPercentConfidenceAchievements() {
+  // The strengths are fitted 1 time after each game, at the time of the game.
+  // That fit gives the prediction after the game for the pair of the game, and
+  // the win chance before the next game. So each value depends only on the
+  // games up to it, and a new game never changes an award of an earlier game.
+  // Games with the same time are one step: the win chance before each of them
+  // is from the fit before all of them.
+  //
+  // After the last game of each local calendar day, the expected scores of the
+  // ranked players are calculated for Prophecy Fulfilled. Like Perfect Day,
+  // the day that is not over yet is not checked.
+  #checkPredictionAchievements() {
+    this.#lastExpectedScores = undefined;
     const games = this.parent.games;
     if (games.length === 0) return;
     const pairStats = new PairStats(games[0].playedAt, games, 0);
     const strengths = new PlayerStrengths(pairStats);
-    const awardedPairs = new Set<string>();
+    const isActiveAt = this.#activeAtLookup();
+    const gameLimit = this.parent.client.gameLimitForRanked;
 
-    games.forEach((game) => {
-      const pairKey = game.winner < game.loser ? `${game.winner}|${game.loser}` : `${game.loser}|${game.winner}`;
-      if (awardedPairs.has(pairKey)) return;
+    // The leaderboard score of each player, calculated the same way as
+    // Elo.eloCalculator: a game with a deleted player does not count.
+    const scores = new Map(this.parent.allPlayers.map((player) => [player.id, Elo.INITIAL_ELO]));
+    const pairKey = (a: string, b: string) => (a < b ? `${a}|${b}` : `${b}|${a}`);
+    const hundredPercentPairs = new Set<string>();
+    const perfectMatchPairs = new Set<string>();
 
-      pairStats.advanceTo(game.playedAt);
-      strengths.fit(game.playedAt);
-      const confidence = strengths.getPrediction(game.winner, game.loser)?.confidence ?? 0;
-      if (confidence < HUNDRED_PERCENT_CONFIDENCE_MIN) return;
+    for (let start = 0; start < games.length; ) {
+      let end = start;
+      while (end < games.length && games[end].playedAt === games[start].playedAt) end++;
+      const time = games[start].playedAt;
 
-      awardedPairs.add(pairKey);
-      const gamesPlayed =
-        pairStats.getStats(game.winner, game.loser, game.playedAt).raw.games +
-        pairStats.getStats(game.loser, game.winner, game.playedAt).raw.games;
-      [
-        { playerId: game.winner, opponent: game.loser },
-        { playerId: game.loser, opponent: game.winner },
-      ].forEach(({ playerId, opponent }) => {
-        this.#addAchievement(
-          playerId,
-          this.#createAchievement(
-            "100-percent-confidence",
-            playerId,
-            game.playedAt,
-            { gameId: game.id, opponent, gamesPlayed },
-            game.id,
-          ),
+      const before = games.slice(start, end).map((game) => strengths.getPrediction(game.winner, game.loser));
+      pairStats.advanceTo(time);
+      strengths.fit(time);
+
+      for (let i = start; i < end; i++) {
+        const game = games[i];
+        const winnerScore = scores.get(game.winner);
+        const loserScore = scores.get(game.loser);
+        if (winnerScore !== undefined && loserScore !== undefined) {
+          const { winnersNewElo, losersNewElo } = Elo.calculateELO(winnerScore, loserScore);
+          scores.set(game.winner, winnersNewElo);
+          scores.set(game.loser, losersNewElo);
+        }
+
+        const winChanceBefore = before[i - start];
+        this.#checkUpsetAchievements(game, winChanceBefore);
+        this.#checkClockworkAchievement(game, winChanceBefore);
+
+        const after = strengths.getPrediction(game.winner, game.loser);
+        const key = pairKey(game.winner, game.loser);
+        if (after && after.confidence >= HUNDRED_PERCENT_CONFIDENCE_MIN && !hundredPercentPairs.has(key)) {
+          hundredPercentPairs.add(key);
+          const gamesPlayed =
+            pairStats.getStats(game.winner, game.loser, time).raw.games +
+            pairStats.getStats(game.loser, game.winner, time).raw.games;
+          [
+            { playerId: game.winner, opponent: game.loser },
+            { playerId: game.loser, opponent: game.winner },
+          ].forEach(({ playerId, opponent }) => {
+            this.#addAchievement(
+              playerId,
+              this.#createAchievement(
+                "100-percent-confidence",
+                playerId,
+                time,
+                { gameId: game.id, opponent, gamesPlayed },
+                game.id,
+              ),
+            );
+          });
+        }
+        if (
+          after &&
+          after.confidence > PERFECT_MATCH_MIN_CONFIDENCE &&
+          Math.abs(toPercent(after.fraction) - 50) <= PERFECT_MATCH_MAX_DISTANCE &&
+          !perfectMatchPairs.has(key)
+        ) {
+          perfectMatchPairs.add(key);
+          [
+            { playerId: game.winner, opponent: game.loser, fraction: after.fraction },
+            { playerId: game.loser, opponent: game.winner, fraction: 1 - after.fraction },
+          ].forEach(({ playerId, opponent, fraction }) => {
+            this.#addAchievement(
+              playerId,
+              this.#createAchievement(
+                "perfect-match",
+                playerId,
+                time,
+                { gameId: game.id, opponent, winChance: toPercent(fraction), confidence: toPercent(after.confidence) },
+                game.id,
+              ),
+            );
+          });
+        }
+      }
+
+      // A day is checked when it is over. Until then, more games can change it.
+      const day = this.#dayStartOf(time);
+      const nextDay = this.#dayStartOf(games[end]?.playedAt ?? this.#now);
+      if (nextDay !== day) {
+        const rankedIds = [...pairStats.opponents.keys()].filter(
+          (id) => scores.has(id) && pairStats.getTotalGames(id) >= gameLimit && isActiveAt(id, time),
         );
-      });
+        this.#checkProphecyFulfilledAchievements(games[end - 1], rankedIds, scores, strengths);
+      }
+      start = end;
+    }
+  }
+
+  // Awards "Against All Odds" to the winner of a game with a win chance of
+  // AGAINST_ALL_ODDS_MAX_WIN_CHANCE or less, and "Biggest Upset" when the win
+  // chance is at or below the league record. The win chance is in percent,
+  // rounded to 0.1, so an equal record is the same number that the app shows.
+  // A prediction below PREDICTION_MIN_CONFIDENCE does not count.
+  #checkUpsetAchievements(game: Game, winChanceBefore: Fraction | undefined) {
+    if (!winChanceBefore || winChanceBefore.confidence < PREDICTION_MIN_CONFIDENCE) return;
+    const winChance = toPercent(winChanceBefore.fraction);
+    const confidence = toPercent(winChanceBefore.confidence);
+
+    if (winChance < (this.lowestWinChanceWon.get(game.winner) ?? Infinity)) {
+      this.lowestWinChanceWon.set(game.winner, winChance);
+    }
+
+    if (winChance <= AGAINST_ALL_ODDS_MAX_WIN_CHANCE) {
+      this.#addAchievement(
+        game.winner,
+        this.#createAchievement(
+          "against-all-odds",
+          game.winner,
+          game.playedAt,
+          { gameId: game.id, opponent: game.loser, winChance, confidence },
+          game.id,
+        ),
+      );
+    }
+
+    const currentRecord = this.biggestUpsetRecord.winChance;
+    if (winChance > (currentRecord ?? BIGGEST_UPSET_RECORD_FLOOR)) return;
+    this.#addAchievement(
+      game.winner,
+      this.#createAchievement(
+        "biggest-upset",
+        game.winner,
+        game.playedAt,
+        { gameId: game.id, opponent: game.loser, winChance, previousRecord: currentRecord },
+        game.id,
+      ),
+    );
+    if (currentRecord === undefined || winChance < currentRecord) {
+      this.biggestUpsetRecord = { winChance, holder: game.winner };
+    }
+  }
+
+  // Counts for "Clockwork" the games where the favourite won. A win by the
+  // underdog ends the run of both players. A game without a prediction, with a
+  // prediction below PREDICTION_MIN_CONFIDENCE, or with a win chance of exactly
+  // 50% neither counts nor ends a run. A player earns it at CLOCKWORK_TARGET
+  // games, and the run starts again from 0.
+  #checkClockworkAchievement(game: Game, winChanceBefore: Fraction | undefined) {
+    if (!winChanceBefore || winChanceBefore.confidence < PREDICTION_MIN_CONFIDENCE) return;
+    if (winChanceBefore.fraction === 0.5) return;
+    const favouriteWon = winChanceBefore.fraction > 0.5;
+
+    [
+      { playerId: game.winner, opponent: game.loser },
+      { playerId: game.loser, opponent: game.winner },
+    ].forEach(({ playerId, opponent }) => {
+      if (!favouriteWon) {
+        this.clockworkRun.set(playerId, { games: 0, startedAt: 0 });
+        return;
+      }
+      const run = this.clockworkRun.get(playerId);
+      const games = (run?.games ?? 0) + 1;
+      const startedAt = run && run.games > 0 ? run.startedAt : game.playedAt;
+      this.bestClockworkRun.set(playerId, Math.max(this.bestClockworkRun.get(playerId) ?? 0, games));
+      if (games < CLOCKWORK_TARGET) {
+        this.clockworkRun.set(playerId, { games, startedAt });
+        return;
+      }
+      this.clockworkRun.set(playerId, { games: 0, startedAt: 0 });
+      this.#addAchievement(
+        playerId,
+        this.#createAchievement(
+          "clockwork",
+          playerId,
+          game.playedAt,
+          { gameId: game.id, opponent, startedAt },
+          game.id,
+        ),
+      );
+    });
+  }
+
+  // Awards "Prophecy Fulfilled" when the score of a player reaches the expected
+  // score, after the score was PROPHECY_FULFILLED_MIN_GAP or more below it.
+  // Checked after the last game of each local calendar day, for the active
+  // players with enough games to be ranked. The award goes to the last game
+  // of the day, which is not always a game of the player: the expected score
+  // also changes with the games of other players.
+  #checkProphecyFulfilledAchievements(
+    lastGameOfDay: Game,
+    rankedIds: string[],
+    scores: Map<string, number>,
+    strengths: PlayerStrengths,
+  ) {
+    if (rankedIds.length < 2) return;
+    const startScores = new Map(rankedIds.map((id) => [id, scores.get(id)!]));
+    const pairs: PairFraction[] = [];
+    for (let i = 0; i < rankedIds.length; i++) {
+      for (let j = i + 1; j < rankedIds.length; j++) {
+        const prediction = strengths.getPrediction(rankedIds[i], rankedIds[j]);
+        if (prediction) pairs.push({ a: rankedIds[i], b: rankedIds[j], fraction: prediction.fraction });
+      }
+    }
+    // The expected scores of the day before are a close start point. They
+    // change only the number of steps, not the solution.
+    const expectedScores = solveExpectedScores(startScores, pairs, this.#lastExpectedScores);
+    this.#lastExpectedScores = expectedScores;
+
+    expectedScores.forEach((expectedScore, playerId) => {
+      const score = startScores.get(playerId)!;
+      const gap = expectedScore - score;
+      const state = this.prophecyState.get(playerId);
+      if (state?.armedAt === undefined) {
+        this.prophecyState.set(
+          playerId,
+          gap >= PROPHECY_FULFILLED_MIN_GAP ? { gap, armedAt: lastGameOfDay.playedAt, largestGap: gap } : { gap },
+        );
+        return;
+      }
+      const largestGap = Math.max(state.largestGap ?? gap, gap);
+      if (gap > 0) {
+        this.prophecyState.set(playerId, { gap, armedAt: state.armedAt, largestGap });
+        return;
+      }
+      this.prophecyState.set(playerId, { gap });
+      this.#addAchievement(
+        playerId,
+        this.#createAchievement(
+          "prophecy-fulfilled",
+          playerId,
+          lastGameOfDay.playedAt,
+          {
+            score: Math.round(score),
+            expectedScore: Math.round(expectedScore),
+            largestGap: Math.round(largestGap),
+            armedAt: state.armedAt,
+          },
+          lastGameOfDay.id,
+        ),
+      );
     });
   }
 
@@ -1881,18 +2151,10 @@ export class Achievements {
    * Per-game cost is O(P) for rank lookups (with a tiny isActiveAt factor).
    * Total O(G * P).
    */
-  #calculateEloAchievements() {
-    const gameLimit = this.parent.client.gameLimitForRanked;
-
-    type EloEntry = { elo: number; totalGames: number };
-    const playerMap = new Map<string, EloEntry>();
-    for (const player of this.parent.allPlayers) {
-      playerMap.set(player.id, { elo: Elo.INITIAL_ELO, totalGames: 0 });
-    }
-
-    // Per-player active-status timeline: each entry is a transition.
-    // PLAYER_CREATED -> active=true, PLAYER_DEACTIVATED -> false,
-    // PLAYER_REACTIVATED -> true. Sorted by time.
+  // Whether a player was active at a time, from the player events.
+  // PLAYER_CREATED and PLAYER_REACTIVATED make a player active, and
+  // PLAYER_DEACTIVATED makes the player retired.
+  #activeAtLookup(): (playerId: string, atTime: number) => boolean {
     type Transition = { time: number; active: boolean };
     const timelines = new Map<string, Transition[]>();
     for (const event of this.parent.events) {
@@ -1912,7 +2174,7 @@ export class Achievements {
     }
     for (const list of timelines.values()) list.sort((a, b) => a.time - b.time);
 
-    const isActiveAt = (playerId: string, atTime: number): boolean => {
+    return (playerId: string, atTime: number): boolean => {
       const tl = timelines.get(playerId);
       if (!tl || tl.length === 0) return false;
       let active = false;
@@ -1922,6 +2184,18 @@ export class Achievements {
       }
       return active;
     };
+  }
+
+  #calculateEloAchievements() {
+    const gameLimit = this.parent.client.gameLimitForRanked;
+
+    type EloEntry = { elo: number; totalGames: number };
+    const playerMap = new Map<string, EloEntry>();
+    for (const player of this.parent.allPlayers) {
+      playerMap.set(player.id, { elo: Elo.INITIAL_ELO, totalGames: 0 });
+    }
+
+    const isActiveAt = this.#activeAtLookup();
 
     // Returns null if the player isn't ranked at `atTime` — must have ≥
     // gameLimitForRanked games and have been active at that moment.
@@ -4001,6 +4275,26 @@ export class Achievements {
       // Filled in below: the highest confidence in percent with an active
       // opponent who has not earned the player a 100% Confidence yet.
       "100-percent-confidence": { current: 0, target: 100, earned: 0 },
+      // Filled in below from the current predictions.
+      "perfect-match": { earned: 0 },
+      "against-all-odds": { earned: 0, lowestWinChance: this.lowestWinChanceWon.get(playerId) },
+      "biggest-upset": {
+        earned: 0,
+        lowestWinChance: this.lowestWinChanceWon.get(playerId),
+        recordWinChance: this.biggestUpsetRecord.winChance,
+        recordHolder: this.biggestUpsetRecord.holder,
+      },
+      clockwork: {
+        current: this.clockworkRun.get(playerId)?.games ?? 0,
+        target: CLOCKWORK_TARGET,
+        best: this.bestClockworkRun.get(playerId),
+        earned: 0,
+      },
+      "prophecy-fulfilled": {
+        earned: 0,
+        gap: this.prophecyState.get(playerId)?.gap,
+        armed: this.prophecyState.get(playerId)?.armedAt !== undefined,
+      },
       // Filled in below from the leaderboard: last place is 0 and 3rd place
       // is the target.
       mentor: { current: 0, target: 1, earned: 0 },
@@ -5006,6 +5300,28 @@ export class Achievements {
     // An opponent without the award is below the minimum, so it shows 99 at most.
     progression["100-percent-confidence"].current = Math.min(Math.round(highestConfidence * 100), 99);
 
+    // Perfect Match progression: the active opponent without a Perfect Match
+    // for this player whose prediction now is closest to 50%, with a
+    // confidence above the minimum.
+    const perfectMatchOpponents = new Set(
+      this.getAchievements(playerId).flatMap((achievement) =>
+        achievement.type === "perfect-match" ? [achievement.data.opponent] : [],
+      ),
+    );
+    let closestDistance = Infinity;
+    gamesPerOpponent.forEach((_, opponent) => {
+      if (!activePlayerIds.has(opponent) || perfectMatchOpponents.has(opponent)) return;
+      const prediction = this.parent.predictions.getPredictedFraction(playerId, opponent);
+      if (!prediction || prediction.confidence <= PERFECT_MATCH_MIN_CONFIDENCE) return;
+      const distance = Math.abs(prediction.fraction - 0.5);
+      if (distance < closestDistance) {
+        closestDistance = distance;
+        progression["perfect-match"].closestOpponent = opponent;
+        progression["perfect-match"].closestWinChance = toPercent(prediction.fraction);
+        progression["perfect-match"].closestConfidence = toPercent(prediction.confidence);
+      }
+    });
+
     // Mentor progression: the player who had this player as first opponent,
     // has not earned this player a Mentor yet, and is highest on the
     // leaderboard. Last place is 0 and 3rd place is the target. Like On the
@@ -5286,6 +5602,23 @@ type AchievementDefinitions = {
   // HUNDRED_PERCENT_CONFIDENCE_MIN. Awarded to both players. `gamesPlayed` is the
   // games of the pair, this game included.
   "100-percent-confidence": { gameId: string; opponent: string; gamesPlayed: number };
+  // After this game, the prediction for the pair was within
+  // PERFECT_MATCH_MAX_DISTANCE of 50%. Awarded to both players. `winChance`
+  // (the badge owner's) and `confidence` are in percent.
+  "perfect-match": { gameId: string; opponent: string; winChance: number; confidence: number };
+  // Won a game with a win chance of AGAINST_ALL_ODDS_MAX_WIN_CHANCE or less.
+  // `winChance` and `confidence` are the prediction before the game, in percent.
+  "against-all-odds": { gameId: string; opponent: string; winChance: number; confidence: number };
+  // Record-breaking win: the lowest win chance, in percent, of a win. Undefined
+  // previousRecord means the game set the very first league record.
+  "biggest-upset": { gameId: string; opponent: string; winChance: number; previousRecord?: number };
+  // The favourite won CLOCKWORK_TARGET games in a row of the badge owner. The
+  // run started with a game at `startedAt` and ended with this game.
+  clockwork: { gameId: string; opponent: string; startedAt: number };
+  // The score reached the expected score after it was PROPHECY_FULFILLED_MIN_GAP
+  // or more below it from `armedAt`. `largestGap` is the largest distance
+  // below the expected score in that time.
+  "prophecy-fulfilled": { score: number; expectedScore: number; largestGap: number; armedAt: number };
   // Awarded to both players of a season's very first game.
   "season-opener": { seasonStart: number; gameId: string; opponent: string };
   // Awarded to both players of every 500th league game. `milestone` is that
@@ -5390,6 +5723,11 @@ export const ACHIEVEMENT_IS_REACHIEVABLE: Record<AchievementType, boolean> = {
   "yin-yang-points": true, // League record
   "rock-paper-scissors": true, // Per cycle
   "100-percent-confidence": true, // Per opponent
+  "perfect-match": true, // Per opponent
+  "against-all-odds": true, // Per qualifying game
+  "biggest-upset": true, // League record - an equal win chance earns it again
+  clockwork: true, // Per run of CLOCKWORK_TARGET games
+  "prophecy-fulfilled": true, // Each time the score reaches the expected score again
 };
 
 // String-keyed lookup for UI code that carries achievement types as plain
@@ -5513,6 +5851,35 @@ type HundredPercentConfidenceProgression = ProgressionWithTarget & {
   // The active opponent without a 100% Confidence for the player whose prediction
   // has the highest confidence.
   closestOpponent?: string;
+};
+
+type PerfectMatchProgression = BaseProgression & {
+  // The active opponent without a Perfect Match for the player whose prediction
+  // is closest to 50%, with a confidence above PERFECT_MATCH_MIN_CONFIDENCE.
+  // The win chance and the confidence are in percent.
+  closestOpponent?: string;
+  closestWinChance?: number;
+  closestConfidence?: number;
+};
+
+type LowestWinChanceProgression = BaseProgression & {
+  // The player's lowest win chance in a win, in percent.
+  lowestWinChance?: number;
+};
+
+type BiggestUpsetProgression = LowestWinChanceProgression & {
+  // The league record and its holder. Undefined until the first record.
+  recordWinChance?: number;
+  recordHolder?: string;
+};
+
+type ProphecyFulfilledProgression = BaseProgression & {
+  // Expected score minus score at the last daily check. Undefined for a player
+  // who was never in a check.
+  gap?: number;
+  // True when the score was PROPHECY_FULFILLED_MIN_GAP or more below the
+  // expected score, so reaching the expected score earns the achievement.
+  armed: boolean;
 };
 
 type MentorProgression = ProgressionWithTarget & {
@@ -5786,4 +6153,9 @@ export type AchievementProgression = {
   "yin-yang-points": YinYangPointsProgression;
   "rock-paper-scissors": BaseProgression;
   "100-percent-confidence": HundredPercentConfidenceProgression;
+  "perfect-match": PerfectMatchProgression;
+  "against-all-odds": LowestWinChanceProgression;
+  "biggest-upset": BiggestUpsetProgression;
+  clockwork: ProgressionWithTarget;
+  "prophecy-fulfilled": ProphecyFulfilledProgression;
 };

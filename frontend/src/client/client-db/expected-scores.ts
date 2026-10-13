@@ -26,8 +26,17 @@ const SLOPE = Math.LN10 / Elo.DIVISOR;
  *
  * The scores of each group of connected players add up to the total of their
  * start scores. A player in no pair has no expected score.
+ *
+ * `guess` is an optional start point for the steps, such as the expected
+ * scores of an earlier calculation. Each group of the guess moves to the total
+ * of its start scores. The solution is the same, but a close guess needs fewer
+ * steps. A player without a guess starts at the start score.
  */
-export function solveExpectedScores(startScores: Map<string, number>, pairs: PairFraction[]): Map<string, number> {
+export function solveExpectedScores(
+  startScores: Map<string, number>,
+  pairs: PairFraction[],
+  guess?: Map<string, number>,
+): Map<string, number> {
   const opponents = new Map<string, { id: string; fraction: number }[]>();
   const addOpponent = (id: string, opponentId: string, fraction: number) => {
     if (!opponents.has(id)) opponents.set(id, []);
@@ -46,10 +55,14 @@ export function solveExpectedScores(startScores: Map<string, number>, pairs: Pai
     const groupOpponents = group.map((id) =>
       opponents.get(id)!.map((opponent) => ({ index: index.get(opponent.id)!, fraction: opponent.fraction })),
     );
-    const solved = solveGroup(
-      group.map((id) => startScores.get(id)!),
-      groupOpponents,
-    );
+    const groupStartScores = group.map((id) => startScores.get(id)!);
+    let first = groupStartScores;
+    if (guess) {
+      const guessed = group.map((id) => guess.get(id) ?? startScores.get(id)!);
+      const shift = (sum(groupStartScores) - sum(guessed)) / group.length;
+      first = guessed.map((score) => score + shift);
+    }
+    const solved = solveGroup(first, groupOpponents);
     group.forEach((id, i) => scores.set(id, solved[i]));
   }
   return scores;
@@ -65,6 +78,8 @@ function missingResults(scores: number[], opponents: Opponent[][]): number[] {
   );
 }
 
+const sum = (values: number[]) => values.reduce((total, value) => total + value, 0);
+
 const sumOfSquares = (values: number[]) => values.reduce((sum, value) => sum + value * value, 0);
 
 /**
@@ -74,8 +89,8 @@ const sumOfSquares = (values: number[]) => values.reduce((sum, value) => sum + v
  * missing results add up to 0, so the step also adds up to 0 and the total
  * score stays the same.
  */
-function solveGroup(startScores: number[], opponents: Opponent[][]): number[] {
-  let scores = [...startScores];
+function solveGroup(firstScores: number[], opponents: Opponent[][]): number[] {
+  let scores = [...firstScores];
   let missing = missingResults(scores, opponents);
 
   for (let iteration = 0; iteration < MAX_ITERATIONS; iteration++) {

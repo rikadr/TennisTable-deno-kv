@@ -174,6 +174,33 @@ export const AchievementFacts: React.FC<{ achievement: Achievement }> = ({ achie
           games
         </span>
       )}
+      {achievement.type === "perfect-match" && achievement.data && (
+        <span className="text-[11px] opacity-80">
+          {fmtNum(achievement.data.winChance, { digits: 1 })}% against {context.playerName(achievement.data.opponent)}{" "}
+          at {fmtNum(achievement.data.confidence, { digits: 1 })}% confidence
+        </span>
+      )}
+      {(achievement.type === "against-all-odds" || achievement.type === "biggest-upset") && achievement.data && (
+        <span className="text-[11px] opacity-80">
+          Beat {context.playerName(achievement.data.opponent)} at a {fmtNum(achievement.data.winChance, { digits: 1 })}%
+          win chance
+          {achievement.type === "biggest-upset" &&
+            (achievement.data.previousRecord !== undefined
+              ? ` (prev record ${fmtNum(achievement.data.previousRecord, { digits: 1 })}%)`
+              : " (first league record!)")}
+        </span>
+      )}
+      {achievement.type === "clockwork" && achievement.data && (
+        <span className="text-[11px] opacity-80">
+          The favourite won 20 games in a row from {dateString(achievement.data.startedAt)}
+        </span>
+      )}
+      {achievement.type === "prophecy-fulfilled" && achievement.data && (
+        <span className="text-[11px] opacity-80">
+          Score {fmtNum(achievement.data.score)} reached expected score {fmtNum(achievement.data.expectedScore)}, after
+          up to {fmtNum(achievement.data.largestGap)} below it
+        </span>
+      )}
       {achievement.type === "tug-of-war" && achievement.data && (
         <GameScoreLink playedAt={achievement.earnedAt} className="text-[11px] opacity-80 underline">
           {achievement.data.leadChanges} lead changes in set {achievement.data.setNumber}

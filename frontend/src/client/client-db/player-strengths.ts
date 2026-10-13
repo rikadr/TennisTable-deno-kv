@@ -98,7 +98,10 @@ export class PlayerStrengths {
    * moved no strength more than the tolerance, so the factor is also correct at the fitted strengths.
    */
   #cholesky = new Float64Array(0);
-  /** H^-1, calculated at the second variance of a fit. A single pair needs only 1 forward substitution */
+  /**
+   * H^-1, calculated at the third variance of a fit. 1 or 2 pairs need only 1 forward substitution
+   * each, so a calculation that reads the pair before and after each game needs no inverse.
+   */
   #inverse: Float64Array | undefined;
   #varianceReads = 0;
 
@@ -262,7 +265,7 @@ export class PlayerStrengths {
   /** The posterior variance of strength a - strength b: e' H^-1 e, with e = 1 at a and -1 at b */
   #gapVariance(a: number, b: number): number {
     const n = this.#theta.length;
-    if (++this.#varianceReads === 2) this.#inverse = PlayerStrengths.#invert(this.#cholesky, n);
+    if (++this.#varianceReads === 3) this.#inverse = PlayerStrengths.#invert(this.#cholesky, n);
     const inverse = this.#inverse;
     if (inverse) return inverse[a * n + a] + inverse[b * n + b] - 2 * inverse[a * n + b];
 

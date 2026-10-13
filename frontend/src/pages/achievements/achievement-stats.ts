@@ -47,6 +47,8 @@ export const ACHIEVEMENT_METRICS: Partial<Record<AchievementType, AchievementMet
   choker: { label: "Lead lost", format: points },
   "yin-yang-points": { label: "Alternating points", format: points },
   "100-percent-confidence": { label: "Games played together", format: games },
+  "against-all-odds": { label: "Win chance", format: (value) => `${fmtNum(value, { digits: 1 })}%` },
+  "biggest-upset": { label: "Win chance", format: (value) => `${fmtNum(value, { digits: 1 })}%` },
   "tug-of-war": {
     label: "Lead changes in the set",
     format: (value) => `${fmtNum(value)} change${value === 1 ? "" : "s"}`,
@@ -112,6 +114,9 @@ export function achievementValue(achievement: Achievement): number | undefined {
       return achievement.data.leadChanges;
     case "100-percent-confidence":
       return achievement.data.gamesPlayed;
+    case "against-all-odds":
+    case "biggest-upset":
+      return achievement.data.winChance;
     case "yin-yang-points":
       return achievement.data.points;
     case "less-is-more":
@@ -176,6 +181,7 @@ export const RECORD_ACHIEVEMENTS: AchievementType[] = [
   "shootout",
   "choker",
   "yin-yang-points",
+  "biggest-upset",
   "leap-frog",
   "earliest-game",
   "latest-game",
@@ -206,6 +212,7 @@ export const MUTUAL_ACHIEVEMENTS: AchievementType[] = [
   "tug-of-war",
   "yin-yang-points",
   "100-percent-confidence",
+  "perfect-match",
 ];
 
 export type RarityEntry = {

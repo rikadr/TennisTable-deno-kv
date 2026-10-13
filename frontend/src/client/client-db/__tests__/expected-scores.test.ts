@@ -129,4 +129,23 @@ describe("solveExpectedScores", () => {
     expect(scores.get("d")!).toBeCloseTo(850, 6);
     expect(scores.has("e")).toBe(false);
   });
+  it("gives the same scores from a guess, with the total of the start scores", () => {
+    const startScores = new Map([
+      ["a", 1000],
+      ["b", 1100],
+      ["c", 900],
+    ]);
+    const pairs: PairFraction[] = [
+      { a: "a", b: "b", fraction: 0.6 },
+      { a: "b", b: "c", fraction: 0.7 },
+      { a: "a", b: "c", fraction: 0.8 },
+    ];
+    const withoutGuess = solveExpectedScores(startScores, pairs);
+    // The guess is near the solution, but its total is not the total of the start scores.
+    const guess = new Map(Array.from(withoutGuess, ([id, score]) => [id, score + 37]));
+    const withGuess = solveExpectedScores(startScores, pairs, guess);
+
+    expect(total(withGuess)).toBeCloseTo(3000, 6);
+    for (const id of ["a", "b", "c"]) expect(withGuess.get(id)!).toBeCloseTo(withoutGuess.get(id)!, 6);
+  });
 });

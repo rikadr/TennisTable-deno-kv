@@ -42,21 +42,29 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
-    slug: "100-percent-confidence-achievement",
-    title: "New achievement: 100% Confidence",
+    slug: "prediction-achievements",
+    title: "6 new achievements from the win predictions",
     date: "2026-10-13",
     tags: ["feature-update"],
     summary:
-      "100% Confidence 💯 is a new achievement. You earn it when the win prediction between you and one opponent reaches 100% confidence.",
+      "100% Confidence 💯, Perfect Match 🪙, Against All Odds 🎲, Biggest Upset 🧨, Clockwork ⏱️ and Prophecy Fulfilled 🎯 use the win predictions and the expected score.",
     body: [
-      text(
-        "The app checks the prediction after each game between the 2 players. Both players earn the achievement, 1 time for each opponent.",
+      list(
+        "100% Confidence 💯 - after a game, the prediction between you and one opponent reaches 100% confidence. Both players earn it.",
+        "Perfect Match 🪙 - after a game, the prediction between you and one opponent is 49.5% to 50.5%, above 50% confidence.",
+        "Against All Odds 🎲 - win a game with a win chance of 10% or less.",
+        "Biggest Upset 🧨 - win a game with the lowest win chance in league history. A win at 10% or less sets the first record.",
+        "Clockwork ⏱️ - play 20 games in a row where the favourite wins.",
+        "Prophecy Fulfilled 🎯 - your score reaches your expected score after it was 100 or more below it.",
       ),
       text(
-        "Old games count less than new games, so the pair must play many games in a short time. Between 2 equal players with no scores, it takes 77 games. Set and point scores add evidence, so fewer games are necessary.",
+        "The win chance of a game is the prediction from the games before it. Against All Odds, Biggest Upset and Clockwork use only predictions at 50% or more confidence. A game with less confidence does not end a Clockwork run.",
       ),
       text(
-        "Progress shows your highest confidence with an active opponent who has not given you the achievement. The app also checks the games that players played before this change.",
+        "The app checks the expected scores after the last game of each day, when the day is over. You can earn 100% Confidence and Perfect Match 1 time for each opponent. You can earn the other 4 achievements again.",
+      ),
+      text(
+        "The achievements are in the new Predictions group. The app also checks the games that players played before this change.",
       ),
     ],
   },

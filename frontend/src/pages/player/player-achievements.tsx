@@ -11,6 +11,8 @@ import {
   isReachievableAchievement,
   YIN_YANG_RECORD_FLOOR,
   YIN_YANG_POINTS_RECORD_FLOOR,
+  BIGGEST_UPSET_RECORD_FLOOR,
+  PROPHECY_FULFILLED_MIN_GAP,
   SHOOTOUT_RECORD_FLOOR,
   SHOOTOUT_SETS_COUNTED,
   STREAK_RECORD_FLOOR,
@@ -451,6 +453,32 @@ export const ACHIEVEMENT_LABELS: Record<AchievementType, { title: string; descri
     description: "Play enough games against one opponent that the prediction for the 2 of you reaches 100% confidence",
     icon: "💯",
   },
+  "perfect-match": {
+    title: "Perfect Match",
+    description:
+      "After a game, the prediction between you and one opponent is between 49.5% and 50.5%, at more than 50% confidence",
+    icon: "🪙",
+  },
+  "against-all-odds": {
+    title: "Against All Odds",
+    description: "Win a game with a win chance of 10% or less, at 50% or more confidence",
+    icon: "🎲",
+  },
+  "biggest-upset": {
+    title: "Biggest Upset",
+    description: "Win a game with the lowest win chance in league history, at 50% or more confidence",
+    icon: "🧨",
+  },
+  clockwork: {
+    title: "Clockwork",
+    description: "Play 20 games in a row where the favourite wins, at 50% or more confidence",
+    icon: "⏱️",
+  },
+  "prophecy-fulfilled": {
+    title: "Prophecy Fulfilled",
+    description: "Reach your expected score after your score was 100 or more below it",
+    icon: "🎯",
+  },
   "rock-paper-scissors": {
     title: "Rock Paper Scissors",
     description: "In one day, beat a player who beats a third player who beats you",
@@ -837,6 +865,44 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
                   <p className="text-xs text-secondary-text/70 mt-2">
                     100% confidence after {achievement.data.gamesPlayed} games against{" "}
                     {context.playerName(achievement.data.opponent)}
+                  </p>
+                )}
+
+                {achievement.type === "perfect-match" && achievement.data && (
+                  <p className="text-xs text-secondary-text/70 mt-2">
+                    {fmtNum(achievement.data.winChance, { digits: 1 })}% against{" "}
+                    {context.playerName(achievement.data.opponent)}, at{" "}
+                    {fmtNum(achievement.data.confidence, { digits: 1 })}% confidence
+                  </p>
+                )}
+
+                {achievement.type === "against-all-odds" && achievement.data && (
+                  <p className="text-xs text-secondary-text/70 mt-2">
+                    Beat {context.playerName(achievement.data.opponent)} with a win chance of{" "}
+                    {fmtNum(achievement.data.winChance, { digits: 1 })}%
+                  </p>
+                )}
+
+                {achievement.type === "biggest-upset" && achievement.data && (
+                  <p className="text-xs text-secondary-text/70 mt-2">
+                    Beat {context.playerName(achievement.data.opponent)} with a win chance of{" "}
+                    {fmtNum(achievement.data.winChance, { digits: 1 })}%
+                    {achievement.data.previousRecord !== undefined
+                      ? ` (previous record ${fmtNum(achievement.data.previousRecord, { digits: 1 })}%)`
+                      : " (first league record)"}
+                  </p>
+                )}
+
+                {achievement.type === "clockwork" && achievement.data && (
+                  <p className="text-xs text-secondary-text/70 mt-2">
+                    The favourite won 20 games in a row from {dateString(achievement.data.startedAt)}
+                  </p>
+                )}
+
+                {achievement.type === "prophecy-fulfilled" && achievement.data && (
+                  <p className="text-xs text-secondary-text/70 mt-2">
+                    Score {fmtNum(achievement.data.score)}, expected score {fmtNum(achievement.data.expectedScore)}. Up
+                    to {fmtNum(achievement.data.largestGap)} below it from {dateString(achievement.data.armedAt)}
                   </p>
                 )}
 
@@ -1880,6 +1946,67 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                           <div className="mt-1.5 text-xs text-secondary-text/70">
                             No league record yet — play {GAMES_IN_PERIOD_RECORD_FLOOR} games in one{" "}
                             {HERO_RECORD_PERIODS[type].noun} to set the first record.
+                          </div>
+                        ) : type === "perfect-match" && "closestWinChance" in data ? (
+                          <div className="mt-1.5 text-xs text-secondary-text/70">
+                            {data.closestOpponent && data.closestConfidence !== undefined ? (
+                              <>
+                                Closest:{" "}
+                                <Link to={{ pathname: "/player/" + data.closestOpponent, search }}>
+                                  <span className="text-secondary-text underline">
+                                    {context.playerName(data.closestOpponent)}
+                                  </span>
+                                </Link>
+                                , {fmtNum(data.closestWinChance, { digits: 1 })}% at{" "}
+                                {fmtNum(data.closestConfidence, { digits: 1 })}% confidence
+                              </>
+                            ) : (
+                              "No active opponent has a prediction above 50% confidence"
+                            )}
+                          </div>
+                        ) : type === "biggest-upset" && "recordWinChance" in data ? (
+                          <div className="mt-1.5 text-xs text-secondary-text/70 space-y-1">
+                            {data.recordWinChance !== undefined ? (
+                              <p>
+                                League record: {fmtNum(data.recordWinChance, { digits: 1 })}%
+                                {data.recordHolder && (
+                                  <>
+                                    {" "}
+                                    by{" "}
+                                    <Link to={{ pathname: "/player/" + data.recordHolder, search }}>
+                                      <span className="text-secondary-text underline">
+                                        {context.playerName(data.recordHolder)}
+                                      </span>
+                                    </Link>
+                                  </>
+                                )}
+                                . Win at {fmtNum(data.recordWinChance, { digits: 1 })}% or less to earn it.
+                              </p>
+                            ) : (
+                              <p>
+                                No league record yet. Win at {BIGGEST_UPSET_RECORD_FLOOR}% or less to set the first
+                                record.
+                              </p>
+                            )}
+                            {data.lowestWinChance !== undefined && (
+                              <p>Your lowest win chance in a win: {fmtNum(data.lowestWinChance, { digits: 1 })}%</p>
+                            )}
+                          </div>
+                        ) : type === "against-all-odds" && "lowestWinChance" in data ? (
+                          <div className="mt-1.5 text-xs text-secondary-text/70">
+                            {data.lowestWinChance !== undefined
+                              ? `Your lowest win chance in a win: ${fmtNum(data.lowestWinChance, { digits: 1 })}%`
+                              : "No win at 50% or more confidence yet"}
+                          </div>
+                        ) : type === "prophecy-fulfilled" && "armed" in data ? (
+                          <div className="mt-1.5 text-xs text-secondary-text/70">
+                            {data.gap === undefined
+                              ? "Play enough games to be ranked. The app checks the expected scores after each day."
+                              : `Your score is ${fmtNum(Math.abs(data.gap))} ${data.gap >= 0 ? "below" : "above"} your expected score. ${
+                                  data.armed
+                                    ? "Reach your expected score to earn it."
+                                    : `Get ${PROPHECY_FULFILLED_MIN_GAP} or more below it first.`
+                                }`}
                           </div>
                         ) : type === "earliest-game" || type === "latest-game" ? (
                           <div className="mt-1.5 text-xs text-secondary-text/70 space-y-1">

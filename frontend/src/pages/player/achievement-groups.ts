@@ -106,8 +106,20 @@ export const ACHIEVEMENT_GROUPS: AchievementGroup[] = [
       "community-builder",
       "student-becomes-master",
       "rock-paper-scissors",
-      "100-percent-confidence",
       "mentor",
+    ],
+  },
+  {
+    id: "predictions",
+    title: "Predictions",
+    icon: "🔮",
+    types: [
+      "100-percent-confidence",
+      "perfect-match",
+      "against-all-odds",
+      "biggest-upset",
+      "clockwork",
+      "prophecy-fulfilled",
     ],
   },
   {
