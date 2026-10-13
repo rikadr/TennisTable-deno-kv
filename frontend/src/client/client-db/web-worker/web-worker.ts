@@ -35,9 +35,7 @@ export type WorkerMessage =
     }
   | { type: "tournament-stage-prediction-data"; data: { result: TournamentStagePredictionResult; done: boolean } }
   | { type: "start-predictions-history"; data: { playerId: string; events: EventType[] } }
-  | { type: "predictions-history-times"; data: { times: number[] } }
-  | { type: "predictions-history-data"; data: { entry: PredictionHistoryEntry; progress: number } }
-  | { type: "predictions-history-complete" }
+  | { type: "predictions-history-result"; data: { entries: PredictionHistoryEntry[] } }
   | { type: "start-whr"; data: { events: EventType[]; config?: Partial<WhrConfig> } }
   | { type: "whr-progress"; data: { progress: number } }
   | { type: "whr-result"; data: { result: WhrResult } }
@@ -121,15 +119,12 @@ function handleWorkerMessage(message: WorkerMessage) {
       break;
     }
 
-    case "start-predictions-history":
+    case "start-predictions-history": {
       const tennisTableForHistory = new TennisTable({ events: message.data.events });
-      tennisTableForHistory.predictionsHistory.computeHistoryForPlayer(
-        message.data.playerId,
-        (data) => postWorkerMessage({ type: "predictions-history-data", data }),
-        (times) => postWorkerMessage({ type: "predictions-history-times", data: { times } }),
-      );
-      setTimeout(() => postWorkerMessage({ type: "predictions-history-complete" }), 1000);
+      const entries = tennisTableForHistory.predictionsHistory.computeHistoryForPlayer(message.data.playerId);
+      postWorkerMessage({ type: "predictions-history-result", data: { entries } });
       break;
+    }
 
     case "start-hall-of-fame-history": {
       const tennisTableForHallOfFame = new TennisTable({ events: message.data.events });

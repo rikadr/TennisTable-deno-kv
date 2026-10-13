@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import {
   CartesianGrid,
   Line,
@@ -35,11 +35,8 @@ export const PlayerPredictionsHistory = ({ playerId }: Props) => {
     });
   };
 
-  const { startComputation, entryByTime, times, isDone, progress } = usePredictionsHistoryWorker();
-
-  useEffect(() => {
-    startComputation(playerId);
-  }, [startComputation, playerId]);
+  // Undefined until the worker gives the result. The chart keeps its size meanwhile, so the page does not move
+  const entries = usePredictionsHistoryWorker(playerId);
 
   const leaderboard = context.leaderboard.getLeaderboard();
 
@@ -51,17 +48,13 @@ export const PlayerPredictionsHistory = ({ playerId }: Props) => {
   }, [leaderboard.rankedPlayers, playerId, context]);
 
   const historicalData = useMemo(() => {
-    return times.map((time) => {
+    return (entries ?? []).map((entry) => {
+      const time = entry.time;
       const date = new Date(time);
       const isToday = date.toDateString() === new Date().toDateString();
       const timeStr = date.toLocaleTimeString("no-NO", { hour: "2-digit", minute: "2-digit" });
       const dateStr = date.toLocaleDateString("no-NO", { month: "short", day: "numeric" });
       const name = isToday ? `Today ${timeStr}` : `${dateStr} ${timeStr}`;
-
-      const entry = entryByTime.get(time);
-      if (!entry) {
-        return { time, name, winChance: null, confidence: null, gamesCount: 0 };
-      }
 
       let winChance = 0;
       let confidence = 0;
@@ -88,9 +81,9 @@ export const PlayerPredictionsHistory = ({ playerId }: Props) => {
         gamesCount,
       };
     });
-  }, [times, entryByTime, selectedTargetId]);
+  }, [entries, selectedTargetId]);
 
-  if (isDone && entryByTime.size === 0) {
+  if (entries?.length === 0) {
     return (
       <div className="w-full h-64 flex items-center justify-center bg-primary-background/50 rounded-xl border border-white/10 text-primary-text/50 italic">
         No prediction history available for this player.
@@ -156,12 +149,6 @@ export const PlayerPredictionsHistory = ({ playerId }: Props) => {
           </div>
         </div>
       </div>
-
-      {!isDone && (
-        <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden mb-2">
-          <div className="h-full bg-blue-500/50 transition-all duration-300" style={{ width: `${progress * 100}%` }} />
-        </div>
-      )}
 
       <div className="w-full h-[350px] md:h-[450px]">
         <ResponsiveContainer width="100%" height="100%">
@@ -253,8 +240,7 @@ export const PlayerPredictionsHistory = ({ playerId }: Props) => {
 
       {historicalData.length > 0 &&
         (() => {
-          const latest = historicalData.findLast((d) => d.winChance !== null);
-          if (!latest || latest.winChance === null || latest.confidence === null) return null;
+          const latest = historicalData[historicalData.length - 1];
           return (
             <div className="mt-4 flex items-center gap-4 px-2 py-3 rounded-xl bg-white/5 border border-white/10">
               <span className="text-primary-text/50 text-xs font-medium">Current</span>
