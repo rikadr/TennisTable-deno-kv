@@ -120,10 +120,7 @@ const SetPoints: React.FC<{
             {index === 0 && (
               <>
                 <h2 className="text-center text-xl">Individual points pr. set</h2>
-                <p className="text-center">(Optional)</p>
-                <p className="text-center text-sm mb-6">
-                  Type the points of the set loser. The app fills in the winner.
-                </p>
+                <p className="text-center mb-6">(Optional)</p>
               </>
             )}
             <div className="flex flex-row items-start justify-evenly h-16 max-w-96 m-auto">
