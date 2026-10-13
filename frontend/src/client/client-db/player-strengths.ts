@@ -52,8 +52,6 @@ export type PredictionDetails = Fraction & {
   gapSd: number;
   /** sigmoid(gap). The fraction is nearer to 50%, because it includes the uncertainty of the gap */
   fractionWithoutUncertainty: number;
-  /** The evidence for the gap, counted as games between 2 even players */
-  evidenceGames: number;
   /** The share of each pair of players in the evidence, largest first, and the share of the prior */
   evidence: { pairs: { p1: string; p2: string; share: number }[]; prior: number };
   /** The fitted strength of each player in the fit */
@@ -226,7 +224,6 @@ export class PlayerStrengths {
     for (let i = 0; i < n; i++) prior += u[i] * u[i] * PRIOR_PRECISION;
 
     const gap = this.#theta[a] - this.#theta[b];
-    const priorVariance = 2 * STRENGTH_PRIOR_SD * STRENGTH_PRIOR_SD;
     return {
       ...prediction,
       p1: { strength: this.#theta[a], sd: Math.sqrt(inverse[a * n + a]) },
@@ -234,7 +231,6 @@ export class PlayerStrengths {
       gap,
       gapSd: Math.sqrt(variance),
       fractionWithoutUncertainty: sigmoid(gap),
-      evidenceGames: Math.max(1 / variance - 1 / priorVariance, 0) / EVEN_GAME_INFORMATION,
       evidence: { pairs, prior: prior / variance },
       strengths: this.#ids.map((id, i) => ({ playerId: id, strength: this.#theta[i] })),
     };
