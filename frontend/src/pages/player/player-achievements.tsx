@@ -1,5 +1,11 @@
 import { useEventDbContext } from "../../wrappers/event-db-context";
-import { dateString, daysBetweenCeiled, monthString, relativeTimeString } from "../../common/date-utils";
+import {
+  dateString,
+  daysAndYearsString,
+  daysBetweenCeiled,
+  monthString,
+  relativeTimeString,
+} from "../../common/date-utils";
 import { classNames } from "../../common/class-names";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -663,7 +669,7 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
 
                 {achievement.type === "reunion" && achievement.data && (
                   <p className="text-xs text-secondary-text/70 mt-2">
-                    Reunited after {daysBetween(achievement.data.lastGameAt, achievement.earnedAt)} days
+                    Reunited after {daysAndYearsString(achievement.data.lastGameAt, achievement.earnedAt)}
                   </p>
                 )}
 

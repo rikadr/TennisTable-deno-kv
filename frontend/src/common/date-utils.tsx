@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { fmtNum } from "./number-utils";
 
 type RelativeTimeVariant = "long" | "short" | "auto";
 
@@ -116,6 +117,13 @@ export function monthString(time: number) {
     month: "long",
     year: "numeric",
   });
+}
+
+// A span in days and in years, e.g. "874 days (2,4 years)". A year is 365.25 days.
+export function daysAndYearsString(from: number, to: number): string {
+  const days = Math.round((to - from) / (24 * 60 * 60 * 1000));
+  const years = fmtNum(days / 365.25, { digits: 1 });
+  return `${days} day${days === 1 ? "" : "s"} (${years} year${years === "1" ? "" : "s"})`;
 }
 
 // Rounds up, so a span within the first day reads as "1 day", never "0 days".

@@ -1,7 +1,7 @@
 import React from "react";
 import { Achievement } from "../../client/client-db/achievements";
 import { useEventDbContext } from "../../wrappers/event-db-context";
-import { dateString, daysBetweenCeiled } from "../../common/date-utils";
+import { dateString, daysAndYearsString, daysBetweenCeiled } from "../../common/date-utils";
 import { fmtNum } from "../../common/number-utils";
 import { GameScoreLink } from "../game/game-score-link";
 
@@ -78,7 +78,7 @@ export const AchievementFacts: React.FC<{ achievement: Achievement }> = ({ achie
       )}
       {achievement.type === "reunion" && achievement.data && (
         <span className="text-[11px] opacity-80">
-          Reunited after {Math.round((achievement.earnedAt - achievement.data.lastGameAt) / (24 * 60 * 60 * 1000))} days
+          Reunited after {daysAndYearsString(achievement.data.lastGameAt, achievement.earnedAt)}
         </span>
       )}
       {achievement.data && "firstWinAt" in achievement.data && "thirdWinAt" in achievement.data && (
