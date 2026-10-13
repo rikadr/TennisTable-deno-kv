@@ -164,33 +164,38 @@ type GamesListProps = {
 };
 const GamesList: React.FC<GamesListProps> = ({ tournament, itemRefs }) => {
   return (
-    <div className="flex flex-col items-center lg:flex-row-reverse lg:justify-end lg:items-start gap-2 bg-primary-background rounded-lg py-4">
-      {tournament.bracket &&
-        tournament.bracket.bracket.map((layer, layerIndex) => (
-          <div key={layerIndex} className="flex flex-col gap-1 w-full min-w-[22rem] max-w-[27rem]">
-            <h3 className="text-center text-sm text-primary-text">
-              {bracketLayerIndexToTournamentRound(layerIndex, tournament.bracket!.doubleElimination)}
-            </h3>
-            {layer.map((game, gameIndex) => {
-              // Skip empty qualifier games
-              if (layerIndex === tournament.bracket!.bracket.length - 1 && !game.player1 && !game.player2) return null;
-              const fallbackKey = "L" + layerIndex + "G+" + gameIndex;
-              return (
-                <TournamentGameListCard
-                  key={
-                    game.player1 && game.player2
-                      ? getGameKeyFromPlayers(game.player1, game.player2, "bracket")
-                      : fallbackKey
-                  }
-                  tournament={tournament}
-                  game={game}
-                  itemRefs={itemRefs}
-                  fallbackKey={fallbackKey}
-                />
-              );
-            })}
-          </div>
-        ))}
+    <div className="bg-primary-background rounded-lg py-4 lg:overflow-x-auto">
+      {/* Wide screens show the rounds side by side. Only this box scrolls when the rounds are wider
+          than the screen, so the page keeps the screen width */}
+      <div className="flex flex-col items-center gap-2 lg:flex-row-reverse lg:justify-end lg:items-start lg:w-fit lg:min-w-full">
+        {tournament.bracket &&
+          tournament.bracket.bracket.map((layer, layerIndex) => (
+            <div key={layerIndex} className="flex flex-col gap-1 w-full min-w-[22rem] max-w-[27rem]">
+              <h3 className="text-center text-sm text-primary-text">
+                {bracketLayerIndexToTournamentRound(layerIndex, tournament.bracket!.doubleElimination)}
+              </h3>
+              {layer.map((game, gameIndex) => {
+                // Skip empty qualifier games
+                if (layerIndex === tournament.bracket!.bracket.length - 1 && !game.player1 && !game.player2)
+                  return null;
+                const fallbackKey = "L" + layerIndex + "G+" + gameIndex;
+                return (
+                  <TournamentGameListCard
+                    key={
+                      game.player1 && game.player2
+                        ? getGameKeyFromPlayers(game.player1, game.player2, "bracket")
+                        : fallbackKey
+                    }
+                    tournament={tournament}
+                    game={game}
+                    itemRefs={itemRefs}
+                    fallbackKey={fallbackKey}
+                  />
+                );
+              })}
+            </div>
+          ))}
+      </div>
     </div>
   );
 };
