@@ -35,8 +35,9 @@ export const PlayerPredictionsHistory = ({ playerId }: Props) => {
     });
   };
 
-  // Undefined until the worker gives the result. The chart keeps its size meanwhile, so the page does not move
-  const entries = usePredictionsHistoryWorker(playerId);
+  // The times come first, so the axis is fixed. The line then fills in from now backwards, as the entries come
+  const history = usePredictionsHistoryWorker(playerId);
+  const isDone = history?.isDone ?? false;
 
   const leaderboard = context.leaderboard.getLeaderboard();
 
@@ -48,13 +49,18 @@ export const PlayerPredictionsHistory = ({ playerId }: Props) => {
   }, [leaderboard.rankedPlayers, playerId, context]);
 
   const historicalData = useMemo(() => {
-    return (entries ?? []).map((entry) => {
-      const time = entry.time;
+    if (!history) return [];
+    return history.times.map((time) => {
       const date = new Date(time);
       const isToday = date.toDateString() === new Date().toDateString();
       const timeStr = date.toLocaleTimeString("no-NO", { hour: "2-digit", minute: "2-digit" });
       const dateStr = date.toLocaleDateString("no-NO", { month: "short", day: "numeric" });
       const name = isToday ? `Today ${timeStr}` : `${dateStr} ${timeStr}`;
+
+      const entry = history.entryByTime.get(time);
+      if (!entry) {
+        return { time, name, winChance: null, confidence: null, gamesCount: 0 };
+      }
 
       let winChance = 0;
       let confidence = 0;
@@ -81,9 +87,9 @@ export const PlayerPredictionsHistory = ({ playerId }: Props) => {
         gamesCount,
       };
     });
-  }, [entries, selectedTargetId]);
+  }, [history, selectedTargetId]);
 
-  if (entries?.length === 0) {
+  if (isDone && history?.entryByTime.size === 0) {
     return (
       <div className="w-full h-64 flex items-center justify-center bg-primary-background/50 rounded-xl border border-white/10 text-primary-text/50 italic">
         No prediction history available for this player.
@@ -188,6 +194,7 @@ export const PlayerPredictionsHistory = ({ playerId }: Props) => {
               stroke="rgb(var(--color-primary-text))"
               strokeWidth={3}
               animationDuration={250}
+              isAnimationActive={isDone}
               connectNulls
               dot={(props: any) => {
                 const { cx, cy, payload, index } = props;
@@ -232,6 +239,7 @@ export const PlayerPredictionsHistory = ({ playerId }: Props) => {
                 return <g key={`conf-dot-empty-${index}`} />;
               }}
               animationDuration={250}
+              isAnimationActive={isDone}
               opacity={0.6}
             />
           </LineChart>
@@ -240,7 +248,8 @@ export const PlayerPredictionsHistory = ({ playerId }: Props) => {
 
       {historicalData.length > 0 &&
         (() => {
-          const latest = historicalData[historicalData.length - 1];
+          const latest = historicalData.findLast((d) => d.winChance !== null);
+          if (!latest || latest.winChance === null || latest.confidence === null) return null;
           return (
             <div className="mt-4 flex items-center gap-4 px-2 py-3 rounded-xl bg-white/5 border border-white/10">
               <span className="text-primary-text/50 text-xs font-medium">Current</span>

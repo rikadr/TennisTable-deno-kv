@@ -23,8 +23,14 @@ export class PredictionsHistory {
     this.parent = parent;
   }
 
-  /** The predictions of the player at up to 150 times from the first game of the player until now, oldest first */
-  computeHistoryForPlayer(playerId: string): PredictionHistoryEntry[] {
+  /**
+   * The predictions of the player at up to 150 times from the first game of the player until now, oldest first.
+   * `progress` gets all the times first, then each entry when it is ready, newest first.
+   */
+  computeHistoryForPlayer(
+    playerId: string,
+    progress?: { onTimes: (times: number[]) => void; onEntry: (entry: PredictionHistoryEntry) => void },
+  ): PredictionHistoryEntry[] {
     const allGames = this.parent.games;
     const playersFirstGame = allGames.find((g) => g.winner === playerId || g.loser === playerId);
     if (!playersFirstGame) return [];
@@ -46,6 +52,7 @@ export class PredictionsHistory {
     }
 
     times.push(endTime);
+    progress?.onTimes(times);
 
     const pairStats = new PairStats(endTime, allGames);
     const strengths = new PlayerStrengths(pairStats);
@@ -94,7 +101,9 @@ export class PredictionsHistory {
       const overAllWinChance = rankedCount === 0 ? 0 : totalWinChanceSum / rankedCount;
       const overAllConfidence = rankedCount === 0 ? 0 : totalConfidenceSum / rankedCount;
 
-      entries.push({ time, overAllWinChance, overAllConfidence, oponents: oponentsOutput, gamesPlayed });
+      const entry = { time, overAllWinChance, overAllConfidence, oponents: oponentsOutput, gamesPlayed };
+      entries.push(entry);
+      progress?.onEntry(entry);
     }
     return entries.reverse();
   }

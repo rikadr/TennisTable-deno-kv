@@ -44,6 +44,27 @@ describe("PredictionsHistory.computeHistoryForPlayer", () => {
     expect(entries[entries.length - 1].oponents.b.winChance).toBeGreaterThan(0.5);
   });
 
+  it("reports all the times first, then each entry newest first", () => {
+    const calls: string[] = [];
+    const reported: number[] = [];
+    let times: number[] = [];
+    const entries = buildTennisTable().predictionsHistory.computeHistoryForPlayer("a", {
+      onTimes: (t) => {
+        calls.push("times");
+        times = t;
+      },
+      onEntry: (entry) => {
+        calls.push("entry");
+        reported.push(entry.time);
+      },
+    });
+
+    expect(calls[0]).toBe("times");
+    expect(calls.filter((call) => call === "times")).toHaveLength(1);
+    expect(times).toEqual(entries.map((entry) => entry.time));
+    expect(reported).toEqual([...times].reverse());
+  });
+
   it("gives no entries for a player with no games", () => {
     expect(buildTennisTable().predictionsHistory.computeHistoryForPlayer("x")).toEqual([]);
   });

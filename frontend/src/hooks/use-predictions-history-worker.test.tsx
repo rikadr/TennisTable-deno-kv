@@ -9,17 +9,20 @@ import { usePredictionsHistoryWorker } from "./use-predictions-history-worker";
 
 jest.mock("./create-modern-worker", () => ({ createModernWorker: jest.fn() }));
 
-/** A worker that answers each start message with 1 result */
+/** A worker that answers a start message with the times, then 2 batches of entries */
 class FakeWorker extends EventTarget {
   terminate = jest.fn();
   received: WorkerMessage[] = [];
-  constructor(private entries: PredictionHistoryEntry[]) {
-    super();
-  }
   postMessage(message: WorkerMessage) {
     this.received.push(message);
-    const result: WorkerMessage = { type: "predictions-history-result", data: { entries: this.entries } };
-    setTimeout(() => this.dispatchEvent(new MessageEvent("message", { data: result })));
+    const replies: WorkerMessage[] = [
+      { type: "predictions-history-times", data: { times: [1, 2, 3] } },
+      { type: "predictions-history-entries", data: { entries: [entry(3)], done: false } },
+      { type: "predictions-history-entries", data: { entries: [entry(2), entry(1)], done: true } },
+    ];
+    replies.forEach((reply, i) =>
+      setTimeout(() => this.dispatchEvent(new MessageEvent("message", { data: reply })), 20 * (i + 1)),
+    );
   }
 }
 
@@ -38,8 +41,9 @@ const entry = (time: number): PredictionHistoryEntry => ({
 });
 
 const Probe: React.FC<{ playerId: string }> = ({ playerId }) => {
-  const entries = usePredictionsHistoryWorker(playerId);
-  return <p>{entries ? `${entries.length} entries` : "waiting"}</p>;
+  const history = usePredictionsHistoryWorker(playerId);
+  if (!history) return <p>waiting</p>;
+  return <p>{`${history.entryByTime.size} of ${history.times.length}${history.isDone ? " done" : ""}`}</p>;
 };
 
 const renderProbe = () =>
@@ -50,14 +54,16 @@ const renderProbe = () =>
   );
 
 describe("usePredictionsHistoryWorker", () => {
-  it("shows the whole history from 1 message of the worker", async () => {
-    const worker = new FakeWorker([entry(1), entry(2), entry(3)]);
+  it("gives the times first, then the entries batch by batch", async () => {
+    const worker = new FakeWorker();
     jest.mocked(createModernWorker).mockReturnValue(worker as unknown as Worker);
 
     renderProbe();
 
     expect(screen.getByText("waiting")).toBeInTheDocument();
-    expect(await screen.findByText("3 entries")).toBeInTheDocument();
+    expect(await screen.findByText("0 of 3")).toBeInTheDocument();
+    expect(await screen.findByText("1 of 3")).toBeInTheDocument();
+    expect(await screen.findByText("3 of 3 done")).toBeInTheDocument();
     expect(worker.received).toHaveLength(1);
     expect(worker.received[0]).toMatchObject({ type: "start-predictions-history", data: { playerId: "a" } });
     expect(worker.terminate).toHaveBeenCalled();
@@ -68,7 +74,9 @@ describe("usePredictionsHistoryWorker", () => {
 
     renderProbe();
 
-    expect(screen.getByText(/^\d+ entries$/)).toBeInTheDocument();
-    expect(screen.queryByText("0 entries")).not.toBeInTheDocument();
+    const text = screen.getByText(/^\d+ of \d+ done$/).textContent ?? "";
+    const [ready, total] = text.split(" of ").map((part) => parseInt(part, 10));
+    expect(ready).toBeGreaterThan(0);
+    expect(ready).toBe(total);
   });
 });
