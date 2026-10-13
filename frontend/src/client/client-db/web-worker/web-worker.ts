@@ -36,8 +36,7 @@ export type WorkerMessage =
   | { type: "tournament-stage-prediction-data"; data: { result: TournamentStagePredictionResult; done: boolean } }
   | { type: "start-predictions-history"; data: { playerId: string; events: EventType[] } }
   | { type: "predictions-history-times"; data: { times: number[] } }
-  | { type: "predictions-history-data"; data: { entry: PredictionHistoryEntry; progress: number } }
-  | { type: "predictions-history-complete" }
+  | { type: "predictions-history-entries"; data: { entries: PredictionHistoryEntry[]; done: boolean } }
   | { type: "start-whr"; data: { events: EventType[]; config?: Partial<WhrConfig> } }
   | { type: "whr-progress"; data: { progress: number } }
   | { type: "whr-result"; data: { result: WhrResult } }
@@ -79,13 +78,15 @@ function handleWorkerMessage(message: WorkerMessage) {
       break;
     }
 
-    case "start-simulating-elo-over-time":
+    case "start-simulating-elo-over-time": {
       const tennisTable = new TennisTable({ events: message.data.events });
       tennisTable.simulations.expectedPlayerEloOverTime(message.data.playerId, (data) =>
         postWorkerMessage({ type: "simulated-elo-delivery", data }),
       );
-      setTimeout(() => postWorkerMessage({ type: "done-with-simulation" }), 1000);
+      // The simulation is synchronous and messages arrive in order, so all deliveries come before this
+      postWorkerMessage({ type: "done-with-simulation" });
       break;
+    }
 
     case "start-tournament-prediction":
       const tennisTableForTournament = new TennisTable({ events: message.data.events });
@@ -121,15 +122,25 @@ function handleWorkerMessage(message: WorkerMessage) {
       break;
     }
 
-    case "start-predictions-history":
+    case "start-predictions-history": {
       const tennisTableForHistory = new TennisTable({ events: message.data.events });
-      tennisTableForHistory.predictionsHistory.computeHistoryForPlayer(
-        message.data.playerId,
-        (data) => postWorkerMessage({ type: "predictions-history-data", data }),
-        (times) => postWorkerMessage({ type: "predictions-history-times", data: { times } }),
-      );
-      setTimeout(() => postWorkerMessage({ type: "predictions-history-complete" }), 1000);
+      // Send the entries in batches, so the chart fills in progressively without a render for each entry.
+      // The first entry goes at once, so the page shows the current prediction as soon as possible
+      let batch: PredictionHistoryEntry[] = [];
+      let lastSent = 0;
+      tennisTableForHistory.predictionsHistory.computeHistoryForPlayer(message.data.playerId, {
+        onTimes: (times) => postWorkerMessage({ type: "predictions-history-times", data: { times } }),
+        onEntry: (entry) => {
+          batch.push(entry);
+          if (Date.now() - lastSent < HISTORY_BATCH_MS) return;
+          postWorkerMessage({ type: "predictions-history-entries", data: { entries: batch, done: false } });
+          batch = [];
+          lastSent = Date.now();
+        },
+      });
+      postWorkerMessage({ type: "predictions-history-entries", data: { entries: batch, done: true } });
       break;
+    }
 
     case "start-hall-of-fame-history": {
       const tennisTableForHallOfFame = new TennisTable({ events: message.data.events });
@@ -161,6 +172,9 @@ function handleWorkerMessage(message: WorkerMessage) {
     }
   }
 }
+
+/** The time between 2 batches of prediction history entries */
+const HISTORY_BATCH_MS = 30;
 
 function postWorkerMessage(message: WorkerMessage): void {
   scope.postMessage(message);
