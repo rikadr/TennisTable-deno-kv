@@ -50,7 +50,7 @@ export const TableSidePicker: React.FC<{
   const toggle = (option: BadSide) => onSelect(badSide === option ? null : option);
   return (
     <div className="flex flex-wrap items-center justify-center gap-2">
-      <span className="text-xs text-gray-400">😵 Bad side:</span>
+      <span className="text-xs text-secondary-text">😵 Bad side:</span>
       <button
         onClick={() => toggle(1)}
         title={`${player1Name} has the bad side of the table`}
