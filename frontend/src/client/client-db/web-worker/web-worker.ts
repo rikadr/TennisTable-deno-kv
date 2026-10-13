@@ -77,13 +77,15 @@ function handleWorkerMessage(message: WorkerMessage) {
       break;
     }
 
-    case "start-simulating-elo-over-time":
+    case "start-simulating-elo-over-time": {
       const tennisTable = new TennisTable({ events: message.data.events });
       tennisTable.simulations.expectedPlayerEloOverTime(message.data.playerId, (data) =>
         postWorkerMessage({ type: "simulated-elo-delivery", data }),
       );
-      setTimeout(() => postWorkerMessage({ type: "done-with-simulation" }), 1000);
+      // The simulation is synchronous and messages arrive in order, so all deliveries come before this
+      postWorkerMessage({ type: "done-with-simulation" });
       break;
+    }
 
     case "start-tournament-prediction":
       const tennisTableForTournament = new TennisTable({ events: message.data.events });
