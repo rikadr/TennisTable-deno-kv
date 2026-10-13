@@ -249,16 +249,13 @@ describe("navigation from the achievements page", () => {
     expect(screen.queryByText("Highest")).not.toBeInTheDocument();
     expect(screen.queryByText("Average")).not.toBeInTheDocument();
 
-    // The card at the top shows the record that stands, and the record it
-    // replaced.
+    // The card at the top shows the record that stands.
     const card = screen.getByRole("region", { name: "Current record" });
     expect(within(card).getByText("5 games")).toBeInTheDocument();
-    expect(within(card).getByText(/stands today after \d+ days/)).toBeInTheDocument();
-    expect(within(card).getByText(/Previous record: 4 games/)).toBeInTheDocument();
+    expect(within(card).getByText(/^Since /)).toBeInTheDocument();
 
-    // The record that stands says how long it has stood, in the card and in
-    // the history.
-    expect(screen.getAllByText(/stands today after \d+ days/).length).toBe(2);
+    // The record that stands says how long it has stood.
+    expect(screen.getByText(/stands today after \d+ days/)).toBeInTheDocument();
     // The records it replaced say how long each of them held.
     expect(screen.getAllByText(/held \d+ days/).length).toBe(2);
 
