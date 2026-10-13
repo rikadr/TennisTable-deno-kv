@@ -1,4 +1,5 @@
 import { PairStats } from "./pair-stats";
+import { PlayerStrengths } from "./player-strengths";
 import { Predictions } from "./predictions";
 import { TennisTable } from "./tennis-table";
 
@@ -54,6 +55,7 @@ export class PredictionsHistory {
     let processed = 0;
 
     const pairStats = new PairStats(endTime, allGames);
+    const strengths = new PlayerStrengths(pairStats);
 
     for (let i = times.length - 1; i >= 0; i--) {
       const time = times[i];
@@ -63,7 +65,7 @@ export class PredictionsHistory {
       const gamesInPeriod = allGames.filter((g) => g.playedAt > periodStart && g.playedAt <= time);
       const gamesPlayed = gamesInPeriod.filter((g) => g.winner === playerId || g.loser === playerId).length;
 
-      const predictions = new Predictions(this.parent, time, pairStats);
+      const predictions = new Predictions(this.parent, time, strengths);
 
       const oponentsOutput: Record<string, Prediction> = {};
 

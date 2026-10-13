@@ -2,6 +2,8 @@ import { TennisTable } from "../tennis-table";
 import { EventType, EventTypeEnum } from "../event-store/event-types";
 import { GAME_CONFIDENCE_CONFIG, POINT_CONFIDENCE_CONFIG, Predictions, SET_CONFIDENCE_CONFIG } from "../predictions";
 import { gameToGame, pointToGame, setToGame } from "../future-elo-probability-lookups";
+import { PairStats } from "../pair-stats";
+import { PlayerStrengths } from "../player-strengths";
 
 // The confidence curve itself is covered in future-elo.test.ts. These tests
 // cover the win-probability outputs and the deterministic fraction helpers.
@@ -14,9 +16,15 @@ function playerEvent(stream: string, name: string, time: number): EventType {
   return { time, stream, type: EventTypeEnum.PLAYER_CREATED, data: { name } };
 }
 
-function buildTennisTable(games: [winner: string, loser: string][]): TennisTable {
+type SetPoints = { gameWinner: number; gameLoser: number }[];
+
+function buildTennisTable(
+  games: [winner: string, loser: string][],
+  extraEvents: EventType[] = [],
+  setPointsOf?: (gameIndex: number) => SetPoints,
+): TennisTable {
   const players = Array.from(new Set(games.flat()));
-  const events: EventType[] = players.map((p, i) => playerEvent(p, p, 1000 + i));
+  const events: EventType[] = [...extraEvents, ...players.map((p, i) => playerEvent(p, p, 1000 + i))];
   games.forEach(([winner, loser], i) => {
     events.push({
       time: T0 + i,
@@ -24,6 +32,21 @@ function buildTennisTable(games: [winner: string, loser: string][]): TennisTable
       type: EventTypeEnum.GAME_CREATED,
       data: { playedAt: T0 + i, winner, loser },
     });
+    const setPoints = setPointsOf?.(i);
+    if (setPoints) {
+      events.push({
+        time: T0 + i,
+        stream: `game-${i}`,
+        type: EventTypeEnum.GAME_SCORE,
+        data: {
+          setsWon: {
+            gameWinner: setPoints.filter((set) => set.gameWinner > set.gameLoser).length,
+            gameLoser: setPoints.filter((set) => set.gameLoser > set.gameWinner).length,
+          },
+          setPoints,
+        },
+      });
+    }
   });
   return new TennisTable({ events, referenceTime: T0 + games.length });
 }
@@ -66,66 +89,6 @@ describe("Predictions.getWinFractionWithConfidence", () => {
   });
 });
 
-describe("Predictions.linkFractions", () => {
-  it("links two even fractions into an even fraction", () => {
-    const linked = Predictions.linkFractions({ fraction: 0.5, confidence: 1 }, { fraction: 0.5, confidence: 1 });
-    expect(linked.fraction).toBeCloseTo(0.5, 10);
-    expect(linked.confidence).toBe(1);
-  });
-
-  it("amplifies two advantages through the Bradley-Terry chain", () => {
-    // Two 0.75 links: 0.75*0.75 / (0.75*0.75 + 0.25*0.25) = 0.9
-    const linked = Predictions.linkFractions({ fraction: 0.75, confidence: 1 }, { fraction: 0.75, confidence: 1 });
-    expect(linked.fraction).toBeCloseTo(0.9, 10);
-  });
-
-  it("multiplies the confidences of the two links", () => {
-    const linked = Predictions.linkFractions({ fraction: 0.6, confidence: 0.5 }, { fraction: 0.6, confidence: 0.4 });
-    expect(linked.confidence).toBeCloseTo(0.2, 10);
-  });
-
-  it("gives no information for a link of 0 and a link of 1", () => {
-    // Before the fix, both directions of this chain gave 0
-    const linked = Predictions.linkFractions({ fraction: 0, confidence: 1 }, { fraction: 1, confidence: 1 });
-    expect(linked).toEqual({ fraction: 0.5, confidence: 0 });
-  });
-
-  it("is symmetric: the reverse chain gives the complement fraction", () => {
-    const forward = Predictions.linkFractions({ fraction: 0.7, confidence: 1 }, { fraction: 0.6, confidence: 1 });
-    const backward = Predictions.linkFractions({ fraction: 0.3, confidence: 1 }, { fraction: 0.4, confidence: 1 });
-    expect(forward.fraction + backward.fraction).toBeCloseTo(1, 10);
-  });
-});
-
-describe("Predictions.combineFractions", () => {
-  it("returns zero for an empty or undefined-only list", () => {
-    expect(Predictions.combineFractions([])).toEqual({ fraction: 0, confidence: 0 });
-    expect(Predictions.combineFractions([undefined, undefined])).toEqual({ fraction: 0, confidence: 0 });
-  });
-
-  it("returns a single fraction unchanged", () => {
-    const combined = Predictions.combineFractions([{ fraction: 0.8, confidence: 0.5 }]);
-    expect(combined.fraction).toBeCloseTo(0.8, 10);
-    expect(combined.confidence).toBeCloseTo(0.5, 10);
-  });
-
-  it("averages equally confident fractions", () => {
-    const combined = Predictions.combineFractions([
-      { fraction: 0.8, confidence: 0.5 },
-      { fraction: 0.4, confidence: 0.5 },
-    ]);
-    expect(combined.fraction).toBeCloseTo(0.6, 10);
-  });
-
-  it("weights fractions by confidence", () => {
-    const combined = Predictions.combineFractions([
-      { fraction: 1, confidence: 0.9 },
-      { fraction: 0, confidence: 0.1 },
-    ]);
-    expect(combined.fraction).toBeCloseTo(0.9, 10);
-  });
-});
-
 describe("Predictions.combinePrioritizedFractions", () => {
   it("lets a fully confident first source occupy all the space", () => {
     const combined = Predictions.combinePrioritizedFractions([
@@ -162,44 +125,7 @@ describe("Predictions.combinePrioritizedFractions", () => {
   });
 });
 
-describe("Predictions direct win probability from games", () => {
-  it("predicts the head-to-head win fraction from game results", () => {
-    // A beats B 3 times, B beats A once: A wins 75% of games
-    const tt = buildTennisTable([
-      ["A", "B"],
-      ["A", "B"],
-      ["A", "B"],
-      ["B", "A"],
-    ]);
-    const fraction = tt.predictions.getDirectFraction("A", "B");
-
-    expect(fraction.fraction).toBeCloseTo(0.75, 5);
-    expect(fraction.confidence).toBeGreaterThan(0);
-    expect(fraction.confidence).toBeLessThan(1);
-  });
-
-  it("gives the complement fraction with the same confidence for the reverse matchup", () => {
-    const tt = buildTennisTable([
-      ["A", "B"],
-      ["A", "B"],
-      ["A", "B"],
-      ["B", "A"],
-    ]);
-    const forward = tt.predictions.getDirectFraction("A", "B");
-    const backward = tt.predictions.getDirectFraction("B", "A");
-
-    expect(forward.fraction + backward.fraction).toBeCloseTo(1, 5);
-    expect(forward.confidence).toBeCloseTo(backward.confidence, 10);
-  });
-
-  it("returns zero confidence for players who never met", () => {
-    const tt = buildTennisTable([
-      ["A", "B"],
-      ["C", "D"],
-    ]);
-    expect(tt.predictions.getDirectFraction("A", "C")).toEqual({ fraction: 0, confidence: 0 });
-  });
-
+describe("Predictions direct stats", () => {
   it("exposes raw and weighted game stats", () => {
     const tt = buildTennisTable([
       ["A", "B"],
@@ -216,7 +142,7 @@ describe("Predictions direct win probability from games", () => {
   });
 });
 
-describe("Predictions symmetry", () => {
+describe("Predictions from all games", () => {
   // Every pair of P1, A, B and P2 played, except P1 and P2
   const games: [string, string][] = [
     ["P1", "A"],
@@ -238,58 +164,6 @@ describe("Predictions symmetry", () => {
     ["P2", "B"],
   ];
 
-  it("counts the chains P1→A→B→P2 and P1→B→A→P2 in the two-layer fraction", () => {
-    const predictions = buildTennisTable(games).predictions;
-    const direct = (a: string, b: string) => predictions.getDirectFraction(a, b);
-    const chain = (a: string, b: string) =>
-      Predictions.linkFractions(Predictions.linkFractions(direct("P1", a), direct(a, b)), direct(b, "P2"));
-
-    const expected = Predictions.combineFractions([chain("A", "B"), chain("B", "A")]);
-    const twoLayer = predictions.getTwoLayerFraction("P1", "P2");
-
-    expect(twoLayer.fraction).toBeCloseTo(expected.fraction, 10);
-    expect(twoLayer.confidence).toBeCloseTo(expected.confidence, 10);
-  });
-
-  it("gives exactly the same two-layer fraction for the first pair of a player as for a later pair", () => {
-    // The first pair of P1 links only the chains to P2. A later pair uses the chains from P1 to all players
-    const firstPair = buildTennisTable(games).predictions;
-    const laterPair = buildTennisTable(games).predictions;
-    laterPair.getTwoLayerFraction("P1", "B");
-
-    for (const p2 of ["P2", "A"]) {
-      expect(firstPair.getTwoLayerFraction("P1", p2)).toEqual(laterPair.getTwoLayerFraction("P1", p2));
-    }
-  });
-
-  it("gives the complement fraction for the reverse pair, in each layer", () => {
-    // A new TennisTable for each direction, so no value comes from the cache of the other direction
-    const forward = buildTennisTable(games).predictions;
-    const backward = buildTennisTable(games).predictions;
-
-    for (const [p1, p2] of [
-      ["P1", "P2"],
-      ["P1", "B"],
-      ["A", "P2"],
-    ]) {
-      const layers = (predictions: Predictions, a: string, b: string) => [
-        predictions.getDirectFraction(a, b),
-        predictions.getOneLayerFraction(a, b),
-        predictions.getTwoLayerFraction(a, b),
-        predictions.getPredictedFraction(a, b)!,
-      ];
-      const forwardLayers = layers(forward, p1, p2);
-      const backwardLayers = layers(backward, p2, p1);
-      forwardLayers.forEach((layer, i) => {
-        if (layer.confidence === 0) return;
-        expect(layer.fraction + backwardLayers[i].fraction).toBeCloseTo(1, 12);
-        expect(layer.confidence).toBeCloseTo(backwardLayers[i].confidence, 12);
-      });
-    }
-  });
-});
-
-describe("Predictions transitive (one-layer) probability", () => {
   const chainGames: [string, string][] = [
     // A beats M 3 of 4
     ["A", "M"],
@@ -303,53 +177,167 @@ describe("Predictions transitive (one-layer) probability", () => {
     ["B", "M"],
   ];
 
-  it("finds the common opponents between two players", () => {
-    const tt = buildTennisTable(chainGames);
-    expect(tt.predictions.getCommonOpponents("A", "B")).toEqual(["M"]);
-    expect(tt.predictions.getCommonOpponents("A", "M")).toEqual([]);
+  it("gives the complement fraction with the same confidence for the reverse pair", () => {
+    // A new TennisTable for each direction, so no value comes from the cache of the other direction
+    const forward = buildTennisTable(games).predictions;
+    const backward = buildTennisTable(games).predictions;
+
+    for (const [p1, p2] of [
+      ["P1", "P2"],
+      ["P1", "B"],
+      ["A", "P2"],
+    ]) {
+      const there = forward.getPredictedFraction(p1, p2)!;
+      const back = backward.getPredictedFraction(p2, p1)!;
+      expect(there.fraction + back.fraction).toBe(1);
+      expect(there.confidence).toBe(back.confidence);
+    }
   });
 
-  it("links win fractions through a common opponent", () => {
-    const tt = buildTennisTable(chainGames);
-    // 0.75 linked with 0.75 through the Bradley-Terry model = 0.9
-    const oneLayer = tt.predictions.getOneLayerFraction("A", "B");
+  it("predicts 2 players who never played each other from a common opponent", () => {
+    const predictions = buildTennisTable(chainGames).predictions;
+    const aAgainstB = predictions.getPredictedFraction("A", "B")!;
 
-    expect(oneLayer.fraction).toBeCloseTo(0.9, 3);
-    expect(oneLayer.confidence).toBeGreaterThan(0);
+    // A is stronger than M, and M is stronger than B, so A is the favourite against B by more
+    expect(aAgainstB.fraction).toBeGreaterThan(predictions.getPredictedFraction("A", "M")!.fraction);
+    expect(predictions.getPredictedFraction("A", "M")!.fraction).toBeGreaterThan(0.5);
+    expect(aAgainstB.confidence).toBeGreaterThan(0);
   });
 
-  it("combines the layers into a predicted fraction when there is no direct data", () => {
-    const tt = buildTennisTable(chainGames);
-    const predicted = tt.predictions.getPredictedFraction("A", "B");
+  it("adds the games against other opponents to a pair with few games", () => {
+    // B won the only game against A, but A won all the games against 3 players that beat B
+    const pair: [string, string][] = [["B", "A"]];
+    const others: [string, string][] = [];
+    for (const opponent of ["X", "Y", "Z"]) {
+      for (let i = 0; i < 4; i++) others.push(["A", opponent], [opponent, "B"]);
+    }
+    const directOnly = buildTennisTable(pair).predictions.getPredictedFraction("A", "B")!;
+    const allGames = buildTennisTable([...pair, ...others]).predictions;
 
-    expect(predicted).toBeDefined();
-    expect(predicted!.fraction).toBeCloseTo(0.9, 3);
+    expect(directOnly.fraction).toBeLessThan(0.5);
+    expect(allGames.getPredictedFraction("A", "B")!.fraction).toBeGreaterThan(0.5);
+    expect(allGames.getPredictedFraction("A", "B")!.confidence).toBeGreaterThan(directOnly.confidence);
   });
 
-  it("returns undefined when no path between the players exists", () => {
-    const tt = buildTennisTable([
+  it("gives more confidence with more games", () => {
+    const fewGames = buildTennisTable([
       ["A", "B"],
-      ["C", "D"],
-    ]);
-    expect(tt.predictions.getPredictedFraction("A", "C")).toBeUndefined();
+      ["B", "A"],
+    ]).predictions.getPredictedFraction("A", "B")!;
+    const manyGames = buildTennisTable(
+      Array.from({ length: 20 }, (_, i): [string, string] => (i % 2 === 0 ? ["A", "B"] : ["B", "A"])),
+    ).predictions.getPredictedFraction("A", "B")!;
+
+    expect(fewGames.fraction).toBeCloseTo(0.5, 10);
+    expect(manyGames.confidence).toBeGreaterThan(fewGames.confidence);
+    expect(manyGames.confidence).toBeLessThan(1);
   });
 
-  it("gives the same prediction when called again, and a separate one for the reverse pair", () => {
+  it("gives no prediction for players with no chain of opponents between them", () => {
+    // A and C are in separate groups. Only the prior separates their strengths
+    const predictions = buildTennisTable([
+      ...Array.from({ length: 20 }, (): [string, string] => ["A", "B"]),
+      ...Array.from({ length: 20 }, (): [string, string] => ["D", "C"]),
+    ]).predictions;
+
+    expect(predictions.getPredictedFraction("A", "C")).toBeUndefined();
+    expect(predictions.getPredictedFraction("C", "A")).toBeUndefined();
+    expect(predictions.getPredictedFraction("A", "B")!.fraction).toBeGreaterThan(0.9);
+  });
+
+  it("gives the same variance for many pairs as for 1 pair of a fit", () => {
+    // The second variance of a fit uses H^-1. The first uses a forward substitution
+    const pairs = [
+      ["P1", "P2"],
+      ["A", "B"],
+      ["B", "P2"],
+      ["P1", "A"],
+    ];
+    const many = buildTennisTable(games).predictions;
+    const manyResults = pairs.map(([p1, p2]) => many.getPredictedFraction(p1, p2)!);
+    pairs.forEach(([p1, p2], i) => {
+      const single = buildTennisTable(games).predictions.getPredictedFraction(p1, p2)!;
+      expect(manyResults[i].fraction).toBeCloseTo(single.fraction, 12);
+      expect(manyResults[i].confidence).toBeCloseTo(single.confidence, 12);
+    });
+  });
+
+  it("gives no prediction for a player with no games", () => {
+    const events: EventType[] = [playerEvent("X", "X", 900)];
+    const tt = buildTennisTable(chainGames, events);
+    tt.predictions.getPredictedFraction("A", "X");
+
+    expect(tt.predictions.getPredictedFraction("A", "X")).toBeUndefined();
+    expect(tt.predictions.getPredictedFraction("A", "A")).toBeUndefined();
+  });
+
+  it("counts the game result before the sets and the points", () => {
+    // A won 6 of 6 games by 2 sets to 1, but took fewer points than B in each game
+    const sets = [
+      { gameWinner: 11, gameLoser: 9 },
+      { gameWinner: 2, gameLoser: 11 },
+      { gameWinner: 11, gameLoser: 9 },
+    ];
+    const tt = buildTennisTable(
+      Array.from({ length: 6 }, (): [string, string] => ["A", "B"]),
+      [],
+      () => sets,
+    );
+
+    expect(tt.predictions.getPredictedFraction("A", "B")!.fraction).toBeGreaterThan(0.6);
+  });
+
+  it("gives the same prediction with shared strengths over many reference times as with a new fit", () => {
+    const tt = buildTennisTable([...games, ...chainGames]);
+    const allGames = tt.games;
+    const strengths = new PlayerStrengths(new PairStats(T0 + allGames.length, allGames));
+
+    for (let time = T0 + allGames.length; time >= T0 + 5; time -= 3) {
+      strengths.pairStats.rewindTo(time);
+      const shared = new Predictions(tt, time, strengths);
+      const fresh = new Predictions(
+        tt,
+        time,
+        allGames.filter((g) => g.playedAt <= time),
+      );
+      for (const [p1, p2] of [
+        ["P1", "P2"],
+        ["A", "B"],
+        ["M", "P2"],
+      ]) {
+        const a = shared.getPredictedFraction(p1, p2);
+        const b = fresh.getPredictedFraction(p1, p2);
+        expect(a === undefined).toBe(b === undefined);
+        if (!a || !b) continue;
+        // The fit stops at a tolerance, and the confidence uses the Hessian of the last step
+        expect(a.fraction).toBeCloseTo(b.fraction, 5);
+        expect(a.confidence).toBeCloseTo(b.confidence, 4);
+      }
+    }
+  });
+
+  it("explains a prediction with the strengths, the gap and the evidence of each pair", () => {
+    const predictions = buildTennisTable(games).predictions;
+    const details = predictions.getPredictionDetails("P1", "P2")!;
+    const predicted = predictions.getPredictedFraction("P1", "P2")!;
+
+    expect(details.fraction).toBeCloseTo(predicted.fraction, 12);
+    expect(details.confidence).toBeCloseTo(predicted.confidence, 12);
+    expect(details.gap).toBeCloseTo(details.p1.strength - details.p2.strength, 12);
+    // The shares of all pairs and of the prior make up all the evidence for the gap
+    const total = details.evidence.pairs.reduce((sum, pair) => sum + pair.share, 0) + details.evidence.prior;
+    expect(total).toBeCloseTo(1, 10);
+    // P1 and P2 never played each other, so all the evidence comes from other pairs and the prior
+    expect(details.evidence.pairs.some((pair) => [pair.p1, pair.p2].sort().join() === "P1,P2")).toBe(false);
+    expect(predictions.getPredictionDetails("P1", "X")).toBeUndefined();
+  });
+
+  it("gives the same prediction when called again, and the complement for the reverse pair", () => {
     const tt = buildTennisTable(chainGames);
-    const first = tt.predictions.getPredictedFraction("A", "B");
+    const first = tt.predictions.getPredictedFraction("A", "B")!;
 
     expect(tt.predictions.getPredictedFraction("A", "B")).toEqual(first);
-    expect(tt.predictions.getPredictedFraction("B", "A")!.fraction).toBeCloseTo(0.1, 3);
-  });
-
-  it("gives undefined again for a pair with no prediction", () => {
-    const tt = buildTennisTable([
-      ["A", "B"],
-      ["C", "D"],
-    ]);
-    tt.predictions.getPredictedFraction("A", "C");
-
-    expect(tt.predictions.getPredictedFraction("A", "C")).toBeUndefined();
+    expect(tt.predictions.getPredictedFraction("B", "A")!.fraction).toBe(1 - first.fraction);
   });
 
   it("counts total games per player and lists all player ids", () => {

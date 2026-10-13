@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useEventDbContext } from "../../wrappers/event-db-context";
-import { Predictions } from "../../client/client-db/predictions";
 import { CARD_SURFACE, fill, textOn } from "../../common/player-color-styles";
 import { fmtNum } from "../../common/number-utils";
 import { stringToColor } from "../../common/string-to-color";
@@ -49,10 +48,7 @@ export const LiveGamePredictionCard: React.FC<Props> = ({
 
   // Static pre-game pairing prediction (same math as the player-page tab).
   const predictions = context.predictions;
-  const direct = predictions.getDirectFraction(player1Id, player2Id);
-  const oneLayer = predictions.getOneLayerFraction(player1Id, player2Id);
-  const twoLayer = predictions.getTwoLayerFraction(player1Id, player2Id);
-  const base = Predictions.combinePrioritizedFractions([direct, oneLayer, twoLayer]);
+  const base = predictions.getPredictedFraction(player1Id, player2Id);
   const baseConfidence = base?.confidence ?? 0;
   const baseFraction = base?.fraction ?? 0;
   const hasBasePrediction = baseConfidence > 0;
