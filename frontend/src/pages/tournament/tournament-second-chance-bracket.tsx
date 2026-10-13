@@ -1,7 +1,13 @@
 import { useSessionStorage } from "usehooks-ts";
 import { Tournament } from "../../client/client-db/tournaments/tournament";
 import { secondChanceRoundLabel } from "./round-labels";
-import { GameTriangle, GrandFinalLinkCard, TournamentGameListCard, TreeListToggle } from "./tournament-bracket";
+import {
+  BracketTreeScroller,
+  GameTriangle,
+  GrandFinalLinkCard,
+  TournamentGameListCard,
+  TreeListToggle,
+} from "./tournament-bracket";
 
 export const TournamentSecondChanceBracket = ({
   tournament,
@@ -42,9 +48,10 @@ export const TournamentSecondChanceBracket = ({
         again and you are out. The winner of the second chance bracket meets the first chance champion in the final.
       </p>
       <TreeListToggle showAsList={showAsList} setShowAsList={setShowAsList} />
-      <GrandFinalLinkCard tournament={tournament} itemRefs={itemRefs} fromSection="second-chance" />
       {showAsList === false && (
-        <div className="flex flex-col gap-6 w-fit max-w-full m-auto bg-primary-background rounded-lg p-4 overflow-x-auto">
+        // The final card sits inside the scroll box, so it stays centred over the top of the tree
+        <BracketTreeScroller className="flex flex-col gap-6">
+          <GrandFinalLinkCard tournament={tournament} itemRefs={itemRefs} fromSection="second-chance" />
           {/* Rounds stacked vertically like the winners tree: second chance semi final at the top,
               round 1 at the bottom. Not a recursive tree: consecutive second chance rounds can
               have the same number of games */}
@@ -82,41 +89,46 @@ export const TournamentSecondChanceBracket = ({
               </div>
             );
           })}
-        </div>
+        </BracketTreeScroller>
       )}
+      {showAsList && <GrandFinalLinkCard tournament={tournament} itemRefs={itemRefs} fromSection="second-chance" />}
       {showAsList && (
-        <div className="flex flex-col items-center lg:flex-row-reverse lg:justify-end lg:items-start gap-2 bg-primary-background rounded-lg py-4">
-          {secondChanceBracket.map((layer, layerIndex) => {
-            // Rounds consisting only of collapsed bye slots are never played
-            if (layer.every((game) => game.isBye)) return null;
-            const { title, subtitle } = secondChanceRoundLabel(layerIndex, secondChanceBracket.length);
-            return (
-              <div key={layerIndex} className="flex flex-col gap-1 w-full min-w-[22rem] max-w-[27rem]">
-                {/* Fixed-height header so the game cards align across rounds */}
-                <div className="h-10 flex flex-col justify-end">
-                  <h3 className="text-center text-sm text-primary-text">{title}</h3>
-                  <p className="text-center text-xs font-light text-primary-text/60 whitespace-nowrap">
-                    {subtitle ?? " "}
-                  </p>
+        <div className="bg-primary-background rounded-lg py-4 lg:overflow-x-auto">
+          {/* Wide screens show the rounds side by side. Only this box scrolls when the rounds are wider
+              than the screen, so the page keeps the screen width */}
+          <div className="flex flex-col items-center gap-2 lg:flex-row-reverse lg:justify-end lg:items-start lg:w-fit lg:min-w-full">
+            {secondChanceBracket.map((layer, layerIndex) => {
+              // Rounds consisting only of collapsed bye slots are never played
+              if (layer.every((game) => game.isBye)) return null;
+              const { title, subtitle } = secondChanceRoundLabel(layerIndex, secondChanceBracket.length);
+              return (
+                <div key={layerIndex} className="flex flex-col gap-1 w-full min-w-[22rem] max-w-[27rem]">
+                  {/* Fixed-height header so the game cards align across rounds */}
+                  <div className="h-10 flex flex-col justify-end">
+                    <h3 className="text-center text-sm text-primary-text">{title}</h3>
+                    <p className="text-center text-xs font-light text-primary-text/60 whitespace-nowrap">
+                      {subtitle ?? " "}
+                    </p>
+                  </div>
+                  {layer.map((game, gameIndex) => {
+                    // Empty bye slots are never shown; walkovers render as normal cards (with a "bye"
+                    // in the empty slot)
+                    if (game.isBye) return null;
+                    const fallbackKey = "LOSERS-L" + layerIndex + "G+" + gameIndex;
+                    return (
+                      <TournamentGameListCard
+                        key={fallbackKey}
+                        tournament={tournament}
+                        game={game}
+                        itemRefs={itemRefs}
+                        fallbackKey={fallbackKey}
+                      />
+                    );
+                  })}
                 </div>
-                {layer.map((game, gameIndex) => {
-                  // Empty bye slots are never shown; walkovers render as normal cards (with a "bye"
-                  // in the empty slot)
-                  if (game.isBye) return null;
-                  const fallbackKey = "LOSERS-L" + layerIndex + "G+" + gameIndex;
-                  return (
-                    <TournamentGameListCard
-                      key={fallbackKey}
-                      tournament={tournament}
-                      game={game}
-                      itemRefs={itemRefs}
-                      fallbackKey={fallbackKey}
-                    />
-                  );
-                })}
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
       )}
     </div>

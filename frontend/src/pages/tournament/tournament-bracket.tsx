@@ -8,6 +8,7 @@ import { bracketLayerIndexToTournamentRound } from "./round-labels";
 import { ProfilePicture } from "../player/profile-picture";
 import { getGameKeyFromPlayers, isParamGame } from "./tournament-page";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useLayoutEffect, useRef } from "react";
 
 export const TournamentBracket = ({
   tournament,
@@ -42,14 +43,39 @@ export const TournamentBracket = ({
   return (
     <div className="space-y-4">
       <TreeListToggle showAsList={showAsList} setShowAsList={setShowAsList} />
-      <GrandFinalLinkCard tournament={tournament} itemRefs={itemRefs} fromSection="winners" />
       {showAsList ? (
-        <GamesList tournament={tournament} itemRefs={itemRefs} />
+        <>
+          <GrandFinalLinkCard tournament={tournament} itemRefs={itemRefs} fromSection="winners" />
+          <GamesList tournament={tournament} itemRefs={itemRefs} />
+        </>
       ) : (
-        <div className="w-fit m-auto bg-primary-background rounded-lg p-4 ">
+        // The final card sits inside the scroll box, so it stays centred over the top of the tree
+        <BracketTreeScroller className="space-y-4">
+          <GrandFinalLinkCard tournament={tournament} itemRefs={itemRefs} fromSection="winners" />
           <GameTriangle tournament={tournament} layerIndex={0} gameIndex={0} itemRefs={itemRefs} />
-        </div>
+        </BracketTreeScroller>
       )}
+    </div>
+  );
+};
+
+/**
+ * Horizontal scroll box for a bracket tree. A tree can be much wider than the screen. Only this
+ * box scrolls, so the rest of the page keeps the screen width. The inner box keeps the full tree
+ * width, so all rows stay centred on each other. The box starts centred on the top of the tree.
+ */
+export const BracketTreeScroller: React.FC<{ children: React.ReactNode; className?: string }> = ({
+  children,
+  className,
+}) => {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const element = scrollRef.current;
+    if (element) element.scrollLeft = (element.scrollWidth - element.clientWidth) / 2;
+  }, []);
+  return (
+    <div ref={scrollRef} className="w-fit max-w-full mx-auto overflow-x-auto bg-primary-background rounded-lg">
+      <div className={classNames("w-fit p-4", className)}>{children}</div>
     </div>
   );
 };
@@ -138,33 +164,38 @@ type GamesListProps = {
 };
 const GamesList: React.FC<GamesListProps> = ({ tournament, itemRefs }) => {
   return (
-    <div className="flex flex-col items-center lg:flex-row-reverse lg:justify-end lg:items-start gap-2 bg-primary-background rounded-lg py-4">
-      {tournament.bracket &&
-        tournament.bracket.bracket.map((layer, layerIndex) => (
-          <div key={layerIndex} className="flex flex-col gap-1 w-full min-w-[22rem] max-w-[27rem]">
-            <h3 className="text-center text-sm text-primary-text">
-              {bracketLayerIndexToTournamentRound(layerIndex, tournament.bracket!.doubleElimination)}
-            </h3>
-            {layer.map((game, gameIndex) => {
-              // Skip empty qualifier games
-              if (layerIndex === tournament.bracket!.bracket.length - 1 && !game.player1 && !game.player2) return null;
-              const fallbackKey = "L" + layerIndex + "G+" + gameIndex;
-              return (
-                <TournamentGameListCard
-                  key={
-                    game.player1 && game.player2
-                      ? getGameKeyFromPlayers(game.player1, game.player2, "bracket")
-                      : fallbackKey
-                  }
-                  tournament={tournament}
-                  game={game}
-                  itemRefs={itemRefs}
-                  fallbackKey={fallbackKey}
-                />
-              );
-            })}
-          </div>
-        ))}
+    <div className="bg-primary-background rounded-lg py-4 lg:overflow-x-auto">
+      {/* Wide screens show the rounds side by side. Only this box scrolls when the rounds are wider
+          than the screen, so the page keeps the screen width */}
+      <div className="flex flex-col items-center gap-2 lg:flex-row-reverse lg:justify-end lg:items-start lg:w-fit lg:min-w-full">
+        {tournament.bracket &&
+          tournament.bracket.bracket.map((layer, layerIndex) => (
+            <div key={layerIndex} className="flex flex-col gap-1 w-full min-w-[22rem] max-w-[27rem]">
+              <h3 className="text-center text-sm text-primary-text">
+                {bracketLayerIndexToTournamentRound(layerIndex, tournament.bracket!.doubleElimination)}
+              </h3>
+              {layer.map((game, gameIndex) => {
+                // Skip empty qualifier games
+                if (layerIndex === tournament.bracket!.bracket.length - 1 && !game.player1 && !game.player2)
+                  return null;
+                const fallbackKey = "L" + layerIndex + "G+" + gameIndex;
+                return (
+                  <TournamentGameListCard
+                    key={
+                      game.player1 && game.player2
+                        ? getGameKeyFromPlayers(game.player1, game.player2, "bracket")
+                        : fallbackKey
+                    }
+                    tournament={tournament}
+                    game={game}
+                    itemRefs={itemRefs}
+                    fallbackKey={fallbackKey}
+                  />
+                );
+              })}
+            </div>
+          ))}
+      </div>
     </div>
   );
 };
