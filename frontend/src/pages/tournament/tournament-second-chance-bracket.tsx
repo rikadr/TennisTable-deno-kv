@@ -48,9 +48,10 @@ export const TournamentSecondChanceBracket = ({
         again and you are out. The winner of the second chance bracket meets the first chance champion in the final.
       </p>
       <TreeListToggle showAsList={showAsList} setShowAsList={setShowAsList} />
-      <GrandFinalLinkCard tournament={tournament} itemRefs={itemRefs} fromSection="second-chance" />
       {showAsList === false && (
+        // The final card sits inside the scroll box, so it stays centred over the top of the tree
         <BracketTreeScroller className="flex flex-col gap-6">
+          <GrandFinalLinkCard tournament={tournament} itemRefs={itemRefs} fromSection="second-chance" />
           {/* Rounds stacked vertically like the winners tree: second chance semi final at the top,
               round 1 at the bottom. Not a recursive tree: consecutive second chance rounds can
               have the same number of games */}
@@ -90,6 +91,7 @@ export const TournamentSecondChanceBracket = ({
           })}
         </BracketTreeScroller>
       )}
+      {showAsList && <GrandFinalLinkCard tournament={tournament} itemRefs={itemRefs} fromSection="second-chance" />}
       {showAsList && (
         <div className="flex flex-col items-center lg:flex-row-reverse lg:justify-end lg:items-start gap-2 bg-primary-background rounded-lg py-4">
           {secondChanceBracket.map((layer, layerIndex) => {

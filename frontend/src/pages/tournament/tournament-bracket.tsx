@@ -43,11 +43,15 @@ export const TournamentBracket = ({
   return (
     <div className="space-y-4">
       <TreeListToggle showAsList={showAsList} setShowAsList={setShowAsList} />
-      <GrandFinalLinkCard tournament={tournament} itemRefs={itemRefs} fromSection="winners" />
       {showAsList ? (
-        <GamesList tournament={tournament} itemRefs={itemRefs} />
+        <>
+          <GrandFinalLinkCard tournament={tournament} itemRefs={itemRefs} fromSection="winners" />
+          <GamesList tournament={tournament} itemRefs={itemRefs} />
+        </>
       ) : (
-        <BracketTreeScroller>
+        // The final card sits inside the scroll box, so it stays centred over the top of the tree
+        <BracketTreeScroller className="space-y-4">
+          <GrandFinalLinkCard tournament={tournament} itemRefs={itemRefs} fromSection="winners" />
           <GameTriangle tournament={tournament} layerIndex={0} gameIndex={0} itemRefs={itemRefs} />
         </BracketTreeScroller>
       )}
