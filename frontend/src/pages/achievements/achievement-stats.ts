@@ -274,6 +274,14 @@ export type RecordStep = {
   heldUntil?: number;
 };
 
+export type CurrentRecord = {
+  step: RecordStep;
+  /** The earning each holder reached the record with, in the order they reached it. */
+  earnings: Achievement[];
+  /** The record it replaced. Undefined while the first record stands. */
+  previous?: RecordStep;
+};
+
 export type TimeToEarn = {
   medianDays: number;
   fastest: { playerId: string; days: number };
@@ -308,6 +316,7 @@ export type AchievementDetails = {
   timeToEarn?: TimeToEarn;
   values?: ValueSummary;
   recordHistory?: RecordStep[];
+  currentRecord?: CurrentRecord;
   perTournament: CountRow[];
   perSeason: CountRow[];
 };
@@ -337,6 +346,7 @@ export function achievementDetails(input: {
   const rarity = rarityRanking(allAchievements, allTypes).get(type)!;
   const first = earnings[0];
   const latest = earnings[earnings.length - 1];
+  const history = RECORD_ACHIEVEMENTS.includes(type) ? recordHistory(earnings) : undefined;
 
   return {
     type,
@@ -354,7 +364,8 @@ export function achievementDetails(input: {
     perMonth: perMonth(earnings, firstGameAt, now),
     timeToEarn: timeToEarn(earnings, firstGameByPlayer),
     values: valueSummary(type, earnings),
-    recordHistory: RECORD_ACHIEVEMENTS.includes(type) ? recordHistory(earnings) : undefined,
+    recordHistory: history,
+    currentRecord: history ? currentRecord(history, earnings) : undefined,
     perTournament: whereTheCountsDiffer(
       groupCount(earnings, (achievement) =>
         achievement.data && "tournamentId" in achievement.data ? achievement.data.tournamentId : undefined,
@@ -571,6 +582,25 @@ export function recordHistory(earnings: Achievement[]): RecordStep[] {
     if (next) step.heldUntil = next.at;
   });
   return steps;
+}
+
+/**
+ * The record that stands: the last step of the history, with the earning each
+ * holder reached it with, so the record can describe the game that set it.
+ */
+export function currentRecord(history: RecordStep[], earnings: Achievement[]): CurrentRecord | undefined {
+  const step = history[history.length - 1];
+  if (!step) return undefined;
+  const holderEarnings = step.holders.flatMap((playerId) => {
+    const earning = earnings.find(
+      (achievement) =>
+        achievement.earnedBy === playerId &&
+        achievement.earnedAt >= step.at &&
+        achievementValue(achievement) === step.value,
+    );
+    return earning ? [earning] : [];
+  });
+  return { step, earnings: holderEarnings, previous: history[history.length - 2] };
 }
 
 export type LeaguePlayerRow = { playerId: string; types: number; earnings: number };

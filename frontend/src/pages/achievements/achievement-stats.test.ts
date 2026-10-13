@@ -8,6 +8,7 @@ import {
   rarityRanking,
   RECORD_ACHIEVEMENTS,
   recordHistory,
+  currentRecord,
   valueBuckets,
 } from "./achievement-stats";
 
@@ -241,6 +242,25 @@ describe("valueBuckets", () => {
 
     expect(buckets).toHaveLength(8);
     expect(buckets.reduce((sum, bucket) => sum + bucket.count, 0)).toBe(values.length);
+  });
+});
+
+describe("currentRecord", () => {
+  it("takes the last step, the earning of each holder, and the record it replaced", () => {
+    const earnings = [
+      heroOfTheDay("alice", START, 4),
+      heroOfTheDay("bob", START + 5 * DAY_MS, 6, 4),
+      heroOfTheDay("carol", START + 9 * DAY_MS, 6, 6),
+    ];
+    const record = currentRecord(recordHistory(earnings), earnings);
+
+    expect(record?.step).toMatchObject({ value: 6, holders: ["bob", "carol"], at: START + 5 * DAY_MS });
+    expect(record?.earnings.map((earning) => earning.earnedAt)).toEqual([START + 5 * DAY_MS, START + 9 * DAY_MS]);
+    expect(record?.previous).toMatchObject({ value: 4, holders: ["alice"] });
+  });
+
+  it("has no record before the first earning", () => {
+    expect(currentRecord([], [])).toBeUndefined();
   });
 });
 

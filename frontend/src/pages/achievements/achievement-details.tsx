@@ -16,7 +16,7 @@ import { AXIS_COLOR, SERIES_COLOR } from "../statistics/percent-chart";
 import { dateString, relativeTimeString } from "../../common/date-utils";
 import { fmtNum } from "../../common/number-utils";
 import { classNames } from "../../common/class-names";
-import { achievementDetails, MonthBucket, ValueSummary } from "./achievement-stats";
+import { achievementDetails, AchievementMetric, CurrentRecord, MonthBucket, ValueSummary } from "./achievement-stats";
 import { playersProgressForType } from "./progress-rows";
 import { AchievementFacts } from "./achievement-facts";
 import { playerAchievementProgressLink } from "../player/player-achievement-link";
@@ -133,6 +133,16 @@ export const AchievementDetails: React.FC<Props> = ({ type, earnedCount, onShowP
           </div>
         </div>
       </div>
+
+      {details.currentRecord && details.values && (
+        <RecordCard
+          record={details.currentRecord}
+          metric={details.values.metric}
+          type={type}
+          now={now}
+          playerName={playerName}
+        />
+      )}
 
       {/* Scarcity */}
       <StatTileRow>
@@ -408,6 +418,56 @@ const NavButton: React.FC<{ to: string; label: string; alignEnd?: boolean; child
     <span className="truncate min-w-0">{label}</span>
     {alignEnd && children}
   </Link>
+);
+
+/** The record that stands, above everything else, for an achievement that holds one. */
+const RecordCard: React.FC<{
+  record: CurrentRecord;
+  metric: AchievementMetric;
+  type: AchievementType;
+  now: number;
+  playerName: (playerId: string) => string;
+}> = ({ record, metric, type, now, playerName }) => (
+  <section
+    aria-label="Current record"
+    className="flex flex-col gap-3 rounded-xl border-2 border-secondary-text px-4 py-3 bg-secondary-background text-secondary-text"
+  >
+    <div>
+      <div className="text-xs md:text-sm uppercase tracking-wide opacity-80">🏆 Current record · {metric.label}</div>
+      <div className="text-3xl md:text-4xl font-bold tabular-nums leading-tight">
+        {metric.format(record.step.value)}
+      </div>
+      <div className="text-xs opacity-70">
+        Set {dateString(record.step.at)} — {standsToday(record.step.at, now)}
+      </div>
+    </div>
+    <div className="flex flex-col gap-2">
+      {record.earnings.map((earning) => (
+        <div key={`${earning.earnedBy}-${earning.earnedAt}`}>
+          <div className="flex items-center gap-3">
+            <Link to={playerAchievementProgressLink(earning.earnedBy, type)} className="shrink-0">
+              <ProfilePicture playerId={earning.earnedBy} size={32} border={2} />
+            </Link>
+            <Link
+              to={playerAchievementProgressLink(earning.earnedBy, type)}
+              className="flex-1 font-semibold hover:underline truncate"
+            >
+              {playerName(earning.earnedBy)}
+            </Link>
+            <span className="text-xs opacity-70 whitespace-nowrap">{dateString(earning.earnedAt)}</span>
+          </div>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1 pl-11">
+            <AchievementFacts achievement={earning} />
+          </div>
+        </div>
+      ))}
+    </div>
+    {record.previous && (
+      <div className="text-xs opacity-70">
+        Previous record: {metric.format(record.previous.value)} by {record.previous.holders.map(playerName).join(" & ")}
+      </div>
+    )}
+  </section>
 );
 
 const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
