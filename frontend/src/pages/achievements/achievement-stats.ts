@@ -46,6 +46,7 @@ export const ACHIEVEMENT_METRICS: Partial<Record<AchievementType, AchievementMet
   shootout: { label: "Points in the counted sets", format: points },
   choker: { label: "Lead lost", format: points },
   "yin-yang-points": { label: "Alternating points", format: points },
+  "100-percent-confidence": { label: "Games played together", format: games },
   "tug-of-war": {
     label: "Lead changes in the set",
     format: (value) => `${fmtNum(value)} change${value === 1 ? "" : "s"}`,
@@ -109,6 +110,8 @@ export function achievementValue(achievement: Achievement): number | undefined {
       return achievement.data.lead;
     case "tug-of-war":
       return achievement.data.leadChanges;
+    case "100-percent-confidence":
+      return achievement.data.gamesPlayed;
     case "yin-yang-points":
       return achievement.data.points;
     case "less-is-more":
@@ -202,6 +205,7 @@ export const MUTUAL_ACHIEVEMENTS: AchievementType[] = [
   "even-steven",
   "tug-of-war",
   "yin-yang-points",
+  "100-percent-confidence",
 ];
 
 export type RarityEntry = {

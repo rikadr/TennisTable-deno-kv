@@ -446,6 +446,11 @@ export const ACHIEVEMENT_LABELS: Record<AchievementType, { title: string; descri
       "Play as many alternating points in a row as anyone in league history. The run continues across sets (tracked games only)",
     icon: "🌗",
   },
+  "100-percent-confidence": {
+    title: "100% Confidence",
+    description: "Play enough games against one opponent that the prediction for the 2 of you reaches 100% confidence",
+    icon: "💯",
+  },
   "rock-paper-scissors": {
     title: "Rock Paper Scissors",
     description: "In one day, beat a player who beats a third player who beats you",
@@ -825,6 +830,13 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
                 {achievement.type === "even-steven" && achievement.data && (
                   <p className="text-xs text-secondary-text/70 mt-2">
                     {achievement.data.gamesPlayed / 2} wins and {achievement.data.gamesPlayed / 2} losses
+                  </p>
+                )}
+
+                {achievement.type === "100-percent-confidence" && achievement.data && (
+                  <p className="text-xs text-secondary-text/70 mt-2">
+                    100% confidence after {achievement.data.gamesPlayed} games against{" "}
+                    {context.playerName(achievement.data.opponent)}
                   </p>
                 )}
 
@@ -1437,7 +1449,7 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                               )}
 
                             {type === "even-steven" &&
-                              "closestOpponent" in data &&
+                              "gamesFromEven" in data &&
                               data.closestOpponent &&
                               data.gamesFromEven !== undefined && (
                                 <div className="mt-1.5 text-xs text-secondary-text/70">
@@ -1450,6 +1462,18 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
                                   , {data.gamesFromEven} game{data.gamesFromEven === 1 ? "" : "s"} from equal
                                 </div>
                               )}
+
+                            {type === "100-percent-confidence" && "closestOpponent" in data && data.closestOpponent && (
+                              <div className="mt-1.5 text-xs text-secondary-text/70">
+                                Closest:{" "}
+                                <Link to={{ pathname: "/player/" + data.closestOpponent, search }}>
+                                  <span className="text-secondary-text underline">
+                                    {context.playerName(data.closestOpponent)}
+                                  </span>
+                                </Link>
+                                , {data.current}% confidence
+                              </div>
+                            )}
 
                             {/* Show last active time for back-after achievements */}
                             {type.startsWith("back-after-") && "lastActiveAt" in data && data.lastActiveAt && (

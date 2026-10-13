@@ -168,6 +168,12 @@ export const AchievementFacts: React.FC<{ achievement: Achievement }> = ({ achie
           {context.playerName(achievement.data.protege)} reached #{achievement.data.rank}
         </span>
       )}
+      {achievement.type === "100-percent-confidence" && achievement.data && (
+        <span className="text-[11px] opacity-80">
+          100% confidence against {context.playerName(achievement.data.opponent)} after {achievement.data.gamesPlayed}{" "}
+          games
+        </span>
+      )}
       {achievement.type === "tug-of-war" && achievement.data && (
         <GameScoreLink playedAt={achievement.earnedAt} className="text-[11px] opacity-80 underline">
           {achievement.data.leadChanges} lead changes in set {achievement.data.setNumber}

@@ -348,6 +348,7 @@ describe("achievementDetails", () => {
         "latest-game",
         "milestone-game",
         "nice-game",
+        "100-percent-confidence",
         "photo-finish",
         "reunion",
         "season-opener",

@@ -106,6 +106,7 @@ export const ACHIEVEMENT_GROUPS: AchievementGroup[] = [
       "community-builder",
       "student-becomes-master",
       "rock-paper-scissors",
+      "100-percent-confidence",
       "mentor",
     ],
   },

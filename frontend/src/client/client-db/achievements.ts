@@ -2,6 +2,8 @@ import { Elo } from "./elo";
 import { EventTypeEnum } from "./event-store/event-types";
 import { Game } from "./event-store/projectors/games-projector";
 import { SkippedGame } from "./event-store/projectors/tournaments-projector";
+import { PairStats } from "./pair-stats";
+import { PlayerStrengths } from "./player-strengths";
 import { determineNextSeason, determineSeason } from "./seasons/seasons";
 import { TennisTable } from "./tennis-table";
 
@@ -273,6 +275,11 @@ export const EVEN_STEVEN_MIN_GAMES = 20;
 // in a tiny season is not a feat. Matches the ≥5 cohort gate the rank and
 // full-house achievements use.
 export const FULL_COVERAGE_MIN_PLAYERS = 5;
+
+// Lowest confidence of the prediction for a pair that earns "100% Confidence". The
+// app shows a confidence in whole percent, so this is the lowest value that
+// shows as 100%.
+export const HUNDRED_PERCENT_CONFIDENCE_MIN = 0.995;
 
 /** The output of the achievements calculation. The web worker calculates it and sends it to the main thread */
 export type AchievementsSnapshot = {
@@ -1357,8 +1364,54 @@ export class Achievements {
     this.#checkFullHouseAndHumbledAchievements();
     this.#checkPerfectDayAndWeekAchievements();
     this.#checkRockPaperScissorsAchievements();
+    this.#checkHundredPercentConfidenceAchievements();
     this.#checkRetirementAchievements();
     this.hasCalculated = true;
+  }
+
+  // Awards "100% Confidence" to both players of a game when, after the game, the
+  // confidence of the prediction for the pair reaches HUNDRED_PERCENT_CONFIDENCE_MIN.
+  // The prediction uses the games up to the game, with the age weights at the
+  // time of the game. Earned 1 time for each pair.
+  //
+  // Each game that can award it needs a new fit of the strengths of all
+  // players. A pair that has the award needs no fit.
+  #checkHundredPercentConfidenceAchievements() {
+    const games = this.parent.games;
+    if (games.length === 0) return;
+    const pairStats = new PairStats(games[0].playedAt, games, 0);
+    const strengths = new PlayerStrengths(pairStats);
+    const awardedPairs = new Set<string>();
+
+    games.forEach((game) => {
+      const pairKey = game.winner < game.loser ? `${game.winner}|${game.loser}` : `${game.loser}|${game.winner}`;
+      if (awardedPairs.has(pairKey)) return;
+
+      pairStats.advanceTo(game.playedAt);
+      strengths.fit(game.playedAt);
+      const confidence = strengths.getPrediction(game.winner, game.loser)?.confidence ?? 0;
+      if (confidence < HUNDRED_PERCENT_CONFIDENCE_MIN) return;
+
+      awardedPairs.add(pairKey);
+      const gamesPlayed =
+        pairStats.getStats(game.winner, game.loser, game.playedAt).raw.games +
+        pairStats.getStats(game.loser, game.winner, game.playedAt).raw.games;
+      [
+        { playerId: game.winner, opponent: game.loser },
+        { playerId: game.loser, opponent: game.winner },
+      ].forEach(({ playerId, opponent }) => {
+        this.#addAchievement(
+          playerId,
+          this.#createAchievement(
+            "100-percent-confidence",
+            playerId,
+            game.playedAt,
+            { gameId: game.id, opponent, gamesPlayed },
+            game.id,
+          ),
+        );
+      });
+    });
   }
 
   // Awards "Rock Paper Scissors" to the 3 players of a cycle of wins in one
@@ -3945,6 +3998,9 @@ export class Achievements {
       "community-builder": { current: 0, target: 10, newPlayers: new Set(), earned: 0 },
       "student-becomes-master": { earned: 0 },
       "rock-paper-scissors": { earned: 0 },
+      // Filled in below: the highest confidence in percent with an active
+      // opponent who has not earned the player a 100% Confidence yet.
+      "100-percent-confidence": { current: 0, target: 100, earned: 0 },
       // Filled in below from the leaderboard: last place is 0 and 3rd place
       // is the target.
       mentor: { current: 0, target: 1, earned: 0 },
@@ -4930,6 +4986,26 @@ export class Achievements {
       progression["even-steven"].current = Math.max(EVEN_STEVEN_MIN_GAMES - closestGamesFromEven, 0);
     }
 
+    // 100% Confidence progression: the active opponent without a 100% Confidence for this
+    // player whose prediction has the highest confidence now. The confidence
+    // is in whole percent, the same as the app shows it.
+    const awardedOpponents = new Set(
+      this.getAchievements(playerId).flatMap((achievement) =>
+        achievement.type === "100-percent-confidence" ? [achievement.data.opponent] : [],
+      ),
+    );
+    let highestConfidence = 0;
+    gamesPerOpponent.forEach((_, opponent) => {
+      if (!activePlayerIds.has(opponent) || awardedOpponents.has(opponent)) return;
+      const confidence = this.parent.predictions.getPredictedFraction(playerId, opponent)?.confidence ?? 0;
+      if (confidence > highestConfidence) {
+        highestConfidence = confidence;
+        progression["100-percent-confidence"].closestOpponent = opponent;
+      }
+    });
+    // An opponent without the award is below the minimum, so it shows 99 at most.
+    progression["100-percent-confidence"].current = Math.min(Math.round(highestConfidence * 100), 99);
+
     // Mentor progression: the player who had this player as first opponent,
     // has not earned this player a Mentor yet, and is highest on the
     // leaderboard. Last place is 0 and 3rd place is the target. Like On the
@@ -5206,6 +5282,10 @@ type AchievementDefinitions = {
   // beat `lostTo`, and `lostTo` beat the badge owner. Awarded to all 3
   // players of the cycle.
   "rock-paper-scissors": { day: number; beat: string; lostTo: string };
+  // After this game, the prediction for the pair reached
+  // HUNDRED_PERCENT_CONFIDENCE_MIN. Awarded to both players. `gamesPlayed` is the
+  // games of the pair, this game included.
+  "100-percent-confidence": { gameId: string; opponent: string; gamesPlayed: number };
   // Awarded to both players of a season's very first game.
   "season-opener": { seasonStart: number; gameId: string; opponent: string };
   // Awarded to both players of every 500th league game. `milestone` is that
@@ -5309,6 +5389,7 @@ export const ACHIEVEMENT_IS_REACHIEVABLE: Record<AchievementType, boolean> = {
   "tug-of-war": true, // Per qualifying game
   "yin-yang-points": true, // League record
   "rock-paper-scissors": true, // Per cycle
+  "100-percent-confidence": true, // Per opponent
 };
 
 // String-keyed lookup for UI code that carries achievement types as plain
@@ -5426,6 +5507,12 @@ type StudentBecomesMasterProgression = BaseProgression & {
   // Only a lost first game can earn the achievement.
   firstOpponent?: string;
   lostFirstGame?: boolean;
+};
+
+type HundredPercentConfidenceProgression = ProgressionWithTarget & {
+  // The active opponent without a 100% Confidence for the player whose prediction
+  // has the highest confidence.
+  closestOpponent?: string;
 };
 
 type MentorProgression = ProgressionWithTarget & {
@@ -5698,4 +5785,5 @@ export type AchievementProgression = {
   "tug-of-war": ProgressionWithTarget;
   "yin-yang-points": YinYangPointsProgression;
   "rock-paper-scissors": BaseProgression;
+  "100-percent-confidence": HundredPercentConfidenceProgression;
 };

@@ -42,6 +42,25 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
+    slug: "100-percent-confidence-achievement",
+    title: "New achievement: 100% Confidence",
+    date: "2026-10-13",
+    tags: ["feature-update"],
+    summary:
+      "100% Confidence 💯 is a new achievement. You earn it when the win prediction between you and one opponent reaches 100% confidence.",
+    body: [
+      text(
+        "The app checks the prediction after each game between the 2 players. Both players earn the achievement, 1 time for each opponent.",
+      ),
+      text(
+        "Old games count less than new games, so the pair must play many games in a short time. Between 2 equal players with no scores, it takes 77 games. Set and point scores add evidence, so fewer games are necessary.",
+      ),
+      text(
+        "Progress shows your highest confidence with an active opponent who has not given you the achievement. The app also checks the games that players played before this change.",
+      ),
+    ],
+  },
+  {
     slug: "set-points-auto-fill",
     title: "Type only the points of the set loser",
     date: "2026-10-12",
