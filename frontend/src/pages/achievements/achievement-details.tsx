@@ -16,7 +16,7 @@ import { AXIS_COLOR, SERIES_COLOR } from "../statistics/percent-chart";
 import { dateString, relativeTimeString } from "../../common/date-utils";
 import { fmtNum } from "../../common/number-utils";
 import { classNames } from "../../common/class-names";
-import { achievementDetails, MonthBucket, ValueSummary } from "./achievement-stats";
+import { achievementDetails, AchievementMetric, MonthBucket, RecordStep, ValueSummary } from "./achievement-stats";
 import { playersProgressForType } from "./progress-rows";
 import { AchievementFacts } from "./achievement-facts";
 import { playerAchievementProgressLink } from "../player/player-achievement-link";
@@ -133,6 +133,15 @@ export const AchievementDetails: React.FC<Props> = ({ type, earnedCount, onShowP
           </div>
         </div>
       </div>
+
+      {details.recordHistory && details.recordHistory.length > 0 && details.values && (
+        <RecordCard
+          record={details.recordHistory[details.recordHistory.length - 1]}
+          metric={details.values.metric}
+          type={type}
+          playerName={playerName}
+        />
+      )}
 
       {/* Scarcity */}
       <StatTileRow>
@@ -408,6 +417,37 @@ const NavButton: React.FC<{ to: string; label: string; alignEnd?: boolean; child
     <span className="truncate min-w-0">{label}</span>
     {alignEnd && children}
   </Link>
+);
+
+/** The record that stands. The value on the left, the holders on the right from the sm breakpoint up. */
+const RecordCard: React.FC<{
+  record: RecordStep;
+  metric: AchievementMetric;
+  type: AchievementType;
+  playerName: (playerId: string) => string;
+}> = ({ record, metric, type, playerName }) => (
+  <section
+    aria-label="Current record"
+    className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-xl border-2 border-secondary-text px-4 py-3 bg-secondary-background text-secondary-text"
+  >
+    <div>
+      <div className="text-xs md:text-sm opacity-80">Current record</div>
+      <div className="text-3xl md:text-4xl font-bold tabular-nums leading-tight">{metric.format(record.value)}</div>
+      <div className="text-xs opacity-70">Since {dateString(record.at)}</div>
+    </div>
+    <div className="flex flex-col gap-2 min-w-0">
+      {record.holders.map((playerId) => (
+        <Link
+          key={playerId}
+          to={playerAchievementProgressLink(playerId, type)}
+          className="flex items-center gap-2 min-w-0 hover:underline"
+        >
+          <ProfilePicture playerId={playerId} size={32} border={2} />
+          <span className="font-semibold truncate">{playerName(playerId)}</span>
+        </Link>
+      ))}
+    </div>
+  </section>
 );
 
 const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (

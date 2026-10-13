@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, useLocation, useNavigate } from "react-router-dom";
 import { EventDbContext } from "../../wrappers/event-db-context";
@@ -249,6 +249,11 @@ describe("navigation from the achievements page", () => {
     expect(screen.queryByText("Highest")).not.toBeInTheDocument();
     expect(screen.queryByText("Average")).not.toBeInTheDocument();
 
+    // The card at the top shows the record that stands.
+    const card = screen.getByRole("region", { name: "Current record" });
+    expect(within(card).getByText("5 games")).toBeInTheDocument();
+    expect(within(card).getByText(/^Since /)).toBeInTheDocument();
+
     // The record that stands says how long it has stood.
     expect(screen.getByText(/stands today after \d+ days/)).toBeInTheDocument();
     // The records it replaced say how long each of them held.
@@ -261,6 +266,8 @@ describe("navigation from the achievements page", () => {
 
   it("keeps the spread of the values for an achievement that holds no record", () => {
     renderPage("/achievements?filter=perfect-day&view=details", <AchievementsPage />);
+
+    expect(screen.queryByRole("region", { name: "Current record" })).not.toBeInTheDocument();
 
     expect(screen.queryByRole("heading", { name: "The record over time" })).not.toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Wins in the day" })).toBeInTheDocument();
