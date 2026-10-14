@@ -1,10 +1,17 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { classNames } from "../common/class-names";
 import { useTennisParams } from "../hooks/use-tennis-params";
 import { useEventDbContext } from "../wrappers/event-db-context";
-import { ManualSetPoints, StepAddScore } from "./add-game/step-add-score";
+import { StepAddScore } from "./add-game/step-add-score";
 import { EventTypeEnum, GameScore } from "../client/client-db/event-store/event-types";
-import { badSideOfGameWinnerSide, gameWinnerSideOfBadSide } from "../common/table-sides";
+import { gameWinnerSideOfBadSide } from "../common/table-sides";
+import {
+  hasResult,
+  ScoreDraft,
+  scoreDraftIssues,
+  scoreDraftOfGameScore,
+  scoreDraftToEventData,
+} from "../common/score-draft";
 import { useEventMutation } from "../hooks/use-event-mutation";
 import { queryClient } from "../common/query-client";
 import { useNavigate } from "react-router-dom";
@@ -19,34 +26,23 @@ export const EditGameSore: React.FC = () => {
   const { gameId } = useTennisParams();
   const game = context.eventStore.gamesProjector.getGameById(gameId);
 
-  const [winnerSets, setWinnerSets] = useState(game?.score?.setsWon.gameWinner ?? 0);
-  const [loserSets, setLoserSets] = useState(game?.score?.setsWon.gameLoser ?? 0);
-  // Player 1 of the form is the game winner, so the winner's side decodes
-  // against slot 1. The sides list covers every set, with or without points.
-  const [setPoints, setSetPoints] = useState<ManualSetPoints[]>(() => {
-    const totalSets = (game?.score?.setsWon.gameWinner ?? 0) + (game?.score?.setsWon.gameLoser ?? 0);
-    return Array.from({ length: totalSets }, (_, index) => ({
-      player1: game?.score?.setPoints?.[index]?.gameWinner,
-      player2: game?.score?.setPoints?.[index]?.gameLoser,
-      badSide: badSideOfGameWinnerSide(game?.score?.gameWinnerSides?.[index], 1),
-    }));
-  });
+  const [draft, setDraft] = useState<ScoreDraft>(() => scoreDraftOfGameScore(game?.score));
   const [validationError, setValidationError] = useState("");
 
-  const invalidScore = (winnerSets === loserSets && winnerSets > 0) || loserSets > winnerSets;
+  const invalidScore = hasResult(draft) === false || scoreDraftIssues(draft).length > 0;
   // The form has no point-level detail, so an edit can only keep the stored
   // point-by-point log while the sets and points it describes are unchanged.
   // An edit that only changes the sides keeps the log of a tracked game.
   const pointDataUnchanged =
-    winnerSets === game?.score?.setsWon.gameWinner &&
-    loserSets === game?.score?.setsWon.gameLoser &&
-    setPoints.every(
+    draft.winnerSets === game?.score?.setsWon.gameWinner &&
+    draft.loserSets === game?.score?.setsWon.gameLoser &&
+    draft.sets.every(
       ({ player1, player2 }, index) =>
         game.score?.setPoints?.[index]?.gameWinner === player1 && game.score?.setPoints?.[index]?.gameLoser === player2,
     );
   const unchangedScore =
     pointDataUnchanged &&
-    setPoints.every(
+    draft.sets.every(
       ({ badSide }, index) => (game?.score?.gameWinnerSides?.[index] ?? null) === gameWinnerSideOfBadSide(badSide, 1),
     );
 
@@ -59,26 +55,18 @@ export const EditGameSore: React.FC = () => {
       return;
     }
 
-    const setPointsAreSet = setPoints.some((set) => set.player1 !== undefined || set.player2 !== undefined);
-    const allSetPointsAreSet = setPoints.every((set) => set.player1 !== undefined && set.player2 !== undefined);
-    if (setPointsAreSet && allSetPointsAreSet === false) {
-      setValidationError("Missing some individual set points. Either add the missing or remove all.");
+    const scoreData = scoreDraftToEventData(draft);
+    if (scoreData === null) {
+      setValidationError("Select the sets won.");
       return;
     }
-
-    // The sides are independent of the points: only the sets won are needed.
-    const sidesAreSet = setPoints.some((set) => set.badSide !== null);
 
     const gameScoreEvent: GameScore = {
       type: EventTypeEnum.GAME_SCORE,
       time: now,
       stream: game.id,
       data: {
-        setsWon: { gameWinner: winnerSets, gameLoser: loserSets },
-        setPoints: setPointsAreSet
-          ? setPoints.map((set) => ({ gameWinner: set.player1!, gameLoser: set.player2! }))
-          : undefined,
-        gameWinnerSides: sidesAreSet ? setPoints.map((set) => gameWinnerSideOfBadSide(set.badSide, 1)) : undefined,
+        ...scoreData,
         pointSequences: pointDataUnchanged ? game.score?.pointSequences : undefined,
         tracking: pointDataUnchanged ? game.score?.tracking : undefined,
       },
@@ -103,27 +91,6 @@ export const EditGameSore: React.FC = () => {
     });
   }
 
-  useEffect(() => {
-    const totalSets = winnerSets + loserSets;
-    if (setPoints.length === totalSets) {
-      return;
-    } else if (setPoints.length < totalSets) {
-      // Set added
-      const setsAdded = totalSets - setPoints.length;
-      const newSets = new Array<ManualSetPoints>(setsAdded).fill({
-        player1: undefined,
-        player2: undefined,
-        badSide: null,
-      });
-      setSetPoints((prev) => [...prev, ...newSets]);
-    } else if (setPoints.length > totalSets) {
-      // Set removed
-      const setsRemoved = setPoints.length - totalSets;
-
-      setSetPoints((prev) => prev.slice(0, prev.length - setsRemoved));
-    }
-  }, [winnerSets, loserSets, setPoints.length]);
-
   // Editing replaces the score event. The stored point-by-point log survives
   // only while the sets and points are unchanged, so warn when they are not.
   const hasPointSequences = (game?.score?.pointSequences?.length ?? 0) > 0;
@@ -140,16 +107,14 @@ export const EditGameSore: React.FC = () => {
           <ConfettiExplosion particleCount={250} force={0.8} width={2_000} duration={10_000} />
         </div>
       )}
-      <div className="flex-1 min-h-0 overflow-y-auto py-8 px-2 xs:px-4">
-        <StepAddScore
-          player1={{ id: game.winner, sets: winnerSets, setSets: setWinnerSets }}
-          player2={{ id: game.loser, sets: loserSets, setSets: setLoserSets }}
-          setPoints={{ setPoints, setSetPoints }}
-          winner={game.winner}
-          invalidScore={invalidScore}
-        />
+      <div className="flex-1 min-h-0 overflow-y-auto py-4 px-2 xs:px-4">
+        <StepAddScore winner={game.winner} loser={game.loser} draft={draft} onChange={setDraft} optional={false} />
 
-        {validationError && <div className="bg-black text-red-500 text-center">Error: {validationError}</div>}
+        {validationError && (
+          <p className="max-w-xl mx-auto mt-3 rounded-lg px-3 py-2 text-sm bg-red-100 text-red-800">
+            Error: {validationError}
+          </p>
+        )}
       </div>
       <div className="p-6 bg-secondary-background shrink-0">
         {discardsPointLog && (

@@ -5,8 +5,8 @@ import { StepIndicator } from "../../common/step-indicator";
 import { StepNavigator } from "./step-navigator";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { StepSelectWinner } from "./step-select-winner";
-import { ManualSetPoints, StepAddScore } from "./step-add-score";
-import { gameWinnerSideOfBadSide } from "../../common/table-sides";
+import { StepAddScore } from "./step-add-score";
+import { EMPTY_SCORE_DRAFT, ScoreDraft, scoreDraftIssues, scoreDraftToEventData } from "../../common/score-draft";
 import { EventTypeEnum, GameCreated, GameScore } from "../../client/client-db/event-store/event-types";
 import { newId } from "../../common/nani-id";
 import { useEventMutation } from "../../hooks/use-event-mutation";
@@ -31,16 +31,10 @@ export const AddGamePageV2: React.FC = () => {
   const [player1, setPlayer1] = useState(params.player1);
   const [player2, setPlayer2] = useState(params.player2);
   const [winner, setWinner] = useState<string | null>(null);
-  const [player1Sets, setPlayer1Sets] = useState(0);
-  const [player2Sets, setPlayer2Sets] = useState(0);
-  const [setPoints, setSetPoints] = useState<ManualSetPoints[]>([]);
+  // From the game winner's perspective, so it starts again when the winner changes.
+  const [scoreDraft, setScoreDraft] = useState<ScoreDraft>(EMPTY_SCORE_DRAFT);
   const [gameSuccessfullyAdded, setGameSuccessfullyAdded] = useState(false);
   const [validationError, setValidationError] = useState("");
-
-  const invalidScore =
-    (player1Sets === player2Sets && player1Sets > 0) ||
-    (winner === player1 && player2Sets > player1Sets) ||
-    (winner === player2 && player1Sets > player2Sets);
 
   const canProceed = (fromStep: number) => {
     switch (fromStep) {
@@ -49,7 +43,7 @@ export const AddGamePageV2: React.FC = () => {
       case 2:
         return !!winner;
       case 3:
-        return invalidScore === false;
+        return scoreDraftIssues(scoreDraft).length === 0;
       default:
         return false;
     }
@@ -86,39 +80,15 @@ export const AddGamePageV2: React.FC = () => {
       return;
     }
 
-    const setPointsAreSet = setPoints.some((set) => set.player1 !== undefined || set.player2 !== undefined);
-    const allSetPointsAreSet = setPoints.every((set) => set.player1 !== undefined && set.player2 !== undefined);
-    if (setPointsAreSet && allSetPointsAreSet === false) {
-      setValidationError("Missing some individual set points. Either add the missing or remove all.");
-      return;
-    }
-
-    // The sides are independent of the points: only the sets won are needed.
-    const sidesAreSet = setPoints.some((set) => set.badSide !== null);
-
-    const gameScoreEvent: GameScore = {
+    const scoreData = scoreDraftToEventData(scoreDraft);
+    const gameScoreEvent: GameScore | null = scoreData && {
       type: EventTypeEnum.GAME_SCORE,
       time: gameCreatedEvent.time + 1,
       stream: gameCreatedEvent.stream,
-      data: {
-        setsWon: {
-          gameWinner: player1 === winner ? player1Sets : player2Sets,
-          gameLoser: player1 === winner ? player2Sets : player1Sets,
-        },
-        setPoints: setPointsAreSet
-          ? setPoints.map((set) => ({
-              gameWinner: player1 === winner ? set.player1! : set.player2!,
-              gameLoser: player1 === winner ? set.player2! : set.player1!,
-            }))
-          : undefined,
-        gameWinnerSides: sidesAreSet
-          ? setPoints.map((set) => gameWinnerSideOfBadSide(set.badSide, player1 === winner ? 1 : 2))
-          : undefined,
-      },
+      data: scoreData,
     };
 
-    const recordScores = gameScoreEvent.data.setsWon.gameWinner > 0 || gameScoreEvent.data.setsWon.gameLoser > 0;
-    if (recordScores) {
+    if (gameScoreEvent) {
       const validateScore = context.eventStore.gamesProjector.validateScoreGame(gameScoreEvent);
       if (validateScore.valid === false) {
         console.error(validateScore.message);
@@ -141,7 +111,7 @@ export const AddGamePageV2: React.FC = () => {
       }, 2_000);
     }
 
-    if (recordScores) {
+    if (gameScoreEvent) {
       await addEventMutation.mutateAsync(gameCreatedEvent);
       await addEventMutation.mutateAsync(gameScoreEvent, {
         onSuccess,
@@ -154,34 +124,11 @@ export const AddGamePageV2: React.FC = () => {
   }
 
   useEffect(() => {
-    const totalSets = player1Sets + player2Sets;
-    if (setPoints.length === totalSets) {
-      return;
-    } else if (setPoints.length < totalSets) {
-      // Set added
-      const setsAdded = totalSets - setPoints.length;
-      const newSets = new Array<ManualSetPoints>(setsAdded).fill({
-        player1: undefined,
-        player2: undefined,
-        badSide: null,
-      });
-      setSetPoints((prev) => [...prev, ...newSets]);
-    } else if (setPoints.length > totalSets) {
-      // Set removed
-      const setsRemoved = setPoints.length - totalSets;
-
-      setSetPoints((prev) => prev.slice(0, prev.length - setsRemoved));
-    }
-  }, [player1Sets, player2Sets, setPoints.length]);
-
-  useEffect(() => {
     if (winner && winner !== player1 && winner !== player2) {
       setWinner(null);
     }
 
-    setPlayer1Sets(0);
-    setPlayer2Sets(0);
-    setSetPoints([]);
+    setScoreDraft(EMPTY_SCORE_DRAFT);
     setValidationError("");
   }, [winner, player1, player2]);
 
@@ -221,14 +168,17 @@ export const AddGamePageV2: React.FC = () => {
         )}
         {currentStep === 3 && player1 && player2 && winner && (
           <StepAddScore
-            player1={{ id: player1, sets: player1Sets, setSets: setPlayer1Sets }}
-            player2={{ id: player2, sets: player2Sets, setSets: setPlayer2Sets }}
-            setPoints={{ setPoints, setSetPoints }}
             winner={winner}
-            invalidScore={invalidScore}
+            loser={winner === player1 ? player2 : player1}
+            draft={scoreDraft}
+            onChange={setScoreDraft}
           />
         )}
-        {validationError && <div className="bg-white text-red-500 text-center">Error: {validationError}</div>}
+        {validationError && (
+          <p className="max-w-xl mx-auto mt-3 rounded-lg px-3 py-2 text-sm bg-red-100 text-red-800">
+            Error: {validationError}
+          </p>
+        )}
       </div>
       <StepNavigator
         canProceed={canProceed(currentStep)}

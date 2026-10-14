@@ -12,9 +12,9 @@ export function setWinnerPoints(loserPoints: number): number {
 }
 
 /**
- * Sets the points of one slot. The players type the points of the set loser,
+ * Sets the points of one slot. The players give the points of the set loser,
  * so the other slot gets the points of the set winner, while it is empty or
- * still holds a calculated value. A value the players typed stays as it is.
+ * still holds a calculated value. A value the players set stays as it is.
  */
 export function updateSetPoints<T extends FillableSetPoints>(
   set: T,

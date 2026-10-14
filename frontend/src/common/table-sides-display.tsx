@@ -36,8 +36,7 @@ type TableSideDisplayProps = {
 /**
  * The selectable pill row on its own: who has the bad side, "Equal" for 2
  * equally good sides, and a press on the selected option to remove it again.
- * The trackers show it while the current set is 0-0, and the add game form
- * shows it for every set the players enter by hand.
+ * The trackers show it while the current set is 0-0.
  */
 export const TableSidePicker: React.FC<{
   badSide: BadSide;

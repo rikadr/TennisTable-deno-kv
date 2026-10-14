@@ -43,18 +43,23 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
     slug: "set-points-auto-fill",
-    title: "Type only the points of the set loser",
-    date: "2026-10-12",
+    title: "New score step on the add game form",
+    date: "2026-10-14",
     tags: ["feature-update"],
     summary:
-      "On the add game form and the edit score page, type the points of the player who lost the set. The app fills in the points of the set winner.",
+      "The score step of the add game form and the edit score page has large buttons, and the keyboard does not open. Select the sets won with 1 press, then the winner and the points of each set.",
     body: [
-      text(
-        "When the loser gets 9 points or less, the winner gets 11. When the loser gets 10 points or more, the winner gets 2 more than the loser. For example, 6 gives 11-6, and 16 gives 18-16.",
+      list(
+        'Sets won: press the result, for example 2-1. Use "Other" for a different result.',
+        "Points: select the set winner, then the points of the set loser. After the points, the form goes to the next set.",
+        "The set winner gets 11, or 2 more than the set loser after 10-10. For example, 6 gives 11-6, and 12 gives 14-12.",
+        "When the result shows who won a set, the app selects that player. In a 2-0 game, press only the points.",
+        "Bad side: the first choice fills all sets, alternating. Correct the sets that did not follow the pattern.",
       ),
       text(
-        "The app changes a filled-in value while you type in the other field. When you type in the filled-in field, the app keeps your value. Use this for a set that ended differently.",
+        "Use + and − on a player to correct a set that did not end at 11, or 2 points after 10-10. A row of tabs above the set shows the score of each set.",
       ),
+      text("The game winner is always on the left. On a tablet, the sets show next to the result."),
     ],
   },
   {
@@ -659,7 +664,7 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
         "The side locks with the first point of the set, the same as the first server. After each set the tracker moves the bad side to the other player, because the players usually change sides. Correct it at 0-0 when the players keep the same side.",
       ),
       text(
-        "The add game form and the edit score page have the same selector below the points of each set. The first side you select fills all the sets, and the other sets alternate from it. A selection of equal sides fills every set with equal sides. Correct the sets that did not follow the pattern, or remove the sides you do not know. The sides do not need the set points — the sets won are enough. An edit that changes only the sides keeps the point log of a tracked game.",
+        "The add game form and the edit score page have a selector for each set. The first side you select fills all the sets, and the other sets alternate from it. A selection of equal sides fills every set with equal sides. Correct the sets that did not follow the pattern, or remove the sides you do not know. The sides do not need the set points — the sets won are enough. An edit that changes only the sides keeps the point log of a tracked game.",
       ),
       text(
         'The `GAME_SCORE` event stores one side per set in `gameWinnerSides`, from the side of the game winner: "G" for the good side, "B" for the bad side, "N" for 2 equal sides and null for a set nobody recorded. The list is independent of the set points.',

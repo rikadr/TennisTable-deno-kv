@@ -1,209 +1,594 @@
+import { useEffect, useRef, useState } from "react";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { ProfilePicture } from "../player/profile-picture";
 import { stringToColor } from "../../common/string-to-color";
 import { classNames } from "../../common/class-names";
-import { autoFillBadSides, BadSide } from "../../common/table-sides";
-import { TableSidePicker } from "../../common/table-sides-display";
-import { SetPointsSlot, updateSetPoints } from "../../common/set-points-fill";
+import { fill } from "../../common/player-color-styles";
+import { BadSide } from "../../common/table-sides";
+import {
+  describeScoreDraftIssue,
+  DraftSet,
+  DraftSlot,
+  hasResult,
+  hasSetPoints,
+  MAX_SETS_PER_PLAYER,
+  RESULT_PRESETS,
+  ScoreDraft,
+  scoreDraftIssues,
+  setWinners,
+  withBadSide,
+  withLoserPoints,
+  withoutAllSetPoints,
+  withoutSetPoints,
+  withPointsStep,
+  withResult,
+  withSetWinner,
+} from "../../common/score-draft";
+
+type Player = { id: string; name: string; color: string };
 
 /**
- * One set as the add game form collects it: the points of both players, and
- * who had the bad side of the table — null when the players do not remember.
- * `autoFilled` names the slot the form calculated from the points of the loser.
+ * Every input is a large button: the on-screen keyboard covers most of a phone
+ * and must not open. The game winner is always on the left.
  */
-export type ManualSetPoints = { player1?: number; player2?: number; autoFilled?: SetPointsSlot; badSide: BadSide };
+export const StepAddScore: React.FC<{
+  winner: string;
+  loser: string;
+  draft: ScoreDraft;
+  onChange: (draft: ScoreDraft) => void;
+  /** False on the edit score page, where a score must have the sets won. */
+  optional?: boolean;
+}> = ({ winner, loser, draft, onChange, optional = true }) => {
+  const context = useEventDbContext();
+  const players: Record<DraftSlot, Player> = {
+    1: { id: winner, name: context.playerName(winner), color: stringToColor(winner) },
+    2: { id: loser, name: context.playerName(loser), color: stringToColor(loser) },
+  };
 
-type SetPointsState = {
-  setPoints: ManualSetPoints[];
-  setSetPoints: React.Dispatch<React.SetStateAction<ManualSetPoints[]>>;
+  return (
+    <div className="max-w-xl md:max-w-4xl mx-auto space-y-3 md:space-y-0 md:grid md:grid-cols-2 md:gap-4 md:items-start">
+      <div className="space-y-3 md:sticky md:top-0">
+        <Scoreboard players={players} draft={draft} />
+        <ResultPicker players={players} draft={draft} onChange={onChange} optional={optional} />
+      </div>
+      {hasResult(draft) ? (
+        <SetsEditor players={players} draft={draft} onChange={onChange} />
+      ) : (
+        <p className="rounded-xl border-2 border-dashed border-secondary-background px-4 py-6 text-center text-sm text-primary-text">
+          Select the sets won to add the points and the bad side of each set.
+        </p>
+      )}
+    </div>
+  );
 };
 
-export const StepAddScore: React.FC<{
-  player1: { id: string; sets: number; setSets: (sets: number) => void };
-  player2: { id: string; sets: number; setSets: (sets: number) => void };
-  setPoints: SetPointsState;
-  winner: string;
-  invalidScore: boolean;
-}> = ({ player1, player2, setPoints, winner, invalidScore }) => {
-  return (
-    <div className="space-y-2 max-w-2xl m-auto">
-      <WinnerBox player1={player1.id} player2={player2.id} winner={winner} />
-      <div className="p-4 bg-secondary-background text-secondary-text rounded-xl">
-        <h2 className="text-center text-2xl">Sets won</h2>
-        <p className="text-center">(Optional)</p>
-        <div
-          className={classNames("flex justify-evenly gap-2", player1.sets === 0 && player2.sets === 0 && "opacity-50")}
-        >
-          <SetCounter player={player1} />
-          <SetCounter player={player2} />
+const Scoreboard: React.FC<{ players: Record<DraftSlot, Player>; draft: ScoreDraft }> = ({ players, draft }) => (
+  <div className="bg-secondary-background text-secondary-text rounded-xl p-3 flex items-center gap-2">
+    <ScoreboardPlayer player={players[1]} isGameWinner />
+    <div className="shrink-0 text-center px-1">
+      {hasResult(draft) ? (
+        <div className="text-4xl xs:text-5xl font-black tabular-nums leading-none">
+          {draft.winnerSets}
+          <span className="mx-1.5 opacity-60">–</span>
+          {draft.loserSets}
         </div>
-        {invalidScore && (
-          <p className="bg-white text-red-500 text-center mt-4">
-            Invalid score. Winner must have won more sets than the loser
+      ) : (
+        <div className="text-3xl font-black leading-none opacity-50">–</div>
+      )}
+      <div className="text-xs mt-1 opacity-80">{hasResult(draft) ? "Sets" : "No score"}</div>
+    </div>
+    <ScoreboardPlayer player={players[2]} />
+  </div>
+);
+
+const ScoreboardPlayer: React.FC<{ player: Player; isGameWinner?: boolean }> = ({ player, isGameWinner }) => (
+  <div className="flex-1 min-w-0 flex flex-col items-center gap-1">
+    <div className="relative">
+      <ProfilePicture playerId={player.id} size={52} border={3} />
+      {isGameWinner && (
+        <span className="absolute -bottom-1 -right-2 text-xl leading-none" title="Game winner">
+          🏆
+        </span>
+      )}
+    </div>
+    <span className="max-w-full truncate text-sm font-semibold">{player.name}</span>
+  </div>
+);
+
+const SectionTitle: React.FC<{ title: string; hint?: string; action?: React.ReactNode }> = ({
+  title,
+  hint,
+  action,
+}) => (
+  <div className="flex items-baseline justify-between gap-2 mb-2">
+    <h2 className="text-lg font-semibold">
+      {title}
+      {hint && <span className="ml-2 text-xs font-normal opacity-75">{hint}</span>}
+    </h2>
+    {action}
+  </div>
+);
+
+const TextButton: React.FC<{ onClick: () => void; children: React.ReactNode }> = ({ onClick, children }) => (
+  <button onClick={onClick} className="shrink-0 text-sm underline underline-offset-2 opacity-90 active:opacity-60 py-1">
+    {children}
+  </button>
+);
+
+// Press feedback uses active:, not hover:. On a touch screen a hover style
+// stays on the last button pressed, and looks like a selection.
+const CHIP = "h-11 rounded-lg font-semibold tabular-nums transition active:scale-95";
+const CHIP_SELECTED = "bg-tertiary-background text-tertiary-text ring-2 ring-tertiary-text";
+const CHIP_UNSELECTED = "bg-primary-background text-primary-text";
+
+const ResultPicker: React.FC<{
+  players: Record<DraftSlot, Player>;
+  draft: ScoreDraft;
+  onChange: (draft: ScoreDraft) => void;
+  optional: boolean;
+}> = ({ players, draft, onChange, optional }) => {
+  const isPreset = RESULT_PRESETS.some(([w, l]) => w === draft.winnerSets && l === draft.loserSets);
+  const [otherOpen, setOtherOpen] = useState(hasResult(draft) && isPreset === false);
+  const showOther = otherOpen || (hasResult(draft) && isPreset === false);
+  const resultIssue = scoreDraftIssues(draft).find((issue) => issue.kind === "result");
+
+  function selectPreset(winnerSets: number, loserSets: number) {
+    setOtherOpen(false);
+    const isSelected = showOther === false && draft.winnerSets === winnerSets && draft.loserSets === loserSets;
+    onChange(isSelected ? withResult(draft, 0, 0) : withResult(draft, winnerSets, loserSets));
+  }
+
+  return (
+    <section className="bg-secondary-background text-secondary-text rounded-xl p-3">
+      <SectionTitle
+        title="Sets won"
+        hint={optional ? "Optional" : undefined}
+        action={
+          hasResult(draft) && (
+            <TextButton
+              onClick={() => {
+                setOtherOpen(false);
+                onChange(withResult(draft, 0, 0));
+              }}
+            >
+              Clear
+            </TextButton>
+          )
+        }
+      />
+      <p className="text-xs opacity-80 mb-2 truncate">
+        {players[1].name} – {players[2].name}
+      </p>
+      {/* The custom screens turn off max-md, and xs comes after md in the CSS,
+          so only a plain media query keeps 4 columns in the narrow md column. */}
+      <div className="grid grid-cols-4 [@media(min-width:470px)_and_(max-width:767.98px)]:grid-cols-7 lg:grid-cols-7 gap-2">
+        {RESULT_PRESETS.map(([winnerSets, loserSets]) => {
+          const selected = showOther === false && draft.winnerSets === winnerSets && draft.loserSets === loserSets;
+          return (
+            <button
+              key={`${winnerSets}-${loserSets}`}
+              onClick={() => selectPreset(winnerSets, loserSets)}
+              aria-pressed={selected}
+              className={classNames(CHIP, "text-lg", selected ? CHIP_SELECTED : CHIP_UNSELECTED)}
+            >
+              {winnerSets}–{loserSets}
+            </button>
+          );
+        })}
+        <button
+          onClick={() => setOtherOpen(true)}
+          aria-pressed={showOther}
+          className={classNames(CHIP, "text-sm", showOther ? CHIP_SELECTED : CHIP_UNSELECTED)}
+        >
+          Other
+        </button>
+      </div>
+      {showOther && (
+        <div className="grid grid-cols-2 gap-2 mt-3">
+          <SetsStepper
+            player={players[1]}
+            value={draft.winnerSets}
+            onChange={(sets) => onChange(withResult(draft, sets, draft.loserSets))}
+          />
+          <SetsStepper
+            player={players[2]}
+            value={draft.loserSets}
+            onChange={(sets) => onChange(withResult(draft, draft.winnerSets, sets))}
+          />
+        </div>
+      )}
+      {resultIssue && (
+        <p className="mt-3 rounded-lg px-3 py-2 text-sm bg-red-100 text-red-800">
+          {describeScoreDraftIssue(resultIssue, players[1].name, players[2].name)}
+        </p>
+      )}
+    </section>
+  );
+};
+
+const STEP_BUTTON =
+  "w-11 h-11 shrink-0 rounded-full text-2xl font-bold leading-none transition active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed";
+
+const SetsStepper: React.FC<{ player: Player; value: number; onChange: (sets: number) => void }> = ({
+  player,
+  value,
+  onChange,
+}) => (
+  <div className="rounded-lg bg-primary-background text-primary-text px-2 py-2">
+    <div className="text-xs text-center truncate mb-1">{player.name}</div>
+    <div className="flex items-center justify-between gap-1">
+      <button
+        onClick={() => onChange(value - 1)}
+        disabled={value === 0}
+        aria-label={`1 set less for ${player.name}`}
+        className={classNames(STEP_BUTTON, "bg-secondary-background text-secondary-text")}
+      >
+        −
+      </button>
+      <span className="text-3xl font-bold tabular-nums">{value}</span>
+      <button
+        onClick={() => onChange(value + 1)}
+        disabled={value === MAX_SETS_PER_PLAYER}
+        aria-label={`1 set more for ${player.name}`}
+        className={classNames(STEP_BUTTON, "bg-secondary-background text-secondary-text")}
+      >
+        +
+      </button>
+    </div>
+  </div>
+);
+
+const REGULAR_LOSER_POINTS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+const DEUCE_LOSER_POINTS = [10, 11, 12, 13, 14];
+
+function firstSetToEdit(draft: ScoreDraft): number {
+  const index = draft.sets.findIndex((set) => hasSetPoints(set) === false);
+  return index === -1 ? 0 : index;
+}
+
+const SetsEditor: React.FC<{
+  players: Record<DraftSlot, Player>;
+  draft: ScoreDraft;
+  onChange: (draft: ScoreDraft) => void;
+}> = ({ players, draft, onChange }) => {
+  const [selectedSet, setSelectedSet] = useState(() => firstSetToEdit(draft));
+  const activeSet = Math.min(selectedSet, draft.sets.length - 1);
+  const winners = setWinners(draft);
+  const issues = scoreDraftIssues(draft).filter((issue) => issue.kind !== "result");
+  const missingPoints = issues.find((issue) => issue.kind === "missing-points");
+
+  const stripRef = useRef<HTMLDivElement>(null);
+  const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  // Not scrollIntoView: it also scrolls the page, and moves the points away from the finger.
+  useEffect(() => {
+    const strip = stripRef.current;
+    const tab = tabRefs.current[activeSet];
+    if (!strip || !tab) return;
+    strip.scrollLeft = tab.offsetLeft - (strip.clientWidth - tab.clientWidth) / 2;
+  }, [activeSet]);
+
+  function selectLoserPoints(setIndex: number, points: number) {
+    const next = withLoserPoints(draft, setIndex, points);
+    onChange(next);
+    const nextSet = next.sets.findIndex((set, index) => index > setIndex && hasSetPoints(set) === false);
+    if (nextSet !== -1) setSelectedSet(nextSet);
+  }
+
+  return (
+    <section className="bg-secondary-background text-secondary-text rounded-xl p-3">
+      <SectionTitle title="Sets" hint="Optional: points and bad side" />
+      <div
+        ref={stripRef}
+        role="tablist"
+        aria-label="Sets"
+        className="flex gap-2 overflow-x-auto scroll-smooth p-1 -m-1"
+      >
+        {draft.sets.map((set, index) => (
+          <SetTab
+            key={index}
+            tabRef={(element) => {
+              tabRefs.current[index] = element;
+            }}
+            index={index}
+            set={set}
+            winner={winners[index]}
+            players={players}
+            selected={index === activeSet}
+            missingPoints={missingPoints?.kind === "missing-points" && missingPoints.setIndexes.includes(index)}
+            onSelect={() => setSelectedSet(index)}
+          />
+        ))}
+      </div>
+      <SetDetails
+        key={activeSet}
+        setIndex={activeSet}
+        set={draft.sets[activeSet]}
+        winner={winners[activeSet]}
+        players={players}
+        noSidesYet={draft.sets.every((set) => set.badSide === null)}
+        onBadSide={(badSide) => onChange(withBadSide(draft, activeSet, badSide))}
+        onWinner={(slot) => onChange(withSetWinner(draft, activeSet, slot))}
+        onLoserPoints={(points) => selectLoserPoints(activeSet, points)}
+        onStep={(slot, delta) => onChange(withPointsStep(draft, activeSet, slot, delta))}
+        onClear={() => onChange(withoutSetPoints(draft, activeSet))}
+      />
+      {issues.length > 0 && (
+        <div className="mt-3 space-y-2">
+          {issues.map((issue) => (
+            <div
+              key={issue.kind + ("setIndex" in issue ? issue.setIndex : "") + ("slot" in issue ? issue.slot : "")}
+              className={classNames(
+                "rounded-lg px-3 py-2 text-sm",
+                issue.kind === "missing-points" ? "bg-amber-100 text-amber-900" : "bg-red-100 text-red-800",
+              )}
+            >
+              <p>{describeScoreDraftIssue(issue, players[1].name, players[2].name)}</p>
+              {issue.kind === "missing-points" && (
+                <button onClick={() => onChange(withoutAllSetPoints(draft))} className="mt-1 underline font-semibold">
+                  Clear the points of all sets
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+};
+
+const SetTab: React.FC<{
+  tabRef: React.Ref<HTMLButtonElement>;
+  index: number;
+  set: DraftSet;
+  winner: DraftSlot | null;
+  players: Record<DraftSlot, Player>;
+  selected: boolean;
+  missingPoints: boolean;
+  onSelect: () => void;
+}> = ({ tabRef, index, set, winner, players, selected, missingPoints, onSelect }) => {
+  const badSideName =
+    set.badSide === 1
+      ? players[1].name
+      : set.badSide === 2
+        ? players[2].name
+        : set.badSide === "neutral"
+          ? "Equal"
+          : null;
+  return (
+    <button
+      ref={tabRef}
+      role="tab"
+      aria-selected={selected}
+      onClick={onSelect}
+      className={classNames(
+        "flex-1 min-w-[4.5rem] rounded-lg px-1.5 pt-1.5 pb-1 flex flex-col items-center transition",
+        selected ? "bg-tertiary-background text-tertiary-text ring-2 ring-tertiary-text" : CHIP_UNSELECTED,
+        missingPoints && selected === false && "ring-2 ring-amber-400",
+      )}
+    >
+      <span className="text-[11px] font-semibold uppercase tracking-wide opacity-75">Set {index + 1}</span>
+      {hasSetPoints(set) ? (
+        <span className="text-base font-bold tabular-nums leading-tight">
+          {set.player1}–{set.player2}
+        </span>
+      ) : (
+        <span className="text-xs font-semibold leading-6 max-w-full truncate">
+          {winner === null ? "–" : players[winner].name}
+        </span>
+      )}
+      <span
+        className="h-1 w-full rounded-full mt-0.5"
+        style={{ backgroundColor: winner === null ? "transparent" : players[winner].color }}
+      />
+      <span className="text-[11px] h-5 leading-5 max-w-full truncate">{badSideName && `😵 ${badSideName}`}</span>
+    </button>
+  );
+};
+
+const SetDetails: React.FC<{
+  setIndex: number;
+  set: DraftSet;
+  winner: DraftSlot | null;
+  players: Record<DraftSlot, Player>;
+  noSidesYet: boolean;
+  onBadSide: (badSide: BadSide) => void;
+  onWinner: (slot: DraftSlot) => void;
+  onLoserPoints: (points: number) => void;
+  onStep: (slot: DraftSlot, delta: number) => void;
+  onClear: () => void;
+}> = ({ setIndex, set, winner, players, noSidesYet, onBadSide, onWinner, onLoserPoints, onStep, onClear }) => {
+  const setNumber = setIndex + 1;
+  const loser: DraftSlot | null = winner === null ? null : winner === 1 ? 2 : 1;
+  const loserPoints =
+    loser === null || hasSetPoints(set) === false ? undefined : set[loser === 1 ? "player1" : "player2"];
+  const hasData = set.player1 !== undefined || set.player2 !== undefined || set.pickedWinner !== undefined;
+
+  return (
+    <div role="tabpanel" aria-label={`Set ${setNumber}`} className="mt-4 space-y-4">
+      <div>
+        <FieldLabel>😵 Bad side in set {setNumber}</FieldLabel>
+        <BadSideControl setNumber={setNumber} badSide={set.badSide} players={players} onSelect={onBadSide} />
+        {noSidesYet && (
+          <p className="mt-1.5 text-xs opacity-80">
+            The first choice fills all sets. The players change sides after each set.
           </p>
         )}
       </div>
-      <SetPoints player1={player1.id} player2={player2.id} setPoints={setPoints} />
-    </div>
-  );
-};
 
-const SetPointsInput: React.FC<{
-  playerId: string;
-  setIndex: number;
-  playerIndex: SetPointsSlot;
-  setPoints: SetPointsState;
-}> = ({ playerId, setIndex, playerIndex, setPoints: { setPoints, setSetPoints } }) => {
-  const context = useEventDbContext();
-  const currentPoints = setPoints[setIndex][playerIndex];
-
-  function handleUpdatePoints(input: number | string) {
-    let value: number | undefined = undefined;
-
-    if (input !== "") {
-      value = Math.max(typeof input === "string" ? parseInt(input) : input, 0);
-    }
-
-    const newPoints = [...setPoints];
-    newPoints[setIndex] = updateSetPoints(newPoints[setIndex], playerIndex, value);
-    setSetPoints(newPoints);
-  }
-  return (
-    <div className="-mt-2">
-      <label className="block text-sm mb-1 text-center">{context.playerName(playerId)}</label>
-      <div className="flex">
-        <input
-          type="number"
-          placeholder="0"
-          className="w-24 h-12 pl-3 ring-[2px] ring-white bg-white text-black text-center text-3xl font-semibold rounded-md"
-          value={currentPoints}
-          onChange={(e) => handleUpdatePoints(e.target.value)}
-        />
-      </div>
-    </div>
-  );
-};
-const SetPoints: React.FC<{
-  player1: string;
-  player2: string;
-  setPoints: SetPointsState;
-}> = ({ player1, player2, setPoints }) => {
-  const context = useEventDbContext();
-  const anyPointsSet = setPoints.setPoints.some((set) => set.player1 !== undefined || set.player2 !== undefined);
-  const anySideSet = setPoints.setPoints.some((set) => set.badSide !== null);
-
-  // The first side picked fills every set, alternating from the picked one
-  // (equal fills equal everywhere). Once any other set has a side, a pick
-  // changes its own set only.
-  function handleSelectSide(setIndex: number, badSide: BadSide) {
-    setPoints.setSetPoints((prev) => {
-      const filled = autoFillBadSides(
-        prev.map((set) => set.badSide),
-        setIndex,
-        badSide,
-      );
-      return prev.map((set, index) => (set.badSide === filled[index] ? set : { ...set, badSide: filled[index] }));
-    });
-  }
-
-  return (
-    <div className="text-primary-text">
-      <div className="grid grid-cols-1 gap-2">
-        {setPoints.setPoints.map((set, index) => (
-          <div
-            key={index}
-            className={classNames(
-              "bg-secondary-background text-secondary-text rounded-lg px-4 py-2",
-              anyPointsSet === false && anySideSet === false && "opacity-50",
-            )}
-          >
-            {index === 0 && (
-              <>
-                <h2 className="text-center text-xl">Individual points pr. set</h2>
-                <p className="text-center mb-6">(Optional)</p>
-              </>
-            )}
-            <div className="flex flex-row items-start justify-evenly h-16 max-w-96 m-auto">
-              <h4 className="font-medium">Set {index + 1}</h4>
-              <SetPointsInput playerId={player1} playerIndex="player1" setIndex={index} setPoints={setPoints} />
-              <span className="text-2xl font-bold text-secondary-text mt-5">-</span>
-              <SetPointsInput playerId={player2} playerIndex="player2" setIndex={index} setPoints={setPoints} />
-            </div>
-            {/* The players often remember who had the worse side of the table.
-                The first press fills every set, and after that one press per
-                set corrects it, with or without the set points. The points row
-                overflows its fixed height, so the margin keeps the pills clear
-                of the inputs. */}
-            <div className="mt-3 pb-1">
-              <TableSidePicker
-                badSide={set.badSide}
-                player1Name={context.playerName(player1)}
-                player2Name={context.playerName(player2)}
-                player1Color={stringToColor(player1)}
-                player2Color={stringToColor(player2)}
-                onSelect={(badSide) => handleSelectSide(index, badSide)}
-              />
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};
-
-const SetCounter: React.FC<{
-  player: { id: string; sets: number; setSets: (sets: number) => void };
-}> = ({ player: { id, sets, setSets } }) => {
-  const context = useEventDbContext();
-  return (
-    <div className="flex flex-col items-center">
-      <h2>{context.playerName(id)}</h2>
-      <div className="grid grid-cols-2 xs:flex xs:items-center gap-2 xs:gap-1 place-items-center">
-        <button
-          className="w-12 aspect-square rounded-full bg-primary-background text-primary-text hover:bg-primary-background/75 order-2 xs:order-none"
-          onClick={() => setSets(Math.max(sets - 1, 0))}
-        >
-          &#8722;
-        </button>
-        <div
-          className="w-24 aspect-square rounded-full flex items-center justify-center bg-primary-background text-primary-text text-4xl col-span-2 order-1 xs:order-none mb-2 xs:mb-0"
-          style={{ borderWidth: 12, borderColor: stringToColor(id || "1adagrsss") }}
-        >
-          {sets}
+      <div>
+        <div className="flex items-baseline justify-between gap-2">
+          <FieldLabel>🏆 Winner of set {setNumber}</FieldLabel>
+          {hasData && <TextButton onClick={onClear}>Clear points</TextButton>}
         </div>
+        <div className="grid grid-cols-2 gap-2">
+          {([1, 2] as const).map((slot) => (
+            <SetPlayerTile
+              key={slot}
+              player={players[slot]}
+              setNumber={setNumber}
+              points={hasSetPoints(set) ? set[slot === 1 ? "player1" : "player2"] : undefined}
+              isSetWinner={winner === slot}
+              onPick={() => onWinner(slot)}
+              onStep={(delta) => onStep(slot, delta)}
+            />
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <FieldLabel>
+          {loser === null ? `Select the winner of set ${setNumber} first` : `Points of ${players[loser].name}`}
+        </FieldLabel>
+        <div className="grid grid-cols-5 gap-2">
+          {REGULAR_LOSER_POINTS.map((points) => (
+            <PointsChip
+              key={points}
+              points={points}
+              selected={loserPoints === points}
+              disabled={loser === null}
+              onSelect={() => onLoserPoints(points)}
+            />
+          ))}
+        </div>
+        <div className="text-xs opacity-80 mt-2 mb-1">After 10–10</div>
+        <div className="grid grid-cols-5 gap-2">
+          {DEUCE_LOSER_POINTS.map((points) => (
+            <PointsChip
+              key={points}
+              points={points}
+              selected={loserPoints === points}
+              disabled={loser === null}
+              onSelect={() => onLoserPoints(points)}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const FieldLabel: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <div className="text-sm font-semibold mb-1.5">{children}</div>
+);
+
+const PointsChip: React.FC<{ points: number; selected: boolean; disabled: boolean; onSelect: () => void }> = ({
+  points,
+  selected,
+  disabled,
+  onSelect,
+}) => (
+  <button
+    onClick={onSelect}
+    disabled={disabled}
+    aria-pressed={selected}
+    className={classNames(
+      CHIP,
+      "text-lg",
+      selected ? CHIP_SELECTED : CHIP_UNSELECTED,
+      disabled && "opacity-40 cursor-not-allowed active:scale-100",
+    )}
+  >
+    {points}
+  </button>
+);
+
+const SetPlayerTile: React.FC<{
+  player: Player;
+  setNumber: number;
+  points: number | undefined;
+  isSetWinner: boolean;
+  onPick: () => void;
+  onStep: (delta: number) => void;
+}> = ({ player, setNumber, points, isSetWinner, onPick, onStep }) => (
+  <div
+    className={classNames(
+      "rounded-xl overflow-hidden flex flex-col transition",
+      isSetWinner ? "shadow-md" : "bg-primary-background text-primary-text",
+    )}
+    style={isSetWinner ? fill(player.color) : undefined}
+  >
+    <button
+      onClick={onPick}
+      aria-pressed={isSetWinner}
+      aria-label={`${player.name} won set ${setNumber}`}
+      className="flex-1 min-h-[6rem] px-2 pt-2 pb-1.5 flex flex-col items-center justify-between gap-1"
+    >
+      <span className="flex items-center gap-1.5 max-w-full">
+        <span className="shrink-0">
+          <ProfilePicture playerId={player.id} size={28} border={2} />
+        </span>
+        <span className="truncate text-sm font-semibold">{player.name}</span>
+      </span>
+      <span
+        className={classNames("text-4xl font-black tabular-nums leading-none", points === undefined && "opacity-30")}
+      >
+        {points ?? "–"}
+      </span>
+      <span className="text-xs leading-4 h-4">{isSetWinner ? "🏆 Set winner" : ""}</span>
+    </button>
+    {points !== undefined && (
+      <div className="grid grid-cols-2 bg-black/10">
         <button
-          className="w-12 aspect-square rounded-full bg-primary-background text-primary-text hover:bg-primary-background/75 order-3 xs:order-none"
-          onClick={() => setSets(sets + 1)}
+          onClick={() => onStep(-1)}
+          disabled={points === 0}
+          aria-label={`1 point less for ${player.name}`}
+          className="h-10 text-xl font-bold active:bg-black/20 disabled:opacity-30"
+        >
+          −
+        </button>
+        <button
+          onClick={() => onStep(1)}
+          aria-label={`1 point more for ${player.name}`}
+          className="h-10 text-xl font-bold active:bg-black/20"
         >
           +
         </button>
       </div>
-    </div>
-  );
-};
+    )}
+  </div>
+);
 
-const WinnerBox: React.FC<{
-  player1: string;
-  player2: string;
-  winner: string;
-}> = ({ player1, player2, winner }) => {
-  const context = useEventDbContext();
+const BadSideControl: React.FC<{
+  setNumber: number;
+  badSide: BadSide;
+  players: Record<DraftSlot, Player>;
+  onSelect: (badSide: BadSide) => void;
+}> = ({ setNumber, badSide, players, onSelect }) => {
+  const toggle = (option: BadSide) => onSelect(badSide === option ? null : option);
+  const option = (value: BadSide) =>
+    classNames(
+      "h-11 min-w-0 rounded-lg px-2 text-sm font-semibold truncate transition",
+      badSide === value ? "shadow" : "active:bg-black/20",
+    );
   return (
     <div
-      className={classNames("relative py-3 px-6 flex justify-between items-center bg-secondary-background rounded-xl")}
+      role="group"
+      aria-label={`Bad side in set ${setNumber}`}
+      className="grid grid-cols-[1fr_auto_1fr] gap-1 p-1 rounded-xl bg-primary-background text-primary-text"
     >
-      <div className={classNames("flex gap-2 items-center")}>
-        <ProfilePicture playerId={player1} border={3} size={60} />
-        {winner === player1 && <p className="text-4xl text-center w-[60px]">🏆</p>}
-      </div>
-      <div className="absolute inset-0 m-auto text-secondary-text flex flex-col justify-center">
-        <p className="text-center">Winner</p>
-        <h2 className="text-center text-2xl">{context.playerName(winner)}</h2>
-      </div>
-      <div className={classNames("flex gap-2 items-center")}>
-        {winner === player2 && <p className="text-4xl text-center w-[60px]">🏆</p>}
-        <ProfilePicture playerId={player2} border={3} size={60} />
-      </div>
+      <button
+        onClick={() => toggle(1)}
+        aria-pressed={badSide === 1}
+        className={option(1)}
+        style={badSide === 1 ? fill(players[1].color) : undefined}
+      >
+        {players[1].name}
+      </button>
+      <button
+        onClick={() => toggle("neutral")}
+        aria-pressed={badSide === "neutral"}
+        className={classNames(option("neutral"), "px-3", badSide === "neutral" && "bg-gray-700 text-white")}
+      >
+        Equal
+      </button>
+      <button
+        onClick={() => toggle(2)}
+        aria-pressed={badSide === 2}
+        className={option(2)}
+        style={badSide === 2 ? fill(players[2].color) : undefined}
+      >
+        {players[2].name}
+      </button>
     </div>
   );
 };
