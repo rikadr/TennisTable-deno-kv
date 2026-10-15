@@ -4,14 +4,12 @@ import { stringToColor } from "../../common/string-to-color";
 import { classNames } from "../../common/class-names";
 import { autoFillBadSides, BadSide } from "../../common/table-sides";
 import { TableSidePicker } from "../../common/table-sides-display";
-import { SetPointsSlot, updateSetPoints } from "../../common/set-points-fill";
 
 /**
  * One set as the add game form collects it: the points of both players, and
  * who had the bad side of the table — null when the players do not remember.
- * `autoFilled` names the slot the form calculated from the points of the loser.
  */
-export type ManualSetPoints = { player1?: number; player2?: number; autoFilled?: SetPointsSlot; badSide: BadSide };
+export type ManualSetPoints = { player1?: number; player2?: number; badSide: BadSide };
 
 type SetPointsState = {
   setPoints: ManualSetPoints[];
@@ -51,7 +49,7 @@ export const StepAddScore: React.FC<{
 const SetPointsInput: React.FC<{
   playerId: string;
   setIndex: number;
-  playerIndex: SetPointsSlot;
+  playerIndex: "player1" | "player2";
   setPoints: SetPointsState;
 }> = ({ playerId, setIndex, playerIndex, setPoints: { setPoints, setSetPoints } }) => {
   const context = useEventDbContext();
@@ -65,7 +63,7 @@ const SetPointsInput: React.FC<{
     }
 
     const newPoints = [...setPoints];
-    newPoints[setIndex] = updateSetPoints(newPoints[setIndex], playerIndex, value);
+    newPoints[setIndex] = { ...newPoints[setIndex], [playerIndex]: value };
     setSetPoints(newPoints);
   }
   return (
