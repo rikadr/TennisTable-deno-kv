@@ -42,22 +42,6 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
-    slug: "set-points-auto-fill",
-    title: "Type only the points of the set loser",
-    date: "2026-10-12",
-    tags: ["feature-update"],
-    summary:
-      "On the add game form and the edit score page, type the points of the player who lost the set. The app fills in the points of the set winner.",
-    body: [
-      text(
-        "When the loser gets 9 points or less, the winner gets 11. When the loser gets 10 points or more, the winner gets 2 more than the loser. For example, 6 gives 11-6, and 16 gives 18-16.",
-      ),
-      text(
-        "The app changes a filled-in value while you type in the other field. When you type in the filled-in field, the app keeps your value. Use this for a set that ended differently.",
-      ),
-    ],
-  },
-  {
     slug: "predictions-from-player-strengths",
     title: "Win predictions use all games",
     date: "2026-10-11",
