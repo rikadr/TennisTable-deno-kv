@@ -44,10 +44,16 @@ function mix(rgb: Rgb, target: Rgb, amount: number): Rgb {
 }
 
 /**
- * Picks black or white text for a background colour, whichever gets the higher WCAG contrast
- * ratio against it. Use it wherever text sits on a generated colour - player colours in
- * particular span everything from near-black to near-white, so neither white nor black text
- * is readable on all of them.
+ * The relative luminance at which text changes from white to black. It matches APCA, which
+ * judges text on coloured backgrounds better than the WCAG 2 contrast ratio. The WCAG ratio
+ * changes at 0.179 and puts black text on saturated mid-tones, where white reads better.
+ */
+const BLACK_TEXT_MIN_LUMINANCE = 0.36;
+
+/**
+ * Picks black or white text for a background colour. Use it wherever text sits on a generated
+ * colour - player colours in particular span everything from near-black to near-white, so
+ * neither white nor black text is readable on all of them.
  *
  * Falls back to white for colours it cannot parse.
  */
@@ -55,11 +61,7 @@ export function readableTextColor(background: string): typeof BLACK | typeof WHI
   const rgb = parseHex(background);
   if (!rgb) return WHITE;
 
-  const luminance = relativeLuminance(rgb);
-  // Contrast ratio is (lighter + 0.05) / (darker + 0.05), with white at 1 and black at 0.
-  const contrastWithWhite = 1.05 / (luminance + 0.05);
-  const contrastWithBlack = (luminance + 0.05) / 0.05;
-  return contrastWithBlack >= contrastWithWhite ? BLACK : WHITE;
+  return relativeLuminance(rgb) >= BLACK_TEXT_MIN_LUMINANCE ? BLACK : WHITE;
 }
 
 /**
