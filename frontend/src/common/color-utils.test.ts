@@ -24,7 +24,7 @@ describe("readableTextColor", () => {
     expect(readableTextColor("#ffe08a")).toBe("#000000");
   });
 
-  it("puts white text on saturated mid-tones and black text on pastels", () => {
+  it("changes from white to black text at luminance 0.36", () => {
     expect(readableTextColor("#0482f1")).toBe("#ffffff");
     expect(readableTextColor("#ec292a")).toBe("#ffffff");
     expect(readableTextColor("#f67b91")).toBe("#ffffff");

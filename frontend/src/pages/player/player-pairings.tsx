@@ -45,7 +45,7 @@ const PlayerTag: React.FC<TagProps> = ({ playerId, title, dimmed, search, onRef,
       onFocus={() => onHighlight(playerId)}
       onBlur={() => onHighlight(undefined)}
       className={classNames(
-        "block rounded-full px-3 py-1 text-sm font-medium whitespace-nowrap hover:brightness-110 transition-all",
+        "block rounded-full px-3 py-1 text-sm font-medium whitespace-nowrap hover:brightness-95 transition-all",
         dimmed && "opacity-25",
       )}
       style={{ backgroundColor: background, color: readableTextColor(background) }}

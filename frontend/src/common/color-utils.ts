@@ -44,9 +44,10 @@ function mix(rgb: Rgb, target: Rgb, amount: number): Rgb {
 }
 
 /**
- * The relative luminance at which text changes from white to black. It matches APCA, which
- * judges text on coloured backgrounds better than the WCAG 2 contrast ratio. The WCAG ratio
- * changes at 0.179 and puts black text on saturated mid-tones, where white reads better.
+ * The relative luminance at which text changes from white to black. APCA changes from white
+ * to black text at about this luminance, for all hues. APCA judges text on coloured backgrounds
+ * better than the WCAG 2 contrast ratio, which changes at 0.179. Between 0.179 and 0.36, white
+ * text gets a WCAG 2 ratio below 4.5:1, but APCA rates it as good as black text.
  */
 const BLACK_TEXT_MIN_LUMINANCE = 0.36;
 
