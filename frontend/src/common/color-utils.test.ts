@@ -24,6 +24,13 @@ describe("readableTextColor", () => {
     expect(readableTextColor("#ffe08a")).toBe("#000000");
   });
 
+  it("changes from white to black text at luminance 0.36", () => {
+    expect(readableTextColor("#0482f1")).toBe("#ffffff");
+    expect(readableTextColor("#ec292a")).toBe("#ffffff");
+    expect(readableTextColor("#f67b91")).toBe("#ffffff");
+    expect(readableTextColor("#a49dde")).toBe("#000000");
+  });
+
   it("weighs green heavier than blue, since green is perceived as brighter", () => {
     expect(readableTextColor("#00ff00")).toBe("#000000");
     expect(readableTextColor("#0000ff")).toBe("#ffffff");
