@@ -68,7 +68,7 @@ export class Leaderboard {
   private _getPlayerSummary(id: string): PlayerSummary & {
     isRanked: boolean;
     rank?: number;
-    streaks?: { longestWin: number; longestLose: number };
+    streaks?: { longestWin: number; longestLose: number; currentWin: number; currentLose: number };
     pointsDistrubution: { oponentId: string; points: number }[];
     gamesDistribution: { oponentId: string; games: number }[];
   } {
@@ -88,7 +88,7 @@ export class Leaderboard {
         isRanked: false,
       };
 
-    const streaks = { longestWin: 0, longestLose: 0 };
+    const streaks = { longestWin: 0, longestLose: 0, currentWin: 0, currentLose: 0 };
     let winStreak = 0;
     let loseStreak = 0;
     player.games.forEach((game) => {
@@ -102,6 +102,8 @@ export class Leaderboard {
         streaks.longestLose = Math.max(streaks.longestLose, loseStreak);
       }
     });
+    streaks.currentWin = winStreak;
+    streaks.currentLose = loseStreak;
 
     const playerIsRanked = player.games.length >= this.parent.client.gameLimitForRanked;
 

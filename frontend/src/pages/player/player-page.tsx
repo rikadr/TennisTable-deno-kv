@@ -256,6 +256,11 @@ export const PlayerPage: React.FC = () => {
                         🏆🔥 {fmtNum(summary.streaks.longestWin)}{" "}
                         <span className="text-lg font-normal">game{summary.streaks.longestWin > 1 && "s"}</span>
                       </p>
+                      {summary.streaks.currentWin > 0 && (
+                        <p className="text-sm mt-1">
+                          Current: {fmtNum(summary.streaks.currentWin)} game{summary.streaks.currentWin > 1 && "s"}
+                        </p>
+                      )}
                     </div>
                     <div className="bg-primary-background rounded-lg p-4">
                       <p className="text-sm  mb-1">Longest Lose Streak</p>
@@ -263,6 +268,11 @@ export const PlayerPage: React.FC = () => {
                         💔🔥 {fmtNum(summary.streaks.longestLose)}{" "}
                         <span className="text-lg font-normal">game{summary.streaks.longestLose > 1 && "s"}</span>
                       </p>
+                      {summary.streaks.currentLose > 0 && (
+                        <p className="text-sm mt-1">
+                          Current: {fmtNum(summary.streaks.currentLose)} game{summary.streaks.currentLose > 1 && "s"}
+                        </p>
+                      )}
                     </div>
                   </>
                 )}
