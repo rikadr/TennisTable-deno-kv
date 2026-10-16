@@ -136,7 +136,7 @@ describe("Leaderboard.getPlayerSummary", () => {
     expect(alice.isRanked).toBe(true);
     expect(alice.rank).toBe(1);
     // Sequence: W W W W L W W
-    expect(alice.streaks).toEqual({ longestWin: 4, longestLose: 1 });
+    expect(alice.streaks).toEqual({ longestWin: 4, longestLose: 1, currentWin: 2, currentLose: 0 });
   });
 
   it("summarises an unranked player without a rank", () => {
