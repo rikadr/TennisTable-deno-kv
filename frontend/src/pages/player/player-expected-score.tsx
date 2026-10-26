@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Link } from "react-router-dom";
 import { fmtNum } from "../../common/number-utils";
 import { usePlayerExpectedScoreWorker } from "../../hooks/use-player-expected-score-worker";
@@ -12,13 +11,12 @@ type Props = {
 
 /**
  * Compact overview widget for unranked and retired players: calculates their expected score
- * with every ranked player plus this player, like the expected leaderboard. The first click
- * arms a warning about the data; the second click on the same button runs the calculation.
+ * with every ranked player plus this player, like the expected leaderboard. The warnings about
+ * the data show next to the button before the calculation runs.
  */
 export const PlayerExpectedScore: React.FC<Props> = ({ playerId, retired }) => {
   const context = useEventDbContext();
   const { start, result, running } = usePlayerExpectedScoreWorker(playerId);
-  const [armed, setArmed] = useState(false);
 
   const gameLimit = context.client.gameLimitForRanked;
   const tooFewGames = context.leaderboard.getPlayerSummary(playerId).games.length < gameLimit;
@@ -37,17 +35,16 @@ export const PlayerExpectedScore: React.FC<Props> = ({ playerId, retired }) => {
 
       {!result && !running && (
         <>
-          {armed &&
-            warnings.map((warning) => (
-              <span key={warning} className="text-xs text-primary-text/80">
-                ⚠️ {warning}
-              </span>
-            ))}
+          {warnings.map((warning) => (
+            <span key={warning} className="text-xs text-primary-text/80">
+              ⚠️ {warning}
+            </span>
+          ))}
           <button
-            onClick={() => (armed ? start() : setArmed(true))}
+            onClick={start}
             className="rounded-md bg-tertiary-background px-3 py-1.5 text-xs font-medium text-tertiary-text hover:bg-tertiary-background/70 transition-colors"
           >
-            {armed ? "Calculate anyway" : "Calculate"}
+            Calculate
           </button>
         </>
       )}
@@ -63,13 +60,16 @@ export const PlayerExpectedScore: React.FC<Props> = ({ playerId, retired }) => {
               <span className="text-sm font-light">points</span>
             </span>
             <span className="text-sm">
-              rank {fmtNum(playerEntry.rank)} of {result.expected.length} on the{" "}
-              <Link to="/simulations/expected-leaderboard" className="underline hover:text-primary-text/70">
-                expected leaderboard
-              </Link>
+              rank {fmtNum(playerEntry.rank)} of {result.expected.length} on the expected leaderboard
               {retired ? ", if the player played against the active players today" : ", not the current leaderboard"}
             </span>
             <span className="text-xs text-primary-text/60">⚠️ May be unreliable — {shortWarning}</span>
+            <Link
+              to="/simulations/expected-leaderboard"
+              className="px-2 py-1 bg-secondary-background text-secondary-text hover:bg-secondary-background/50 rounded-lg"
+            >
+              See full expected leaderboard
+            </Link>
           </>
         ) : (
           <span className="text-xs text-primary-text/80">
