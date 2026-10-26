@@ -21,6 +21,7 @@ import { fmtNum } from "../../common/number-utils";
 import { useEloSimulationWorker } from "../../hooks/use-elo-simulation-worker";
 import { Shimmer } from "../../common/shimmer";
 import { classNames } from "../../common/class-names";
+import { Link } from "react-router-dom";
 
 export const PlayerEloGraph: React.FC<{ playerId: string }> = ({ playerId }) => {
   const context = useEventDbContext();
@@ -253,6 +254,14 @@ export const PlayerEloGraph: React.FC<{ playerId: string }> = ({ playerId }) => 
             </div>
           )}
         </div>
+      )}
+      {showExpectedElo && lastEntry.simulatedElo && (
+        <Link
+          to="/simulations/expected-leaderboard"
+          className="inline-block mt-4 px-2 py-1 bg-secondary-background text-secondary-text hover:bg-secondary-background/50 rounded-lg"
+        >
+          See full expected leaderboard
+        </Link>
       )}
       {showExpectedElo && (
         <div className="mt-4">
