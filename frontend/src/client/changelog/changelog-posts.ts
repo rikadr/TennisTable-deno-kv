@@ -42,6 +42,25 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
+    slug: "player-network-top-opponents",
+    title: "Player network: links to the top opponents",
+    date: "2026-10-27",
+    tags: ["feature-update"],
+    summary:
+      "The player network has a new mode. Each player links only to the opponents that the player played the most games against.",
+    body: [
+      text(
+        "Select `Top opponents` above the graph. The slider sets how many opponents each player links to. A player can have more links than this number, because other players can have the player in their top list.",
+      ),
+      list(
+        "Each player gives a link a share of the strength. The share is the games against that opponent, divided by the games against all the top opponents.",
+        "When 2 players have each other in their top list, the app adds the 2 shares together.",
+        "A stronger link is thicker and pulls the 2 players closer together.",
+      ),
+      text("`Games per link` is the previous mode. It shows a link when 2 players played a minimum number of games."),
+    ],
+  },
+  {
     slug: "predictions-from-player-strengths",
     title: "Win predictions use all games",
     date: "2026-10-11",
