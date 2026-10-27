@@ -58,9 +58,12 @@ export const PlayerNetwork: React.FC = () => {
   // Top opponents mode: number of most played opponents each player links to
   const [topOpponents, setTopOpponents] = useState(3);
   const topCount = Math.min(topOpponents, maxTopOpponents);
+  // Top opponents mode: links a player can have in addition to topCount. The maximum value means no limit.
+  const [extraLinks, setExtraLinks] = useState(maxTopOpponents);
+  const extraCount = Math.min(extraLinks, maxTopOpponents);
 
   const processMatches = useCallback(
-    (mode: LinkMode, threshold: number, topCount: number) => {
+    (mode: LinkMode, threshold: number, topCount: number, extraCount: number) => {
       const playerStats = new Map<string, { matches: number; wins: number }>();
       const connections = new Map<string, { player1: string; player2: string; matches: Match[] }>();
 
@@ -152,7 +155,21 @@ export const PlayerNetwork: React.FC = () => {
         });
       });
 
-      const links = Array.from(strengthByKey.entries()).map(([key, strength]) =>
+      // Each player has a maximum of topCount + extraCount links. The strongest links are added first, and a link
+      // is added only when both players are below the maximum.
+      const maxLinks = topCount + extraCount;
+      const linkCount = new Map<string, number>();
+      const keptLinks = Array.from(strengthByKey.entries())
+        .sort(([keyA, a], [keyB, b]) => b - a || keyA.localeCompare(keyB))
+        .filter(([key]) => {
+          const { player1, player2 } = connections.get(key)!;
+          if ((linkCount.get(player1) ?? 0) >= maxLinks || (linkCount.get(player2) ?? 0) >= maxLinks) return false;
+          linkCount.set(player1, (linkCount.get(player1) ?? 0) + 1);
+          linkCount.set(player2, (linkCount.get(player2) ?? 0) + 1);
+          return true;
+        });
+
+      const links = keptLinks.map(([key, strength]) =>
         createLink(connections.get(key)!, {
           strength,
           width: 1 + strength * 2.5,
@@ -384,13 +401,13 @@ export const PlayerNetwork: React.FC = () => {
 
   // Update visualization live
   useEffect(() => {
-    const { nodes, links } = processMatches(linkMode, connectionThreshold, topCount);
+    const { nodes, links } = processMatches(linkMode, connectionThreshold, topCount, extraCount);
     createVisualization(nodes, links, false);
-  }, [linkMode, connectionThreshold, topCount, matches, processMatches, createVisualization]);
+  }, [linkMode, connectionThreshold, topCount, extraCount, matches, processMatches, createVisualization]);
 
   // Initialize visualization
   useEffect(() => {
-    const { nodes, links } = processMatches(linkMode, connectionThreshold, topCount);
+    const { nodes, links } = processMatches(linkMode, connectionThreshold, topCount, extraCount);
     createVisualization(nodes, links, true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -458,6 +475,25 @@ export const PlayerNetwork: React.FC = () => {
               <span>Most played opponent</span>
               <span>All opponents</span>
             </div>
+            <h3 className="text-lg font-semibold mt-2">
+              {extraCount === maxTopOpponents
+                ? "No maximum links per player"
+                : `Maximum ${topCount + extraCount} ${topCount + extraCount === 1 ? "link" : "links"} per player`}
+            </h3>
+            <input
+              type="range"
+              min="0"
+              max={maxTopOpponents}
+              step="1"
+              value={extraCount}
+              onChange={(e) => setExtraLinks(Number(e.target.value))}
+              className="w-full h-3 bg-secondary-text rounded-lg appearance-none cursor-pointer slider-blue"
+              disabled={matches.length === 0}
+            />
+            <div className="flex justify-between text-xs text-secondary-text">
+              <span>Top opponents only</span>
+              <span>No maximum</span>
+            </div>
           </>
         )}
       </div>
@@ -465,7 +501,10 @@ export const PlayerNetwork: React.FC = () => {
         <svg
           ref={svgRef}
           className="w-full border rounded"
-          style={{ height: height - 170 + "px", background: "rgb(var(--color-primary-background))" }}
+          style={{
+            height: height - (linkMode === "games" ? 170 : 240) + "px",
+            background: "rgb(var(--color-primary-background))",
+          }}
         />
       </div>
     </div>

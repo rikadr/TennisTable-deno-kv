@@ -56,6 +56,7 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
         "Each player gives a link a share of the strength. The share is the games against that opponent, divided by the games against all the top opponents.",
         "When 2 players have each other in their top list, the app adds the 2 shares together.",
         "A stronger link is thicker and pulls the 2 players closer together.",
+        "A second slider sets the maximum number of links for each player. The app keeps the strongest links.",
       ),
       text("`Games per link` is the previous mode. It shows a link when 2 players played a minimum number of games."),
     ],
