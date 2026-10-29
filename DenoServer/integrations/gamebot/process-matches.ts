@@ -1,4 +1,4 @@
-import { db } from "../../db.ts";
+import { getDb } from "../../db.ts";
 import { storeEvent } from "../../event-store/event-store.ts";
 import { EventType, EventTypeEnum } from "../../event-store/event-types.ts";
 import { newId } from "../../event-store/nano-id.ts";
@@ -24,7 +24,8 @@ export interface MatchesApiResponse {
 const LAST_SYNCED_MATCH_TIMESTAMP_KV_KEY = "gamebot:last_synced_match_timestamp";
 const FIRST_SYNC_FROM = 1765500000000; // Fri Dec 12 2025 01:40:00 GMT+0100
 
-export async function processMatchesResponse(response: MatchesApiResponse) {
+export async function processMatchesResponse(client: string, response: MatchesApiResponse) {
+  const db = getDb(client);
   const matches = response._embedded?.matches;
   if (Array.isArray(matches) === false) {
     return;
@@ -84,7 +85,7 @@ export async function processMatchesResponse(response: MatchesApiResponse) {
   }
 
   for (const event of eventsToWrite) {
-    await storeEvent(event);
+    await storeEvent(client, event);
   }
   const lastEventSynced = Math.max(...eventsToWrite.map((e) => e.time));
   await db.setValue(LAST_SYNCED_MATCH_TIMESTAMP_KV_KEY, lastEventSynced);
@@ -92,7 +93,7 @@ export async function processMatchesResponse(response: MatchesApiResponse) {
   console.log(`Compleded syncing ${matchesToSync.length} matches, resulting in ${eventsToWrite.length} events.`);
 
   // webSocketClientManager.broadcastClearCache(); // Maybe too hars to do full refetch?
-  webSocketClientManager.broadcastLatestEvent();
+  webSocketClientManager.broadcastLatestEvent(client);
 }
 
 function userIdFromUrl(url?: string): string {

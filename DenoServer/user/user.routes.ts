@@ -2,13 +2,14 @@ import { Router } from "oak";
 import { OptioPongContext, authService } from "../auth-service/auth-service.ts";
 import { isAuthenticated, requireAuth } from "../auth-service/middleware.ts";
 import { getUser } from "./user.store.ts";
+import { clientOf } from "../client.ts";
 
 export const registerUserRoutes = (api: Router) => {
   api.post("/user/sign-up", async (context) => {
     const payload = (await context.request.body.json()) as { username: string; password: string };
 
     try {
-      const { token } = await authService.signUp(payload.username, payload.password);
+      const { token } = await authService.signUp(clientOf(context), payload.username, payload.password);
 
       context.response.body = { token };
     } catch (err) {
@@ -19,7 +20,7 @@ export const registerUserRoutes = (api: Router) => {
 
   api.get("/user/me", isAuthenticated, async (context: OptioPongContext) => {
     const user = authService.getUserFromRequest(context);
-    const userData = await getUser(user.username);
+    const userData = await getUser(clientOf(context), user.username);
     if (!userData) {
       context.response.status = 404;
       context.response.body = { error: "User not found" };
@@ -31,7 +32,7 @@ export const registerUserRoutes = (api: Router) => {
   });
 
   api.get("/user", isAuthenticated, requireAuth("user", "read"), async (context) => {
-    const users = await authService.getAllUsers();
+    const users = await authService.getAllUsers(clientOf(context));
     context.response.body = { users };
   });
 
@@ -39,7 +40,7 @@ export const registerUserRoutes = (api: Router) => {
     const payload = (await context.request.body.json()) as { username: string; password: string };
 
     try {
-      const { token } = await authService.login(payload.username, payload.password);
+      const { token } = await authService.login(clientOf(context), payload.username, payload.password);
 
       context.response.body = { token };
     } catch (err) {
@@ -53,7 +54,7 @@ export const registerUserRoutes = (api: Router) => {
     const username = context.params.username;
     const payload = (await context.request.body.json()) as { role: string };
 
-    const updated = await authService.setRole({ username, role: payload.role });
+    const updated = await authService.setRole(clientOf(context), { username, role: payload.role });
 
     context.response.status = 200;
     context.response.body = updated;
@@ -61,7 +62,7 @@ export const registerUserRoutes = (api: Router) => {
 
   api.delete("/user/:username", isAuthenticated, requireAuth("user", "delete"), async (context) => {
     const username = context.params.username;
-    await authService.deleteUser(username);
+    await authService.deleteUser(clientOf(context), username);
     context.response.status = 204;
   });
 };

@@ -1,16 +1,16 @@
-import { db } from "../db.ts";
+import { getDb } from "../db.ts";
 
 export type { SetPoint, LiveGameState } from "../db/database.ts";
 import type { LiveGameState } from "../db/database.ts";
 
-export async function getLiveGame(): Promise<LiveGameState | null> {
-  return db.getLiveGame();
+export async function getLiveGame(client: string): Promise<LiveGameState | null> {
+  return getDb(client).getLiveGame();
 }
 
-export async function setLiveGame(state: LiveGameState): Promise<void> {
-  await db.setLiveGame(state);
+export async function setLiveGame(client: string, state: LiveGameState): Promise<void> {
+  await getDb(client).setLiveGame(state);
 }
 
-export async function clearLiveGame(): Promise<void> {
-  await db.clearLiveGame();
+export async function clearLiveGame(client: string): Promise<void> {
+  await getDb(client).clearLiveGame();
 }

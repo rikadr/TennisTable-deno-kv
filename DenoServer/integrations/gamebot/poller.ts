@@ -1,11 +1,15 @@
+import { CLIENTS } from "../../client.ts";
 import { getClientConfig } from "./client-config.ts";
 import { processMatchesResponse } from "./process-matches.ts";
 
-const config = getClientConfig();
+for (const client of CLIENTS) {
+  const config = getClientConfig(client);
+  if (!config.enabled || !config.gameBotChannelId) {
+    continue;
+  }
 
-if (config.enabled && config.gameBotChannelId) {
   // Poll twice a day, at 12:00 and 17:00
-  Deno.cron("Gamebot Poller", "0 12,17 * * *", async () => {
+  Deno.cron(`Gamebot Poller ${client}`, "0 12,17 * * *", async () => {
     try {
       const headers = new Headers();
       if (config.apiToken) {
@@ -25,7 +29,7 @@ if (config.enabled && config.gameBotChannelId) {
       }
 
       const data = JSON.parse(text);
-      await processMatchesResponse(data);
+      await processMatchesResponse(client, data);
     } catch (error) {
       console.error("Error polling Gamebot:", error);
     }

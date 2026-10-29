@@ -2,6 +2,7 @@ import { jwtVerify } from "jose";
 import { Context, Middleware } from "oak";
 import { ContextState, JWT_SECRET, SessionUser } from "./auth-service.ts";
 import { Action, Auth, Resource } from "./auth-handler.ts";
+import { clientOf, ROOT_CLIENT } from "../client.ts";
 
 export function requireAuth<T extends Resource, K extends Action<T>>(resource: T, action: K): Middleware<ContextState> {
   return async (context, next) => {
@@ -18,11 +19,6 @@ export function requireAuth<T extends Resource, K extends Action<T>>(resource: T
 }
 
 export const isAuthenticated: Middleware<ContextState> = async (context, next) => {
-  if (context.request.url.pathname === "/user/login") {
-    await next();
-    return;
-  }
-
   try {
     context.state.user = await verifyRequestToken(context);
     context.state.auth = new Auth(context);
@@ -51,15 +47,23 @@ async function verifyRequestToken(context: Context): Promise<SessionUser> {
     throw new Error("Token missing");
   }
 
+  let payload: SessionUser & { client?: string };
   try {
-    const user = await jwtVerify<SessionUser>(token, JWT_SECRET);
-    return {
-      username: user.payload.username,
-      role: user.payload.role,
-    };
+    payload = (await jwtVerify<SessionUser & { client?: string }>(token, JWT_SECRET)).payload;
   } catch (_err) {
     throw new Error("Invalid token");
   }
+
+  // A token is only valid for the client that issued it. Tokens from before
+  // the client claim came from a deployment that served the root client.
+  if ((payload.client ?? ROOT_CLIENT) !== clientOf(context)) {
+    throw new Error("Invalid token");
+  }
+
+  return {
+    username: payload.username,
+    role: payload.role,
+  };
 }
 
 export async function hasAccess<T extends Resource, K extends Action<T>>(

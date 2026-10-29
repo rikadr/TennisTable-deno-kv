@@ -25,9 +25,19 @@ The backend is the "Vault". It is a **Thin Server** designed to be simple, fast,
   when you extend the interface.
 - **Schema:** `db/schema.sql`. Tables: `events`, `users`, `live_game`,
   `key_value`.
-- **Multi-tenancy:** One database serves every deployment. Every table has a
-  `client_id` column from the `CLIENT` env var, and every query filters on it.
-  A query without that filter reads another office's data.
+- **Multi-tenancy:** One server and one database serve every client (office).
+  The client is the first path segment of each request: `/optio/events`.
+  `CLIENTS` lists the clients the server accepts, and an unknown client gets a
+  404. Every table has a `client_id` column, and every query filters on it. A
+  query without that filter reads another office's data.
+- **Getting the client:** A route handler calls `clientOf(context)` from
+  `client.ts`, and then `getDb(client)` from `db.ts`. Locally, each client has
+  its own SQLite file: `./data/<client>.db`.
+- **Tokens:** A JWT holds the client that issued it. A token for one client
+  gets a 401 on the routes of another client.
+- **Root routes (temporary):** When `CLIENT` is set, the server also serves that
+  client at the root path (`/events`), for the frontends that still use the old
+  URL. Remove this when every frontend uses a client path.
 
 ## Workflows
 
@@ -61,7 +71,10 @@ The backend is the "Vault". It is a **Thin Server** designed to be simple, fast,
 
 ## Broadcasting
 The connected WebSocket clients live in the memory of one server instance, and
-the deployment runs several. A broadcast therefore goes out over a
+the deployment can run several. A broadcast therefore goes out over a
 `BroadcastChannel` first, so every instance sends it to its own clients. A write
 can land on an instance that holds no clients at all. Never assume the instance
 that handles a request is the instance a client is connected to.
+
+Each socket belongs to one client, and a broadcast goes only to the sockets of
+that client.

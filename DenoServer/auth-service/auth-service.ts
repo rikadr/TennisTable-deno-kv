@@ -18,8 +18,8 @@ export type OptioPongContext = Context<ContextState>;
 
 export const JWT_SECRET = new TextEncoder().encode(Deno.env.get("JWT_SECRET"));
 
-async function createJwt(user: User): Promise<string> {
-  return await new SignJWT({ username: user.username, role: user.role })
+async function createJwt(client: string, user: User): Promise<string> {
+  return await new SignJWT({ username: user.username, role: user.role, client })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setIssuer("tennis-table")
@@ -37,8 +37,8 @@ function getUserFromRequest(context: OptioPongContext): SessionUser {
   return user;
 }
 
-async function signUp(username: string, password: string): Promise<{ token: string }> {
-  const foundUser = await userStore.getUser(username);
+async function signUp(client: string, username: string, password: string): Promise<{ token: string }> {
+  const foundUser = await userStore.getUser(client, username);
   if (foundUser) {
     throw new Error("User already exists");
   }
@@ -46,13 +46,13 @@ async function signUp(username: string, password: string): Promise<{ token: stri
   // async hash not avaiable in deno deploy
   const encryptedPassword = bcrypt.hashSync(password);
 
-  const user = await userStore.createUser(username, encryptedPassword, "user");
+  const user = await userStore.createUser(client, username, encryptedPassword, "user");
 
-  return { token: await createJwt(user) };
+  return { token: await createJwt(client, user) };
 }
 
-async function login(username: string, password: string): Promise<{ token: string }> {
-  const user = await userStore.getUser(username);
+async function login(client: string, username: string, password: string): Promise<{ token: string }> {
+  const user = await userStore.getUser(client, username);
 
   if (!user) {
     throw new Error("Username or password is incorrect");
@@ -64,18 +64,21 @@ async function login(username: string, password: string): Promise<{ token: strin
     throw new Error("Username or password is incorrect");
   }
 
-  const token = await createJwt(user);
+  const token = await createJwt(client, user);
 
   return { token };
 }
 
-async function getAllUsers(): Promise<Omit<User, "password">[]> {
-  return await userStore.findAll();
+async function getAllUsers(client: string): Promise<Omit<User, "password">[]> {
+  return await userStore.findAll(client);
 }
 
-async function setRole(options: { role: string; username: string }): Promise<Omit<User, "password">> {
-  await userStore.update(options.username, { role: options.role });
-  const user = await userStore.getUser(options.username);
+async function setRole(
+  client: string,
+  options: { role: string; username: string },
+): Promise<Omit<User, "password">> {
+  await userStore.update(client, options.username, { role: options.role });
+  const user = await userStore.getUser(client, options.username);
   if (!user) {
     throw new Error("User not found");
   }
@@ -83,8 +86,8 @@ async function setRole(options: { role: string; username: string }): Promise<Omi
   return safeUser;
 }
 
-async function deleteUser(username: string): Promise<void> {
-  await userStore.remove(username);
+async function deleteUser(client: string, username: string): Promise<void> {
+  await userStore.remove(client, username);
 }
 
 export const authService = {

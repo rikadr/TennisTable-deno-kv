@@ -6,9 +6,7 @@ export interface GamebotConfig {
   pollingIntervalMs?: number;
 }
 
-export function getClientConfig(): GamebotConfig {
-  const client = Deno.env.get("CLIENT");
-
+export function getClientConfig(client: string): GamebotConfig {
   switch (client) {
     case "deepinsight":
       return {
@@ -20,7 +18,7 @@ export function getClientConfig(): GamebotConfig {
       };
     default:
       return {
-        client:"not found",
+        client,
         enabled: false,
       };
   }

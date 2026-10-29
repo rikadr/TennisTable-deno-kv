@@ -19,9 +19,18 @@ enum WS_MESSAGE {
  */
 const FANOUT_CHANNEL_NAME = "ws-updates-fanout";
 
+type FanoutMessage = { clientId: string; message: string };
+
+function isFanoutMessage(data: unknown): data is FanoutMessage {
+  if (typeof data !== "object" || data === null) return false;
+  const { clientId, message } = data as Record<string, unknown>;
+  return typeof clientId === "string" && typeof message === "string";
+}
+
 export class WebSocketClientManager {
   private readonly instanciatedAt = Date.now();
-  private clients: Map<string, { client: WebSocket; createdAt: number }>;
+  /** Open web sockets by connection id. `clientId` is the client (office) the socket belongs to. */
+  private clients: Map<string, { client: WebSocket; clientId: string; createdAt: number }>;
   /**
    * The web socket clients live in the memory of one server instance, but the
    * deployment runs several instances. A write can land on an instance that
@@ -50,8 +59,8 @@ export class WebSocketClientManager {
       // A message from another instance goes to this instance's clients only.
       // Sending it back to the channel would loop between the instances.
       channel.onmessage = (event: MessageEvent<unknown>) => {
-        if (typeof event.data === "string") {
-          this.sendToLocalClients(event.data);
+        if (isFanoutMessage(event.data)) {
+          this.sendToLocalClients(event.data.clientId, event.data.message);
         }
       };
       return channel;
@@ -61,9 +70,9 @@ export class WebSocketClientManager {
     }
   }
 
-  private addClient(client: WebSocket): string {
+  private addClient(client: WebSocket, clientId: string): string {
     const connectionId = Math.random().toString(36).substring(2);
-    this.clients.set(connectionId, { client, createdAt: Date.now() });
+    this.clients.set(connectionId, { client, clientId, createdAt: Date.now() });
     return connectionId;
   }
 
@@ -79,7 +88,7 @@ export class WebSocketClientManager {
     return this.clients.has(connectionId);
   }
 
-  private handleMessage(message: unknown, client: WebSocket) {
+  private handleMessage(message: unknown, client: WebSocket, clientId: string) {
     if (typeof message !== "string") {
       return;
     }
@@ -95,7 +104,7 @@ export class WebSocketClientManager {
     }
 
     if (message.startsWith(WS_MESSAGE.LATEST_EVENT)) {
-      this.sendLatestEvent(client);
+      this.sendLatestEvent(client, clientId);
     }
   }
 
@@ -116,14 +125,14 @@ export class WebSocketClientManager {
     const client = this.clients.get(connectionId);
     if (!client) return;
 
-    this.sendLatestEvent(client.client);
+    this.sendLatestEvent(client.client, client.clientId);
   }
 
-  private async sendLatestEvent(client: WebSocket) {
+  private async sendLatestEvent(client: WebSocket, clientId: string) {
     // A database read can fail. It runs outside of a request, so a rejection
     // here is unhandled and stops the process with all of its web sockets.
     try {
-      const lastEvent = await getLatestEventTimestamp();
+      const lastEvent = await getLatestEventTimestamp(clientId);
       if (!lastEvent) return;
 
       if (client.readyState === WebSocket.OPEN) {
@@ -135,24 +144,25 @@ export class WebSocketClientManager {
   }
 
   /**
-   * Send message to all open web sockets of this server instance
+   * Send message to all open web sockets of one client on this server instance
    */
-  private sendToLocalClients(message: string) {
+  private sendToLocalClients(clientId: string, message: string) {
     for (const [_id, client] of this.clients) {
-      if (client.client.readyState === WebSocket.OPEN) {
+      if (client.clientId === clientId && client.client.readyState === WebSocket.OPEN) {
         client.client.send(message);
       }
     }
   }
 
   /**
-   * Send message to all open web sockets of all server instances
+   * Send message to all open web sockets of one client on all server instances
    */
-  private broadcastMessage(message: string) {
-    this.sendToLocalClients(message);
+  private broadcastMessage(clientId: string, message: string) {
+    this.sendToLocalClients(clientId, message);
 
     try {
-      this.fanout?.postMessage(message);
+      const fanoutMessage: FanoutMessage = { clientId, message };
+      this.fanout?.postMessage(fanoutMessage);
     } catch (error) {
       console.error("Failed to send a web socket broadcast to the other instances:", error);
     }
@@ -164,7 +174,7 @@ export class WebSocketClientManager {
    * @param context
    * @returns Web socket
    */
-  startWebSocketConnection(context: RouterContext<string>) {
+  startWebSocketConnection(context: RouterContext<string>, clientId: string) {
     if (!context.isUpgradable) {
       context.throw(400, "Request can not be upgraded to a web socket");
     }
@@ -172,14 +182,14 @@ export class WebSocketClientManager {
     let connectionId = "";
 
     socket.onopen = () => {
-      const id = this.addClient(socket);
+      const id = this.addClient(socket, clientId);
       connectionId = id;
       this.sendConnectionId(id);
       this.sendLatestEventFromConnectionId(id);
     };
 
     socket.onmessage = ({ data: message }) => {
-      this.handleMessage(message, socket);
+      this.handleMessage(message, socket, clientId);
     };
 
     socket.onclose = () => {
@@ -198,12 +208,12 @@ export class WebSocketClientManager {
    * Broadcast all connected clients a request to check if they need to reload their data.
    * Used for when new events are added.
    */
-  async broadcastLatestEvent() {
+  async broadcastLatestEvent(clientId: string) {
     // Callers do not await this, so a rejection would be unhandled.
     try {
-      const lastEvent = await getLatestEventTimestamp();
+      const lastEvent = await getLatestEventTimestamp(clientId);
       if (!lastEvent) return;
-      this.broadcastMessage(WS_MESSAGE.LATEST_EVENT + ":" + lastEvent);
+      this.broadcastMessage(clientId, WS_MESSAGE.LATEST_EVENT + ":" + lastEvent);
     } catch (error) {
       console.error("Failed to broadcast the latest event:", error);
     }
@@ -214,22 +224,22 @@ export class WebSocketClientManager {
    * full event history. Only for event manipulation (edit/delete), where
    * already-cached events have changed... dont use this if you can avoid it
    */
-  broadcastClearCache() {
-    this.broadcastMessage(WS_MESSAGE.CLEAR_CACHE);
+  broadcastClearCache(clientId: string) {
+    this.broadcastMessage(clientId, WS_MESSAGE.CLEAR_CACHE);
   }
 
   /**
    * Notify all clients that the live game state has changed.
    * Clients should refetch `/live-game` to get the new state.
    */
-  broadcastLiveGame() {
-    this.broadcastMessage(WS_MESSAGE.LIVE_GAME);
+  broadcastLiveGame(clientId: string) {
+    this.broadcastMessage(clientId, WS_MESSAGE.LIVE_GAME);
   }
 
   /**
-   * List all clients and their current state
+   * List the web sockets of one client and their current state
    */
-  listAllClients(): {
+  listAllClients(clientId: string): {
     instanciatedAt: string;
     crossInstanceFanout: boolean;
     clients: { id: string; createdAt: number }[];
@@ -239,10 +249,9 @@ export class WebSocketClientManager {
       // The list covers one server instance. A deployment runs several, so two
       // calls can report different instances and different client lists.
       crossInstanceFanout: this.fanout !== undefined,
-      clients: Array.from(this.clients.keys()).map((id) => ({
-        id,
-        createdAt: this.clients.get(id)!.createdAt,
-      })),
+      clients: Array.from(this.clients.entries())
+        .filter(([_id, client]) => client.clientId === clientId)
+        .map(([id, client]) => ({ id, createdAt: client.createdAt })),
     };
   }
 }

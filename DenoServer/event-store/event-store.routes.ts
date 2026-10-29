@@ -2,7 +2,8 @@ import { EventType, EventTypeEnum } from "./event-types.ts";
 import { deleteEvent, getEventsAfter, storeEvent, updateEvent } from "./event-store.ts";
 import { webSocketClientManager } from "../server.ts";
 import { hasAccess } from "../auth-service/middleware.ts";
-import { db } from "../db.ts";
+import { getDb } from "../db.ts";
+import { clientOf } from "../client.ts";
 import { Router } from "oak";
 
 export function registerEventStoreRoutes(api: Router) {
@@ -11,7 +12,7 @@ export function registerEventStoreRoutes(api: Router) {
    */
   api.get("/events", async (context) => {
     const after = context.request.url.searchParams.get("after");
-    const events = await getEventsAfter(after ? Number(after) : 0);
+    const events = await getEventsAfter(clientOf(context), after ? Number(after) : 0);
     context.response.body = events;
   });
 
@@ -70,8 +71,9 @@ export function registerEventStoreRoutes(api: Router) {
     // client can submit it because it is auto-seeded on tournament start and
     // the backend's atomic uniqueness check on event time prevents duplicates.
 
-    await storeEvent(eventPayload);
-    webSocketClientManager.broadcastLatestEvent();
+    const client = clientOf(context);
+    await storeEvent(client, eventPayload);
+    webSocketClientManager.broadcastLatestEvent(client);
     context.response.status = 201;
   });
 
@@ -87,12 +89,13 @@ export function registerEventStoreRoutes(api: Router) {
     // Assume frontend has validated business logic for the event // TODO: Do reducer business logic backend too
     // Run zod validation??
 
-    const updated = await updateEvent(eventPayload);
+    const client = clientOf(context);
+    const updated = await updateEvent(client, eventPayload);
     if (updated === false) {
       context.response.status = 409;
       return;
     }
-    webSocketClientManager.broadcastClearCache();
+    webSocketClientManager.broadcastClearCache(client);
     context.response.status = 201;
   });
 
@@ -108,12 +111,13 @@ export function registerEventStoreRoutes(api: Router) {
     // Assume frontend has validated business logic for the event // TODO: Do reducer business logic backend too
     // Run zod validation??
 
-    const deleted = await deleteEvent(eventTime);
+    const client = clientOf(context);
+    const deleted = await deleteEvent(client, eventTime);
     if (deleted === false) {
       context.response.status = 409;
       return;
     }
-    webSocketClientManager.broadcastClearCache();
+    webSocketClientManager.broadcastClearCache(client);
     context.response.status = 201;
   });
 
@@ -134,10 +138,11 @@ export function registerEventStoreRoutes(api: Router) {
   api.post("/events", async (context) => {
     const eventsPayload = (await context.request.body.json()) as EventType[];
 
+    const client = clientOf(context);
     for (const event of eventsPayload) {
-      await storeEvent(event);
+      await storeEvent(client, event);
     }
-    webSocketClientManager.broadcastLatestEvent();
+    webSocketClientManager.broadcastLatestEvent(client);
 
     context.response.body = { uploadedCount: eventsPayload.length.toLocaleString() };
     context.response.status = 201;
@@ -147,8 +152,9 @@ export function registerEventStoreRoutes(api: Router) {
    * Delete all events
    */
   api.delete("/events", async (context) => {
-    const deletedCount = await db.deleteAllEvents();
-    webSocketClientManager.broadcastLatestEvent();
+    const client = clientOf(context);
+    const deletedCount = await getDb(client).deleteAllEvents();
+    webSocketClientManager.broadcastLatestEvent(client);
 
     console.log(`Deleted ${deletedCount.toLocaleString()} events`);
     context.response.status = 204;

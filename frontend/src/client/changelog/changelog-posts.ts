@@ -42,6 +42,26 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
+    slug: "one-server-for-all-offices",
+    title: "One server for all offices",
+    date: "2026-10-29",
+    tags: ["technical"],
+    summary: "One server serves the data of all offices. Before, each office had its own server.",
+    body: [
+      text(
+        "Each request names its office in the first part of the path, for example `/optio/events`. The server rejects an office that is not in its list.",
+      ),
+      list(
+        "A login token is valid for one office only.",
+        "A live update goes only to the players of that office.",
+        "Local development keeps 1 SQLite file for each office.",
+      ),
+      text(
+        "Each office still has its own app. The address of its server ends in the name of the office. The old addresses work until all apps use the new ones.",
+      ),
+    ],
+  },
+  {
     slug: "predictions-from-player-strengths",
     title: "Win predictions use all games",
     date: "2026-10-11",

@@ -25,7 +25,7 @@ or point `REACT_APP_API_BASE_URL` at a deployed backend.
 
 | Variable                         | Purpose                                                                                                       |
 | -------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| `REACT_APP_API_BASE_URL`         | Backend base URL (local dev: `http://localhost:8000`)                                                         |
+| `REACT_APP_API_BASE_URL`         | Backend base URL, ending in the client (local dev: `http://localhost:8000/local`)                             |
 | `REACT_APP_CLIENT`               | Client/tenant config: `local`, `optio`, `skimore`, `asplanviak`, `deepinsight`, or unset for the guest client |
 | `REACT_APP_ENV`                  | `local` enables local-only admin controls                                                                     |
 | `REACT_APP_IMAGE_KIT_PUBLIC_KEY` | ImageKit public key for profile picture uploads                                                               |
