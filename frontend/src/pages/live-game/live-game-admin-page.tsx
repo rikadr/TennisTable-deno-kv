@@ -341,11 +341,7 @@ export const LiveGameAdminPage: React.FC = () => {
             player2={{ id: localState.player2Id, set: (id) => setPlayer(2, id) }}
           />
           {hasPlayers && (
-            <BestOfSelector
-              tone="theme"
-              value={localState.bestOf}
-              onChange={(bestOf) => setLocalState({ ...localState, bestOf })}
-            />
+            <BestOfSelector value={localState.bestOf} onChange={(bestOf) => setLocalState({ ...localState, bestOf })} />
           )}
           {hasPlayers && (
             <button
@@ -393,12 +389,6 @@ export const LiveGameAdminPage: React.FC = () => {
               <h2 className="text-gray-400 text-xs uppercase tracking-widest font-bold">
                 Set {localState.completedSets.length + 1}
               </h2>
-              <BestOfSelector
-                tone="card"
-                value={localState.bestOf}
-                onChange={setBestOf}
-                disabled={updateLiveGame.isPending}
-              />
               <ServeTrackerDisplay
                 currentSet={localState.currentSet}
                 firstServer={localState.firstServer}
@@ -466,6 +456,9 @@ export const LiveGameAdminPage: React.FC = () => {
             completedSets={localState.completedSets}
             bestOf={localState.bestOf}
           />
+          <div className="flex justify-center">
+            <BestOfSelector value={localState.bestOf} onChange={setBestOf} disabled={updateLiveGame.isPending} />
+          </div>
 
           <CompletedSetsList
             sets={localState.completedSets}
