@@ -1,10 +1,9 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { useEventDbContext } from "../../wrappers/event-db-context";
+import React, { useEffect, useState } from "react";
 import { CARD_SURFACE, fill, textOn } from "../../common/player-color-styles";
 import { fmtNum } from "../../common/number-utils";
 import { stringToColor } from "../../common/string-to-color";
 import { LiveGameSetPoint } from "./live-game-types";
-import { computeLiveWinPrediction } from "./live-game-win-probability";
+import { useLiveWinPrediction } from "./use-live-win-prediction";
 
 /** Width of the white pill that marks the split in the win prediction bar. */
 const DIVIDER_WIDTH_PX = 6;
@@ -28,8 +27,6 @@ export const LiveGamePredictionCard: React.FC<Props> = ({
   currentSet,
   completedSets,
 }) => {
-  const context = useEventDbContext();
-
   const player1Color = stringToColor(player1Id);
   const player2Color = stringToColor(player2Id);
 
@@ -41,61 +38,18 @@ export const LiveGamePredictionCard: React.FC<Props> = ({
     setRevealed(false);
   }, [player1Id, player2Id]);
 
-  const player1Ranked = context.leaderboard.getPlayerSummary(player1Id)?.isRanked ?? false;
-  const player2Ranked = context.leaderboard.getPlayerSummary(player2Id)?.isRanked ?? false;
-  const bothUnranked = !player1Ranked && !player2Ranked;
-  const hasUnranked = !player1Ranked || !player2Ranked;
-
-  // Static pre-game pairing prediction (same math as the player-page tab).
-  const predictions = context.predictions;
-  const base = predictions.getPredictedFraction(player1Id, player2Id);
-  const baseConfidence = base?.confidence ?? 0;
-  const baseFraction = base?.fraction ?? 0;
-  const hasBasePrediction = baseConfidence > 0;
-
-  const pointsPlayed =
-    currentSet.player1 + currentSet.player2 + completedSets.reduce((sum, set) => sum + set.player1 + set.player2, 0);
-
-  // Primitives + a serialized key so the memo depends only on stable values
-  // (the score objects get new identities on every poll/render).
-  const setsWonP1 = setsWon.player1;
-  const setsWonP2 = setsWon.player2;
-  const currentSetP1 = currentSet.player1;
-  const currentSetP2 = currentSet.player2;
-  const completedSetsKey = JSON.stringify(completedSets);
-
-  // Live prediction: derive a per-point win chance from the pre-game prediction
-  // plus the points/sets played so far, then Monte-Carlo simulate the rest of
-  // the match from the current score (see live-game-win-probability). Memoised
-  // so the simulation only re-runs when the score actually changes.
-  const { player1WinChance, confidence } = useMemo(
-    () =>
-      computeLiveWinPrediction({
-        preGameWinChance: hasBasePrediction ? baseFraction : 0.5,
-        preGameConfidence: baseConfidence,
-        setsWon: { player1: setsWonP1, player2: setsWonP2 },
-        currentSet: { player1: currentSetP1, player2: currentSetP2 },
-        completedSets: JSON.parse(completedSetsKey) as LiveGameSetPoint[],
-      }),
-    [
-      hasBasePrediction,
-      baseFraction,
-      baseConfidence,
-      setsWonP1,
-      setsWonP2,
-      currentSetP1,
-      currentSetP2,
-      completedSetsKey,
-    ],
-  );
+  const { player1WinChance, confidence, hasPrediction, hasUnranked, bothUnranked } = useLiveWinPrediction({
+    player1Id,
+    player2Id,
+    setsWon,
+    currentSet,
+    completedSets,
+  });
   const player2WinChance = 1 - player1WinChance;
 
   // The win chance splits the full width of the bar. The divider width is taken off the
   // span, so at 0% and 100% the divider sits flush with the end of the bar and stays in view.
   const split = `calc(${DIVIDER_WIDTH_PX / 2}px + ${player1WinChance} * (100% - ${DIVIDER_WIDTH_PX}px))`;
-
-  // With no pairing data and no points played yet there is nothing to predict.
-  const hasPrediction = hasBasePrediction || pointsPlayed > 0;
 
   const unrankedLabel = bothUnranked ? "Both players are not ranked" : "One player is not ranked";
 
