@@ -42,6 +42,24 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
+    slug: "tv-overlay-set-by-set-score",
+    title: "TV overlay shows the score of each set",
+    date: "2026-11-03",
+    tags: ["feature-update"],
+    summary: "The TV overlay has a new layout. It shows the score of each set, in 2 rows with 1 row for each player.",
+    body: [
+      list(
+        "Player 1 is on the top row and player 2 is on the bottom row.",
+        "Each set has a section after the names. The current set is the section on the right, with black text on white.",
+        "When a set ends, the score of the winner of that set gets a yellow background. A new section at 0-0 starts on the right.",
+        "A yellow dot before a name shows the player who must serve.",
+      ),
+      text(
+        "The overlay uses fixed colours, not the player colours. A green player colour disappeared when the broadcast removed the green background.",
+      ),
+    ],
+  },
+  {
     slug: "predictions-from-player-strengths",
     title: "Win predictions use all games",
     date: "2026-10-11",
