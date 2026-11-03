@@ -15,6 +15,7 @@ import { useClearLiveGameMutation, useLiveGameQuery, useUpdateLiveGameMutation }
 import { emptyLiveGame, LiveGameSetPoint, LiveGameState } from "./live-game-types";
 import { CompletedSetsList } from "./completed-sets-list";
 import { LiveGamePredictionCard } from "./live-game-prediction-card";
+import { BestOfSelector } from "./best-of-selector";
 import ConfettiExplosion from "react-confetti-explosion";
 import { Server } from "../../common/serve-tracker";
 import { ServeTrackerDisplay } from "../../common/serve-tracker-display";
@@ -50,6 +51,8 @@ export const LiveGameAdminPage: React.FC = () => {
       // Spread over emptyLiveGame so older games without newer fields (e.g.
       // firstServer) pick up sensible defaults.
       setLocalState(liveGameQuery.data ? { ...emptyLiveGame, ...liveGameQuery.data } : emptyLiveGame);
+      // A match that was ended for review and not saved yet opens on the review step.
+      if (liveGameQuery.data?.endedAt && !liveGameQuery.data.finishedAt) setStage("confirm");
     }
   }, [localState, liveGameQuery.isSuccess, liveGameQuery.data]);
 
@@ -111,6 +114,10 @@ export const LiveGameAdminPage: React.FC = () => {
       finishedAt: null,
       updatedAt: Date.now(),
     });
+  }
+
+  function setBestOf(bestOf: number) {
+    pushState({ ...localState!, bestOf });
   }
 
   function setFirstServer(player: Server) {
@@ -334,6 +341,13 @@ export const LiveGameAdminPage: React.FC = () => {
             player2={{ id: localState.player2Id, set: (id) => setPlayer(2, id) }}
           />
           {hasPlayers && (
+            <BestOfSelector
+              tone="theme"
+              value={localState.bestOf}
+              onChange={(bestOf) => setLocalState({ ...localState, bestOf })}
+            />
+          )}
+          {hasPlayers && (
             <button
               onClick={startMatch}
               disabled={updateLiveGame.isPending}
@@ -379,6 +393,12 @@ export const LiveGameAdminPage: React.FC = () => {
               <h2 className="text-gray-400 text-xs uppercase tracking-widest font-bold">
                 Set {localState.completedSets.length + 1}
               </h2>
+              <BestOfSelector
+                tone="card"
+                value={localState.bestOf}
+                onChange={setBestOf}
+                disabled={updateLiveGame.isPending}
+              />
               <ServeTrackerDisplay
                 currentSet={localState.currentSet}
                 firstServer={localState.firstServer}
@@ -444,6 +464,7 @@ export const LiveGameAdminPage: React.FC = () => {
             setsWon={localState.setsWon}
             currentSet={localState.currentSet}
             completedSets={localState.completedSets}
+            bestOf={localState.bestOf}
           />
 
           <CompletedSetsList
@@ -506,6 +527,8 @@ export const LiveGameAdminPage: React.FC = () => {
           onBack={() => {
             setStage("scoring");
             setValidationError("");
+            // The match goes on, so the overlay must show it as live again.
+            pushState({ ...localState!, endedAt: null });
           }}
         />
       )}

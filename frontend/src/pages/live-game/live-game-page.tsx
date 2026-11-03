@@ -76,6 +76,7 @@ export const LiveGamePage: React.FC = () => {
           completedSets={state.completedSets}
           badSides={state.completedSetBadSides ?? []}
           firstServer={state.firstServer ?? 1}
+          bestOf={state.bestOf}
           player1Name={context.playerName(state.player1Id)}
           player2Name={context.playerName(state.player2Id)}
         />
@@ -105,6 +106,7 @@ type ScoreboardProps = {
   /** Who had the bad side of the table in each completed set. */
   badSides: BadSide[];
   firstServer: Server;
+  bestOf: number;
   player1Name: string;
   player2Name: string;
 };
@@ -117,6 +119,7 @@ const LiveScoreboard: React.FC<ScoreboardProps> = ({
   completedSets,
   badSides,
   firstServer,
+  bestOf,
   player1Name,
   player2Name,
 }) => {
@@ -192,6 +195,7 @@ const LiveScoreboard: React.FC<ScoreboardProps> = ({
         setsWon={setsWon}
         currentSet={currentSet}
         completedSets={completedSets}
+        bestOf={bestOf}
       />
 
       <CompletedSetsList

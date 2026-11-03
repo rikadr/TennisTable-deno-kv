@@ -75,7 +75,8 @@ const OverlayGraphics: React.FC<{ state: LiveGameState; player1Id: string; playe
   const context = useEventDbContext();
   const player1Name = context.playerName(player1Id);
   const player2Name = context.playerName(player2Id);
-  const isOver = state.finishedAt !== null;
+  // The match is over once the admin ends it for review, before the game is saved.
+  const isOver = state.endedAt !== null || state.finishedAt !== null;
 
   const prediction = useLiveWinPrediction({
     player1Id,
@@ -83,6 +84,7 @@ const OverlayGraphics: React.FC<{ state: LiveGameState; player1Id: string; playe
     setsWon: state.setsWon,
     currentSet: state.currentSet,
     completedSets: state.completedSets,
+    bestOf: state.bestOf,
   });
   const chartAfterSet = useShowAfterIncrease(state.completedSets.length, CHART_SHOW_MS);
   const wantChart = isOver || chartAfterSet;
@@ -91,6 +93,7 @@ const OverlayGraphics: React.FC<{ state: LiveGameState; player1Id: string; playe
     prediction.preGameWinChance,
     prediction.preGameConfidence,
     wantChart,
+    !isOver,
   );
 
   const showBar = !isOver && prediction.hasPrediction;

@@ -261,4 +261,51 @@ describe("computeLiveWinPrediction", () => {
     expect(dominating.player1WinChance).toBeGreaterThan(0.9);
     expect(dominating.confidence).toBeGreaterThan(0.85);
   });
+  it("keeps a best of 5 open at 2-0", () => {
+    const prediction = computeLiveWinPrediction({
+      preGameWinChance: 0.5,
+      preGameConfidence: 0.5,
+      setsWon: { player1: 2, player2: 0 },
+      currentSet: { player1: 0, player2: 0 },
+      completedSets: [
+        { player1: 11, player2: 5 },
+        { player1: 11, player2: 8 },
+      ],
+      bestOf: 5,
+      simulations: 20000,
+      random: seededRandom(7),
+    });
+    expect(prediction.player1WinChance).toBeGreaterThan(0.5);
+    expect(prediction.player1WinChance).toBeLessThan(1);
+    expect(prediction.confidence).toBeLessThan(1);
+  });
+
+  it("returns a decided result in a best of 5 once a player has won three sets", () => {
+    const decided = computeLiveWinPrediction({
+      preGameWinChance: 0.5,
+      preGameConfidence: 0.5,
+      setsWon: { player1: 1, player2: 3 },
+      currentSet: { player1: 0, player2: 0 },
+      completedSets: [
+        { player1: 11, player2: 5 },
+        { player1: 8, player2: 11 },
+        { player1: 9, player2: 11 },
+        { player1: 6, player2: 11 },
+      ],
+      bestOf: 5,
+      simulations: 1000,
+      random: seededRandom(8),
+    });
+    expect(decided.player1WinChance).toBe(0);
+  });
+
+  it("gives the favourite a larger edge in a longer match", () => {
+    const bestOf3 = computeLiveWinPrediction(freshGame({ preGameWinChance: 0.65, preGameConfidence: 0.5 }));
+    const bestOf5 = computeLiveWinPrediction({
+      ...freshGame({ preGameWinChance: 0.65, preGameConfidence: 0.5 }),
+      bestOf: 5,
+    });
+    expect(bestOf5.player1WinChance).toBeGreaterThan(bestOf3.player1WinChance + 0.02);
+    expect(bestOf5.perPointWinChance).toBeCloseTo(bestOf3.perPointWinChance, 6);
+  });
 });

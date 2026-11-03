@@ -17,15 +17,21 @@ type WinChanceHistory = { series: number[]; setBreaks: number[] };
  * thread for about 100 ms in a long match. It runs only while `enabled`. When it
  * is disabled, the last history stays, so the chart keeps its content while it
  * slides out.
+ *
+ * Without `includeCurrentSet` the history stops at the last completed set. A game
+ * that ends mid-set is saved without that set, so the final chart leaves it out too.
  */
 export function useWinChanceHistory(
   state: LiveGameState,
   preGameWinChance: number,
   preGameConfidence: number,
   enabled: boolean,
+  includeCurrentSet: boolean,
 ): { available: boolean; history: WinChanceHistory | null } {
-  const sequencesKey = JSON.stringify([...state.completedSetSequences, state.currentSetSequence]);
-  const setsKey = JSON.stringify([...state.completedSets, state.currentSet]);
+  const currentSequence = includeCurrentSet ? [state.currentSetSequence] : [];
+  const currentSet = includeCurrentSet ? [state.currentSet] : [];
+  const sequencesKey = JSON.stringify([...state.completedSetSequences, ...currentSequence]);
+  const setsKey = JSON.stringify([...state.completedSets, ...currentSet]);
   const seed = state.startedAt ?? 0;
 
   const available = useMemo(() => {
@@ -47,6 +53,7 @@ export function useWinChanceHistory(
       preGameWinChance,
       preGameConfidence,
       seed,
+      bestOf: state.bestOf,
     });
 
     const setBreaks: number[] = [];
@@ -56,7 +63,7 @@ export function useWinChanceHistory(
       setBreaks.push(total);
     }
     return { series: [preGameWinChance, ...history], setBreaks };
-  }, [enabled, available, sequencesKey, preGameWinChance, preGameConfidence, seed]);
+  }, [enabled, available, sequencesKey, preGameWinChance, preGameConfidence, seed, state.bestOf]);
 
   const last = useRef<WinChanceHistory | null>(null);
   if (current) last.current = current;

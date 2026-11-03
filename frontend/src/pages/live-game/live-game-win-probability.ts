@@ -1,4 +1,4 @@
-import { LiveGameSetPoint } from "./live-game-types";
+import { DEFAULT_BEST_OF, LiveGameSetPoint } from "./live-game-types";
 import {
   Fraction,
   POINT_CONFIDENCE_CONFIG,
@@ -8,10 +8,10 @@ import {
 import { pointToGame, setToGame } from "../../client/client-db/future-elo-probability-lookups";
 
 /**
- * Live win-probability model for a best-of-3 table tennis match
- * (first to 2 sets; each set first to 11, win by 2 / deuce). A match that keeps
- * going past a decided best-of-3 extends to the next best-of-odd-N — see
- * `setsToWinMatch`.
+ * Live win-probability model for a best-of-N table tennis match, best of 3 by
+ * default (first to 2 sets; each set first to 11, win by 2 / deuce). A match
+ * that keeps going past its decided length extends to the next best-of-odd-N —
+ * see `setsToWinMatch`.
  *
  * Approach (see chat design):
  *
@@ -25,10 +25,12 @@ import { pointToGame, setToGame } from "../../client/client-db/future-elo-probab
  *     them is exact), then combine by confidence into one per-point%.
  *
  *  2. Monte-Carlo simulate the remainder of the match from the current score
- *     with that per-point% and use the win ratio as the prediction.
+ *     with that per-point% and use the win ratio as the prediction. The
+ *     per-point% does not depend on the match length, so a longer match only
+ *     changes the simulation: it gives the favourite more room to win.
  *
- * At 0–0 with no points played this reproduces the static pairing prediction
- * (inverting then simulating the same best-of-3-to-11 model round-trips), and
+ * At 0–0 with no points played in a best of 3 this reproduces the static pairing
+ * prediction (inverting then simulating the same best-of-3-to-11 model round-trips), and
  * as points/sets are played the per-point% sharpens and the simulated win
  * ratio converges toward 0/1 as the match nears its end.
  */
@@ -50,6 +52,8 @@ export type LiveWinPredictionInput = {
   setsWon: { player1: number; player2: number };
   currentSet: LiveGameSetPoint;
   completedSets: LiveGameSetPoint[];
+  /** The most sets the match can have: 3, 5, 7… Defaults to 3 (first to 2 sets). */
+  bestOf?: number;
   /** Number of Monte-Carlo simulations. Defaults to 1000. */
   simulations?: number;
   /** Injectable RNG for deterministic tests. Defaults to Math.random. */
@@ -62,7 +66,6 @@ export type LiveWinPredictionInput = {
   skipConfidenceSimulation?: boolean;
 };
 
-const SETS_TO_WIN_MATCH = 2;
 const POINTS_TO_WIN_SET = 11;
 const DEFAULT_SIMULATIONS = 1000;
 
@@ -91,11 +94,11 @@ function normalizeScore(
 }
 
 /**
- * How many sets win this match. Best of 3 (first to 2) by default, but the
- * players can keep going: a set that starts although a player already has
- * enough sets to have won extends the match to the next best-of-odd-N. A 3rd
- * set at 2–0 or a 4th at 2–1 makes it best of 5 (first to 3), a set after 3
- * won sets makes it best of 7, and so on.
+ * How many sets win this match. `bestOf` sets the start value (best of 3 is
+ * first to 2), but the players can keep going: a set that starts although a
+ * player already has enough sets to have won extends the match to the next
+ * best-of-odd-N. In a best of 3, a 3rd set at 2–0 or a 4th at 2–1 makes it best
+ * of 5 (first to 3), a set after 3 won sets makes it best of 7, and so on.
  *
  * The completed sets replay in order so an extension stays counted after its
  * set ends: 2–1 reached through 2–0 keeps the match a best of 5, while 2–1
@@ -107,8 +110,9 @@ function setsToWinMatch(
   setsWon: { player1: number; player2: number },
   completedSets: LiveGameSetPoint[],
   currentSet: LiveGameSetPoint,
+  bestOf: number,
 ): number {
-  let setsToWin = SETS_TO_WIN_MATCH;
+  let setsToWin = Math.floor(bestOf / 2) + 1;
   const currentSetStarted = currentSet.player1 + currentSet.player2 > 0;
 
   if (completedSets.length === setsWon.player1 + setsWon.player2) {
@@ -270,7 +274,7 @@ export function computeLiveWinPrediction(input: LiveWinPredictionInput): LiveWin
   const { setsWon, currentSet, completedSets } = normalizeScore(input);
 
   const perPoint = derivePerPointWinChance({ ...input, setsWon, currentSet, completedSets });
-  const setsToWin = setsToWinMatch(setsWon, completedSets, currentSet);
+  const setsToWin = setsToWinMatch(setsWon, completedSets, currentSet, input.bestOf ?? DEFAULT_BEST_OF);
 
   const current = runSimulations(
     perPoint.fraction,
