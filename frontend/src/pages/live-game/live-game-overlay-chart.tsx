@@ -1,10 +1,13 @@
 import React, { useMemo, useRef } from "react";
-import { replayWinPercentHistory } from "../game/game-win-replay";
+import { replayWinPercentHistory, seededRandom } from "../game/game-win-replay";
+import { computeLiveWinPrediction } from "./live-game-win-probability";
 import { LiveGameState } from "./live-game-types";
 import { OVERLAY_COLORS } from "./live-game-overlay-colors";
 
 const CHART_WIDTH = 952;
 const CHART_HEIGHT = 170;
+/** Simulations for the 0-0 sample. It is one run, so it can afford less noise than the per-point replay. */
+const START_SIMULATIONS = 5000;
 
 type WinChanceHistory = { series: number[]; setBreaks: number[] };
 
@@ -62,7 +65,19 @@ export function useWinChanceHistory(
       total += sequence.length;
       setBreaks.push(total);
     }
-    return { series: [preGameWinChance, ...history], setBreaks };
+    // The pre-game chance is for a best of 3, so simulate the 0-0 score at the match length that is set.
+    const start = computeLiveWinPrediction({
+      preGameWinChance,
+      preGameConfidence,
+      setsWon: { player1: 0, player2: 0 },
+      currentSet: { player1: 0, player2: 0 },
+      completedSets: [],
+      bestOf: state.bestOf,
+      simulations: START_SIMULATIONS,
+      random: seededRandom(seed),
+      skipConfidenceSimulation: true,
+    }).player1WinChance;
+    return { series: [start, ...history], setBreaks };
   }, [enabled, available, sequencesKey, preGameWinChance, preGameConfidence, seed, state.bestOf]);
 
   const last = useRef<WinChanceHistory | null>(null);
