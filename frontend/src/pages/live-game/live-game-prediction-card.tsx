@@ -16,6 +16,7 @@ type Props = {
   setsWon: { player1: number; player2: number };
   currentSet: LiveGameSetPoint;
   completedSets: LiveGameSetPoint[];
+  bestOf: number;
 };
 
 export const LiveGamePredictionCard: React.FC<Props> = ({
@@ -26,6 +27,7 @@ export const LiveGamePredictionCard: React.FC<Props> = ({
   setsWon,
   currentSet,
   completedSets,
+  bestOf,
 }) => {
   const player1Color = stringToColor(player1Id);
   const player2Color = stringToColor(player2Id);
@@ -44,6 +46,7 @@ export const LiveGamePredictionCard: React.FC<Props> = ({
     setsWon,
     currentSet,
     completedSets,
+    bestOf,
   });
   const player2WinChance = 1 - player1WinChance;
 

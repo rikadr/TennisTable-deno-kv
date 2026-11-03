@@ -5,6 +5,9 @@ export type LiveGameSetPoint = {
   player2: number;
 };
 
+/** The match length when nobody sets one: best of 3, first to 2 sets. */
+export const DEFAULT_BEST_OF = 3;
+
 export type LiveGameState = {
   player1Id: string | null;
   player2Id: string | null;
@@ -38,6 +41,8 @@ export type LiveGameState = {
   badSide: BadSide;
   /** How many points were undone while tracking this match. */
   corrections: number;
+  /** The most sets the match can have (3, 5, 7…). The win chance simulates a match of this length. */
+  bestOf: number;
   startedAt: number | null;
   /** Epoch ms the match was ended for review. Null while it is still played. */
   endedAt: number | null;
@@ -60,6 +65,7 @@ export const emptyLiveGame: LiveGameState = {
   completedSetBadSides: [],
   badSide: null,
   corrections: 0,
+  bestOf: DEFAULT_BEST_OF,
   startedAt: null,
   endedAt: null,
   finishedAt: null,

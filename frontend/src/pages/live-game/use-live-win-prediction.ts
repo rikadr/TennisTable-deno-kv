@@ -21,8 +21,9 @@ export function useLiveWinPrediction(params: {
   setsWon: { player1: number; player2: number };
   currentSet: LiveGameSetPoint;
   completedSets: LiveGameSetPoint[];
+  bestOf: number;
 }): LiveWinPredictionResult {
-  const { player1Id, player2Id, setsWon, currentSet, completedSets } = params;
+  const { player1Id, player2Id, setsWon, currentSet, completedSets, bestOf } = params;
   const context = useEventDbContext();
 
   const player1Ranked = context.leaderboard.getPlayerSummary(player1Id)?.isRanked ?? false;
@@ -58,8 +59,9 @@ export function useLiveWinPrediction(params: {
         setsWon: { player1: setsWonP1, player2: setsWonP2 },
         currentSet: { player1: currentSetP1, player2: currentSetP2 },
         completedSets: JSON.parse(completedSetsKey) as LiveGameSetPoint[],
+        bestOf,
       }),
-    [preGameWinChance, baseConfidence, setsWonP1, setsWonP2, currentSetP1, currentSetP2, completedSetsKey],
+    [preGameWinChance, baseConfidence, setsWonP1, setsWonP2, currentSetP1, currentSetP2, completedSetsKey, bestOf],
   );
 
   return {

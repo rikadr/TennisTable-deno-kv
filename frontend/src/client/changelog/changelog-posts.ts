@@ -59,7 +59,7 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
         "The win chance bar is at the bottom centre. Player 1 is orange and player 2 is blue. A colour tab before each name in the scoreboard shows which colour is which player.",
       ),
       text(
-        "After each set, a chart of the win chance for the match so far comes up for 20 seconds. When the game is saved, the scoreboard and the chart stay on the screen until the next game starts.",
+        "After each set, the overlay shows a chart of the win chance for the match so far for 20 seconds. When the admin ends the match, the scoreboard and the chart stay on the screen until the next game starts.",
       ),
       text(
         "The overlay uses fixed colours, not the player colours. A green player colour disappeared when the broadcast removed the green background.",
@@ -1458,6 +1458,9 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
     body: [
       text(
         "The live game pages and the TV overlay show a win percentage for each player. The percentage updates when the score changes. It comes from the same model as the 1v1 comparison.",
+      ),
+      text(
+        "A live game is best of 3 by default. The admin can set it to best of 5 or 7, and the win percentage then uses that number of sets.",
       ),
     ],
   },

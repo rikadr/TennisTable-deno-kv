@@ -1,10 +1,13 @@
 import React, { useMemo, useRef } from "react";
-import { replayWinPercentHistory } from "../game/game-win-replay";
+import { replayWinPercentHistory, seededRandom } from "../game/game-win-replay";
+import { computeLiveWinPrediction } from "./live-game-win-probability";
 import { LiveGameState } from "./live-game-types";
 import { OVERLAY_COLORS } from "./live-game-overlay-colors";
 
 const CHART_WIDTH = 952;
 const CHART_HEIGHT = 170;
+/** Simulations for the 0-0 sample. It is one run, so it can afford less noise than the per-point replay. */
+const START_SIMULATIONS = 5000;
 
 type WinChanceHistory = { series: number[]; setBreaks: number[] };
 
@@ -17,15 +20,21 @@ type WinChanceHistory = { series: number[]; setBreaks: number[] };
  * thread for about 100 ms in a long match. It runs only while `enabled`. When it
  * is disabled, the last history stays, so the chart keeps its content while it
  * slides out.
+ *
+ * Without `includeCurrentSet` the history stops at the last completed set. A game
+ * that ends mid-set is saved without that set, so the final chart leaves it out too.
  */
 export function useWinChanceHistory(
   state: LiveGameState,
   preGameWinChance: number,
   preGameConfidence: number,
   enabled: boolean,
+  includeCurrentSet: boolean,
 ): { available: boolean; history: WinChanceHistory | null } {
-  const sequencesKey = JSON.stringify([...state.completedSetSequences, state.currentSetSequence]);
-  const setsKey = JSON.stringify([...state.completedSets, state.currentSet]);
+  const currentSequence = includeCurrentSet ? [state.currentSetSequence] : [];
+  const currentSet = includeCurrentSet ? [state.currentSet] : [];
+  const sequencesKey = JSON.stringify([...state.completedSetSequences, ...currentSequence]);
+  const setsKey = JSON.stringify([...state.completedSets, ...currentSet]);
   const seed = state.startedAt ?? 0;
 
   const available = useMemo(() => {
@@ -47,6 +56,7 @@ export function useWinChanceHistory(
       preGameWinChance,
       preGameConfidence,
       seed,
+      bestOf: state.bestOf,
     });
 
     const setBreaks: number[] = [];
@@ -55,8 +65,20 @@ export function useWinChanceHistory(
       total += sequence.length;
       setBreaks.push(total);
     }
-    return { series: [preGameWinChance, ...history], setBreaks };
-  }, [enabled, available, sequencesKey, preGameWinChance, preGameConfidence, seed]);
+    // The pre-game chance is for a best of 3, so simulate the 0-0 score at the match length that is set.
+    const start = computeLiveWinPrediction({
+      preGameWinChance,
+      preGameConfidence,
+      setsWon: { player1: 0, player2: 0 },
+      currentSet: { player1: 0, player2: 0 },
+      completedSets: [],
+      bestOf: state.bestOf,
+      simulations: START_SIMULATIONS,
+      random: seededRandom(seed),
+      skipConfidenceSimulation: true,
+    }).player1WinChance;
+    return { series: [start, ...history], setBreaks };
+  }, [enabled, available, sequencesKey, preGameWinChance, preGameConfidence, seed, state.bestOf]);
 
   const last = useRef<WinChanceHistory | null>(null);
   if (current) last.current = current;

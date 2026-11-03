@@ -41,6 +41,8 @@ export type LiveGameState = {
   badSide: 1 | 2 | "neutral" | null;
   /** How many points were undone while tracking this match. */
   corrections: number;
+  /** The most sets the match can have (3, 5, 7...). Missing in states saved before it existed. */
+  bestOf?: number;
   startedAt: number | null;
   /** Epoch ms the match was ended for review. Null while it is still played. */
   endedAt: number | null;

@@ -1,6 +1,6 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { httpClient } from "../../common/http-client";
-import { LiveGameState } from "./live-game-types";
+import { emptyLiveGame, LiveGameState } from "./live-game-types";
 import { queryClient } from "../../common/query-client";
 
 const LIVE_GAME_QUERY_KEY = ["live-game"];
@@ -25,7 +25,8 @@ export function useLiveGameQuery(options?: {
       }
       const text = await res.text();
       if (!text) return null;
-      return JSON.parse(text) as LiveGameState;
+      // A state saved before a field existed does not have it, so fill in the defaults.
+      return { ...emptyLiveGame, ...(JSON.parse(text) as Partial<LiveGameState>) };
     },
     refetchInterval: options?.refetchIntervalMs ?? false,
     refetchIntervalInBackground: options?.refetchInBackground ?? false,

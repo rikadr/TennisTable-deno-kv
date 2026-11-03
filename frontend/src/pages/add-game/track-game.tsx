@@ -22,6 +22,7 @@ import { computeLiveWinPrediction } from "../live-game/live-game-win-probability
 import { WinPercentGraph } from "./win-percent-graph";
 import { session } from "../../services/auth";
 import { useLiveGameQuery, useUpdateLiveGameMutation } from "../live-game/use-live-game";
+import { DEFAULT_BEST_OF } from "../live-game/live-game-types";
 import {
   appendPoint,
   emptyTrackedSet,
@@ -315,6 +316,7 @@ export const TrackGamePage: React.FC = () => {
         completedSetBadSides: [...matchData.badSides],
         badSide,
         corrections,
+        bestOf: DEFAULT_BEST_OF,
         // Keep the original start so the timeline stays continuous across the
         // handover. Only a match that skipped the scoring screen starts now.
         startedAt: startedAt ?? now,
@@ -583,6 +585,7 @@ export const TrackGamePage: React.FC = () => {
               setsWon={matchData.setsWon}
               currentSet={currentSetScore}
               completedSets={matchData.setPoints ?? []}
+              bestOf={DEFAULT_BEST_OF}
             />
           </div>
 
