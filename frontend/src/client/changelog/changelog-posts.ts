@@ -43,16 +43,23 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
     slug: "tv-overlay-set-by-set-score",
-    title: "TV overlay shows the score of each set",
+    title: "New TV overlay with set scores and win chance",
     date: "2026-11-03",
     tags: ["feature-update"],
-    summary: "The TV overlay has a new layout. It shows the score of each set, in 2 rows with 1 row for each player.",
+    summary:
+      "The TV overlay has a new layout for a 16:9 broadcast. It shows the score of each set and the live win chance.",
     body: [
       list(
-        "Player 1 is on the top row and player 2 is on the bottom row.",
-        "Each set has a section after the names. The current set is the section on the right, with black text on white.",
-        "When a set ends, the score of the winner of that set gets a yellow background. A new section at 0-0 starts on the right.",
+        "The scoreboard is at the top centre. Player 1 is on the top row and player 2 is on the bottom row.",
+        "Each set has a section after the names. The current set is on the right, with black text on white.",
+        "When a set ends, the score of the set winner gets a yellow background. A new section at 0-0 starts.",
         "A yellow dot before a name shows the player who must serve.",
+      ),
+      text(
+        "The win chance bar is at the bottom centre. Player 1 is orange and player 2 is blue. A colour tab before each name in the scoreboard shows which colour is which player.",
+      ),
+      text(
+        "After each set, a chart of the win chance for the match so far comes up for 20 seconds. When the game is saved, the scoreboard and the chart stay on the screen until the next game starts.",
       ),
       text(
         "The overlay uses fixed colours, not the player colours. A green player colour disappeared when the broadcast removed the green background.",
