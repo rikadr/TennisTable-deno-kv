@@ -105,6 +105,22 @@ describe("NewVersionChecker", () => {
     expect(reloadPageMock).not.toHaveBeenCalled();
   });
 
+  it("reloads the TV overlay at once, without the popup", async () => {
+    scriptTag = addRunningBundleScript();
+    mockFetchReturning(NEW_BUNDLE);
+    window.history.pushState({}, "", "/live-game/overlay");
+    try {
+      render(<NewVersionChecker />);
+
+      await advanceTime(CHECK_INTERVAL_MS);
+
+      expect(reloadPageMock).toHaveBeenCalled();
+      expect(screen.queryByText(/new version available/i)).not.toBeInTheDocument();
+    } finally {
+      window.history.pushState({}, "", "/");
+    }
+  });
+
   it("refreshes when 'Refresh now' is clicked", async () => {
     scriptTag = addRunningBundleScript();
     mockFetchReturning(NEW_BUNDLE);
