@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useRef } from "react";
 import { replayWinPercentHistory } from "../game/game-win-replay";
 import { LiveGameState } from "./live-game-types";
 import { OVERLAY_COLORS } from "./live-game-overlay-colors";
@@ -6,28 +6,40 @@ import { OVERLAY_COLORS } from "./live-game-overlay-colors";
 const CHART_WIDTH = 952;
 const CHART_HEIGHT = 170;
 
+type WinChanceHistory = { series: number[]; setBreaks: number[] };
+
 /**
  * Player 1's win chance after every point of the match, with the pre-game chance
- * first. Null when the stored point sequences do not match the score, e.g. a
- * live game that started before point tracking existed.
+ * first. `available` is false when the stored point sequences do not match the
+ * score, e.g. a live game that started before point tracking existed.
+ *
+ * The replay re-runs the Monte-Carlo model for every point, which blocks the main
+ * thread for about 100 ms in a long match. It runs only while `enabled`. When it
+ * is disabled, the last history stays, so the chart keeps its content while it
+ * slides out.
  */
 export function useWinChanceHistory(
   state: LiveGameState,
   preGameWinChance: number,
   preGameConfidence: number,
-): { series: number[]; setBreaks: number[] } | null {
+  enabled: boolean,
+): { available: boolean; history: WinChanceHistory | null } {
   const sequencesKey = JSON.stringify([...state.completedSetSequences, state.currentSetSequence]);
   const setsKey = JSON.stringify([...state.completedSets, state.currentSet]);
   const seed = state.startedAt ?? 0;
 
-  return useMemo(() => {
+  const available = useMemo(() => {
     const sequences = JSON.parse(sequencesKey) as string[];
     const sets = JSON.parse(setsKey) as { player1: number; player2: number }[];
-    const matchesScore = sequences.every((sequence, index) => {
+    return sequences.every((sequence, index) => {
       const set = sets[index];
       return !!set && sequence.length === set.player1 + set.player2;
     });
-    if (!matchesScore) return null;
+  }, [sequencesKey, setsKey]);
+
+  const current = useMemo(() => {
+    if (!enabled || !available) return null;
+    const sequences = JSON.parse(sequencesKey) as string[];
 
     // The replay reads "W" as a point to its player 1, so the history is from player 1's view.
     const history = replayWinPercentHistory({
@@ -44,7 +56,12 @@ export function useWinChanceHistory(
       setBreaks.push(total);
     }
     return { series: [preGameWinChance, ...history], setBreaks };
-  }, [sequencesKey, setsKey, preGameWinChance, preGameConfidence, seed]);
+  }, [enabled, available, sequencesKey, preGameWinChance, preGameConfidence, seed]);
+
+  const last = useRef<WinChanceHistory | null>(null);
+  if (current) last.current = current;
+
+  return { available, history: current ?? last.current };
 }
 
 export const WinChanceChart: React.FC<{

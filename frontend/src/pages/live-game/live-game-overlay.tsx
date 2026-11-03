@@ -84,12 +84,18 @@ const OverlayGraphics: React.FC<{ state: LiveGameState; player1Id: string; playe
     currentSet: state.currentSet,
     completedSets: state.completedSets,
   });
-  const history = useWinChanceHistory(state, prediction.preGameWinChance, prediction.preGameConfidence);
   const chartAfterSet = useShowAfterIncrease(state.completedSets.length, CHART_SHOW_MS);
+  const wantChart = isOver || chartAfterSet;
+  const { available, history } = useWinChanceHistory(
+    state,
+    prediction.preGameWinChance,
+    prediction.preGameConfidence,
+    wantChart,
+  );
   const gain = useLastPointGain(state, prediction.player1WinChance);
 
   const showBar = !isOver && prediction.hasPrediction;
-  const showChart = !!history && (isOver || chartAfterSet);
+  const showChart = wantChart && available;
   const { server } = getServeInfo(state.currentSet, state.firstServer ?? 1);
 
   const winnerName = state.setsWon.player1 > state.setsWon.player2 ? player1Name : player2Name;
