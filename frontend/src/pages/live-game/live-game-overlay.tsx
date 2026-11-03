@@ -92,7 +92,6 @@ const OverlayGraphics: React.FC<{ state: LiveGameState; player1Id: string; playe
     prediction.preGameConfidence,
     wantChart,
   );
-  const gain = useLastPointGain(state, prediction.player1WinChance);
 
   const showBar = !isOver && prediction.hasPrediction;
   const showChart = wantChart && available;
@@ -126,7 +125,6 @@ const OverlayGraphics: React.FC<{ state: LiveGameState; player1Id: string; playe
               player2Name={player2Name}
               player1WinChance={prediction.player1WinChance}
               lowData={prediction.hasUnranked}
-              gain={gain}
             />
           )}
           {/* The chart comes in from the bottom edge and its growing slot pushes the bar up. */}
@@ -255,68 +253,53 @@ const CompletedSetColumn: React.FC<{ set: LiveGameSetPoint }> = ({ set }) => {
   );
 };
 
-type PointGain = { player: 1 | 2; points: number };
+const WIN_CHANCE_BAR_WIDTH = 640;
 
 const WinChanceBar: React.FC<{
   player1Name: string;
   player2Name: string;
   player1WinChance: number;
   lowData: boolean;
-  gain: PointGain | null;
-}> = ({ player1Name, player2Name, player1WinChance, lowData, gain }) => {
+}> = ({ player1Name, player2Name, player1WinChance, lowData }) => {
   const player1Percent = Math.round(player1WinChance * 100);
   // The divider width is taken off the span, so at 0 % and 100 % the divider sits
   // flush with the end of the bar and stays in view.
   const split = `calc(${DIVIDER_WIDTH_PX / 2}px + ${player1WinChance} * (100% - ${DIVIDER_WIDTH_PX}px))`;
 
   return (
-    <div
-      className="flex flex-col gap-3 rounded-lg box-border px-6 pt-4 pb-5"
-      style={{ backgroundColor: OVERLAY_COLORS.panel, boxShadow: "0 2px 10px rgba(0, 0, 0, 0.35)" }}
-    >
-      <div className="flex items-center gap-3">
-        <KeySquare color={OVERLAY_COLORS.player1} />
-        <span className="text-white text-2xl font-semibold">{player1Name}</span>
-        <span className="text-white text-[32px] font-extrabold">{player1Percent}%</span>
-        <GainLabel gain={gain} player={1} />
-        <span
-          className="flex-grow text-center text-[15px] font-bold uppercase tracking-[0.14em]"
-          style={{ color: OVERLAY_COLORS.mutedText }}
-        >
-          Win chance{lowData && " · low data"}
-        </span>
-        <GainLabel gain={gain} player={2} />
-        <span className="text-white text-[32px] font-extrabold">{100 - player1Percent}%</span>
-        <span className="text-white text-2xl font-semibold">{player2Name}</span>
-        <KeySquare color={OVERLAY_COLORS.player2} />
+    <div className="self-center flex flex-col items-center gap-1.5" style={{ width: WIN_CHANCE_BAR_WIDTH }}>
+      <div className="text-white text-base font-bold" style={{ textShadow: "0 1px 3px rgba(0, 0, 0, 0.6)" }}>
+        Win chance{lowData && " · low data"}
       </div>
-      <div className="relative">
-        <div className="flex h-[14px] w-full overflow-hidden rounded-full">
+      <div
+        className="w-full flex items-center gap-3 rounded-lg box-border px-4 py-2.5"
+        style={{ backgroundColor: OVERLAY_COLORS.panel, boxShadow: "0 2px 10px rgba(0, 0, 0, 0.35)" }}
+      >
+        <span className="text-white text-lg font-semibold whitespace-nowrap overflow-hidden text-ellipsis max-w-[150px]">
+          {player1Name}
+        </span>
+        <span className="w-14 shrink-0 text-right text-white text-xl font-extrabold">{player1Percent}%</span>
+        <div className="relative flex-1 min-w-0">
+          <div className="flex h-2.5 w-full overflow-hidden rounded-full">
+            <div
+              className="transition-all duration-500"
+              style={{ width: split, backgroundColor: OVERLAY_COLORS.player1 }}
+            />
+            <div className="flex-1" style={{ backgroundColor: OVERLAY_COLORS.player2 }} />
+          </div>
           <div
-            className="transition-all duration-500"
-            style={{ width: split, backgroundColor: OVERLAY_COLORS.player1 }}
+            className="pointer-events-none absolute -top-[3px] -bottom-[3px] -translate-x-1/2 rounded-full bg-white shadow-[0_0_0_1px_rgba(0,0,0,0.25)] transition-all duration-500"
+            style={{ left: split, width: DIVIDER_WIDTH_PX }}
           />
-          <div className="flex-1" style={{ backgroundColor: OVERLAY_COLORS.player2 }} />
         </div>
-        <div
-          className="pointer-events-none absolute -top-1 -bottom-1 -translate-x-1/2 rounded-full bg-white shadow-[0_0_0_1px_rgba(0,0,0,0.25)] transition-all duration-500"
-          style={{ left: split, width: DIVIDER_WIDTH_PX }}
-        />
+        <span className="w-14 shrink-0 text-left text-white text-xl font-extrabold">{100 - player1Percent}%</span>
+        <span className="text-white text-lg font-semibold whitespace-nowrap overflow-hidden text-ellipsis max-w-[150px]">
+          {player2Name}
+        </span>
       </div>
     </div>
   );
 };
-
-const KeySquare: React.FC<{ color: string }> = ({ color }) => (
-  <span className="w-3.5 h-3.5 rounded-[3px] shrink-0" style={{ backgroundColor: color }} />
-);
-
-const GainLabel: React.FC<{ gain: PointGain | null; player: 1 | 2 }> = ({ gain, player }) =>
-  gain?.player === player ? (
-    <span className="text-lg font-bold" style={{ color: OVERLAY_COLORS.softText }}>
-      ▲ {gain.points}
-    </span>
-  ) : null;
 
 function stageScale(): number {
   return Math.min(window.innerWidth / STAGE_WIDTH, window.innerHeight / STAGE_HEIGHT);
@@ -349,33 +332,4 @@ function useShowAfterIncrease(count: number, durationMs: number): boolean {
     return () => clearTimeout(timer);
   }, [count, durationMs]);
   return visible;
-}
-
-/**
- * How much the last point raised the win chance of the player who won it. The
- * Monte-Carlo prediction has some noise, so a change against the point is not shown.
- */
-function useLastPointGain(state: LiveGameState, player1WinChance: number): PointGain | null {
-  const pointsPlayed =
-    state.currentSet.player1 +
-    state.currentSet.player2 +
-    state.completedSets.reduce((sum, set) => sum + set.player1 + set.player2, 0);
-  const lastSequence =
-    state.currentSetSequence || state.completedSetSequences[state.completedSetSequences.length - 1] || "";
-  const lastChar = lastSequence[lastSequence.length - 1];
-  const lastPointWinner: 1 | 2 | null = lastChar === "1" ? 1 : lastChar === "2" ? 2 : null;
-
-  const [gain, setGain] = useState<PointGain | null>(null);
-  const previous = useRef<{ pointsPlayed: number; chance: number } | null>(null);
-  useEffect(() => {
-    const before = previous.current;
-    previous.current = { pointsPlayed, chance: player1WinChance };
-    if (!before || lastPointWinner === null || pointsPlayed !== before.pointsPlayed + 1) {
-      setGain(null);
-      return;
-    }
-    const change = Math.round((player1WinChance - before.chance) * 100) * (lastPointWinner === 1 ? 1 : -1);
-    setGain(change > 0 ? { player: lastPointWinner, points: change } : null);
-  }, [pointsPlayed, player1WinChance, lastPointWinner]);
-  return gain;
 }
