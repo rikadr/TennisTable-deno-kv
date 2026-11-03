@@ -124,7 +124,6 @@ const OverlayGraphics: React.FC<{ state: LiveGameState; player1Id: string; playe
               player1Name={player1Name}
               player2Name={player2Name}
               player1WinChance={prediction.player1WinChance}
-              lowData={prediction.hasUnranked}
             />
           )}
           {/* The chart comes in from the bottom edge and its growing slot pushes the bar up. */}
@@ -259,8 +258,7 @@ const WinChanceBar: React.FC<{
   player1Name: string;
   player2Name: string;
   player1WinChance: number;
-  lowData: boolean;
-}> = ({ player1Name, player2Name, player1WinChance, lowData }) => {
+}> = ({ player1Name, player2Name, player1WinChance }) => {
   const player1Percent = Math.round(player1WinChance * 100);
   // The divider width is taken off the span, so at 0 % and 100 % the divider sits
   // flush with the end of the bar and stays in view.
@@ -269,7 +267,7 @@ const WinChanceBar: React.FC<{
   return (
     <div className="self-center flex flex-col items-center gap-1.5" style={{ width: WIN_CHANCE_BAR_WIDTH }}>
       <div className="text-white text-base font-bold" style={{ textShadow: "0 1px 3px rgba(0, 0, 0, 0.6)" }}>
-        Win chance{lowData && " · low data"}
+        Win chance
       </div>
       <div
         className="w-full flex items-center gap-3 rounded-lg box-border px-4 py-2.5"
