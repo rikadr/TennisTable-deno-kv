@@ -1462,6 +1462,9 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
       text(
         "A live game is best of 3 by default. The admin can set it to best of 5 or 7, and the win percentage then uses that number of sets.",
       ),
+      text(
+        "The win percentage counts each point one time. Before, it also counted a won set as more evidence, so 1 won set moved the percentage close to 100%.",
+      ),
     ],
   },
   {
