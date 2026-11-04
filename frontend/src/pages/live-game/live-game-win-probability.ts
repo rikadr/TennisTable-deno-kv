@@ -1,11 +1,6 @@
 import { DEFAULT_BEST_OF, LiveGameSetPoint } from "./live-game-types";
-import {
-  Fraction,
-  POINT_CONFIDENCE_CONFIG,
-  Predictions,
-  SET_CONFIDENCE_CONFIG,
-} from "../../client/client-db/predictions";
-import { pointToGame, setToGame } from "../../client/client-db/future-elo-probability-lookups";
+import { Fraction, POINT_CONFIDENCE_CONFIG, Predictions } from "../../client/client-db/predictions";
+import { pointToGame } from "../../client/client-db/future-elo-probability-lookups";
 
 /**
  * Live win-probability model for a best-of-N table tennis match, best of 3 by
@@ -16,13 +11,17 @@ import { pointToGame, setToGame } from "../../client/client-db/future-elo-probab
  * Approach (see chat design):
  *
  *  1. Derive a single per-point win probability for player 1 from
- *     pre-game data + the points/sets played so far in this game.
+ *     pre-game data + the points played so far in this game.
  *
- *     The static prediction maps point% and set% up to a game% and combines
- *     them by confidence. Here we run that in reverse: we take the pre-game
- *     game% and the live set% / point% and map each back down to a per-point%
- *     (`pointToGame` and `setToGame` are best-of-3-to-11 tables, so inverting
- *     them is exact), then combine by confidence into one per-point%.
+ *     The static prediction maps point% up to a game% and combines it by
+ *     confidence. Here we run that in reverse: we take the pre-game game% and
+ *     the live point% and map each back down to a per-point% (`pointToGame` is
+ *     a best-of-3-to-11 table, so inverting it is exact), then combine by
+ *     confidence into one per-point%.
+ *
+ *     The sets won are not separate evidence: a set is made of the points that
+ *     are already counted. Counting both made a player who won 1 set look much
+ *     stronger per point, and the prediction jumped toward 100 %.
  *
  *  2. Monte-Carlo simulate the remainder of the match from the current score
  *     with that per-point% and use the win ratio as the prediction. The
@@ -72,9 +71,9 @@ const DEFAULT_SIMULATIONS = 1000;
 /**
  * A current set that is already decided (11+ points, 2 clear) counts as a
  * completed set, so the prediction is the same just before and just after the
- * set win is confirmed and the score returns to 0–0. Without this, confirming
- * a set moves the same evidence from the points estimator into the sets
- * estimator and the prediction jumps.
+ * set win is confirmed and the score returns to 0–0. Without this, the sets won
+ * and the match length (`setsToWinMatch`) change at the confirmation, and the
+ * prediction jumps.
  */
 function normalizeScore(
   input: LiveWinPredictionInput,
@@ -171,24 +170,16 @@ function gameChanceToPerPoint(gameChance: number): number {
  * predictions.
  */
 function derivePerPointWinChance(input: LiveWinPredictionInput): Fraction {
-  const { preGameWinChance, preGameConfidence, setsWon, currentSet, completedSets } = input;
+  const { preGameWinChance, preGameConfidence, currentSet, completedSets } = input;
 
   const livePointsP1 = currentSet.player1 + completedSets.reduce((sum, set) => sum + set.player1, 0);
   const livePointsP2 = currentSet.player2 + completedSets.reduce((sum, set) => sum + set.player2, 0);
-  const liveSetsP1 = setsWon.player1;
-  const liveSetsP2 = setsWon.player2;
 
   const estimators: Fraction[] = [];
 
   // Pre-game data (already a combined game%, direct + indirect) → per-point%.
   if (preGameConfidence > 0) {
     estimators.push({ fraction: gameChanceToPerPoint(preGameWinChance), confidence: preGameConfidence });
-  }
-
-  // Live sets → per-point% (set% → game% → per-point%).
-  if (liveSetsP1 + liveSetsP2 > 0) {
-    const setLevel = Predictions.getWinFractionWithConfidence(liveSetsP1, liveSetsP2, setToGame, SET_CONFIDENCE_CONFIG);
-    estimators.push({ fraction: gameChanceToPerPoint(setLevel.fraction), confidence: setLevel.confidence });
   }
 
   // Live points → per-point% (point% maps to itself, i.e. the raw point fraction).

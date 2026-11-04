@@ -308,4 +308,36 @@ describe("computeLiveWinPrediction", () => {
     expect(bestOf5.player1WinChance).toBeGreaterThan(bestOf3.player1WinChance + 0.02);
     expect(bestOf5.perPointWinChance).toBeCloseTo(bestOf3.perPointWinChance, 6);
   });
+  it("does not count a won set again on top of its points", () => {
+    // Without pairing data the per-point chance is the share of points won: 14 of 26.
+    const prediction = computeLiveWinPrediction({
+      preGameWinChance: 0.5,
+      preGameConfidence: 0,
+      setsWon: { player1: 1, player2: 0 },
+      currentSet: { player1: 3, player2: 3 },
+      completedSets: [{ player1: 11, player2: 9 }],
+      simulations: 1000,
+      random: seededRandom(9),
+    });
+    expect(prediction.perPointWinChance).toBeCloseTo(14 / 26, 2);
+  });
+
+  it("gives a 1-0 lead in sets less weight in a longer match", () => {
+    const atBestOf = (bestOf: number) =>
+      computeLiveWinPrediction({
+        preGameWinChance: 0.6,
+        preGameConfidence: 0.6,
+        setsWon: { player1: 1, player2: 0 },
+        currentSet: { player1: 0, player2: 0 },
+        completedSets: [{ player1: 11, player2: 9 }],
+        bestOf,
+        simulations: 40000,
+        random: seededRandom(10),
+      }).player1WinChance;
+    const bestOf3 = atBestOf(3);
+    const bestOf5 = atBestOf(5);
+    const bestOf7 = atBestOf(7);
+    expect(bestOf3).toBeGreaterThan(bestOf5 + 0.02);
+    expect(bestOf5).toBeGreaterThan(bestOf7 + 0.003);
+  });
 });
