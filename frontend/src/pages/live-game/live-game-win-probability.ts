@@ -71,9 +71,9 @@ const DEFAULT_SIMULATIONS = 1000;
 /**
  * A current set that is already decided (11+ points, 2 clear) counts as a
  * completed set, so the prediction is the same just before and just after the
- * set win is confirmed and the score returns to 0–0. Without this, confirming
- * a set moves the same evidence from the points estimator into the sets
- * estimator and the prediction jumps.
+ * set win is confirmed and the score returns to 0–0. Without this, the sets won
+ * and the match length (`setsToWinMatch`) change at the confirmation, and the
+ * prediction jumps.
  */
 function normalizeScore(
   input: LiveWinPredictionInput,
