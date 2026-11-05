@@ -3,6 +3,8 @@ import * as d3 from "d3";
 import { stringToColor } from "../../common/string-to-color";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { useWindowSize } from "usehooks-ts";
+import { classNames } from "../../common/class-names";
+import { isMutualTopOpponent, rankOpponents } from "./rank-opponents";
 
 interface Match {
   player1: string;
@@ -24,6 +26,15 @@ interface Link extends d3.SimulationLinkDatum<Node> {
   matches: Match[];
 }
 
+type LinkMode = "games" | "top-opponents";
+
+const linkModeOptions: { value: LinkMode; label: string }[] = [
+  { value: "games", label: "Games played" },
+  { value: "top-opponents", label: "Top opponents" },
+];
+
+const MAX_TOP_OPPONENTS = 20;
+
 // Fixed physics parameters (no longer state, just constants)
 const physicsParams = {
   nodeRepulsion: -260,
@@ -42,11 +53,12 @@ export const PlayerNetwork: React.FC = () => {
   );
   const simulationRef = useRef<d3.Simulation<Node, Link> | null>(null);
 
-  // Connection threshold slider
+  const [linkMode, setLinkMode] = useState<LinkMode>("games");
   const [connectionThreshold, setConnectionThreshold] = useState(15);
+  const [topOpponents, setTopOpponents] = useState(3);
 
   const processMatches = useCallback(
-    (threshold: number = 15) => {
+    (mode: LinkMode, threshold: number, topN: number) => {
       const playerStats = new Map<string, { matches: number; wins: number }>();
       const connections = new Map<string, Match[]>();
 
@@ -86,9 +98,14 @@ export const PlayerNetwork: React.FC = () => {
         radius: Math.max(8, Math.sqrt(stats.matches) * 4),
       }));
 
-      // Create links - only for pairings with threshold or more matches
+      const ranked = mode === "top-opponents" ? rankOpponents(matches) : undefined;
+
       const links: Link[] = Array.from(connections.entries())
-        .filter(([key, matchList]) => matchList.length >= threshold)
+        .filter(([key, matchList]) => {
+          if (!ranked) return matchList.length >= threshold;
+          const [player1, player2] = key.split("-");
+          return isMutualTopOpponent(ranked, player1, player2, topN);
+        })
         .map(([key, matchList]) => {
           const [player1, player2] = key.split("-");
           const source = nodes.find((n) => n.id === player1)!;
@@ -330,35 +347,85 @@ export const PlayerNetwork: React.FC = () => {
 
   // Update visualization live
   useEffect(() => {
-    const { nodes, links } = processMatches(connectionThreshold);
+    const { nodes, links } = processMatches(linkMode, connectionThreshold, topOpponents);
     createVisualization(nodes, links, false);
-  }, [connectionThreshold, matches, processMatches, createVisualization]);
+  }, [linkMode, connectionThreshold, topOpponents, matches, processMatches, createVisualization]);
 
   // Initialize visualization
   useEffect(() => {
-    const { nodes, links } = processMatches(connectionThreshold);
+    const { nodes, links } = processMatches(linkMode, connectionThreshold, topOpponents);
     createVisualization(nodes, links, true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
     <div className="w-full ">
-      {/* Connection Threshold Slider */}
       <div className="px-4 py-2 bg-secondary-background text-secondary-text rounded-lg">
-        <h3 className="text-lg font-semibold">Games per link</h3>
-        <input
-          type="range"
-          min="1"
-          max="50"
-          value={connectionThreshold}
-          onChange={(e) => setConnectionThreshold(Number(e.target.value))}
-          className="w-full h-3 bg-secondary-text rounded-lg appearance-none cursor-pointer slider-blue"
-          disabled={matches.length === 0}
-        />
-        <div className="flex justify-between text-xs text-secondary-text">
-          <span>1 game per link</span>
-          <span>Many games per link</span>
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
+          <h3 className="text-lg font-semibold">
+            {linkMode === "games"
+              ? `Games per link: ${connectionThreshold}`
+              : `Top ${topOpponents} opponent${topOpponents === 1 ? "" : "s"} per player`}
+          </h3>
+          <div
+            role="radiogroup"
+            aria-label="Link mode"
+            className="flex rounded-lg border border-secondary-text divide-x divide-secondary-text overflow-hidden"
+          >
+            {linkModeOptions.map((option) => (
+              <button
+                key={option.value}
+                role="radio"
+                aria-checked={linkMode === option.value}
+                onClick={() => setLinkMode(option.value)}
+                className={classNames(
+                  "px-2.5 py-1.5 text-xs xs:text-sm transition-colors",
+                  linkMode === option.value
+                    ? "bg-secondary-text text-secondary-background font-medium"
+                    : "bg-secondary-background text-secondary-text hover:bg-secondary-text/20",
+                )}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
         </div>
+        {linkMode === "games" ? (
+          <>
+            <input
+              type="range"
+              min="1"
+              max="50"
+              value={connectionThreshold}
+              onChange={(e) => setConnectionThreshold(Number(e.target.value))}
+              className="w-full h-3 bg-secondary-text rounded-lg appearance-none cursor-pointer slider-blue"
+              disabled={matches.length === 0}
+            />
+            <div className="flex justify-between text-xs text-secondary-text">
+              <span>1 game per link</span>
+              <span>Many games per link</span>
+            </div>
+          </>
+        ) : (
+          <>
+            <input
+              type="range"
+              min="1"
+              max={MAX_TOP_OPPONENTS}
+              value={topOpponents}
+              onChange={(e) => setTopOpponents(Number(e.target.value))}
+              className="w-full h-3 bg-secondary-text rounded-lg appearance-none cursor-pointer slider-blue"
+              disabled={matches.length === 0}
+            />
+            <div className="flex justify-between text-xs text-secondary-text">
+              <span>Top 1</span>
+              <span>Top {MAX_TOP_OPPONENTS}</span>
+            </div>
+            <p className="text-xs text-secondary-text mt-1">
+              A link shows only when each player has the other in their top {topOpponents} by game count.
+            </p>
+          </>
+        )}
       </div>
       <div className="border rounded-lg bg-gray-50">
         <svg
