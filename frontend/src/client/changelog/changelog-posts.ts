@@ -55,6 +55,9 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
       text(
         "A link shows only when both players have the other in their list. On a tie in game count, the opponent with the more recent game ranks higher.",
       ),
+      text(
+        'Clear "Include retired players" to remove the retired players and their games from the graph. Then a top list contains only active players. This works in both link modes.',
+      ),
     ],
   },
   {

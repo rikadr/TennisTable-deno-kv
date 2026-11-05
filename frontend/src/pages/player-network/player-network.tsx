@@ -50,8 +50,18 @@ export const PlayerNetwork: React.FC = () => {
   const context = useEventDbContext();
   const { height } = useWindowSize();
   const svgRef = useRef<SVGSVGElement>(null);
-  const [matches] = useState<Match[]>(
+  const [allMatches] = useState<Match[]>(
     context.games.map((g) => ({ player1: g.winner, player2: g.loser, winner: g.winner })),
+  );
+  const [activePlayerIds] = useState(() => new Set(context.players.map((player) => player.id)));
+  const [includeRetired, setIncludeRetired] = useState(true);
+  // Without retired players, their games go too, so they do not fill a top opponents list.
+  const matches = useMemo(
+    () =>
+      includeRetired
+        ? allMatches
+        : allMatches.filter((match) => activePlayerIds.has(match.player1) && activePlayerIds.has(match.player2)),
+    [allMatches, activePlayerIds, includeRetired],
   );
   const simulationRef = useRef<d3.Simulation<Node, Link> | null>(null);
 
@@ -59,7 +69,7 @@ export const PlayerNetwork: React.FC = () => {
   const [connectionThreshold, setConnectionThreshold] = useState(15);
   const [topOpponents, setTopOpponents] = useState(3);
 
-  // The games do not change after mount, so count them once.
+  // Count the games once per set of games, not on every slider move.
   const { playerStats, pairs, ranked } = useMemo(() => {
     const playerStats = new Map<string, { matches: number; wins: number }>();
     const pairsByKey = new Map<string, PlayerPair>();
@@ -359,6 +369,10 @@ export const PlayerNetwork: React.FC = () => {
               ? `Games per link: ${connectionThreshold}`
               : `Top ${topOpponents} opponent${topOpponents === 1 ? "" : "s"} per player`}
           </h3>
+          <label className="flex items-center gap-2 text-xs xs:text-sm">
+            <input type="checkbox" checked={includeRetired} onChange={(e) => setIncludeRetired(e.target.checked)} />
+            Include retired players
+          </label>
           <div
             role="radiogroup"
             aria-label="Link mode"
