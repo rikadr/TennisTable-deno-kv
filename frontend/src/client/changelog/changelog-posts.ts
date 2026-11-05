@@ -42,6 +42,25 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
+    slug: "player-network-top-opponents",
+    title: "Player network: link by top opponents",
+    date: "2026-11-05",
+    tags: ["feature-update"],
+    summary:
+      "The player network has a new link mode. It links 2 players when each is in the top opponents list of the other.",
+    body: [
+      text(
+        'Select "Top opponents" above the graph. The slider sets the length of the top list for each player. At 3, the list is the 3 opponents with the most games against that player.',
+      ),
+      text(
+        "A link shows only when both players have the other in their list. On a tie in game count, the opponent with the more recent game ranks higher.",
+      ),
+      text(
+        'Clear "Include retired players" to remove the retired players and their games from the graph. Then a top list contains only active players. This works in both link modes.',
+      ),
+    ],
+  },
+  {
     slug: "tv-overlay-set-by-set-score",
     title: "New TV overlay with set scores and win chance",
     date: "2026-11-03",

@@ -1,8 +1,10 @@
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import React, { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import * as d3 from "d3";
 import { stringToColor } from "../../common/string-to-color";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { useWindowSize } from "usehooks-ts";
+import { classNames } from "../../common/class-names";
+import { isMutualTopOpponent, rankOpponents } from "./rank-opponents";
 
 interface Match {
   player1: string;
@@ -24,6 +26,17 @@ interface Link extends d3.SimulationLinkDatum<Node> {
   matches: Match[];
 }
 
+type PlayerPair = { player1: string; player2: string; matches: Match[]; lastPlayed: number };
+
+type LinkMode = "games" | "top-opponents";
+
+const linkModeOptions: { value: LinkMode; label: string }[] = [
+  { value: "games", label: "Games played" },
+  { value: "top-opponents", label: "Top opponents" },
+];
+
+const MAX_TOP_OPPONENTS = 20;
+
 // Fixed physics parameters (no longer state, just constants)
 const physicsParams = {
   nodeRepulsion: -260,
@@ -37,74 +50,80 @@ export const PlayerNetwork: React.FC = () => {
   const context = useEventDbContext();
   const { height } = useWindowSize();
   const svgRef = useRef<SVGSVGElement>(null);
-  const [matches] = useState<Match[]>(
+  const [allMatches] = useState<Match[]>(
     context.games.map((g) => ({ player1: g.winner, player2: g.loser, winner: g.winner })),
+  );
+  const [activePlayerIds] = useState(() => new Set(context.players.map((player) => player.id)));
+  const [includeRetired, setIncludeRetired] = useState(true);
+  // Without retired players, their games go too, so they do not fill a top opponents list.
+  const matches = useMemo(
+    () =>
+      includeRetired
+        ? allMatches
+        : allMatches.filter((match) => activePlayerIds.has(match.player1) && activePlayerIds.has(match.player2)),
+    [allMatches, activePlayerIds, includeRetired],
   );
   const simulationRef = useRef<d3.Simulation<Node, Link> | null>(null);
 
-  // Connection threshold slider
+  const [linkMode, setLinkMode] = useState<LinkMode>("games");
   const [connectionThreshold, setConnectionThreshold] = useState(15);
+  const [topOpponents, setTopOpponents] = useState(3);
+
+  // Count the games once per set of games, not on every slider move.
+  const { playerStats, pairs, ranked } = useMemo(() => {
+    const playerStats = new Map<string, { matches: number; wins: number }>();
+    const pairsByKey = new Map<string, PlayerPair>();
+
+    matches.forEach((match, index) => {
+      const { player1, player2, winner } = match;
+
+      for (const player of [player1, player2]) {
+        const stats = playerStats.get(player) ?? { matches: 0, wins: 0 };
+        stats.matches++;
+        if (winner === player) stats.wins++;
+        playerStats.set(player, stats);
+      }
+
+      const [first, second] = [player1, player2].sort();
+      // JSON keeps the key unique for any player id. The key is never parsed.
+      const key = JSON.stringify([first, second]);
+      const pair = pairsByKey.get(key) ?? { player1: first, player2: second, matches: [], lastPlayed: index };
+      pair.matches.push(match);
+      pair.lastPlayed = index;
+      pairsByKey.set(key, pair);
+    });
+
+    const pairs = Array.from(pairsByKey.values());
+    const ranked = rankOpponents(pairs.map((pair) => ({ ...pair, games: pair.matches.length })));
+    return { playerStats, pairs, ranked };
+  }, [matches]);
 
   const processMatches = useCallback(
-    (threshold: number = 15) => {
-      const playerStats = new Map<string, { matches: number; wins: number }>();
-      const connections = new Map<string, Match[]>();
-
-      matches.forEach((match) => {
-        const { player1, player2, winner } = match;
-
-        // Update player stats
-        if (!playerStats.has(player1)) {
-          playerStats.set(player1, { matches: 0, wins: 0 });
-        }
-        if (!playerStats.has(player2)) {
-          playerStats.set(player2, { matches: 0, wins: 0 });
-        }
-
-        const p1Stats = playerStats.get(player1)!;
-        const p2Stats = playerStats.get(player2)!;
-
-        p1Stats.matches++;
-        p2Stats.matches++;
-
-        if (winner === player1) p1Stats.wins++;
-        if (winner === player2) p2Stats.wins++;
-
-        // Track connections
-        const connectionKey = [player1, player2].sort().join("-");
-        if (!connections.has(connectionKey)) {
-          connections.set(connectionKey, []);
-        }
-        connections.get(connectionKey)!.push(match);
-      });
-
-      // Create nodes
+    (mode: LinkMode, threshold: number, topN: number) => {
       const nodes: Node[] = Array.from(playerStats.entries()).map(([id, stats]) => ({
         id,
         matches: stats.matches,
         wins: stats.wins,
         radius: Math.max(8, Math.sqrt(stats.matches) * 4),
       }));
+      const nodesById = new Map(nodes.map((node) => [node.id, node]));
 
-      // Create links - only for pairings with threshold or more matches
-      const links: Link[] = Array.from(connections.entries())
-        .filter(([key, matchList]) => matchList.length >= threshold)
-        .map(([key, matchList]) => {
-          const [player1, player2] = key.split("-");
-          const source = nodes.find((n) => n.id === player1)!;
-          const target = nodes.find((n) => n.id === player2)!;
-
-          return {
-            source,
-            target,
-            strength: matchList.length,
-            matches: matchList,
-          };
-        });
+      const links: Link[] = pairs
+        .filter((pair) =>
+          mode === "top-opponents"
+            ? isMutualTopOpponent(ranked, pair.player1, pair.player2, topN)
+            : pair.matches.length >= threshold,
+        )
+        .map((pair) => ({
+          source: nodesById.get(pair.player1)!,
+          target: nodesById.get(pair.player2)!,
+          strength: pair.matches.length,
+          matches: pair.matches,
+        }));
 
       return { nodes, links };
     },
-    [matches],
+    [playerStats, pairs, ranked],
   );
 
   const createVisualization = useCallback(
@@ -330,35 +349,89 @@ export const PlayerNetwork: React.FC = () => {
 
   // Update visualization live
   useEffect(() => {
-    const { nodes, links } = processMatches(connectionThreshold);
+    const { nodes, links } = processMatches(linkMode, connectionThreshold, topOpponents);
     createVisualization(nodes, links, false);
-  }, [connectionThreshold, matches, processMatches, createVisualization]);
+  }, [linkMode, connectionThreshold, topOpponents, matches, processMatches, createVisualization]);
 
   // Initialize visualization
   useEffect(() => {
-    const { nodes, links } = processMatches(connectionThreshold);
+    const { nodes, links } = processMatches(linkMode, connectionThreshold, topOpponents);
     createVisualization(nodes, links, true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
     <div className="w-full ">
-      {/* Connection Threshold Slider */}
       <div className="px-4 py-2 bg-secondary-background text-secondary-text rounded-lg">
-        <h3 className="text-lg font-semibold">Games per link</h3>
-        <input
-          type="range"
-          min="1"
-          max="50"
-          value={connectionThreshold}
-          onChange={(e) => setConnectionThreshold(Number(e.target.value))}
-          className="w-full h-3 bg-secondary-text rounded-lg appearance-none cursor-pointer slider-blue"
-          disabled={matches.length === 0}
-        />
-        <div className="flex justify-between text-xs text-secondary-text">
-          <span>1 game per link</span>
-          <span>Many games per link</span>
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
+          <h3 className="text-lg font-semibold">
+            {linkMode === "games"
+              ? `Games per link: ${connectionThreshold}`
+              : `Top ${topOpponents} opponent${topOpponents === 1 ? "" : "s"} per player`}
+          </h3>
+          <label className="flex items-center gap-2 text-xs xs:text-sm">
+            <input type="checkbox" checked={includeRetired} onChange={(e) => setIncludeRetired(e.target.checked)} />
+            Include retired players
+          </label>
+          <div
+            role="radiogroup"
+            aria-label="Link mode"
+            className="flex rounded-lg border border-secondary-text divide-x divide-secondary-text overflow-hidden"
+          >
+            {linkModeOptions.map((option) => (
+              <button
+                key={option.value}
+                role="radio"
+                aria-checked={linkMode === option.value}
+                onClick={() => setLinkMode(option.value)}
+                className={classNames(
+                  "px-2.5 py-1.5 text-xs xs:text-sm transition-colors",
+                  linkMode === option.value
+                    ? "bg-secondary-text text-secondary-background font-medium"
+                    : "bg-secondary-background text-secondary-text hover:bg-secondary-text/20",
+                )}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
         </div>
+        {linkMode === "games" ? (
+          <>
+            <input
+              type="range"
+              min="1"
+              max="50"
+              value={connectionThreshold}
+              onChange={(e) => setConnectionThreshold(Number(e.target.value))}
+              className="w-full h-3 bg-secondary-text rounded-lg appearance-none cursor-pointer slider-blue"
+              disabled={matches.length === 0}
+            />
+            <div className="flex justify-between text-xs text-secondary-text">
+              <span>1 game per link</span>
+              <span>Many games per link</span>
+            </div>
+          </>
+        ) : (
+          <>
+            <input
+              type="range"
+              min="1"
+              max={MAX_TOP_OPPONENTS}
+              value={topOpponents}
+              onChange={(e) => setTopOpponents(Number(e.target.value))}
+              className="w-full h-3 bg-secondary-text rounded-lg appearance-none cursor-pointer slider-blue"
+              disabled={matches.length === 0}
+            />
+            <div className="flex justify-between text-xs text-secondary-text">
+              <span>Top 1</span>
+              <span>Top {MAX_TOP_OPPONENTS}</span>
+            </div>
+            <p className="text-xs text-secondary-text mt-1">
+              A link shows only when each player has the other in their top {topOpponents} by game count.
+            </p>
+          </>
+        )}
       </div>
       <div className="border rounded-lg bg-gray-50">
         <svg
