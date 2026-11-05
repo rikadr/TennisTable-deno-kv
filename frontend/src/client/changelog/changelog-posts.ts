@@ -50,13 +50,10 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
       "The player network has a new link mode. It links 2 players when each is in the top opponents list of the other.",
     body: [
       text(
-        "Select \"Top opponents\" above the graph. The slider sets the length of the top list for each player. At 3, the list is the 3 opponents with the most games against that player.",
+        'Select "Top opponents" above the graph. The slider sets the length of the top list for each player. At 3, the list is the 3 opponents with the most games against that player.',
       ),
       text(
         "A link shows only when both players have the other in their list. On a tie in game count, the opponent with the more recent game ranks higher.",
-      ),
-      text(
-        "This mode shows the main rivalries of each player. The \"Games played\" mode works as before: it links 2 players who have the minimum number of games between them.",
       ),
     ],
   },

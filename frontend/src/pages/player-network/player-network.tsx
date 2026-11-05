@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import React, { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import * as d3 from "d3";
 import { stringToColor } from "../../common/string-to-color";
 import { useEventDbContext } from "../../wrappers/event-db-context";
@@ -25,6 +25,8 @@ interface Link extends d3.SimulationLinkDatum<Node> {
   strength: number;
   matches: Match[];
 }
+
+type PlayerPair = { player1: string; player2: string; matches: Match[]; lastPlayed: number };
 
 type LinkMode = "games" | "top-opponents";
 
@@ -57,71 +59,61 @@ export const PlayerNetwork: React.FC = () => {
   const [connectionThreshold, setConnectionThreshold] = useState(15);
   const [topOpponents, setTopOpponents] = useState(3);
 
+  // The games do not change after mount, so count them once.
+  const { playerStats, pairs, ranked } = useMemo(() => {
+    const playerStats = new Map<string, { matches: number; wins: number }>();
+    const pairsByKey = new Map<string, PlayerPair>();
+
+    matches.forEach((match, index) => {
+      const { player1, player2, winner } = match;
+
+      for (const player of [player1, player2]) {
+        const stats = playerStats.get(player) ?? { matches: 0, wins: 0 };
+        stats.matches++;
+        if (winner === player) stats.wins++;
+        playerStats.set(player, stats);
+      }
+
+      const [first, second] = [player1, player2].sort();
+      // JSON keeps the key unique for any player id. The key is never parsed.
+      const key = JSON.stringify([first, second]);
+      const pair = pairsByKey.get(key) ?? { player1: first, player2: second, matches: [], lastPlayed: index };
+      pair.matches.push(match);
+      pair.lastPlayed = index;
+      pairsByKey.set(key, pair);
+    });
+
+    const pairs = Array.from(pairsByKey.values());
+    const ranked = rankOpponents(pairs.map((pair) => ({ ...pair, games: pair.matches.length })));
+    return { playerStats, pairs, ranked };
+  }, [matches]);
+
   const processMatches = useCallback(
     (mode: LinkMode, threshold: number, topN: number) => {
-      const playerStats = new Map<string, { matches: number; wins: number }>();
-      const connections = new Map<string, Match[]>();
-
-      matches.forEach((match) => {
-        const { player1, player2, winner } = match;
-
-        // Update player stats
-        if (!playerStats.has(player1)) {
-          playerStats.set(player1, { matches: 0, wins: 0 });
-        }
-        if (!playerStats.has(player2)) {
-          playerStats.set(player2, { matches: 0, wins: 0 });
-        }
-
-        const p1Stats = playerStats.get(player1)!;
-        const p2Stats = playerStats.get(player2)!;
-
-        p1Stats.matches++;
-        p2Stats.matches++;
-
-        if (winner === player1) p1Stats.wins++;
-        if (winner === player2) p2Stats.wins++;
-
-        // Track connections
-        const connectionKey = [player1, player2].sort().join("-");
-        if (!connections.has(connectionKey)) {
-          connections.set(connectionKey, []);
-        }
-        connections.get(connectionKey)!.push(match);
-      });
-
-      // Create nodes
       const nodes: Node[] = Array.from(playerStats.entries()).map(([id, stats]) => ({
         id,
         matches: stats.matches,
         wins: stats.wins,
         radius: Math.max(8, Math.sqrt(stats.matches) * 4),
       }));
+      const nodesById = new Map(nodes.map((node) => [node.id, node]));
 
-      const ranked = mode === "top-opponents" ? rankOpponents(matches) : undefined;
-
-      const links: Link[] = Array.from(connections.entries())
-        .filter(([key, matchList]) => {
-          if (!ranked) return matchList.length >= threshold;
-          const [player1, player2] = key.split("-");
-          return isMutualTopOpponent(ranked, player1, player2, topN);
-        })
-        .map(([key, matchList]) => {
-          const [player1, player2] = key.split("-");
-          const source = nodes.find((n) => n.id === player1)!;
-          const target = nodes.find((n) => n.id === player2)!;
-
-          return {
-            source,
-            target,
-            strength: matchList.length,
-            matches: matchList,
-          };
-        });
+      const links: Link[] = pairs
+        .filter((pair) =>
+          mode === "top-opponents"
+            ? isMutualTopOpponent(ranked, pair.player1, pair.player2, topN)
+            : pair.matches.length >= threshold,
+        )
+        .map((pair) => ({
+          source: nodesById.get(pair.player1)!,
+          target: nodesById.get(pair.player2)!,
+          strength: pair.matches.length,
+          matches: pair.matches,
+        }));
 
       return { nodes, links };
     },
-    [matches],
+    [playerStats, pairs, ranked],
   );
 
   const createVisualization = useCallback(

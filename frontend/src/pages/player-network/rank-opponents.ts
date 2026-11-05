@@ -1,40 +1,34 @@
-type PlayedGame = { player1: string; player2: string };
+export type OpponentPair = {
+  player1: string;
+  player2: string;
+  games: number;
+  /** Any value that increases with time, for example the index of the last game. */
+  lastPlayed: number;
+};
 
 /**
  * Returns the opponents of each player, ordered by game count, most first.
  * On a tie, the opponent with the more recent game ranks higher.
- * The games must be in chronological order.
  */
-export function rankOpponents(games: PlayedGame[]): Map<string, string[]> {
-  const stats = new Map<string, Map<string, { count: number; lastIndex: number }>>();
-
-  const record = (player: string, opponent: string, index: number) => {
-    let opponents = stats.get(player);
-    if (!opponents) {
-      opponents = new Map();
-      stats.set(player, opponents);
-    }
-    const entry = opponents.get(opponent);
-    if (entry) {
-      entry.count++;
-      entry.lastIndex = index;
-    } else {
-      opponents.set(opponent, { count: 1, lastIndex: index });
-    }
+export function rankOpponents(pairs: OpponentPair[]): Map<string, string[]> {
+  const opponents = new Map<string, OpponentPair[]>();
+  const add = (player: string, pair: OpponentPair) => {
+    const list = opponents.get(player);
+    if (list) list.push(pair);
+    else opponents.set(player, [pair]);
   };
-
-  games.forEach((game, index) => {
-    record(game.player1, game.player2, index);
-    record(game.player2, game.player1, index);
+  pairs.forEach((pair) => {
+    add(pair.player1, pair);
+    add(pair.player2, pair);
   });
 
   const ranked = new Map<string, string[]>();
-  stats.forEach((opponents, player) => {
+  opponents.forEach((list, player) => {
     ranked.set(
       player,
-      Array.from(opponents.entries())
-        .sort(([, a], [, b]) => b.count - a.count || b.lastIndex - a.lastIndex)
-        .map(([opponent]) => opponent),
+      list
+        .sort((a, b) => b.games - a.games || b.lastPlayed - a.lastPlayed)
+        .map((pair) => (pair.player1 === player ? pair.player2 : pair.player1)),
     );
   });
   return ranked;
