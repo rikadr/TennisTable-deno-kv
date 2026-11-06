@@ -269,9 +269,14 @@ export const ACHIEVEMENT_LABELS: Record<AchievementType, { title: string; descri
     description: "Go undefeated across 5 or more games in a single day",
     icon: "☀️",
   },
+  "winning-week": {
+    title: "Winning Week",
+    description: "Win a game on each of 5 consecutive days within one week (Mon–Sun)",
+    icon: "📈",
+  },
   "perfect-week": {
     title: "Perfect Week",
-    description: "Win a game on each of 5 consecutive days within one week (Mon–Sun)",
+    description: "Win a game on each of 5 consecutive days within one week (Mon–Sun), and lose no games that week",
     icon: "🗓️",
   },
   kingslayer: {
@@ -925,9 +930,15 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
                   </p>
                 )}
 
-                {achievement.type === "perfect-week" && achievement.data && (
+                {achievement.type === "winning-week" && achievement.data && (
                   <p className="text-xs text-secondary-text/70 mt-2">
                     Won on 5 consecutive days from {dateString(achievement.data.startDay)}
+                  </p>
+                )}
+
+                {achievement.type === "perfect-week" && achievement.data && (
+                  <p className="text-xs text-secondary-text/70 mt-2">
+                    {achievement.data.wins} wins, 0 losses in the week of {dateString(achievement.data.weekStart)}
                   </p>
                 )}
 

@@ -30,6 +30,7 @@ export const ACHIEVEMENT_GROUPS: AchievementGroup[] = [
       "streak-player-20",
       "hat-trick",
       "perfect-day",
+      "winning-week",
       "perfect-week",
       "streak-ender",
       "party-pooper",
