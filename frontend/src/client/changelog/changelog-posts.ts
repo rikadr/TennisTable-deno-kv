@@ -42,6 +42,26 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
+    slug: "perfect-week-no-losses-and-winning-week",
+    title: "Perfect Week needs a week with no losses, and new achievement Winning Week",
+    date: "2026-11-06",
+    tags: ["feature-update"],
+    summary:
+      "Perfect Week 🗓️ now needs zero losses in the week. Winning Week 📈 is new and uses the previous Perfect Week rule.",
+    body: [
+      list(
+        "Winning Week 📈 - win a game on each of 5 consecutive days in the same week. Monday to Friday, Tuesday to Saturday and Wednesday to Sunday all count. Losses do not stop it.",
+        "Perfect Week 🗓️ - the same 5 consecutive won days, and no losses from Monday to Sunday.",
+      ),
+      text(
+        "The app gives a Perfect Week only after the week ends, because a loss on a later day stops it. Perfect Day ☀️ works the same way for one day.",
+      ),
+      text(
+        "The app calculates achievements from history. Each earlier Perfect Week is now a Winning Week. Only the weeks with no losses also keep a Perfect Week.",
+      ),
+    ],
+  },
+  {
     slug: "player-network-top-opponents",
     title: "Player network: link by top opponents",
     date: "2026-11-05",

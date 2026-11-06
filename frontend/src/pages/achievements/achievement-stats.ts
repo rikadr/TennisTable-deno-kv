@@ -56,6 +56,7 @@ export const ACHIEVEMENT_METRICS: Partial<Record<AchievementType, AchievementMet
   "earliest-game": { label: "Time of the game", format: timeOfDay },
   "latest-game": { label: "Time of the game", format: timeOfDay },
   "perfect-day": { label: "Wins in the day", format: games },
+  "perfect-week": { label: "Wins in the week", format: games },
   "group-stage-star": { label: "Wins in the group", format: games },
   "party-pooper": { label: "Wins spoiled", format: games },
   "full-house": { label: "Players beaten", format: (value) => `${fmtNum(value)} players` },
@@ -123,6 +124,7 @@ export function achievementValue(achievement: Achievement): number | undefined {
     case "latest-game":
       return achievement.data.minutesIntoDay;
     case "perfect-day":
+    case "perfect-week":
       return achievement.data.wins;
     case "group-stage-star":
       return achievement.data.wins;
