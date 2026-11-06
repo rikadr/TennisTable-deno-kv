@@ -99,6 +99,42 @@ const daysWonInRun = (daysWon: Set<number>, start: number): number => {
 const firstWonRunStart = (daysWon: Set<number>): number | null =>
   WEEK_RUN_STARTS.find((start) => daysWonInRun(daysWon, start) === WEEK_RUN_LENGTH) ?? null;
 
+// False once a day of the run has elapsed without a win. `daysElapsed` is the
+// number of days of the week that are over (0=Monday is still in progress).
+const runIsAlive = (daysWon: Set<number>, start: number, daysElapsed: number): boolean => {
+  for (let offset = start; offset < start + WEEK_RUN_LENGTH && offset < daysElapsed; offset++) {
+    if (!daysWon.has(offset)) return false;
+  }
+  return true;
+};
+
+// Local midnight `days` days after the local midnight `dayStart`. setDate
+// keeps local midnight across DST, where adding 24h multiples does not.
+const dayAfter = (dayStart: number, days: number): number => {
+  const date = new Date(dayStart);
+  date.setDate(date.getDate() + days);
+  return date.getTime();
+};
+
+// One player's games in one week (Monday-start, local time). Shared by the
+// Winning Week / Perfect Week awards and their progression.
+// daysWon holds day offsets from the week's Monday (0=Mon..6=Sun).
+// `completedAt`, `completedByGameId` and `startOffset` describe the win that
+// completed the first 5-day run, the Winning Week. `lastWinGameId` is the
+// game a Perfect Week links to.
+type WeekStats = {
+  daysWon: Set<number>;
+  wins: number;
+  losses: number;
+  lastWinGameId: string | undefined;
+  completedAt: number | null;
+  completedByGameId: string | undefined;
+  startOffset: number;
+};
+
+// The Perfect Week rule on top of a Winning Week run: no losses in the week.
+const isUndefeatedWeek = (stats: WeekStats): boolean => stats.losses === 0;
+
 // Largest deficit to the season winner's final score that still earns "So
 // Close", as a fraction of the winner's score. Every non-winner within the
 // band qualifies, whatever rank the tiebreakers left them at — the score is
@@ -319,6 +355,9 @@ export class Achievements {
 
   /** Game ids by the time they were played. Built on the first read. */
   #gamesByPlayedAt: Map<number, string> | undefined;
+  // Per player, per week start: the week tally of the last calculation.
+  // Progression reads it, so the awards and the progress use the same data.
+  #weekStats = new Map<string, Map<number, WeekStats>>();
 
   /** The moment the achievements are awarded for: the reference time of a
    * projection of a past state, or the real clock for the live state. Read
@@ -1475,7 +1514,9 @@ export class Achievements {
   //
   // Perfect Week: a Winning Week with zero losses in the whole week
   // (Mon–Sun). Like Perfect Day it is only awarded once the week is OVER,
-  // because a later loss in the week would disqualify it. Stamped at the
+  // because a later loss in the week would disqualify it. Stamped at the end
+  // of the week (next Monday's local midnight), the moment it is awarded, so
+  // views that filter by earned time see it when it appears. It links to the
   // week's last (winning) game.
   //
   // All are earnable multiple times — once per qualifying day / week.
@@ -1501,20 +1542,8 @@ export class Achievements {
     // `lastWinGameId` goes with `lastWinAt`: the win the day is stamped at.
     type DayStats = { wins: number; losses: number; lastWinAt: number; lastWinGameId: string | undefined };
     const perDay = new Map<string, Map<number, DayStats>>();
-    // daysWon holds day offsets from the week's Monday (0=Mon..6=Sun).
-    // startOffset is the first day of the 5-day run that completed the
-    // Winning Week (only meaningful once completedAt is set).
-    type WeekStats = {
-      daysWon: Set<number>;
-      wins: number;
-      losses: number;
-      lastWinAt: number;
-      lastWinGameId: string | undefined;
-      completedAt: number | null;
-      completedByGameId: string | undefined;
-      startOffset: number;
-    };
     const perWeek = new Map<string, Map<number, WeekStats>>();
+    this.#weekStats = perWeek;
 
     const getDayStats = (playerId: string, day: number): DayStats => {
       let days = perDay.get(playerId);
@@ -1541,7 +1570,6 @@ export class Achievements {
           daysWon: new Set(),
           wins: 0,
           losses: 0,
-          lastWinAt: 0,
           lastWinGameId: undefined,
           completedAt: null,
           completedByGameId: undefined,
@@ -1585,7 +1613,6 @@ export class Achievements {
       const dayOffset = (new Date(game.playedAt).getDay() + 6) % 7; // 0=Mon..6=Sun
       const winnerWeek = getWeekStats(game.winner, week);
       winnerWeek.wins++;
-      winnerWeek.lastWinAt = game.playedAt;
       winnerWeek.lastWinGameId = game.id;
       if (!winnerWeek.daysWon.has(dayOffset)) {
         winnerWeek.daysWon.add(dayOffset);
@@ -1628,37 +1655,31 @@ export class Achievements {
 
     // Award Winning Week for each week with a completed 5-day run, and
     // Perfect Week for each such week that has ended with zero losses, in
-    // week order. setDate keeps local midnight across DST, so the run's first
-    // day is derived from the week's Monday rather than by adding 24h
-    // multiples.
+    // week order.
     const thisWeekStart = this.#weekStartOf(this.#now);
-    const dayOfWeek = (week: number, offset: number): number => {
-      const date = new Date(week);
-      date.setDate(date.getDate() + offset);
-      return date.getTime();
-    };
     for (const [playerId, weeks] of perWeek) {
       const sortedWeeks = Array.from(weeks.entries()).sort((a, b) => a[0] - b[0]);
       for (const [week, stats] of sortedWeeks) {
         if (stats.completedAt === null) continue;
+        const startDay = dayAfter(week, stats.startOffset);
         this.#addAchievement(
           playerId,
           this.#createAchievement(
             "winning-week",
             playerId,
             stats.completedAt,
-            { weekStart: week, startDay: dayOfWeek(week, stats.startOffset) },
+            { weekStart: week, startDay },
             stats.completedByGameId,
           ),
         );
-        if (week < thisWeekStart && stats.losses === 0) {
+        if (week < thisWeekStart && isUndefeatedWeek(stats)) {
           this.#addAchievement(
             playerId,
             this.#createAchievement(
               "perfect-week",
               playerId,
-              stats.lastWinAt,
-              { weekStart: week, startDay: dayOfWeek(week, stats.startOffset), wins: stats.wins },
+              dayAfter(week, 7),
+              { weekStart: week, startDay, wins: stats.wins },
               stats.lastWinGameId,
             ),
           );
@@ -4065,11 +4086,6 @@ export class Achievements {
     // calendar week / month, keyed by the period's start timestamp.
     const gamesPerWeek = new Map<number, number>();
     const gamesPerMonth = new Map<number, number>();
-    // Winning Week / Perfect Week progression: distinct won days (offsets
-    // from Monday, 0=Mon..6=Sun) per week — any day can be part of a 5-day
-    // run. Perfect Week also needs the week's losses.
-    const weekDaysWon = new Map<number, Set<number>>();
-    const weekLosses = new Map<number, number>();
     const opponentsPlayed = new Set<string>();
     const gamesPerOpponent = new Map<string, { count: number; firstGame: number; lastGame: number }>();
     const firstOpponentForSet = new Set<string>();
@@ -4185,24 +4201,10 @@ export class Achievements {
       }
 
       // Hero of the Week / Month progression: tally games per week / month.
-      const weekKey = this.#weekStartOf(game.playedAt);
-      gamesPerWeek.set(weekKey, (gamesPerWeek.get(weekKey) ?? 0) + 1);
+      const heroWeekKey = this.#weekStartOf(game.playedAt);
+      gamesPerWeek.set(heroWeekKey, (gamesPerWeek.get(heroWeekKey) ?? 0) + 1);
       const heroMonthKey = this.#monthStartOf(game.playedAt);
       gamesPerMonth.set(heroMonthKey, (gamesPerMonth.get(heroMonthKey) ?? 0) + 1);
-
-      // Winning Week / Perfect Week progression: collect distinct won days
-      // and losses per week.
-      if (isWinner) {
-        const wonDayOffset = (new Date(game.playedAt).getDay() + 6) % 7; // 0=Mon..6=Sun
-        let daysWon = weekDaysWon.get(weekKey);
-        if (!daysWon) {
-          daysWon = new Set();
-          weekDaysWon.set(weekKey, daysWon);
-        }
-        daysWon.add(wonDayOffset);
-      } else {
-        weekLosses.set(weekKey, (weekLosses.get(weekKey) ?? 0) + 1);
-      }
 
       // Track opponents
       const opponent = isWinner ? game.loser : game.winner;
@@ -4415,40 +4417,33 @@ export class Achievements {
     // 1/5 all through Tuesday; if Tuesday then passes with no win, the
     // Mon–Fri and Tue–Sat runs are dead and Wednesday starts the player on
     // the Wed–Sun run at 0/5.
-    const thisWeekKey = this.#weekStartOf(nowMs);
+    const playerWeeks = this.#weekStats.get(playerId);
+    const thisWeek = playerWeeks?.get(this.#weekStartOf(nowMs));
+    const daysWonThisWeek = thisWeek?.daysWon ?? new Set<number>();
     const daysSinceMonday = (new Date(nowMs).getDay() + 6) % 7; // 0=Mon..6=Sun
-    const daysWonThisWeek = weekDaysWon.get(thisWeekKey) ?? new Set<number>();
-    let winningWeekProgress = 0;
-    for (const start of WEEK_RUN_STARTS) {
-      let runIsDead = false;
-      for (let offset = start; offset < start + WEEK_RUN_LENGTH; offset++) {
-        if (!daysWonThisWeek.has(offset) && offset < daysSinceMonday) {
-          runIsDead = true;
-          break;
-        }
-      }
-      if (!runIsDead) {
-        winningWeekProgress = Math.max(winningWeekProgress, daysWonInRun(daysWonThisWeek, start));
-      }
-    }
+    const winningWeekProgress = Math.max(
+      0,
+      ...WEEK_RUN_STARTS.filter((start) => runIsAlive(daysWonThisWeek, start, daysSinceMonday)).map((start) =>
+        daysWonInRun(daysWonThisWeek, start),
+      ),
+    );
     progression["winning-week"].current = winningWeekProgress;
 
     // Perfect Week progression is the same live attempt, but a single loss
     // this week nullifies it until next Monday. A full 5/5 reads as complete
     // but is not yet earned: the achievement lands when the week ends still
     // undefeated.
-    const lostThisWeek = (weekLosses.get(thisWeekKey) ?? 0) > 0;
-    progression["perfect-week"].current = lostThisWeek ? 0 : winningWeekProgress;
+    progression["perfect-week"].current = !thisWeek || isUndefeatedWeek(thisWeek) ? winningWeekProgress : 0;
 
     // Best: across every week the player has played, the most won days
     // inside one of the three 5-day runs — their closest attempt. Perfect
     // Week only counts the weeks with zero losses.
     let bestWinningWeekRun = 0;
     let bestPerfectWeekRun = 0;
-    weekDaysWon.forEach((daysWon, week) => {
-      const bestRun = Math.max(...WEEK_RUN_STARTS.map((start) => daysWonInRun(daysWon, start)));
+    playerWeeks?.forEach((stats) => {
+      const bestRun = Math.max(...WEEK_RUN_STARTS.map((start) => daysWonInRun(stats.daysWon, start)));
       bestWinningWeekRun = Math.max(bestWinningWeekRun, bestRun);
-      if ((weekLosses.get(week) ?? 0) === 0) {
+      if (isUndefeatedWeek(stats)) {
         bestPerfectWeekRun = Math.max(bestPerfectWeekRun, bestRun);
       }
     });
@@ -5317,9 +5312,9 @@ export const ACHIEVEMENT_IS_REACHIEVABLE: Record<AchievementType, boolean> = {
   "comeback-kid": true, // Per broken lose streak
   "unbreakable-spirit": true,
   "hat-trick": true, // Per 3-wins-in-90-minutes window
-  "perfect-day": true, // Per qualifying day / week
-  "winning-week": true,
-  "perfect-week": true,
+  "perfect-day": true, // Per qualifying day
+  "winning-week": true, // Per qualifying week
+  "perfect-week": true, // Per qualifying week
   kingslayer: true, // Per opponent — beating a different #1 earns it again
   "king-maker": true, // Per new #1
   "touched-the-throne": false,

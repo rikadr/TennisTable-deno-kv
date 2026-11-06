@@ -1,9 +1,11 @@
 import { TennisTable } from "../../tennis-table";
 import { EventType, EventTypeEnum } from "../../event-store/event-types";
+import { Achievement } from "../../achievements";
 
 // Perfect Week: a Winning Week (a win on each of 5 consecutive days in the
 // same Monday-start week) with zero losses in the whole week. Awarded only
-// after the week ends, stamped at the last win of the week.
+// after the week ends, stamped at the end of the week and linked to the last
+// win of the week.
 //
 // Jan 15 2024 is a Monday, so 15=Mon, 16=Tue, 17=Wed, 18=Thu, 19=Fri,
 // 20=Sat, 21=Sun. Jan 22 2024 is the following Monday.
@@ -40,10 +42,16 @@ describe("Perfect Week Achievement Tests", () => {
     win(19, "player-1", "player-2", "fri"),
   ];
 
-  function achievementsOf(events: EventType[], type: "perfect-week" | "winning-week") {
-    const tennisTable = new TennisTable({ events });
+  function achievementsOf<T extends "perfect-week" | "winning-week">(
+    events: EventType[],
+    type: T,
+    referenceTime?: number,
+  ): Extract<Achievement, { type: T }>[] {
+    const tennisTable = new TennisTable({ events, referenceTime });
     tennisTable.achievements.calculateAchievements();
-    return tennisTable.achievements.getAchievements("player-1").filter((a) => a.type === type);
+    return tennisTable.achievements
+      .getAchievements("player-1")
+      .filter((a): a is Extract<Achievement, { type: T }> => a.type === type);
   }
 
   it("awards perfect-week for an undefeated week with 5 consecutive won days", () => {
@@ -54,8 +62,9 @@ describe("Perfect Week Achievement Tests", () => {
     expect(perfectWeeks[0].data.weekStart).toBe(new Date(2024, 0, 15).getTime());
     expect(perfectWeeks[0].data.startDay).toBe(new Date(2024, 0, 15).getTime());
     expect(perfectWeeks[0].data.wins).toBe(6);
-    // Stamped at the last win of the week.
-    expect(perfectWeeks[0].earnedAt).toBe(new Date(2024, 0, 19, 15).getTime());
+    // Stamped at the end of the week, when it is awarded, and linked to the
+    // last win of the week.
+    expect(perfectWeeks[0].earnedAt).toBe(new Date(2024, 0, 22).getTime());
     expect(perfectWeeks[0].earnedByGame).toBe("fri-2");
   });
 
@@ -103,6 +112,15 @@ describe("Perfect Week Achievement Tests", () => {
     const events: EventType[] = [...baseEvents, ...monToFriWins()];
 
     expect(achievementsOf(events, "perfect-week")).toHaveLength(1);
+  });
+
+  it("follows the reference time of a projection of a past state", () => {
+    // The live clock is long after the week, but the projection is of Saturday.
+    const events: EventType[] = [...baseEvents, ...monToFriWins()];
+
+    expect(achievementsOf(events, "perfect-week", new Date(2024, 0, 20, 10).getTime())).toHaveLength(0);
+    expect(achievementsOf(events, "winning-week", new Date(2024, 0, 20, 10).getTime())).toHaveLength(1);
+    expect(achievementsOf(events, "perfect-week", new Date(2024, 0, 22).getTime())).toHaveLength(1);
   });
 
   describe("Progression", () => {
