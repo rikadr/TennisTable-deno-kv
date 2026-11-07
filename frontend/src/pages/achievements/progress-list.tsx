@@ -23,7 +23,8 @@ export const ProgressList: React.FC<ProgressListProps> = ({ selectedType }) => {
     selectedType.startsWith("active-") ||
     selectedType.startsWith("back-after-") ||
     selectedType === "anniversary" ||
-    selectedType === "season-opener";
+    selectedType === "season-opener" ||
+    selectedType === "season-closer";
 
   const playersProgress = useMemo(
     () => (selectedType === ALL_ACHIEVEMENTS ? [] : playersProgressForType(context, selectedType)),

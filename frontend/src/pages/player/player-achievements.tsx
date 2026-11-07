@@ -11,6 +11,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   Achievement,
   AchievementProgression,
+  ARCH_RIVALS_RECORD_FLOOR,
   AchievementType,
   CHOKER_RECORD_FLOOR,
   GAMES_IN_PERIOD_RECORD_FLOOR,
@@ -461,6 +462,32 @@ export const ACHIEVEMENT_LABELS: Record<AchievementType, { title: string; descri
     title: "Rock Paper Scissors",
     description: "In one day, beat a player who beats a third player who beats you",
     icon: "✂️",
+  },
+  "season-closer": {
+    title: "Season Closer",
+    description: "Play in the last game of a season",
+    icon: "🔚",
+  },
+  "arch-rivals": {
+    title: "Arch Rivals",
+    description: "Play as many games against one opponent as any pair of players in league history",
+    icon: "🆚",
+  },
+  turnaround: {
+    title: "Turnaround",
+    description: "Win a set where you trailed by 6 or more points (tracked games only)",
+    icon: "🔄",
+  },
+  "set-point-saver": {
+    title: "Set Point Saver",
+    description: "Win 5 sets where the opponent had the set point (tracked games only)",
+    icon: "🛡️",
+  },
+  "service-machine": {
+    title: "Service Machine",
+    description:
+      "Win 10 of your serve points in a row in one game. The points your opponent serves do not count (tracked games only)",
+    icon: "🤖",
   },
 };
 
@@ -921,6 +948,35 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements, query, 
                   </GameScoreLink>
                 )}
 
+                {achievement.type === "turnaround" && achievement.data && (
+                  <GameScoreLink
+                    playedAt={achievement.earnedAt}
+                    className="block text-xs text-secondary-text/70 mt-2 underline"
+                  >
+                    Trailed {achievement.data.trailingPoints}–{achievement.data.trailingOpponentPoints} in set{" "}
+                    {achievement.data.setNumber}, won the set {achievement.data.playerPoints}–
+                    {achievement.data.opponentPoints}
+                  </GameScoreLink>
+                )}
+
+                {achievement.type === "service-machine" && achievement.data && (
+                  <GameScoreLink
+                    playedAt={achievement.earnedAt}
+                    className="block text-xs text-secondary-text/70 mt-2 underline"
+                  >
+                    {achievement.data.points} serve points in a row
+                  </GameScoreLink>
+                )}
+
+                {achievement.type === "arch-rivals" && achievement.data && (
+                  <p className="text-xs text-secondary-text/70 mt-2">
+                    {achievement.data.gamesPlayed} games together since {dateString(achievement.data.firstGameAt)}
+                    {achievement.data.previousRecord !== undefined
+                      ? ` (previous record: ${achievement.data.previousRecord})`
+                      : " (first league record!)"}
+                  </p>
+                )}
+
                 {achievement.type === "yin-yang-points" && achievement.data && (
                   <GameScoreLink
                     playedAt={achievement.earnedAt}
@@ -1331,6 +1387,7 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId, query,
                 type.startsWith("back-after-") ||
                 type === "anniversary" ||
                 type === "season-opener" ||
+                type === "season-closer" ||
                 type === "reunion";
 
               return (
@@ -1434,6 +1491,14 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId, query,
                                           ? "the season is open, and the first game of it earns this"
                                           : `${formatTimePeriod(data.target - data.current)} until the next season starts`}
                                         )
+                                      </span>
+                                    )}
+                                  {type === "season-closer" &&
+                                    typeof data.target === "number" &&
+                                    typeof data.current === "number" && (
+                                      <span className="text-xs text-secondary-text/70 font-normal ml-2">
+                                        (League-wide — {formatTimePeriod(data.target - data.current)} until the season
+                                        ends. The last game before the end earns this)
                                       </span>
                                     )}
                                   {/* The player's best-ever value, for chases whose
@@ -1757,6 +1822,40 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId, query,
                                 </div>
                               )}
 
+                            {/* Record holders for arch-rivals — both players of the
+                          record pair hold it together. */}
+                            {type === "arch-rivals" &&
+                              "recordHolders" in data &&
+                              data.recordHolders &&
+                              data.recordHolders.length > 0 && (
+                                <div className="mt-1.5 text-xs text-secondary-text/70">
+                                  League record held by{" "}
+                                  {data.recordHolders.map((holder, i) => (
+                                    <span key={holder}>
+                                      {i > 0 && " and "}
+                                      <Link to={{ pathname: "/player/" + holder, search }}>
+                                        <span className="text-secondary-text underline">
+                                          {context.playerName(holder)}
+                                        </span>
+                                      </Link>
+                                    </span>
+                                  ))}
+                                  . Play {data.target} games against one opponent to earn it.
+                                  {"topOpponent" in data && data.topOpponent && (
+                                    <>
+                                      {" "}
+                                      Your most games are with{" "}
+                                      <Link to={{ pathname: "/player/" + data.topOpponent, search }}>
+                                        <span className="text-secondary-text underline">
+                                          {context.playerName(data.topOpponent)}
+                                        </span>
+                                      </Link>
+                                      .
+                                    </>
+                                  )}
+                                </div>
+                              )}
+
                             {/* Record holder for choker. An equal lead earns it, so
                           the target IS the record. */}
                             {type === "choker" && "recordHolder" in data && data.recordHolder && (
@@ -1890,6 +1989,11 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId, query,
                           <div className="mt-1.5 text-xs text-secondary-text/70">
                             No league record yet — play {YIN_YANG_POINTS_RECORD_FLOOR} alternating points in a row in a
                             tracked game to set the first record.
+                          </div>
+                        ) : type === "arch-rivals" ? (
+                          <div className="mt-1.5 text-xs text-secondary-text/70">
+                            No league record yet — play {ARCH_RIVALS_RECORD_FLOOR} games against one opponent to set the
+                            first record.
                           </div>
                         ) : type === "choker" ? (
                           <div className="mt-1.5 text-xs text-secondary-text/70">

@@ -42,6 +42,26 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
+    slug: "5-new-achievements-arch-rivals-turnaround-set-point-saver-service-machine-season-closer",
+    title: "5 new achievements: Arch Rivals, Turnaround, Set Point Saver, Service Machine and Season Closer",
+    date: "2026-11-07",
+    tags: ["feature-update"],
+    summary:
+      "5 new achievements. Three of them use the point-by-point data of tracked games, and Service Machine is the first to use the serve data.",
+    body: [
+      list(
+        "Arch Rivals 🆚 - play as many games against one opponent as any pair in league history. Both players earn it. The first record needs 20 games.",
+        "Turnaround 🔄 - win a set where you trailed by 6 or more points. Each such set earns it.",
+        "Set Point Saver 🛡️ - win 5 sets where the opponent had the set point. You earn it one time.",
+        "Service Machine 🤖 - win 10 of your serve points in a row in one game. The points of the opponent's serve do not stop the run.",
+        "Season Closer 🔚 - play in the last game of a season. Both players earn it when the season ends.",
+      ),
+      text(
+        "Turnaround, Set Point Saver and Service Machine count only tracked games. The app calculates achievements from history, so earlier games also count.",
+      ),
+    ],
+  },
+  {
     slug: "perfect-week-no-losses-and-winning-week",
     title: "Perfect Week needs a week with no losses, and new achievement Winning Week",
     date: "2026-11-06",

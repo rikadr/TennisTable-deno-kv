@@ -173,6 +173,25 @@ export const AchievementFacts: React.FC<{ achievement: Achievement }> = ({ achie
           {achievement.data.leadChanges} lead changes in set {achievement.data.setNumber}
         </GameScoreLink>
       )}
+      {achievement.type === "turnaround" && achievement.data && (
+        <GameScoreLink playedAt={achievement.earnedAt} className="text-[11px] opacity-80 underline">
+          Trailed {achievement.data.trailingPoints}–{achievement.data.trailingOpponentPoints} in set{" "}
+          {achievement.data.setNumber}, won {achievement.data.playerPoints}–{achievement.data.opponentPoints}
+        </GameScoreLink>
+      )}
+      {achievement.type === "service-machine" && achievement.data && (
+        <GameScoreLink playedAt={achievement.earnedAt} className="text-[11px] opacity-80 underline">
+          {achievement.data.points} serve points in a row
+        </GameScoreLink>
+      )}
+      {achievement.type === "arch-rivals" && achievement.data && (
+        <span className="text-[11px] opacity-80">
+          {achievement.data.gamesPlayed} games since {dateString(achievement.data.firstGameAt)}
+          {achievement.data.previousRecord !== undefined
+            ? ` (prev record ${achievement.data.previousRecord})`
+            : " (first league record!)"}
+        </span>
+      )}
       {achievement.type === "yin-yang-points" && achievement.data && (
         <GameScoreLink playedAt={achievement.earnedAt} className="text-[11px] opacity-80 underline">
           {achievement.data.points} alternating points
