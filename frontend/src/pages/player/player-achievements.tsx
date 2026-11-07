@@ -513,6 +513,17 @@ export const PlayerAchievements: React.FC<Props> = ({ playerId }) => {
     });
   };
 
+  // One search for both sub-tabs, so it stays when you switch between them.
+  // A link that names an achievement puts it in the search field.
+  const highlightedType = searchParams.get(PLAYER_ACHIEVEMENT_PARAM);
+  const [query, setQuery] = useState(highlightedType ?? "");
+
+  // Follows the url, so a second link into the tab searches its achievement.
+  // A tab switch removes the param, and must not clear the search.
+  useEffect(() => {
+    if (highlightedType) setQuery(highlightedType);
+  }, [highlightedType]);
+
   context.achievements.calculateAchievements();
 
   if (!playerId) {
@@ -555,19 +566,54 @@ export const PlayerAchievements: React.FC<Props> = ({ playerId }) => {
           Horizontal padding is nearly zero on mobile — the page card
           already pads, and the achievement cards need the width. */}
       <div className="flex-1 px-0.5 py-4 sm:p-6">
-        {activeTab === "earned" && <AchievementsTab achievements={sortedAchievements} />}
-        {activeTab === "progress" && <ProgressTab progression={progression} playerId={playerId} />}
+        {activeTab === "earned" && (
+          <AchievementsTab achievements={sortedAchievements} query={query} onQueryChange={setQuery} />
+        )}
+        {activeTab === "progress" && (
+          <ProgressTab progression={progression} playerId={playerId} query={query} onQueryChange={setQuery} />
+        )}
       </div>
     </div>
   );
 };
 
-type AchievementsTabProps = {
+type SearchProps = {
+  query: string;
+  onQueryChange: (query: string) => void;
+};
+
+const AchievementSearchField: React.FC<SearchProps> = ({ query, onQueryChange }) => (
+  <input
+    type="search"
+    value={query}
+    onChange={(event) => onQueryChange(event.target.value)}
+    placeholder="Search achievements…"
+    aria-label="Search achievements by name or description"
+    className="w-full min-w-0 sm:flex-1 px-3 py-2 bg-secondary-background text-secondary-text border border-secondary-text rounded-lg text-sm placeholder:text-secondary-text/50"
+  />
+);
+
+// The type is the name a link and a url use, such as "streak-player-20", so a
+// search on it finds the achievement.
+function matchesAchievementSearch(
+  type: string,
+  label: { title: string; description: string },
+  normalizedQuery: string,
+): boolean {
+  return (
+    label.title.toLowerCase().includes(normalizedQuery) ||
+    label.description.toLowerCase().includes(normalizedQuery) ||
+    type.toLowerCase().includes(normalizedQuery)
+  );
+}
+
+type AchievementsTabProps = SearchProps & {
   achievements: Achievement[];
 };
 
-const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
+const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements, query, onQueryChange }) => {
   const context = useEventDbContext();
+  const normalizedQuery = query.trim().toLowerCase();
 
   if (achievements.length === 0) {
     return (
@@ -579,10 +625,25 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements }) => {
     );
   }
 
+  const gameLimitForRanked = context.client.gameLimitForRanked;
+  const visibleAchievements = normalizedQuery
+    ? achievements.filter((achievement) =>
+        matchesAchievementSearch(
+          achievement.type,
+          getAchievementLabel(achievement.type, gameLimitForRanked),
+          normalizedQuery,
+        ),
+      )
+    : achievements;
+
   return (
     <div className="space-y-2">
-      {achievements.map((achievement, index) => {
-        const label = getAchievementLabel(achievement.type, context.client.gameLimitForRanked);
+      <AchievementSearchField query={query} onQueryChange={onQueryChange} />
+      {visibleAchievements.length === 0 && (
+        <p className="text-sm text-secondary-text/70">No achievements match "{query.trim()}".</p>
+      )}
+      {visibleAchievements.map((achievement, index) => {
+        const label = getAchievementLabel(achievement.type, gameLimitForRanked);
 
         return (
           <div
@@ -1038,7 +1099,7 @@ function minutesToTimeString(minutes: number): string {
   return `${String(hours).padStart(2, "0")}:${String(mins).padStart(2, "0")}`;
 }
 
-type ProgressTabProps = {
+type ProgressTabProps = SearchProps & {
   progression: AchievementProgression;
   playerId: string;
 };
@@ -1076,23 +1137,17 @@ const progressFilterOptions: { value: ProgressFilter; label: string }[] = [
   { value: "unachieved", label: "Unachieved" },
 ];
 
-const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
+const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId, query, onQueryChange }) => {
   const context = useEventDbContext();
   const search = usePlayerLinkSearch();
   const [searchParams] = useSearchParams();
   const [sort, setSort] = useState<ProgressSort>("default");
   const [filter, setFilter] = useState<ProgressFilter>("all");
-  // A link can name one achievement. The search field starts on it, so the tab
-  // opens on that achievement alone, and the row is marked and scrolled to.
-  // Clear the search field to get the whole list back.
+  // A link can name one achievement. The parent puts it in the search field,
+  // so the tab opens on that achievement alone, and the row is marked and
+  // scrolled to. Clear the search field to get the whole list back.
   const highlightedType = searchParams.get(PLAYER_ACHIEVEMENT_PARAM);
-  const [query, setQuery] = useState(highlightedType ?? "");
   const normalizedQuery = query.trim().toLowerCase();
-
-  // Follows the url, so a second link into the tab searches its achievement.
-  useEffect(() => {
-    setQuery(highlightedType ?? "");
-  }, [highlightedType]);
 
   useEffect(() => {
     if (!highlightedType) return;
@@ -1146,14 +1201,7 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
       items = items.filter((item) => !item.hasEarned);
     }
     if (normalizedQuery) {
-      items = items.filter(
-        (item) =>
-          item.label.title.toLowerCase().includes(normalizedQuery) ||
-          item.label.description.toLowerCase().includes(normalizedQuery) ||
-          // The type is the name a link and a url use, such as
-          // "streak-player-20", so a search on it finds the achievement.
-          item.type.toLowerCase().includes(normalizedQuery),
-      );
+      items = items.filter((item) => matchesAchievementSearch(item.type, item.label, normalizedQuery));
     }
 
     if (sort !== "default") {
@@ -1207,14 +1255,7 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId }) => {
           labels — the controls explain themselves, and mobile gets the
           vertical space. */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-        <input
-          type="search"
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          placeholder="Search achievements…"
-          aria-label="Search achievements by name or description"
-          className="w-full min-w-0 sm:flex-1 px-3 py-2 bg-secondary-background text-secondary-text border border-secondary-text rounded-lg text-sm placeholder:text-secondary-text/50"
-        />
+        <AchievementSearchField query={query} onQueryChange={onQueryChange} />
         <div className="flex items-center gap-2 shrink-0">
           <div
             role="radiogroup"
