@@ -341,7 +341,6 @@ describe("a player's achievements from a link", () => {
       <PlayerAchievements playerId="alice" />,
     );
 
-    // The progress tab, and not the earned tab, holds the search field.
     const search = screen.getByLabelText("Search achievements by name or description");
     expect(search).toHaveValue("first-game");
     // The search holds the list to the achievement the link names.
@@ -388,8 +387,37 @@ describe("a player's achievements from a link", () => {
   it("opens on the earned tab when the link names no achievement", () => {
     renderPage("/player/alice?tab=achievements", <PlayerAchievements playerId="alice" />);
 
-    expect(screen.queryByLabelText("Search achievements by name or description")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Earned/ })).toHaveClass("border-secondary-text");
+    expect(screen.getByLabelText("Search achievements by name or description")).toHaveValue("");
     expect(scrollIntoView).not.toHaveBeenCalled();
+  });
+
+  it("searches the earned achievements", async () => {
+    renderPage("/player/alice?tab=achievements", <PlayerAchievements playerId="alice" />);
+    expect(screen.getByText("First Game")).toBeInTheDocument();
+
+    await userEvent.type(screen.getByLabelText("Search achievements by name or description"), "no match here");
+
+    expect(screen.queryByText("First Game")).not.toBeInTheDocument();
+    expect(screen.getByText('No achievements match "no match here".')).toBeInTheDocument();
+  });
+
+  it("keeps the search when you switch between the earned and the progress tab", async () => {
+    renderPage(
+      "/player/alice?tab=achievements&achievementTab=progress&achievement=first-game",
+      <PlayerAchievements playerId="alice" />,
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: /Earned/ }));
+    expect(screen.getByLabelText("Search achievements by name or description")).toHaveValue("first-game");
+
+    await userEvent.clear(screen.getByLabelText("Search achievements by name or description"));
+    await userEvent.type(screen.getByLabelText("Search achievements by name or description"), "streak");
+    await userEvent.click(screen.getByRole("button", { name: "Progress" }));
+
+    expect(screen.getByLabelText("Search achievements by name or description")).toHaveValue("streak");
+    expect(screen.getByText("Humiliation Streak")).toBeInTheDocument();
+    expect(screen.queryByText("First Game")).not.toBeInTheDocument();
   });
 });
 
