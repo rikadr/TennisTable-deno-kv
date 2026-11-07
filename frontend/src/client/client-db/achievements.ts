@@ -1341,7 +1341,8 @@ export class Achievements {
       if (isTrackedGame(game)) {
         // "Choker": a lead lost in a set that equals or beats the league
         // record.
-        this.#checkChokerAchievements(game);
+        const leadsLost = leadsLostInSets(game);
+        this.#checkChokerAchievements(game, leadsLost);
         // "Tug of War": a set where the lead changed
         // TUG_OF_WAR_MIN_LEAD_CHANGES or more times.
         this.#checkTugOfWarAchievement(game);
@@ -1350,7 +1351,7 @@ export class Achievements {
         this.#checkYinYangPointsAchievement(game);
         // "Turnaround": each set won after a deficit of TURNAROUND_MIN_DEFICIT
         // or more points.
-        this.#checkTurnaroundAchievements(game);
+        this.#checkTurnaroundAchievements(game, leadsLost);
         // "Set Point Saver": career sets won after the opponent had set point.
         this.#checkSetPointSaverAchievement(game);
         // "Server Master": SERVER_MASTER_TARGET serve points in a row in
@@ -2707,8 +2708,8 @@ export class Achievements {
   // a bigger lead moves the record; an equal lead earns the award and leaves
   // the record with its holder. Both players can earn it in one game, and one
   // player can earn it in more than 1 set.
-  #checkChokerAchievements(game: Game) {
-    leadsLostInSets(game).forEach((set) => {
+  #checkChokerAchievements(game: Game, leadsLost: ReturnType<typeof leadsLostInSets>) {
+    leadsLost.forEach((set) => {
       const playerId = set.setLoser === "gameWinner" ? game.winner : game.loser;
       const opponent = playerId === game.winner ? game.loser : game.winner;
 
@@ -2819,15 +2820,16 @@ export class Achievements {
 
   // Awards "Arch Rivals" to both players of a pair whose games against each
   // other equal or beat the league record. A pair of ARCH_RIVALS_RECORD_FLOOR
-  // games establishes the first record. Like the Hero records, the award is
-  // earned at the game that reached the record, and while the pair stays level
-  // with the record its game count grows with each game, instead of one award
-  // per game. When another pair passes the record, a later tie is a new award.
+  // games establishes the first record. A pair earns it once, at the game that
+  // first reached the record. The games of a pair only grow, so each time the
+  // pair reaches the record again, the game count of its award grows to the new
+  // count, and no new award is made. 2 pairs that take turns at the record so
+  // get 1 award each, not 1 award each game.
   #checkArchRivalsAchievement(game: Game, pairs: Map<string, ArchRivalsPairState>, firstGameAt: number) {
     const key = [game.winner, game.loser].sort().join("|");
     let pair = pairs.get(key);
     if (pair === undefined) {
-      pair = { games: 0, openAwards: undefined };
+      pair = { games: 0, awards: undefined };
       pairs.set(key, pair);
     }
     pair.games++;
@@ -2850,9 +2852,9 @@ export class Achievements {
       }
     };
 
-    // The pair's awards were level with the record before this game: grow them.
-    if (pair.openAwards !== undefined && pair.openAwards[0].data.gamesPlayed === recordBeforeGame) {
-      pair.openAwards.forEach((award) => (award.data.gamesPlayed = pair.games));
+    // The pair already has its awards: grow them to the new count.
+    if (pair.awards !== undefined) {
+      pair.awards.forEach((award) => (award.data.gamesPlayed = pair.games));
       moveRecord();
       return;
     }
@@ -2871,15 +2873,15 @@ export class Achievements {
       this.#addAchievement(playerId, award);
       return award;
     });
-    pair.openAwards = [awards[0], awards[1]];
+    pair.awards = [awards[0], awards[1]];
     moveRecord();
   }
 
   // Awards "Turnaround" to the set winner of each set of a tracked game where
   // the set loser led by TURNAROUND_MIN_DEFICIT or more points. Both players
   // can earn it in one game, and one player can earn it in more than 1 set.
-  #checkTurnaroundAchievements(game: Game) {
-    leadsLostInSets(game).forEach((set) => {
+  #checkTurnaroundAchievements(game: Game, leadsLost: ReturnType<typeof leadsLostInSets>) {
+    leadsLost.forEach((set) => {
       const playerId = set.setLoser === "gameWinner" ? game.loser : game.winner;
       const opponent = playerId === game.winner ? game.loser : game.winner;
 
@@ -5070,6 +5072,7 @@ export class Achievements {
     const seasonToClose = inGracePeriod ? determineNextSeason(now) : currentSeason;
     progression["season-closer"].target = seasonToClose.end - seasonToClose.start;
     progression["season-closer"].current = inGracePeriod ? 0 : now - seasonToClose.start;
+    progression["season-closer"].seasonStart = seasonToClose.start;
     progression["season-closer"].seasonEnd = seasonToClose.end;
 
     // David progression: highest Elo gained from a win where both
@@ -5585,8 +5588,9 @@ type AchievementDefinitions = {
   // Awarded to both players of a season's last game, when the season ends.
   "season-closer": { seasonStart: number; gameId: string; opponent: string };
   // Record-breaking count of games between one pair of players. Awarded to
-  // both players. `gamesPlayed` is the games of the pair while the award was
-  // level with the record, and `firstGameAt` the first game of the pair.
+  // both players, once for each pair. `gamesPlayed` is the games of the pair
+  // the last time it reached the record, and `firstGameAt` the first game of
+  // the pair.
   // Undefined previousRecord means the pair established the first record.
   "arch-rivals": {
     gameId: string;
@@ -5790,11 +5794,11 @@ type HeroPeriodState = {
 type HeroRecordCounts = { day: number | undefined; week: number | undefined; month: number | undefined };
 
 // Per-pair chase state for the Arch Rivals record: the games of the pair so
-// far, and the awards of both players whose game count still grows with the
-// record while the pair stays level with it.
+// far, and the awards of both players, once the pair has earned them. Their
+// game count grows each time the pair reaches the record again.
 type ArchRivalsPairState = {
   games: number;
-  openAwards: [GenericAchievement<"arch-rivals">, GenericAchievement<"arch-rivals">] | undefined;
+  awards: [GenericAchievement<"arch-rivals">, GenericAchievement<"arch-rivals">] | undefined;
 };
 
 // Progression Types
@@ -5965,7 +5969,9 @@ type ArchRivalsProgression = BaseProgression & {
 // Season Closer is league-wide: the progress is the part of the season that
 // has passed. Current and target are milliseconds.
 type SeasonCloserProgression = ProgressionWithTarget & {
-  // The moment the season ends. The last game before it earns the award.
+  // The season to close. Between seasons it is the next season, which has not
+  // started yet. The last game before the end earns the award.
+  seasonStart?: number;
   seasonEnd?: number;
 };
 

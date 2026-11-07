@@ -486,7 +486,7 @@ export const ACHIEVEMENT_LABELS: Record<AchievementType, { title: string; descri
   "server-master": {
     title: "Server Master",
     description:
-      "Win 10 of your serve points in a row in one game. The points your opponent serves do not stop the run (tracked games only)",
+      "Win 10 of your serve points in a row in one game. The points your opponent serves do not stop the run (tracked games with serve data only)",
     icon: "🤵",
   },
 };
@@ -1155,6 +1155,24 @@ function minutesToTimeString(minutes: number): string {
   return `${String(hours).padStart(2, "0")}:${String(mins).padStart(2, "0")}`;
 }
 
+// Links to the pages of the players, joined with "and".
+const PlayerLinks: React.FC<{ players: string[] }> = ({ players }) => {
+  const context = useEventDbContext();
+  const search = usePlayerLinkSearch();
+  return (
+    <>
+      {players.map((player, i) => (
+        <span key={player}>
+          {i > 0 && " and "}
+          <Link to={{ pathname: "/player/" + player, search }}>
+            <span className="text-secondary-text underline">{context.playerName(player)}</span>
+          </Link>
+        </span>
+      ))}
+    </>
+  );
+};
+
 type ProgressTabProps = SearchProps & {
   progression: AchievementProgression;
   playerId: string;
@@ -1494,11 +1512,16 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId, query,
                                       </span>
                                     )}
                                   {type === "season-closer" &&
+                                    "seasonStart" in data &&
+                                    data.seasonStart !== undefined &&
                                     typeof data.target === "number" &&
                                     typeof data.current === "number" && (
                                       <span className="text-xs text-secondary-text/70 font-normal ml-2">
-                                        (League-wide — {formatTimePeriod(data.target - data.current)} until the season
-                                        ends. The last game before the end earns this)
+                                        (League-wide —{" "}
+                                        {Date.now() < data.seasonStart
+                                          ? `no season is running. The next season starts in ${formatTimePeriod(data.seasonStart - Date.now())}`
+                                          : `${formatTimePeriod(data.target - data.current)} until the season ends. The last game before the end earns this`}
+                                        )
                                       </span>
                                     )}
                                   {/* The player's best-ever value, for chases whose
@@ -1778,19 +1801,9 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId, query,
                               <div className="mt-1.5 text-xs text-secondary-text/70">
                                 {data.recordHolders && data.recordHolders.length > 0 ? (
                                   <>
-                                    League record held by{" "}
-                                    {data.recordHolders.map((holder, i) => (
-                                      <span key={holder}>
-                                        {i > 0 && " and "}
-                                        <Link to={{ pathname: "/player/" + holder, search }}>
-                                          <span className="text-secondary-text underline">
-                                            {context.playerName(holder)}
-                                          </span>
-                                        </Link>
-                                      </span>
-                                    ))}
-                                    . Play a {data.target}+ point game (your {SHOOTOUT_SETS_COUNTED} highest-scoring
-                                    legal sets count) to earn it.
+                                    League record held by <PlayerLinks players={data.recordHolders} />. Play a{" "}
+                                    {data.target}+ point game (your {SHOOTOUT_SETS_COUNTED} highest-scoring legal sets
+                                    count) to earn it.
                                   </>
                                 ) : (
                                   <>
@@ -1807,18 +1820,8 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId, query,
                               data.recordHolders &&
                               data.recordHolders.length > 0 && (
                                 <div className="mt-1.5 text-xs text-secondary-text/70">
-                                  League record held by{" "}
-                                  {data.recordHolders.map((holder, i) => (
-                                    <span key={holder}>
-                                      {i > 0 && " and "}
-                                      <Link to={{ pathname: "/player/" + holder, search }}>
-                                        <span className="text-secondary-text underline">
-                                          {context.playerName(holder)}
-                                        </span>
-                                      </Link>
-                                    </span>
-                                  ))}
-                                  . Play {data.target} alternating points in a row in a tracked game to earn it.
+                                  League record held by <PlayerLinks players={data.recordHolders} />. Play {data.target}{" "}
+                                  alternating points in a row in a tracked game to earn it.
                                 </div>
                               )}
 
@@ -1829,28 +1832,12 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId, query,
                               data.recordHolders &&
                               data.recordHolders.length > 0 && (
                                 <div className="mt-1.5 text-xs text-secondary-text/70">
-                                  League record held by{" "}
-                                  {data.recordHolders.map((holder, i) => (
-                                    <span key={holder}>
-                                      {i > 0 && " and "}
-                                      <Link to={{ pathname: "/player/" + holder, search }}>
-                                        <span className="text-secondary-text underline">
-                                          {context.playerName(holder)}
-                                        </span>
-                                      </Link>
-                                    </span>
-                                  ))}
-                                  . Play {data.target} games against one opponent to earn it.
+                                  League record held by <PlayerLinks players={data.recordHolders} />. Play {data.target}{" "}
+                                  games against one opponent to earn it.
                                   {"topOpponent" in data && data.topOpponent && (
                                     <>
                                       {" "}
-                                      Your most games are with{" "}
-                                      <Link to={{ pathname: "/player/" + data.topOpponent, search }}>
-                                        <span className="text-secondary-text underline">
-                                          {context.playerName(data.topOpponent)}
-                                        </span>
-                                      </Link>
-                                      .
+                                      Your most games are with <PlayerLinks players={[data.topOpponent]} />.
                                     </>
                                   )}
                                 </div>
@@ -1994,6 +1981,13 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId, query,
                           <div className="mt-1.5 text-xs text-secondary-text/70">
                             No league record yet — play {ARCH_RIVALS_RECORD_FLOOR} games against one opponent to set the
                             first record.
+                            {"topOpponent" in data && data.topOpponent && "current" in data && (
+                              <>
+                                {" "}
+                                Your most games: {fmtNum(data.current)} with{" "}
+                                <PlayerLinks players={[data.topOpponent]} />.
+                              </>
+                            )}
                           </div>
                         ) : type === "choker" ? (
                           <div className="mt-1.5 text-xs text-secondary-text/70">

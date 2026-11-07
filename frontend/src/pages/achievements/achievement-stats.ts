@@ -170,6 +170,10 @@ export function achievementValue(achievement: Achievement): number | undefined {
  * The achievements that hold a league record. Every earning of one of these
  * beat the value of the earning before it, so their earnings in order are the
  * history of the record.
+ *
+ * Arch Rivals is left out: a pair earns it once, and the game count of that
+ * award grows after other pairs earned theirs, so its earnings are not in
+ * record order.
  */
 export const RECORD_ACHIEVEMENTS: AchievementType[] = [
   "hero-of-the-day",
@@ -184,7 +188,6 @@ export const RECORD_ACHIEVEMENTS: AchievementType[] = [
   "shootout",
   "choker",
   "yin-yang-points",
-  "arch-rivals",
   "leap-frog",
   "earliest-game",
   "latest-game",

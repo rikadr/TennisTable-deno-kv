@@ -58,6 +58,24 @@ describe("Arch Rivals Achievement", () => {
     });
   });
 
+  it("gives 2 pairs that take turns at the record 1 award each", () => {
+    const events = [
+      ...baseEvents,
+      ...games(ARCH_RIVALS_RECORD_FLOOR, "alice", "bob"),
+      ...games(ARCH_RIVALS_RECORD_FLOOR, "carol", "dave"),
+    ];
+    // The pairs take turns, so each game moves one pair level with or past the other.
+    for (let i = 0; i < 5; i++) {
+      events.push(...games(1, "carol", "dave"), ...games(1, "alice", "bob"));
+    }
+    const tt = table({ events });
+
+    expect(awards(tt, "alice")).toHaveLength(1);
+    expect(awards(tt, "carol")).toHaveLength(1);
+    expect(awards(tt, "alice")[0].data.gamesPlayed).toBe(ARCH_RIVALS_RECORD_FLOOR + 5);
+    expect(awards(tt, "carol")[0].data.gamesPlayed).toBe(ARCH_RIVALS_RECORD_FLOOR + 5);
+  });
+
   it("gives nothing below the floor", () => {
     const tt = table({ events: [...baseEvents, ...games(ARCH_RIVALS_RECORD_FLOOR - 1, "alice", "bob")] });
     expect(awards(tt, "alice")).toHaveLength(0);
