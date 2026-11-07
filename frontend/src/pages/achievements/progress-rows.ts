@@ -55,8 +55,10 @@ export function playersProgressForType(context: TennisTable, type: string): Prog
       return { player, isRetired: !activeIds.has(player.id), current, target, percent, earned };
     })
     .sort((a, b) => {
-      // Sort by percent desc, then by current value desc
+      // Sort by percent desc, then by current value desc. On a tie an active
+      // player comes before a retired player.
       if (b.percent !== a.percent) return b.percent - a.percent;
-      return b.current - a.current;
+      if (b.current !== a.current) return b.current - a.current;
+      return Number(a.isRetired) - Number(b.isRetired);
     });
 }

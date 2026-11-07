@@ -351,6 +351,8 @@ describe("achievementDetails", () => {
         "photo-finish",
         "reunion",
         "season-opener",
+        "season-closer",
+        "arch-rivals",
         "shootout",
         "tug-of-war",
         "yin-yang-points",

@@ -40,7 +40,8 @@ export function useAchievementsFilter() {
     : "recent";
 
   // The search of the recent list. It replaces the history entry, so the back
-  // button does not step through each keystroke.
+  // button does not step through each keystroke. A search looks at every
+  // achievement, so it clears the type filter.
   const search = searchParams.get(ACHIEVEMENTS_SEARCH_PARAM) ?? "";
 
   function setSelectedType(type: string) {
@@ -55,8 +56,12 @@ export function useAchievementsFilter() {
     setSearchParams(
       (previous) => {
         const params = new URLSearchParams(previous);
-        if (next === "") params.delete(ACHIEVEMENTS_SEARCH_PARAM);
-        else params.set(ACHIEVEMENTS_SEARCH_PARAM, next);
+        if (next === "") {
+          params.delete(ACHIEVEMENTS_SEARCH_PARAM);
+        } else {
+          params.set(ACHIEVEMENTS_SEARCH_PARAM, next);
+          params.delete(ACHIEVEMENTS_FILTER_PARAM);
+        }
         return params;
       },
       { replace: true },
@@ -81,9 +86,15 @@ export function achievementsParams(
 ): URLSearchParams {
   const params = new URLSearchParams(current);
 
+  // A search and a filter on one achievement exclude each other: choosing an
+  // achievement clears the search, and a search clears the filter.
   if (changes.type !== undefined) {
-    if (changes.type === ALL_ACHIEVEMENTS) params.delete(ACHIEVEMENTS_FILTER_PARAM);
-    else params.set(ACHIEVEMENTS_FILTER_PARAM, changes.type);
+    if (changes.type === ALL_ACHIEVEMENTS) {
+      params.delete(ACHIEVEMENTS_FILTER_PARAM);
+    } else {
+      params.set(ACHIEVEMENTS_FILTER_PARAM, changes.type);
+      params.delete(ACHIEVEMENTS_SEARCH_PARAM);
+    }
   }
 
   if (changes.view !== undefined) {

@@ -3,6 +3,7 @@ import { EventTypeEnum } from "./event-store/event-types";
 import { Game } from "./event-store/projectors/games-projector";
 import { SkippedGame } from "./event-store/projectors/tournaments-projector";
 import { determineNextSeason, determineSeason } from "./seasons/seasons";
+import { getServeInfo } from "../../common/serve-tracker";
 import { TennisTable } from "./tennis-table";
 
 // Shortest streak that can establish the very first Longest Win / Lose Streak
@@ -328,6 +329,87 @@ export const EVEN_STEVEN_MIN_GAMES = 20;
 // full-house achievements use.
 export const FULL_COVERAGE_MIN_PLAYERS = 5;
 
+// Fewest games 2 players must play against each other to establish the very
+// first Arch Rivals record. Below this a pair is too ordinary to hold a league
+// record. Once a record exists the floor is irrelevant — only reaching the
+// record counts.
+export const ARCH_RIVALS_RECORD_FLOOR = 20;
+
+// Smallest deficit a player must come back from in a set for "Turnaround". The
+// deficit is the largest lead the opponent held in the set, from the point log
+// of a tracked game. Each such set earns it.
+export const TURNAROUND_MIN_DEFICIT = 6;
+
+// Career sets a player must win after the opponent had set point for "Set
+// Point Saver". The count only grows, so the achievement is earned once.
+export const SET_POINT_SAVER_TARGET = 5;
+
+// Serve points in a row a player must win in one game for "Server Master".
+// Only the points the player serves count: a point the opponent serves does
+// not stop the run. The run continues across sets. Earned once.
+export const SERVER_MASTER_TARGET = 10;
+
+// The sets of a tracked game the set winner won after the set loser had set
+// point. The set loser has set point when one more point wins them the set:
+// they have 10 or more points and lead. Only a game with a point log can tell,
+// so an untracked game gives no sets. A set with equal points has no winner and
+// is left out.
+export function setPointsSavedInSets(game: Game): { setNumber: number; setWinner: "gameWinner" | "gameLoser" }[] {
+  const sequences = game.score?.pointSequences;
+  const setPoints = game.score?.setPoints;
+  if (sequences === undefined || setPoints === undefined) return [];
+
+  return sequences.flatMap((sequence, index) => {
+    const set = setPoints[index];
+    if (set === undefined || set.gameWinner === set.gameLoser) return [];
+    const setWinner = set.gameWinner > set.gameLoser ? "gameWinner" : "gameLoser";
+    const winnerChar = setWinner === "gameWinner" ? "W" : "L";
+
+    let winnerPoints = 0;
+    let loserPoints = 0;
+    for (const point of sequence) {
+      if (loserPoints >= 10 && loserPoints > winnerPoints) {
+        return [{ setNumber: index + 1, setWinner }];
+      }
+      if (point === winnerChar) winnerPoints++;
+      else loserPoints++;
+    }
+    return [];
+  });
+}
+
+// The longest run of serve points in a row each player won in a tracked game.
+// A point the other player serves does not stop or extend the run. The sets
+// are read in the order played as one sequence, so a run continues into the
+// next set. Undefined for a game without a point log or serve data.
+export function longestServeRuns(game: Game): { gameWinner: number; gameLoser: number } | undefined {
+  const sequences = game.score?.pointSequences;
+  const firstServers = game.score?.tracking?.firstServers;
+  if (sequences === undefined || sequences.length === 0 || firstServers === undefined) return undefined;
+
+  const run = { W: 0, L: 0 };
+  const best = { W: 0, L: 0 };
+  sequences.forEach((sequence, index) => {
+    const firstServer = firstServers[index];
+    if (firstServer !== "W" && firstServer !== "L") return;
+    let winnerPoints = 0;
+    let loserPoints = 0;
+    for (const point of sequence) {
+      const { server } = getServeInfo({ player1: winnerPoints, player2: loserPoints }, firstServer === "W" ? 1 : 2);
+      const serverChar = server === 1 ? "W" : "L";
+      if (point === serverChar) {
+        run[serverChar]++;
+        best[serverChar] = Math.max(best[serverChar], run[serverChar]);
+      } else {
+        run[serverChar] = 0;
+      }
+      if (point === "W") winnerPoints++;
+      else loserPoints++;
+    }
+  });
+  return { gameWinner: best.W, gameLoser: best.L };
+}
+
 /** The output of the achievements calculation. The web worker calculates it and sends it to the main thread */
 export type AchievementsSnapshot = {
   achievements: Map<string, Achievement[]>;
@@ -452,6 +534,25 @@ export class Achievements {
   // Each player's own longest run of alternating points in a tracked game.
   // Used for Yin Yang Points progression.
   longestAlternatingPoints: Map<string, number> = new Map();
+  // League-wide running record for the Arch Rivals achievement: the most games
+  // 2 players have played against each other. Both players of the pair hold it
+  // together. Undefined until a pair reaches ARCH_RIVALS_RECORD_FLOOR games.
+  archRivalsRecord: { games: number | undefined; holders: string[] } = {
+    games: undefined,
+    holders: [],
+  };
+  // Each player's most games against one opponent, and who that opponent is.
+  // Used for Arch Rivals progression.
+  mostGamesAgainstOneOpponent: Map<string, { games: number; opponent: string }> = new Map();
+  // Each player's largest deficit in a set they won in a tracked game. Used for
+  // Turnaround progression.
+  biggestDeficitOvercome: Map<string, number> = new Map();
+  // Each player's career count of sets won after the opponent had set point.
+  // Used for Set Point Saver.
+  setPointSetsSaved: Map<string, number> = new Map();
+  // Each player's longest run of serve points in a row won in one game. Used
+  // for Server Master.
+  longestServeRun: Map<string, number> = new Map();
   // Best (lowest) leaderboard rank each player has ever held, recorded only
   // while the ranked cohort had ≥5 players — the same gate the On the
   // Podium / Touched the Throne awards use, so a "best" here always means a
@@ -583,6 +684,11 @@ export class Achievements {
     this.mostLeadChanges.clear();
     this.yinYangPointsRecord = { points: undefined, holders: [] };
     this.longestAlternatingPoints.clear();
+    this.archRivalsRecord = { games: undefined, holders: [] };
+    this.mostGamesAgainstOneOpponent.clear();
+    this.biggestDeficitOvercome.clear();
+    this.setPointSetsSaved.clear();
+    this.longestServeRun.clear();
     this.bestRankEver.clear();
     this.bestBeatenRank.clear();
     this.bestClimb.clear();
@@ -657,6 +763,9 @@ export class Achievements {
     >();
 
     const gameLimitForRanked = this.parent.client.gameLimitForRanked;
+
+    // Arch Rivals state per pair of players, keyed on both ids in sorted order.
+    const archRivalsPairs = new Map<string, ArchRivalsPairState>();
 
     this.parent.games.forEach((game, gameIndex) => {
       // Check for "Milestone Game": awarded to both players of every 500th
@@ -994,6 +1103,10 @@ export class Achievements {
       loserOpponentData.count++;
       loserOpponentData.lastGame = game.playedAt;
 
+      // Check for "Arch Rivals": the league record for the most games between
+      // one pair of players.
+      this.#checkArchRivalsAchievement(game, archRivalsPairs, winnerOpponentData.firstGame);
+
       // Check for best-friends achievement (50 games within 1 year)
       if (winnerOpponentData.count === 50 && game.playedAt - winnerOpponentData.firstGame <= ONE_YEAR) {
         this.#addAchievement(
@@ -1228,13 +1341,22 @@ export class Achievements {
       if (isTrackedGame(game)) {
         // "Choker": a lead lost in a set that equals or beats the league
         // record.
-        this.#checkChokerAchievements(game);
+        const leadsLost = leadsLostInSets(game);
+        this.#checkChokerAchievements(game, leadsLost);
         // "Tug of War": a set where the lead changed
         // TUG_OF_WAR_MIN_LEAD_CHANGES or more times.
         this.#checkTugOfWarAchievement(game);
         // "Yin Yang Points": the longest run of alternating points in league
         // history, counted across sets.
         this.#checkYinYangPointsAchievement(game);
+        // "Turnaround": each set won after a deficit of TURNAROUND_MIN_DEFICIT
+        // or more points.
+        this.#checkTurnaroundAchievements(game, leadsLost);
+        // "Set Point Saver": career sets won after the opponent had set point.
+        this.#checkSetPointSaverAchievement(game);
+        // "Server Master": SERVER_MASTER_TARGET serve points in a row in
+        // one game.
+        this.#checkServerMasterAchievement(game);
       }
 
       // Check for "On the Record": career games tracked point by point.
@@ -2586,8 +2708,8 @@ export class Achievements {
   // a bigger lead moves the record; an equal lead earns the award and leaves
   // the record with its holder. Both players can earn it in one game, and one
   // player can earn it in more than 1 set.
-  #checkChokerAchievements(game: Game) {
-    leadsLostInSets(game).forEach((set) => {
+  #checkChokerAchievements(game: Game, leadsLost: ReturnType<typeof leadsLostInSets>) {
+    leadsLost.forEach((set) => {
       const playerId = set.setLoser === "gameWinner" ? game.winner : game.loser;
       const opponent = playerId === game.winner ? game.loser : game.winner;
 
@@ -2694,6 +2816,152 @@ export class Achievements {
     if (currentRecord === undefined || run.points > currentRecord) {
       this.yinYangPointsRecord = { points: run.points, holders: [game.winner, game.loser] };
     }
+  }
+
+  // Awards "Arch Rivals" to both players of a pair whose games against each
+  // other equal or beat the league record. A pair of ARCH_RIVALS_RECORD_FLOOR
+  // games establishes the first record. A pair earns it once, at the game that
+  // first reached the record. The games of a pair only grow, so each time the
+  // pair reaches the record again, the game count of its award grows to the new
+  // count, and no new award is made. 2 pairs that take turns at the record so
+  // get 1 award each, not 1 award each game.
+  #checkArchRivalsAchievement(game: Game, pairs: Map<string, ArchRivalsPairState>, firstGameAt: number) {
+    const key = [game.winner, game.loser].sort().join("|");
+    let pair = pairs.get(key);
+    if (pair === undefined) {
+      pair = { games: 0, awards: undefined };
+      pairs.set(key, pair);
+    }
+    pair.games++;
+
+    [
+      { playerId: game.winner, opponent: game.loser },
+      { playerId: game.loser, opponent: game.winner },
+    ].forEach(({ playerId, opponent }) => {
+      if (pair.games > (this.mostGamesAgainstOneOpponent.get(playerId)?.games ?? 0)) {
+        this.mostGamesAgainstOneOpponent.set(playerId, { games: pair.games, opponent });
+      }
+    });
+
+    const recordBeforeGame = this.archRivalsRecord.games;
+    if (pair.games < (recordBeforeGame ?? ARCH_RIVALS_RECORD_FLOOR)) return;
+
+    const moveRecord = () => {
+      if (recordBeforeGame === undefined || pair.games > recordBeforeGame) {
+        this.archRivalsRecord = { games: pair.games, holders: [game.winner, game.loser] };
+      }
+    };
+
+    // The pair already has its awards: grow them to the new count.
+    if (pair.awards !== undefined) {
+      pair.awards.forEach((award) => (award.data.gamesPlayed = pair.games));
+      moveRecord();
+      return;
+    }
+
+    const awards = [
+      { playerId: game.winner, opponent: game.loser },
+      { playerId: game.loser, opponent: game.winner },
+    ].map(({ playerId, opponent }) => {
+      const award = this.#createAchievement(
+        "arch-rivals",
+        playerId,
+        game.playedAt,
+        { gameId: game.id, opponent, gamesPlayed: pair.games, firstGameAt, previousRecord: recordBeforeGame },
+        game.id,
+      );
+      this.#addAchievement(playerId, award);
+      return award;
+    });
+    pair.awards = [awards[0], awards[1]];
+    moveRecord();
+  }
+
+  // Awards "Turnaround" to the set winner of each set of a tracked game where
+  // the set loser led by TURNAROUND_MIN_DEFICIT or more points. Both players
+  // can earn it in one game, and one player can earn it in more than 1 set.
+  #checkTurnaroundAchievements(game: Game, leadsLost: ReturnType<typeof leadsLostInSets>) {
+    leadsLost.forEach((set) => {
+      const playerId = set.setLoser === "gameWinner" ? game.loser : game.winner;
+      const opponent = playerId === game.winner ? game.loser : game.winner;
+
+      if (set.lead > (this.biggestDeficitOvercome.get(playerId) ?? 0)) {
+        this.biggestDeficitOvercome.set(playerId, set.lead);
+      }
+      if (set.lead < TURNAROUND_MIN_DEFICIT) return;
+
+      this.#addAchievement(
+        playerId,
+        this.#createAchievement(
+          "turnaround",
+          playerId,
+          game.playedAt,
+          {
+            gameId: game.id,
+            opponent,
+            setNumber: set.setNumber,
+            deficit: set.lead,
+            trailingPoints: set.leadOpponentPoints,
+            trailingOpponentPoints: set.leadPoints,
+            playerPoints: set.setWinnerPoints,
+            opponentPoints: set.setLoserPoints,
+          },
+          game.id,
+        ),
+      );
+    });
+  }
+
+  // Awards "Set Point Saver" when a player's career count of sets won after the
+  // opponent had set point reaches SET_POINT_SAVER_TARGET. One game can hold
+  // more than 1 such set, so the award triggers on the crossing. Earned once.
+  #checkSetPointSaverAchievement(game: Game) {
+    const savedSets = { gameWinner: 0, gameLoser: 0 };
+    setPointsSavedInSets(game).forEach((set) => savedSets[set.setWinner]++);
+
+    [
+      { playerId: game.winner, saved: savedSets.gameWinner },
+      { playerId: game.loser, saved: savedSets.gameLoser },
+    ].forEach(({ playerId, saved }) => {
+      if (saved === 0) return;
+      const before = this.setPointSetsSaved.get(playerId) ?? 0;
+      this.setPointSetsSaved.set(playerId, before + saved);
+      if (before < SET_POINT_SAVER_TARGET && before + saved >= SET_POINT_SAVER_TARGET) {
+        this.#addAchievement(
+          playerId,
+          this.#createAchievement("set-point-saver", playerId, game.playedAt, undefined, game.id),
+        );
+      }
+    });
+  }
+
+  // Awards "Server Master" the first time a player wins
+  // SERVER_MASTER_TARGET of their serve points in a row in one tracked game.
+  // Earned once.
+  #checkServerMasterAchievement(game: Game) {
+    const runs = longestServeRuns(game);
+    if (runs === undefined) return;
+
+    [
+      { playerId: game.winner, opponent: game.loser, run: runs.gameWinner },
+      { playerId: game.loser, opponent: game.winner, run: runs.gameLoser },
+    ].forEach(({ playerId, opponent, run }) => {
+      const before = this.longestServeRun.get(playerId) ?? 0;
+      if (run <= before) return;
+      this.longestServeRun.set(playerId, run);
+      if (before < SERVER_MASTER_TARGET && run >= SERVER_MASTER_TARGET) {
+        this.#addAchievement(
+          playerId,
+          this.#createAchievement(
+            "server-master",
+            playerId,
+            game.playedAt,
+            { gameId: game.id, opponent, points: run },
+            game.id,
+          ),
+        );
+      }
+    });
   }
 
   // Awards "Deuce Demon" when a player's career total of won deuce sets
@@ -3641,6 +3909,33 @@ export class Achievements {
         );
       }
 
+      // Season Closer: both players of the season's last game. The last game
+      // is only known when the season has ended, so the award is earned at
+      // the end of the season.
+      const closingGame = s.games[s.games.length - 1];
+      if (closingGame && this.#now > s.end) {
+        this.#addAchievement(
+          closingGame.winner,
+          this.#createAchievement(
+            "season-closer",
+            closingGame.winner,
+            s.end,
+            { seasonStart: s.start, gameId: closingGame.id, opponent: closingGame.loser },
+            closingGame.id,
+          ),
+        );
+        this.#addAchievement(
+          closingGame.loser,
+          this.#createAchievement(
+            "season-closer",
+            closingGame.loser,
+            s.end,
+            { seasonStart: s.start, gameId: closingGame.id, opponent: closingGame.winner },
+            closingGame.id,
+          ),
+        );
+      }
+
       // The remaining season achievements read the FINAL leaderboard, so
       // they only exist once the season has ended.
       if (this.#now > s.end && leaderboard.length > 0) {
@@ -3965,6 +4260,10 @@ export class Achievements {
       // Filled in below: the most lead changes in one set the player has
       // played, up to the target.
       "tug-of-war": { current: 0, target: TUG_OF_WAR_MIN_LEAD_CHANGES, earned: 0 },
+      // Filled in below: the largest deficit in a set the player won.
+      turnaround: { current: 0, target: TURNAROUND_MIN_DEFICIT, earned: 0 },
+      "set-point-saver": { current: 0, target: SET_POINT_SAVER_TARGET, earned: 0 },
+      "server-master": { current: 0, target: SERVER_MASTER_TARGET, earned: 0 },
       "yin-yang-points": {
         earned: 0,
         current: 0,
@@ -4003,6 +4302,12 @@ export class Achievements {
       "best-friends": { current: 0, target: 50, perOpponent: new Map(), earned: 0 },
       reunion: { current: 0, target: ONE_YEAR, earned: 0 },
       "even-steven": { current: 0, target: EVEN_STEVEN_MIN_GAMES, earned: 0 },
+      "arch-rivals": {
+        earned: 0,
+        current: 0,
+        target: this.archRivalsRecord.games,
+        recordHolders: this.archRivalsRecord.holders,
+      },
       "welcome-committee": { current: 0, target: 3, newPlayers: new Set(), earned: 0 },
       "community-builder": { current: 0, target: 10, newPlayers: new Set(), earned: 0 },
       "student-becomes-master": { earned: 0 },
@@ -4040,6 +4345,8 @@ export class Achievements {
       "full-coverage": { current: 0, target: 1, missing: new Set(), earned: 0 },
       // League-wide countdown to the next season start, filled in below.
       "season-opener": { current: 0, target: 0, earned: 0 },
+      // League-wide progress through the current season, filled in below.
+      "season-closer": { current: 0, target: 0, earned: 0 },
       "milestone-game": { current: 0, target: MILESTONE_GAME_INTERVAL, earned: 0 },
     };
 
@@ -4758,6 +5065,16 @@ export class Achievements {
       !inGracePeriod && !currentSeasonHasGames ? seasonOpenerTarget : now - currentSeason.start;
     progression["season-opener"].nextSeasonStart = nextSeasonStart;
 
+    // Season Closer progression is league-wide and shows how much of the
+    // season has passed, because the last game before the end earns it. In the
+    // grace period between seasons the next season is the one to close, and
+    // none of it has passed.
+    const seasonToClose = inGracePeriod ? determineNextSeason(now) : currentSeason;
+    progression["season-closer"].target = seasonToClose.end - seasonToClose.start;
+    progression["season-closer"].current = inGracePeriod ? 0 : now - seasonToClose.start;
+    progression["season-closer"].seasonStart = seasonToClose.start;
+    progression["season-closer"].seasonEnd = seasonToClose.end;
+
     // David progression: highest Elo gained from a win where both
     // players were ranked at the time of the match. Players who never
     // crossed the ranked threshold will naturally have no entries in
@@ -4792,6 +5109,24 @@ export class Achievements {
     // Yin Yang Points progression: the player's own longest run of alternating
     // points, compared against the league record they must reach.
     progression["yin-yang-points"].current = this.longestAlternatingPoints.get(playerId) ?? 0;
+
+    // Arch Rivals progression: the player's most games against one opponent,
+    // compared against the league record they must reach.
+    const topRival = this.mostGamesAgainstOneOpponent.get(playerId);
+    progression["arch-rivals"].current = topRival?.games ?? 0;
+    progression["arch-rivals"].topOpponent = topRival?.opponent;
+
+    // Turnaround, Set Point Saver and Server Master cap at the target, so
+    // the progress does not show the player's totals past it.
+    progression["turnaround"].current = Math.min(
+      this.biggestDeficitOvercome.get(playerId) ?? 0,
+      TURNAROUND_MIN_DEFICIT,
+    );
+    progression["set-point-saver"].current = Math.min(
+      this.setPointSetsSaved.get(playerId) ?? 0,
+      SET_POINT_SAVER_TARGET,
+    );
+    progression["server-master"].current = Math.min(this.longestServeRun.get(playerId) ?? 0, SERVER_MASTER_TARGET);
 
     // Milestone Game progression is league-wide (everyone shares it) and
     // restarts at every milestone: current is the games played since the
@@ -5250,6 +5585,41 @@ type AchievementDefinitions = {
   "rock-paper-scissors": { day: number; beat: string; lostTo: string };
   // Awarded to both players of a season's very first game.
   "season-opener": { seasonStart: number; gameId: string; opponent: string };
+  // Awarded to both players of a season's last game, when the season ends.
+  "season-closer": { seasonStart: number; gameId: string; opponent: string };
+  // Record-breaking count of games between one pair of players. Awarded to
+  // both players, once for each pair. `gamesPlayed` is the games of the pair
+  // the last time it reached the record, and `firstGameAt` the first game of
+  // the pair.
+  // Undefined previousRecord means the pair established the first record.
+  "arch-rivals": {
+    gameId: string;
+    opponent: string;
+    gamesPlayed: number;
+    firstGameAt: number;
+    previousRecord?: number;
+  };
+  // Won a set of a tracked game after trailing by TURNAROUND_MIN_DEFICIT or
+  // more points. `deficit` is the largest deficit, and
+  // `trailingPoints`–`trailingOpponentPoints` the score when the badge owner
+  // first trailed by it. `playerPoints`–`opponentPoints` is the final score of
+  // the set. All scores are from the badge owner's side.
+  turnaround: {
+    gameId: string;
+    opponent: string;
+    setNumber: number;
+    deficit: number;
+    trailingPoints: number;
+    trailingOpponentPoints: number;
+    playerPoints: number;
+    opponentPoints: number;
+  };
+  // Career sets won after the opponent had set point reached
+  // SET_POINT_SAVER_TARGET. Earned by the crossing game.
+  "set-point-saver": undefined;
+  // Won SERVER_MASTER_TARGET or more serve points in a row in one tracked
+  // game. `points` is the length of the run.
+  "server-master": { gameId: string; opponent: string; points: number };
   // Awarded to both players of every 500th league game. `milestone` is that
   // game number.
   "milestone-game": { gameId: string; opponent: string; milestone: number };
@@ -5352,6 +5722,11 @@ export const ACHIEVEMENT_IS_REACHIEVABLE: Record<AchievementType, boolean> = {
   "tug-of-war": true, // Per qualifying game
   "yin-yang-points": true, // League record
   "rock-paper-scissors": true, // Per cycle
+  "season-closer": true, // Per season
+  "arch-rivals": true, // League record — can be retaken
+  turnaround: true, // Per qualifying set
+  "set-point-saver": false,
+  "server-master": false,
 };
 
 // String-keyed lookup for UI code that carries achievement types as plain
@@ -5417,6 +5792,14 @@ type HeroPeriodState = {
 // The Hero of the Day / Week / Month record counts, as they stood before a
 // game.
 type HeroRecordCounts = { day: number | undefined; week: number | undefined; month: number | undefined };
+
+// Per-pair chase state for the Arch Rivals record: the games of the pair so
+// far, and the awards of both players, once the pair has earned them. Their
+// game count grows each time the pair reaches the record again.
+type ArchRivalsPairState = {
+  games: number;
+  awards: [GenericAchievement<"arch-rivals">, GenericAchievement<"arch-rivals">] | undefined;
+};
 
 // Progression Types
 type BaseProgression = {
@@ -5569,6 +5952,27 @@ type YinYangPointsProgression = BaseProgression & {
   target?: number;
   // Both players of the record game hold the record together.
   recordHolders?: string[];
+};
+
+type ArchRivalsProgression = BaseProgression & {
+  // The player's most games against one opponent (0 if none).
+  current: number;
+  // The league record — a pair that equals it earns the award. Undefined when
+  // no pair has set a record yet (ARCH_RIVALS_RECORD_FLOOR games take it).
+  target?: number;
+  // Both players of the record pair hold the record together.
+  recordHolders?: string[];
+  // The opponent behind `current`.
+  topOpponent?: string;
+};
+
+// Season Closer is league-wide: the progress is the part of the season that
+// has passed. Current and target are milliseconds.
+type SeasonCloserProgression = ProgressionWithTarget & {
+  // The season to close. Between seasons it is the next season, which has not
+  // started yet. The last game before the end earns the award.
+  seasonStart?: number;
+  seasonEnd?: number;
 };
 
 type ChokerProgression = BaseProgression & {
@@ -5742,4 +6146,9 @@ export type AchievementProgression = {
   "tug-of-war": ProgressionWithTarget;
   "yin-yang-points": YinYangPointsProgression;
   "rock-paper-scissors": BaseProgression;
+  "season-closer": SeasonCloserProgression;
+  "arch-rivals": ArchRivalsProgression;
+  turnaround: ProgressionWithTarget;
+  "set-point-saver": ProgressionWithTarget;
+  "server-master": ProgressionWithTarget;
 };

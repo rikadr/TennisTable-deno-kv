@@ -48,6 +48,8 @@ describe("Achievements earned by a game", () => {
       game("g1", noon, "a", "b"),
       game("g2", noon + 2 * 60_000, "c", "a"),
       game("g3", noon + 24 * 60 * 60_000 + 60_000, "c", "b"),
+      // The last game of the season earns Season Closer, so g3 is not the last.
+      game("g4", noon + 2 * 24 * 60 * 60_000 + 60_000, "a", "b"),
     ]);
 
     // The third game is on the next day, at a time of day between the

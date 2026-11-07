@@ -167,19 +167,36 @@ describe("navigation from the achievements page", () => {
     expect(currentUrl()).toBe("/achievements");
   });
 
-  it("searches the recent list on the achievement, and keeps the search out of the history", async () => {
+  it("searches the recent list across all achievements, and keeps the search out of the history", async () => {
     renderPage("/achievements", <AchievementsPage />);
     await userEvent.selectOptions(screen.getByLabelText("Filter:"), "hero-of-the-day");
 
-    await userEvent.type(screen.getByLabelText("Search achievements by name or player"), "hero");
+    await userEvent.type(screen.getByLabelText("Search achievements by name or player"), "first");
 
-    expect(currentUrl()).toBe("/achievements?filter=hero-of-the-day&q=hero");
-    expect(screen.getAllByRole("link", { name: "Hero of the Day" }).length).toBeGreaterThan(0);
+    // The search clears the filter, so it finds achievements of other types.
+    expect(currentUrl()).toBe("/achievements?q=first");
+    expect(screen.getByLabelText("Filter:")).toHaveValue("all");
+    expect(screen.getAllByRole("link", { name: "First Game" }).length).toBeGreaterThan(0);
 
     // Each keystroke replaces the url, so one step back goes to the url before
     // the filter.
     await userEvent.click(screen.getByRole("button", { name: "history back" }));
     expect(currentUrl()).toBe("/achievements");
+  });
+
+  it("clears the search when you select an achievement", async () => {
+    renderPage("/achievements?q=bob", <AchievementsPage />);
+
+    await userEvent.selectOptions(screen.getByLabelText("Filter:"), "hero-of-the-day");
+    expect(currentUrl()).toBe("/achievements?filter=hero-of-the-day");
+    expect(screen.getByLabelText("Search achievements by name or player")).toHaveValue("");
+  });
+
+  it("clears the search when you click the name of an achievement", async () => {
+    renderPage("/achievements?q=first", <AchievementsPage />);
+
+    await userEvent.click(screen.getAllByRole("link", { name: "First Game" })[0]);
+    expect(currentUrl()).toBe("/achievements?filter=first-game&view=details");
   });
 
   it("searches the recent list on the player who earned it", async () => {
