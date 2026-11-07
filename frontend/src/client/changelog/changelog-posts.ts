@@ -42,22 +42,22 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
-    slug: "5-new-achievements-arch-rivals-turnaround-set-point-saver-serve-machine-season-closer",
-    title: "5 new achievements: Arch Rivals, Turnaround, Set Point Saver, Serve Machine and Season Closer",
+    slug: "5-new-achievements-arch-rivals-turnaround-set-point-saver-server-master-season-closer",
+    title: "5 new achievements: Arch Rivals, Turnaround, Set Point Saver, Server Master and Season Closer",
     date: "2026-11-07",
     tags: ["feature-update"],
     summary:
-      "5 new achievements. Three of them use the point-by-point data of tracked games, and Serve Machine is the first to use the serve data.",
+      "5 new achievements. Three of them use the point-by-point data of tracked games, and Server Master is the first to use the serve data.",
     body: [
       list(
         "Arch Rivals 🆚 - play as many games against one opponent as any pair in league history. Both players earn it. The first record needs 20 games.",
         "Turnaround 🔄 - win a set where you trailed by 6 or more points. Each such set earns it.",
         "Set Point Saver 🛡️ - win 5 sets where the opponent had the set point. You earn it one time.",
-        "Serve Machine 🤖 - win 10 of your serve points in a row in one game. The points of the opponent's serve do not stop the run.",
+        "Server Master 🤵 - win 10 of your serve points in a row in one game. The points of the opponent's serve do not stop the run.",
         "Season Closer 🔚 - play in the last game of a season. Both players earn it when the season ends.",
       ),
       text(
-        "Turnaround, Set Point Saver and Serve Machine count only tracked games. The app calculates achievements from history, so earlier games also count.",
+        "Turnaround, Set Point Saver and Server Master count only tracked games. The app calculates achievements from history, so earlier games also count.",
       ),
     ],
   },

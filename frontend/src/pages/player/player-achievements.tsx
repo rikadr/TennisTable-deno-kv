@@ -483,11 +483,11 @@ export const ACHIEVEMENT_LABELS: Record<AchievementType, { title: string; descri
     description: "Win 5 sets where the opponent had the set point (tracked games only)",
     icon: "🛡️",
   },
-  "serve-machine": {
-    title: "Serve Machine",
+  "server-master": {
+    title: "Server Master",
     description:
-      "Win 10 of your serve points in a row in one game. The points your opponent serves do not count (tracked games only)",
-    icon: "🤖",
+      "Win 10 of your serve points in a row in one game. The points your opponent serves do not stop the run (tracked games only)",
+    icon: "🤵",
   },
 };
 
@@ -959,7 +959,7 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements, query, 
                   </GameScoreLink>
                 )}
 
-                {achievement.type === "serve-machine" && achievement.data && (
+                {achievement.type === "server-master" && achievement.data && (
                   <GameScoreLink
                     playedAt={achievement.earnedAt}
                     className="block text-xs text-secondary-text/70 mt-2 underline"
