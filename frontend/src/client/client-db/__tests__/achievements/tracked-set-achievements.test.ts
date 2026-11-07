@@ -2,7 +2,7 @@ import { EventType, EventTypeEnum, GameTracking } from "../../event-store/event-
 import { TennisTable } from "../../tennis-table";
 import {
   longestServeRuns,
-  SERVICE_MACHINE_TARGET,
+  SERVE_MACHINE_TARGET,
   SET_POINT_SAVER_TARGET,
   setPointsSavedInSets,
   TURNAROUND_MIN_DEFICIT,
@@ -15,7 +15,7 @@ const table = (data: ConstructorParameters<typeof TennisTable>[0]): TennisTable 
   return tt;
 };
 
-// Turnaround, Set Point Saver and Service Machine read the point log of a
+// Turnaround, Set Point Saver and Serve Machine read the point log of a
 // tracked game. Alice is always the game winner ("W"), Bob the game loser ("L").
 
 const baseEvents: EventType[] = [
@@ -134,7 +134,7 @@ describe("Set Point Saver Achievement", () => {
   });
 });
 
-describe("Service Machine Achievement", () => {
+describe("Serve Machine Achievement", () => {
   it("counts only the serve points of each player, and continues across sets", () => {
     // Alice serves first: points 1–2, 5–6, 9–10 ... She wins all her serve
     // points. Bob wins his own serve points 3–4 and loses 7–8.
@@ -153,10 +153,10 @@ describe("Service Machine Achievement", () => {
       events: [...baseEvents, ...trackedGame("g1", 100, [set, set], "WW"), ...trackedGame("g2", 200, [set, set], "WW")],
     });
 
-    const alice = awards(tt, "alice", "service-machine");
+    const alice = awards(tt, "alice", "serve-machine");
     expect(alice).toHaveLength(1);
     expect(alice[0].data).toEqual({ gameId: "g1", opponent: "bob", points: 12 });
-    expect(tt.achievements.getPlayerProgression("alice")["service-machine"].current).toBe(SERVICE_MACHINE_TARGET);
+    expect(tt.achievements.getPlayerProgression("alice")["serve-machine"].current).toBe(SERVE_MACHINE_TARGET);
   });
 
   it("needs serve data", () => {

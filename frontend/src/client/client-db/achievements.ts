@@ -344,10 +344,10 @@ export const TURNAROUND_MIN_DEFICIT = 6;
 // Point Saver". The count only grows, so the achievement is earned once.
 export const SET_POINT_SAVER_TARGET = 5;
 
-// Serve points in a row a player must win in one game for "Service Machine".
+// Serve points in a row a player must win in one game for "Serve Machine".
 // Only the points the player serves count: a point the opponent serves does
 // not stop the run. The run continues across sets. Earned once.
-export const SERVICE_MACHINE_TARGET = 10;
+export const SERVE_MACHINE_TARGET = 10;
 
 // The sets of a tracked game the set winner won after the set loser had set
 // point. The set loser has set point when one more point wins them the set:
@@ -551,7 +551,7 @@ export class Achievements {
   // Used for Set Point Saver.
   setPointSetsSaved: Map<string, number> = new Map();
   // Each player's longest run of serve points in a row won in one game. Used
-  // for Service Machine.
+  // for Serve Machine.
   longestServeRun: Map<string, number> = new Map();
   // Best (lowest) leaderboard rank each player has ever held, recorded only
   // while the ranked cohort had ≥5 players — the same gate the On the
@@ -1353,9 +1353,9 @@ export class Achievements {
         this.#checkTurnaroundAchievements(game);
         // "Set Point Saver": career sets won after the opponent had set point.
         this.#checkSetPointSaverAchievement(game);
-        // "Service Machine": SERVICE_MACHINE_TARGET serve points in a row in
+        // "Serve Machine": SERVE_MACHINE_TARGET serve points in a row in
         // one game.
-        this.#checkServiceMachineAchievement(game);
+        this.#checkServeMachineAchievement(game);
       }
 
       // Check for "On the Record": career games tracked point by point.
@@ -2933,10 +2933,10 @@ export class Achievements {
     });
   }
 
-  // Awards "Service Machine" the first time a player wins
-  // SERVICE_MACHINE_TARGET of their serve points in a row in one tracked game.
+  // Awards "Serve Machine" the first time a player wins
+  // SERVE_MACHINE_TARGET of their serve points in a row in one tracked game.
   // Earned once.
-  #checkServiceMachineAchievement(game: Game) {
+  #checkServeMachineAchievement(game: Game) {
     const runs = longestServeRuns(game);
     if (runs === undefined) return;
 
@@ -2947,11 +2947,11 @@ export class Achievements {
       const before = this.longestServeRun.get(playerId) ?? 0;
       if (run <= before) return;
       this.longestServeRun.set(playerId, run);
-      if (before < SERVICE_MACHINE_TARGET && run >= SERVICE_MACHINE_TARGET) {
+      if (before < SERVE_MACHINE_TARGET && run >= SERVE_MACHINE_TARGET) {
         this.#addAchievement(
           playerId,
           this.#createAchievement(
-            "service-machine",
+            "serve-machine",
             playerId,
             game.playedAt,
             { gameId: game.id, opponent, points: run },
@@ -4261,7 +4261,7 @@ export class Achievements {
       // Filled in below: the largest deficit in a set the player won.
       turnaround: { current: 0, target: TURNAROUND_MIN_DEFICIT, earned: 0 },
       "set-point-saver": { current: 0, target: SET_POINT_SAVER_TARGET, earned: 0 },
-      "service-machine": { current: 0, target: SERVICE_MACHINE_TARGET, earned: 0 },
+      "serve-machine": { current: 0, target: SERVE_MACHINE_TARGET, earned: 0 },
       "yin-yang-points": {
         earned: 0,
         current: 0,
@@ -5113,7 +5113,7 @@ export class Achievements {
     progression["arch-rivals"].current = topRival?.games ?? 0;
     progression["arch-rivals"].topOpponent = topRival?.opponent;
 
-    // Turnaround, Set Point Saver and Service Machine cap at the target, so
+    // Turnaround, Set Point Saver and Serve Machine cap at the target, so
     // the progress does not show the player's totals past it.
     progression["turnaround"].current = Math.min(
       this.biggestDeficitOvercome.get(playerId) ?? 0,
@@ -5123,7 +5123,7 @@ export class Achievements {
       this.setPointSetsSaved.get(playerId) ?? 0,
       SET_POINT_SAVER_TARGET,
     );
-    progression["service-machine"].current = Math.min(this.longestServeRun.get(playerId) ?? 0, SERVICE_MACHINE_TARGET);
+    progression["serve-machine"].current = Math.min(this.longestServeRun.get(playerId) ?? 0, SERVE_MACHINE_TARGET);
 
     // Milestone Game progression is league-wide (everyone shares it) and
     // restarts at every milestone: current is the games played since the
@@ -5613,9 +5613,9 @@ type AchievementDefinitions = {
   // Career sets won after the opponent had set point reached
   // SET_POINT_SAVER_TARGET. Earned by the crossing game.
   "set-point-saver": undefined;
-  // Won SERVICE_MACHINE_TARGET or more serve points in a row in one tracked
+  // Won SERVE_MACHINE_TARGET or more serve points in a row in one tracked
   // game. `points` is the length of the run.
-  "service-machine": { gameId: string; opponent: string; points: number };
+  "serve-machine": { gameId: string; opponent: string; points: number };
   // Awarded to both players of every 500th league game. `milestone` is that
   // game number.
   "milestone-game": { gameId: string; opponent: string; milestone: number };
@@ -5722,7 +5722,7 @@ export const ACHIEVEMENT_IS_REACHIEVABLE: Record<AchievementType, boolean> = {
   "arch-rivals": true, // League record — can be retaken
   turnaround: true, // Per qualifying set
   "set-point-saver": false,
-  "service-machine": false,
+  "serve-machine": false,
 };
 
 // String-keyed lookup for UI code that carries achievement types as plain
@@ -6144,5 +6144,5 @@ export type AchievementProgression = {
   "arch-rivals": ArchRivalsProgression;
   turnaround: ProgressionWithTarget;
   "set-point-saver": ProgressionWithTarget;
-  "service-machine": ProgressionWithTarget;
+  "serve-machine": ProgressionWithTarget;
 };

@@ -179,7 +179,7 @@ export const AchievementFacts: React.FC<{ achievement: Achievement }> = ({ achie
           {achievement.data.setNumber}, won {achievement.data.playerPoints}–{achievement.data.opponentPoints}
         </GameScoreLink>
       )}
-      {achievement.type === "service-machine" && achievement.data && (
+      {achievement.type === "serve-machine" && achievement.data && (
         <GameScoreLink playedAt={achievement.earnedAt} className="text-[11px] opacity-80 underline">
           {achievement.data.points} serve points in a row
         </GameScoreLink>

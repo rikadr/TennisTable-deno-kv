@@ -53,7 +53,7 @@ export const ACHIEVEMENT_METRICS: Partial<Record<AchievementType, AchievementMet
   "less-is-more": { label: "Points behind the loser", format: points },
   "arch-rivals": { label: "Games of the pair", format: games },
   turnaround: { label: "Points behind", format: points },
-  "service-machine": { label: "Serve points in a row", format: points },
+  "serve-machine": { label: "Serve points in a row", format: points },
   "leap-frog": { label: "Ranks jumped", format: (value) => `${fmtNum(value)} rank${value === 1 ? "" : "s"}` },
   "giant-hunting": { label: "Largest Score gap", format: score },
   "earliest-game": { label: "Time of the game", format: timeOfDay },
@@ -119,7 +119,7 @@ export function achievementValue(achievement: Achievement): number | undefined {
       return achievement.data.gamesPlayed;
     case "turnaround":
       return achievement.data.deficit;
-    case "service-machine":
+    case "serve-machine":
       return achievement.data.points;
     case "less-is-more":
       return achievement.data.opponentPoints - achievement.data.playerPoints;

@@ -87,7 +87,7 @@ export const ACHIEVEMENT_GROUPS: AchievementGroup[] = [
       "tug-of-war",
       "turnaround",
       "set-point-saver",
-      "service-machine",
+      "serve-machine",
       "yin-yang-points",
       "hero-of-the-day",
       "hero-of-the-week",
