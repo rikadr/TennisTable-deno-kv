@@ -2,7 +2,6 @@ import { EventType, EventTypeEnum, GameTracking } from "../../event-store/event-
 import { TennisTable } from "../../tennis-table";
 import {
   longestServeRuns,
-  SERVER_MASTER_TARGET,
   SET_POINT_SAVER_TARGET,
   setPointsSavedInSets,
   TURNAROUND_MIN_DEFICIT,
@@ -148,15 +147,20 @@ describe("Server Master Achievement", () => {
   it("awards once, when a player first wins 10 serve points in a row", () => {
     // Alice wins every point and serves first in both sets: 6 serve points in
     // set 1 (11 points) and 6 in set 2, so the run reaches 12 across the sets.
+    // In g2 she does the same in 3 sets, so the run reaches 18.
     const set = "W".repeat(11);
     const tt = table({
-      events: [...baseEvents, ...trackedGame("g1", 100, [set, set], "WW"), ...trackedGame("g2", 200, [set, set], "WW")],
+      events: [
+        ...baseEvents,
+        ...trackedGame("g1", 100, [set, set], "WW"),
+        ...trackedGame("g2", 200, [set, set, set], "WWW"),
+      ],
     });
 
     const alice = awards(tt, "alice", "server-master");
     expect(alice).toHaveLength(1);
     expect(alice[0].data).toEqual({ gameId: "g1", opponent: "bob", points: 12 });
-    expect(tt.achievements.getPlayerProgression("alice")["server-master"].current).toBe(SERVER_MASTER_TARGET);
+    expect(tt.achievements.getPlayerProgression("alice")["server-master"].current).toBe(18);
   });
 
   it("needs serve data", () => {

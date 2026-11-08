@@ -5116,8 +5116,9 @@ export class Achievements {
     progression["arch-rivals"].current = topRival?.games ?? 0;
     progression["arch-rivals"].topOpponent = topRival?.opponent;
 
-    // Turnaround, Set Point Saver and Server Master cap at the target, so
-    // the progress does not show the player's totals past it.
+    // Turnaround and Set Point Saver cap at the target, so the progress does
+    // not show the player's totals past it. Server Master shows the longest
+    // serve run of the player, also past the target.
     progression["turnaround"].current = Math.min(
       this.biggestDeficitOvercome.get(playerId) ?? 0,
       TURNAROUND_MIN_DEFICIT,
@@ -5126,7 +5127,7 @@ export class Achievements {
       this.setPointSetsSaved.get(playerId) ?? 0,
       SET_POINT_SAVER_TARGET,
     );
-    progression["server-master"].current = Math.min(this.longestServeRun.get(playerId) ?? 0, SERVER_MASTER_TARGET);
+    progression["server-master"].current = this.longestServeRun.get(playerId) ?? 0;
 
     // Milestone Game progression is league-wide (everyone shares it) and
     // restarts at every milestone: current is the games played since the
