@@ -62,9 +62,9 @@ export const PlayerPredictionsHistory = ({ playerId }: Props) => {
         return { time, name, winChance: null, confidence: null, gamesCount: 0 };
       }
 
-      let winChance = 0;
-      let confidence = 0;
-      let gamesCount = 0;
+      let winChance: number;
+      let confidence: number;
+      let gamesCount: number;
 
       if (selectedTargetId === "overall") {
         winChance = entry.overAllWinChance;
@@ -72,11 +72,11 @@ export const PlayerPredictionsHistory = ({ playerId }: Props) => {
         gamesCount = entry.gamesPlayed;
       } else {
         const prediction = entry.oponents[selectedTargetId];
-        if (prediction) {
-          winChance = prediction.winChance;
-          confidence = prediction.confidence;
-          gamesCount = prediction.gamesPlayedAgainst;
-        }
+        // No prediction before the opponent's first game. Show no line there, not 0%
+        if (!prediction) return { time, name, winChance: null, confidence: null, gamesCount: 0 };
+        winChance = prediction.winChance;
+        confidence = prediction.confidence;
+        gamesCount = prediction.gamesPlayedAgainst;
       }
 
       return {
@@ -278,8 +278,9 @@ const CustomTooltip = ({
   const context = useEventDbContext();
   if (active && payload && payload.length) {
     const data = payload[0].payload;
-    const winChance = payload.find((p) => p.dataKey === "winChance")?.value as number;
-    const confidence = payload.find((p) => p.dataKey === "confidence")?.value as number;
+    const winChance = payload.find((p) => p.dataKey === "winChance")?.value as number | null | undefined;
+    const confidence = payload.find((p) => p.dataKey === "confidence")?.value as number | null | undefined;
+    if (winChance == null || confidence == null) return null;
     const gamesCount = data.gamesCount as number;
 
     const targetName = selectedTargetId === "overall" ? "Overall" : `vs ${context.playerName(selectedTargetId)}`;
