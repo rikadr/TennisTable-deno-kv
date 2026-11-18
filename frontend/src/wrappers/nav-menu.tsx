@@ -21,7 +21,8 @@ export const NavMenu: React.FC = () => {
     });
   }, [pathname]);
 
-  const renderMenuitems = () => {
+  // In the bar, the items keep the narrow padding until `md`, so "New player" fits from `sm`
+  const renderMenuitems = (inBar = false) => {
     const items: { name: string; to: string }[] = [
       { name: "🥇 Dashboard", to: "/dashboard" },
       { name: "🍁 Seasons", to: "/season/list" },
@@ -39,8 +40,10 @@ export const NavMenu: React.FC = () => {
       items.push({ name: "📺 Live Game", to: "/live-game" });
       items.push({ name: "🔐 Admin Page", to: "/admin" });
     }
-    const menuItemWrapperClassNames =
-      "flex items-center justify-end md:justify-start h-12 md:h-10 hover:underline px-4 sm:px-12";
+    const menuItemWrapperClassNames = classNames(
+      "flex items-center justify-end md:justify-start h-12 md:h-10 hover:underline px-4",
+      inBar ? "md:px-12" : "sm:px-12",
+    );
     const menuItemTextClassNames = "text-lg md:text-xl font-semibold text-secondary-text";
 
     const list = items.map((item, index) => (
@@ -112,8 +115,8 @@ export const NavMenu: React.FC = () => {
         <Link to="/dashboard" className={classNames("whitespace-nowrap rounded-full select-none text-primary-text")}>
           {themedLogo()}
         </Link>
-        {renderMenuitems().slice(2, 3)}
-        <div className="md:flex hidden">{renderMenuitems().slice(3, 4)}</div>
+        {renderMenuitems(true).slice(2, 3)}
+        <div className="sm:flex hidden">{renderMenuitems(true).slice(3, 4)}</div>
 
         <div className="grow md:block" />
 
