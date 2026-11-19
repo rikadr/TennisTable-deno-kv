@@ -289,6 +289,8 @@ export const BAD_SIDE_BANDIT_TARGET = 10;
 // loser gave it. A set the game winner loses to 0 does not count, so the
 // donuts given always match the donuts taken.
 export const DONUT_BAKER_TARGET = 5;
+// Career donut sets a player wins for "Sweet Tooth".
+const DONUT_5_TARGET = 5;
 
 // Whether the game winner played more sets on the bad side of the table than
 // the game loser. "B" is a set where the game winner had the bad side, "G" a
@@ -1385,18 +1387,16 @@ export class Achievements {
           game.score.setPoints,
           game.playedAt,
         );
+        // "Sweet Tooth": the career count of donut sets the player won
+        // reaches DONUT_5_TARGET. One game can win several donuts, so the
+        // count can step over the target and the check is a crossing.
+        const donutCountBefore = winner.donutCount;
         winner.donutCount += donutsEarned;
-
-        // Check if player reached 5 total donuts
-        // Only award if they haven't already earned this achievement
-        if (winner.donutCount === 5) {
-          const hasDonut5 = this.achievementMap.get(game.winner)?.some((a) => a.type === "donut-5");
-          if (!hasDonut5) {
-            this.#addAchievement(
-              game.winner,
-              this.#createAchievement("donut-5", game.winner, game.playedAt, undefined, game.id),
-            );
-          }
+        if (donutCountBefore < DONUT_5_TARGET && winner.donutCount >= DONUT_5_TARGET) {
+          this.#addAchievement(
+            game.winner,
+            this.#createAchievement("donut-5", game.winner, game.playedAt, undefined, game.id),
+          );
         }
 
         // "The Baker": the career count of donut sets the player gave away
@@ -4221,7 +4221,7 @@ export class Achievements {
 
       // Game feats
       "donut-1": { current: 0, target: 1, earned: 0 },
-      "donut-5": { current: 0, target: 5, earned: 0 },
+      "donut-5": { current: 0, target: DONUT_5_TARGET, earned: 0 },
       "donut-baker": { current: 0, target: DONUT_BAKER_TARGET, total: 0, earned: 0 },
       "double-donut": { earned: 0 },
       "nice-game": { earned: 0 },

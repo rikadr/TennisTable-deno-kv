@@ -42,6 +42,25 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
+    slug: "sweet-tooth-missed-on-a-skipped-count",
+    title: "Sweet Tooth 🥯 was not given to some players",
+    date: "2026-11-19",
+    tags: ["bug-fix"],
+    summary:
+      "Sweet Tooth 🥯 now goes to each player with 5 or more donut sets won. Some players with 6 or more sets did not have it.",
+    body: [
+      text(
+        "A player earns Sweet Tooth 🥯 in the game that takes the count of donut sets won to 5 or more. The date of the achievement is the date of that game.",
+      ),
+      text(
+        "Before this change, the app gave the achievement only at a count of exactly 5. A game with 2 or more donut sets can take the count from 4 to 6. A player with such a game did not get the achievement.",
+      ),
+      text(
+        "The app calculates achievements from the full history, so these players now have the achievement. The number of players who hold Sweet Tooth 🥯, and its rarity rank, can be different from before.",
+      ),
+    ],
+  },
+  {
     slug: "5-new-achievements-arch-rivals-turnaround-set-point-saver-server-master-season-closer",
     title: "5 new achievements: Arch Rivals, Turnaround, Set Point Saver, Server Master and Season Closer",
     date: "2026-11-07",

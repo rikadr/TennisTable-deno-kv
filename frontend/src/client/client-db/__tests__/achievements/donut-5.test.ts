@@ -105,6 +105,48 @@ describe("TennisTable", () => {
       expect(progression["donut-5"]).toStrictEqual({ current: 5, target: 5, earned: 1 });
     });
 
+    it("should earn achievement when one game takes the count past the target", () => {
+      // 2 donut sets in each game: the count goes from 4 to 6 in the 3rd game
+      // and is never exactly 5.
+      for (let i = 1; i <= 3; i++) {
+        events.push({
+          type: EventTypeEnum.GAME_CREATED,
+          stream: `game${i}`,
+          time: 1000 + i * 10,
+          data: { winner: "alice", loser: "bob", playedAt: 1000 + i * 10 },
+        });
+        events.push({
+          type: EventTypeEnum.GAME_SCORE,
+          stream: `game${i}`,
+          time: 1000 + i * 10 + 1,
+          data: {
+            setsWon: { gameWinner: 2, gameLoser: 0 },
+            setPoints: [
+              { gameWinner: 11, gameLoser: 0 },
+              { gameWinner: 11, gameLoser: 0 },
+            ],
+          },
+        });
+      }
+
+      tennisTable = new TennisTable({ events });
+      tennisTable.achievements.calculateAchievements();
+
+      const donut5Achievements = tennisTable.achievements.getAchievements("alice").filter((a) => a.type === "donut-5");
+
+      expect(donut5Achievements).toHaveLength(1);
+      expect(donut5Achievements[0]).toStrictEqual({
+        type: "donut-5",
+        earnedBy: "alice",
+        earnedAt: 1030, // Time of the 3rd game
+        earnedByGame: "game3",
+        data: undefined,
+      });
+
+      const progression = tennisTable.achievements.getPlayerProgression("alice");
+      expect(progression["donut-5"]).toStrictEqual({ current: 6, target: 5, earned: 1 });
+    });
+
     it("should only earn achievement once even with 11 donuts", () => {
       // Create 11 games, each with 1 donut set
       for (let i = 1; i <= 11; i++) {
