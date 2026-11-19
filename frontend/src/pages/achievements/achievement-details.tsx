@@ -94,7 +94,7 @@ export const AchievementDetails: React.FC<Props> = ({ type, earnedCount, onShowP
   const closest = useMemo(() => {
     const rows = playersProgressForType(context, type);
     return {
-      careerCounts: topCareerCounts(rows, CAREER_COUNT_ROWS),
+      careerCounts: CAREER_COUNT_METRICS[type] ? topCareerCounts(rows, CAREER_COUNT_ROWS) : [],
       chasing: rows.filter((row) => row.earned === 0 && row.percent > 0).slice(0, CLOSEST_PLAYERS),
       noProgress: rows.filter((row) => row.earned === 0 && row.percent === 0).length,
     };

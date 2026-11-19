@@ -24,8 +24,8 @@ describe("playersProgressForType", () => {
 describe("topCareerCounts", () => {
   const players = ["alice", "bob", "carol", "dave"];
 
-  /** A game `loser` loses to the next player, with 2 sets and no point. */
-  function donutGames(loser: string, games: number, offset: number): EventType[] {
+  /** Games `loser` loses to the next player. `donutSets` of the 2 sets are without a point. */
+  function donutGames(loser: string, games: number, offset: number, donutSets = 2): EventType[] {
     const winner = players[(players.indexOf(loser) + 1) % players.length];
     return Array.from({ length: games }, (_, index): EventType[] => {
       const playedAt = 1000 + offset + index * 10;
@@ -40,7 +40,7 @@ describe("topCareerCounts", () => {
             setsWon: { gameWinner: 2, gameLoser: 0 },
             setPoints: [
               { gameWinner: 11, gameLoser: 0 },
-              { gameWinner: 11, gameLoser: 0 },
+              { gameWinner: 11, gameLoser: donutSets === 2 ? 0 : 1 },
             ],
           },
         },
@@ -48,7 +48,7 @@ describe("topCareerCounts", () => {
     }).flat();
   }
 
-  function rowsFor(events: EventType[]) {
+  function rowsFor(events: EventType[], type = "donut-baker") {
     const tt = new TennisTable({
       events: [
         ...players.map(
@@ -63,7 +63,7 @@ describe("topCareerCounts", () => {
       ],
     });
     tt.achievements.calculateAchievements();
-    return playersProgressForType(tt, "donut-baker");
+    return playersProgressForType(tt, type);
   }
 
   it("ranks the holders on the full count, and leaves out a player below the target", () => {
@@ -92,12 +92,13 @@ describe("topCareerCounts", () => {
     expect(topCareerCounts(rows, 2).map((row) => row.player.id)).toEqual(["alice", "carol"]);
   });
 
-  it("is empty for an achievement with no career count", () => {
-    const tt = new TennisTable({
-      events: [{ type: EventTypeEnum.PLAYER_CREATED, stream: "alice", time: 1, data: { name: "alice" } }],
-    });
-    tt.achievements.calculateAchievements();
+  it("uses the progress of an achievement that does not cap it", () => {
+    // Sweet Tooth: Bob wins the 12 donut sets of Alice, Carol the 6 of Bob.
+    const rows = rowsFor([...donutGames("alice", 12, 0, 1), ...donutGames("bob", 6, 1000, 1)], "donut-5");
 
-    expect(topCareerCounts(playersProgressForType(tt, "first-game"), 5)).toEqual([]);
+    expect(topCareerCounts(rows, 5).map((row) => [row.player.id, row.total, row.rank])).toEqual([
+      ["bob", 12, 1],
+      ["carol", 6, 2],
+    ]);
   });
 });

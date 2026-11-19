@@ -9,8 +9,8 @@ export type ProgressRow = {
   percent: number;
   earned: number;
   /**
-   * The full career count, for an achievement that counts past its target.
-   * `current` stops at the target, so it cannot rank the holders.
+   * The full career count, for an achievement whose `current` stops at the
+   * target. Undefined where `current` is the full count already.
    */
   total?: number;
 };
@@ -83,12 +83,15 @@ export type CareerCountRow = {
 /**
  * The holders of an achievement with the highest career counts, highest first.
  * Only a player who earned the achievement is in the list, so the list is
- * shorter than `limit` when fewer players hold it. Empty for an achievement
- * that has no career count.
+ * shorter than `limit` when fewer players hold it.
+ *
+ * Call it only for a type in CAREER_COUNT_METRICS: for any other type
+ * `current` is not a career count.
  */
 export function topCareerCounts(rows: ProgressRow[], limit: number): CareerCountRow[] {
   const holders = rows
-    .flatMap((row) => (row.earned > 0 && row.total !== undefined ? [{ player: row.player, total: row.total }] : []))
+    .filter((row) => row.earned > 0)
+    .map((row) => ({ player: row.player, total: row.total ?? row.current }))
     .sort((a, b) => b.total - a.total);
 
   return holders

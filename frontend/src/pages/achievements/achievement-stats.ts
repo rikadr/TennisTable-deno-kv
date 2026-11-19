@@ -77,15 +77,29 @@ export const ACHIEVEMENT_METRICS: Partial<Record<AchievementType, AchievementMet
   anniversary: { label: "Years in the league", format: (value) => `${fmtNum(value)} year${value === 1 ? "" : "s"}` },
 };
 
+const donutSets = (value: number) => `${fmtNum(value)} donut set${value === 1 ? "" : "s"}`;
+const opponents = (value: number) => `${fmtNum(value)} opponent${value === 1 ? "" : "s"}`;
+const newPlayers = (value: number) => `${fmtNum(value)} player${value === 1 ? "" : "s"}`;
+
 /**
  * The achievements that count past their target. The count of a holder keeps
  * growing after the earning, so the details view ranks the holders on it.
+ *
+ * Only an achievement whose progress already shows the full count belongs
+ * here. Deuce Demon, On the Record, Bad Side Bandit and Set Point Saver cap
+ * their progress at the target on purpose: the app does not show how much a
+ * player plays, and a ranked count would show it.
  */
 export const CAREER_COUNT_METRICS: Partial<Record<AchievementType, AchievementMetric>> = {
-  "donut-baker": {
-    label: "Most donut sets given away",
-    format: (value) => `${fmtNum(value)} donut set${value === 1 ? "" : "s"}`,
-  },
+  "donut-5": { label: "Most donut sets won", format: donutSets },
+  "donut-baker": { label: "Most donut sets given away", format: donutSets },
+  "close-calls": { label: "Most close games", format: games },
+  "edge-lord": { label: "Most close games", format: games },
+  "consistency-is-key": { label: "Most games with equal set scores", format: games },
+  "variety-player": { label: "Most opponents played", format: opponents },
+  "global-player": { label: "Most opponents played", format: opponents },
+  "welcome-committee": { label: "Most new players welcomed", format: newPlayers },
+  "community-builder": { label: "Most new players welcomed", format: newPlayers },
 };
 
 /**
