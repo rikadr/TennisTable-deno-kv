@@ -673,6 +673,9 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
         "The Progress tab on the player page shows how many of the 5 sets you have. The Game Feats group holds the achievement, next to the achievements for the donut sets you win.",
       ),
       text(
+        "The count continues after you earn the achievement. The Details view on the achievements page lists the 5 holders with the highest counts.",
+      ),
+      text(
         "The achievement for 5 donut sets won keeps the same rule, but it has a new name: Sweet Tooth 🥯. The previous name was Donuts to Share.",
       ),
     ],
@@ -778,6 +781,7 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
         "How many times players earn it each month.",
         "The typical time from a player's first game to the achievement.",
         "The highest, the lowest and the average value, for an achievement that measures one.",
+        "The 5 holders with the highest counts, for an achievement that counts past its target, such as Sweet Tooth 🥯.",
         "The current record, in a card at the top, for an achievement that holds a league record. The card shows the value, the holders, and the date of the record.",
         "The record over time, for an achievement that holds a league record.",
         "Each record step shows the value, the holder, and how long the record stands.",

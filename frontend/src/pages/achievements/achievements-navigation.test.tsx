@@ -104,8 +104,36 @@ const LocationProbe: React.FC = () => {
   );
 };
 
-function renderPage(url: string, element: React.ReactElement) {
-  const context = new TennisTable({ events: buildEvents(), gameLimitForRankedOverride: 3 });
+/** 3 games Bob loses to Alice with 2 sets without a point each: 6 donut sets given away. */
+function buildDonutEvents(): EventType[] {
+  return [0, 1, 2].flatMap((index): EventType[] => {
+    const playedAt = START + 200 * DAY_MS + index * HOUR_MS;
+    const stream = `donut-game-${index}`;
+    return [
+      {
+        time: 2000 + index * 2,
+        stream,
+        type: EventTypeEnum.GAME_CREATED,
+        data: { playedAt, winner: "alice", loser: "bob" },
+      },
+      {
+        time: 2001 + index * 2,
+        stream,
+        type: EventTypeEnum.GAME_SCORE,
+        data: {
+          setsWon: { gameWinner: 2, gameLoser: 0 },
+          setPoints: [
+            { gameWinner: 11, gameLoser: 0 },
+            { gameWinner: 11, gameLoser: 0 },
+          ],
+        },
+      },
+    ];
+  });
+}
+
+function renderPage(url: string, element: React.ReactElement, extraEvents: EventType[] = []) {
+  const context = new TennisTable({ events: [...buildEvents(), ...extraEvents], gameLimitForRankedOverride: 3 });
   return render(
     // The profile pictures need the ImageKit endpoint of the app.
     <MemoryRouter initialEntries={[url]}>
@@ -252,6 +280,18 @@ describe("navigation from the achievements page", () => {
     // Every player earns it in their own first game, so the time to earn it
     // says nothing and the section stays out.
     expect(screen.queryByRole("heading", { name: "Time to earn it" })).not.toBeInTheDocument();
+  });
+
+  it("ranks the holders of a count achievement on their full count", () => {
+    renderPage("/achievements?filter=donut-baker&view=details", <AchievementsPage />, buildDonutEvents());
+
+    // Bob earns The Baker at 5 donut sets, and the list counts all 6.
+    const heading = screen.getByRole("heading", { name: "Most donut sets given away" });
+    // eslint-disable-next-line testing-library/no-node-access
+    const section = within(heading.closest("section")!);
+    expect(section.getByText("#1")).toBeInTheDocument();
+    expect(section.getByRole("link", { name: "bob" })).toBeInTheDocument();
+    expect(section.getByText("6 donut sets")).toBeInTheDocument();
   });
 
   it("lists the record over time, and no spread of the values", () => {

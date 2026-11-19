@@ -8,6 +8,11 @@ export type ProgressRow = {
   target: number;
   percent: number;
   earned: number;
+  /**
+   * The full career count, for an achievement whose `current` stops at the
+   * target. Undefined where `current` is the full count already.
+   */
+  total?: number;
 };
 
 /**
@@ -33,6 +38,7 @@ export function playersProgressForType(context: TennisTable, type: string): Prog
       let target = 0;
       let percent = 0;
       let earned = 0;
+      let total: number | undefined = undefined;
 
       if (specificProgression && "earned" in specificProgression) {
         earned = specificProgression.earned ?? 0;
@@ -48,11 +54,15 @@ export function playersProgressForType(context: TennisTable, type: string): Prog
         target = 1;
       }
 
+      if (specificProgression && "total" in specificProgression) {
+        total = specificProgression.total;
+      }
+
       if (target > 0) {
         percent = Math.round(achievementProgressPercentage(type, current, target));
       }
 
-      return { player, isRetired: !activeIds.has(player.id), current, target, percent, earned };
+      return { player, isRetired: !activeIds.has(player.id), current, target, percent, earned, total };
     })
     .sort((a, b) => {
       // Sort by percent desc, then by current value desc. On a tie an active
@@ -61,4 +71,30 @@ export function playersProgressForType(context: TennisTable, type: string): Prog
       if (b.current !== a.current) return b.current - a.current;
       return Number(a.isRetired) - Number(b.isRetired);
     });
+}
+
+export type CareerCountRow = {
+  player: ProgressRow["player"];
+  total: number;
+  /** 1 is the highest count. Players with the same count share a rank. */
+  rank: number;
+};
+
+/**
+ * The holders of an achievement with the highest career counts, highest first.
+ * Only a player who earned the achievement is in the list, so the list is
+ * shorter than `limit` when fewer players hold it.
+ *
+ * Call it only for a type in CAREER_COUNT_METRICS: for any other type
+ * `current` is not a career count.
+ */
+export function topCareerCounts(rows: ProgressRow[], limit: number): CareerCountRow[] {
+  const holders = rows
+    .filter((row) => row.earned > 0)
+    .map((row) => ({ player: row.player, total: row.total ?? row.current }))
+    .sort((a, b) => b.total - a.total);
+
+  return holders
+    .map((holder) => ({ ...holder, rank: holders.findIndex((other) => other.total === holder.total) + 1 }))
+    .slice(0, limit);
 }

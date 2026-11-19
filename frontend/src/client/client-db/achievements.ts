@@ -4222,7 +4222,7 @@ export class Achievements {
       // Game feats
       "donut-1": { current: 0, target: 1, earned: 0 },
       "donut-5": { current: 0, target: 5, earned: 0 },
-      "donut-baker": { current: 0, target: DONUT_BAKER_TARGET, earned: 0 },
+      "donut-baker": { current: 0, target: DONUT_BAKER_TARGET, total: 0, earned: 0 },
       "double-donut": { earned: 0 },
       "nice-game": { earned: 0 },
       "less-is-more": { earned: 0 },
@@ -4633,6 +4633,7 @@ export class Achievements {
     progression["donut-1"].current = donutCount;
     progression["donut-5"].current = donutCount;
     progression["donut-baker"].current = Math.min(donutsGivenCount, DONUT_BAKER_TARGET);
+    progression["donut-baker"].total = donutsGivenCount;
     progression["streak-all-10"].current = currentWinStreakAll;
     progression["streak-all-10"].best = longestWinStreakAll;
     progression["close-calls"].current = closeCallsCount;
@@ -5820,6 +5821,13 @@ type ProgressionWithTarget = BaseProgression & {
   target: number; // Target value needed to earn achievement
 };
 
+// A career count that keeps growing after the achievement is earned. The
+// progress bar stops at the target; `total` is the full count, which the
+// details view ranks the holders on.
+type CareerCountProgression = ProgressionWithTarget & {
+  total: number;
+};
+
 type BackAfterProgression = BaseProgression & {
   current?: number; // Time since last activity (milliseconds)
   target?: number; // Required inactive period (milliseconds)
@@ -6068,7 +6076,7 @@ export type AchievementProgression = {
   ranked: ProgressionWithTarget;
   "donut-1": ProgressionWithTarget;
   "donut-5": ProgressionWithTarget;
-  "donut-baker": ProgressionWithTarget;
+  "donut-baker": CareerCountProgression;
   "double-donut": BaseProgression;
   "streak-all-10": ProgressionWithTarget;
   "streak-player-10": StreakPlayerProgression;
