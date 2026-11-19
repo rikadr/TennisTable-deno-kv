@@ -60,7 +60,7 @@ describe("TennisTable", () => {
       expect(achievements).toHaveLength(0);
 
       const progression = tennisTable.achievements.getPlayerProgression("bob");
-      expect(progression["donut-baker"]).toStrictEqual({ current: 4, target: 5, earned: 0 });
+      expect(progression["donut-baker"]).toStrictEqual({ current: 4, target: 5, total: 4, earned: 0 });
     });
 
     it("should earn achievement exactly at 5 donuts given", () => {
@@ -82,7 +82,7 @@ describe("TennisTable", () => {
       });
 
       const progression = tennisTable.achievements.getPlayerProgression("bob");
-      expect(progression["donut-baker"]).toStrictEqual({ current: 5, target: 5, earned: 1 });
+      expect(progression["donut-baker"]).toStrictEqual({ current: 5, target: 5, total: 5, earned: 1 });
     });
 
     it("should earn achievement when one game takes the count past the target", () => {
@@ -119,7 +119,8 @@ describe("TennisTable", () => {
       expect(achievements[0].earnedAt).toBe(1050); // Time of the 5th game
 
       const progression = tennisTable.achievements.getPlayerProgression("bob");
-      expect(progression["donut-baker"]).toStrictEqual({ current: 5, target: 5, earned: 1 });
+      // The total keeps the full count, for the ranking of the holders.
+      expect(progression["donut-baker"]).toStrictEqual({ current: 5, target: 5, total: 11, earned: 1 });
     });
 
     it("should not award the winner of the donut sets", () => {
@@ -134,7 +135,7 @@ describe("TennisTable", () => {
       expect(achievements).toHaveLength(0);
 
       const progression = tennisTable.achievements.getPlayerProgression("alice");
-      expect(progression["donut-baker"]).toStrictEqual({ current: 0, target: 5, earned: 0 });
+      expect(progression["donut-baker"]).toStrictEqual({ current: 0, target: 5, total: 0, earned: 0 });
     });
   });
 });

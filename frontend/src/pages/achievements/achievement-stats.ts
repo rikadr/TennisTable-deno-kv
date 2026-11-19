@@ -78,6 +78,17 @@ export const ACHIEVEMENT_METRICS: Partial<Record<AchievementType, AchievementMet
 };
 
 /**
+ * The achievements that count past their target. The count of a holder keeps
+ * growing after the earning, so the details view ranks the holders on it.
+ */
+export const CAREER_COUNT_METRICS: Partial<Record<AchievementType, AchievementMetric>> = {
+  "donut-baker": {
+    label: "Most donut sets given away",
+    format: (value) => `${fmtNum(value)} donut set${value === 1 ? "" : "s"}`,
+  },
+};
+
+/**
  * The value of one earning, in the unit of its metric. The switch narrows the
  * data shape per type, so every case reads a field the type really has.
  */

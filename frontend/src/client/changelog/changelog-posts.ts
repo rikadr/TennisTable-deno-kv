@@ -673,6 +673,9 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
         "The Progress tab on the player page shows how many of the 5 sets you have. The Game Feats group holds the achievement, next to the achievements for the donut sets you win.",
       ),
       text(
+        "The count continues after you earn the achievement. The Details view on the achievements page lists the 5 holders with the highest counts.",
+      ),
+      text(
         "The achievement for 5 donut sets won keeps the same rule, but it has a new name: Sweet Tooth 🥯. The previous name was Donuts to Share.",
       ),
     ],

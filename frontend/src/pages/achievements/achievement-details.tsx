@@ -16,13 +16,21 @@ import { AXIS_COLOR, SERIES_COLOR } from "../statistics/percent-chart";
 import { dateString, relativeTimeString } from "../../common/date-utils";
 import { fmtNum } from "../../common/number-utils";
 import { classNames } from "../../common/class-names";
-import { achievementDetails, AchievementMetric, MonthBucket, RecordStep, ValueSummary } from "./achievement-stats";
-import { playersProgressForType } from "./progress-rows";
+import {
+  achievementDetails,
+  AchievementMetric,
+  CAREER_COUNT_METRICS,
+  MonthBucket,
+  RecordStep,
+  ValueSummary,
+} from "./achievement-stats";
+import { playersProgressForType, topCareerCounts } from "./progress-rows";
 import { AchievementFacts } from "./achievement-facts";
 import { playerAchievementProgressLink } from "../player/player-achievement-link";
 import { achievementsLink } from "./use-achievements-filter";
 
 const CLOSEST_PLAYERS = 3;
+const CAREER_COUNT_ROWS = 5;
 /** Above this many earnings the spread reads better as a histogram. */
 const VALUE_BARS_MAX = 12;
 
@@ -81,10 +89,12 @@ export const AchievementDetails: React.FC<Props> = ({ type, earnedCount, onShowP
     });
   }, [context.achievements.achievementMap, context.games, context.allPlayers, type]);
 
-  // The players closest to earning it, the ones who do not hold it yet.
+  // The players closest to earning it, the ones who do not hold it yet, and
+  // the holders with the highest career counts.
   const closest = useMemo(() => {
     const rows = playersProgressForType(context, type);
     return {
+      careerCounts: topCareerCounts(rows, CAREER_COUNT_ROWS),
       chasing: rows.filter((row) => row.earned === 0 && row.percent > 0).slice(0, CLOSEST_PLAYERS),
       noProgress: rows.filter((row) => row.earned === 0 && row.percent === 0).length,
     };
@@ -96,6 +106,7 @@ export const AchievementDetails: React.FC<Props> = ({ type, earnedCount, onShowP
 
   // A player with no name event still needs a name in a table.
   const playerName = (playerId: string) => context.playerName(playerId) ?? playerId;
+  const careerCountMetric = CAREER_COUNT_METRICS[type];
 
   return (
     <div className="max-w-3xl mx-auto flex flex-col gap-6 text-primary-text">
@@ -222,6 +233,34 @@ export const AchievementDetails: React.FC<Props> = ({ type, earnedCount, onShowP
               ) : (
                 details.values.buckets.length > 1 && <CountChart data={details.values.buckets} name="Earnings" />
               )}
+            </Section>
+          )}
+
+          {/* The holders with the highest career counts */}
+          {careerCountMetric && closest.careerCounts.length > 0 && (
+            <Section title={careerCountMetric.label}>
+              <div className="space-y-1">
+                {closest.careerCounts.map((row) => (
+                  <div
+                    key={row.player.id}
+                    className="flex items-center gap-3 rounded-lg px-3 py-2 bg-secondary-background text-secondary-text"
+                  >
+                    <span className="w-6 text-right opacity-60 font-bold">#{row.rank}</span>
+                    <Link to={playerAchievementProgressLink(row.player.id, type)} className="shrink-0">
+                      <ProfilePicture playerId={row.player.id} size={28} border={2} />
+                    </Link>
+                    <Link
+                      to={playerAchievementProgressLink(row.player.id, type)}
+                      className="flex-1 font-medium hover:underline truncate"
+                    >
+                      {row.player.name}
+                    </Link>
+                    <span className="font-semibold tabular-nums whitespace-nowrap">
+                      {careerCountMetric.format(row.total)}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </Section>
           )}
 
