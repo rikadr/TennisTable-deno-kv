@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom";
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, useLocation, useNavigate } from "react-router-dom";
 import { EventDbContext } from "../../wrappers/event-db-context";
@@ -397,7 +397,7 @@ describe("navigation from the achievements page", () => {
 describe("a player's achievements from a link", () => {
   beforeEach(() => scrollIntoView.mockClear());
 
-  it("opens on the progress tab, searches the achievement and scrolls to it", () => {
+  it("opens on the progress tab, searches the achievement and scrolls to it", async () => {
     renderPage(
       "/player/alice?tab=achievements&achievementTab=progress&achievement=first-game",
       <PlayerAchievements playerId="alice" />,
@@ -412,7 +412,9 @@ describe("a player's achievements from a link", () => {
     const row = progressRow("first-game");
     expect(row).toBeInTheDocument();
     expect(row).toHaveClass("ring-4");
-    expect(scrollIntoView).toHaveBeenCalledTimes(1);
+    // The scroll starts after a short delay.
+    expect(scrollIntoView).not.toHaveBeenCalled();
+    await waitFor(() => expect(scrollIntoView).toHaveBeenCalledTimes(1));
   });
 
   it("opens the progress tab for a url that names an achievement and no tab", () => {
@@ -446,7 +448,7 @@ describe("a player's achievements from a link", () => {
     expect(screen.getByText("Humiliation Streak")).toBeInTheDocument();
   });
 
-  it("marks an earned achievement that the link names, scrolls to it and keeps the list", () => {
+  it("marks an earned achievement that the link names, scrolls to it and keeps the list", async () => {
     const league = new TennisTable({ events: buildEvents(), gameLimitForRankedOverride: 3 });
     league.achievements.calculateAchievements();
     const earned = league.achievements.getAchievements("alice")[0];
@@ -460,7 +462,9 @@ describe("a player's achievements from a link", () => {
     expect(screen.getByLabelText("Search achievements by name or description")).toHaveValue("");
     // eslint-disable-next-line testing-library/no-node-access
     expect(document.getElementById(playerEarnedAchievementRowId(key))).toHaveClass("ring-4");
-    expect(scrollIntoView).toHaveBeenCalledTimes(1);
+    // The scroll starts after a short delay.
+    expect(scrollIntoView).not.toHaveBeenCalled();
+    await waitFor(() => expect(scrollIntoView).toHaveBeenCalledTimes(1));
   });
 
   it("opens on the earned tab when the link names no achievement", () => {
