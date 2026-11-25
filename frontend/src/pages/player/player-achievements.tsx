@@ -30,7 +30,10 @@ import { achievementProgressPercentage } from "../../common/achievement-progress
 import {
   PLAYER_ACHIEVEMENT_PARAM,
   PLAYER_ACHIEVEMENTS_TAB_PARAM,
+  PLAYER_EARNED_ACHIEVEMENT_PARAM,
   playerAchievementRowId,
+  playerEarnedAchievementKey,
+  playerEarnedAchievementRowId,
 } from "./player-achievement-link";
 import { ACHIEVEMENT_GROUPS, ACHIEVEMENT_TYPE_TO_GROUP_ID, OTHER_ACHIEVEMENT_GROUP } from "./achievement-groups";
 import { achievementDetailsPageLink } from "../achievements/use-achievements-filter";
@@ -536,6 +539,7 @@ export const PlayerAchievements: React.FC<Props> = ({ playerId }) => {
       params.set(PLAYER_ACHIEVEMENTS_TAB_PARAM, tab);
       // The highlighted achievement belongs to the tab you leave.
       params.delete(PLAYER_ACHIEVEMENT_PARAM);
+      params.delete(PLAYER_EARNED_ACHIEVEMENT_PARAM);
       return params;
     });
   };
@@ -550,6 +554,13 @@ export const PlayerAchievements: React.FC<Props> = ({ playerId }) => {
   useEffect(() => {
     if (highlightedType) setQuery(highlightedType);
   }, [highlightedType]);
+
+  // A link to an earned achievement shows the whole list, so that its row is
+  // in the list.
+  const highlightedEarned = searchParams.get(PLAYER_EARNED_ACHIEVEMENT_PARAM);
+  useEffect(() => {
+    if (highlightedEarned) setQuery("");
+  }, [highlightedEarned]);
 
   context.achievements.calculateAchievements();
 
@@ -640,17 +651,8 @@ type AchievementsTabProps = SearchProps & {
 
 const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements, query, onQueryChange }) => {
   const context = useEventDbContext();
+  const [searchParams] = useSearchParams();
   const normalizedQuery = query.trim().toLowerCase();
-
-  if (achievements.length === 0) {
-    return (
-      <div className="text-center py-12">
-        <div className="text-6xl mb-4">🏆</div>
-        <p className="text-secondary-text">No achievements yet</p>
-        <p className="text-sm text-secondary-text/70 mt-2">Keep playing to unlock achievements!</p>
-      </div>
-    );
-  }
 
   const gameLimitForRanked = context.client.gameLimitForRanked;
   const visibleAchievements = normalizedQuery
@@ -663,6 +665,32 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements, query, 
       )
     : achievements;
 
+  // A link can name one earned achievement. The row is marked and scrolled to,
+  // and the rest of the list stays. Only the first row that matches is marked.
+  // The scroll waits until the row is in the list, because a search can hide it.
+  const highlightedKey = searchParams.get(PLAYER_EARNED_ACHIEVEMENT_PARAM);
+  const highlightedIndex = highlightedKey
+    ? visibleAchievements.findIndex(
+        (achievement) => playerEarnedAchievementKey(achievement.type, achievement.earnedAt) === highlightedKey,
+      )
+    : -1;
+  const highlightedInList = highlightedIndex !== -1;
+  useEffect(() => {
+    if (!highlightedKey || !highlightedInList) return;
+    const row = document.getElementById(playerEarnedAchievementRowId(highlightedKey));
+    row?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [highlightedKey, highlightedInList]);
+
+  if (achievements.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <div className="text-6xl mb-4">🏆</div>
+        <p className="text-secondary-text">No achievements yet</p>
+        <p className="text-sm text-secondary-text/70 mt-2">Keep playing to unlock achievements!</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-2">
       <AchievementSearchField query={query} onQueryChange={onQueryChange} />
@@ -671,11 +699,16 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements, query, 
       )}
       {visibleAchievements.map((achievement, index) => {
         const label = getAchievementLabel(achievement.type, gameLimitForRanked);
+        const highlighted = highlightedKey !== null && index === highlightedIndex;
 
         return (
           <div
             key={`${achievement.type}-${achievement.earnedAt}-${index}`}
-            className="bg-background-secondary rounded-lg px-3 py-2.5 border border-secondary-text"
+            id={highlighted ? playerEarnedAchievementRowId(highlightedKey) : undefined}
+            className={classNames(
+              "bg-background-secondary rounded-lg px-3 py-2.5 border border-secondary-text",
+              highlighted && "ring-4 ring-secondary-text",
+            )}
           >
             <div className="flex items-start gap-3">
               {/* The icon and the name link to the achievement's own Details

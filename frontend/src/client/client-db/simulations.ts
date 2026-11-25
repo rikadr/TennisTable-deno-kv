@@ -64,6 +64,18 @@ export class Simulations {
     return { current: rankedPlayers.map(({ id, rank, elo }) => ({ id, rank, score: elo })), expected };
   }
 
+  /**
+   * The expected scores from one calculation with the ranked players and the
+   * given players. A given player with no game data has no expected score.
+   */
+  expectedScoresIncluding(playerIds: string[]): Map<string, number> {
+    return this.expectedScores(
+      this.parent.predictions,
+      this.parent.predictions.getExpectedScorePlayerIds(playerIds),
+      this.parent.leaderboard.getCachedLeaderboardMap(),
+    );
+  }
+
   expectedPlayerEloOverTime(
     playerId: string,
     workerCallback: (message: { elements: { elo: number; time: number }[]; progress: number }) => void,

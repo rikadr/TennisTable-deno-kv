@@ -11,6 +11,11 @@ import { ACHIEVEMENT_LABELS } from "../player/player-achievements";
 import { orderAchievementTypes } from "../player/achievement-groups";
 import { AchievementType } from "../../client/client-db/achievements";
 import { PlayerAchievements } from "../player/player-achievements";
+import {
+  playerEarnedAchievementKey,
+  playerEarnedAchievementLink,
+  playerEarnedAchievementRowId,
+} from "../player/player-achievement-link";
 
 // jsdom implements no scrolling, so the progress row cannot scroll itself into
 // view. The stub records the call the browser would act on.
@@ -439,6 +444,23 @@ describe("a player's achievements from a link", () => {
 
     expect(screen.getByText("First Game")).toBeInTheDocument();
     expect(screen.getByText("Humiliation Streak")).toBeInTheDocument();
+  });
+
+  it("marks an earned achievement that the link names, scrolls to it and keeps the list", () => {
+    const league = new TennisTable({ events: buildEvents(), gameLimitForRankedOverride: 3 });
+    league.achievements.calculateAchievements();
+    const earned = league.achievements.getAchievements("alice")[0];
+    const key = playerEarnedAchievementKey(earned.type, earned.earnedAt);
+    renderPage(
+      playerEarnedAchievementLink("alice", earned.type, earned.earnedAt),
+      <PlayerAchievements playerId="alice" />,
+    );
+
+    expect(screen.getByRole("button", { name: /Earned/ })).toHaveClass("border-secondary-text");
+    expect(screen.getByLabelText("Search achievements by name or description")).toHaveValue("");
+    // eslint-disable-next-line testing-library/no-node-access
+    expect(document.getElementById(playerEarnedAchievementRowId(key))).toHaveClass("ring-4");
+    expect(scrollIntoView).toHaveBeenCalledTimes(1);
   });
 
   it("opens on the earned tab when the link names no achievement", () => {

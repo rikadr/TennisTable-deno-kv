@@ -12,6 +12,7 @@ import { RelativeTime } from "../../common/date-utils";
 import { OponentsScores } from "./oponents-scores";
 import { session } from "../../services/auth";
 import { PlayerAchievements } from "./player-achievements";
+import { PLAYER_EARNED_ACHIEVEMENT_PARAM } from "./player-achievement-link";
 import { PlayerPredictionsPage } from "./player-predictions-page";
 import { PlayerSeasonStats } from "./player-season-stats";
 import { PlayerPairings } from "./player-pairings";
@@ -61,6 +62,8 @@ export const PlayerPage: React.FC = () => {
     setSearchParams((prev) => {
       const newParams = new URLSearchParams(prev);
       newParams.set("tab", tab);
+      // The marked earned achievement belongs to the tab you leave.
+      newParams.delete(PLAYER_EARNED_ACHIEVEMENT_PARAM);
       return newParams;
     });
   };

@@ -623,16 +623,16 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
     date: "2026-08-31",
     tags: ["feature-update"],
     summary:
-      "The game details page shows what the game changed: the rank and the Elo on the leaderboard, the season rank and score, the Hall of Fame score, and the achievements the game earned.",
+      "The game details page shows the ranks and the scores that the game changed for the 2 players. It also shows the achievements the game earned.",
     body: [
       text(
-        "Each player gets a table with the value before the game, the value after it, and the change. The rows are the rank and the Elo on the overall leaderboard, the rank and the score on the season leaderboard, and the Hall of Fame score. A row opens the page that shows that number.",
+        "Each player gets a table with the value before the game, the value after it, and the change. The first rows are the rank and the Elo on the overall leaderboard, and the expected score. The other rows are the rank and the score on the season leaderboard, and the Hall of Fame score. A row opens the page that shows that number.",
       ),
       text(
         "The table shows a dash where the player has no value. An unranked player has no rank, but keeps the Elo. A player with no earlier game in the season starts the season score at 0. A game in the break between 2 seasons changes no season score, and the page says so.",
       ),
       text(
-        "The Hall of Fame score needs the state of every player before the game and after it. The app calculates it in a web worker. The page opens at once, and the score comes a moment later.",
+        "The expected score and the Hall of Fame score need the state of every player before the game and after it. The app calculates them in a web worker. The page opens at once, and the 2 scores come a moment later.",
       ),
       text(
         "The page also lists the achievements the game earned. Each achievement records the game that earned it. A Perfect Day records the last win of the day. The list can hold an achievement of a player who did not play the game. A game that changes the leaderboard can put another player on the podium.",
@@ -1124,7 +1124,7 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
       "A new page shows how the leaderboards, the games and the achievements changed in a period that you select.",
     body: [
       text(
-        "The new What changed page shows what changed in a period that you select. Buttons select common periods: the last game, today, or the last 7, 30 or 365 days. The Custom button shows two inputs for a start time and an end time.",
+        "The new What changed page shows what changed in a period that you select. Buttons select common periods: the last game, today, yesterday, or the last 7, 30 or 365 days. The Custom button shows two inputs for a start time and an end time.",
       ),
       text(
         "The Leaderboards tab compares the overall leaderboard, the season leaderboard or the Hall of Fame score at the two times. A table shows each player with the rank and the score at the start, at the end, and the change in both. A toggle sorts the table by the rank at the start, the rank at the end, or the change in score. A player who joins or leaves a leaderboard in the period also gets a score change. The season score and the Hall of Fame score start at 0, and the overall leaderboard uses the elo of the player.",
@@ -1136,7 +1136,7 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
         "On the Hall of Fame score, a Breakdown toggle changes the rows of the table. All shows one row per player. Player shows one row per category of the score, for the player that you select. The All players option sums each category over all players. The rank then shows which category gives the most points.",
       ),
       text(
-        "The Games tab and the Achievements tab list the games played and the achievements earned in the period. The season leaderboard needs a period within 1 season.",
+        "The Games tab and the Achievements tab list the games played and the achievements earned in the period. An achievement opens the Achievements tab of the player page, at that achievement. The season leaderboard needs a period within 1 season.",
       ),
       text("The page is in the Other menu."),
     ],
