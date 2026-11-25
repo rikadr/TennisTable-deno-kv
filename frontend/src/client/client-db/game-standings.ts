@@ -77,6 +77,18 @@ export function hallOfFameScoreAt(state: TennisTable | undefined, playerId: stri
   return state?.hallOfFame.getScoreForAnyPlayer(playerId)?.score.total;
 }
 
+/** The app state just before and just after a game. */
+export type GameStates = { before: TennisTable; after: TennisTable };
+
+/**
+ * The app state just before and just after a game. The GAME_SCORE event of
+ * the game is stored at playedAt + 1, so the state after the game is there.
+ */
+export function statesAroundGame(events: EventType[], playedAt: number): GameStates {
+  const stateAt = (time: number) => new TennisTable({ events: eventsUpTo(events, time), referenceTime: time });
+  return { before: stateAt(playedAt - 1), after: stateAt(playedAt + 1) };
+}
+
 /** The Hall of Fame score of one player just before and just after a game. */
 export type HallOfFameChange = { playerId: string; before: number | undefined; after: number | undefined };
 
@@ -85,17 +97,11 @@ export type HallOfFameChange = { playerId: string; before: number | undefined; a
  * scores every achievement of every player twice, which takes seconds on a
  * long history, so it runs in a web worker.
  */
-export function hallOfFameChangeAroundGame(
-  events: EventType[],
-  playedAt: number,
-  playerIds: string[],
-): HallOfFameChange[] {
-  const before = new TennisTable({ events: eventsUpTo(events, playedAt - 1), referenceTime: playedAt - 1 });
-  const after = new TennisTable({ events: eventsUpTo(events, playedAt + 1), referenceTime: playedAt + 1 });
+export function hallOfFameChangeAroundGame(states: GameStates, playerIds: string[]): HallOfFameChange[] {
   return playerIds.map((playerId) => ({
     playerId,
-    before: hallOfFameScoreAt(before, playerId),
-    after: hallOfFameScoreAt(after, playerId),
+    before: hallOfFameScoreAt(states.before, playerId),
+    after: hallOfFameScoreAt(states.after, playerId),
   }));
 }
 
@@ -103,32 +109,20 @@ export function hallOfFameChangeAroundGame(
 export type ExpectedScoreChange = { playerId: string; before: number | undefined; after: number | undefined };
 
 /**
- * The expected score of one player in one projected state. The calculation
- * covers the ranked players. A player who is unranked or retired at that time
- * gets a calculation of their own, with that player added, like the expected
- * score on the player page. A player with no game data has no expected score.
- */
-function expectedScoreAt(state: TennisTable, playerId: string, ranked: Map<string, number>): number | undefined {
-  if (ranked.has(playerId)) return ranked.get(playerId);
-  return state.simulations.expectedLeaderBoard(playerId).expected.find((player) => player.id === playerId)?.score;
-}
-
-/**
  * The expected score of each player just before and just after a game. Each
- * of the 2 times needs an expected leaderboard, so it runs in a web worker.
+ * of the 2 times needs one calculation, so it runs in a web worker.
+ *
+ * Each calculation has the ranked players and all the given players, like the
+ * expected score on the player page. A game can make a player ranked. With
+ * the given players in both calculations, the 2 times compare the same
+ * players, and the change comes from the game.
+ *
+ * A player with no game data has no expected score. The first game of a
+ * player thus adds that player to the calculation after the game.
  */
-export function expectedScoreChangeAroundGame(
-  events: EventType[],
-  playedAt: number,
-  playerIds: string[],
-): ExpectedScoreChange[] {
-  const scoresAt = (time: number) => {
-    const state = new TennisTable({ events: eventsUpTo(events, time), referenceTime: time });
-    const ranked = new Map(state.simulations.expectedLeaderBoard().expected.map(({ id, score }) => [id, score]));
-    return new Map(playerIds.map((playerId) => [playerId, expectedScoreAt(state, playerId, ranked)]));
-  };
-  const before = scoresAt(playedAt - 1);
-  const after = scoresAt(playedAt + 1);
+export function expectedScoreChangeAroundGame(states: GameStates, playerIds: string[]): ExpectedScoreChange[] {
+  const before = states.before.simulations.expectedScoresIncluding(playerIds);
+  const after = states.after.simulations.expectedScoresIncluding(playerIds);
   return playerIds.map((playerId) => ({ playerId, before: before.get(playerId), after: after.get(playerId) }));
 }
 

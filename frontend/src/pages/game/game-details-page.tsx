@@ -18,8 +18,7 @@ import { PointSituationRadar } from "./point-situation-radar";
 import { playerStandingsAt, seasonOfGame } from "../../client/client-db/game-standings";
 import { GameAchievements } from "./game-achievements-panel";
 import { GameTournaments } from "./game-tournaments-panel";
-import { useGameHallOfFameChange } from "../../hooks/use-game-hall-of-fame-change";
-import { useGameExpectedScoreChange } from "../../hooks/use-game-expected-score-change";
+import { useGameScoreChanges } from "../../hooks/use-game-score-changes";
 import { StandingsChangeTable } from "./game-standings-panel";
 import { GameTagList } from "../recent-games/game-tag-list";
 
@@ -102,13 +101,10 @@ export const GameDetailsPage: React.FC = () => {
   // same time both count a game between their players, so this is a list.
   const tournamentPlacements = useMemo(() => context.tournaments.findGamePlacements(game?.playedAt), [context, game]);
 
-  // The Hall of Fame score of the two players before and after the game. It is
-  // calculated in a web worker, so the page renders without waiting for it.
-  const hallOfFame = useGameHallOfFameChange(game?.playedAt, game ? [game.winner, game.loser] : []);
-
-  // The expected score of the two players before and after the game, also
-  // from a web worker.
-  const expectedScore = useGameExpectedScoreChange(game?.playedAt, game ? [game.winner, game.loser] : []);
+  // The expected score and the Hall of Fame score of the two players before
+  // and after the game. A web worker calculates them, so the page renders
+  // without waiting.
+  const { expectedScore, hallOfFame } = useGameScoreChanges(game?.playedAt, game ? [game.winner, game.loser] : []);
 
   // The overall pairing prediction, from the winner's perspective, in the two
   // projected states. Undefined when there is no data to predict from.

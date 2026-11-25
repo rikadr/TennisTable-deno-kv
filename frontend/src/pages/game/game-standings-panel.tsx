@@ -69,7 +69,9 @@ export const StandingsChangeTable: React.FC<{
       after: expectedScore.after,
       change: scoreChange(expectedScore.before, expectedScore.after),
       digits: 0,
-      link: "/simulations/expected-leaderboard",
+      // The expected leaderboard has the ranked players only. The player page
+      // shows the expected score of an unranked or retired player.
+      link: after.leaderboardRank === undefined ? `/player/${playerId}` : "/simulations/expected-leaderboard",
       pending: expectedScore.pending,
     },
   ];

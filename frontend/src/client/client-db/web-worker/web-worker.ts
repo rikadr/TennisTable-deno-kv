@@ -5,6 +5,7 @@ import {
   expectedScoreChangeAroundGame,
   HallOfFameChange,
   hallOfFameChangeAroundGame,
+  statesAroundGame,
 } from "../game-standings";
 import { HallOfFameHistoryResult } from "../hall-of-fame-history";
 import { PredictionHistoryEntry } from "../predictions-history";
@@ -52,15 +53,11 @@ export type WorkerMessage =
   | { type: "hall-of-fame-history-progress"; data: { progress: number } }
   | { type: "hall-of-fame-history-result"; data: { result: HallOfFameHistoryResult } }
   | {
-      type: "start-game-hall-of-fame-change";
-      data: { events: EventType[]; playedAt: number; playerIds: string[] };
-    }
-  | { type: "game-hall-of-fame-change-result"; data: { playedAt: number; changes: HallOfFameChange[] } }
-  | {
-      type: "start-game-expected-score-change";
+      type: "start-game-score-changes";
       data: { events: EventType[]; playedAt: number; playerIds: string[] };
     }
   | { type: "game-expected-score-change-result"; data: { playedAt: number; changes: ExpectedScoreChange[] } }
+  | { type: "game-hall-of-fame-change-result"; data: { playedAt: number; changes: HallOfFameChange[] } }
   | { type: "start-achievements"; data: { events: EventType[]; referenceTime?: number } }
   | { type: "achievements-result"; data: { snapshot: AchievementsSnapshot } };
 
@@ -163,20 +160,17 @@ function handleWorkerMessage(message: WorkerMessage) {
       break;
     }
 
-    case "start-game-hall-of-fame-change": {
-      const changes = hallOfFameChangeAroundGame(message.data.events, message.data.playedAt, message.data.playerIds);
-      postWorkerMessage({
-        type: "game-hall-of-fame-change-result",
-        data: { playedAt: message.data.playedAt, changes },
-      });
-      break;
-    }
-
-    case "start-game-expected-score-change": {
-      const changes = expectedScoreChangeAroundGame(message.data.events, message.data.playedAt, message.data.playerIds);
+    case "start-game-score-changes": {
+      const { events, playedAt, playerIds } = message.data;
+      const states = statesAroundGame(events, playedAt);
+      // The expected scores take less time, so they go first.
       postWorkerMessage({
         type: "game-expected-score-change-result",
-        data: { playedAt: message.data.playedAt, changes },
+        data: { playedAt, changes: expectedScoreChangeAroundGame(states, playerIds) },
+      });
+      postWorkerMessage({
+        type: "game-hall-of-fame-change-result",
+        data: { playedAt, changes: hallOfFameChangeAroundGame(states, playerIds) },
       });
       break;
     }

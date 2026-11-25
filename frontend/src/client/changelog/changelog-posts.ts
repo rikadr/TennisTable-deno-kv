@@ -623,16 +623,16 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
     date: "2026-08-31",
     tags: ["feature-update"],
     summary:
-      "The game details page shows what the game changed: the rank and the Elo on the leaderboard, the expected score, the season rank and score, the Hall of Fame score, and the achievements the game earned.",
+      "The game details page shows the ranks and the scores that the game changed for the 2 players. It also shows the achievements the game earned.",
     body: [
       text(
-        "Each player gets a table with the value before the game, the value after it, and the change. The rows are the rank and the Elo on the overall leaderboard, the expected score, the rank and the score on the season leaderboard, and the Hall of Fame score. A row opens the page that shows that number.",
+        "Each player gets a table with the value before the game, the value after it, and the change. The first rows are the rank and the Elo on the overall leaderboard, and the expected score. The other rows are the rank and the score on the season leaderboard, and the Hall of Fame score. A row opens the page that shows that number.",
       ),
       text(
         "The table shows a dash where the player has no value. An unranked player has no rank, but keeps the Elo. A player with no earlier game in the season starts the season score at 0. A game in the break between 2 seasons changes no season score, and the page says so.",
       ),
       text(
-        "The expected score and the Hall of Fame score need the state of every player before the game and after it. The app calculates them in web workers. The page opens at once, and the 2 scores come a moment later.",
+        "The expected score and the Hall of Fame score need the state of every player before the game and after it. The app calculates them in a web worker. The page opens at once, and the 2 scores come a moment later.",
       ),
       text(
         "The page also lists the achievements the game earned. Each achievement records the game that earned it. A Perfect Day records the last win of the day. The list can hold an achievement of a player who did not play the game. A game that changes the leaderboard can put another player on the podium.",

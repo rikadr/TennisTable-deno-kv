@@ -555,6 +555,13 @@ export const PlayerAchievements: React.FC<Props> = ({ playerId }) => {
     if (highlightedType) setQuery(highlightedType);
   }, [highlightedType]);
 
+  // A link to an earned achievement shows the whole list, so that its row is
+  // in the list.
+  const highlightedEarned = searchParams.get(PLAYER_EARNED_ACHIEVEMENT_PARAM);
+  useEffect(() => {
+    if (highlightedEarned) setQuery("");
+  }, [highlightedEarned]);
+
   context.achievements.calculateAchievements();
 
   if (!playerId) {
@@ -647,25 +654,6 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements, query, 
   const [searchParams] = useSearchParams();
   const normalizedQuery = query.trim().toLowerCase();
 
-  // A link can name one earned achievement. The row is marked and scrolled to,
-  // and the rest of the list stays.
-  const highlightedKey = searchParams.get(PLAYER_EARNED_ACHIEVEMENT_PARAM);
-  useEffect(() => {
-    if (!highlightedKey) return;
-    const row = document.getElementById(playerEarnedAchievementRowId(highlightedKey));
-    row?.scrollIntoView({ behavior: "smooth", block: "center" });
-  }, [highlightedKey]);
-
-  if (achievements.length === 0) {
-    return (
-      <div className="text-center py-12">
-        <div className="text-6xl mb-4">🏆</div>
-        <p className="text-secondary-text">No achievements yet</p>
-        <p className="text-sm text-secondary-text/70 mt-2">Keep playing to unlock achievements!</p>
-      </div>
-    );
-  }
-
   const gameLimitForRanked = context.client.gameLimitForRanked;
   const visibleAchievements = normalizedQuery
     ? achievements.filter((achievement) =>
@@ -677,6 +665,32 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements, query, 
       )
     : achievements;
 
+  // A link can name one earned achievement. The row is marked and scrolled to,
+  // and the rest of the list stays. Only the first row that matches is marked.
+  // The scroll waits until the row is in the list, because a search can hide it.
+  const highlightedKey = searchParams.get(PLAYER_EARNED_ACHIEVEMENT_PARAM);
+  const highlightedIndex = highlightedKey
+    ? visibleAchievements.findIndex(
+        (achievement) => playerEarnedAchievementKey(achievement.type, achievement.earnedAt) === highlightedKey,
+      )
+    : -1;
+  const highlightedInList = highlightedIndex !== -1;
+  useEffect(() => {
+    if (!highlightedKey || !highlightedInList) return;
+    const row = document.getElementById(playerEarnedAchievementRowId(highlightedKey));
+    row?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [highlightedKey, highlightedInList]);
+
+  if (achievements.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <div className="text-6xl mb-4">🏆</div>
+        <p className="text-secondary-text">No achievements yet</p>
+        <p className="text-sm text-secondary-text/70 mt-2">Keep playing to unlock achievements!</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-2">
       <AchievementSearchField query={query} onQueryChange={onQueryChange} />
@@ -685,15 +699,15 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements, query, 
       )}
       {visibleAchievements.map((achievement, index) => {
         const label = getAchievementLabel(achievement.type, gameLimitForRanked);
-        const earnedKey = playerEarnedAchievementKey(achievement.type, achievement.earnedAt);
+        const highlighted = highlightedKey !== null && index === highlightedIndex;
 
         return (
           <div
-            key={`${earnedKey}-${index}`}
-            id={playerEarnedAchievementRowId(earnedKey)}
+            key={`${achievement.type}-${achievement.earnedAt}-${index}`}
+            id={highlighted ? playerEarnedAchievementRowId(highlightedKey) : undefined}
             className={classNames(
               "bg-background-secondary rounded-lg px-3 py-2.5 border border-secondary-text",
-              highlightedKey === earnedKey && "ring-4 ring-secondary-text",
+              highlighted && "ring-4 ring-secondary-text",
             )}
           >
             <div className="flex items-start gap-3">
