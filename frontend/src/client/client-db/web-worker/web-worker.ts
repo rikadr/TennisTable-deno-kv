@@ -1,6 +1,11 @@
 import { AchievementsSnapshot } from "../achievements";
 import { EventType } from "../event-store/event-types";
-import { HallOfFameChange, hallOfFameChangeAroundGame } from "../game-standings";
+import {
+  ExpectedScoreChange,
+  expectedScoreChangeAroundGame,
+  HallOfFameChange,
+  hallOfFameChangeAroundGame,
+} from "../game-standings";
 import { HallOfFameHistoryResult } from "../hall-of-fame-history";
 import { PredictionHistoryEntry } from "../predictions-history";
 import { ExpectedLeaderboard } from "../simulations";
@@ -51,6 +56,11 @@ export type WorkerMessage =
       data: { events: EventType[]; playedAt: number; playerIds: string[] };
     }
   | { type: "game-hall-of-fame-change-result"; data: { playedAt: number; changes: HallOfFameChange[] } }
+  | {
+      type: "start-game-expected-score-change";
+      data: { events: EventType[]; playedAt: number; playerIds: string[] };
+    }
+  | { type: "game-expected-score-change-result"; data: { playedAt: number; changes: ExpectedScoreChange[] } }
   | { type: "start-achievements"; data: { events: EventType[]; referenceTime?: number } }
   | { type: "achievements-result"; data: { snapshot: AchievementsSnapshot } };
 
@@ -157,6 +167,15 @@ function handleWorkerMessage(message: WorkerMessage) {
       const changes = hallOfFameChangeAroundGame(message.data.events, message.data.playedAt, message.data.playerIds);
       postWorkerMessage({
         type: "game-hall-of-fame-change-result",
+        data: { playedAt: message.data.playedAt, changes },
+      });
+      break;
+    }
+
+    case "start-game-expected-score-change": {
+      const changes = expectedScoreChangeAroundGame(message.data.events, message.data.playedAt, message.data.playerIds);
+      postWorkerMessage({
+        type: "game-expected-score-change-result",
         data: { playedAt: message.data.playedAt, changes },
       });
       break;

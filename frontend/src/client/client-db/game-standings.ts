@@ -99,6 +99,39 @@ export function hallOfFameChangeAroundGame(
   }));
 }
 
+/** The expected score of one player just before and just after a game. */
+export type ExpectedScoreChange = { playerId: string; before: number | undefined; after: number | undefined };
+
+/**
+ * The expected score of one player in one projected state. The calculation
+ * covers the ranked players. A player who is unranked or retired at that time
+ * gets a calculation of their own, with that player added, like the expected
+ * score on the player page. A player with no game data has no expected score.
+ */
+function expectedScoreAt(state: TennisTable, playerId: string, ranked: Map<string, number>): number | undefined {
+  if (ranked.has(playerId)) return ranked.get(playerId);
+  return state.simulations.expectedLeaderBoard(playerId).expected.find((player) => player.id === playerId)?.score;
+}
+
+/**
+ * The expected score of each player just before and just after a game. Each
+ * of the 2 times needs an expected leaderboard, so it runs in a web worker.
+ */
+export function expectedScoreChangeAroundGame(
+  events: EventType[],
+  playedAt: number,
+  playerIds: string[],
+): ExpectedScoreChange[] {
+  const scoresAt = (time: number) => {
+    const state = new TennisTable({ events: eventsUpTo(events, time), referenceTime: time });
+    const ranked = new Map(state.simulations.expectedLeaderBoard().expected.map(({ id, score }) => [id, score]));
+    return new Map(playerIds.map((playerId) => [playerId, expectedScoreAt(state, playerId, ranked)]));
+  };
+  const before = scoresAt(playedAt - 1);
+  const after = scoresAt(playedAt + 1);
+  return playerIds.map((playerId) => ({ playerId, before: before.get(playerId), after: after.get(playerId) }));
+}
+
 /**
  * The score gained between the two states. A side where the player has no
  * score counts as `absentAs` - a season score and a Hall of Fame score both

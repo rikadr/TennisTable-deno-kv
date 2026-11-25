@@ -4,6 +4,7 @@ import { eventsUpTo } from "../event-store/events-up-to";
 import { determineSeason } from "../seasons/seasons";
 import { TennisTable } from "../tennis-table";
 import {
+  expectedScoreChangeAroundGame,
   hallOfFameChangeAroundGame,
   hallOfFameScoreAt,
   playerStandingsAt,
@@ -195,6 +196,47 @@ describe("hallOfFameChangeAroundGame", () => {
     expect(change.before).toBe(hallOfFameScoreAt(stateWithoutGame, "b"));
     expect(change.after).toBe(hallOfFameScoreAt(stateWithGame, "b"));
     expect(change.after).not.toBe(change.before);
+  });
+});
+
+describe("expectedScoreChangeAroundGame", () => {
+  // Enough games for 2 ranked players at the default limit. D plays 1 game,
+  // which is the game under test, and stays unranked.
+  const pairEvents: EventType[] = [player("a", 1), player("b", 2), player("d", 3)];
+  for (let i = 0; i < 12; i++) {
+    const time = season1.start + (i + 1) * HOUR;
+    pairEvents.push(i % 3 === 0 ? game(`p${i}`, time, "b", "a") : game(`p${i}`, time, "a", "b"));
+  }
+  const lastPairGame = season1.start + 12 * HOUR;
+  const unrankedGame = season1.start + 13 * HOUR;
+  pairEvents.push(game("u1", unrankedGame, "a", "d"));
+
+  it("scores every given player before and after the game, in the given order", () => {
+    const changes = expectedScoreChangeAroundGame(pairEvents, lastPairGame, ["b", "a"]);
+    expect(changes.map((change) => change.playerId)).toEqual(["b", "a"]);
+    for (const change of changes) {
+      expect(change.before).toBeDefined();
+      expect(change.after).toBeDefined();
+    }
+    // A wins the game, so the expected score of A goes up and that of B down.
+    expect(changes[1].after!).toBeGreaterThan(changes[1].before!);
+    expect(changes[0].after!).toBeLessThan(changes[0].before!);
+  });
+
+  it("reads the expected leaderboard of the state just before and just after the game", () => {
+    const [change] = expectedScoreChangeAroundGame(pairEvents, lastPairGame, ["a"]);
+    const expectedAt = (time: number) =>
+      new TennisTable({ events: eventsUpTo(pairEvents, time), referenceTime: time }).simulations
+        .expectedLeaderBoard()
+        .expected.find((entry) => entry.id === "a")?.score;
+    expect(change.before).toBe(expectedAt(lastPairGame - 1));
+    expect(change.after).toBe(expectedAt(lastPairGame + 1));
+  });
+
+  it("adds an unranked player to the calculation, and has no score before their first game", () => {
+    const [change] = expectedScoreChangeAroundGame(pairEvents, unrankedGame, ["d"]);
+    expect(change.before).toBeUndefined();
+    expect(change.after).toBeDefined();
   });
 });
 

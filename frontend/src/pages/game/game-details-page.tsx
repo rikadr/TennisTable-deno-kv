@@ -19,6 +19,7 @@ import { playerStandingsAt, seasonOfGame } from "../../client/client-db/game-sta
 import { GameAchievements } from "./game-achievements-panel";
 import { GameTournaments } from "./game-tournaments-panel";
 import { useGameHallOfFameChange } from "../../hooks/use-game-hall-of-fame-change";
+import { useGameExpectedScoreChange } from "../../hooks/use-game-expected-score-change";
 import { StandingsChangeTable } from "./game-standings-panel";
 import { GameTagList } from "../recent-games/game-tag-list";
 
@@ -104,6 +105,10 @@ export const GameDetailsPage: React.FC = () => {
   // The Hall of Fame score of the two players before and after the game. It is
   // calculated in a web worker, so the page renders without waiting for it.
   const hallOfFame = useGameHallOfFameChange(game?.playedAt, game ? [game.winner, game.loser] : []);
+
+  // The expected score of the two players before and after the game, also
+  // from a web worker.
+  const expectedScore = useGameExpectedScoreChange(game?.playedAt, game ? [game.winner, game.loser] : []);
 
   // The overall pairing prediction, from the winner's perspective, in the two
   // projected states. Undefined when there is no data to predict from.
@@ -261,6 +266,11 @@ export const GameDetailsPage: React.FC = () => {
                   marker="🏆"
                   before={standings.winner.before}
                   after={standings.winner.after}
+                  expectedScore={{
+                    before: expectedScore.byPlayer.get(game.winner)?.before,
+                    after: expectedScore.byPlayer.get(game.winner)?.after,
+                    pending: expectedScore.pending,
+                  }}
                   hallOfFame={{
                     before: hallOfFame.byPlayer.get(game.winner)?.before,
                     after: hallOfFame.byPlayer.get(game.winner)?.after,
@@ -274,6 +284,11 @@ export const GameDetailsPage: React.FC = () => {
                   marker="💔"
                   before={standings.loser.before}
                   after={standings.loser.after}
+                  expectedScore={{
+                    before: expectedScore.byPlayer.get(game.loser)?.before,
+                    after: expectedScore.byPlayer.get(game.loser)?.after,
+                    pending: expectedScore.pending,
+                  }}
                   hallOfFame={{
                     before: hallOfFame.byPlayer.get(game.loser)?.before,
                     after: hallOfFame.byPlayer.get(game.loser)?.after,

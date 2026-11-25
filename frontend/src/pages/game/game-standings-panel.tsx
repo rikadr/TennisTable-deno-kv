@@ -31,8 +31,8 @@ const ChangeCell: React.FC<{ change: number | undefined; digits: number }> = ({ 
 
 /**
  * The places and the scores that the game moved for one player: the place on
- * the overall leaderboard, the score and the place on the season leaderboard,
- * and the Hall of Fame score. Each row opens the page that shows that number.
+ * the overall leaderboard, the Elo, the expected score, the score and the place
+ * on the season leaderboard, and the Hall of Fame score. Each row opens the page that shows that number.
  */
 export const StandingsChangeTable: React.FC<{
   playerId: string;
@@ -40,9 +40,10 @@ export const StandingsChangeTable: React.FC<{
   marker: string;
   before: PlayerStandings;
   after: PlayerStandings;
+  expectedScore: { before: number | undefined; after: number | undefined; pending: boolean };
   hallOfFame: { before: number | undefined; after: number | undefined; pending: boolean };
   season: GameSeason | undefined;
-}> = ({ playerId, name, marker, before, after, hallOfFame, season }) => {
+}> = ({ playerId, name, marker, before, after, expectedScore, hallOfFame, season }) => {
   const navigate = useNavigate();
 
   const rows: Row[] = [
@@ -61,6 +62,15 @@ export const StandingsChangeTable: React.FC<{
       change: scoreChange(before.leaderboardScore, after.leaderboardScore),
       digits: 0,
       link: "/dashboard",
+    },
+    {
+      label: "Expected score",
+      before: expectedScore.before,
+      after: expectedScore.after,
+      change: scoreChange(expectedScore.before, expectedScore.after),
+      digits: 0,
+      link: "/simulations/expected-leaderboard",
+      pending: expectedScore.pending,
     },
   ];
 

@@ -13,6 +13,7 @@ import { GameMarkers } from "../game/game-markers";
 import { Game } from "../../client/client-db/event-store/projectors/games-projector";
 import { Achievement } from "../../client/client-db/achievements";
 import { getAchievementLabel } from "../player/player-achievements";
+import { playerEarnedAchievementLink } from "../player/player-achievement-link";
 import { ProfilePicture } from "../player/profile-picture";
 import { Elo } from "../../client/client-db/elo";
 import { AbsentScore, absentScoreZero, buildDiffRows, RankedEntry, scoreDelta, SortBy } from "./what-changed-diff";
@@ -40,7 +41,7 @@ const LEADERBOARD_TABS: { id: LeaderboardTab; label: string }[] = [
 // category of the score for the player that you select.
 type Breakdown = "all" | "player";
 
-type QuickRange = "last-game" | "today" | "7-days" | "30-days" | "365-days" | "custom";
+type QuickRange = "last-game" | "today" | "yesterday" | "7-days" | "30-days" | "365-days" | "custom";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const WEEK_MS = 7 * DAY_MS;
@@ -338,15 +339,32 @@ export const WhatChangedPage: React.FC = () => {
   // windows do not drift while the page stays open.
   const [now, setNow] = useState(() => Date.now());
 
-  // Quick select of common periods, all ending now. The inputs have second
-  // resolution, so the last-game window starts 1 ms before the game: the
-  // truncated second is then strictly before the game and the game itself
-  // falls inside the window. "custom" has no start - it reveals the two
-  // datetime inputs and keeps their current values.
+  // Quick select of common periods. A period without an end ends now. The
+  // inputs have second resolution, so the last-game window starts 1 ms before
+  // the game: the truncated second is then strictly before the game and the
+  // game itself falls inside the window. "custom" has no start - it reveals
+  // the two datetime inputs and keeps their current values.
   const lastGame = context.games.at(-1);
-  const quickRanges: { id: QuickRange; label: string; start?: (now: number) => number }[] = [
+  const startOfToday = (now: number) => new Date(now).setHours(0, 0, 0, 0);
+  const quickRanges: {
+    id: QuickRange;
+    label: string;
+    start?: (now: number) => number;
+    end?: (now: number) => number;
+  }[] = [
     ...(lastGame ? [{ id: "last-game" as const, label: "Last game", start: () => lastGame.playedAt - 1 }] : []),
-    { id: "today", label: "Today", start: (now: number) => new Date(now).setHours(0, 0, 0, 0) },
+    { id: "today", label: "Today", start: startOfToday },
+    {
+      id: "yesterday",
+      label: "Yesterday",
+      // The date moves back 1 day, so the start is 00:00 also when the day
+      // has 23 or 25 hours.
+      start: (now: number) => {
+        const day = new Date(startOfToday(now));
+        return day.setDate(day.getDate() - 1);
+      },
+      end: startOfToday,
+    },
     { id: "7-days", label: "Last 7 days", start: (now: number) => now - 7 * DAY_MS },
     { id: "30-days", label: "Last 30 days", start: (now: number) => now - 30 * DAY_MS },
     { id: "365-days", label: "Last 365 days", start: (now: number) => now - 365 * DAY_MS },
@@ -360,13 +378,17 @@ export const WhatChangedPage: React.FC = () => {
   // A quick range stays relative in the URL - reopening it computes the
   // window from the current time. The custom range keeps its two absolute
   // timestamps in the from/to params instead.
-  const selectedQuickStart = quickRanges.find((range) => range.id === selectedRange)?.start;
+  const selectedQuickRange = quickRanges.find((range) => range.id === selectedRange);
+  const selectedQuickStart = selectedQuickRange?.start;
+  const selectedQuickEnd = selectedQuickRange?.end;
   const fromValue =
     selectedRange === "custom"
       ? (searchParams.get("from") ?? toDatetimeLocalValue(now - WEEK_MS))
       : toDatetimeLocalValue(selectedQuickStart ? selectedQuickStart(now) : now - WEEK_MS);
   const toValue =
-    selectedRange === "custom" ? (searchParams.get("to") ?? toDatetimeLocalValue(now)) : toDatetimeLocalValue(now);
+    selectedRange === "custom"
+      ? (searchParams.get("to") ?? toDatetimeLocalValue(now))
+      : toDatetimeLocalValue(selectedQuickEnd ? selectedQuickEnd(now) : now);
 
   const selectQuickRange = (range: (typeof quickRanges)[number]) => {
     if (range.id === "custom") {
@@ -772,7 +794,11 @@ export const WhatChangedPage: React.FC = () => {
                     return (
                       <div
                         key={`${achievement.type}-${achievement.earnedBy}-${achievement.earnedAt}-${index}`}
-                        onClick={() => navigate(`/player/${achievement.earnedBy}`)}
+                        onClick={() =>
+                          navigate(
+                            playerEarnedAchievementLink(achievement.earnedBy, achievement.type, achievement.earnedAt),
+                          )
+                        }
                         className="flex items-center gap-2 md:gap-3 py-1 px-1 xs:px-2 md:px-3 border-b border-primary-text/50 bg-primary-background hover:bg-secondary-background hover:text-secondary-text cursor-pointer transition-colors"
                       >
                         <span className="text-xl md:text-2xl shrink-0">{label.icon}</span>
