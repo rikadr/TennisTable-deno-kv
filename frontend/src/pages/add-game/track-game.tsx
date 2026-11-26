@@ -204,7 +204,9 @@ export const TrackGamePage: React.FC = () => {
    */
   async function eventsOnServer(save: PendingSave) {
     const url = new URL(`${process.env.REACT_APP_API_BASE_URL}/events`);
-    url.searchParams.append("after", String(save.playedAt - 1));
+    // From the end of the match, not from playedAt: playedAt moves when a retry
+    // starts again, and an event of the first attempt can still arrive late.
+    url.searchParams.append("after", String(save.endedAt - 1));
     const events = await httpClient(url, { method: "GET" }).then((response) => response.json() as Promise<EventType[]>);
     const own = events.filter((event) => event.stream === save.stream);
     return {
