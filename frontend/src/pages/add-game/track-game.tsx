@@ -1,12 +1,12 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { StepSelectPlayers } from "./step-select-players";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { useEventMutation } from "../../hooks/use-event-mutation";
 import { queryClient } from "../../common/query-client";
+import { httpClient } from "../../common/http-client";
 import { useNavigate } from "react-router-dom";
-import { EventTypeEnum, GameCreated, GameScore } from "../../client/client-db/event-store/event-types";
+import { EventType, EventTypeEnum, GameCreated, GameScore } from "../../client/client-db/event-store/event-types";
 import { newId } from "../../common/nani-id";
-import ConfettiExplosion from "react-confetti-explosion";
 import { PendingTournamentGame } from "./pending-tournament-game";
 import { useTennisParams } from "../../hooks/use-tennis-params";
 import { classNames } from "../../common/class-names";
@@ -18,8 +18,6 @@ import { ServeTrackerDisplay } from "../../common/serve-tracker-display";
 import { BadSide, badSideLabel, gameWinnerSideOfBadSide, nextSetBadSide } from "../../common/table-sides";
 import { TableSideDisplay } from "../../common/table-sides-display";
 import { LiveGamePredictionCard } from "../live-game/live-game-prediction-card";
-import { computeLiveWinPrediction } from "../live-game/live-game-win-probability";
-import { WinPercentGraph } from "./win-percent-graph";
 import { session } from "../../services/auth";
 import { useLiveGameQuery, useUpdateLiveGameMutation } from "../live-game/use-live-game";
 import { DEFAULT_BEST_OF } from "../live-game/live-game-types";
@@ -30,65 +28,120 @@ import {
   toEventTrackingData,
   TrackedSet,
 } from "../../common/point-sequences";
+import {
+  clearTrackedGame,
+  loadTrackedGame,
+  MatchData,
+  PendingSave,
+  saveTrackedGame,
+  StoredTrackedGame,
+} from "./tracked-game-storage";
 
 interface SetPoint {
   player1: number;
   player2: number;
 }
 
-interface MatchData {
-  setsWon: {
-    player1: number;
-    player2: number;
-  };
-  setPoints?: SetPoint[];
-  /** Points of each completed set, in scoring order, and when each was scored. */
-  trackedSets: TrackedSet[];
-  /** Who served the first point of each completed set. */
-  firstServers: Server[];
-  /** Who had the bad side of the table in each completed set. */
-  badSides: BadSide[];
-}
-
-type Stage = "player-selection" | "scoring" | "summary";
+type Stage = "player-selection" | "scoring";
 
 export const TrackGamePage: React.FC = () => {
   const context = useEventDbContext();
-  const addEventMutation = useEventMutation();
+  // A failed save shows inline and keeps the game, so it must not throw during render.
+  // It also must not wait for the browser to report a connection: a request that
+  // cannot be sent fails, and the player sees it.
+  const addEventMutation = useEventMutation({ suppressErrorToast: true, throwOnError: false, networkMode: "always" });
   const navigate = useNavigate();
   const params = useTennisParams();
 
-  const [stage, setStage] = useState<Stage>("player-selection");
-  const [player1, setPlayer1] = useState<string | null>(params.player1);
-  const [player2, setPlayer2] = useState<string | null>(params.player2);
-  const [matchData, setMatchData] = useState<MatchData>({
-    setsWon: { player1: 0, player2: 0 },
-    setPoints: [],
-    trackedSets: [],
-    firstServers: [],
-    badSides: [],
-  });
-  const [currentSetScore, setCurrentSetScore] = useState<SetPoint>({
-    player1: 0,
-    player2: 0,
-  });
+  // A tracked game that was left before it was saved. Read once, so the page
+  // continues from it and ignores the players in the url.
+  const [restored] = useState(loadTrackedGame);
+
+  // True when the url asks for players that are not in the restored game, e.g.
+  // a tournament match link on a device with a game that was not saved.
+  const [restoredOtherMatch, setRestoredOtherMatch] = useState(
+    () =>
+      restored !== null &&
+      [params.player1, params.player2].some(
+        (player) => !!player && player !== restored.player1 && player !== restored.player2,
+      ),
+  );
+
+  const [stage, setStage] = useState<Stage>(restored ? "scoring" : "player-selection");
+  const [player1, setPlayer1] = useState<string | null>(restored?.player1 ?? params.player1);
+  const [player2, setPlayer2] = useState<string | null>(restored?.player2 ?? params.player2);
+  const [matchData, setMatchData] = useState<MatchData>(
+    restored?.matchData ?? {
+      setsWon: { player1: 0, player2: 0 },
+      setPoints: [],
+      trackedSets: [],
+      firstServers: [],
+      badSides: [],
+    },
+  );
+  const [currentSetScore, setCurrentSetScore] = useState<SetPoint>(
+    restored?.currentSetScore ?? { player1: 0, player2: 0 },
+  );
   // The points of the current set, in the order they were scored.
-  const [currentTrackedSet, setCurrentTrackedSet] = useState<TrackedSet>(emptyTrackedSet);
-  const [firstServer, setFirstServer] = useState<Server>(1);
+  const [currentTrackedSet, setCurrentTrackedSet] = useState<TrackedSet>(
+    restored?.currentTrackedSet ?? emptyTrackedSet,
+  );
+  const [firstServer, setFirstServer] = useState<Server>(restored?.firstServer ?? 1);
   // Who has the bad side of the table in the set being played. Null until the
   // operator records it, and the sides are only saved when every set has one.
-  const [badSide, setBadSide] = useState<BadSide>(null);
-  // Epoch ms the match started, when it was ended, and how many points were
-  // undone. Saved with the game so its timeline can be replayed.
-  const [startedAt, setStartedAt] = useState<number | null>(null);
-  const [endedAt, setEndedAt] = useState<number | null>(null);
-  const [corrections, setCorrections] = useState(0);
-  // Player 1's live win chance sampled after every point, for the summary graph.
-  const [winPercentHistory, setWinPercentHistory] = useState<number[]>([]);
+  const [badSide, setBadSide] = useState<BadSide>(restored?.badSide ?? null);
+  // Epoch ms the match started, and how many points were undone. Saved with
+  // the game so its timeline can be replayed.
+  const [startedAt, setStartedAt] = useState<number | null>(restored?.startedAt ?? null);
+  const [corrections, setCorrections] = useState(restored?.corrections ?? 0);
+  // Set when a save starts, and kept until the save is complete. While it is
+  // set the scoring is locked, so a retry saves the same game.
+  const [pendingSave, setPendingSave] = useState<PendingSave | null>(restored?.pendingSave ?? null);
   const [validationError, setValidationError] = useState<string>("");
-  const [gameSuccessfullyAdded, setGameSuccessfullyAdded] = useState(false);
+  // Stays true after a successful save, until the game details page opens.
+  const [isSaving, setIsSaving] = useState(false);
+  const [storageFailed, setStorageFailed] = useState(false);
+  const locked = isSaving || pendingSave !== null;
 
-  // The scoring and summary screens are colour coded per player instead of a fixed
+  /** The game as localStorage keeps it, or null before the match starts. */
+  const snapshot = (save: PendingSave | null): StoredTrackedGame | null => {
+    if (stage !== "scoring" || !player1 || !player2 || startedAt === null) return null;
+    return {
+      player1,
+      player2,
+      matchData,
+      currentSetScore,
+      currentTrackedSet,
+      firstServer,
+      badSide,
+      startedAt,
+      corrections,
+      pendingSave: save,
+    };
+  };
+
+  // Keep the game in localStorage while it is tracked. Leaving the page does
+  // not lose it: the add game pages lead back here and the game continues.
+  useEffect(() => {
+    const game = snapshot(pendingSave);
+    if (game) setStorageFailed(saveTrackedGame(game) === false);
+    // snapshot reads only the values listed below.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    stage,
+    player1,
+    player2,
+    matchData,
+    currentSetScore,
+    currentTrackedSet,
+    firstServer,
+    badSide,
+    startedAt,
+    corrections,
+    pendingSave,
+  ]);
+
+  // The scoring screen is colour coded per player instead of a fixed
   // blue/purple pair, so each side matches the colour the player has everywhere else.
   const player1Color = stringToColor(player1 || "");
   const player2Color = stringToColor(player2 || "");
@@ -98,39 +151,19 @@ export const TrackGamePage: React.FC = () => {
   const liveGameQuery = useLiveGameQuery({ enabled: isAdmin });
   const updateLiveGame = useUpdateLiveGameMutation();
 
-  // Player 1's match-win chance at a given current-set score, from the same
-  // model as the live prediction card below the score buttons.
-  const computeWinPercent = (currentSet: SetPoint): number => {
-    const base = context.predictions.getPredictedFraction(player1 ?? "", player2 ?? "");
-    return computeLiveWinPrediction({
-      preGameWinChance: base?.fraction ?? 0.5,
-      preGameConfidence: base?.confidence ?? 0,
-      setsWon: matchData.setsWon,
-      currentSet,
-      completedSets: matchData.setPoints ?? [],
-    }).player1WinChance;
-  };
-
   const addPoint = (player: number) => {
     const key = `player${player}` as keyof SetPoint;
-    const next: SetPoint = { ...currentSetScore, [key]: currentSetScore[key] + 1 };
-    setCurrentSetScore(next);
+    setCurrentSetScore({ ...currentSetScore, [key]: currentSetScore[key] + 1 });
     const at = Date.now();
     setCurrentTrackedSet((prev) => appendPoint(prev, player as 1 | 2, at));
-    setWinPercentHistory((prev) => [...prev, computeWinPercent(next)]);
   };
 
   const removePoint = (player: number) => {
     const key = `player${player}` as keyof SetPoint;
     if (currentSetScore[key] === 0) return;
-    const next: SetPoint = { ...currentSetScore, [key]: currentSetScore[key] - 1 };
-    setCurrentSetScore(next);
+    setCurrentSetScore({ ...currentSetScore, [key]: currentSetScore[key] - 1 });
     setCurrentTrackedSet((prev) => removeLastPoint(prev, player as 1 | 2));
     setCorrections((prev) => prev + 1);
-    // Undoing a point drops the last 2 samples and appends one for the restored
-    // score, so the history keeps one sample per point. Undoing the only point
-    // of the match just empties the history.
-    setWinPercentHistory((prev) => (prev.length <= 1 ? [] : [...prev.slice(0, -2), computeWinPercent(next)]));
   };
 
   const setWon = (player: number) => {
@@ -164,118 +197,150 @@ export const TrackGamePage: React.FC = () => {
     setStage("scoring");
   };
 
-  const endMatch = () => {
-    setEndedAt(Date.now());
-    setStage("summary");
-  };
+  /**
+   * Which events of a save the server has, and the time of its latest event.
+   * Asks the server directly and throws when that fails: the cached events
+   * cannot answer this, and the shared events query does not fetch offline.
+   */
+  async function eventsOnServer(save: PendingSave) {
+    const url = new URL(`${process.env.REACT_APP_API_BASE_URL}/events`);
+    // From the end of the match, not from playedAt: playedAt moves when a retry
+    // starts again, and an event of the first attempt can still arrive late.
+    url.searchParams.append("after", String(save.endedAt - 1));
+    const events = await httpClient(url, { method: "GET" }).then((response) => response.json() as Promise<EventType[]>);
+    const own = events.filter((event) => event.stream === save.stream);
+    return {
+      created: own.some((event) => event.type === EventTypeEnum.GAME_CREATED),
+      scored: own.some((event) => event.type === EventTypeEnum.GAME_SCORE),
+      latestTime: Math.max(0, ...events.map((event) => event.time)),
+    };
+  }
 
-  async function submitGame(winner: string, loser: string) {
+  /** Saves the game and opens its details page. There is no review step. */
+  async function endMatch() {
+    if (!player1 || !player2 || isSaving) return;
     setValidationError("");
-    const now = Date.now();
-    const gameCreatedEvent: GameCreated = {
-      type: EventTypeEnum.GAME_CREATED,
-      time: now,
-      stream: newId(),
-      data: { winner, loser, playedAt: now },
+
+    const player1Won = matchData.setsWon.player1 > matchData.setsWon.player2;
+    const winner = player1Won ? player1 : player2;
+    const loser = player1Won ? player2 : player1;
+    const completedSets = matchData.setPoints || [];
+    const failed = (message: string) => {
+      setValidationError(message);
+      setIsSaving(false);
     };
+    const connectionError =
+      "Could not save the game. The match is kept on this device. Check your connection and press Save again.";
 
-    const validateCreated = context.eventStore.gamesProjector.validateCreateGame(gameCreatedEvent);
-    if (validateCreated.valid === false) {
-      console.error(validateCreated.message);
-      setValidationError(validateCreated.message);
-      return;
-    }
+    setIsSaving(true);
 
-    // Since our setPoints always have values (never undefined), we consider them all "set"
-    // We only send setPoints if we actually recorded them (which we always do in this flow)
-    const setPointsForValidation = matchData.setPoints || [];
-
-    // Both are undefined when the tracked points do not line up with the
-    // completed sets. They are always saved together.
-    const trackingData = toEventTrackingData({
-      completedSets: setPointsForValidation,
-      trackedSets: matchData.trackedSets,
-      firstServers: matchData.firstServers,
-      player1IsGameWinner: player1 === winner,
-      source: "track-game",
-      startedAt,
-      endedAt,
-      corrections,
-    });
-
-    const gameScoreEvent: GameScore = {
-      type: EventTypeEnum.GAME_SCORE,
-      time: gameCreatedEvent.time + 1,
-      stream: gameCreatedEvent.stream,
-      data: {
-        setsWon: {
-          gameWinner: player1 === winner ? matchData.setsWon.player1 : matchData.setsWon.player2,
-          gameLoser: player1 === winner ? matchData.setsWon.player2 : matchData.setsWon.player1,
-        },
-        setPoints:
-          setPointsForValidation.length > 0
-            ? setPointsForValidation.map((set) => ({
-                gameWinner: player1 === winner ? set.player1 : set.player2,
-                gameLoser: player1 === winner ? set.player2 : set.player1,
-              }))
-            : undefined,
-        gameWinnerSides: matchData.badSides.some((side) => side !== null)
-          ? setPointsForValidation.map((_, index) =>
-              gameWinnerSideOfBadSide(matchData.badSides[index] ?? null, player1 === winner ? 1 : 2),
-            )
-          : undefined,
-        pointSequences: trackingData?.pointSequences,
-        tracking: trackingData?.tracking,
-      },
-    };
-
-    const recordScores = gameScoreEvent.data.setsWon.gameWinner > 0 || gameScoreEvent.data.setsWon.gameLoser > 0;
-    if (recordScores) {
-      const validateScore = context.eventStore.gamesProjector.validateScoreGame(gameScoreEvent);
-      if (validateScore.valid === false) {
-        console.error(validateScore.message);
-        setValidationError(validateScore.message);
+    // A request of an earlier attempt can have reached the server without a
+    // response, so a retry first asks the server which events it has.
+    let save: PendingSave = pendingSave ?? { stream: newId(), playedAt: Date.now(), endedAt: Date.now() };
+    let onServer = { created: false, scored: false };
+    let scoreTime = save.playedAt + 1;
+    if (pendingSave) {
+      try {
+        const server = await eventsOnServer(pendingSave);
+        onServer = server;
+        // The server only stores an event with a time after its latest event.
+        // The times of the first attempt are too early when another event was
+        // stored after them.
+        const nextTime = Math.max(Date.now(), server.latestTime + 1);
+        if (!server.created) {
+          save = { ...pendingSave, playedAt: nextTime };
+          scoreTime = nextTime + 1;
+        } else if (server.latestTime > pendingSave.playedAt) {
+          scoreTime = nextTime;
+        }
+      } catch (error) {
+        console.error(error);
+        failed(connectionError);
         return;
       }
     }
 
-    const isPendingTournamentGame = context.tournaments.findAllPendingGames(winner, loser);
+    if (!onServer.scored) {
+      const { playedAt } = save;
+      const gameCreatedEvent: GameCreated = {
+        type: EventTypeEnum.GAME_CREATED,
+        time: playedAt,
+        stream: save.stream,
+        data: { winner, loser, playedAt },
+      };
 
-    async function onSuccess() {
-      queryClient.invalidateQueries();
-      setTimeout(() => {
-        navigate(
-          isPendingTournamentGame.length > 0
-            ? `/tournament?tournament=${isPendingTournamentGame[0].tournament.id}&player1=${isPendingTournamentGame[0].player1}&player2=${isPendingTournamentGame[0].player2}`
-            : `/1v1/?player1=${winner}&player2=${loser}`,
-        );
-      }, 2_000);
-      setGameSuccessfullyAdded(true);
+      // Both are undefined when the tracked points do not line up with the
+      // completed sets. They are always saved together.
+      const trackingData = toEventTrackingData({
+        completedSets,
+        trackedSets: matchData.trackedSets,
+        firstServers: matchData.firstServers,
+        player1IsGameWinner: player1Won,
+        source: "track-game",
+        startedAt,
+        endedAt: save.endedAt,
+        corrections,
+      });
+
+      const gameScoreEvent: GameScore = {
+        type: EventTypeEnum.GAME_SCORE,
+        time: scoreTime,
+        stream: save.stream,
+        data: {
+          setsWon: {
+            gameWinner: player1Won ? matchData.setsWon.player1 : matchData.setsWon.player2,
+            gameLoser: player1Won ? matchData.setsWon.player2 : matchData.setsWon.player1,
+          },
+          setPoints:
+            completedSets.length > 0
+              ? completedSets.map((set) => ({
+                  gameWinner: player1Won ? set.player1 : set.player2,
+                  gameLoser: player1Won ? set.player2 : set.player1,
+                }))
+              : undefined,
+          gameWinnerSides: matchData.badSides.some((side) => side !== null)
+            ? completedSets.map((_, index) =>
+                gameWinnerSideOfBadSide(matchData.badSides[index] ?? null, player1Won ? 1 : 2),
+              )
+            : undefined,
+          pointSequences: trackingData?.pointSequences,
+          tracking: trackingData?.tracking,
+        },
+      };
+
+      const validation = onServer.created
+        ? context.eventStore.gamesProjector.validateScoreGame(gameScoreEvent)
+        : [
+            context.eventStore.gamesProjector.validateCreateGame(gameCreatedEvent),
+            context.eventStore.gamesProjector.validateScoreGame(gameScoreEvent),
+          ].find((result) => result.valid === false);
+      if (validation && validation.valid === false) {
+        console.error(validation.message);
+        failed(validation.message);
+        return;
+      }
+
+      // Store the save before the first request, so a retry after a reload
+      // also continues from it.
+      setPendingSave(save);
+      const game = snapshot(save);
+      if (game) saveTrackedGame(game);
+
+      try {
+        if (!onServer.created) await addEventMutation.mutateAsync(gameCreatedEvent);
+        await addEventMutation.mutateAsync(gameScoreEvent);
+      } catch (error) {
+        console.error(error);
+        failed(connectionError);
+        return;
+      }
     }
 
-    if (recordScores) {
-      await addEventMutation.mutateAsync(gameCreatedEvent);
-      await addEventMutation.mutateAsync(gameScoreEvent, {
-        onSuccess,
-      });
-    } else {
-      await addEventMutation.mutateAsync(gameCreatedEvent, {
-        onSuccess,
-      });
-    }
+    clearTrackedGame();
+    // The game details page reads the game from the events, so load them first.
+    await queryClient.invalidateQueries().catch(console.error);
+    navigate(`/game?time=${save.playedAt}`);
   }
-
-  const confirmMatch = () => {
-    if (!player1 || !player2) {
-      setValidationError("Both players must be selected");
-      return;
-    }
-
-    const winner = matchData.setsWon.player1 > matchData.setsWon.player2 ? player1 : player2;
-    const loser = matchData.setsWon.player1 > matchData.setsWon.player2 ? player2 : player1;
-
-    submitGame(winner, loser);
-  };
 
   /**
    * Hands the match over to the broadcasted live game, keeping the score so far.
@@ -328,13 +393,47 @@ export const TrackGamePage: React.FC = () => {
       setValidationError(error instanceof Error ? error.message : "Could not start the broadcasted live game");
       return;
     }
+    clearTrackedGame();
     navigate("/live-game/admin");
   }
 
-  const cancelMatch = () => {
+  const cancelMatch = async () => {
+    if (!window.confirm("Cancel this match? The tracked points are deleted.")) return;
+    setValidationError("");
+
+    // A save that did not complete can have left the game on the server. Then
+    // the match is not only on this device, and a cancel here cannot remove it.
+    if (pendingSave) {
+      setIsSaving(true);
+      try {
+        const onServer = await eventsOnServer(pendingSave);
+        if (onServer.scored) {
+          clearTrackedGame();
+          navigate(`/game?time=${pendingSave.playedAt}`);
+          return;
+        }
+        if (onServer.created) {
+          setValidationError(
+            "The server already has this game, but not its score. Press Save again to save the score.",
+          );
+          setIsSaving(false);
+          return;
+        }
+      } catch (error) {
+        console.error(error);
+        setValidationError("Could not check if the server has this game. Check your connection and try again.");
+        setIsSaving(false);
+        return;
+      }
+      setIsSaving(false);
+    }
+
+    clearTrackedGame();
     setStage("player-selection");
-    setPlayer1(null);
-    setPlayer2(null);
+    // Back to the players in the url, e.g. of the tournament match link that
+    // led to a restored match of other players.
+    setPlayer1(params.player1);
+    setPlayer2(params.player2);
     setMatchData({
       setsWon: { player1: 0, player2: 0 },
       setPoints: [],
@@ -347,9 +446,9 @@ export const TrackGamePage: React.FC = () => {
     setFirstServer(1);
     setBadSide(null);
     setStartedAt(null);
-    setEndedAt(null);
     setCorrections(0);
-    setWinPercentHistory([]);
+    setPendingSave(null);
+    setRestoredOtherMatch(false);
     setValidationError("");
   };
 
@@ -400,6 +499,17 @@ export const TrackGamePage: React.FC = () => {
     return (
       <div className="text-black px-2 pb-2 pt-0 sm:px-4 sm:pb-4">
         <div className="max-w-md mx-auto">
+          {restoredOtherMatch && (
+            <div className="mb-3 p-3 bg-yellow-100 border border-yellow-400 text-yellow-800 rounded-lg text-sm">
+              This is an earlier match of {context.playerName(player1)} against {context.playerName(player2)} that is
+              not saved. Save it or cancel it before you start a new match.
+            </div>
+          )}
+          {storageFailed && (
+            <div className="mb-3 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg text-sm">
+              This device cannot store the match. If you leave this page, the match is lost.
+            </div>
+          )}
           <div className="bg-white rounded-xl shadow-lg p-3 tall:p-4 sm:p-4 mb-3">
             <div className="text-center mb-2 tall:mb-3">
               <div className="flex justify-center items-center gap-3 xs:gap-6">
@@ -477,6 +587,7 @@ export const TrackGamePage: React.FC = () => {
                   <div className="flex flex-col gap-1.5 tall:gap-2 w-full items-center">
                     <button
                       onClick={() => addPoint(1)}
+                      disabled={locked}
                       className="w-full h-24 tall:h-32 text-center text-4xl font-bold rounded-lg hover:brightness-95 transition"
                       style={fill(player1Color)}
                     >
@@ -484,7 +595,7 @@ export const TrackGamePage: React.FC = () => {
                     </button>
                     <button
                       onClick={() => removePoint(1)}
-                      disabled={currentSetScore.player1 === 0}
+                      disabled={locked || currentSetScore.player1 === 0}
                       className={classNames(
                         "w-full h-11 tall:h-12 text-center rounded-lg transition text-2xl font-bold",
                         currentSetScore.player1 === 0
@@ -515,6 +626,7 @@ export const TrackGamePage: React.FC = () => {
                   <div className="flex flex-col gap-1.5 tall:gap-2 w-full items-center">
                     <button
                       onClick={() => addPoint(2)}
+                      disabled={locked}
                       className="w-full h-24 tall:h-32 text-center text-4xl font-bold rounded-lg hover:brightness-95 transition"
                       style={fill(player2Color)}
                     >
@@ -522,7 +634,7 @@ export const TrackGamePage: React.FC = () => {
                     </button>
                     <button
                       onClick={() => removePoint(2)}
-                      disabled={currentSetScore.player2 === 0}
+                      disabled={locked || currentSetScore.player2 === 0}
                       className={classNames(
                         "w-full h-11 tall:h-12 text-center rounded-lg transition text-2xl font-bold",
                         currentSetScore.player2 === 0
@@ -541,7 +653,7 @@ export const TrackGamePage: React.FC = () => {
             {/* Set Won Button */}
             <button
               onClick={() => setLeader && setWon(setLeader)}
-              disabled={setLeader === null}
+              disabled={locked || setLeader === null}
               className={classNames(
                 "w-full py-2.5 tall:py-3 mb-2 rounded-lg font-semibold transition text-base",
                 setLeader === null ? "bg-gray-300 text-gray-500 cursor-not-allowed" : "hover:brightness-95",
@@ -556,7 +668,7 @@ export const TrackGamePage: React.FC = () => {
             {/* End Match Button */}
             <button
               onClick={endMatch}
-              disabled={!canEndMatch}
+              disabled={!canEndMatch || isSaving}
               className={classNames(
                 "w-full py-2.5 tall:py-3 rounded-lg font-semibold transition text-base",
                 canEndMatch
@@ -564,7 +676,10 @@ export const TrackGamePage: React.FC = () => {
                   : "bg-gray-300 text-gray-500 cursor-not-allowed",
               )}
             >
-              <div>End Match & Review</div>
+              <div>{isSaving ? "Saving…" : pendingSave ? "Save again" : "End Match & Save"}</div>
+              {pendingSave && !isSaving && (
+                <div className="text-xs font-normal mt-1">The game is not saved. Scoring is locked.</div>
+              )}
               {!canEndMatch && (
                 <div className="text-xs font-normal mt-1">
                   {matchData.setsWon.player1 === matchData.setsWon.player2
@@ -574,6 +689,12 @@ export const TrackGamePage: React.FC = () => {
               )}
             </button>
           </div>
+
+          {validationError && (
+            <div className="mb-3 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg text-sm">
+              {validationError}
+            </div>
+          )}
 
           {/* Live Win Prediction */}
           <div className="mb-3">
@@ -588,12 +709,6 @@ export const TrackGamePage: React.FC = () => {
               bestOf={DEFAULT_BEST_OF}
             />
           </div>
-
-          {validationError && (
-            <div className="mb-3 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg text-sm">
-              {validationError}
-            </div>
-          )}
 
           {/* Sets History */}
           {matchData.setPoints && matchData.setPoints.length > 0 && (
@@ -646,7 +761,7 @@ export const TrackGamePage: React.FC = () => {
           {isAdmin && (
             <button
               onClick={convertToBroadcastedLiveGame}
-              disabled={updateLiveGame.isPending}
+              disabled={updateLiveGame.isPending || locked}
               className="w-full mt-3 py-3 px-4 rounded-lg bg-secondary-background text-secondary-text hover:opacity-80 transition-opacity disabled:opacity-50"
             >
               <div className="font-semibold">
@@ -657,154 +772,14 @@ export const TrackGamePage: React.FC = () => {
               </div>
             </button>
           )}
-        </div>
-      </div>
-    );
-  }
 
-  // Summary Screen
-  if (stage === "summary") {
-    const winner = matchData.setsWon.player1 > matchData.setsWon.player2 ? player1 : player2;
-
-    return (
-      <div className="p-2 sm:p-4">
-        {gameSuccessfullyAdded && (
-          <div className="flex justify-center">
-            <ConfettiExplosion particleCount={250} force={0.8} width={2_000} duration={10_000} />
-          </div>
-        )}
-        <div className="max-w-md mx-auto pt-0 sm:pt-8">
-          <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6">
-            <div className="text-center mb-4">
-              <h1 className="text-2xl font-bold text-gray-800 mb-2">🏆 Match Complete!</h1>
-              <p className="text-lg text-gray-600 text-center">
-                Winner:{" "}
-                <span
-                  className="font-bold"
-                  style={textOn(winner === player1 ? player1Color : player2Color, CARD_SURFACE)}
-                >
-                  {context.playerName(winner)}
-                </span>
-              </p>
-              <div className="m-auto w-fit">
-                <ProfilePicture playerId={winner} size={140} border={8} shape="rounded" />
-              </div>
-            </div>
-
-            {/* Final Score */}
-            <div className="bg-gray-50 rounded-lg p-3 mb-4">
-              <div className="grid grid-cols-3 items-center text-center">
-                <div>
-                  <h3 className="font-semibold text-gray-700 mb-2 text-sm">{context.playerName(player1)}</h3>
-                  <div className="text-4xl font-bold" style={textOn(player1Color, ROW_SURFACE)}>
-                    {matchData.setsWon.player1}
-                  </div>
-                </div>
-                <div className="text-2xl font-bold text-gray-400">-</div>
-                <div>
-                  <h3 className="font-semibold text-gray-700 mb-2 text-sm">{context.playerName(player2)}</h3>
-                  <div className="text-4xl font-bold" style={textOn(player2Color, ROW_SURFACE)}>
-                    {matchData.setsWon.player2}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Winner's win % point by point */}
-            <div className="mb-6">
-              <WinPercentGraph
-                history={winPercentHistory}
-                winnerIsPlayer1={winner === player1}
-                winnerName={context.playerName(winner)}
-                winnerColor={winner === player1 ? player1Color : player2Color}
-                completedSets={matchData.setPoints ?? []}
-              />
-            </div>
-
-            {/* Set Details */}
-            {matchData.setPoints && matchData.setPoints.length > 0 && (
-              <div className="mb-4">
-                <h3 className="text-base font-bold text-gray-800 mb-2">Set Details</h3>
-                <div className="space-y-2">
-                  {matchData.setPoints.map((set, index) => {
-                    const setWinner = set.player1 > set.player2 ? 1 : 2;
-                    const sideLabel = badSideLabel(
-                      matchData.badSides[index],
-                      context.playerName(player1),
-                      context.playerName(player2),
-                    );
-                    return (
-                      <div
-                        key={index}
-                        className="flex items-center justify-between px-3 py-2 bg-gray-50 rounded-lg text-sm"
-                      >
-                        <div className="flex flex-col">
-                          <span className="font-semibold text-gray-700">Set {index + 1}</span>
-                          {sideLabel && <span className="text-xs text-gray-400">😵 {sideLabel}</span>}
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <div className="w-5">{setWinner === 1 && "🏆"}</div>
-                          <div className="w-16 flex items-center justify-between text-lg">
-                            <span
-                              className={classNames("font-bold", setWinner !== 1 && "text-gray-400")}
-                              style={setWinner === 1 ? textOn(player1Color, ROW_SURFACE) : undefined}
-                            >
-                              {set.player1}
-                            </span>
-                            <span className="text-gray-400">-</span>
-                            <span
-                              className={classNames("font-bold", setWinner !== 2 && "text-gray-400")}
-                              style={setWinner === 2 ? textOn(player2Color, ROW_SURFACE) : undefined}
-                            >
-                              {set.player2}
-                            </span>
-                          </div>
-                          <div className="w-5">{setWinner === 2 && "🏆"}</div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* Validation Error */}
-            {validationError && (
-              <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg text-sm">
-                {validationError}
-              </div>
-            )}
-
-            {/* Action Buttons */}
-            <div className="space-y-2">
-              <button
-                onClick={() => !gameSuccessfullyAdded && confirmMatch()}
-                disabled={addEventMutation.isPending}
-                className={classNames(
-                  "w-full py-3 rounded-lg font-semibold transition flex items-center justify-center gap-2 text-base",
-                  addEventMutation.isPending
-                    ? "bg-gray-400 text-white cursor-not-allowed"
-                    : "bg-green-600 text-white hover:bg-green-700",
-                )}
-              >
-                {addEventMutation.isPending ? "Submitting..." : "✅ Confirm & Save"}
-              </button>
-              <button
-                onClick={() => setStage("scoring")}
-                disabled={addEventMutation.isPending}
-                className="w-full bg-gray-200 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-300 transition flex items-center justify-center gap-2 text-base disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {"<-"} Back
-              </button>
-              <button
-                onClick={cancelMatch}
-                disabled={addEventMutation.isPending}
-                className="w-full bg-gray-200 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-300 transition flex items-center justify-center gap-2 text-base disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                ❌ Cancel
-              </button>
-            </div>
-          </div>
+          <button
+            onClick={cancelMatch}
+            disabled={isSaving}
+            className="w-full mt-3 py-3 rounded-lg font-semibold bg-gray-200 text-gray-700 hover:bg-gray-300 transition disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            ❌ Cancel match
+          </button>
         </div>
       </div>
     );

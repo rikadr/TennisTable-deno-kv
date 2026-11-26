@@ -18,13 +18,16 @@ function saveErrorMessage(action: string, error: Error): string {
 // throwOnError: false is for callers that expect some posts to fail. The
 // default rethrows the error during render, and with no error boundary that
 // unmounts the whole app.
-type EventMutationOptions = { suppressErrorToast?: boolean; throwOnError?: boolean };
+// networkMode "always" is for callers that must see a failed request at once.
+// The default pauses a mutation while the browser reports no connection.
+type EventMutationOptions = { suppressErrorToast?: boolean; throwOnError?: boolean; networkMode?: "always" };
 
 export function useEventMutation(options?: EventMutationOptions) {
   const { showToast } = useToast();
   return useMutation({
     // Set only when given: an explicit undefined would replace the query client default
     ...(options?.throwOnError !== undefined && { throwOnError: options.throwOnError }),
+    ...(options?.networkMode !== undefined && { networkMode: options.networkMode }),
     mutationFn: async (payloadEvent: EventType) => {
       return httpClient(`${process.env.REACT_APP_API_BASE_URL}/event`, {
         method: "POST",
