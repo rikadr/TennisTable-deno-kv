@@ -282,3 +282,57 @@ describe("rankChange", () => {
     expect(rankChange(1, undefined)).toBeUndefined();
   });
 });
+
+describe("eventsUpTo with scores stored later", () => {
+  const score = (gameId: string, time: number, gameWinner: number, gameLoser: number): EventType => ({
+    time,
+    stream: gameId,
+    type: EventTypeEnum.GAME_SCORE,
+    data: { setsWon: { gameWinner, gameLoser } },
+  });
+  const playedAt = season1.start + HOUR;
+  const otherGameTime = playedAt + 5_000;
+  const base: EventType[] = [player("a", 1), player("b", 2), player("c", 3), game("g1", playedAt, "a", "b")];
+  const scoreIn = (state: TennisTable, gameId = "g1") => state.games.find((g) => g.id === gameId)?.score?.setsWon;
+
+  it("keeps a score stored 1 ms after the game", () => {
+    const events = [...base, score("g1", playedAt + 1, 2, 0)];
+    expect(eventsUpTo(events, playedAt + 1)).toEqual(events);
+    expect(eventsUpTo(events, playedAt - 1)).toEqual(base.slice(0, 3));
+  });
+
+  it("counts a late score at the time of its game, and leaves later events out", () => {
+    const events = [
+      ...base,
+      player("d", playedAt + 2_000),
+      game("g2", otherGameTime, "c", "a"),
+      score("g2", otherGameTime + 1, 2, 1),
+      score("g1", otherGameTime + 10_000, 2, 0),
+    ];
+    expect(eventsUpTo(events, playedAt + 1).map((event) => event.stream)).toEqual(["a", "b", "c", "g1", "g1"]);
+  });
+
+  it("uses the last score when the score was changed later", () => {
+    const events = [...base, score("g1", playedAt + 1, 2, 0), score("g1", playedAt + 60_000, 3, 1)];
+    const state = new TennisTable({ events: eventsUpTo(events, playedAt + 1) });
+    expect(scoreIn(state)).toEqual({ gameWinner: 3, gameLoser: 1 });
+  });
+
+  it("matches a score to its game by id, not by the time it was played", () => {
+    // The score of g2 is stored before g2 was played, so only the lookup of its
+    // game leaves it out of the state 1 ms after g1.
+    const events = [...base, score("g2", playedAt, 2, 0), game("g2", playedAt + 2, "c", "a")];
+    expect(eventsUpTo(events, playedAt + 1).map((event) => event.stream)).toEqual(["a", "b", "c", "g1"]);
+  });
+
+  it("gives a game the late score of an earlier game in its before and after states", () => {
+    const events = [...base, game("g2", otherGameTime, "c", "a"), score("g1", otherGameTime + 1, 2, 0)];
+    const first = statesAroundGame(events, playedAt);
+    const second = statesAroundGame(events, otherGameTime);
+    expect(first.before.games.find((g) => g.id === "g1")).toBeUndefined();
+    expect(scoreIn(first.after)).toEqual({ gameWinner: 2, gameLoser: 0 });
+    expect(first.after.games.find((g) => g.id === "g2")).toBeUndefined();
+    expect(scoreIn(second.before)).toEqual({ gameWinner: 2, gameLoser: 0 });
+    expect(scoreIn(second.after)).toEqual({ gameWinner: 2, gameLoser: 0 });
+  });
+});

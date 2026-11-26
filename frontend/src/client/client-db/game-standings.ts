@@ -81,8 +81,8 @@ export function hallOfFameScoreAt(state: TennisTable | undefined, playerId: stri
 export type GameStates = { before: TennisTable; after: TennisTable };
 
 /**
- * The app state just before and just after a game. The GAME_SCORE event of
- * the game is stored at playedAt + 1, so the state after the game is there.
+ * The app state just before and just after a game. Scores count at the time
+ * their game was played, see `eventsUpTo`.
  */
 export function statesAroundGame(events: EventType[], playedAt: number): GameStates {
   const stateAt = (time: number) => new TennisTable({ events: eventsUpTo(events, time), referenceTime: time });

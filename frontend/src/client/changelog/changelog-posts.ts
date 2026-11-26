@@ -42,6 +42,25 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
+    slug: "game-details-after-values-with-a-late-score",
+    title: "Correct values on game details when a player adds or changes a score later",
+    date: "2026-11-26",
+    tags: ["bug-fix"],
+    summary:
+      "The game details and What changed pages use the current score of each game, also when a player adds or changes the score after the game.",
+    body: [
+      text(
+        "The app counts a score at the time its game was played. A score that a player adds or changes later on the edit page applies to that game and to the games after it.",
+      ),
+      text(
+        "This changes the values before and after a game on the game details page: the Ranks and scores table, the expected score, the Hall of Fame score and the win prediction. The What changed page and the Hall of Fame history use the same rule.",
+      ),
+      text(
+        "Before this change, these values counted a score at the time a player stored it. For a game scored later, the app calculated the values without the score. For a changed score, it used the old score. The leaderboards were correct.",
+      ),
+    ],
+  },
+  {
     slug: "tracked-game-saves-on-end-match",
     title: "A tracked game saves on End Match and continues after you leave",
     date: "2026-11-26",

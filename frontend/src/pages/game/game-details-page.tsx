@@ -44,9 +44,8 @@ export const GameDetailsPage: React.FC = () => {
   );
 
   // The app state just before and just after the game. Both drive the pairing
-  // prediction; the pre-game one also seeds the win % replay. The game's
-  // GAME_SCORE event is stored at playedAt + 1, so the post state projects
-  // there — at playedAt itself the game would count without its score.
+  // prediction; the pre-game one also seeds the win % replay. Scores count at
+  // the time their game was played, also when a player stored them later.
   const preState = useStateAt(game ? game.playedAt - 1 : undefined);
   const postState = useStateAt(game ? game.playedAt + 1 : undefined);
 

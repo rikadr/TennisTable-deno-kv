@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { useEventDbContext } from "../wrappers/event-db-context";
 import { TennisTable } from "../client/client-db/tennis-table";
 import { eventsUpTo } from "../client/client-db/event-store/events-up-to";
+import { EventType } from "../client/client-db/event-store/event-types";
 import { useAchievementsSnapshot } from "./use-achievements-snapshot";
 
 export { eventsUpTo };
@@ -15,6 +16,14 @@ export function useStateAt(time: number | undefined, options?: { achievements?: 
     () => (time === undefined ? undefined : eventsUpTo(context.events, time)),
     [context.events, time],
   );
+  return useStateOf(events, time, options);
+}
+
+function useStateOf(
+  events: EventType[] | undefined,
+  time: number | undefined,
+  options?: { achievements?: boolean },
+): TennisTable | undefined {
   const { snapshot, isCurrent } = useAchievementsSnapshot(options?.achievements ? events : undefined, time);
   const currentSnapshot = isCurrent ? snapshot : undefined;
 
