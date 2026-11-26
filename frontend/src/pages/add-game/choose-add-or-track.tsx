@@ -3,8 +3,9 @@ import { loadTrackedGame } from "./tracked-game-storage";
 
 export const ChooseAddOrTrack = () => {
   const [searchParams] = useSearchParams();
-  // A tracked game that was not saved continues before a new game starts.
-  if (loadTrackedGame()) return <Navigate to="/add-game-track" replace />;
+  // A tracked game that was not saved continues before a new game starts. The
+  // tracker gets the players in the url, so it can tell when they differ.
+  if (loadTrackedGame()) return <Navigate to={`/add-game-track?${searchParams.toString()}`} replace />;
   return (
     <div className="min-h-screen p-4 flex justify-center">
       <div className="w-full max-w-md space-y-8">

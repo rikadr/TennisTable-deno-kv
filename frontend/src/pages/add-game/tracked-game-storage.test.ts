@@ -62,6 +62,15 @@ describe("tracked game storage", () => {
     ["text that is not JSON", "{not json"],
     ["an object of a different shape", JSON.stringify({ player1: "alice" })],
     ["a game without its current set", JSON.stringify({ ...game, currentTrackedSet: undefined })],
+    ["a game with an unknown table side", JSON.stringify({ ...game, badSide: "left" })],
+    [
+      "a game with a set that has no point log",
+      JSON.stringify({ ...game, matchData: { ...game.matchData, trackedSets: [] } }),
+    ],
+    [
+      "a game with a point that has no time",
+      JSON.stringify({ ...game, currentTrackedSet: { sequence: "212", pointTimes: [20, 21] } }),
+    ],
     ["a game with an invalid pending save", JSON.stringify({ ...game, pendingSave: { stream: "game-1" } })],
   ])("drops %s", (_, raw) => {
     window.localStorage.setItem(STORAGE_KEY, raw);

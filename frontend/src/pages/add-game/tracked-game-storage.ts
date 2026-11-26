@@ -49,7 +49,43 @@ function isSetPoints(value: unknown): value is TrackedSetPoints {
 }
 
 function isTrackedSet(value: unknown): value is TrackedSet {
-  return isRecord(value) && typeof value.sequence === "string" && Array.isArray(value.pointTimes);
+  return (
+    isRecord(value) &&
+    typeof value.sequence === "string" &&
+    /^[12]*$/.test(value.sequence) &&
+    Array.isArray(value.pointTimes) &&
+    value.pointTimes.length === value.sequence.length &&
+    value.pointTimes.every((time) => typeof time === "number")
+  );
+}
+
+function isServer(value: unknown): value is Server {
+  return value === 1 || value === 2;
+}
+
+function isBadSide(value: unknown): value is BadSide {
+  return value === 1 || value === 2 || value === "neutral" || value === null;
+}
+
+/** Each completed set has its points, its first server and its side, and one winner. */
+function isMatchData(value: unknown): value is MatchData {
+  if (!isRecord(value)) return false;
+  const { setsWon, setPoints, trackedSets, firstServers, badSides } = value;
+  return (
+    isSetPoints(setsWon) &&
+    Array.isArray(setPoints) &&
+    setPoints.every(isSetPoints) &&
+    setsWon.player1 + setsWon.player2 === setPoints.length &&
+    Array.isArray(trackedSets) &&
+    trackedSets.length === setPoints.length &&
+    trackedSets.every(isTrackedSet) &&
+    Array.isArray(firstServers) &&
+    firstServers.length === setPoints.length &&
+    firstServers.every(isServer) &&
+    Array.isArray(badSides) &&
+    badSides.length === setPoints.length &&
+    badSides.every(isBadSide)
+  );
 }
 
 function isPendingSave(value: unknown): value is PendingSave {
@@ -57,21 +93,15 @@ function isPendingSave(value: unknown): value is PendingSave {
 }
 
 function isStoredTrackedGame(value: unknown): value is StoredTrackedGame {
-  if (!isRecord(value) || !isRecord(value.matchData)) return false;
-  const { matchData } = value;
   return (
+    isRecord(value) &&
     typeof value.player1 === "string" &&
     typeof value.player2 === "string" &&
-    isSetPoints(matchData.setsWon) &&
-    Array.isArray(matchData.setPoints) &&
-    matchData.setPoints.every(isSetPoints) &&
-    Array.isArray(matchData.trackedSets) &&
-    matchData.trackedSets.every(isTrackedSet) &&
-    Array.isArray(matchData.firstServers) &&
-    Array.isArray(matchData.badSides) &&
+    isMatchData(value.matchData) &&
     isSetPoints(value.currentSetScore) &&
     isTrackedSet(value.currentTrackedSet) &&
-    (value.firstServer === 1 || value.firstServer === 2) &&
+    isServer(value.firstServer) &&
+    isBadSide(value.badSide) &&
     typeof value.startedAt === "number" &&
     typeof value.corrections === "number" &&
     (value.pendingSave === null || isPendingSave(value.pendingSave))

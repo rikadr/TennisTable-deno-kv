@@ -50,7 +50,7 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
       "The End Match button of the game tracker saves the game immediately. A tracked game that you leave stays on the device, and you can continue it.",
     body: [
       text(
-        "The End Match button saves the game and opens the game details page. That page shows the score, the win % graph and the point log. The review step with its Confirm button is removed, because a game was lost when a player left that step.",
+        "The End Match button saves the game and opens the game details page. That page shows the score, the win % graph and the point log. The tracker has no review step and no Confirm button. Before this change, the app lost a game when a player left that step.",
       ),
       text(
         "The game tracker stores the game on the device after each point. If you leave the page or close the browser, the Add game page opens the tracker again with the same score. The stored game stays until you save it or cancel it.",

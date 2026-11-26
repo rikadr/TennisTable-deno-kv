@@ -54,6 +54,16 @@ export const TrackGamePage: React.FC = () => {
   // continues from it and ignores the players in the url.
   const [restored] = useState(loadTrackedGame);
 
+  // True when the url asks for players that are not in the restored game, e.g.
+  // a tournament match link on a device with a game that was not saved.
+  const [restoredOtherMatch, setRestoredOtherMatch] = useState(
+    () =>
+      restored !== null &&
+      [params.player1, params.player2].some(
+        (player) => !!player && player !== restored.player1 && player !== restored.player2,
+      ),
+  );
+
   const [stage, setStage] = useState<Stage>(restored ? "scoring" : "player-selection");
   const [player1, setPlayer1] = useState<string | null>(restored?.player1 ?? params.player1);
   const [player2, setPlayer2] = useState<string | null>(restored?.player2 ?? params.player2);
@@ -411,6 +421,7 @@ export const TrackGamePage: React.FC = () => {
     setStartedAt(null);
     setCorrections(0);
     setPendingSave(null);
+    setRestoredOtherMatch(false);
     setValidationError("");
   };
 
@@ -461,6 +472,12 @@ export const TrackGamePage: React.FC = () => {
     return (
       <div className="text-black px-2 pb-2 pt-0 sm:px-4 sm:pb-4">
         <div className="max-w-md mx-auto">
+          {restoredOtherMatch && (
+            <div className="mb-3 p-3 bg-yellow-100 border border-yellow-400 text-yellow-800 rounded-lg text-sm">
+              This is an earlier match of {context.playerName(player1)} against {context.playerName(player2)} that is
+              not saved. Save it or cancel it before you start a new match.
+            </div>
+          )}
           {storageFailed && (
             <div className="mb-3 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg text-sm">
               This device cannot store the match. If you leave this page, the match is lost.
