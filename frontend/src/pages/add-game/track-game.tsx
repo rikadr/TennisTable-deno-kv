@@ -3,6 +3,7 @@ import { StepSelectPlayers } from "./step-select-players";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { useEventMutation } from "../../hooks/use-event-mutation";
 import { queryClient } from "../../common/query-client";
+import { httpClient } from "../../common/http-client";
 import { useNavigate } from "react-router-dom";
 import { EventType, EventTypeEnum, GameCreated, GameScore } from "../../client/client-db/event-store/event-types";
 import { newId } from "../../common/nani-id";
@@ -46,7 +47,9 @@ type Stage = "player-selection" | "scoring";
 export const TrackGamePage: React.FC = () => {
   const context = useEventDbContext();
   // A failed save shows inline and keeps the game, so it must not throw during render.
-  const addEventMutation = useEventMutation({ suppressErrorToast: true, throwOnError: false });
+  // It also must not wait for the browser to report a connection: a request that
+  // cannot be sent fails, and the player sees it.
+  const addEventMutation = useEventMutation({ suppressErrorToast: true, throwOnError: false, networkMode: "always" });
   const navigate = useNavigate();
   const params = useTennisParams();
 
@@ -195,17 +198,19 @@ export const TrackGamePage: React.FC = () => {
   };
 
   /**
-   * Which events of a game the server has. Loads the events first, and throws
-   * when that fails, because the cached events cannot answer this.
+   * Which events of a save the server has, and the time of its latest event.
+   * Asks the server directly and throws when that fails: the cached events
+   * cannot answer this, and the shared events query does not fetch offline.
    */
-  async function eventsOnServer(stream: string): Promise<{ created: boolean; scored: boolean }> {
-    await queryClient.refetchQueries({ queryKey: ["event-db"] }, { throwOnError: true });
-    const events = (queryClient.getQueryData<EventType[]>(["event-db"]) ?? []).filter(
-      (event) => event.stream === stream,
-    );
+  async function eventsOnServer(save: PendingSave) {
+    const url = new URL(`${process.env.REACT_APP_API_BASE_URL}/events`);
+    url.searchParams.append("after", String(save.playedAt - 1));
+    const events = await httpClient(url, { method: "GET" }).then((response) => response.json() as Promise<EventType[]>);
+    const own = events.filter((event) => event.stream === save.stream);
     return {
-      created: events.some((event) => event.type === EventTypeEnum.GAME_CREATED),
-      scored: events.some((event) => event.type === EventTypeEnum.GAME_SCORE),
+      created: own.some((event) => event.type === EventTypeEnum.GAME_CREATED),
+      scored: own.some((event) => event.type === EventTypeEnum.GAME_SCORE),
+      latestTime: Math.max(0, ...events.map((event) => event.time)),
     };
   }
 
@@ -218,103 +223,121 @@ export const TrackGamePage: React.FC = () => {
     const winner = player1Won ? player1 : player2;
     const loser = player1Won ? player2 : player1;
     const completedSets = matchData.setPoints || [];
-
-    // A retry keeps the stream and the time of the first attempt. The server
-    // rejects a second event with the same time, so no event is stored twice.
-    const save: PendingSave = pendingSave ?? { stream: newId(), playedAt: Date.now() };
-    const isRetry = pendingSave !== null;
-    const { playedAt } = save;
-    const gameCreatedEvent: GameCreated = {
-      type: EventTypeEnum.GAME_CREATED,
-      time: playedAt,
-      stream: save.stream,
-      data: { winner, loser, playedAt },
+    const failed = (message: string) => {
+      setValidationError(message);
+      setIsSaving(false);
     };
+    const connectionError =
+      "Could not save the game. The match is kept on this device. Check your connection and press Save again.";
 
-    if (!isRetry) {
-      const validateCreated = context.eventStore.gamesProjector.validateCreateGame(gameCreatedEvent);
-      if (validateCreated.valid === false) {
-        console.error(validateCreated.message);
-        setValidationError(validateCreated.message);
+    setIsSaving(true);
+
+    // A request of an earlier attempt can have reached the server without a
+    // response, so a retry first asks the server which events it has.
+    let save: PendingSave = pendingSave ?? { stream: newId(), playedAt: Date.now(), endedAt: Date.now() };
+    let onServer = { created: false, scored: false };
+    let scoreTime = save.playedAt + 1;
+    if (pendingSave) {
+      try {
+        const server = await eventsOnServer(pendingSave);
+        onServer = server;
+        // The server only stores an event with a time after its latest event.
+        // The times of the first attempt are too early when another event was
+        // stored after them.
+        const nextTime = Math.max(Date.now(), server.latestTime + 1);
+        if (!server.created) {
+          save = { ...pendingSave, playedAt: nextTime };
+          scoreTime = nextTime + 1;
+        } else if (server.latestTime > pendingSave.playedAt) {
+          scoreTime = nextTime;
+        }
+      } catch (error) {
+        console.error(error);
+        failed(connectionError);
         return;
       }
     }
 
-    // Both are undefined when the tracked points do not line up with the
-    // completed sets. They are always saved together.
-    const trackingData = toEventTrackingData({
-      completedSets,
-      trackedSets: matchData.trackedSets,
-      firstServers: matchData.firstServers,
-      player1IsGameWinner: player1Won,
-      source: "track-game",
-      startedAt,
-      endedAt: playedAt,
-      corrections,
-    });
+    if (!onServer.scored) {
+      const { playedAt } = save;
+      const gameCreatedEvent: GameCreated = {
+        type: EventTypeEnum.GAME_CREATED,
+        time: playedAt,
+        stream: save.stream,
+        data: { winner, loser, playedAt },
+      };
 
-    const gameScoreEvent: GameScore = {
-      type: EventTypeEnum.GAME_SCORE,
-      time: gameCreatedEvent.time + 1,
-      stream: gameCreatedEvent.stream,
-      data: {
-        setsWon: {
-          gameWinner: player1Won ? matchData.setsWon.player1 : matchData.setsWon.player2,
-          gameLoser: player1Won ? matchData.setsWon.player2 : matchData.setsWon.player1,
-        },
-        setPoints:
-          completedSets.length > 0
-            ? completedSets.map((set) => ({
-                gameWinner: player1Won ? set.player1 : set.player2,
-                gameLoser: player1Won ? set.player2 : set.player1,
-              }))
+      // Both are undefined when the tracked points do not line up with the
+      // completed sets. They are always saved together.
+      const trackingData = toEventTrackingData({
+        completedSets,
+        trackedSets: matchData.trackedSets,
+        firstServers: matchData.firstServers,
+        player1IsGameWinner: player1Won,
+        source: "track-game",
+        startedAt,
+        endedAt: save.endedAt,
+        corrections,
+      });
+
+      const gameScoreEvent: GameScore = {
+        type: EventTypeEnum.GAME_SCORE,
+        time: scoreTime,
+        stream: save.stream,
+        data: {
+          setsWon: {
+            gameWinner: player1Won ? matchData.setsWon.player1 : matchData.setsWon.player2,
+            gameLoser: player1Won ? matchData.setsWon.player2 : matchData.setsWon.player1,
+          },
+          setPoints:
+            completedSets.length > 0
+              ? completedSets.map((set) => ({
+                  gameWinner: player1Won ? set.player1 : set.player2,
+                  gameLoser: player1Won ? set.player2 : set.player1,
+                }))
+              : undefined,
+          gameWinnerSides: matchData.badSides.some((side) => side !== null)
+            ? completedSets.map((_, index) =>
+                gameWinnerSideOfBadSide(matchData.badSides[index] ?? null, player1Won ? 1 : 2),
+              )
             : undefined,
-        gameWinnerSides: matchData.badSides.some((side) => side !== null)
-          ? completedSets.map((_, index) =>
-              gameWinnerSideOfBadSide(matchData.badSides[index] ?? null, player1Won ? 1 : 2),
-            )
-          : undefined,
-        pointSequences: trackingData?.pointSequences,
-        tracking: trackingData?.tracking,
-      },
-    };
+          pointSequences: trackingData?.pointSequences,
+          tracking: trackingData?.tracking,
+        },
+      };
 
-    const validateScore = context.eventStore.gamesProjector.validateScoreGame(gameScoreEvent);
-    if (validateScore.valid === false) {
-      console.error(validateScore.message);
-      setValidationError(validateScore.message);
-      return;
-    }
-
-    setIsSaving(true);
-    try {
-      // A request of the first attempt can have reached the server without a
-      // response. Send only the events that the server does not have.
-      let onServer = { created: false, scored: false };
-      if (isRetry) {
-        onServer = await eventsOnServer(save.stream);
-      } else {
-        // Store the save before the first request, so a retry after a reload
-        // also continues from it.
-        setPendingSave(save);
-        const game = snapshot(save);
-        if (game) saveTrackedGame(game);
+      const validation = onServer.created
+        ? context.eventStore.gamesProjector.validateScoreGame(gameScoreEvent)
+        : [
+            context.eventStore.gamesProjector.validateCreateGame(gameCreatedEvent),
+            context.eventStore.gamesProjector.validateScoreGame(gameScoreEvent),
+          ].find((result) => result.valid === false);
+      if (validation && validation.valid === false) {
+        console.error(validation.message);
+        failed(validation.message);
+        return;
       }
-      if (!onServer.created) await addEventMutation.mutateAsync(gameCreatedEvent);
-      if (!onServer.scored) await addEventMutation.mutateAsync(gameScoreEvent);
-    } catch (error) {
-      console.error(error);
-      setValidationError(
-        "Could not save the game. The match is kept on this device. Check your connection and press End Match again.",
-      );
-      setIsSaving(false);
-      return;
+
+      // Store the save before the first request, so a retry after a reload
+      // also continues from it.
+      setPendingSave(save);
+      const game = snapshot(save);
+      if (game) saveTrackedGame(game);
+
+      try {
+        if (!onServer.created) await addEventMutation.mutateAsync(gameCreatedEvent);
+        await addEventMutation.mutateAsync(gameScoreEvent);
+      } catch (error) {
+        console.error(error);
+        failed(connectionError);
+        return;
+      }
     }
 
     clearTrackedGame();
     // The game details page reads the game from the events, so load them first.
     await queryClient.invalidateQueries().catch(console.error);
-    navigate(`/game?time=${playedAt}`);
+    navigate(`/game?time=${save.playedAt}`);
   }
 
   /**
@@ -381,7 +404,7 @@ export const TrackGamePage: React.FC = () => {
     if (pendingSave) {
       setIsSaving(true);
       try {
-        const onServer = await eventsOnServer(pendingSave.stream);
+        const onServer = await eventsOnServer(pendingSave);
         if (onServer.scored) {
           clearTrackedGame();
           navigate(`/game?time=${pendingSave.playedAt}`);
@@ -389,7 +412,7 @@ export const TrackGamePage: React.FC = () => {
         }
         if (onServer.created) {
           setValidationError(
-            "The server already has this game, but not its score. Press End Match again to save the score.",
+            "The server already has this game, but not its score. Press Save again to save the score.",
           );
           setIsSaving(false);
           return;
@@ -405,8 +428,10 @@ export const TrackGamePage: React.FC = () => {
 
     clearTrackedGame();
     setStage("player-selection");
-    setPlayer1(null);
-    setPlayer2(null);
+    // Back to the players in the url, e.g. of the tournament match link that
+    // led to a restored match of other players.
+    setPlayer1(params.player1);
+    setPlayer2(params.player2);
     setMatchData({
       setsWon: { player1: 0, player2: 0 },
       setPoints: [],

@@ -39,7 +39,7 @@ describe("tracked game storage", () => {
   });
 
   it("restores a save that did not complete", () => {
-    const pending = { ...game, pendingSave: { stream: "game-1", playedAt: 50 } };
+    const pending = { ...game, pendingSave: { stream: "game-1", playedAt: 50, endedAt: 50 } };
     expect(saveTrackedGame(pending)).toBe(true);
     expect(loadTrackedGame()).toEqual(pending);
   });

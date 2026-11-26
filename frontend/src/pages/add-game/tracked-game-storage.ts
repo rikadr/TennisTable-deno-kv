@@ -16,11 +16,12 @@ export interface MatchData {
 }
 
 /**
- * The stream and the time of a save that started. The server can have the
- * game, its score, both or none, so a retry uses the same values and first
- * reads what the server has.
+ * A save that started. The server can have the game, its score, both or none,
+ * so a retry first asks the server. `playedAt` moves to a later time when the
+ * server has nothing and a retry starts again. `endedAt` stays the time the
+ * match ended.
  */
-export type PendingSave = { stream: string; playedAt: number };
+export type PendingSave = { stream: string; playedAt: number; endedAt: number };
 
 /**
  * A tracked game in progress. The tracker saves it after every change, so a
@@ -89,7 +90,12 @@ function isMatchData(value: unknown): value is MatchData {
 }
 
 function isPendingSave(value: unknown): value is PendingSave {
-  return isRecord(value) && typeof value.stream === "string" && typeof value.playedAt === "number";
+  return (
+    isRecord(value) &&
+    typeof value.stream === "string" &&
+    typeof value.playedAt === "number" &&
+    typeof value.endedAt === "number"
+  );
 }
 
 function isStoredTrackedGame(value: unknown): value is StoredTrackedGame {
