@@ -615,6 +615,24 @@ export const PlayerAchievements: React.FC<Props> = ({ playerId }) => {
   );
 };
 
+/** The delay before the scroll to a row that a link names. */
+const SCROLL_TO_ROW_DELAY_MS = 100;
+
+/**
+ * Scrolls to the row with the given dom id. The nav menu scrolls the window to
+ * the top when the path changes, in the same render. A scroll at that moment
+ * is cancelled by the scroll to the top, so this scroll starts after a delay.
+ */
+function useScrollToRow(rowId: string | undefined) {
+  useEffect(() => {
+    if (!rowId) return;
+    const timeout = setTimeout(() => {
+      document.getElementById(rowId)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, SCROLL_TO_ROW_DELAY_MS);
+    return () => clearTimeout(timeout);
+  }, [rowId]);
+}
+
 type SearchProps = {
   query: string;
   onQueryChange: (query: string) => void;
@@ -675,11 +693,7 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({ achievements, query, 
       )
     : -1;
   const highlightedInList = highlightedIndex !== -1;
-  useEffect(() => {
-    if (!highlightedKey || !highlightedInList) return;
-    const row = document.getElementById(playerEarnedAchievementRowId(highlightedKey));
-    row?.scrollIntoView({ behavior: "smooth", block: "center" });
-  }, [highlightedKey, highlightedInList]);
+  useScrollToRow(highlightedKey && highlightedInList ? playerEarnedAchievementRowId(highlightedKey) : undefined);
 
   if (achievements.length === 0) {
     return (
@@ -1256,11 +1270,7 @@ const ProgressTab: React.FC<ProgressTabProps> = ({ progression, playerId, query,
   const highlightedType = searchParams.get(PLAYER_ACHIEVEMENT_PARAM);
   const normalizedQuery = query.trim().toLowerCase();
 
-  useEffect(() => {
-    if (!highlightedType) return;
-    const row = document.getElementById(playerAchievementRowId(highlightedType));
-    row?.scrollIntoView({ behavior: "smooth", block: "center" });
-  }, [highlightedType]);
+  useScrollToRow(highlightedType ? playerAchievementRowId(highlightedType) : undefined);
 
   const gameLimitForRanked = context.client.gameLimitForRanked;
 
