@@ -12,23 +12,22 @@ export function eventsUpTo(events: EventType[], time: number): EventType[] {
 }
 
 /**
- * The events that make up the app state just after a game: the events up to
- * 1 ms after it, and the score of the game also when it was stored later.
- * A score arrives later when a save was retried after other events, or when a
- * player adds the score on the edit page. The other events stored before that
- * score stay out, so the state shows this game only.
+ * The events that make up the app state at a point in time, for the states
+ * around a game. A score counts at the time its game was played, also when a
+ * player stored or changed it later. Then a game shows the same score before
+ * and after other games, as it does in the live state.
  */
-export function eventsAfterGame(events: EventType[], playedAt: number): EventType[] {
-  const time = playedAt + 1;
-  const gameIds = new Set(
-    events
-      .filter((event) => event.type === EventTypeEnum.GAME_CREATED && event.data.playedAt === playedAt)
-      .map((event) => event.stream),
-  );
-  // Every score event of the game, in stored order, so a later edit replaces
-  // an earlier score the same way it does in the live state.
-  const lateScores = events
-    .filter((event) => event.type === EventTypeEnum.GAME_SCORE && gameIds.has(event.stream) && event.time > time)
-    .map((event) => ({ ...event, time }));
-  return [...eventsUpTo(events, time), ...lateScores];
+export function eventsUpToByGameTime(events: EventType[], time: number): EventType[] {
+  const playedAtOfGame = new Map<string, number>();
+  for (const event of events) {
+    if (event.type === EventTypeEnum.GAME_CREATED) playedAtOfGame.set(event.stream, event.data.playedAt);
+  }
+  return events.filter((event) => {
+    if (event.type === EventTypeEnum.GAME_CREATED) return event.data.playedAt <= time;
+    if (event.type === EventTypeEnum.GAME_SCORE) {
+      const playedAt = playedAtOfGame.get(event.stream);
+      return playedAt === undefined ? event.time <= time : playedAt <= time;
+    }
+    return event.time <= time;
+  });
 }

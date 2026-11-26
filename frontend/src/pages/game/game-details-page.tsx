@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useEventDbContext } from "../../wrappers/event-db-context";
 import { session } from "../../services/auth";
 import { useTennisParams } from "../../hooks/use-tennis-params";
-import { useStateAfterGame, useStateAt } from "../../hooks/use-state-at";
+import { useStateAtGameTime } from "../../hooks/use-state-at";
 import { fmtNum } from "../../common/number-utils";
 import { RelativeTime, fullDateTimeString, toDatetimeLocalValue } from "../../common/date-utils";
 import { stringToColor } from "../../common/string-to-color";
@@ -44,10 +44,10 @@ export const GameDetailsPage: React.FC = () => {
   );
 
   // The app state just before and just after the game. Both drive the pairing
-  // prediction; the pre-game one also seeds the win % replay. The post state
-  // has the score of the game also when the score was stored later.
-  const preState = useStateAt(game ? game.playedAt - 1 : undefined);
-  const postState = useStateAfterGame(game?.playedAt);
+  // prediction; the pre-game one also seeds the win % replay. Scores count at
+  // the time their game was played, also when a player stored them later.
+  const preState = useStateAtGameTime(game ? game.playedAt - 1 : undefined);
+  const postState = useStateAtGameTime(game ? game.playedAt + 1 : undefined);
 
   // Elo moved by this game, from the players' game log entries.
   const eloExchange = useMemo(() => {
