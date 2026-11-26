@@ -1,6 +1,6 @@
 import { Elo } from "./elo";
 import { EventType } from "./event-store/event-types";
-import { eventsUpTo } from "./event-store/events-up-to";
+import { eventsAfterGame, eventsUpTo } from "./event-store/events-up-to";
 import { TennisTable } from "./tennis-table";
 
 /**
@@ -81,12 +81,14 @@ export function hallOfFameScoreAt(state: TennisTable | undefined, playerId: stri
 export type GameStates = { before: TennisTable; after: TennisTable };
 
 /**
- * The app state just before and just after a game. The GAME_SCORE event of
- * the game is stored at playedAt + 1, so the state after the game is there.
+ * The app state just before and just after a game. The state after the game
+ * has its score also when the score was stored later, see `eventsAfterGame`.
  */
 export function statesAroundGame(events: EventType[], playedAt: number): GameStates {
-  const stateAt = (time: number) => new TennisTable({ events: eventsUpTo(events, time), referenceTime: time });
-  return { before: stateAt(playedAt - 1), after: stateAt(playedAt + 1) };
+  return {
+    before: new TennisTable({ events: eventsUpTo(events, playedAt - 1), referenceTime: playedAt - 1 }),
+    after: new TennisTable({ events: eventsAfterGame(events, playedAt), referenceTime: playedAt + 1 }),
+  };
 }
 
 /** The Hall of Fame score of one player just before and just after a game. */

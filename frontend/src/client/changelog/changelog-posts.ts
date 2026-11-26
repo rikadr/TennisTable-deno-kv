@@ -42,6 +42,22 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
+    slug: "game-details-after-values-with-a-late-score",
+    title: "Correct after values on game details for a game scored later",
+    date: "2026-11-26",
+    tags: ["bug-fix"],
+    summary:
+      "The game details page now uses the score of the game in the After column, also when the score was added later.",
+    body: [
+      text(
+        "The After column of Ranks and scores, the expected score, the Hall of Fame score and the win prediction now include the score of the game. This applies when a player adds the score later on the edit page, and when a tracked game saves its score after a retry.",
+      ),
+      text(
+        "Before this change, the page showed these values for such a game as if the game had no score. The leaderboards and the other pages were correct.",
+      ),
+    ],
+  },
+  {
     slug: "tracked-game-saves-on-end-match",
     title: "A tracked game saves on End Match and continues after you leave",
     date: "2026-11-26",

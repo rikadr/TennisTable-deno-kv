@@ -1,7 +1,8 @@
 import { useMemo } from "react";
 import { useEventDbContext } from "../wrappers/event-db-context";
 import { TennisTable } from "../client/client-db/tennis-table";
-import { eventsUpTo } from "../client/client-db/event-store/events-up-to";
+import { eventsAfterGame, eventsUpTo } from "../client/client-db/event-store/events-up-to";
+import { EventType } from "../client/client-db/event-store/event-types";
 import { useAchievementsSnapshot } from "./use-achievements-snapshot";
 
 export { eventsUpTo };
@@ -15,6 +16,25 @@ export function useStateAt(time: number | undefined, options?: { achievements?: 
     () => (time === undefined ? undefined : eventsUpTo(context.events, time)),
     [context.events, time],
   );
+  return useStateOf(events, time, options);
+}
+
+// The app state just after the game played at `playedAt`. It has the score of
+// the game also when the score was stored later, see `eventsAfterGame`.
+export function useStateAfterGame(playedAt: number | undefined): TennisTable | undefined {
+  const context = useEventDbContext();
+  const events = useMemo(
+    () => (playedAt === undefined ? undefined : eventsAfterGame(context.events, playedAt)),
+    [context.events, playedAt],
+  );
+  return useStateOf(events, playedAt === undefined ? undefined : playedAt + 1);
+}
+
+function useStateOf(
+  events: EventType[] | undefined,
+  time: number | undefined,
+  options?: { achievements?: boolean },
+): TennisTable | undefined {
   const { snapshot, isCurrent } = useAchievementsSnapshot(options?.achievements ? events : undefined, time);
   const currentSnapshot = isCurrent ? snapshot : undefined;
 
