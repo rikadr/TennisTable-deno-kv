@@ -18,7 +18,7 @@ const game: StoredTrackedGame = {
   badSide: null,
   startedAt: 1,
   corrections: 3,
-  createdGame: null,
+  pendingSave: null,
 };
 
 describe("tracked game storage", () => {
@@ -38,6 +38,20 @@ describe("tracked game storage", () => {
     expect(loadTrackedGame()).toEqual(game);
   });
 
+  it("restores a save that did not complete", () => {
+    const pending = { ...game, pendingSave: { stream: "game-1", playedAt: 50 } };
+    expect(saveTrackedGame(pending)).toBe(true);
+    expect(loadTrackedGame()).toEqual(pending);
+  });
+
+  it("reports a game that the device did not store", () => {
+    const setItem = jest.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new Error("QuotaExceededError");
+    });
+    expect(saveTrackedGame(game)).toBe(false);
+    setItem.mockRestore();
+  });
+
   it("returns null after the game is cleared", () => {
     saveTrackedGame(game);
     clearTrackedGame();
@@ -48,6 +62,7 @@ describe("tracked game storage", () => {
     ["text that is not JSON", "{not json"],
     ["an object of a different shape", JSON.stringify({ player1: "alice" })],
     ["a game without its current set", JSON.stringify({ ...game, currentTrackedSet: undefined })],
+    ["a game with an invalid pending save", JSON.stringify({ ...game, pendingSave: { stream: "game-1" } })],
   ])("drops %s", (_, raw) => {
     window.localStorage.setItem(STORAGE_KEY, raw);
     expect(loadTrackedGame()).toBeNull();

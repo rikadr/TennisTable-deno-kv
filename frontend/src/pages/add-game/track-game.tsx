@@ -4,7 +4,7 @@ import { useEventDbContext } from "../../wrappers/event-db-context";
 import { useEventMutation } from "../../hooks/use-event-mutation";
 import { queryClient } from "../../common/query-client";
 import { useNavigate } from "react-router-dom";
-import { EventTypeEnum, GameCreated, GameScore } from "../../client/client-db/event-store/event-types";
+import { EventType, EventTypeEnum, GameCreated, GameScore } from "../../client/client-db/event-store/event-types";
 import { newId } from "../../common/nani-id";
 import { PendingTournamentGame } from "./pending-tournament-game";
 import { useTennisParams } from "../../hooks/use-tennis-params";
@@ -27,7 +27,14 @@ import {
   toEventTrackingData,
   TrackedSet,
 } from "../../common/point-sequences";
-import { clearTrackedGame, CreatedGame, loadTrackedGame, MatchData, saveTrackedGame } from "./tracked-game-storage";
+import {
+  clearTrackedGame,
+  loadTrackedGame,
+  MatchData,
+  PendingSave,
+  saveTrackedGame,
+  StoredTrackedGame,
+} from "./tracked-game-storage";
 
 interface SetPoint {
   player1: number;
@@ -74,16 +81,19 @@ export const TrackGamePage: React.FC = () => {
   // the game so its timeline can be replayed.
   const [startedAt, setStartedAt] = useState<number | null>(restored?.startedAt ?? null);
   const [corrections, setCorrections] = useState(restored?.corrections ?? 0);
-  const [createdGame, setCreatedGame] = useState<CreatedGame | null>(restored?.createdGame ?? null);
+  // Set when a save starts, and kept until the save is complete. While it is
+  // set the scoring is locked, so a retry saves the same game.
+  const [pendingSave, setPendingSave] = useState<PendingSave | null>(restored?.pendingSave ?? null);
   const [validationError, setValidationError] = useState<string>("");
   // Stays true after a successful save, until the game details page opens.
   const [isSaving, setIsSaving] = useState(false);
+  const [storageFailed, setStorageFailed] = useState(false);
+  const locked = isSaving || pendingSave !== null;
 
-  // Keep the game in localStorage while it is tracked. Leaving the page does
-  // not lose it: the add game pages lead back here and the game continues.
-  useEffect(() => {
-    if (stage !== "scoring" || !player1 || !player2 || startedAt === null) return;
-    saveTrackedGame({
+  /** The game as localStorage keeps it, or null before the match starts. */
+  const snapshot = (save: PendingSave | null): StoredTrackedGame | null => {
+    if (stage !== "scoring" || !player1 || !player2 || startedAt === null) return null;
+    return {
       player1,
       player2,
       matchData,
@@ -93,8 +103,17 @@ export const TrackGamePage: React.FC = () => {
       badSide,
       startedAt,
       corrections,
-      createdGame,
-    });
+      pendingSave: save,
+    };
+  };
+
+  // Keep the game in localStorage while it is tracked. Leaving the page does
+  // not lose it: the add game pages lead back here and the game continues.
+  useEffect(() => {
+    const game = snapshot(pendingSave);
+    if (game) setStorageFailed(saveTrackedGame(game) === false);
+    // snapshot reads only the values listed below.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     stage,
     player1,
@@ -106,7 +125,7 @@ export const TrackGamePage: React.FC = () => {
     badSide,
     startedAt,
     corrections,
-    createdGame,
+    pendingSave,
   ]);
 
   // The scoring screen is colour coded per player instead of a fixed
@@ -165,6 +184,21 @@ export const TrackGamePage: React.FC = () => {
     setStage("scoring");
   };
 
+  /**
+   * Which events of a game the server has. Loads the events first, and throws
+   * when that fails, because the cached events cannot answer this.
+   */
+  async function eventsOnServer(stream: string): Promise<{ created: boolean; scored: boolean }> {
+    await queryClient.refetchQueries({ queryKey: ["event-db"] }, { throwOnError: true });
+    const events = (queryClient.getQueryData<EventType[]>(["event-db"]) ?? []).filter(
+      (event) => event.stream === stream,
+    );
+    return {
+      created: events.some((event) => event.type === EventTypeEnum.GAME_CREATED),
+      scored: events.some((event) => event.type === EventTypeEnum.GAME_SCORE),
+    };
+  }
+
   /** Saves the game and opens its details page. There is no review step. */
   async function endMatch() {
     if (!player1 || !player2 || isSaving) return;
@@ -173,21 +207,21 @@ export const TrackGamePage: React.FC = () => {
     const player1Won = matchData.setsWon.player1 > matchData.setsWon.player2;
     const winner = player1Won ? player1 : player2;
     const loser = player1Won ? player2 : player1;
-    const now = Date.now();
     const completedSets = matchData.setPoints || [];
 
-    // An earlier attempt can have created the game and then failed on the
-    // score. Send only the score then, so the game is not created twice.
-    const alreadyCreated = createdGame?.winner === winner ? createdGame : null;
-    const playedAt = alreadyCreated?.playedAt ?? now;
+    // A retry keeps the stream and the time of the first attempt. The server
+    // rejects a second event with the same time, so no event is stored twice.
+    const save: PendingSave = pendingSave ?? { stream: newId(), playedAt: Date.now() };
+    const isRetry = pendingSave !== null;
+    const { playedAt } = save;
     const gameCreatedEvent: GameCreated = {
       type: EventTypeEnum.GAME_CREATED,
       time: playedAt,
-      stream: alreadyCreated?.stream ?? newId(),
+      stream: save.stream,
       data: { winner, loser, playedAt },
     };
 
-    if (!alreadyCreated) {
+    if (!isRetry) {
       const validateCreated = context.eventStore.gamesProjector.validateCreateGame(gameCreatedEvent);
       if (validateCreated.valid === false) {
         console.error(validateCreated.message);
@@ -205,7 +239,7 @@ export const TrackGamePage: React.FC = () => {
       player1IsGameWinner: player1Won,
       source: "track-game",
       startedAt,
-      endedAt: now,
+      endedAt: playedAt,
       corrections,
     });
 
@@ -244,11 +278,20 @@ export const TrackGamePage: React.FC = () => {
 
     setIsSaving(true);
     try {
-      if (!alreadyCreated) {
-        await addEventMutation.mutateAsync(gameCreatedEvent);
-        setCreatedGame({ stream: gameCreatedEvent.stream, playedAt, winner });
+      // A request of the first attempt can have reached the server without a
+      // response. Send only the events that the server does not have.
+      let onServer = { created: false, scored: false };
+      if (isRetry) {
+        onServer = await eventsOnServer(save.stream);
+      } else {
+        // Store the save before the first request, so a retry after a reload
+        // also continues from it.
+        setPendingSave(save);
+        const game = snapshot(save);
+        if (game) saveTrackedGame(game);
       }
-      await addEventMutation.mutateAsync(gameScoreEvent);
+      if (!onServer.created) await addEventMutation.mutateAsync(gameCreatedEvent);
+      if (!onServer.scored) await addEventMutation.mutateAsync(gameScoreEvent);
     } catch (error) {
       console.error(error);
       setValidationError(
@@ -319,8 +362,37 @@ export const TrackGamePage: React.FC = () => {
     navigate("/live-game/admin");
   }
 
-  const cancelMatch = () => {
+  const cancelMatch = async () => {
     if (!window.confirm("Cancel this match? The tracked points are deleted.")) return;
+    setValidationError("");
+
+    // A save that did not complete can have left the game on the server. Then
+    // the match is not only on this device, and a cancel here cannot remove it.
+    if (pendingSave) {
+      setIsSaving(true);
+      try {
+        const onServer = await eventsOnServer(pendingSave.stream);
+        if (onServer.scored) {
+          clearTrackedGame();
+          navigate(`/game?time=${pendingSave.playedAt}`);
+          return;
+        }
+        if (onServer.created) {
+          setValidationError(
+            "The server already has this game, but not its score. Press End Match again to save the score.",
+          );
+          setIsSaving(false);
+          return;
+        }
+      } catch (error) {
+        console.error(error);
+        setValidationError("Could not check if the server has this game. Check your connection and try again.");
+        setIsSaving(false);
+        return;
+      }
+      setIsSaving(false);
+    }
+
     clearTrackedGame();
     setStage("player-selection");
     setPlayer1(null);
@@ -338,7 +410,7 @@ export const TrackGamePage: React.FC = () => {
     setBadSide(null);
     setStartedAt(null);
     setCorrections(0);
-    setCreatedGame(null);
+    setPendingSave(null);
     setValidationError("");
   };
 
@@ -389,6 +461,11 @@ export const TrackGamePage: React.FC = () => {
     return (
       <div className="text-black px-2 pb-2 pt-0 sm:px-4 sm:pb-4">
         <div className="max-w-md mx-auto">
+          {storageFailed && (
+            <div className="mb-3 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg text-sm">
+              This device cannot store the match. If you leave this page, the match is lost.
+            </div>
+          )}
           <div className="bg-white rounded-xl shadow-lg p-3 tall:p-4 sm:p-4 mb-3">
             <div className="text-center mb-2 tall:mb-3">
               <div className="flex justify-center items-center gap-3 xs:gap-6">
@@ -466,7 +543,7 @@ export const TrackGamePage: React.FC = () => {
                   <div className="flex flex-col gap-1.5 tall:gap-2 w-full items-center">
                     <button
                       onClick={() => addPoint(1)}
-                      disabled={isSaving}
+                      disabled={locked}
                       className="w-full h-24 tall:h-32 text-center text-4xl font-bold rounded-lg hover:brightness-95 transition"
                       style={fill(player1Color)}
                     >
@@ -474,7 +551,7 @@ export const TrackGamePage: React.FC = () => {
                     </button>
                     <button
                       onClick={() => removePoint(1)}
-                      disabled={isSaving || currentSetScore.player1 === 0}
+                      disabled={locked || currentSetScore.player1 === 0}
                       className={classNames(
                         "w-full h-11 tall:h-12 text-center rounded-lg transition text-2xl font-bold",
                         currentSetScore.player1 === 0
@@ -505,7 +582,7 @@ export const TrackGamePage: React.FC = () => {
                   <div className="flex flex-col gap-1.5 tall:gap-2 w-full items-center">
                     <button
                       onClick={() => addPoint(2)}
-                      disabled={isSaving}
+                      disabled={locked}
                       className="w-full h-24 tall:h-32 text-center text-4xl font-bold rounded-lg hover:brightness-95 transition"
                       style={fill(player2Color)}
                     >
@@ -513,7 +590,7 @@ export const TrackGamePage: React.FC = () => {
                     </button>
                     <button
                       onClick={() => removePoint(2)}
-                      disabled={isSaving || currentSetScore.player2 === 0}
+                      disabled={locked || currentSetScore.player2 === 0}
                       className={classNames(
                         "w-full h-11 tall:h-12 text-center rounded-lg transition text-2xl font-bold",
                         currentSetScore.player2 === 0
@@ -532,7 +609,7 @@ export const TrackGamePage: React.FC = () => {
             {/* Set Won Button */}
             <button
               onClick={() => setLeader && setWon(setLeader)}
-              disabled={isSaving || setLeader === null}
+              disabled={locked || setLeader === null}
               className={classNames(
                 "w-full py-2.5 tall:py-3 mb-2 rounded-lg font-semibold transition text-base",
                 setLeader === null ? "bg-gray-300 text-gray-500 cursor-not-allowed" : "hover:brightness-95",
@@ -555,7 +632,10 @@ export const TrackGamePage: React.FC = () => {
                   : "bg-gray-300 text-gray-500 cursor-not-allowed",
               )}
             >
-              <div>{isSaving ? "Saving…" : "End Match & Save"}</div>
+              <div>{isSaving ? "Saving…" : pendingSave ? "Save again" : "End Match & Save"}</div>
+              {pendingSave && !isSaving && (
+                <div className="text-xs font-normal mt-1">The game is not saved. Scoring is locked.</div>
+              )}
               {!canEndMatch && (
                 <div className="text-xs font-normal mt-1">
                   {matchData.setsWon.player1 === matchData.setsWon.player2
@@ -637,7 +717,7 @@ export const TrackGamePage: React.FC = () => {
           {isAdmin && (
             <button
               onClick={convertToBroadcastedLiveGame}
-              disabled={updateLiveGame.isPending}
+              disabled={updateLiveGame.isPending || locked}
               className="w-full mt-3 py-3 px-4 rounded-lg bg-secondary-background text-secondary-text hover:opacity-80 transition-opacity disabled:opacity-50"
             >
               <div className="font-semibold">

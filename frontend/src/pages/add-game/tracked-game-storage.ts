@@ -15,8 +15,12 @@ export interface MatchData {
   badSides: BadSide[];
 }
 
-/** The GAME_CREATED event of a tracked game that the server already has. */
-export type CreatedGame = { stream: string; playedAt: number; winner: string };
+/**
+ * The stream and the time of a save that started. The server can have the
+ * game, its score, both or none, so a retry uses the same values and first
+ * reads what the server has.
+ */
+export type PendingSave = { stream: string; playedAt: number };
 
 /**
  * A tracked game in progress. The tracker saves it after every change, so a
@@ -32,11 +36,8 @@ export type StoredTrackedGame = {
   badSide: BadSide;
   startedAt: number;
   corrections: number;
-  /**
-   * Set when the game was created but its score did not reach the server. The
-   * next save sends only the score, so the game is not created twice.
-   */
-  createdGame: CreatedGame | null;
+  /** Set before the first request of a save, and kept until the save is complete. */
+  pendingSave: PendingSave | null;
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -49,6 +50,10 @@ function isSetPoints(value: unknown): value is TrackedSetPoints {
 
 function isTrackedSet(value: unknown): value is TrackedSet {
   return isRecord(value) && typeof value.sequence === "string" && Array.isArray(value.pointTimes);
+}
+
+function isPendingSave(value: unknown): value is PendingSave {
+  return isRecord(value) && typeof value.stream === "string" && typeof value.playedAt === "number";
 }
 
 function isStoredTrackedGame(value: unknown): value is StoredTrackedGame {
@@ -68,7 +73,8 @@ function isStoredTrackedGame(value: unknown): value is StoredTrackedGame {
     isTrackedSet(value.currentTrackedSet) &&
     (value.firstServer === 1 || value.firstServer === 2) &&
     typeof value.startedAt === "number" &&
-    typeof value.corrections === "number"
+    typeof value.corrections === "number" &&
+    (value.pendingSave === null || isPendingSave(value.pendingSave))
   );
 }
 
@@ -87,11 +93,14 @@ export function loadTrackedGame(): StoredTrackedGame | null {
   return null;
 }
 
-export function saveTrackedGame(game: StoredTrackedGame) {
+/** Returns false when the device did not store the game, e.g. on a full quota. */
+export function saveTrackedGame(game: StoredTrackedGame): boolean {
   try {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(game));
+    return true;
   } catch (error) {
     console.error("Failed to save the tracked game", error);
+    return false;
   }
 }
 
