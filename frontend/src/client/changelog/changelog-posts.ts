@@ -42,6 +42,25 @@ const list = (...items: string[]): ChangelogBlock => ({ kind: "list", items });
  */
 export const CHANGELOG_POSTS: ChangelogPost[] = [
   {
+    slug: "tracked-game-saves-on-end-match",
+    title: "A tracked game saves on End Match and continues after you leave",
+    date: "2026-11-26",
+    tags: ["feature-update"],
+    summary:
+      "The End Match button of the game tracker saves the game immediately. A tracked game that you leave stays on the device, and you can continue it.",
+    body: [
+      text(
+        "The End Match button saves the game and opens the game details page. That page shows the score, the win % graph and the point log. The review step with its Confirm button is removed, because a game was lost when a player left that step.",
+      ),
+      text(
+        "The game tracker stores the game on the device after each point. If you leave the page or close the browser, the Add game page opens the tracker again with the same score. The stored game stays until you save it or cancel it.",
+      ),
+      text(
+        "The new Cancel match button below the score deletes the tracked game. Use it to start a different game on a device that has a stored game.",
+      ),
+    ],
+  },
+  {
     slug: "sweet-tooth-missed-on-a-skipped-count",
     title: "Sweet Tooth 🥯 was not given to some players",
     date: "2026-11-19",
