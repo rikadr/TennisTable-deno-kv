@@ -1,6 +1,6 @@
 import { Elo } from "./elo";
 import { EventType } from "./event-store/event-types";
-import { eventsUpToByGameTime } from "./event-store/events-up-to";
+import { eventsUpTo } from "./event-store/events-up-to";
 import { TennisTable } from "./tennis-table";
 
 /**
@@ -82,11 +82,10 @@ export type GameStates = { before: TennisTable; after: TennisTable };
 
 /**
  * The app state just before and just after a game. Scores count at the time
- * their game was played, see `eventsUpToByGameTime`.
+ * their game was played, see `eventsUpTo`.
  */
 export function statesAroundGame(events: EventType[], playedAt: number): GameStates {
-  const stateAt = (time: number) =>
-    new TennisTable({ events: eventsUpToByGameTime(events, time), referenceTime: time });
+  const stateAt = (time: number) => new TennisTable({ events: eventsUpTo(events, time), referenceTime: time });
   return { before: stateAt(playedAt - 1), after: stateAt(playedAt + 1) };
 }
 

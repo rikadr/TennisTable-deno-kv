@@ -47,16 +47,16 @@ export const CHANGELOG_POSTS: ChangelogPost[] = [
     date: "2026-11-26",
     tags: ["bug-fix"],
     summary:
-      "The game details page uses the current score of each game, also when a player adds or changes the score after the game.",
+      "The game details and What changed pages use the current score of each game, also when a player adds or changes the score after the game.",
     body: [
       text(
-        "The Ranks and scores table, the expected score, the Hall of Fame score and the win prediction show values before and after a game. These values now use the current score of each game.",
+        "The app counts a score at the time its game was played. A score that a player adds or changes later on the edit page applies to that game and to the games after it.",
       ),
       text(
-        "The app counts a score at the time its game was played. A score that a player adds or changes later on the edit page now applies to that game and to the games after it.",
+        "This changes the values before and after a game on the game details page: the Ranks and scores table, the expected score, the Hall of Fame score and the win prediction. The What changed page and the Hall of Fame history use the same rule.",
       ),
       text(
-        "Before this change, the page used only the scores that existed at the time of the game. A game scored later showed no score, and a changed score showed the old score. The leaderboards and the other pages were correct.",
+        "Before this change, these values counted a score at the time a player stored it. For a game scored later, the app calculated the values without the score. For a changed score, it used the old score. The leaderboards were correct.",
       ),
     ],
   },
